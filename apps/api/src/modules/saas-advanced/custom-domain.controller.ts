@@ -3,22 +3,39 @@
  */
 
 import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger'
+import {
   Controller,
   Get,
   Post,
   Delete,
   Param,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
 import { CustomDomainService } from './custom-domain.service'
 import { isValidDomain, buildVerificationHost, buildVerificationValue } from './custom-domain.entity'
+import {
+  AddDomainRequest,
+  DomainDetailResponse,
+  DomainListQueryRequest,
+  DomainListResponse,
+  ResolveHostRequest,
+  ResolveHostResponse,
+  ValidateDomainRequest,
+  ValidateDomainResponse,
+} from './custom-domain.dto'
 
-export interface AddDomainRequest {
-  domain: string
-}
-
+@ApiTags('saas-domain')
 @Controller('saas/domain')
 export class CustomDomainController {
   constructor(private readonly service: CustomDomainService) {}
@@ -27,8 +44,11 @@ export class CustomDomainController {
    * 添加自定义域名 (返回待 TXT 校验记录)
    * POST /saas/domain
    */
+  @ApiOperation({ summary: '添加自定义域名' })
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: AddDomainRequest })
+  @ApiCreatedResponse({ type: DomainDetailResponse })
   async addDomain(@Body() body: AddDomainRequest) {
     return this.service.addDomain(body.domain)
   }
@@ -37,17 +57,27 @@ export class CustomDomainController {
    * 列出当前租户所有域名
    * GET /saas/domain
    */
+  @ApiOperation({ summary: '列出当前租户可见域名' })
+  @ApiQuery({ name: 'keyword', type: String, required: false, description: '按域名关键字模糊搜索' })
+  @ApiQuery({ name: 'status', type: String, required: false, description: '按域名状态筛选' })
+  @ApiQuery({ name: 'scopeType', type: String, required: false, description: '按作用域类型筛选' })
+  @ApiQuery({ name: 'page', type: Number, required: false, description: '分页页码，默认 1' })
+  @ApiQuery({ name: 'pageSize', type: Number, required: false, description: '分页大小，默认 10' })
+  @ApiQuery({ name: 'sortBy', type: String, required: false, description: '排序字段，默认 createdAt' })
+  @ApiQuery({ name: 'sortOrder', type: String, required: false, description: '排序方向，默认 desc' })
   @Get()
-  async list() {
-    const items = await this.service.list()
-    return { items, total: items.length }
+  @ApiOkResponse({ type: DomainListResponse })
+  async list(@Query() query: DomainListQueryRequest = new DomainListQueryRequest()) {
+    return this.service.listPage(query)
   }
 
   /**
    * 获取域名详情 + 校验提示
    * GET /saas/domain/:id
    */
+  @ApiOperation({ summary: '获取域名详情与 TXT 校验提示' })
   @Get(':id')
+  @ApiOkResponse({ type: DomainDetailResponse })
   async getById(@Param('id') id: string) {
     const m = await this.service.getById(id)
     return {
@@ -65,8 +95,10 @@ export class CustomDomainController {
    * 删除域名
    * DELETE /saas/domain/:id
    */
+  @ApiOperation({ summary: '删除域名' })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: '删除成功' })
   async remove(@Param('id') id: string) {
     await this.service.remove(id)
   }
@@ -75,8 +107,10 @@ export class CustomDomainController {
    * 触发 DNS TXT 校验
    * POST /saas/domain/:id/verify
    */
+  @ApiOperation({ summary: '触发 DNS TXT 校验' })
   @Post(':id/verify')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: DomainDetailResponse })
   async verify(@Param('id') id: string) {
     return this.service.verify(id)
   }
@@ -85,29 +119,37 @@ export class CustomDomainController {
    * 申请 SSL 证书 (active → active_ssl)
    * POST /saas/domain/:id/ssl
    */
+  @ApiOperation({ summary: '申请 SSL 证书' })
   @Post(':id/ssl')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: DomainDetailResponse })
   async requestSsl(@Param('id') id: string) {
     return this.service.requestSsl(id)
   }
 
   /**
    * Host → tenantId 解析 (CDN/网关用, 无需租户上下文)
-   * GET /saas/domain/resolve?host=acme.shenjiying88.com
+   * GET /saas/domain/resolve/host?host=acme.shenjiying88.com
    */
   @Get('resolve/host')
-  async resolveHost(@Body() body: { host: string }) {
-    const tenantId = this.service.resolveTenantByHost(body.host)
-    return { host: body.host, tenantId, resolved: tenantId != null }
+  @ApiOperation({ summary: '按 Host 解析租户上下文' })
+  @ApiQuery({ name: 'host', type: String, required: true, description: '需要解析的访问 Host' })
+  @ApiOkResponse({ type: ResolveHostResponse })
+  async resolveHost(@Query() query: ResolveHostRequest) {
+    const tenantId = this.service.resolveTenantByHost(query.host)
+    return { host: query.host, tenantId, resolved: tenantId != null }
   }
 
   /**
    * 域名格式预校验 (前端表单用)
    * POST /saas/domain/validate
    */
+  @ApiOperation({ summary: '预校验域名格式' })
   @Post('validate')
   @HttpCode(HttpStatus.OK)
-  async validateDomain(@Body() body: AddDomainRequest) {
+  @ApiBody({ type: ValidateDomainRequest })
+  @ApiOkResponse({ type: ValidateDomainResponse })
+  async validateDomain(@Body() body: ValidateDomainRequest) {
     const result = isValidDomain(body.domain)
     return result
   }

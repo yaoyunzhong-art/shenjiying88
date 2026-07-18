@@ -13,7 +13,10 @@ import {
   CreatePortalDto,
   UpdatePortalDto,
   PortalQueryDto,
-  PortalLoginEntryDto
+  PortalLoginEntryDto,
+  MarketProfileDto,
+  RegionalOverrideDto,
+  PortalBootstrapResponseDto,
 } from './portal.dto'
 
 /**
@@ -235,5 +238,72 @@ describe('portal.dto: PortalLoginEntryDto', () => {
   it('PortalLoginEntryDto is a class (structural check)', () => {
     assert.ok(PortalLoginEntryDto.prototype)
     assert.ok(typeof PortalLoginEntryDto === 'function')
+  })
+})
+
+describe('portal.dto: Bootstrap response DTOs', () => {
+  it('MarketProfileDto 支持完整市场画像字段', () => {
+    const dto = plainToInstance(MarketProfileDto, {
+      marketCode: 'cn-mainland',
+      marketName: '中国大陆',
+      countryCode: 'CN',
+      locale: { defaultLanguage: 'zh-CN', supportedLanguages: ['zh-CN', 'en-US'] },
+      timezone: { timezone: 'Asia/Shanghai' },
+      currency: { currencyCode: 'CNY', symbol: '¥' },
+      tax: { taxMode: 'INCLUDED', taxRate: 13, taxLabel: '增值税' },
+      network: {
+        networkRegion: 'CHINA_MAINLAND',
+        apiBaseUrl: 'https://cn-api.m5.local',
+        cdnBaseUrl: 'https://cn-cdn.m5.local',
+        callbackBaseUrl: 'https://cn-hooks.m5.local',
+      },
+      email: {
+        provider: 'SMTP',
+        fromName: 'M5 CN',
+        fromAddress: 'hello@cn.local',
+        replyTo: 'support@cn.local',
+      },
+      social: { primaryPlatforms: ['WECHAT'], supportPlatforms: ['WECHAT'] },
+    })
+
+    assert.equal(dto.countryCode, 'CN')
+    assert.equal(dto.currency.currencyCode, 'CNY')
+    assert.equal(dto.network.callbackBaseUrl, 'https://cn-hooks.m5.local')
+    assert.equal(dto.email.replyTo, 'support@cn.local')
+  })
+
+  it('RegionalOverrideDto 支持可选覆盖字段', () => {
+    const dto = plainToInstance(RegionalOverrideDto, {
+      scopeType: 'TENANT',
+      scopeCode: 'tenant-demo',
+      inheritanceMode: 'TENANT_DEFAULT',
+      marketCode: 'cn-mainland',
+      email: { fromName: 'tenant-demo HQ' },
+      social: { primaryPlatforms: ['WECHAT'] },
+      timezone: { timezone: 'Asia/Shanghai' },
+    })
+
+    assert.equal(dto.scopeType, 'TENANT')
+    assert.equal(dto.email?.fromName, 'tenant-demo HQ')
+    assert.deepEqual(dto.social?.primaryPlatforms, ['WECHAT'])
+    assert.equal(dto.timezone?.timezone, 'Asia/Shanghai')
+  })
+
+  it('PortalBootstrapResponseDto 支持三层门户和 foundation 元数据', () => {
+    const dto = plainToInstance(PortalBootstrapResponseDto, {
+      tenantPortal: { scopeCode: 'tenant-demo' },
+      brandPortal: { scopeCode: 'brand-demo' },
+      storePortal: { scopeCode: 'store-001' },
+      marketProfile: { marketCode: 'cn-mainland' },
+      regionalOverrides: [{ scopeType: 'TENANT', scopeCode: 'tenant-demo', marketCode: 'cn-mainland' }],
+      foundationDependencies: ['identity-access'],
+      foundationContracts: ['portal-page:v1'],
+    })
+
+    assert.equal(dto.tenantPortal.scopeCode, 'tenant-demo')
+    assert.equal(dto.brandPortal.scopeCode, 'brand-demo')
+    assert.equal(dto.storePortal.scopeCode, 'store-001')
+    assert.deepEqual(dto.foundationDependencies, ['identity-access'])
+    assert.deepEqual(dto.foundationContracts, ['portal-page:v1'])
   })
 })

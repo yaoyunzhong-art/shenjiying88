@@ -17,6 +17,7 @@ import {
 import { randomUUID } from 'node:crypto'
 import { requireTenantContext } from '../../common/context/tenant-context'
 import { PrismaService } from '../../prisma/prisma.service'
+import type { DomainListQueryRequest } from './custom-domain.dto'
 import {
   DomainMapping,
   DomainScopeType,
@@ -178,20 +179,58 @@ export class CustomDomainService {
     return mapping
   }
 
-  async list(): Promise<DomainMapping[]> {
+  async list(query: DomainListQueryRequest = {} as DomainListQueryRequest): Promise<DomainMapping[]> {
+    return (await this.listPage(query)).items
+  }
+
+  async listPage(query: DomainListQueryRequest = {} as DomainListQueryRequest): Promise<{
+    items: DomainMapping[]
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+    sortBy: DomainSortField
+    sortOrder: DomainSortOrder
+  }> {
     const ctx = requireTenantContext()
+    const page = Math.max(query.page ?? 1, 1)
+    const pageSize = Math.max(query.pageSize ?? 10, 1)
+    const sortBy = (query.sortBy ?? 'createdAt') as DomainSortField
+    const sortOrder = (query.sortOrder ?? 'desc') as DomainSortOrder
+    const offset = (page - 1) * pageSize
+
+    let items: DomainMapping[]
     if (this.canUsePersistence()) {
       const rows = await this.customDomains().findMany({
         where: { tenantId: ctx.tenantId },
         orderBy: { createdAt: 'desc' },
       })
-      return rows.map((row: PersistedCustomDomainRow) => this.rowToMapping(row))
+      items = rows.map((row: PersistedCustomDomainRow) => this.rowToMapping(row))
+    } else {
+      const ids = this.domainsByTenant.get(ctx.tenantId) ?? new Set()
+      items = Array.from(ids)
+        .map((id) => this.domains.get(id)!)
+        .filter((d) => d != null)
     }
-    const ids = this.domainsByTenant.get(ctx.tenantId) ?? new Set()
-    return Array.from(ids)
-      .map((id) => this.domains.get(id)!)
-      .filter((d) => d != null)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+    const filtered = this.applyListQuery(items, query)
+    const sorted = this.sortMappings(filtered, sortBy, sortOrder)
+    const total = sorted.length
+    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize)
+
+    return {
+      items: sorted.slice(offset, offset + pageSize),
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: totalPages > 0 && page > 1,
+      sortBy,
+      sortOrder,
+    }
   }
 
   async getById(id: string): Promise<DomainMapping> {
@@ -442,7 +481,54 @@ export class CustomDomainService {
   private customDomains(): CustomDomainDelegate {
     return (this.prisma as unknown as { customDomain: CustomDomainDelegate }).customDomain
   }
+
+  private applyListQuery(items: DomainMapping[], query: DomainListQueryRequest): DomainMapping[] {
+    const keyword = query.keyword?.trim().toLowerCase()
+    return items.filter((item) => {
+      if (query.status && item.status !== query.status) {
+        return false
+      }
+      if (query.scopeType && item.scopeType !== query.scopeType) {
+        return false
+      }
+      if (keyword && !item.domain.toLowerCase().includes(keyword)) {
+        return false
+      }
+      return true
+    })
+  }
+
+  private sortMappings(
+    items: DomainMapping[],
+    sortBy: DomainSortField,
+    sortOrder: DomainSortOrder,
+  ): DomainMapping[] {
+    const direction = sortOrder === 'asc' ? 1 : -1
+    return [...items].sort((a, b) => {
+      const left = this.readSortValue(a, sortBy)
+      const right = this.readSortValue(b, sortBy)
+      const compared = left.localeCompare(right)
+      return compared * direction
+    })
+  }
+
+  private readSortValue(item: DomainMapping, sortBy: DomainSortField): string {
+    switch (sortBy) {
+      case 'domain':
+        return item.domain
+      case 'status':
+        return item.status
+      case 'updatedAt':
+        return item.updatedAt
+      case 'createdAt':
+      default:
+        return item.createdAt
+    }
+  }
 }
+
+type DomainSortField = 'createdAt' | 'updatedAt' | 'domain' | 'status'
+type DomainSortOrder = 'asc' | 'desc'
 
 type PersistedCustomDomainRow = {
   id: string

@@ -134,6 +134,59 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
         /not found/,
       )
     })
+
+    it('支持按状态和关键字筛选域名列表', async () => {
+      const active = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('query-active.shenjiying88.com'),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('query-pending.shenjiying88.com'),
+      )
+      SHARED_SERVICE.setDnsTxtOverride(active.verificationHost, [
+        buildVerificationValue(active.verificationToken),
+      ])
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.verify(active.id))
+
+      const filtered = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.list({
+          status: 'active',
+          keyword: 'query-active',
+          page: 1,
+          pageSize: 10,
+        }),
+      )
+      assert.ok(filtered.length >= 1)
+      assert.ok(filtered.every((item) => item.status === 'active'))
+      assert.ok(filtered.every((item) => item.domain.includes('query-active')))
+    })
+
+    it('支持按 domain 升序排序并返回真实分页元信息', async () => {
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('sort-zeta.shenjiying88.com'),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('sort-alpha.shenjiying88.com'),
+      )
+
+      const pageResult = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.listPage({
+          keyword: 'sort-',
+          sortBy: 'domain',
+          sortOrder: 'asc',
+          page: 1,
+          pageSize: 1,
+        }),
+      )
+
+      assert.equal(pageResult.items.length, 1)
+      assert.ok(pageResult.total >= 2)
+      assert.equal(pageResult.totalPages >= 2, true)
+      assert.equal(pageResult.hasNextPage, true)
+      assert.equal(pageResult.hasPreviousPage, false)
+      assert.equal(pageResult.sortBy, 'domain')
+      assert.equal(pageResult.sortOrder, 'asc')
+      assert.equal(pageResult.items[0].domain, 'sort-alpha.shenjiying88.com')
+    })
   })
 
   // ============ 5. DNS TXT 校验 (4) ============

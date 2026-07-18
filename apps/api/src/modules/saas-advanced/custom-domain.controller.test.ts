@@ -92,22 +92,52 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
   // ============ 2. GET /saas/domain — 列出域名 ============
   describe('GET /saas/domain — list()', () => {
     it('返回 items 数组和 total', async () => {
-      const res = await inTenant(TENANT_A, () => controller.list())
+      const res = await inTenant(TENANT_A, () => controller.list({}))
       assert.ok(Array.isArray(res.items))
       assert.equal(typeof res.total, 'number')
       assert.equal(res.items.length, res.total)
+      assert.equal(res.page, 1)
+      assert.equal(res.pageSize, 10)
+      assert.equal(res.totalPages >= 0, true)
+      assert.equal(res.sortBy, 'createdAt')
+      assert.equal(res.sortOrder, 'desc')
     })
 
     it('跨租户隔离: tenant-B 看不到 tenant-A 的域名', async () => {
       await inTenant(TENANT_A, () =>
         controller.addDomain({ domain: 'isolated.shenjiying88.com' }),
       )
-      const aList = await inTenant(TENANT_A, () => controller.list())
-      const bList = await inTenant(TENANT_B, () => controller.list())
+      const aList = await inTenant(TENANT_A, () => controller.list({}))
+      const bList = await inTenant(TENANT_B, () => controller.list({}))
       const aDomains = aList.items.map((d: any) => d.domain)
       const bDomains = bList.items.map((d: any) => d.domain)
       assert.ok(aDomains.includes('isolated.shenjiying88.com'))
       assert.ok(!bDomains.includes('isolated.shenjiying88.com'))
+    })
+
+    it('支持按 status 筛选、排序和分页元信息', async () => {
+      const active = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'query-active.shenjiying88.com' }),
+      )
+      await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'query-pending.shenjiying88.com' }),
+      )
+      service.setDnsTxtOverride(active.verificationHost, [
+        buildVerificationValue(active.verificationToken),
+      ])
+      await inTenant(TENANT_A, () => controller.verify(active.id))
+
+      const filtered = await inTenant(TENANT_A, () =>
+        controller.list({ status: 'active', sortBy: 'domain', sortOrder: 'asc', page: 1, pageSize: 1 }),
+      )
+      assert.equal(filtered.items.length, 1)
+      assert.equal(filtered.items[0].status, 'active')
+      assert.equal(filtered.page, 1)
+      assert.equal(filtered.pageSize, 1)
+      assert.equal(filtered.total >= 1, true)
+      assert.equal(filtered.totalPages >= 1, true)
+      assert.equal(filtered.sortBy, 'domain')
+      assert.equal(filtered.sortOrder, 'asc')
     })
   })
 

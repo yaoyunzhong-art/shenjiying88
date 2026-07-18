@@ -39,4 +39,9 @@
 | approvals | 1src | 53 |
 | notifications | 1src | 40 |
 | store-reports | 1src | 31 |
-| **合计** | **14src** | **370** |
+| training | 1src | 49 |
+| feedback | 1src | 18 |
+| audit-logs | 1src | 63 |
+| tags | 1src | 57 |
+| coupon-templates | 1src | 68 |
+| **合计** | **19src** | **625** |

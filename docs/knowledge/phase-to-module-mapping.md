@@ -33,6 +33,11 @@
 | Equipment | admin-web/app/equipment/ | ~300行 | 56测试 | 🆕 | 🔴 | P-30后勤 设备管理 |
 | Approvals | admin-web/app/approvals/ | ~400行 | 53测试 | 🆕 | 🔴 | P-Admin 审批流程 |
 | Notifications | admin-web/app/notifications/ | ~300行 | 40测试 | 🆕 | 🔴 | P-Admin 通知管理 |
+| Training | admin-web/app/training/ | ~300行 | 49测试 | 🆕 | 🔴 | P-30后勤 培训管理 |
+| Feedback | admin-web/app/feedback/ | ~350行 | 18测试 | 🆕 | 🔴 | P-38财务 客户反馈 |
+| Audit Logs | admin-web/app/audit-logs/ | ~300行 | 63测试 | 🆕 | 🔴 | P-Admin 审计日志 |
+| Tags | admin-web/app/tags/ | ~300行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
+| Coupon Templates | admin-web/app/coupon-templates/ | ~300行 | 68测试 | 🆕 | 🔴 | P-35收银 优惠券模板 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
 ### V19 Day2 凌晨 storefront 薄页面补齐 (2026-07-18 02:25-03:10)

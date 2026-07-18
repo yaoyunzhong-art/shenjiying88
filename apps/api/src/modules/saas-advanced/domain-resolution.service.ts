@@ -9,6 +9,13 @@ interface DomainResolutionContext {
   storeId?: string
 }
 
+interface PrimaryDomainScope {
+  scopeType: 'TENANT' | 'BRAND' | 'STORE'
+  tenantId: string
+  brandId?: string
+  storeId?: string
+}
+
 function normalizeHost(host: string): string {
   return host.toLowerCase().trim().split(',')[0].split(':')[0]
 }
@@ -17,6 +24,7 @@ function normalizeHost(host: string): string {
 export class DomainResolutionService implements OnModuleInit {
   private readonly logger = new Logger(DomainResolutionService.name)
   private readonly hostIndex = new Map<string, DomainResolutionContext>()
+  private readonly primaryDomainIndex = new Map<string, string>()
 
   constructor(@Optional() private readonly prisma?: PrismaService) {}
 
@@ -31,18 +39,31 @@ export class DomainResolutionService implements OnModuleInit {
         },
         select: {
           domain: true,
+          scopeType: true,
           tenantId: true,
           brandId: true,
           storeId: true,
+          isPrimary: true,
         },
       })
 
       for (const row of rows) {
-        this.hostIndex.set(row.domain, {
+        this.hostIndex.set(normalizeHost(row.domain), {
           tenantId: row.tenantId,
           brandId: row.brandId ?? undefined,
           storeId: row.storeId ?? undefined,
         })
+        if (row.isPrimary) {
+          this.primaryDomainIndex.set(
+            this.buildScopeKey({
+              scopeType: row.scopeType as PrimaryDomainScope['scopeType'],
+              tenantId: row.tenantId,
+              brandId: row.brandId ?? undefined,
+              storeId: row.storeId ?? undefined,
+            }),
+            normalizeHost(row.domain),
+          )
+        }
       }
     } catch (error) {
       this.logger.warn(`load custom domains skipped: ${(error as Error).message}`)
@@ -62,23 +83,47 @@ export class DomainResolutionService implements OnModuleInit {
 
   upsertFromMapping(mapping: DomainMapping): void {
     const normalized = normalizeHost(mapping.domain)
+    const scopeKey = this.buildScopeKey({
+      scopeType: mapping.scopeType,
+      tenantId: mapping.tenantId,
+      brandId: mapping.brandId,
+      storeId: mapping.storeId,
+    })
     if (mapping.status === 'active' || mapping.status === 'active_ssl') {
       this.hostIndex.set(normalized, {
         tenantId: mapping.tenantId,
         brandId: mapping.brandId,
         storeId: mapping.storeId,
       })
+      if (mapping.isPrimary) {
+        this.primaryDomainIndex.set(scopeKey, normalized)
+      } else if (this.primaryDomainIndex.get(scopeKey) === normalized) {
+        this.primaryDomainIndex.delete(scopeKey)
+      }
       return
     }
     this.hostIndex.delete(normalized)
+    if (this.primaryDomainIndex.get(scopeKey) === normalized) {
+      this.primaryDomainIndex.delete(scopeKey)
+    }
   }
 
   removeHost(host: string): void {
-    this.hostIndex.delete(normalizeHost(host))
+    const normalized = normalizeHost(host)
+    this.hostIndex.delete(normalized)
+    for (const [scopeKey, domain] of this.primaryDomainIndex.entries()) {
+      if (domain === normalized || normalizeHost(domain) === normalized) {
+        this.primaryDomainIndex.delete(scopeKey)
+      }
+    }
   }
 
   countHosts(): number {
     return this.hostIndex.size
+  }
+
+  findPrimaryDomain(scope: PrimaryDomainScope): string | null {
+    return this.primaryDomainIndex.get(this.buildScopeKey(scope)) ?? null
   }
 
   private canUsePersistence(): boolean {
@@ -87,6 +132,15 @@ export class DomainResolutionService implements OnModuleInit {
 
   private customDomains(): DomainResolutionDelegate {
     return (this.prisma as unknown as { customDomain: DomainResolutionDelegate }).customDomain
+  }
+
+  private buildScopeKey(scope: PrimaryDomainScope): string {
+    return [
+      scope.scopeType,
+      scope.tenantId,
+      scope.brandId ?? '',
+      scope.storeId ?? '',
+    ].join(':')
   }
 }
 
@@ -99,14 +153,18 @@ type DomainResolutionDelegate = {
     }
     select: {
       domain: true
+      scopeType: true
       tenantId: true
       brandId: true
       storeId: true
+      isPrimary: true
     }
   }): Promise<Array<{
     domain: string
+    scopeType: string
     tenantId: string
     brandId: string | null
     storeId: string | null
+    isPrimary: boolean
   }>>
 }

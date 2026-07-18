@@ -1,13 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-/**
- * 🐜 自动: [saas-advanced] [A] custom-domain dto 测试补全
- *
- * 自定义域名 DTO 类型定义测试
- */
-
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
+import { plainToInstance } from 'class-transformer'
+import { validateSync } from 'class-validator'
 import {
   AddDomainRequest,
+  DomainListQueryRequest,
   ValidateDomainRequest,
   ValidateDomainResponse,
   DomainVerifyHint,
@@ -18,25 +15,63 @@ import {
   ResolveHostResponse,
 } from './custom-domain.dto'
 
-describe('saas-advanced custom-domain dto - 类型定义', () => {
-  // ============ AddDomainRequest ============
-  it('AddDomainRequest 必填字段', () => {
-    const dto: AddDomainRequest = { domain: 'acme.example.com' }
-    assert.equal(dto.domain, 'acme.example.com')
+describe('saas-advanced custom-domain dto', () => {
+  it('AddDomainRequest 要求 domain 非空', () => {
+    const dto = plainToInstance(AddDomainRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
   })
 
-  it('AddDomainRequest 空字符串边界', () => {
-    const dto: AddDomainRequest = { domain: '' }
-    assert.equal(dto.domain, '')
+  it('ValidateDomainRequest 要求 domain 非空', () => {
+    const dto = plainToInstance(ValidateDomainRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
   })
 
-  // ============ ValidateDomainRequest ============
-  it('ValidateDomainRequest 字段', () => {
-    const dto: ValidateDomainRequest = { domain: 'test.example.com' }
-    assert.equal(dto.domain, 'test.example.com')
+  it('ResolveHostRequest 要求 host 非空', () => {
+    const dto = plainToInstance(ResolveHostRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
   })
 
-  // ============ ValidateDomainResponse ============
+  it('DomainListQueryRequest 支持状态筛选和分页转换', () => {
+    const dto = plainToInstance(DomainListQueryRequest, {
+      status: 'active',
+      scopeType: 'BRAND',
+      page: '2',
+      pageSize: '5',
+      sortBy: 'domain',
+      sortOrder: 'asc',
+      keyword: 'brand-http',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.status, 'active')
+    assert.equal(dto.scopeType, 'BRAND')
+    assert.equal(dto.page, 2)
+    assert.equal(dto.pageSize, 5)
+    assert.equal(dto.sortBy, 'domain')
+    assert.equal(dto.sortOrder, 'asc')
+  })
+
+  it('DomainListQueryRequest 拒绝非法分页', () => {
+    const dto = plainToInstance(DomainListQueryRequest, {
+      page: 0,
+      pageSize: 101,
+    })
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
+  })
+
+  it('DomainListQueryRequest 拒绝非法排序字段', () => {
+    const dto = plainToInstance(DomainListQueryRequest, {
+      sortBy: 'tenantId',
+      sortOrder: 'upward',
+    })
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
+  })
+
   it('ValidateDomainResponse 校验通过', () => {
     const resp: ValidateDomainResponse = { valid: true }
     assert.equal(resp.valid, true)
@@ -49,7 +84,6 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.equal(resp.error, '域名格式不合法')
   })
 
-  // ============ DomainVerifyHint ============
   it('DomainVerifyHint 完整字段', () => {
     const hint: DomainVerifyHint = {
       host: '_shenjiying-verify.acme.example.com',
@@ -61,10 +95,10 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.ok(hint.host.startsWith('_shenjiying-verify'))
   })
 
-  // ============ DomainListItem ============
   it('DomainListItem 基本字段', () => {
     const item: DomainListItem = {
       id: 'dom-001',
+      scopeType: 'TENANT',
       tenantId: 'tenant-abc',
       domain: 'acme.example.com',
       status: 'active',
@@ -80,6 +114,7 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
   it('DomainListItem 校验失败次数', () => {
     const item: DomainListItem = {
       id: 'dom-002',
+      scopeType: 'BRAND',
       tenantId: 'tenant-abc',
       domain: 'failed.example.com',
       status: 'disabled',
@@ -92,9 +127,18 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.equal(item.status, 'disabled')
   })
 
-  // ============ DomainListResponse ============
   it('DomainListResponse 空列表', () => {
-    const resp: DomainListResponse = { items: [], total: 0 }
+    const resp: DomainListResponse = {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 10,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    }
     assert.equal(resp.total, 0)
     assert.equal(resp.items.length, 0)
   })
@@ -102,6 +146,7 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
   it('DomainListResponse 含多个域名', () => {
     const item: DomainListItem = {
       id: 'dom-001',
+      scopeType: 'TENANT',
       tenantId: 'tenant-abc',
       domain: 'a.example.com',
       status: 'active',
@@ -110,15 +155,26 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
       updatedAt: '2026-06-01T00:00:00Z',
       createdBy: 'user-001',
     }
-    const resp: DomainListResponse = { items: [item], total: 1 }
+    const resp: DomainListResponse = {
+      items: [item],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      sortBy: 'domain',
+      sortOrder: 'asc',
+    }
     assert.equal(resp.total, 1)
     assert.equal(resp.items[0].domain, 'a.example.com')
+    assert.equal(resp.sortBy, 'domain')
   })
 
-  // ============ DomainDetailResponse ============
   it('DomainDetailResponse 含 hint', () => {
     const resp: DomainDetailResponse = {
       id: 'dom-001',
+      scopeType: 'TENANT',
       tenantId: 'tenant-abc',
       domain: 'acme.example.com',
       status: 'pending_verification',
@@ -141,6 +197,7 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
   it('DomainDetailResponse 含 SSL 信息', () => {
     const resp: DomainDetailResponse = {
       id: 'dom-001',
+      scopeType: 'BRAND',
       tenantId: 'tenant-abc',
       domain: 'secure.example.com',
       status: 'active_ssl',
@@ -167,13 +224,6 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.ok(resp.lastVerifiedAt != null)
   })
 
-  // ============ ResolveHostRequest ============
-  it('ResolveHostRequest 字段', () => {
-    const dto: ResolveHostRequest = { host: 'acme.example.com' }
-    assert.equal(dto.host, 'acme.example.com')
-  })
-
-  // ============ ResolveHostResponse ============
   it('ResolveHostResponse 已解析', () => {
     const resp: ResolveHostResponse = {
       host: 'acme.example.com',

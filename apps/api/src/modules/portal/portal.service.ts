@@ -16,6 +16,7 @@ import { toMarketProfileContract, toRegionalConfigOverrideContract } from '../ma
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { TenantConfigService } from '../tenant-config/tenant-config.service'
+import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
 
 const PORTAL_SUPPORTED_LANGUAGES = Object.values(LanguageCode)
 
@@ -24,7 +25,8 @@ export class PortalService {
   constructor(
     private readonly marketService: MarketService,
     private readonly foundationService: FoundationService,
-    @Optional() private readonly tenantConfigService?: TenantConfigService
+    @Optional() private readonly tenantConfigService?: TenantConfigService,
+    @Optional() private readonly domainResolutionService?: DomainResolutionService,
   ) {}
 
   resolveTenantPortal(context: RequestTenantContext): TobPortal {
@@ -37,7 +39,7 @@ export class PortalService {
       marketCode: marketProfile.marketCode,
       channel: PortalChannel.Web,
       name: `${context.tenantId} ToB 官网`,
-      primaryDomain: `${context.tenantId}.${marketProfile.marketCode}.b2b.local`,
+      primaryDomain: this.resolveTenantPrimaryDomain(context, marketProfile.marketCode),
       supportedLanguages: marketProfile.locale.supportedLanguages,
       heroTitle: `${context.tenantId} 企业级经营门户`,
       heroSubtitle: '覆盖品牌、门店、会员、营销、赛事、财务与全球化配置的统一 SaaS 官网。',
@@ -62,7 +64,7 @@ export class PortalService {
       marketCode: marketProfile.marketCode,
       channel: PortalChannel.Web,
       name: `${brandCode} 品牌 ToB 官网`,
-      primaryDomain: `${brandCode}.${context.tenantId}.${marketProfile.marketCode}.b2b.local`,
+      primaryDomain: this.resolveBrandPrimaryDomain(context, brandCode, marketProfile.marketCode),
       supportedLanguages: marketProfile.locale.supportedLanguages,
       heroTitle: `${brandCode} 品牌经营官网`,
       heroSubtitle: '面向品牌招商、加盟合作、渠道拓展、品牌能力展示和后台登录入口。',
@@ -91,7 +93,12 @@ export class PortalService {
       marketCode: marketProfile.marketCode,
       channel: PortalChannel.Web,
       name: `${storeCode} 门店门户`,
-      primaryDomain: `${storeCode}.${brandCode}.${context.tenantId}.${marketProfile.marketCode}.local`,
+      primaryDomain: this.resolveStorePrimaryDomain(
+        context,
+        brandCode,
+        storeCode,
+        marketProfile.marketCode,
+      ),
       supportedLanguages: marketProfile.locale.supportedLanguages,
       supportedSurfaces: [
         StorefrontSurface.OfficialSite,
@@ -152,5 +159,38 @@ export class PortalService {
         supportedLanguages: normalizedSupportedLanguages as typeof marketProfile.locale.supportedLanguages,
       },
     }
+  }
+
+  private resolveTenantPrimaryDomain(context: RequestTenantContext, marketCode: string): string {
+    return this.domainResolutionService?.findPrimaryDomain({
+      scopeType: 'TENANT',
+      tenantId: context.tenantId,
+    }) ?? `${context.tenantId}.${marketCode}.b2b.local`
+  }
+
+  private resolveBrandPrimaryDomain(
+    context: RequestTenantContext,
+    brandCode: string,
+    marketCode: string,
+  ): string {
+    return this.domainResolutionService?.findPrimaryDomain({
+      scopeType: 'BRAND',
+      tenantId: context.tenantId,
+      brandId: brandCode,
+    }) ?? `${brandCode}.${context.tenantId}.${marketCode}.b2b.local`
+  }
+
+  private resolveStorePrimaryDomain(
+    context: RequestTenantContext,
+    brandCode: string,
+    storeCode: string,
+    marketCode: string,
+  ): string {
+    return this.domainResolutionService?.findPrimaryDomain({
+      scopeType: 'STORE',
+      tenantId: context.tenantId,
+      brandId: brandCode,
+      storeId: storeCode,
+    }) ?? `${storeCode}.${brandCode}.${context.tenantId}.${marketCode}.local`
   }
 }

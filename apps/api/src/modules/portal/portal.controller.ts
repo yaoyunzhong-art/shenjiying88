@@ -1,32 +1,55 @@
 import { Controller, Get } from '@nestjs/common'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PortalService } from './portal.service'
+import { PortalBootstrapResponseDto, PortalDto } from './portal.dto'
 
+@ApiTags('portal')
 @Controller('portals')
 export class PortalController {
   constructor(private readonly portalService: PortalService) {}
 
   /** 获取完整的门户 bootstrap 信息（含 tenant/brand/store 门户 + 市场配置 + 基础依赖） */
+  @ApiOperation({
+    summary: '获取门户 bootstrap 信息',
+    description: '返回租户、品牌、门店三层门户视图，以及市场画像、区域覆盖配置和 foundation 依赖元数据。',
+  })
   @Get('bootstrap')
+  @ApiOkResponse({ type: PortalBootstrapResponseDto })
   getBootstrap(@TenantContext() tenantContext: RequestTenantContext) {
     return this.portalService.getBootstrap(tenantContext)
   }
 
   /** 仅获取租户级别 ToB 门户信息 */
+  @ApiOperation({
+    summary: '获取租户级门户',
+    description: '返回租户级 ToB 门户，主域名优先走已配置的 custom primary domain，否则回退平台默认域名。',
+  })
   @Get('tenant-portal')
+  @ApiOkResponse({ type: PortalDto })
   getTenantPortal(@TenantContext() tenantContext: RequestTenantContext) {
     return this.portalService.resolveTenantPortal(tenantContext)
   }
 
   /** 仅获取品牌级别 ToB 门户信息 */
+  @ApiOperation({
+    summary: '获取品牌级门户',
+    description: '返回品牌级 ToB 门户，若品牌已绑定主域名则优先返回品牌主域名。',
+  })
   @Get('brand-portal')
+  @ApiOkResponse({ type: PortalDto })
   getBrandPortal(@TenantContext() tenantContext: RequestTenantContext) {
     return this.portalService.resolveBrandPortal(tenantContext)
   }
 
   /** 仅获取门店级别 ToC 门户信息 */
+  @ApiOperation({
+    summary: '获取门店级门户',
+    description: '返回门店级 ToC 门户，包含多端 supportedSurfaces 和主域名决策结果。',
+  })
   @Get('store-portal')
+  @ApiOkResponse({ type: PortalDto })
   getStorePortal(@TenantContext() tenantContext: RequestTenantContext) {
     return this.portalService.resolveStorePortal(tenantContext)
   }

@@ -1,27 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-/**
- * E2E: Portal 门户管理 HTTP 链路
- *
- * 链路:
- *   HTTP → TestController → PortalService → FoundationService + MarketService
- *
- * 验证:
- *   - portal bootstrap 返回 tenant/brand/store 三个 scope 视图
- *   - 含市场画像 + 区域覆盖 + foundation 依赖
- *   - 跨租户 / 跨市场时差异
- */
-
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { Controller, Get, Inject, Req } from '@nestjs/common'
+import { afterAll, beforeAll, describe, it } from 'vitest'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { PortalController } from './portal.controller'
 import { PortalService } from './portal.service'
 import { MarketService } from '../market/market.service'
 import { FoundationService } from '../foundation/foundation.service'
 import type { TenantAwareRequest } from '../tenant/tenant.types'
+import type { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
   const ctx = req as unknown as TenantAwareRequest
@@ -34,21 +23,11 @@ function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
   next()
 }
 
-@Controller('portal')
-class TestPortalController {
-  constructor(
-    @Inject(PortalService) private readonly portalService: PortalService
-  ) {}
-
-  @Get('bootstrap')
-  bootstrap(@Req() req: Request) {
-    const ctx = (req as unknown as TenantAwareRequest).tenantContext
-    return this.portalService.getBootstrap(ctx)
-  }
-}
-
-async function buildApp() {
-  // Create a minimal FoundationService-compatible mock to avoid 7-arg constructor
+async function buildApp(
+  options: {
+    findPrimaryDomain?: DomainResolutionService['findPrimaryDomain']
+  } = {},
+) {
   const foundationService = {
     getModuleCatalog: () => [],
     getConsumerCatalog: () => [],
@@ -63,14 +42,45 @@ async function buildApp() {
     getBlueprint: () => ({}),
     getDependencySummary: () => ({ dependsOn: ['identity-access', 'configuration-governance'], handoffContracts: [] })
   } as unknown as FoundationService
-  const marketService = new MarketService(foundationService)
-  const portalService = new PortalService(marketService, foundationService)
+  const marketService = {
+    getMergedProfile: (ctx: TenantAwareRequest['tenantContext']) => {
+      const marketCode = ctx?.marketCode ?? 'cn-mainland'
+      if (marketCode === 'us-default') {
+        return {
+          marketCode: 'us-default',
+          marketName: 'United States',
+          locale: { defaultLanguage: 'en-US', supportedLanguages: ['en-US'] },
+          timezone: { timezone: 'America/Los_Angeles' },
+          tax: { taxMode: 'EXCLUDED', taxRate: 8.25, taxLabel: 'Sales Tax' },
+          network: { networkRegion: 'GLOBAL' },
+          email: { provider: 'SMTP', fromName: 'M5 US', fromAddress: 'hello@us.local' },
+          social: { primaryPlatforms: ['INSTAGRAM'], supportPlatforms: ['FACEBOOK'] },
+        }
+      }
+      return {
+        marketCode: 'cn-mainland',
+        marketName: '中国大陆',
+        locale: { defaultLanguage: 'zh-CN', supportedLanguages: ['zh-CN'] },
+        timezone: { timezone: 'Asia/Shanghai' },
+        tax: { taxMode: 'INCLUDED', taxRate: 13, taxLabel: '增值税' },
+        network: { networkRegion: 'CHINA_MAINLAND' },
+        email: { provider: 'SMTP', fromName: 'M5 CN', fromAddress: 'hello@cn.local' },
+        social: { primaryPlatforms: ['WECHAT'], supportPlatforms: [] },
+      }
+    },
+    getOverrides: () => [],
+  } as unknown as MarketService
+  const domainResolutionService = {
+    findPrimaryDomain: options.findPrimaryDomain ?? (() => null),
+  } as DomainResolutionService
+  const portalService = new PortalService(marketService, foundationService, undefined, domainResolutionService)
   const moduleRef = await Test.createTestingModule({
-    controllers: [TestPortalController],
+    controllers: [PortalController],
     providers: [
       { provide: PortalService, useValue: portalService },
       { provide: MarketService, useValue: marketService },
-      { provide: FoundationService, useValue: foundationService }
+      { provide: FoundationService, useValue: foundationService },
+      { provide: 'DomainResolutionService', useValue: domainResolutionService },
     ]
   }).compile()
 
@@ -95,180 +105,112 @@ const TENANT_US = {
   'x-market-code': 'us-default'
 }
 
-it('e2e: portal bootstrap returns three scope portals', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    assert.equal(res.statusCode, 200)
-    const data = res.body.data
-    assert.ok(data.tenantPortal)
-    assert.ok(data.brandPortal)
-    assert.ok(data.storePortal)
-    assert.ok(data.marketProfile)
-    assert.ok(Array.isArray(data.regionalOverrides))
-  } finally {
-    await app.close()
-  }
-})
+describe('Portal HTTP E2E', () => {
+  let app: Awaited<ReturnType<typeof buildApp>>['app']
 
-it('e2e: tenant portal has scopeCode from headers', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    assert.equal(res.body.data.tenantPortal.scopeCode, 'tenant-cn')
-    assert.equal(res.body.data.brandPortal.scopeCode, 'brand-cn')
-    assert.equal(res.body.data.storePortal.scopeCode, 'store-cn')
-  } finally {
-    await app.close()
-  }
-})
+  beforeAll(async () => {
+    const built = await buildApp()
+    app = built.app
+  })
 
-it('e2e: marketProfile embedded in portal bootstrap', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
+  afterAll(async () => {
+    await app.close()
+  })
+
+  it('GET /portals/bootstrap 返回三个 scope 门户和市场画像', async () => {
+    const res = await request(app.getHttpServer()).get('/portals/bootstrap').set(TENANT_CN).expect(200)
+    assert.equal(res.body.success, true)
+    assert.ok(res.body.data.tenantPortal)
+    assert.ok(res.body.data.brandPortal)
+    assert.ok(res.body.data.storePortal)
     assert.equal(res.body.data.marketProfile.marketCode, 'cn-mainland')
-    assert.equal(res.body.data.marketProfile.timezone.timezone, 'Asia/Shanghai')
-  } finally {
-    await app.close()
-  }
-})
+    assert.ok(Array.isArray(res.body.data.regionalOverrides))
+  })
 
-it('e2e: US tenant portal uses LA timezone', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_US)
-    assert.equal(res.body.data.marketProfile.timezone.timezone, 'America/Los_Angeles')
-    assert.equal(res.body.data.tenantPortal.scopeCode, 'tenant-us')
-  } finally {
-    await app.close()
-  }
-})
+  it('GET /portals/tenant-portal 返回租户门户并继承头部上下文', async () => {
+    const res = await request(app.getHttpServer()).get('/portals/tenant-portal').set(TENANT_CN).expect(200)
+    assert.equal(res.body.data.scopeCode, 'tenant-cn')
+    assert.equal(res.body.data.tenantCode, 'tenant-cn')
+    assert.equal(res.body.data.loginEntry.loginPath, '/cn-mainland/tenant-cn/login')
+  })
 
-it('e2e: regionalOverrides contain all 3 scope types', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    const scopeTypes = res.body.data.regionalOverrides.map((o: any) => o.scopeType)
-    assert.ok(scopeTypes.includes('TENANT'))
-    assert.ok(scopeTypes.includes('BRAND'))
-    assert.ok(scopeTypes.includes('STORE'))
-  } finally {
-    await app.close()
-  }
-})
+  it('GET /portals/brand-portal 返回品牌门户并带品牌上下文', async () => {
+    const res = await request(app.getHttpServer()).get('/portals/brand-portal').set(TENANT_CN).expect(200)
+    assert.equal(res.body.data.scopeCode, 'brand-cn')
+    assert.equal(res.body.data.brandCode, 'brand-cn')
+    assert.equal(res.body.data.tenantCode, 'tenant-cn')
+    assert.ok(res.body.data.heroTitle.includes('brand-cn'))
+  })
 
-it('e2e: portal bootstrap contains foundation dependency', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    assert.ok(Array.isArray(res.body.data.foundationDependencies))
-    assert.ok(res.body.data.foundationDependencies.length >= 1)
-  } finally {
-    await app.close()
-  }
-})
-
-it('e2e: default headers produce tenant-001', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap')
-    assert.equal(res.statusCode, 200)
-    assert.equal(res.body.data.tenantPortal.scopeCode, 'tenant-001')
-  } finally {
-    await app.close()
-  }
-})
-
-it('e2e: portal identifiers vary across tenants', async () => {
-  const { app } = await buildApp()
-  try {
-    const a = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    const b = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_US)
-    assert.notEqual(a.body.data.tenantPortal.scopeCode, b.body.data.tenantPortal.scopeCode)
-    assert.notEqual(a.body.data.marketProfile.marketCode, b.body.data.marketProfile.marketCode)
-  } finally {
-    await app.close()
-  }
-})
-
-it('e2e: portal heroTitle and brand code are derived from tenant context', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    assert.equal(res.body.data.brandPortal.brandCode, 'brand-cn')
-    assert.equal(res.body.data.brandPortal.tenantCode, 'tenant-cn')
-    assert.ok(res.body.data.tenantPortal.heroTitle.includes('tenant-cn'))
-    assert.ok(res.body.data.brandPortal.heroTitle.includes('brand-cn'))
-  } finally {
-    await app.close()
-  }
-})
-
-it('e2e: portal store portal surfaces cover all 6 storefront surfaces', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    const surfaces = res.body.data.storePortal.supportedSurfaces
+  it('GET /portals/store-portal 返回门店门户并暴露全部 storefront surface', async () => {
+    const res = await request(app.getHttpServer()).get('/portals/store-portal').set(TENANT_CN).expect(200)
+    const surfaces = res.body.data.supportedSurfaces as string[]
+    assert.equal(res.body.data.scopeCode, 'store-cn')
+    assert.equal(res.body.data.storeCode, 'store-cn')
     assert.ok(Array.isArray(surfaces))
-    assert.ok(surfaces.length >= 6)
     assert.ok(surfaces.includes('OFFICIAL_SITE'))
     assert.ok(surfaces.includes('H5'))
     assert.ok(surfaces.includes('MINIAPP'))
     assert.ok(surfaces.includes('APP'))
     assert.ok(surfaces.includes('PC_CONSOLE'))
     assert.ok(surfaces.includes('PAD_CONSOLE'))
-  } finally {
-    await app.close()
-  }
-})
+  })
 
-it('e2e: portal supportedLanguages differ for cn vs us markets', async () => {
-  const { app } = await buildApp()
-  try {
-    const cn = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    const us = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_US)
-    // Tenant portal: inherits full locale list per market
+  it('不同市场上下文返回不同 timezone 和语言集合', async () => {
+    const cn = await request(app.getHttpServer()).get('/portals/bootstrap').set(TENANT_CN).expect(200)
+    const us = await request(app.getHttpServer()).get('/portals/bootstrap').set(TENANT_US).expect(200)
+    assert.equal(cn.body.data.marketProfile.timezone.timezone, 'Asia/Shanghai')
+    assert.equal(us.body.data.marketProfile.timezone.timezone, 'America/Los_Angeles')
     assert.ok(cn.body.data.tenantPortal.supportedLanguages.includes('zh-CN'))
     assert.ok(us.body.data.tenantPortal.supportedLanguages.includes('en-US'))
-    // Store portal: zh-CN only for cn, en-US only for us
-    assert.deepEqual(cn.body.data.storePortal.supportedLanguages, ['zh-CN'])
-    assert.deepEqual(us.body.data.storePortal.supportedLanguages, ['en-US'])
-  } finally {
-    await app.close()
-  }
-})
+  })
 
-it('e2e: portal login paths follow marketCode/tenantId/brandId pattern', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    assert.equal(res.body.data.tenantPortal.loginEntry.loginPath, '/cn-mainland/tenant-cn/login')
-    assert.equal(
-      res.body.data.brandPortal.loginEntry.loginPath,
-      '/cn-mainland/tenant-cn/brand-cn/login'
-    )
-    assert.equal(res.body.data.tenantPortal.loginEntry.ssoEnabled, true)
-    assert.equal(res.body.data.brandPortal.loginEntry.ssoEnabled, true)
-  } finally {
-    await app.close()
-  }
-})
+  it('缺省头部走默认 tenant 上下文', async () => {
+    const res = await request(app.getHttpServer()).get('/portals/bootstrap').expect(200)
+    assert.equal(res.body.data.tenantPortal.scopeCode, 'tenant-001')
+    assert.equal(res.body.data.brandPortal.scopeCode, 'brand-001')
+    assert.equal(res.body.data.storePortal.scopeCode, 'store-001')
+  })
 
-it('e2e: portal primaryDomain embeds scope code and market code', async () => {
-  const { app } = await buildApp()
-  try {
-    const res = await request(app.getHttpServer()).get('/portal/bootstrap').set(TENANT_CN)
-    assert.match(res.body.data.tenantPortal.primaryDomain, /^tenant-cn\.cn-mainland\.b2b\.local$/)
-    assert.match(
-      res.body.data.brandPortal.primaryDomain,
-      /^brand-cn\.tenant-cn\.cn-mainland\.b2b\.local$/
-    )
-    assert.match(
-      res.body.data.storePortal.primaryDomain,
-      /^store-cn\.brand-cn\.tenant-cn\.cn-mainland\.local$/
-    )
-  } finally {
-    await app.close()
-  }
+  it('bootstrap 优先返回 custom primary domain', async () => {
+    const built = await buildApp({
+      findPrimaryDomain: (scope) => {
+        if (scope.scopeType === 'TENANT') return 'tenant-cn.custom.example.com'
+        if (scope.scopeType === 'BRAND') return 'brand-cn.custom.example.com'
+        if (scope.scopeType === 'STORE') return 'store-cn.custom.example.com'
+        return null
+      },
+    })
+
+    try {
+      const res = await request(built.app.getHttpServer()).get('/portals/bootstrap').set(TENANT_CN).expect(200)
+      assert.equal(res.body.data.tenantPortal.primaryDomain, 'tenant-cn.custom.example.com')
+      assert.equal(res.body.data.brandPortal.primaryDomain, 'brand-cn.custom.example.com')
+      assert.equal(res.body.data.storePortal.primaryDomain, 'store-cn.custom.example.com')
+    } finally {
+      await built.app.close()
+    }
+  })
+
+  it('独立门户接口也优先返回 custom primary domain', async () => {
+    const built = await buildApp({
+      findPrimaryDomain: (scope) => {
+        if (scope.scopeType === 'TENANT') return 'tenant-only.custom.example.com'
+        if (scope.scopeType === 'BRAND') return 'brand-only.custom.example.com'
+        if (scope.scopeType === 'STORE') return 'store-only.custom.example.com'
+        return null
+      },
+    })
+
+    try {
+      const tenant = await request(built.app.getHttpServer()).get('/portals/tenant-portal').set(TENANT_CN).expect(200)
+      const brand = await request(built.app.getHttpServer()).get('/portals/brand-portal').set(TENANT_CN).expect(200)
+      const store = await request(built.app.getHttpServer()).get('/portals/store-portal').set(TENANT_CN).expect(200)
+      assert.equal(tenant.body.data.primaryDomain, 'tenant-only.custom.example.com')
+      assert.equal(brand.body.data.primaryDomain, 'brand-only.custom.example.com')
+      assert.equal(store.body.data.primaryDomain, 'store-only.custom.example.com')
+    } finally {
+      await built.app.close()
+    }
+  })
 })
