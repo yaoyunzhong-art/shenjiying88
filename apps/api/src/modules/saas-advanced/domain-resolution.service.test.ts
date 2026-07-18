@@ -203,6 +203,35 @@ describe('DomainResolutionService', () => {
     )
   })
 
+  it('删除旧 primary 后可由同 scope 新 primary 重新占位', () => {
+    const service = new DomainResolutionService()
+    service.upsertFromMapping(
+      createMapping({
+        scopeType: 'TENANT',
+        domain: 'tenant-old.example.com',
+        isPrimary: true,
+      }),
+    )
+
+    service.removeHost('tenant-old.example.com')
+    service.upsertFromMapping(
+      createMapping({
+        id: 'dom-002',
+        scopeType: 'TENANT',
+        domain: 'tenant-new.example.com',
+        isPrimary: true,
+      }),
+    )
+
+    assert.equal(
+      service.findPrimaryDomain({
+        scopeType: 'TENANT',
+        tenantId: 'tenant-demo',
+      }),
+      'tenant-new.example.com',
+    )
+  })
+
   it('onModuleInit 从持久层加载 active 域名和主域名索引', async () => {
     process.env.NODE_ENV = 'development'
     const prisma = {

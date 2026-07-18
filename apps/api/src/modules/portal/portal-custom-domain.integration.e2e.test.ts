@@ -258,4 +258,121 @@ describe('Portal + CustomDomain Integration E2E', () => {
       'store-fallback.brand-store-fallback.tenant-link-store-fallback.cn-mainland.local',
     )
   })
+
+  it('tenant 删除旧 primary 并重选后，Portal bootstrap 读取到新 tenant 主域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-link-tenant',
+      'x-role': 'tenant_admin',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'tenant-first.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'tenant-second.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/primary`).set(headers).expect(200)
+    await request(app.getHttpServer()).delete(`/saas/domain/${first.body.data.id}`).set(headers).expect(204)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/primary`).set(headers).expect(200)
+
+    const bootstrap = await request(app.getHttpServer())
+      .get('/portals/bootstrap')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(bootstrap.body.data.tenantPortal.primaryDomain, 'tenant-second.example.io')
+  })
+
+  it('brand 删除旧 primary 并重选后，Portal brand-portal 读取到新 brand 主域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-link-brand-reselect',
+      'x-brand-id': 'brand-reselect',
+      'x-role': 'brand_admin',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'brand-first.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'brand-second.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/primary`).set(headers).expect(200)
+    await request(app.getHttpServer()).delete(`/saas/domain/${first.body.data.id}`).set(headers).expect(204)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/primary`).set(headers).expect(200)
+
+    const portal = await request(app.getHttpServer())
+      .get('/portals/brand-portal')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(portal.body.data.primaryDomain, 'brand-second.example.io')
+  })
+
+  it('store 删除旧 primary 并重选后，Portal bootstrap 读取到新 store 主域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-link-store-reselect',
+      'x-brand-id': 'brand-store-reselect',
+      'x-store-id': 'store-reselect',
+      'x-role': 'store_admin',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'store-first.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'store-second.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/primary`).set(headers).expect(200)
+    await request(app.getHttpServer()).delete(`/saas/domain/${first.body.data.id}`).set(headers).expect(204)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/primary`).set(headers).expect(200)
+
+    const bootstrap = await request(app.getHttpServer())
+      .get('/portals/bootstrap')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(bootstrap.body.data.storePortal.primaryDomain, 'store-second.example.io')
+  })
 })

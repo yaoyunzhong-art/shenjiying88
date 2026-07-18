@@ -289,4 +289,64 @@ describe('CustomDomain HTTP E2E', () => {
     assert.equal(resolved.body.data.tenantId, null)
     assert.equal(list.body.data.items.length, 0)
   })
+
+  it('GET /saas/domain/primary/current 返回当前主域名，删除后重选可读到新主域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-current',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'current-first.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'current-second.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/primary`).set(headers).expect(200)
+
+    const current = await request(app.getHttpServer())
+      .get('/saas/domain/primary/current')
+      .set(headers)
+      .expect(200)
+
+    await request(app.getHttpServer())
+      .delete(`/saas/domain/${first.body.data.id}`)
+      .set(headers)
+      .expect(204)
+
+    const afterRemove = await request(app.getHttpServer())
+      .get('/saas/domain/primary/current')
+      .set(headers)
+      .expect(200)
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${second.body.data.id}/primary`)
+      .set(headers)
+      .expect(200)
+
+    const afterReselect = await request(app.getHttpServer())
+      .get('/saas/domain/primary/current')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(current.body.data.resolved, true)
+    assert.equal(current.body.data.item.domain, 'current-first.example.io')
+    assert.equal(afterRemove.body.data.resolved, false)
+    assert.equal(afterRemove.body.data.item, null)
+    assert.equal(afterReselect.body.data.resolved, true)
+    assert.equal(afterReselect.body.data.item.domain, 'current-second.example.io')
+  })
 })

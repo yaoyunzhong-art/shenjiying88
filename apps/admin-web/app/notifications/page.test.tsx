@@ -6,14 +6,17 @@
  *   - 禁止: as any / describe.skip / it.only
  *   - 覆盖: 正例 + 反例 + 边界（三件套）
  *   - 隔离: beforeEach 重置，test 自包含
+ *   - React 渲染测试: @testing-library/react + happy-dom
  *
- * 覆盖: 15+ items
+ * 覆盖: 45+ items
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, before, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import React from 'react';
+import { render, screen, cleanup } from '@testing-library/react';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const SOURCE = path.join(__dirname, 'page.tsx');
@@ -319,4 +322,148 @@ describe('notifications — 代码结构', () => {
   it('包含 Style 样式', () => assert.ok(SRC.includes('style={')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
   it('包含注释说明', () => assert.ok(SRC.includes('/**') || SRC.includes('//')));
+});
+
+/* ══════════════════════════════════════════════════════════
+   React 渲染测试 — @testing-library/react + happy-dom
+   使用真实的组件渲染，验证渲染输出
+   ══════════════════════════════════════════════════════════ */
+
+let NotificationsPage: React.ComponentType;
+let pageModule: any;
+
+describe('notifications — React 渲染', () => {
+  /* 所有测试共享一次动态导入 */
+  before(async () => {
+    pageModule = await import('./page.tsx');
+    NotificationsPage = pageModule.default;
+  });
+
+  /* 每个测试后清理 DOM */
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('33. render 组件不报错，容器存在', () => {
+    const { container } = render(React.createElement(NotificationsPage));
+    assert.ok(container, 'container 应存在');
+    assert.ok(container.querySelector('main'), '应渲染 main 元素');
+  });
+
+  it('34. 渲染页面标题和副标题', () => {
+    render(React.createElement(NotificationsPage));
+    const titleEl = screen.getByText(/📢 通知管理/);
+    assert.ok(titleEl, '应渲染标题 📢 通知管理');
+
+    const subtitleEl = screen.getByText(/管理和查看系统通知的发送记录/);
+    assert.ok(subtitleEl, '应渲染副标题');
+  });
+
+  it('35. 渲染三个概览统计卡片', () => {
+    render(React.createElement(NotificationsPage));
+
+    // StatCard 渲染 label 在 span 中
+    const totalLabel = screen.getByText('总通知数');
+    const monthLabel = screen.getByText('本月发送');
+    const rateLabel = screen.getByText('成功率');
+
+    assert.ok(totalLabel, '应渲染总通知数标签');
+    assert.ok(monthLabel, '应渲染本月发送标签');
+    assert.ok(rateLabel, '应渲染成功率标签');
+
+    // 统计值也在 DOM 中: 总通知数=7（可能多次出现，用 getAllByText 的 >=1 个）
+    const values = screen.getAllByText('7');
+    assert.ok(values.length >= 1, '总通知数值 7 应在 DOM 中至少出现 1 次');
+    const rateValue = screen.getByText('98%');
+    assert.ok(rateValue, '成功率值应为 98%');
+  });
+
+  it('36. 渲染 Tab 筛选器（全部/已发送/待发送）', () => {
+    render(React.createElement(NotificationsPage));
+
+    // 使用 role=tab 精确获取 tabs，避免「全部门店」干扰
+    const tabs = screen.getAllByRole('tab');
+    assert.equal(tabs.length, 3, '应有 3 个 tab');
+
+    // 验证 tab 文本
+    assert.ok(tabs[0].textContent?.startsWith('全部'), '第一个 tab 应为「全部」');
+    assert.ok(tabs[1].textContent?.startsWith('已发送'), '第二个 tab 应为「已发送」');
+    assert.ok(tabs[2].textContent?.startsWith('待发送'), '第三个 tab 应为「待发送」');
+
+    // 默认选中「全部」
+    assert.equal(tabs[0].getAttribute('aria-selected'), 'true', '默认应选中「全部」');
+  });
+
+  it('37. 渲染通知数据表格，包含表头和数据行', () => {
+    render(React.createElement(NotificationsPage));
+
+    // 表格标题
+    const tableTitle = screen.getByText(/通知 \(7\)/);
+    assert.ok(tableTitle, '应显示通知 (7)');
+
+    // 表头
+    const headerTitle = screen.getByText('标题');
+    const headerType = screen.getByText('类型');
+    const headerSentAt = screen.getByText('发送时间');
+    const headerStatus = screen.getByText('状态');
+
+    assert.ok(headerTitle, '应渲染「标题」表头');
+    assert.ok(headerType, '应渲染「类型」表头');
+    assert.ok(headerSentAt, '应渲染「发送时间」表头');
+    assert.ok(headerStatus, '应渲染「状态」表头');
+
+    // 数据行 — 特定通知标题应出现在 DOM 中
+    const notif1 = screen.getByText('系统升级通知 2026-07');
+    const notif2 = screen.getByText('暑期会员营销活动');
+    assert.ok(notif1, '应渲染通知 N001 标题');
+    assert.ok(notif2, '应渲染通知 N002 标题');
+
+    // StatusBadge 渲染为带标签的元素 — 使用 getAllByText 查找
+    const sentBadges = screen.getAllByText('已发送');
+    assert.ok(sentBadges.length >= 2, '应渲染至少 2 个「已发送」状态标签');
+  });
+
+  it('38. 渲染刷新按钮', () => {
+    render(React.createElement(NotificationsPage));
+    const refreshBtn = screen.getByText(/🔄 刷新/);
+    assert.ok(refreshBtn, '应渲染刷新按钮');
+  });
+
+  it('39. 渲染分页器，显示总条数', () => {
+    render(React.createElement(NotificationsPage));
+    // Pagination 渲染 "Total X items"
+    const totalText = screen.getByText(/Total 7 items/);
+    assert.ok(totalText, '应渲染分页器 Total 7 items');
+  });
+
+  it('40. 渲染表格行包含通知类型标签', () => {
+    render(React.createElement(NotificationsPage));
+    // StatusBadge 渲染通知类型标签（可能有多个同名行，用 getAllByText）
+    const sysAnnounce = screen.getAllByText('系统公告');
+    assert.ok(sysAnnounce.length >= 1, '应渲染至少 1 个系统公告类型标签');
+
+    const marketing = screen.getAllByText('营销推送');
+    assert.ok(marketing.length >= 1, '应渲染至少 1 个营销推送类型标签');
+
+    const alertType = screen.getAllByText('告警通知');
+    assert.ok(alertType.length >= 1, '应渲染至少 1 个告警通知类型标签');
+
+    const activityType = screen.getByText('活动提醒');
+    assert.ok(activityType, '应渲染活动提醒类型标签');
+  });
+
+  it('41. 渲染收件人标签', () => {
+    render(React.createElement(NotificationsPage));
+    const allStores = screen.getAllByText('全部门店');
+    assert.ok(allStores.length >= 2, '应渲染至少 2 个「全部门店」收件人标签');
+
+    const adminRole = screen.getByText('设备管理员');
+    assert.ok(adminRole, '应渲染「设备管理员」收件人标签');
+  });
+
+  it('42. 发送时间不为空的条目显示时间', () => {
+    render(React.createElement(NotificationsPage));
+    const sentTime = screen.getByText('2026-07-18 10:00:00');
+    assert.ok(sentTime, '应渲染 N001 的发送时间');
+  });
 });

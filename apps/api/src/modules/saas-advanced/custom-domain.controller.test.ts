@@ -33,11 +33,24 @@ const TENANT_B = {
   userId: 'admin-B',
   role: 'tenant_admin' as const,
 }
+const TENANT_ROOT = {
+  tenantId: 'tenant-root',
+  userId: 'admin-root',
+  role: 'tenant_admin' as const,
+}
 
 /**
  * 辅助: 在 tenant 上下文中调用 controller 方法
  */
-function inTenant<T>(ctx: typeof TENANT_A, fn: () => Promise<T>): Promise<T> {
+function inTenant<T>(
+  ctx: {
+    tenantId: string
+    storeId?: string
+    userId: string
+    role: 'tenant_admin' | 'brand_admin' | 'store_admin'
+  },
+  fn: () => Promise<T>,
+): Promise<T> {
   return runWithTenant(ctx, fn)
 }
 
@@ -138,6 +151,55 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       assert.equal(filtered.totalPages >= 1, true)
       assert.equal(filtered.sortBy, 'domain')
       assert.equal(filtered.sortOrder, 'asc')
+    })
+  })
+
+  // ============ 2.1 GET /saas/domain/primary/current — 当前主域名 ============
+  describe('GET /saas/domain/primary/current — getCurrentPrimary()', () => {
+    it('返回当前 tenant scope 主域名', async () => {
+      const first = await inTenant(TENANT_ROOT, () =>
+        controller.addDomain({ domain: 'current-primary.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      await inTenant(TENANT_ROOT, () => controller.verify(first.id))
+      await inTenant(TENANT_ROOT, () => controller.setPrimary(first.id))
+
+      const current = await inTenant(TENANT_ROOT, () => controller.getCurrentPrimary({}))
+
+      assert.equal(current.resolved, true)
+      assert.equal(current.tenantId, 'tenant-root')
+      assert.equal(current.item?.domain, 'current-primary.example.io')
+      assert.equal(current.item?.isPrimary, true)
+    })
+
+    it('删除 primary 后返回 unresolved，重选后返回新主域名', async () => {
+      const first = await inTenant(TENANT_ROOT, () =>
+        controller.addDomain({ domain: 'current-reselect-a.example.io' }),
+      )
+      const second = await inTenant(TENANT_ROOT, () =>
+        controller.addDomain({ domain: 'current-reselect-b.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      service.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await inTenant(TENANT_ROOT, () => controller.verify(first.id))
+      await inTenant(TENANT_ROOT, () => controller.verify(second.id))
+      await inTenant(TENANT_ROOT, () => controller.setPrimary(first.id))
+      await inTenant(TENANT_ROOT, () => controller.remove(first.id))
+
+      const afterRemove = await inTenant(TENANT_ROOT, () => controller.getCurrentPrimary({}))
+      await inTenant(TENANT_ROOT, () => controller.setPrimary(second.id))
+      const afterReselect = await inTenant(TENANT_ROOT, () => controller.getCurrentPrimary({}))
+
+      assert.equal(afterRemove.resolved, false)
+      assert.equal(afterRemove.item, null)
+      assert.equal(afterReselect.resolved, true)
+      assert.equal(afterReselect.item?.domain, 'current-reselect-b.example.io')
     })
   })
 

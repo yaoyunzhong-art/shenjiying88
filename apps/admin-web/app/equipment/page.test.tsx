@@ -1,12 +1,22 @@
 /**
  * equipment/page.test.tsx — 设备管理页面 L1 冒烟测试
- * ⚡ 覆盖: 数据工厂 / 状态与类型映射 / 统计 / 筛选 / 搜索 / 排序 / 空态 / 边界
+ * ⚡ 覆盖: 数据工厂 / 状态与类型映射 / 统计 / 筛选 / 搜索 / 排序 / 空态 / 边界 / React 渲染
  * 🧪 URL-pattern responseRegistry 模式 (同步数据无需 fetch，但保留 registry)
  */
 
 import assert from 'node:assert/strict';
 import test, { describe, it } from 'node:test';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import React from 'react';
+import { render, screen, cleanup } from '@testing-library/react';
+import mod from './page';
+
+const EquipmentPage = mod.default;
 
 // ---- 类型（与 page.tsx 同步） ----
 
@@ -460,7 +470,7 @@ describe('EquipmentPage — 边界条件', () => {
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('Equipment — hooks验证', () => {
   it('包含 useMemo 声明', () => assert.ok(SRC.includes('useMemo')));
@@ -474,4 +484,108 @@ describe('Equipment — hooks验证', () => {
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
   it('包含注释说明', () => assert.ok(SRC.includes('/**') || SRC.includes('//')));
+});
+
+// ================================================================
+// React 渲染测试 — 使用 @testing-library/react + happy-dom
+// 验证页面组件真实渲染输出
+// ================================================================
+
+function setup() {
+  cleanup();
+  const result = render(React.createElement(EquipmentPage));
+  return result;
+}
+
+describe('EquipmentPage — React 渲染', () => {
+  // 1. 渲染不报错
+  it('渲染不报错', () => {
+    assert.doesNotThrow(() => setup());
+  });
+
+  // 2. 标题正确
+  it('渲染页面标题为「设备管理」', () => {
+    const { container } = setup();
+    const h1 = container.querySelector('h1');
+    assert.ok(h1, '页面应包含 h1 标题');
+    assert.ok(h1.textContent?.includes('设备管理'), `期待"设备管理"，实际"${h1.textContent}"`);
+  });
+
+  // 3. 统计区域显示总数与状态
+  it('统计区域显示 4 个统计卡片（总设备数/正常/维修中/待报废）', () => {
+    const { container } = setup();
+    const cards = container.querySelectorAll('div');
+    const statsLabels = ['总设备数', '正常', '维修中', '待报废'];
+    for (const label of statsLabels) {
+      const found = Array.from(cards).some((card) => card.textContent?.includes(label));
+      assert.ok(found, `统计卡片应包含「${label}」`);
+    }
+  });
+
+  // 4. 筛选控件（搜索框 + Tab）
+  it('存在搜索控件（SearchFilterInput 或 placeholder 含"搜索"的 input）', () => {
+    const { container } = setup();
+    const inputs = container.querySelectorAll('input');
+    const hasSearch = Array.from(inputs).some(
+      (inp) => inp.getAttribute('placeholder')?.includes('搜索') || inp.getAttribute('placeholder')?.includes('设备名称'),
+    );
+    assert.ok(hasSearch, `应有搜索 input，找到 ${inputs.length} 个 input`);
+  });
+
+  it('存在 Tab 筛选（全部/正常/维修中）', () => {
+    const { container } = setup();
+    const text = container.textContent ?? '';
+    assert.ok(text.includes('全部'), 'Tab 应包含「全部」');
+    assert.ok(text.includes('正常'), 'Tab 应包含「正常」');
+    assert.ok(text.includes('维修中'), 'Tab 应包含「维修中」');
+  });
+
+  // 5. 列表渲染 — 8 个设备
+  it('列表中包含所有 8 个样本设备的名称', () => {
+    const { container } = setup();
+    const text = container.textContent ?? '';
+    const expected = ['扭蛋机-A01', '娃娃机-B03', '收银机-主01', '中央空调-01', '音响系统-S01', '灯箱-L02', '闸机-G01', '扭蛋机-A02'];
+    for (const name of expected) {
+      assert.ok(text.includes(name), `列表应包含「${name}」`);
+    }
+  });
+
+  // 6. DataTable 渲染表格列头
+  it('DataTable 包含设备名称/型号/设备类型/所属门店/供应商/采购日期/保修期/状态列头', () => {
+    const { container } = setup();
+    const text = container.textContent ?? '';
+    const headers = ['设备名称', '型号', '设备类型', '所属门店', '供应商', '采购日期', '保修期', '状态'];
+    for (const h of headers) {
+      assert.ok(text.includes(h), `表格应包含列头「${h}」`);
+    }
+  });
+
+  // 7. 状态标签渲染
+  it('状态标签出现"正常""维修中""待报废""已报废"', () => {
+    const { container } = setup();
+    const text = container.textContent ?? '';
+    assert.ok(text.includes('正常'), '应包含状态文字"正常"');
+    assert.ok(text.includes('维修中'), '应包含状态文字"维修中"');
+    assert.ok(text.includes('待报废'), '应包含状态文字"待报废"');
+    assert.ok(text.includes('已报废'), '应包含状态文字"已报废"');
+  });
+
+  // 8. 操作提示框
+  it('操作提示区域包含提示文字', () => {
+    const { container } = setup();
+    const text = container.textContent ?? '';
+    assert.ok(text.includes('💡') || text.includes('提示'), '应包含提示区域');
+  });
+
+  // 9. 刷新增统计 — component 是函数
+  it('EquipmentPage 是一个函数组件', () => {
+    assert.strictEqual(typeof EquipmentPage, 'function');
+  });
+
+  // 10. 导出包含 defaultEquipment 样本数据
+  it('模块导出 defaultEquipment（样本数据）', () => {
+    const data = mod.defaultEquipment;
+    assert.ok(Array.isArray(data), 'defaultEquipment 应该是数组');
+    assert.strictEqual(data.length, 8);
+  });
 });

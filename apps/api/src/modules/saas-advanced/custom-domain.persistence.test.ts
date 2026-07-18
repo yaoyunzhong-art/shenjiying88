@@ -35,6 +35,14 @@ const TENANT_CTX = {
   role: 'brand_admin' as const,
 }
 
+const STORE_CTX = {
+  tenantId: 'tenant-persist',
+  brandId: 'brand-persist',
+  storeId: 'store-persist',
+  userId: 'user-persist',
+  role: 'store_admin' as const,
+}
+
 const originalNodeEnv = process.env.NODE_ENV
 
 function createRow(overrides: Partial<Row> = {}): Row {
@@ -243,6 +251,91 @@ describe('CustomDomainService persistence branch', () => {
         brandId: 'brand-persist',
       }),
       null,
+    )
+  })
+
+  it('getCurrentPrimary 在 persistence 分支返回当前 brand primary，删除后可重选', async () => {
+    const rows = [
+      createRow({ id: 'dom-1', domain: 'brand-first.example.io', isPrimary: true }),
+      createRow({ id: 'dom-2', domain: 'brand-second.example.io', isPrimary: false }),
+    ]
+    const domainResolution = new DomainResolutionService()
+    const service = new CustomDomainService(createPrisma(rows), domainResolution)
+
+    const current = await runWithTenant(TENANT_CTX, () =>
+      service.getCurrentPrimary({ scopeType: 'BRAND', brandId: 'brand-persist' }),
+    )
+    await runWithTenant(TENANT_CTX, () => service.remove('dom-1'))
+    const afterRemove = await runWithTenant(TENANT_CTX, () =>
+      service.getCurrentPrimary({ scopeType: 'BRAND', brandId: 'brand-persist' }),
+    )
+    await runWithTenant(TENANT_CTX, () => service.setPrimary('dom-2'))
+    const afterReselect = await runWithTenant(TENANT_CTX, () =>
+      service.getCurrentPrimary({ scopeType: 'BRAND', brandId: 'brand-persist' }),
+    )
+
+    assert.equal(current?.domain, 'brand-first.example.io')
+    assert.equal(afterRemove, null)
+    assert.equal(afterReselect?.domain, 'brand-second.example.io')
+    assert.equal(
+      domainResolution.findPrimaryDomain({
+        scopeType: 'BRAND',
+        tenantId: 'tenant-persist',
+        brandId: 'brand-persist',
+      }),
+      'brand-second.example.io',
+    )
+  })
+
+  it('getCurrentPrimary 在 persistence 分支支持 store scope 查询与重选', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-1',
+        scopeType: 'STORE',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+        domain: 'store-first.example.io',
+        isPrimary: true,
+      }),
+      createRow({
+        id: 'dom-2',
+        scopeType: 'STORE',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+        domain: 'store-second.example.io',
+        isPrimary: false,
+      }),
+    ]
+    const domainResolution = new DomainResolutionService()
+    const service = new CustomDomainService(createPrisma(rows), domainResolution)
+
+    const current = await runWithTenant(STORE_CTX, () =>
+      service.getCurrentPrimary({
+        scopeType: 'STORE',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+      }),
+    )
+    await runWithTenant(STORE_CTX, () => service.remove('dom-1'))
+    await runWithTenant(STORE_CTX, () => service.setPrimary('dom-2'))
+    const afterReselect = await runWithTenant(STORE_CTX, () =>
+      service.getCurrentPrimary({
+        scopeType: 'STORE',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+      }),
+    )
+
+    assert.equal(current?.domain, 'store-first.example.io')
+    assert.equal(afterReselect?.domain, 'store-second.example.io')
+    assert.equal(
+      domainResolution.findPrimaryDomain({
+        scopeType: 'STORE',
+        tenantId: 'tenant-persist',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+      }),
+      'store-second.example.io',
     )
   })
 })

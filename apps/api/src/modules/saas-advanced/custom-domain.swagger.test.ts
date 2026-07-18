@@ -24,6 +24,7 @@ describe('CustomDomain Swagger', () => {
               verificationToken: 'token',
             }),
             remove: async () => undefined,
+            getCurrentPrimary: async () => null,
             verify: async () => ({}),
             requestSsl: async () => ({}),
             resolveTenantByHost: () => null,
@@ -47,6 +48,7 @@ describe('CustomDomain Swagger', () => {
     )
 
     assert.ok(doc.paths['/saas/domain'])
+    assert.ok(doc.paths['/saas/domain/primary/current'])
     assert.ok(doc.paths['/saas/domain/{id}'])
     assert.ok(doc.paths['/saas/domain/{id}/verify'])
     assert.ok(doc.paths['/saas/domain/{id}/ssl'])
@@ -56,6 +58,8 @@ describe('CustomDomain Swagger', () => {
 
     const listDomains = doc.paths['/saas/domain'].get
     const listParameters = (listDomains?.parameters ?? []) as Array<{ name?: string; in?: string }>
+    const currentPrimary = doc.paths['/saas/domain/primary/current'].get
+    const currentParameters = (currentPrimary?.parameters ?? []) as Array<{ name?: string; in?: string }>
     const resolveHost = doc.paths['/saas/domain/resolve/host'].get
     const hostParameter = resolveHost?.parameters?.[0] as { name?: string; in?: string } | undefined
 
@@ -64,6 +68,9 @@ describe('CustomDomain Swagger', () => {
     assert.ok(listParameters.some((parameter) => parameter.name === 'page' && parameter.in === 'query'))
     assert.ok(listParameters.some((parameter) => parameter.name === 'sortBy' && parameter.in === 'query'))
     assert.ok(listParameters.some((parameter) => parameter.name === 'sortOrder' && parameter.in === 'query'))
+    assert.ok(currentParameters.some((parameter) => parameter.name === 'scopeType' && parameter.in === 'query'))
+    assert.ok(currentParameters.some((parameter) => parameter.name === 'brandId' && parameter.in === 'query'))
+    assert.ok(currentParameters.some((parameter) => parameter.name === 'storeId' && parameter.in === 'query'))
 
     assert.ok(resolveHost)
     assert.deepEqual(resolveHost?.tags, ['saas-domain'])
@@ -78,6 +85,7 @@ describe('CustomDomain Swagger', () => {
     assert.ok(addDomain?.requestBody)
     assert.ok(doc.components?.schemas?.AddDomainRequest)
     assert.ok(doc.components?.schemas?.DomainListResponse)
+    assert.ok(doc.components?.schemas?.CurrentPrimaryDomainResponse)
     assert.ok(doc.components?.schemas?.ResolveHostResponse)
   })
 })
