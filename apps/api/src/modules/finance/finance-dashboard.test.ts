@@ -306,4 +306,115 @@ describe('[finance-dashboard] 分账状态流转: pending→processing→complet
     const result = svc.getTransactionStatus('non-existent')
     assert.equal(result, null)
   })
+
+  // ── StorePAndL 边界条件 ────────────────────────────────
+
+  it('getStoreRevenue 不同门店不同值', async () => {
+    const svc = makeStorePAndL()
+    const revA = await svc.getStoreRevenue('store-A1', '2026-06')
+    const revB = await svc.getStoreRevenue('store-B1', '2026-06')
+    assert.ok(revA.revenue !== revB.revenue, '不同门店应有不同营收')
+  })
+
+  it('getStoreRevenue 不同月份不同值', async () => {
+    const svc = makeStorePAndL()
+    const rev1 = await svc.getStoreRevenue('store-A1', '2026-06')
+    const rev2 = await svc.getStoreRevenue('store-A1', '2026-07')
+    assert.ok(rev1.revenue !== rev2.revenue, '不同月份应有不同营收')
+  })
+
+  it('calculateStoreProfit: 营收为0时利润为负（成本不为0）', async () => {
+    const svc = makeStorePAndL()
+    // 任何门店利润 = revenue - cost，revenue应>0
+    const profit = await svc.calculateStoreProfit('store-A1', '2026-06')
+    assert.ok(profit.revenue > 0, '默认门店营收应大于0')
+    assert.ok(profit.cost > 0, '默认门店成本应大于0')
+    assert.equal(profit.profit, profit.revenue - profit.cost)
+  })
+
+  it('getStoreMargin: 营收=0时利润率为0', async () => {
+    const svc = makeStorePAndL()
+    const margin = await svc.getStoreMargin('store-A1', '2026-06')
+    assert.ok(typeof margin === 'number')
+    assert.ok(margin >= -1 && margin <= 1, '利润率应在[-1,1]范围内')
+  })
+
+  it('compareStores 空数组返回空', async () => {
+    const svc = makeStorePAndL()
+    const results = await svc.compareStores([], '2026-06')
+    assert.equal(results.length, 0)
+  })
+
+  it('compareStores 单门店返回排名1', async () => {
+    const svc = makeStorePAndL()
+    const results = await svc.compareStores(['store-A1'], '2026-06')
+    assert.equal(results.length, 1)
+    assert.equal(results[0].rank, 1)
+  })
+
+  // ── BrandPAndL 边界条件 ────────────────────────────────
+
+  it('generateBrandPAndLReport 包含品牌ID', async () => {
+    const svc = makeBrandPAndL()
+    const report = await svc.generateBrandPAndLReport('brand-A', '2026-06')
+    assert.ok(report.brandId === 'brand-A')
+    assert.ok(typeof report.grossProfit === 'number')
+    assert.ok(typeof report.netProfit === 'number')
+  })
+
+  // ── AccountTransactionLog 边界条件 ──────────────────────
+
+  it('queryTransactionLogs 按fromAccountId过滤', async () => {
+    const svc = makeTxLog()
+    await svc.logTransaction({ transactionId: 'tx-f1', fromAccountId: 'acct-A', toAccountId: 'acct-B', amount: 100 })
+    await svc.logTransaction({ transactionId: 'tx-f2', fromAccountId: 'acct-C', toAccountId: 'acct-D', amount: 200 })
+    const filtered = svc.queryTransactionLogs({ fromAccountId: 'acct-A' })
+    assert.equal(filtered.length, 1)
+    assert.equal(filtered[0].transactionId, 'tx-f1')
+  })
+
+  it('queryTransactionLogs 按toAccountId过滤', async () => {
+    const svc = makeTxLog()
+    await svc.logTransaction({ transactionId: 'tx-t1', fromAccountId: 'acct-A', toAccountId: 'acct-B', amount: 100 })
+    await svc.logTransaction({ transactionId: 'tx-t2', fromAccountId: 'acct-C', toAccountId: 'acct-D', amount: 200 })
+    const filtered = svc.queryTransactionLogs({ toAccountId: 'acct-B' })
+    assert.equal(filtered.length, 1)
+    assert.equal(filtered[0].transactionId, 'tx-t1')
+  })
+
+  it('queryTransactionLogs 空过滤返回全部', async () => {
+    const svc = makeTxLog()
+    await svc.logTransaction({ transactionId: 'tx-a1', fromAccountId: 'acct-A', toAccountId: 'acct-B', amount: 100 })
+    await svc.logTransaction({ transactionId: 'tx-a2', fromAccountId: 'acct-C', toAccountId: 'acct-D', amount: 200 })
+    // 空filter = {} 应该返回全部
+    const all = svc.queryTransactionLogs({})
+    const all2 = svc.queryTransactionLogs({} as any)
+    assert.equal(all.length, 2)
+    assert.equal(all2.length, 2)
+  })
+
+  it('logTransaction 创建不同账户记录', async () => {
+    const svc = makeTxLog()
+    const tx1 = await svc.logTransaction({ transactionId: 'tx-m1', fromAccountId: 'acct-A', toAccountId: 'acct-B', amount: 500 })
+    const tx2 = await svc.logTransaction({ transactionId: 'tx-m2', fromAccountId: 'acct-C', toAccountId: 'acct-D', amount: 1500 })
+    assert.ok(tx1.id !== tx2.id)
+    assert.equal(tx1.status, TransactionStatus.Pending)
+    assert.equal(tx2.status, TransactionStatus.Pending)
+  })
+
+  it('updateTransactionStatus: 不存在txId报错', async () => {
+    const svc = makeTxLog()
+    await assert.rejects(() =>
+      svc.updateTransactionStatus('non-existent', TransactionStatus.Processing)
+    )
+  })
+
+  it('getTransactionStatus 存在时返回匹配记录', async () => {
+    const svc = makeTxLog()
+    const tx = await svc.logTransaction({ transactionId: 'tx-g1', fromAccountId: 'acct-A', toAccountId: 'acct-B', amount: 777 })
+    const found = svc.getTransactionStatus(tx.id)
+    assert.ok(found !== null)
+    assert.equal(found.transactionId, 'tx-g1')
+    assert.equal(found.amount, 777)
+  })
 })
