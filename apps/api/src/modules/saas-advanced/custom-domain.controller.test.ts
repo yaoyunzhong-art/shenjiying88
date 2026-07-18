@@ -303,8 +303,11 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       )
 
       assert.equal(governance.total >= 1, true)
+      assert.equal(governance.page, 1)
+      assert.equal(governance.sortBy, 'activeCount')
       assert.ok(currentBrandScope)
       assert.equal(currentBrandScope?.activeCount >= 2, true)
+      assert.ok(currentBrandScope?.recommendationReason)
     })
 
     it('治理视图支持按 scopeType 和 brandId 过滤', async () => {
@@ -350,8 +353,97 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       )
 
       assert.equal(recommended.applied, true)
+      assert.equal(recommended.dryRun, false)
+      assert.equal(recommended.candidateCount, 2)
       assert.equal(recommended.item?.domain, 'controller-recommend-b.example.io')
       assert.equal(recommended.item?.isPrimary, true)
+      assert.ok(recommended.recommendationReason?.includes('active_ssl'))
+    })
+
+    it('recommendPrimary dryRun 只返回推荐结果不真正写入 primary', async () => {
+      const recommendCtx = {
+        tenantId: 'tenant-controller-recommend-dryrun',
+        brandId: 'brand-controller-recommend-dryrun',
+        userId: 'brand-controller-recommend-dryrun-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await inTenant(recommendCtx, () =>
+        controller.addDomain({ domain: 'controller-recommend-dryrun-a.example.io' }),
+      )
+      const second = await inTenant(recommendCtx, () =>
+        controller.addDomain({ domain: 'controller-recommend-dryrun-b.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      service.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await inTenant(recommendCtx, () => controller.verify(first.id))
+      await inTenant(recommendCtx, () => controller.verify(second.id))
+      await inTenant(recommendCtx, () => controller.requestSsl(second.id))
+
+      const preview = await inTenant(recommendCtx, () =>
+        controller.recommendPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-controller-recommend-dryrun',
+          dryRun: true,
+        }),
+      )
+      const current = await inTenant(recommendCtx, () =>
+        controller.getCurrentPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-controller-recommend-dryrun',
+        }),
+      )
+
+      assert.equal(preview.applied, false)
+      assert.equal(preview.dryRun, true)
+      assert.equal(preview.item?.domain, 'controller-recommend-dryrun-b.example.io')
+      assert.equal(current.resolved, false)
+    })
+
+    it('recommendPrimaryBatch 支持批量治理执行', async () => {
+      const tenantCtx = {
+        tenantId: 'tenant-controller-batch',
+        userId: 'tenant-controller-batch-admin',
+        role: 'tenant_admin' as const,
+      }
+      const brandCtx = {
+        tenantId: 'tenant-controller-batch',
+        brandId: 'brand-controller-batch',
+        userId: 'brand-controller-batch-admin',
+        role: 'brand_admin' as const,
+      }
+      const tenantDomain = await inTenant(tenantCtx, () =>
+        controller.addDomain({ domain: 'controller-batch-tenant.example.io' }),
+      )
+      const brandDomain = await inTenant(brandCtx, () =>
+        controller.addDomain({ domain: 'controller-batch-brand.example.io' }),
+      )
+      service.setDnsTxtOverride(tenantDomain.verificationHost, [
+        buildVerificationValue(tenantDomain.verificationToken),
+      ])
+      service.setDnsTxtOverride(brandDomain.verificationHost, [
+        buildVerificationValue(brandDomain.verificationToken),
+      ])
+      await inTenant(tenantCtx, () => controller.verify(tenantDomain.id))
+      await inTenant(brandCtx, () => controller.verify(brandDomain.id))
+
+      const batch = await inTenant(tenantCtx, () =>
+        controller.recommendPrimaryBatch({
+          items: [
+            { scopeType: 'TENANT' },
+            { scopeType: 'BRAND', brandId: 'brand-controller-batch', dryRun: true },
+          ],
+        }),
+      )
+
+      assert.equal(batch.total, 2)
+      assert.equal(batch.appliedCount, 1)
+      assert.equal(batch.resolvedCount, 2)
+      assert.equal(batch.items[0].applied, true)
+      assert.equal(batch.items[1].dryRun, true)
     })
 
     it('brand_admin 查询 STORE scope 批量主域名会被拒绝', async () => {

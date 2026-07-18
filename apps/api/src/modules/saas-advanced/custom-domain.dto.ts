@@ -25,6 +25,12 @@ const DOMAIN_STATUS_VALUES = [
 const DOMAIN_SCOPE_VALUES = ['TENANT', 'BRAND', 'STORE'] as const
 const DOMAIN_SORT_FIELD_VALUES = ['createdAt', 'updatedAt', 'domain', 'status'] as const
 const DOMAIN_SORT_ORDER_VALUES = ['asc', 'desc'] as const
+const GOVERNANCE_SORT_FIELD_VALUES = [
+  'activeCount',
+  'scopeType',
+  'recommendedDomain',
+  'latestUpdatedAt',
+] as const
 
 export class AddDomainRequest {
   @ApiProperty({ example: 'brand.example.io', description: '待接入的平台自定义域名' })
@@ -264,6 +270,15 @@ export class ActiveWithoutPrimaryScopeItem {
   @ApiProperty({ example: 2 })
   activeCount!: number
 
+  @ApiProperty({ example: '2026-07-18T02:00:00.000Z' })
+  latestUpdatedAt!: string
+
+  @ApiPropertyOptional({ type: () => DomainListItem, nullable: true })
+  recommendedItem?: DomainListItem | null
+
+  @ApiPropertyOptional({ example: '优先推荐 active_ssl，且最近一次校验/更新时间更新' })
+  recommendationReason?: string
+
   @ApiProperty({ type: () => [DomainListItem] })
   candidateDomains!: DomainListItem[]
 }
@@ -274,6 +289,27 @@ export class ActiveWithoutPrimaryGovernanceResponse {
 
   @ApiProperty({ type: () => [ActiveWithoutPrimaryScopeItem] })
   items!: ActiveWithoutPrimaryScopeItem[]
+
+  @ApiProperty({ example: 1 })
+  page!: number
+
+  @ApiProperty({ example: 10 })
+  pageSize!: number
+
+  @ApiProperty({ example: 1 })
+  totalPages!: number
+
+  @ApiProperty({ example: false })
+  hasNextPage!: boolean
+
+  @ApiProperty({ example: false })
+  hasPreviousPage!: boolean
+
+  @ApiProperty({ example: 'activeCount', enum: GOVERNANCE_SORT_FIELD_VALUES })
+  sortBy!: (typeof GOVERNANCE_SORT_FIELD_VALUES)[number]
+
+  @ApiProperty({ example: 'desc', enum: DOMAIN_SORT_ORDER_VALUES })
+  sortOrder!: (typeof DOMAIN_SORT_ORDER_VALUES)[number]
 }
 
 export class ActiveWithoutPrimaryGovernanceQueryRequest {
@@ -295,6 +331,50 @@ export class ActiveWithoutPrimaryGovernanceQueryRequest {
   @IsString()
   @IsOptional()
   storeId?: string
+
+  @ApiPropertyOptional({
+    description: '治理视图分页页码',
+    example: 1,
+    default: 1,
+    minimum: 1,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1
+
+  @ApiPropertyOptional({
+    description: '治理视图每页条数',
+    example: 10,
+    default: 10,
+    minimum: 1,
+    maximum: 100,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  pageSize?: number = 10
+
+  @ApiPropertyOptional({
+    description: '治理视图排序字段',
+    enum: GOVERNANCE_SORT_FIELD_VALUES,
+    example: 'activeCount',
+  })
+  @IsIn(GOVERNANCE_SORT_FIELD_VALUES)
+  @IsOptional()
+  sortBy?: (typeof GOVERNANCE_SORT_FIELD_VALUES)[number] = 'activeCount'
+
+  @ApiPropertyOptional({
+    description: '治理视图排序方向',
+    enum: DOMAIN_SORT_ORDER_VALUES,
+    example: 'desc',
+  })
+  @IsIn(DOMAIN_SORT_ORDER_VALUES)
+  @IsOptional()
+  sortOrder?: (typeof DOMAIN_SORT_ORDER_VALUES)[number] = 'desc'
 }
 
 export class RecommendPrimaryDomainRequest {
@@ -343,11 +423,41 @@ export class RecommendPrimaryDomainResponse {
   @ApiProperty({ example: true })
   applied!: boolean
 
+  @ApiProperty({ example: false })
+  dryRun!: boolean
+
   @ApiProperty({ example: true })
   resolved!: boolean
 
+  @ApiProperty({ example: 2 })
+  candidateCount!: number
+
+  @ApiPropertyOptional({ example: '优先推荐 active_ssl，且最近一次校验/更新时间更新' })
+  recommendationReason?: string
+
   @ApiPropertyOptional({ type: () => DomainListItem, nullable: true })
   item?: DomainListItem | null
+}
+
+export class BatchRecommendPrimaryDomainRequest {
+  @ApiProperty({ type: () => [RecommendPrimaryDomainRequest] })
+  @IsArray()
+  @Type(() => RecommendPrimaryDomainRequest)
+  items!: RecommendPrimaryDomainRequest[]
+}
+
+export class BatchRecommendPrimaryDomainResponse {
+  @ApiProperty({ example: 2 })
+  total!: number
+
+  @ApiProperty({ example: 1 })
+  appliedCount!: number
+
+  @ApiProperty({ example: 2 })
+  resolvedCount!: number
+
+  @ApiProperty({ type: () => [RecommendPrimaryDomainResponse] })
+  items!: RecommendPrimaryDomainResponse[]
 }
 
 export class DomainListQueryRequest {

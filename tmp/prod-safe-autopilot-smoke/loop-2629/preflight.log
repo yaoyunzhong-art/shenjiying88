@@ -1,0 +1,13 @@
+=== preflight online ===
+timestamp=2026-07-18 16:55:24
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/preflight-prod-public-cutover.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example --allow-missing-tls 
+
+bash: no job control in this shell
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Checking namespace access
+E0718 16:55:24.774645   66893 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:55:24.776540   66893 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:55:24.778220   66893 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:55:24.779851   66893 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:55:24.781411   66893 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+Unable to connect to the server: dial tcp 47.98.47.157:6443: connect: network is unreachable

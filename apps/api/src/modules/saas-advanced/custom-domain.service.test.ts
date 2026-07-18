@@ -619,13 +619,21 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
         isolatedService.listActiveWithoutPrimary(),
       )
 
-      assert.equal(governance.length, 1)
-      assert.equal(governance[0].scopeType, 'BRAND')
-      assert.equal(governance[0].activeCount, 2)
+      assert.equal(governance.total, 1)
+      assert.equal(governance.page, 1)
+      assert.equal(governance.sortBy, 'activeCount')
+      assert.equal(governance.items[0].scopeType, 'BRAND')
+      assert.equal(governance.items[0].activeCount, 2)
       assert.deepEqual(
-        governance[0].candidateDomains.map((item) => item.domain).sort(),
+        governance.items[0].candidateDomains.map((item) => item.domain).sort(),
         ['governance-a.example.io', 'governance-b.example.io'],
       )
+      assert.ok(
+        ['governance-a.example.io', 'governance-b.example.io'].includes(
+          governance.items[0].recommendedItem?.domain ?? '',
+        ),
+      )
+      assert.ok(governance.items[0].recommendationReason?.includes('回退到 active'))
     })
 
     it('listActiveWithoutPrimary 支持按 scope 和 brandId 过滤', async () => {
@@ -658,9 +666,9 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
         }),
       )
 
-      assert.equal(governance.length, 1)
-      assert.equal(governance[0].brandId, 'brand-governance-filter')
-      assert.equal(governance[0].scopeType, 'BRAND')
+      assert.equal(governance.total, 1)
+      assert.equal(governance.items[0].brandId, 'brand-governance-filter')
+      assert.equal(governance.items[0].scopeType, 'BRAND')
     })
 
     it('recommendPrimary 会为缺主域名 scope 选择优先候选并补选 primary', async () => {
@@ -701,9 +709,109 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       )
 
       assert.equal(recommended.applied, true)
+      assert.equal(recommended.dryRun, false)
+      assert.equal(recommended.candidateCount, 2)
       assert.equal(recommended.item?.domain, 'recommend-ssl.example.io')
+      assert.ok(recommended.recommendationReason?.includes('active_ssl'))
       assert.equal(current?.domain, 'recommend-ssl.example.io')
       assert.equal(current?.isPrimary, true)
+    })
+
+    it('recommendPrimary dryRun 只预览推荐结果，不真正写入 primary', async () => {
+      const isolatedService = new CustomDomainService()
+      const brandCtx = {
+        tenantId: 'tenant-recommend-dryrun',
+        brandId: 'brand-recommend-dryrun',
+        userId: 'brand-recommend-dryrun-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('recommend-dryrun-a.example.io'),
+      )
+      const second = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('recommend-dryrun-b.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(brandCtx, async () => isolatedService.verify(first.id))
+      await runWithTenant(brandCtx, async () => isolatedService.verify(second.id))
+      await runWithTenant(brandCtx, async () => isolatedService.requestSsl(second.id))
+
+      const preview = await runWithTenant(brandCtx, async () =>
+        isolatedService.recommendPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-recommend-dryrun',
+          dryRun: true,
+        }),
+      )
+      const current = await runWithTenant(brandCtx, async () =>
+        isolatedService.getCurrentPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-recommend-dryrun',
+        }),
+      )
+
+      assert.equal(preview.applied, false)
+      assert.equal(preview.dryRun, true)
+      assert.equal(preview.item?.domain, 'recommend-dryrun-b.example.io')
+      assert.equal(current, null)
+    })
+
+    it('recommendPrimaryBatch 支持批量 dry-run/执行混合补选', async () => {
+      const isolatedService = new CustomDomainService()
+      const tenantCtx = {
+        tenantId: 'tenant-recommend-batch',
+        userId: 'tenant-recommend-batch-admin',
+        role: 'tenant_admin' as const,
+      }
+      const brandCtx = {
+        tenantId: 'tenant-recommend-batch',
+        brandId: 'brand-recommend-batch',
+        userId: 'brand-recommend-batch-admin',
+        role: 'brand_admin' as const,
+      }
+      const tenantDomain = await runWithTenant(tenantCtx, async () =>
+        isolatedService.addDomain('recommend-batch-tenant.example.io'),
+      )
+      const brandDomain = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('recommend-batch-brand.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(tenantDomain.verificationHost, [
+        buildVerificationValue(tenantDomain.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(brandDomain.verificationHost, [
+        buildVerificationValue(brandDomain.verificationToken),
+      ])
+      await runWithTenant(tenantCtx, async () => isolatedService.verify(tenantDomain.id))
+      await runWithTenant(brandCtx, async () => isolatedService.verify(brandDomain.id))
+
+      const batch = await runWithTenant(tenantCtx, async () =>
+        isolatedService.recommendPrimaryBatch([
+          { scopeType: 'TENANT' },
+          { scopeType: 'BRAND', brandId: 'brand-recommend-batch', dryRun: true },
+        ]),
+      )
+      const tenantPrimary = await runWithTenant(tenantCtx, async () =>
+        isolatedService.getCurrentPrimary({ scopeType: 'TENANT' }),
+      )
+      const brandPrimary = await runWithTenant(brandCtx, async () =>
+        isolatedService.getCurrentPrimary({
+          scopeType: 'BRAND',
+          brandId: 'brand-recommend-batch',
+        }),
+      )
+
+      assert.equal(batch.total, 2)
+      assert.equal(batch.appliedCount, 1)
+      assert.equal(batch.resolvedCount, 2)
+      assert.equal(batch.items[0].applied, true)
+      assert.equal(batch.items[1].dryRun, true)
+      assert.equal(tenantPrimary?.domain, 'recommend-batch-tenant.example.io')
+      assert.equal(brandPrimary, null)
     })
 
     it('brand_admin 不可查询 STORE scope 当前主域名', async () => {
@@ -759,9 +867,9 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
         isolatedService.listActiveWithoutPrimary(),
       )
 
-      assert.equal(governance.length, 1)
-      assert.equal(governance[0].storeId, 'store-governance')
-      assert.equal(governance[0].candidateDomains[0].domain, 'store-visible.example.io')
+      assert.equal(governance.total, 1)
+      assert.equal(governance.items[0].storeId, 'store-governance')
+      assert.equal(governance.items[0].candidateDomains[0].domain, 'store-visible.example.io')
     })
 
     it('brand_admin 不可为 STORE scope 执行推荐主域名', async () => {

@@ -406,9 +406,14 @@ describe('CustomDomainService persistence branch', () => {
 
     const governance = await runWithTenant(TENANT_CTX, () => service.listActiveWithoutPrimary())
 
-    assert.equal(governance.length, 1)
-    assert.equal(governance[0].scopeType, 'BRAND')
-    assert.equal(governance[0].activeCount, 2)
+    assert.equal(governance.total, 1)
+    assert.equal(governance.items[0].scopeType, 'BRAND')
+    assert.equal(governance.items[0].activeCount, 2)
+    assert.ok(
+      ['brand-governance-a.example.io', 'brand-governance-b.example.io'].includes(
+        governance.items[0].recommendedItem?.domain ?? '',
+      ),
+    )
   })
 
   it('recommendPrimary 在 persistence 分支会为缺主域名 scope 自动补选主域名', async () => {
@@ -445,8 +450,43 @@ describe('CustomDomainService persistence branch', () => {
     )
 
     assert.equal(recommended.applied, true)
+    assert.equal(recommended.candidateCount, 2)
+    assert.ok(recommended.recommendationReason?.includes('active_ssl'))
     assert.equal(recommended.item?.domain, 'brand-recommend-b.example.io')
     assert.equal(rows.find((row) => row.id === 'dom-2')?.isPrimary, true)
+  })
+
+  it('recommendPrimaryBatch 在 persistence 分支支持批量 dryRun/执行混合补选', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-tenant',
+        scopeType: 'TENANT',
+        brandId: null,
+        domain: 'tenant-batch.example.io',
+        isPrimary: false,
+      }),
+      createRow({
+        id: 'dom-brand',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-batch.example.io',
+        isPrimary: false,
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    const batch = await runWithTenant(TENANT_ROOT_CTX, () =>
+      service.recommendPrimaryBatch([
+        { scopeType: 'TENANT' },
+        { scopeType: 'BRAND', brandId: 'brand-persist', dryRun: true },
+      ]),
+    )
+
+    assert.equal(batch.total, 2)
+    assert.equal(batch.appliedCount, 1)
+    assert.equal(batch.resolvedCount, 2)
+    assert.equal(batch.items[0].applied, true)
+    assert.equal(batch.items[1].dryRun, true)
   })
 
   it('brand_admin 在 persistence 分支不可查询 STORE scope', async () => {

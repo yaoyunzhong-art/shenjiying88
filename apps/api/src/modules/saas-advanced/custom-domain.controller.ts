@@ -29,6 +29,8 @@ import {
   AddDomainRequest,
   ActiveWithoutPrimaryGovernanceQueryRequest,
   ActiveWithoutPrimaryGovernanceResponse,
+  BatchRecommendPrimaryDomainRequest,
+  BatchRecommendPrimaryDomainResponse,
   BatchCurrentPrimaryDomainRequest,
   BatchCurrentPrimaryDomainResponse,
   CurrentPrimaryDomainQueryRequest,
@@ -132,17 +134,17 @@ export class CustomDomainController {
   @ApiQuery({ name: 'scopeType', type: String, required: false, description: '按作用域类型过滤治理视图' })
   @ApiQuery({ name: 'brandId', type: String, required: false, description: '按品牌作用域过滤治理视图' })
   @ApiQuery({ name: 'storeId', type: String, required: false, description: '按门店作用域过滤治理视图' })
+  @ApiQuery({ name: 'page', type: Number, required: false, description: '治理视图分页页码，默认 1' })
+  @ApiQuery({ name: 'pageSize', type: Number, required: false, description: '治理视图分页大小，默认 10' })
+  @ApiQuery({ name: 'sortBy', type: String, required: false, description: '治理视图排序字段，默认 activeCount' })
+  @ApiQuery({ name: 'sortOrder', type: String, required: false, description: '治理视图排序方向，默认 desc' })
   @Get('governance/active-without-primary')
   @ApiOkResponse({ type: ActiveWithoutPrimaryGovernanceResponse })
   async listActiveWithoutPrimary(
     @Query()
     query: ActiveWithoutPrimaryGovernanceQueryRequest = new ActiveWithoutPrimaryGovernanceQueryRequest(),
   ) {
-    const items = await this.service.listActiveWithoutPrimary(query)
-    return {
-      total: items.length,
-      items,
-    }
+    return this.service.listActiveWithoutPrimary(query)
   }
 
   /**
@@ -156,6 +158,19 @@ export class CustomDomainController {
   @ApiOkResponse({ type: RecommendPrimaryDomainResponse })
   async recommendPrimary(@Body() body: RecommendPrimaryDomainRequest) {
     return this.service.recommendPrimary(body)
+  }
+
+  /**
+   * 批量为缺主域名作用域自动推荐并补选 primary
+   * POST /saas/domain/governance/primary/recommend/batch
+   */
+  @ApiOperation({ summary: '批量为缺主域名作用域自动推荐并补选 primary' })
+  @Post('governance/primary/recommend/batch')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: BatchRecommendPrimaryDomainRequest })
+  @ApiOkResponse({ type: BatchRecommendPrimaryDomainResponse })
+  async recommendPrimaryBatch(@Body() body: BatchRecommendPrimaryDomainRequest) {
+    return this.service.recommendPrimaryBatch(body.items)
   }
 
   /**

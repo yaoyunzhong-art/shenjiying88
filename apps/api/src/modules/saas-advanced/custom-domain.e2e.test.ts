@@ -482,11 +482,15 @@ describe('CustomDomain HTTP E2E', () => {
       scopeType: string
       brandId?: string
       activeCount: number
+      recommendationReason?: string
     }>).find((item) => item.scopeType === 'BRAND' && item.brandId === 'brand-http-governance')
 
     assert.equal(governance.body.data.total >= 1, true)
+    assert.equal(governance.body.data.page, 1)
+    assert.equal(governance.body.data.sortBy, 'activeCount')
     assert.ok(currentBrandScope)
     assert.equal(currentBrandScope?.activeCount >= 2, true)
+    assert.ok(currentBrandScope?.recommendationReason)
   })
 
   it('GET /saas/domain/governance/active-without-primary 支持 query 过滤', async () => {
@@ -511,6 +515,7 @@ describe('CustomDomain HTTP E2E', () => {
       ),
       true,
     )
+    assert.equal(governance.body.data.page, 1)
   })
 
   it('POST /saas/domain/governance/primary/recommend 会自动补选推荐主域名', async () => {
@@ -570,9 +575,116 @@ describe('CustomDomain HTTP E2E', () => {
       .expect(200)
 
     assert.equal(recommended.body.data.applied, true)
+    assert.equal(recommended.body.data.dryRun, false)
+    assert.equal(recommended.body.data.candidateCount, 2)
     assert.equal(recommended.body.data.item.domain, 'recommend-http-b.example.io')
+    assert.ok(String(recommended.body.data.recommendationReason).includes('active_ssl'))
     assert.equal(current.body.data.item.domain, 'recommend-http-b.example.io')
     assert.equal(current.body.data.item.isPrimary, true)
+  })
+
+  it('POST /saas/domain/governance/primary/recommend dryRun 只预览不写入 primary', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-recommend-dryrun',
+      'x-brand-id': 'brand-http-recommend-dryrun',
+      'x-user-id': 'brand-http-recommend-dryrun-admin',
+      'x-role': 'brand_admin',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'recommend-http-dryrun-a.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'recommend-http-dryrun-b.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/ssl`).set(headers).expect(200)
+
+    const preview = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend')
+      .set(headers)
+      .send({
+        scopeType: 'BRAND',
+        brandId: 'brand-http-recommend-dryrun',
+        dryRun: true,
+      })
+      .expect(200)
+    const current = await request(app.getHttpServer())
+      .get('/saas/domain/primary/current')
+      .set(headers)
+      .query({
+        scopeType: 'BRAND',
+        brandId: 'brand-http-recommend-dryrun',
+      })
+      .expect(200)
+
+    assert.equal(preview.body.data.applied, false)
+    assert.equal(preview.body.data.dryRun, true)
+    assert.equal(preview.body.data.item.domain, 'recommend-http-dryrun-b.example.io')
+    assert.equal(current.body.data.resolved, false)
+  })
+
+  it('POST /saas/domain/governance/primary/recommend/batch 支持批量执行与 dryRun 混合', async () => {
+    const tenantHeaders = {
+      'x-tenant-id': 'tenant-http-batch-recommend',
+      'x-user-id': 'tenant-http-batch-recommend-admin',
+      'x-role': 'tenant_admin',
+    }
+    const brandHeaders = {
+      'x-tenant-id': 'tenant-http-batch-recommend',
+      'x-brand-id': 'brand-http-batch-recommend',
+      'x-user-id': 'brand-http-batch-recommend-admin',
+      'x-role': 'brand_admin',
+    }
+
+    const tenantDomain = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(tenantHeaders)
+      .send({ domain: 'recommend-http-batch-tenant.example.io' })
+      .expect(201)
+    const brandDomain = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(brandHeaders)
+      .send({ domain: 'recommend-http-batch-brand.example.io' })
+      .expect(201)
+    customDomainService.setDnsTxtOverride(tenantDomain.body.data.verificationHost, [
+      buildVerificationValue(tenantDomain.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(brandDomain.body.data.verificationHost, [
+      buildVerificationValue(brandDomain.body.data.verificationToken),
+    ])
+    await request(app.getHttpServer()).post(`/saas/domain/${tenantDomain.body.data.id}/verify`).set(tenantHeaders).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${brandDomain.body.data.id}/verify`).set(brandHeaders).expect(200)
+
+    const batch = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend/batch')
+      .set(tenantHeaders)
+      .send({
+        items: [
+          { scopeType: 'TENANT' },
+          { scopeType: 'BRAND', brandId: 'brand-http-batch-recommend', dryRun: true },
+        ],
+      })
+      .expect(200)
+
+    assert.equal(batch.body.data.total, 2)
+    assert.equal(batch.body.data.appliedCount, 1)
+    assert.equal(batch.body.data.resolvedCount, 2)
+    assert.equal(batch.body.data.items[0].applied, true)
+    assert.equal(batch.body.data.items[1].dryRun, true)
   })
 
   it('brand_admin 请求 STORE scope 批量主域名返回 403', async () => {
@@ -607,6 +719,25 @@ describe('CustomDomain HTTP E2E', () => {
         scopeType: 'STORE',
         brandId: 'brand-http-forbidden',
         storeId: 'store-http-forbidden',
+      })
+      .expect(403)
+
+    assert.ok(String(res.body.message).includes('brand_admin'))
+  })
+
+  it('brand_admin 为 STORE scope 批量执行推荐主域名返回 403', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend/batch')
+      .set({
+        'x-tenant-id': 'tenant-http-forbidden',
+        'x-brand-id': 'brand-http-forbidden',
+        'x-user-id': 'brand-http-forbidden-admin',
+        'x-role': 'brand_admin',
+      })
+      .send({
+        items: [
+          { scopeType: 'STORE', brandId: 'brand-http-forbidden', storeId: 'store-http-forbidden' },
+        ],
       })
       .expect(403)
 

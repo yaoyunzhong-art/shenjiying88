@@ -17,7 +17,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, before } from 'node:test';
 import fs from 'node:fs';
 
 // ===================== 类型定义 =====================

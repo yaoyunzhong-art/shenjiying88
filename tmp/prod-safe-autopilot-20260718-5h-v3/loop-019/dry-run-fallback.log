@@ -1,0 +1,31 @@
+=== client dry-run offline fallback ===
+timestamp=2026-07-18 15:22:11
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/apply-prod-public-cutover.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example --kubectl-dry-run client --offline --skip-tls-check 
+
+bash: no job control in this shell
+==> Rendering public cutover manifests
+Rendered files:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-ingress-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-config-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-public-dns-records.csv
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-tls-secret.template.yaml
+==> Offline mode: skipping live resource backup
+==> Skipping TLS secret existence check
+==> Offline mode: manifest sanity checks passed
+==> Skipping production workload restart
+==> Public cutover apply finished
+Backup dir:
+  offline-skip
+
+Suggested verification:
+  scripts/verify-prod-public-endpoints.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example
+
+Quick cluster checks:
+  kubectl -n m5 get ingress m5-ingress
+  kubectl -n m5 get secret m5-tls
+
+Execution mode:
+  kubectl dry-run = client
+  offline         = true
+  skip tls check = true
+  skip restart   = true

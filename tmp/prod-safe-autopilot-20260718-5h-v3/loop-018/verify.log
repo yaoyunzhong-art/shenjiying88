@@ -1,0 +1,24 @@
+=== verify endpoints with resolve ===
+timestamp=2026-07-18 15:05:42
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/verify-prod-public-endpoints.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example --use-resolve 
+
+bash: no job control in this shell
+Note:
+  --use-resolve probes future public hostnames against the current NLB IP.
+  Before the ingress host rules are switched from .local to formal domains,
+  receiving the fake ingress certificate and HTTP 404 is expected.
+
+=== DNS api.m5-platform.com ===
+;; connection timed out; no servers could be reached
+
+=== DNS admin.m5-platform.com ===
+;; connection timed out; no servers could be reached
+
+=== DNS store.m5-platform.com ===
+;; connection timed out; no servers could be reached
+
+=== DNS tob.m5-platform.com ===
+;; connection timed out; no servers could be reached
+
+=== Certificate api.m5-platform.com ===
+Could not find certificate from <stdin>

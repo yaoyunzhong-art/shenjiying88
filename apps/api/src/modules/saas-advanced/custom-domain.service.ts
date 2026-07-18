@@ -21,10 +21,12 @@ import { PrismaService } from '../../prisma/prisma.service'
 import type {
   ActiveWithoutPrimaryGovernanceQueryRequest,
   ActiveWithoutPrimaryScopeItem,
+  BatchRecommendPrimaryDomainResponse,
   BatchCurrentPrimaryDomainQueryItem,
   CurrentPrimaryDomainQueryRequest,
   DomainListQueryRequest,
   RecommendPrimaryDomainRequest,
+  RecommendPrimaryDomainResponse,
 } from './custom-domain.dto'
 import {
   DomainMapping,
@@ -292,10 +294,25 @@ export class CustomDomainService {
 
   async listActiveWithoutPrimary(
     query: ActiveWithoutPrimaryGovernanceQueryRequest = {},
-  ): Promise<ActiveWithoutPrimaryScopeItem[]> {
+  ): Promise<{
+    items: ActiveWithoutPrimaryScopeItem[]
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+    sortBy: GovernanceSortField
+    sortOrder: GovernanceSortOrder
+  }> {
+    this.assertGovernanceQueryAccess(query)
     const activeMappings = (await this.listAccessibleMappings()).filter((mapping) =>
       this.isActiveMapping(mapping),
     )
+    const page = Math.max(query.page ?? 1, 1)
+    const pageSize = Math.min(Math.max(query.pageSize ?? 10, 1), 100)
+    const sortBy = query.sortBy ?? 'activeCount'
+    const sortOrder = query.sortOrder ?? 'desc'
     const grouped = new Map<string, DomainMapping[]>()
 
     for (const mapping of activeMappings) {
@@ -305,43 +322,82 @@ export class CustomDomainService {
       grouped.set(key, group)
     }
 
-    return Array.from(grouped.values())
+    const items = Array.from(grouped.values())
       .filter((group) => !group.some((mapping) => mapping.isPrimary === true))
       .map((group) => {
         const [first] = group
+        const candidates = this.sortMappings(group, 'createdAt', 'desc')
+        const recommendation = this.selectRecommendation(candidates)
         return {
           scopeType: first.scopeType,
           tenantId: first.tenantId,
           brandId: first.brandId,
           storeId: first.storeId,
           activeCount: group.length,
-          candidateDomains: this.sortMappings(group, 'createdAt', 'desc'),
+          latestUpdatedAt: candidates
+            .map((item) => item.updatedAt)
+            .sort((left, right) => right.localeCompare(left))[0] ?? first.updatedAt,
+          recommendedItem: recommendation.item,
+          recommendationReason: recommendation.reason,
+          candidateDomains: candidates,
         }
       })
       .filter((item) => this.matchesGovernanceFilter(item, query))
+
+    const sorted = this.sortGovernanceItems(items, sortBy, sortOrder)
+    const total = sorted.length
+    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize)
+    const start = (page - 1) * pageSize
+    const pagedItems = sorted.slice(start, start + pageSize)
+
+    return {
+      items: pagedItems,
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasNextPage: totalPages > 0 && page < totalPages,
+      hasPreviousPage: page > 1 && total > 0,
+      sortBy,
+      sortOrder,
+    }
   }
 
   async recommendPrimary(
     query: RecommendPrimaryDomainRequest,
-  ): Promise<{
-    scopeType: string
-    tenantId: string
-    brandId?: string
-    storeId?: string
-    applied: boolean
-    resolved: boolean
-    item: DomainMapping | null
-  }> {
+  ): Promise<RecommendPrimaryDomainResponse> {
     const scope = this.resolveScopeSelection(query)
     const current = await this.getCurrentPrimary(query)
     if (current) {
-      throw new BadRequestException('Primary domain already configured for the selected scope')
+      return {
+        scopeType: scope.scopeType,
+        tenantId: scope.tenantId,
+        brandId: scope.brandId,
+        storeId: scope.storeId,
+        applied: false,
+        dryRun: query.dryRun === true,
+        resolved: true,
+        candidateCount: 0,
+        recommendationReason: '当前作用域已存在主域名，无需补选',
+        item: current,
+      }
     }
 
     const candidates = await this.pickRecommendationCandidates(scope)
-    const candidate = candidates[0] ?? null
-    if (!candidate) {
-      throw new NotFoundException('No active domains available for primary recommendation')
+    const recommendation = this.selectRecommendation(candidates)
+    if (!recommendation.item) {
+      return {
+        scopeType: scope.scopeType,
+        tenantId: scope.tenantId,
+        brandId: scope.brandId,
+        storeId: scope.storeId,
+        applied: false,
+        dryRun: query.dryRun === true,
+        resolved: false,
+        candidateCount: 0,
+        recommendationReason: '当前作用域没有可用于补选的 active 域名',
+        item: null,
+      }
     }
 
     if (query.dryRun === true) {
@@ -351,20 +407,38 @@ export class CustomDomainService {
         brandId: scope.brandId,
         storeId: scope.storeId,
         applied: false,
+        dryRun: true,
         resolved: true,
-        item: candidate,
+        candidateCount: candidates.length,
+        recommendationReason: recommendation.reason,
+        item: recommendation.item,
       }
     }
 
-    const applied = await this.setPrimary(candidate.id)
+    const applied = await this.setPrimary(recommendation.item.id)
     return {
       scopeType: scope.scopeType,
       tenantId: scope.tenantId,
       brandId: scope.brandId,
       storeId: scope.storeId,
       applied: true,
+      dryRun: false,
       resolved: true,
+      candidateCount: candidates.length,
+      recommendationReason: recommendation.reason,
       item: applied,
+    }
+  }
+
+  async recommendPrimaryBatch(
+    items: RecommendPrimaryDomainRequest[] = [],
+  ): Promise<BatchRecommendPrimaryDomainResponse> {
+    const results = await Promise.all(items.map((item) => this.recommendPrimary(item)))
+    return {
+      total: results.length,
+      appliedCount: results.filter((item) => item.applied).length,
+      resolvedCount: results.filter((item) => item.resolved).length,
+      items: results,
     }
   }
 
@@ -681,6 +755,21 @@ export class CustomDomainService {
     }
   }
 
+  private selectRecommendation(candidates: DomainMapping[]): {
+    item: DomainMapping | null
+    reason?: string
+  } {
+    const item = candidates[0] ?? null
+    if (!item) {
+      return { item: null }
+    }
+
+    return {
+      item,
+      reason: this.buildRecommendationReason(item, candidates.length),
+    }
+  }
+
   private async pickRecommendationCandidates(
     scope: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
   ): Promise<DomainMapping[]> {
@@ -784,6 +873,19 @@ export class CustomDomainService {
     item: Pick<ActiveWithoutPrimaryScopeItem, 'scopeType' | 'brandId' | 'storeId'>,
     query: ActiveWithoutPrimaryGovernanceQueryRequest,
   ): boolean {
+    if (query.scopeType && item.scopeType !== query.scopeType) {
+      return false
+    }
+    if (query.brandId && (item.brandId ?? null) !== query.brandId) {
+      return false
+    }
+    if (query.storeId && (item.storeId ?? null) !== query.storeId) {
+      return false
+    }
+    return true
+  }
+
+  private assertGovernanceQueryAccess(query: ActiveWithoutPrimaryGovernanceQueryRequest): void {
     const ctx = requireTenantContext()
     this.assertRequestedScopeAccess(query.scopeType as DomainScopeType | undefined, ctx)
 
@@ -797,17 +899,6 @@ export class CustomDomainService {
     ) {
       throw new ForbiddenException('store_admin can only access the current store scope')
     }
-
-    if (query.scopeType && item.scopeType !== query.scopeType) {
-      return false
-    }
-    if (query.brandId && (item.brandId ?? null) !== query.brandId) {
-      return false
-    }
-    if (query.storeId && (item.storeId ?? null) !== query.storeId) {
-      return false
-    }
-    return true
   }
 
   private compareRecommendationPriority(left: DomainMapping, right: DomainMapping): number {
@@ -828,6 +919,16 @@ export class CustomDomainService {
     }
 
     return left.domain.localeCompare(right.domain)
+  }
+
+  private buildRecommendationReason(item: DomainMapping, candidateCount: number): string {
+    const parts = [
+      item.status === 'active_ssl' ? '优先推荐 active_ssl' : '当前 scope 无 active_ssl，回退到 active',
+    ]
+    if (candidateCount > 1) {
+      parts.push('同 scope 候选按最近更新时间排序')
+    }
+    return parts.join('，')
   }
 
   private buildScopeKey(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): string {
@@ -938,10 +1039,46 @@ export class CustomDomainService {
         return item.createdAt
     }
   }
+
+  private sortGovernanceItems(
+    items: ActiveWithoutPrimaryScopeItem[],
+    sortBy: GovernanceSortField,
+    sortOrder: GovernanceSortOrder,
+  ): ActiveWithoutPrimaryScopeItem[] {
+    const direction = sortOrder === 'asc' ? 1 : -1
+    return [...items].sort((a, b) => {
+      const left = this.readGovernanceSortValue(a, sortBy)
+      const right = this.readGovernanceSortValue(b, sortBy)
+      const compared = left.localeCompare(right, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      })
+      return compared * direction
+    })
+  }
+
+  private readGovernanceSortValue(
+    item: ActiveWithoutPrimaryScopeItem,
+    sortBy: GovernanceSortField,
+  ): string {
+    switch (sortBy) {
+      case 'scopeType':
+        return item.scopeType
+      case 'recommendedDomain':
+        return item.recommendedItem?.domain ?? ''
+      case 'latestUpdatedAt':
+        return item.latestUpdatedAt
+      case 'activeCount':
+      default:
+        return String(item.activeCount).padStart(6, '0')
+    }
+  }
 }
 
 type DomainSortField = 'createdAt' | 'updatedAt' | 'domain' | 'status'
 type DomainSortOrder = 'asc' | 'desc'
+type GovernanceSortField = 'activeCount' | 'scopeType' | 'recommendedDomain' | 'latestUpdatedAt'
+type GovernanceSortOrder = 'asc' | 'desc'
 
 type PersistedCustomDomainRow = {
   id: string

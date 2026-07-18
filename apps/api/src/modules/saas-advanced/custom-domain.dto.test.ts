@@ -4,9 +4,13 @@ import { plainToInstance } from 'class-transformer'
 import { validateSync } from 'class-validator'
 import {
   AddDomainRequest,
+  ActiveWithoutPrimaryGovernanceQueryRequest,
+  BatchRecommendPrimaryDomainRequest,
   CurrentPrimaryDomainQueryRequest,
   CurrentPrimaryDomainResponse,
   DomainListQueryRequest,
+  RecommendPrimaryDomainRequest,
+  RecommendPrimaryDomainResponse,
   ValidateDomainRequest,
   ValidateDomainResponse,
   DomainVerifyHint,
@@ -93,6 +97,48 @@ describe('saas-advanced custom-domain dto', () => {
     })
     const errors = validateSync(dto)
     assert.ok(errors.length > 0)
+  })
+
+  it('ActiveWithoutPrimaryGovernanceQueryRequest 支持分页排序过滤', () => {
+    const dto = plainToInstance(ActiveWithoutPrimaryGovernanceQueryRequest, {
+      scopeType: 'BRAND',
+      brandId: 'brand-001',
+      page: '2',
+      pageSize: '5',
+      sortBy: 'latestUpdatedAt',
+      sortOrder: 'asc',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.page, 2)
+    assert.equal(dto.pageSize, 5)
+    assert.equal(dto.sortBy, 'latestUpdatedAt')
+    assert.equal(dto.sortOrder, 'asc')
+  })
+
+  it('RecommendPrimaryDomainRequest 支持 dryRun', () => {
+    const dto = plainToInstance(RecommendPrimaryDomainRequest, {
+      scopeType: 'STORE',
+      brandId: 'brand-001',
+      storeId: 'store-001',
+      dryRun: 'true',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.dryRun, true)
+  })
+
+  it('BatchRecommendPrimaryDomainRequest 支持多项批量推荐', () => {
+    const dto = plainToInstance(BatchRecommendPrimaryDomainRequest, {
+      items: [
+        { scopeType: 'TENANT' },
+        { scopeType: 'BRAND', brandId: 'brand-001', dryRun: false },
+      ],
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.items.length, 2)
+    assert.equal(dto.items[1].scopeType, 'BRAND')
   })
 
   it('ValidateDomainResponse 校验通过', () => {
@@ -300,5 +346,33 @@ describe('saas-advanced custom-domain dto', () => {
     }
     assert.equal(resp.resolved, false)
     assert.equal(resp.item, null)
+  })
+
+  it('RecommendPrimaryDomainResponse 暴露推荐理由与候选数', () => {
+    const resp: RecommendPrimaryDomainResponse = {
+      scopeType: 'BRAND',
+      tenantId: 'tenant-001',
+      brandId: 'brand-001',
+      applied: false,
+      dryRun: true,
+      resolved: true,
+      candidateCount: 2,
+      recommendationReason: '优先推荐 active_ssl，且最近一次校验/更新时间更新',
+      item: {
+        id: 'dom-001',
+        scopeType: 'BRAND',
+        tenantId: 'tenant-001',
+        brandId: 'brand-001',
+        domain: 'brand.example.io',
+        status: 'active_ssl',
+        verificationFailCount: 0,
+        createdAt: '2026-07-18T00:00:00Z',
+        updatedAt: '2026-07-18T02:00:00Z',
+        createdBy: 'user-001',
+      },
+    }
+    assert.equal(resp.dryRun, true)
+    assert.equal(resp.candidateCount, 2)
+    assert.ok(resp.recommendationReason?.includes('active_ssl'))
   })
 })

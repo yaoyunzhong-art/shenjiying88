@@ -1,0 +1,19 @@
+=== server dry-run ===
+timestamp=2026-07-18 16:30:05
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/apply-prod-public-cutover.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example --kubectl-dry-run server --skip-tls-check 
+
+bash: no job control in this shell
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Rendering public cutover manifests
+Rendered files:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-ingress-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-config-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-public-dns-records.csv
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public/m5-tls-secret.template.yaml
+==> Backing up live resources to /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/backups/public-cutover/20260718-163006
+E0718 16:30:06.470795   58447 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:30:06.472593   58447 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:30:06.474254   58447 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:30:06.475863   58447 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+E0718 16:30:06.477504   58447 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://47.98.47.157:6443/api?timeout=32s\": dial tcp 47.98.47.157:6443: connect: network is unreachable"
+Unable to connect to the server: dial tcp 47.98.47.157:6443: connect: network is unreachable

@@ -42,3 +42,10 @@ Rendered files:
   /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-public-dns-records.csv
   /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-tls-secret.template.yaml
 ==> Running kubectl server dry-run
+WARN: Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
+==> Preflight finished
+Rendered dir: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+
+Warnings:
+  - TLS secret is missing: m5-tls
+  - Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
