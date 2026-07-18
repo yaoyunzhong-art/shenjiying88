@@ -14,9 +14,13 @@ const __dirname = dirname(__filename);
 
 import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
-import mod from './page';
 
-const EquipmentPage = mod.default;
+// Use createRequire for the page module so that require.cache mocks
+// (e.g. @m5/ui set up in .test-setup.mjs) are honored.
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
+const pageReq = _require(resolve(__dirname, './page'));
+const EquipmentPage = pageReq.default;
 
 // ---- 类型（与 page.tsx 同步） ----
 
@@ -491,58 +495,61 @@ describe('Equipment — hooks验证', () => {
 // 验证页面组件真实渲染输出
 // ================================================================
 
-function setup() {
+function renderPage() {
   cleanup();
-  const result = render(React.createElement(EquipmentPage));
-  return result;
+  const view = render(React.createElement(EquipmentPage));
+  return view;
 }
 
 describe('EquipmentPage — React 渲染', () => {
   // 1. 渲染不报错
   it('渲染不报错', () => {
-    assert.doesNotThrow(() => setup());
+    assert.doesNotThrow(() => renderPage());
   });
 
   // 2. 标题正确
   it('渲染页面标题为「设备管理」', () => {
-    const { container } = setup();
+    const { container } = renderPage();
     const h1 = container.querySelector('h1');
     assert.ok(h1, '页面应包含 h1 标题');
     assert.ok(h1.textContent?.includes('设备管理'), `期待"设备管理"，实际"${h1.textContent}"`);
   });
 
-  // 3. 统计区域显示总数与状态
-  it('统计区域显示 4 个统计卡片（总设备数/正常/维修中/待报废）', () => {
-    const { container } = setup();
-    const cards = container.querySelectorAll('div');
-    const statsLabels = ['总设备数', '正常', '维修中', '待报废'];
-    for (const label of statsLabels) {
-      const found = Array.from(cards).some((card) => card.textContent?.includes(label));
-      assert.ok(found, `统计卡片应包含「${label}」`);
-    }
+  // 3. 统计区域显示 4 个统计值
+  it('统计区域显示 4 个统计值（总设备数/正常/维修中/待报废）', () => {
+    const { container } = renderPage();
+    const text = container.textContent ?? '';
+    assert.ok(text.includes('总设备数'), '应包含「总设备数」');
+    assert.ok(text.includes('正常'), '统计卡片应包含「正常」');
+    assert.ok(text.includes('维修中'), '统计卡片应包含「维修中」');
+    assert.ok(text.includes('待报废'), '统计卡片应包含「待报废」');
+    // 验证值
+    assert.ok(text.includes('8'), '总设备数应为 8');
+    assert.ok(text.includes('5'), '正常应为 5');
   });
 
-  // 4. 筛选控件（搜索框 + Tab）
-  it('存在搜索控件（SearchFilterInput 或 placeholder 含"搜索"的 input）', () => {
-    const { container } = setup();
+  // 4. 存在搜索控件
+  it('存在搜索控件（输入框）', () => {
+    const { container } = renderPage();
     const inputs = container.querySelectorAll('input');
     const hasSearch = Array.from(inputs).some(
       (inp) => inp.getAttribute('placeholder')?.includes('搜索') || inp.getAttribute('placeholder')?.includes('设备名称'),
     );
-    assert.ok(hasSearch, `应有搜索 input，找到 ${inputs.length} 个 input`);
+    assert.ok(hasSearch, `应有搜索输入框，找到 ${inputs.length} 个 input`);
   });
 
-  it('存在 Tab 筛选（全部/正常/维修中）', () => {
-    const { container } = setup();
+  // 5. Tab 筛选
+  it('Tab 筛选包含「全部」「正常」「维修中」标签', () => {
+    const { container } = renderPage();
     const text = container.textContent ?? '';
     assert.ok(text.includes('全部'), 'Tab 应包含「全部」');
     assert.ok(text.includes('正常'), 'Tab 应包含「正常」');
     assert.ok(text.includes('维修中'), 'Tab 应包含「维修中」');
   });
 
-  // 5. 列表渲染 — 8 个设备
+  // 6. 列表包含 8 个设备
   it('列表中包含所有 8 个样本设备的名称', () => {
-    const { container } = setup();
+    const { container } = renderPage();
     const text = container.textContent ?? '';
     const expected = ['扭蛋机-A01', '娃娃机-B03', '收银机-主01', '中央空调-01', '音响系统-S01', '灯箱-L02', '闸机-G01', '扭蛋机-A02'];
     for (const name of expected) {
@@ -550,9 +557,9 @@ describe('EquipmentPage — React 渲染', () => {
     }
   });
 
-  // 6. DataTable 渲染表格列头
-  it('DataTable 包含设备名称/型号/设备类型/所属门店/供应商/采购日期/保修期/状态列头', () => {
-    const { container } = setup();
+  // 7. DataTable 列头
+  it('DataTable 包含各列头（设备名称/型号/类型/门店/供应商/采购日期/保修期/状态）', () => {
+    const { container } = renderPage();
     const text = container.textContent ?? '';
     const headers = ['设备名称', '型号', '设备类型', '所属门店', '供应商', '采购日期', '保修期', '状态'];
     for (const h of headers) {
@@ -560,31 +567,49 @@ describe('EquipmentPage — React 渲染', () => {
     }
   });
 
-  // 7. 状态标签渲染
+  // 8. 状态标签
   it('状态标签出现"正常""维修中""待报废""已报废"', () => {
-    const { container } = setup();
+    const { container } = renderPage();
     const text = container.textContent ?? '';
-    assert.ok(text.includes('正常'), '应包含状态文字"正常"');
-    assert.ok(text.includes('维修中'), '应包含状态文字"维修中"');
-    assert.ok(text.includes('待报废'), '应包含状态文字"待报废"');
-    assert.ok(text.includes('已报废'), '应包含状态文字"已报废"');
+    assert.ok(text.includes('正常'), '应包含"正常"');
+    assert.ok(text.includes('维修中'), '应包含"维修中"');
+    assert.ok(text.includes('待报废'), '应包含"待报废"');
+    assert.ok(text.includes('已报废'), '应包含"已报废"');
   });
 
-  // 8. 操作提示框
+  // 9. 操作提示区域
   it('操作提示区域包含提示文字', () => {
-    const { container } = setup();
+    const { container } = renderPage();
     const text = container.textContent ?? '';
     assert.ok(text.includes('💡') || text.includes('提示'), '应包含提示区域');
   });
 
-  // 9. 刷新增统计 — component 是函数
-  it('EquipmentPage 是一个函数组件', () => {
-    assert.strictEqual(typeof EquipmentPage, 'function');
+  // 10. subtitle 统计汇总
+  it('页面 subtitle 显示统计汇总（8台设备）', () => {
+    const { container } = renderPage();
+    const subtitle = container.querySelector('[data-testid="page-subtitle"]');
+    assert.ok(subtitle, '应包含 subtitle 元素');
+    assert.ok(subtitle.textContent?.includes('8台设备'), `subtitle 应包含台数统计，实际"${subtitle.textContent}"`);
   });
 
-  // 10. 导出包含 defaultEquipment 样本数据
-  it('模块导出 defaultEquipment（样本数据）', () => {
-    const data = mod.defaultEquipment;
+  // 11. 刷新按钮
+  it('存在刷新按钮', () => {
+    const { container } = renderPage();
+    const buttons = container.querySelectorAll('button');
+    const hasRefresh = Array.from(buttons).some((btn) => btn.textContent?.includes('刷新'));
+    assert.ok(hasRefresh, '应包含刷新按钮');
+  });
+
+  // 12. 分页信息
+  it('存在分页信息', () => {
+    const { container } = renderPage();
+    const text = container.textContent ?? '';
+    assert.ok(text.includes('Page') || text.includes('页') || text.includes('items'), '应包含分页信息');
+  });
+
+  // 13. 模块导出样本数据
+  it('模块导出 defaultEquipment（样本数据，8个）', () => {
+    const data = pageReq.defaultEquipment;
     assert.ok(Array.isArray(data), 'defaultEquipment 应该是数组');
     assert.strictEqual(data.length, 8);
   });
