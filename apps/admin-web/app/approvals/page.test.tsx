@@ -10,8 +10,10 @@
  */
 
 import assert from 'node:assert/strict';
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import fs from 'node:fs';
+import { render, screen, cleanup } from '@testing-library/react';
+import ApprovalsPage from './page';
 
 // ===================== 类型定义 =====================
 
@@ -559,5 +561,69 @@ describe('活动审批页 — 组件结构', () => {
 
   it('包含空态处理', () => {
     assert.ok(SRC.includes('EmptyState') || SRC.includes('empty'));
+  });
+});
+
+// ===================== React 渲染测试 =====================
+
+/**
+ * React 渲染测试 — 使用 @testing-library/react 做真正的组件渲染
+ * 依赖 .test-setup.mjs 提供的 happy-dom 环境和 next/navigation mock
+ * 通过 afterEach(cleanup) 确保每次渲染后清理 DOM，防止测试间干扰
+ */
+describe('活动审批页 — React 渲染', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('组件能够渲染且不抛出错误', () => {
+    assert.doesNotThrow(() => {
+      render(<ApprovalsPage />);
+    });
+  });
+
+  it('渲染页面标题「活动审批」', () => {
+    render(<ApprovalsPage />);
+    const heading = screen.getByText('📋 活动审批');
+    assert.ok(heading);
+    assert.strictEqual(heading.tagName, 'H1');
+  });
+
+  it('渲染三个统计卡片（待审批数 / 本月总金额 / 通过率）', () => {
+    render(<ApprovalsPage />);
+    assert.strictEqual(screen.getAllByText(/待审批数|本月总金额|通过率/).length, 3);
+    assert.strictEqual(screen.getByText('4').tagName, 'DIV'); // 待审批数
+    assert.ok(screen.getByText('50%')); // 通过率
+  });
+
+  it('渲染三个 Tab 按钮且默认选中「待审批」', () => {
+    render(<ApprovalsPage />);
+    const allBtns = screen.getAllByRole('button');
+    // 至少有 1 个按钮包含待审批、已处理、全部各一个
+    const pendingBtn = allBtns.find((b) => b.textContent?.includes('待审批'));
+    const doneBtn = allBtns.find((b) => b.textContent?.includes('已处理'));
+    const allBtn = allBtns.find((b) => b.textContent?.includes('全部'));
+    assert.ok(pendingBtn);
+    assert.ok(doneBtn);
+    assert.ok(allBtn);
+    // 默认选中「待审批」Tab（fontWeight 应为 700）
+    assert.strictEqual(pendingBtn!.style.fontWeight, '700');
+  });
+
+  it('渲染样本数据的第一条记录（采购2台高配收银终端）', () => {
+    render(<ApprovalsPage />);
+    // 使用 queryAll 避免重复元素报错（jsdom + 列表渲染可能导致文本多次出现）
+    const descriptions = screen.queryAllByText('采购2台高配收银终端(华为擎云)');
+    assert.ok(descriptions.length >= 1);
+    assert.ok(screen.queryByText('APR-001'));
+    assert.ok(screen.queryByText('李强'));
+    assert.ok(screen.queryByText('北京朝阳店'));
+  });
+
+  it('刷新按钮可点击', () => {
+    render(<ApprovalsPage />);
+    const refreshBtn = screen.getByRole('button', { name: /⟳ 刷新/ });
+    assert.ok(refreshBtn);
+    assert.strictEqual(refreshBtn.getAttribute('type'), 'button');
   });
 });
