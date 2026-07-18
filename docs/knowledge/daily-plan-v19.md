@@ -5,6 +5,41 @@
 
 ---
 
+## 🔗 圈梁四道箍铁律（永久生效 · 所有版本）
+
+> 2026-07-18 11:52 大飞哥指令，写入 V19 及以后所有版本作为不可拆卸铁律
+
+每次新建/修改代码文件后，**必须**执行：
+
+```
+① TSC通过 → ② 测试存在 → ③ 圈梁表更新 → ④ PRD标记
+```
+
+| 箍 | 含义 | 验收标准 |
+|:--:|:-----|:---------|
+| 🟢 ① 代码 | TSC零错误 | `npx tsc --noEmit -p <project>` 或 `pnpm turbo typecheck` 无error |
+| 🟢 ② 测试 | 有对应测试文件，且全部通过 | `.test.ts` 或 `.test.tsx` 存在，0 fail，无需 skip |
+| 🟢 ③ 审计 | 变更在圈梁表中记录 | 更新 `phase-to-module-mapping.md` 或 `alignment-final-*.md` |
+| 🟡 ④ PRD | 新建页面24h内补PRD | PRD摘要卡映射到对应Phase |
+
+### 快速清单（commit前）：
+- [ ] TSC通过 (`npx tsc --noEmit -p <project>`)
+- [ ] 测试文件存在 (或已有文件增强)
+- [ ] 圈梁表已更新 (`docs/knowledge/phase-to-module-mapping.md`)
+- [ ] PRD状态已标记（新建=🔴 改现=🟡已有）
+
+### 测试原则（P-38 教训 2026-07-18）
+- 组件测试的 fetch mock 改用 **URL-pattern responseRegistry** 而非顺序队列：并发 fetch 不会按队列顺序触发，顺序队列导致超时假阳性
+- 避免 `describe.skip` —— 跳过的测试不如删掉
+- 避免 `it.only` —— 残留会导致其他测试不跑
+- 正例·反例·边界 三件套：每个测试至少覆盖 3 种场景
+- `as any` 禁止（AM-001）
+
+### 违者处罚
+🚨 撤销该树哥全部产出，立即上报龙虾哥
+
+---
+
 ## 一、固定窗口（不可移动）
 
 | 窗口 | 时间 | 时长 | 内容 | 谁参与 |

@@ -1,7 +1,20 @@
 # 🗺️ V20 Roadmap — 截止冲刺 · 三Phase闭环 · AI增强
 
-> 最后更新: 2026-07-18 04:33 · V19 Day2完美收尾(16🏆·全线0 fail)
+> 最后更新: 2026-07-18 11:52 · V20 Day1 进行中
 > 生命周期: 2026-07-18 08:00 → 2026-07-19 08:00
+
+## 🔗 圈梁四道箍（V20 强制执行）
+
+> 来源: `daily-plan-v19.md` 永久铁律，引入 `v20-roadmap.md` 显式标定
+
+| 箍 | 含义 | commit前检查 |
+|:--:|:-----|:------------|
+| 🟢 ① 代码 | TSC零错误 | `npx tsc --noEmit -p <project>` |
+| 🟢 ② 测试 | 测试文件存在 & 0 fail | `.test.tsx` 不skip |
+| 🟢 ③ 审计 | 圈梁表更新 | `phase-to-module-mapping.md` |
+| 🟡 ④ PRD | 新建页面24h补PRD | PRD摘要卡 |
+
+**P-38 教训 (2026-07-18)**: 组件测试fetch mock必须用URL-pattern registry而非顺序队列。async waitFor超时 = 测试结构问题而非代码bug
 
 ## 核心战略
 
