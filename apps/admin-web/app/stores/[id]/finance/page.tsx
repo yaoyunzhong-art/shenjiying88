@@ -27,6 +27,10 @@ const COLUMNS = [
   { title: '状态', dataIndex: 'status', render: (v: string) => <Tag color={v === 'settled' ? 'default' : 'blue'}>{v === 'settled' ? '已结算' : '待结算'}</Tag> },
 ];
 
+const TRANSACTION_COUNT = TRANSACTIONS.length;
+const INCOME_COUNT = TRANSACTIONS.filter(d => d.type === '营收').length;
+const EXPENSE_COUNT = TRANSACTIONS.filter(d => d.type === '支出').length;
+
 export default function FinancePage() {
   const [tab, setTab] = useState('overview');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -49,6 +53,14 @@ export default function FinancePage() {
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>💰 财务管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>营收 · 支出 · 对账 · 结算</span></div>
           <Space><Button onClick={() => setShowSettle(true)}>日结</Button><Button type="primary">月报</Button></Space>
         </div>
+
+        {/* 财务统计条 — 收入/支出/利润/流水笔数 */}
+        <Row gutter={[16, 16]}>
+          <Col span={6}><Card size="small"><Statistic title="总收入" value={income.toLocaleString()} prefix="¥" valueStyle={{ color: '#34d399' }} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="总支出" value={expense.toLocaleString()} prefix="¥" valueStyle={{ color: '#f87171' }} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="利润" value={netProfit.toLocaleString()} prefix="¥" valueStyle={{ color: netProfit >= 0 ? '#34d399' : '#f87171' }} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="流水笔数" value={TRANSACTION_COUNT} suffix="笔" valueStyle={{ color: '#60a5fa' }} /></Card></Col>
+        </Row>
 
         <Row gutter={[16, 16]}>
           <Col span={6}><Card size="small"><Statistic title="今日营收" value={12800} prefix="¥" valueStyle={{ color: '#34d399' }} /></Card></Col>
