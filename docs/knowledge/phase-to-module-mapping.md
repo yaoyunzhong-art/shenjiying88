@@ -51,6 +51,11 @@
 | Settings | admin-web/app/settings/ | ~280行 | 37测试 | 🆕 | 🔴 | P-Admin 设置中心 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
+### V20 Day1 凌晨 brands/new 品牌新增页增强 (2026-07-19 00:51)
+| 页面 | 位置 | 代码 | 测试 | 审计 | PRD | 推荐Phase |
+|:-----|:----|:---:|:----:|:----:|:---:|:---------|
+| BrandNewPage | admin-web/app/brands/new/ | 新增品牌类型分类标签(自营/联名/代理/其他) | 32测试🆕(从25↑) | ✅ | 🟡已有 | P-47品牌运营 |
+
 ### V20 Day1 凌晨 purchase-orders/form 增强 (2026-07-19 00:47)
 | 页面 | 位置 | 代码 | 测试 | 审计 | PRD | 推荐Phase |
 |:-----|:----|:---:|:----:|:----:|:---:|:---------|

@@ -1,11 +1,11 @@
 /**
  * 新建品牌 — Brand Create Form Page (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 📊市场管理
- * 功能: 表单验证、提交、错误处理
+ * 功能: 表单验证、提交、错误处理、品牌类型分类
  */
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -20,6 +20,7 @@ import {
 interface BrandFormData {
   name: string;
   code: string;
+  brandType: string;
   marketCode: string;
   tier: string;
   category: string;
@@ -30,9 +31,31 @@ interface BrandFormData {
   headquarterProvince: string;
   website: string;
   notes: string;
+  // 品牌类型扩展字段
+  operationsEntity?: string;
+  coBrandPartner?: string;
+  coBrandRatio?: string;
+  licensor?: string;
+  licensePeriod?: string;
 }
 
+type BrandType = 'self-operated' | 'co-branded' | 'agency' | 'other';
+
 // ---- 常量 ----
+
+const BRAND_TYPE_OPTIONS: { label: string; value: BrandType; hint: string }[] = [
+  { label: '自营', value: 'self-operated', hint: '品牌由运营方直接经营' },
+  { label: '联名', value: 'co-branded', hint: '需填写联名方信息与分成比例' },
+  { label: '代理', value: 'agency', hint: '需填写授权方与授权期限' },
+  { label: '其他', value: 'other', hint: '无需额外信息' },
+];
+
+const BRAND_TYPE_STYLE: Record<BrandType, { bg: string; color: string }> = {
+  'self-operated': { bg: '#e8f5e9', color: '#2e7d32' },
+  'co-branded': { bg: '#e3f2fd', color: '#1565c0' },
+  'agency': { bg: '#fff3e0', color: '#e65100' },
+  'other': { bg: '#f3e5f5', color: '#6a1b9a' },
+};
 
 const MARKET_OPTIONS = [
   { label: '中国大陆 (cn-mainland)', value: 'cn-mainland' },
@@ -71,9 +94,74 @@ const PROVINCE_OPTIONS = [
   { label: '山东省', value: '山东省' },
 ];
 
-// ---- 字段定义 ----
+// ---- 品牌类型扩展字段 ----
 
-const FIELDS: FormPageField<Record<string, unknown>>[] = [
+function getBrandTypeExtraFields(type: BrandType): FormPageField<Record<string, unknown>>[] {
+  switch (type) {
+    case 'self-operated':
+      return [
+        {
+          key: 'operationsEntity',
+          label: '运营主体',
+          required: true,
+          type: 'text',
+          placeholder: '例如：M5 集团自营部',
+          helper: '负责该品牌日常运营的实体部门',
+          rules: [
+            { validate: (v) => (typeof v === 'string' && v.length < 2 ? '运营主体至少 2 个字符' : null) },
+          ],
+        },
+      ];
+    case 'co-branded':
+      return [
+        {
+          key: 'coBrandPartner',
+          label: '联名方',
+          required: true,
+          type: 'text',
+          placeholder: '例如：XX 联名品牌',
+          helper: '合作联名的品牌方名称',
+          rules: [
+            { validate: (v) => (typeof v === 'string' && v.length < 2 ? '联名方至少 2 个字符' : null) },
+          ],
+        },
+        {
+          key: 'coBrandRatio',
+          label: '联名比例',
+          type: 'text',
+          placeholder: '例如：50:50',
+          helper: '双方分成比例（选填）',
+        },
+      ];
+    case 'agency':
+      return [
+        {
+          key: 'licensor',
+          label: '授权方',
+          required: true,
+          type: 'text',
+          placeholder: '例如：XX 品牌授权方',
+          helper: '品牌授权的来源方',
+          rules: [
+            { validate: (v) => (typeof v === 'string' && v.length < 2 ? '授权方至少 2 个字符' : null) },
+          ],
+        },
+        {
+          key: 'licensePeriod',
+          label: '授权期限',
+          type: 'text',
+          placeholder: '例如：2026-01-01 ~ 2027-12-31',
+          helper: '品牌授权有效期（选填）',
+        },
+      ];
+    default: // 'other'
+      return [];
+  }
+}
+
+// ---- 基础字段定义 ----
+
+const BASE_FIELDS: FormPageField<Record<string, unknown>>[] = [
   {
     key: 'name',
     label: '品牌名称',
@@ -174,16 +262,63 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
   },
 ];
 
+// ---- 品牌类型标签组件 ----
+
+function BrandTypeTags({
+  value,
+  onChange,
+}: {
+  value: BrandType;
+  onChange: (type: BrandType) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }} data-testid="brand-type-tags">
+      {BRAND_TYPE_OPTIONS.map((opt) => {
+        const isActive = value === opt.value;
+        const style = BRAND_TYPE_STYLE[opt.value];
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            data-testid={`brand-type-tag-${opt.value}`}
+            data-active={isActive ? 'true' : 'false'}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '20px',
+              border: isActive ? `2px solid ${style.color}` : '1px solid #ddd',
+              backgroundColor: isActive ? style.bg : '#fff',
+              color: isActive ? style.color : '#666',
+              cursor: 'pointer',
+              fontWeight: isActive ? 600 : 400,
+              fontSize: '14px',
+              transition: 'all 0.2s',
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ---- 页面组件 ----
 
 export default function BrandNewPage() {
   const router = useRouter();
   const { success } = useToast();
+  const [brandType, setBrandType] = useState<BrandType>('self-operated');
 
   const meta = useMemo(() => ({
     title: '新建品牌',
     description: '创建一个新的品牌，填写品牌基本信息与运营配置',
   }), []);
+
+  const fields = useMemo<FormPageField<Record<string, unknown>>[]>(() => {
+    const extra = getBrandTypeExtraFields(brandType);
+    return [...BASE_FIELDS, ...extra];
+  }, [brandType]);
 
   const handleSubmit = async (values: Record<string, unknown>): Promise<FormPageSubmitResult<Record<string, unknown>> | null> => {
     // 模拟 API 延迟
@@ -206,14 +341,17 @@ export default function BrandNewPage() {
   };
 
   return (
-    <FormPageScaffold
-      fields={FIELDS}
-      meta={meta}
-      onSubmit={handleSubmit}
-      onSuccess={handleSuccess}
-      backUrl="/brands"
-      submitLabel="创建品牌"
-      submitVariant="primary"
-    />
+    <div data-testid="brand-new-page">
+      <BrandTypeTags value={brandType} onChange={setBrandType} />
+      <FormPageScaffold
+        fields={fields}
+        meta={meta}
+        onSubmit={handleSubmit}
+        onSuccess={handleSuccess}
+        backUrl="/brands"
+        submitLabel="创建品牌"
+        submitVariant="primary"
+      />
+    </div>
   );
 }
