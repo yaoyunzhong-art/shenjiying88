@@ -48,9 +48,14 @@ import {
   buildFoundationWorkspaceHref,
   buildAuditTrailHref,
   buildAuditTrailRecordDetailHref,
+  buildDomainGovernanceDisplayModel,
   buildDomainGovernanceHref,
   buildDomainGovernanceWorkspaceHref,
+  formatDomainGovernanceFocusScopeLabel,
+  formatDomainGovernanceLastEvaluatedSummary,
+  formatDomainGovernanceRecommendationSummary,
   formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceFocusScopeSummary,
   formatDomainGovernanceSourceSummary,
   getDomainGovernanceAttentionLabel,
   readAuditTrailRecordDetailParam,
@@ -1785,6 +1790,81 @@ test('types: domain governance formatter helpers stay stable across consumers', 
       recommendedReadyScopes: 0,
     }),
     '已对齐',
+  );
+});
+
+test('types: domain governance display model exposes richer section contract', () => {
+  const summary = {
+    totalMissingPrimaryScopes: 2,
+    totalActiveWithoutPrimaryDomains: 3,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 1,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'STORE',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+        recommendationReason: '优先选择 active_ssl',
+      },
+    ],
+  };
+
+  assert.equal(
+    formatDomainGovernanceFocusScopeLabel(summary.currentScopes[0]),
+    '焦点 scope STORE / tenant-demo / brand-demo / store-001',
+  );
+  assert.equal(
+    formatDomainGovernanceFocusScopeSummary(summary.currentScopes[0]),
+    '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
+  );
+  assert.equal(
+    formatDomainGovernanceRecommendationSummary(summary.currentScopes[0]),
+    '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
+  );
+  assert.equal(
+    formatDomainGovernanceLastEvaluatedSummary(summary),
+    '最近评估 2026-07-18T00:00:00.000Z',
+  );
+
+  assert.deepEqual(
+    buildDomainGovernanceDisplayModel(
+      'custom',
+      summary,
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+    ),
+    {
+      title: '域名治理工作台',
+      subtitle: '统一域名缺口、推荐补选和治理入口展示',
+      statusLabel: '待治理',
+      countsSummary: '缺主 scope 2 / 活跃未设主域名 3',
+      sourceSummary: '域名来源 custom / 可直接补选 1',
+      statusSummary: '治理状态：待治理 / 可直接补选 1',
+      compactSummary: '缺主 scope 2 / 域名来源 custom',
+      workspaceSummary:
+        '治理入口 /saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+      workspaceHref:
+        '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+      ctaLabel: '打开域名治理工作台',
+      focusScopeLabel: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
+      focusScopeSummary: '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
+      recommendationSummary: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
+      lastEvaluatedSummary: '最近评估 2026-07-18T00:00:00.000Z',
+      detailLines: [
+        '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
+        '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
+        '最近评估 2026-07-18T00:00:00.000Z',
+      ],
+      requiresAttention: true,
+    },
   );
 });
 

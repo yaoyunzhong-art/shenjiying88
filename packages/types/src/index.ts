@@ -2326,6 +2326,108 @@ export function formatDomainGovernanceSourceSummary(
   return `域名来源 ${domainSource} / 可直接补选 ${summary.recommendedReadyScopes}`;
 }
 
+export interface DomainGovernanceDisplayModel {
+  title: string;
+  subtitle: string;
+  statusLabel: '待治理' | '已对齐';
+  countsSummary: string;
+  sourceSummary: string;
+  statusSummary: string;
+  compactSummary: string;
+  workspaceSummary: string;
+  workspaceHref: string;
+  ctaLabel: string;
+  focusScopeLabel: string;
+  focusScopeSummary: string;
+  recommendationSummary: string;
+  lastEvaluatedSummary: string;
+  detailLines: string[];
+  requiresAttention: boolean;
+}
+
+export function formatDomainGovernanceFocusScopeLabel(
+  scope?: PortalDomainGovernanceScopeSummaryContract,
+): string {
+  if (!scope) {
+    return '焦点 scope 未命中';
+  }
+
+  const scopeSegments = [scope.scopeType];
+  if (scope.tenantId) {
+    scopeSegments.push(scope.tenantId);
+  }
+  if (scope.brandId) {
+    scopeSegments.push(scope.brandId);
+  }
+  if (scope.storeId) {
+    scopeSegments.push(scope.storeId);
+  }
+
+  return `焦点 scope ${scopeSegments.join(' / ')}`;
+}
+
+export function formatDomainGovernanceFocusScopeSummary(
+  scope?: PortalDomainGovernanceScopeSummaryContract,
+): string {
+  if (!scope) {
+    return '当前批次暂无命中的治理 scope，先沿用统一治理入口。';
+  }
+
+  return `${formatDomainGovernanceFocusScopeLabel(scope)} / 激活域名 ${scope.activeDomainCount} / ${
+    scope.missingPrimary ? '缺主域名' : '已对齐'
+  }`;
+}
+
+export function formatDomainGovernanceRecommendationSummary(
+  scope?: PortalDomainGovernanceScopeSummaryContract,
+): string {
+  if (!scope?.recommendedDomain) {
+    return '推荐主域名：暂无直接补选候选，先进入治理工作台查看明细。';
+  }
+
+  const reason = scope.recommendationReason ? ` / 原因 ${scope.recommendationReason}` : '';
+  return `推荐主域名：${scope.recommendedDomain}${reason}`;
+}
+
+export function formatDomainGovernanceLastEvaluatedSummary(
+  summary: PortalDomainGovernanceSummaryContract,
+): string {
+  return `最近评估 ${summary.lastEvaluatedAt}`;
+}
+
+export function buildDomainGovernanceDisplayModel(
+  domainSource: string,
+  summary: PortalDomainGovernanceSummaryContract,
+  workspaceHref: string,
+): DomainGovernanceDisplayModel {
+  const focusScope = selectDomainGovernanceFocusScope(summary);
+  const statusLabel = getDomainGovernanceAttentionLabel(summary);
+  const countsSummary = formatDomainGovernanceCountsSummary(summary);
+  const sourceSummary = formatDomainGovernanceSourceSummary(domainSource, summary);
+  const focusScopeSummary = formatDomainGovernanceFocusScopeSummary(focusScope);
+  const recommendationSummary = formatDomainGovernanceRecommendationSummary(focusScope);
+  const lastEvaluatedSummary = formatDomainGovernanceLastEvaluatedSummary(summary);
+
+  return {
+    title: '域名治理工作台',
+    subtitle: '统一域名缺口、推荐补选和治理入口展示',
+    statusLabel,
+    countsSummary,
+    sourceSummary,
+    statusSummary: `治理状态：${statusLabel} / 可直接补选 ${summary.recommendedReadyScopes}`,
+    compactSummary: `缺主 scope ${summary.totalMissingPrimaryScopes} / 域名来源 ${domainSource}`,
+    workspaceSummary: `治理入口 ${workspaceHref}`,
+    workspaceHref,
+    ctaLabel: '打开域名治理工作台',
+    focusScopeLabel: formatDomainGovernanceFocusScopeLabel(focusScope),
+    focusScopeSummary,
+    recommendationSummary,
+    lastEvaluatedSummary,
+    detailLines: [focusScopeSummary, recommendationSummary, lastEvaluatedSummary],
+    requiresAttention: summary.requiresAttention,
+  };
+}
+
 export interface WorkbenchNavItemContract {
   key: string;
   label: string;

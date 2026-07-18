@@ -1,6 +1,6 @@
 # 🛠️ Phase开发进度追踪 (C层开发库)
 
-> 最后更新: 2026-07-18 22:33
+> 最后更新: 2026-07-19 00:33
 
 ## G→T 验收自动回写
 | 日期 | Pulse# | 模块 | Base | Service | Controller | CTest | 连续🏆 |
@@ -10,6 +10,7 @@
 | 2026-07-18 | #565 | 全线(自修27TSC+8test) | ✅ | ✅ | ✅ | ✅ | 27🏆 |
 | 2026-07-18 | #566 | 全线(自修1 miniapp domainSource) | ✅ | ✅ | ✅ | ✅ | 28🏆 |
 | 2026-07-19 | #567 | 全线(自修 SettingsScreen imports + stash domainGovernanceWorkspaceHref) | ✅ | ✅ | ✅ | ✅ | 29🏆 |
+| 2026-07-19 | #568 | 全线(stash恢复domainGovernanceDisplayModel+PortalDomainGovernanceCard presenter) | ✅ | ✅ | ✅ | ✅ | 30🏆 |
 
 ## Active Phase (Pulse-Nightly-16)
 

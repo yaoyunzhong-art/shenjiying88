@@ -973,6 +973,29 @@ export declare function buildDomainGovernanceWorkspaceHref(summary: PortalDomain
 export declare function getDomainGovernanceAttentionLabel(summary: PortalDomainGovernanceSummaryContract): '待治理' | '已对齐';
 export declare function formatDomainGovernanceCountsSummary(summary: PortalDomainGovernanceSummaryContract): string;
 export declare function formatDomainGovernanceSourceSummary(domainSource: string, summary: PortalDomainGovernanceSummaryContract): string;
+export interface DomainGovernanceDisplayModel {
+    title: string;
+    subtitle: string;
+    statusLabel: '待治理' | '已对齐';
+    countsSummary: string;
+    sourceSummary: string;
+    statusSummary: string;
+    compactSummary: string;
+    workspaceSummary: string;
+    workspaceHref: string;
+    ctaLabel: string;
+    focusScopeLabel: string;
+    focusScopeSummary: string;
+    recommendationSummary: string;
+    lastEvaluatedSummary: string;
+    detailLines: string[];
+    requiresAttention: boolean;
+}
+export declare function formatDomainGovernanceFocusScopeLabel(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+export declare function formatDomainGovernanceFocusScopeSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+export declare function formatDomainGovernanceRecommendationSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+export declare function formatDomainGovernanceLastEvaluatedSummary(summary: PortalDomainGovernanceSummaryContract): string;
+export declare function buildDomainGovernanceDisplayModel(domainSource: string, summary: PortalDomainGovernanceSummaryContract, workspaceHref: string): DomainGovernanceDisplayModel;
 export interface WorkbenchNavItemContract {
     key: string;
     label: string;

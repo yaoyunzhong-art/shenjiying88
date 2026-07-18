@@ -34,6 +34,7 @@ __export(index_exports, {
   buildConfigurationHref: () => buildConfigurationHref,
   buildConfigurationOperationDetailHref: () => buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref: () => buildConfigurationSecretDetailHref,
+  buildDomainGovernanceDisplayModel: () => buildDomainGovernanceDisplayModel,
   buildDomainGovernanceHref: () => buildDomainGovernanceHref,
   buildDomainGovernanceWorkspaceHref: () => buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext: () => buildFoundationAlertLinkedFocusContext,
@@ -77,6 +78,10 @@ __export(index_exports, {
   filterFoundationAlertTimelineBySource: () => filterFoundationAlertTimelineBySource,
   findLatestFoundationAlertTimelineEntry: () => findLatestFoundationAlertTimelineEntry,
   formatDomainGovernanceCountsSummary: () => formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceFocusScopeLabel: () => formatDomainGovernanceFocusScopeLabel,
+  formatDomainGovernanceFocusScopeSummary: () => formatDomainGovernanceFocusScopeSummary,
+  formatDomainGovernanceLastEvaluatedSummary: () => formatDomainGovernanceLastEvaluatedSummary,
+  formatDomainGovernanceRecommendationSummary: () => formatDomainGovernanceRecommendationSummary,
   formatDomainGovernanceSourceSummary: () => formatDomainGovernanceSourceSummary,
   foundationAlertCatalogFallback: () => foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles: () => foundationAppBootstrapProfiles,
@@ -1211,6 +1216,65 @@ function formatDomainGovernanceCountsSummary(summary) {
 function formatDomainGovernanceSourceSummary(domainSource, summary) {
   return `\u57DF\u540D\u6765\u6E90 ${domainSource} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
 }
+function formatDomainGovernanceFocusScopeLabel(scope) {
+  if (!scope) {
+    return "\u7126\u70B9 scope \u672A\u547D\u4E2D";
+  }
+  const scopeSegments = [scope.scopeType];
+  if (scope.tenantId) {
+    scopeSegments.push(scope.tenantId);
+  }
+  if (scope.brandId) {
+    scopeSegments.push(scope.brandId);
+  }
+  if (scope.storeId) {
+    scopeSegments.push(scope.storeId);
+  }
+  return `\u7126\u70B9 scope ${scopeSegments.join(" / ")}`;
+}
+function formatDomainGovernanceFocusScopeSummary(scope) {
+  if (!scope) {
+    return "\u5F53\u524D\u6279\u6B21\u6682\u65E0\u547D\u4E2D\u7684\u6CBB\u7406 scope\uFF0C\u5148\u6CBF\u7528\u7EDF\u4E00\u6CBB\u7406\u5165\u53E3\u3002";
+  }
+  return `${formatDomainGovernanceFocusScopeLabel(scope)} / \u6FC0\u6D3B\u57DF\u540D ${scope.activeDomainCount} / ${scope.missingPrimary ? "\u7F3A\u4E3B\u57DF\u540D" : "\u5DF2\u5BF9\u9F50"}`;
+}
+function formatDomainGovernanceRecommendationSummary(scope) {
+  if (!scope?.recommendedDomain) {
+    return "\u63A8\u8350\u4E3B\u57DF\u540D\uFF1A\u6682\u65E0\u76F4\u63A5\u8865\u9009\u5019\u9009\uFF0C\u5148\u8FDB\u5165\u6CBB\u7406\u5DE5\u4F5C\u53F0\u67E5\u770B\u660E\u7EC6\u3002";
+  }
+  const reason = scope.recommendationReason ? ` / \u539F\u56E0 ${scope.recommendationReason}` : "";
+  return `\u63A8\u8350\u4E3B\u57DF\u540D\uFF1A${scope.recommendedDomain}${reason}`;
+}
+function formatDomainGovernanceLastEvaluatedSummary(summary) {
+  return `\u6700\u8FD1\u8BC4\u4F30 ${summary.lastEvaluatedAt}`;
+}
+function buildDomainGovernanceDisplayModel(domainSource, summary, workspaceHref) {
+  const focusScope = selectDomainGovernanceFocusScope(summary);
+  const statusLabel = getDomainGovernanceAttentionLabel(summary);
+  const countsSummary = formatDomainGovernanceCountsSummary(summary);
+  const sourceSummary = formatDomainGovernanceSourceSummary(domainSource, summary);
+  const focusScopeSummary = formatDomainGovernanceFocusScopeSummary(focusScope);
+  const recommendationSummary = formatDomainGovernanceRecommendationSummary(focusScope);
+  const lastEvaluatedSummary = formatDomainGovernanceLastEvaluatedSummary(summary);
+  return {
+    title: "\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
+    subtitle: "\u7EDF\u4E00\u57DF\u540D\u7F3A\u53E3\u3001\u63A8\u8350\u8865\u9009\u548C\u6CBB\u7406\u5165\u53E3\u5C55\u793A",
+    statusLabel,
+    countsSummary,
+    sourceSummary,
+    statusSummary: `\u6CBB\u7406\u72B6\u6001\uFF1A${statusLabel} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`,
+    compactSummary: `\u7F3A\u4E3B scope ${summary.totalMissingPrimaryScopes} / \u57DF\u540D\u6765\u6E90 ${domainSource}`,
+    workspaceSummary: `\u6CBB\u7406\u5165\u53E3 ${workspaceHref}`,
+    workspaceHref,
+    ctaLabel: "\u6253\u5F00\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
+    focusScopeLabel: formatDomainGovernanceFocusScopeLabel(focusScope),
+    focusScopeSummary,
+    recommendationSummary,
+    lastEvaluatedSummary,
+    detailLines: [focusScopeSummary, recommendationSummary, lastEvaluatedSummary],
+    requiresAttention: summary.requiresAttention
+  };
+}
 var defaultRoleWorkbenchContracts = [
   {
     role: "SUPER_ADMIN",
@@ -1978,6 +2042,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   buildConfigurationHref,
   buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref,
+  buildDomainGovernanceDisplayModel,
   buildDomainGovernanceHref,
   buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext,
@@ -2021,6 +2086,10 @@ function buildIntegrationOrchestrationHref(query = {}) {
   filterFoundationAlertTimelineBySource,
   findLatestFoundationAlertTimelineEntry,
   formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceFocusScopeLabel,
+  formatDomainGovernanceFocusScopeSummary,
+  formatDomainGovernanceLastEvaluatedSummary,
+  formatDomainGovernanceRecommendationSummary,
   formatDomainGovernanceSourceSummary,
   foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles,

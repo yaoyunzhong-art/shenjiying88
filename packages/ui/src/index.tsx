@@ -395,6 +395,7 @@ export {
   GovernanceQuickViewSection,
 } from './components/FoundationConsumerSections';
 export { PortalConsumerGovernanceSection } from './components/PortalConsumerGovernanceSection';
+export { PortalDomainGovernanceCard } from './components/PortalDomainGovernanceCard';
 export {
   createFoundationAlertLinkedOverviewStats,
   FoundationAlertLinkedOverviewSection,
@@ -542,6 +543,7 @@ export type {
   GovernanceQuickViewSectionProps,
 } from './components/FoundationConsumerSections';
 export type { PortalConsumerGovernanceSectionProps } from './components/PortalConsumerGovernanceSection';
+export type { PortalDomainGovernanceCardProps } from './components/PortalDomainGovernanceCard';
 export type { ProcurementManagerDashboardProps, ProcurementSummary, PurchaseOrderSnapshot, SupplierOverview } from './components/ProcurementManagerDashboard';
 export type {
   FoundationAlertLinkedOverviewCardDefinition,
