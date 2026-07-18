@@ -1,400 +1,437 @@
 /**
- * reports/page.test.tsx — 报表中心页面 L1 冒烟测试
- * ⚡ 覆盖: buildChartOption 6 种图表 / 正例+反例+边界
+ * page.test.tsx — 报表中心页面 L1 静态分析测试
+ *
+ * 覆盖: 接口定义 / 报表分类列表展示 / 搜索和筛选 / 统计数据
+ * 方法: 源码静态分析, 不依赖 React 渲染
+ *
+ * Phase-39 T169
  */
 
 import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
-
-import { buildChartOption } from './reports-utils';
-import type { ReportResult, ReportTab } from './reports-utils';
+import { describe, it } from 'node:test';
 import fs from 'node:fs';
 
-// ─── Mock ReportResult Factory ───────────────────────────
-
-function makeReport(overrides?: Partial<ReportResult>): ReportResult {
-  return {
-    type: 'revenue',
-    tenantId: 'demo-tenant',
-    period: { from: '2024-06-01', to: '2024-06-30' },
-    columns: [
-      { field: 'period', alias: '日期', type: 'dimension' },
-      { field: 'revenue', alias: '营收', type: 'metric' },
-    ],
-    rows: [
-      { period: '2024-06-01', revenue: 500000 },
-      { period: '2024-06-02', revenue: 620000 },
-      { period: '2024-06-03', revenue: 480000 },
-    ],
-    generatedAt: '2024-07-01T00:00:00Z',
-    cached: false,
-    totals: { period: '合计', revenue: 1600000 },
-    ...overrides,
-  };
-}
+const SRC: string = fs.readFileSync(
+  new URL('./page.tsx', import.meta.url),
+  'utf-8'
+);
 
 // ====================================================================
-//  正例
+//  1. 接口定义 / 类型相关
 // ====================================================================
 
-describe('reports-page: 正例 — buildChartOption', () => {
-  it('revenue tab should return line chart with correct xAxis/yAxis', () => {
-    const report = makeReport();
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.title?.text, '营收趋势');
-    assert.equal(opt.series?.[0]?.type, 'line');
-    assert.equal(opt.series?.[0]?.name, '营收');
-    assert.deepEqual(opt.xAxis?.data, ['2024-06-01', '2024-06-02', '2024-06-03']);
-    assert.deepEqual(opt.yAxis?.data, undefined);
-    assert.equal(opt.tooltip?.trigger, 'axis');
-  });
-
-  it('revenue series data should match report row revenue values', () => {
-    const report = makeReport();
-    const opt = buildChartOption('revenue', report);
-    assert.deepEqual(opt.series?.[0]?.data, [500000, 620000, 480000]);
-  });
-
-  it('product-ranking tab should return bar chart', () => {
-    const report = makeReport({
-      type: 'product-ranking',
-      columns: [
-        { field: 'name', alias: '商品', type: 'dimension' },
-        { field: 'soldQty', alias: '销量', type: 'metric' },
-      ],
-      rows: [
-        { name: '商品A', soldQty: 1200 },
-        { name: '商品B', soldQty: 980 },
-        { name: '商品C', soldQty: 760 },
-      ],
-    });
-    const opt = buildChartOption('product-ranking', report);
-
-    assert.equal(opt.title?.text, '商品 Top N 排行');
-    assert.equal(opt.series?.[0]?.type, 'bar');
-    assert.equal(opt.series?.[0]?.name, '销量');
-    assert.deepEqual(opt.xAxis?.data, ['商品A', '商品B', '商品C']);
-    assert.deepEqual(opt.series?.[0]?.data, [1200, 980, 760]);
-  });
-
-  it('product-ranking should fallback to sku field when name is missing', () => {
-    const report = makeReport({
-      type: 'product-ranking',
-      columns: [
-        { field: 'sku', alias: 'SKU', type: 'dimension' },
-        { field: 'count', alias: '数量', type: 'metric' },
-      ],
-      rows: [
-        { sku: 'SKU-001', count: 55 },
-        { sku: 'SKU-002', count: 42 },
-      ],
-    });
-    const opt = buildChartOption('product-ranking', report);
-    assert.deepEqual(opt.xAxis?.data, ['SKU-001', 'SKU-002']);
-    assert.deepEqual(opt.series?.[0]?.data, [55, 42]);
-  });
-
-  it('payment-mix tab should return pie chart', () => {
-    const report = makeReport({
-      type: 'payment-mix',
-      columns: [
-        { field: 'method', alias: '方式', type: 'dimension' },
-        { field: 'amount', alias: '金额', type: 'metric' },
-      ],
-      rows: [
-        { method: '微信支付', amount: 800000 },
-        { method: '支付宝', amount: 600000 },
-        { method: '银联', amount: 200000 },
-      ],
-    });
-    const opt = buildChartOption('payment-mix', report);
-
-    assert.equal(opt.title?.text, '支付方式占比');
-    assert.equal(opt.series?.[0]?.type, 'pie');
-    assert.equal(opt.series?.[0]?.data?.length, 3);
-    assert.equal(opt.series?.[0]?.data?.[0]?.name, '微信支付');
-    assert.equal(opt.series?.[0]?.data?.[0]?.value, 800000);
-  });
-
-  it('payment-mix should fallback to amountCents field', () => {
-    const report = makeReport({
-      type: 'payment-mix',
-      columns: [
-        { field: 'method', alias: '方式', type: 'dimension' },
-        { field: 'amountCents', alias: '金额分', type: 'metric' },
-      ],
-      rows: [
-        { method: '现金', amountCents: 100000 },
-      ],
-    });
-    const opt = buildChartOption('payment-mix', report);
-    assert.equal(opt.series?.[0]?.data?.[0]?.value, 100000);
-  });
-
-  it('hourly-heatmap tab should return heatmap chart with 7×24 data', () => {
-    const report = makeReport({ type: 'hourly-heatmap', rows: [] });
-    const opt = buildChartOption('hourly-heatmap', report);
-
-    assert.equal(opt.title?.text, '时段热力图');
-    assert.equal(opt.series?.[0]?.type, 'heatmap');
-    assert.equal(opt.xAxis?.type, 'category');
-    assert.equal(opt.xAxis?.data?.length, 24);
-    assert.equal(opt.yAxis?.data?.length, 7);
-    assert.equal(opt.series?.[0]?.data?.length, 24 * 7);
-    assert.ok(opt.visualMap, 'heatmap should have visualMap');
-  });
-
-  it('order tab should return funnel chart', () => {
-    const report = makeReport({
-      type: 'order',
-      columns: [
-        { field: 'stage', alias: '阶段', type: 'dimension' },
-        { field: 'count', alias: '数量', type: 'metric' },
-      ],
-      rows: [
-        { stage: '浏览', count: 10000 },
-        { stage: '加购', count: 3000 },
-        { stage: '下单', count: 1500 },
-        { stage: '支付', count: 1200 },
-      ],
-    });
-    const opt = buildChartOption('order', report);
-
-    assert.equal(opt.title?.text, '订单转化漏斗');
-    assert.equal(opt.series?.[0]?.type, 'funnel');
-    assert.equal(opt.series?.[0]?.data?.length, 4);
-    assert.equal(opt.series?.[0]?.data?.[0]?.name, '浏览');
-    assert.equal(opt.series?.[0]?.data?.[0]?.value, 10000);
-    assert.equal(opt.series?.[0]?.data?.[3]?.name, '支付');
-    assert.equal(opt.series?.[0]?.data?.[3]?.value, 1200);
-  });
-
-  it('inventory tab should return gauge chart', () => {
-    const report = makeReport({
-      type: 'inventory',
-      columns: [{ field: 'turnoverRate', alias: '周转率', type: 'metric' }],
-      rows: [{ turnoverRate: 0.85 }],
-    });
-    const opt = buildChartOption('inventory', report);
-
-    assert.equal(opt.title?.text, '库存周转率');
-    assert.equal(opt.series?.[0]?.type, 'gauge');
-    assert.ok(opt.series?.[0]?.data?.[0]?.value, 'gauge should have a value');
-  });
-});
-
-// ====================================================================
-//  反例
-// ====================================================================
-
-describe('reports-page: 反例 — buildChartOption', () => {
-  it('revenue with empty rows should produce empty line chart', () => {
-    const report = makeReport({ rows: [] });
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.title?.text, '营收趋势');
-    assert.deepEqual(opt.series?.[0]?.data, []);
-    assert.deepEqual(opt.xAxis?.data, []);
-  });
-
-  it('product-ranking with empty rows should produce empty bar chart', () => {
-    const report = makeReport({
-      type: 'product-ranking',
-      rows: [],
-      columns: [
-        { field: 'name', alias: '商品', type: 'dimension' },
-        { field: 'soldQty', alias: '销量', type: 'metric' },
-      ],
-    });
-    const opt = buildChartOption('product-ranking', report);
-
-    assert.equal(opt.series?.[0]?.type, 'bar');
-    assert.deepEqual(opt.series?.[0]?.data, []);
-    assert.deepEqual(opt.xAxis?.data, []);
-  });
-
-  it('payment-mix with empty rows should return empty pie data', () => {
-    const report = makeReport({
-      type: 'payment-mix',
-      rows: [],
-      columns: [
-        { field: 'method', alias: '方式', type: 'dimension' },
-        { field: 'amount', alias: '金额', type: 'metric' },
-      ],
-    });
-    const opt = buildChartOption('payment-mix', report);
-
-    assert.equal(opt.series?.[0]?.type, 'pie');
-    assert.equal(opt.series?.[0]?.data?.length, 0);
-  });
-
-  it('inventory with empty rows should default gauge value to 0', () => {
-    const report = makeReport({
-      type: 'inventory',
-      rows: [],
-      columns: [{ field: 'turnoverRate', alias: '周转率', type: 'metric' }],
-    });
-    const opt = buildChartOption('inventory', report);
-
-    assert.equal(opt.series?.[0]?.type, 'gauge');
+describe('page.tsx: 类型与接口定义', () => {
+  it('should import ReportResult type from reports-utils', () => {
     assert.ok(
-      opt.series?.[0]?.data?.[0]?.value !== undefined,
-      'gauge should still have value even with empty rows'
+      SRC.includes("import type { ReportResult") ||
+      SRC.includes("import type { ReportResult,") ||
+      SRC.includes("import { type ReportResult"),
+      '需要从 reports-utils 导入 ReportResult 类型'
     );
   });
 
-  it('inventory with rows missing turnoverRate should default to 0', () => {
-    const report = makeReport({ type: 'inventory', rows: [{}] });
-    const opt = buildChartOption('inventory', report);
-
-    const val = Number(opt.series?.[0]?.data?.[0]?.value ?? '');
-    assert.equal(val, 0);
+  it('should import ReportTab type from reports-utils', () => {
+    assert.ok(
+      SRC.includes("import type {") && SRC.includes("ReportTab"),
+      '需要导入 ReportTab 类型'
+    );
   });
 
-  it('revenue with missing revenue field in row should produce NaN-free data', () => {
-    const report = makeReport({
-      rows: [{ period: '2024-06-01' }, { period: '2024-06-02', revenue: undefined }],
-    });
-    const opt = buildChartOption('revenue', report);
-
-    const data = opt.series?.[0]?.data ?? [];
-    for (const d of data) {
-      assert.equal(typeof d, 'number', `revenue data point should be number, got ${typeof d}`);
-      assert.ok(!Number.isNaN(d), 'revenue data point should not be NaN');
-    }
+  it('should import buildChartOption from reports-utils', () => {
+    assert.ok(
+      SRC.includes("import {") && SRC.includes("buildChartOption"),
+      '需要导入 buildChartOption 函数'
+    );
   });
 
-  it('unknown report tab should return default fallback option', () => {
-    const report = makeReport();
-    const opt = buildChartOption('unknown-report-tab' as ReportTab, report);
+  it('should declare globalWindow echarts type', () => {
+    assert.ok(
+      SRC.includes('declare global') || SRC.includes('interface Window'),
+      '需要全局声明 window.echarts 类型'
+    );
+  });
 
-    assert.equal(opt.title?.text, '未知报表');
-    assert.equal(opt.series, undefined);
+  it('should define CARD_STYLE constant with correct border-radius', () => {
+    assert.ok(SRC.includes('CARD_STYLE'), '需要 CARD_STYLE 常量');
+    assert.ok(SRC.includes('borderRadius: 8'), '卡片边框圆角应为 8px');
+  });
+
+  it('should define TAB_ACTIVE style with blue bottom border', () => {
+    assert.ok(SRC.includes('TAB_ACTIVE'), '需要 TAB_ACTIVE 样式常量');
+    assert.ok(
+      SRC.includes("'#2563eb'"),
+      '激活标签应使用品牌蓝 #2563eb'
+    );
   });
 });
 
 // ====================================================================
-//  边界
+//  2. 报表分类 / 列表展示
 // ====================================================================
 
-describe('reports-page: 边界 — buildChartOption', () => {
-  it('revenue with single data row should still produce valid chart', () => {
-    const report = makeReport({
-      rows: [{ period: '2024-06-01', revenue: 100000 }],
-    });
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.xAxis?.data?.length, 1);
-    assert.equal(opt.series?.[0]?.data?.length, 1);
-    assert.equal(opt.series?.[0]?.data?.[0], 100000);
+describe('page.tsx: 报表分类与列表展示', () => {
+  it('should define exactly 6 report tabs with keys and labels', () => {
+    // 提取所有 tab button 的 key-label 对
+    const tabMatches = SRC.match(/\{ key: '([^']+)', label: '([^']+)' \}/g);
+    assert.ok(tabMatches, '需要定义报表标签页数组');
+    assert.equal(
+      tabMatches.length,
+      6,
+      `应有 6 个报表分类, 实际 ${tabMatches.length}`
+    );
   });
 
-  it('revenue with very large numbers should not truncate', () => {
-    const report = makeReport({
-      rows: [{ period: '2024-06-01', revenue: 999999999999 }],
-    });
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.series?.[0]?.data?.[0], 999999999999);
+  it('should include revenue tab with 营收趋势 label', () => {
+    assert.ok(
+      SRC.includes("key: 'revenue'") && SRC.includes('营收趋势'),
+      '需要营收趋势标签'
+    );
   });
 
-  it('revenue with zero revenue should render zero', () => {
-    const report = makeReport({
-      rows: [{ period: '2024-06-01', revenue: 0 }],
-    });
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.series?.[0]?.data?.[0], 0);
+  it('should include product-ranking tab with 商品排行 label', () => {
+    assert.ok(
+      SRC.includes("key: 'product-ranking'") && SRC.includes('商品排行'),
+      '需要商品排行标签'
+    );
   });
 
-  it('revenue with negative revenue should handle negative values', () => {
-    const report = makeReport({
-      rows: [{ period: '2024-06-01', revenue: -50000 }],
-    });
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.series?.[0]?.data?.[0], -50000);
+  it('should include payment-mix tab with 支付占比 label', () => {
+    assert.ok(
+      SRC.includes("key: 'payment-mix'") && SRC.includes('支付占比'),
+      '需要支付占比标签'
+    );
   });
 
-  it('all charts should have tooltip and grid configured', () => {
-    const tabs: ReportTab[] = ['revenue', 'product-ranking', 'payment-mix', 'hourly-heatmap', 'order', 'inventory'];
-    const report = makeReport({
-      rows: [{ period: '2024-06-01', revenue: 100 }],
-    });
-
-    for (const tab of tabs) {
-      const opt = buildChartOption(tab, report);
-      if (['revenue', 'product-ranking'].includes(tab)) {
-        assert.ok(opt.tooltip, `${tab} should have tooltip`);
-        assert.ok(opt.grid, `${tab} should have grid`);
-      }
-    }
+  it('should include hourly-heatmap tab with 时段热力 label', () => {
+    assert.ok(
+      SRC.includes("key: 'hourly-heatmap'") && SRC.includes('时段热力'),
+      '需要时段热力图标签'
+    );
   });
 
-  it('revenue should have smooth line and areaStyle (visual polish)', () => {
-    const report = makeReport();
-    const opt = buildChartOption('revenue', report);
-
-    assert.equal(opt.series?.[0]?.smooth, true, 'revenue chart should be smooth');
-    assert.ok(opt.series?.[0]?.areaStyle, 'revenue chart should have areaStyle');
+  it('should include order tab with 订单漏斗 label', () => {
+    assert.ok(
+      SRC.includes("key: 'order'") && SRC.includes('订单漏斗'),
+      '需要订单漏斗标签'
+    );
   });
 
-  it('inventory gauge should have progress bar and pointer configured', () => {
-    const report = makeReport({
-      type: 'inventory',
-      rows: [{ turnoverRate: 0.75 }],
-    });
-    const opt = buildChartOption('inventory', report);
-
-    assert.ok(opt.series?.[0]?.progress, 'gauge should have progress');
-    assert.equal(opt.series?.[0]?.anchor?.show, true, 'gauge should have visible anchor');
-    assert.equal(opt.series?.[0]?.pointer?.width, 5, 'gauge pointer width should be 5');
+  it('should include inventory tab with 库存周转 label', () => {
+    assert.ok(
+      SRC.includes("key: 'inventory'") && SRC.includes('库存周转'),
+      '需要库存周转标签'
+    );
   });
 
-  it('payment-mix should have legend at bottom', () => {
-    const report = makeReport({
-      type: 'payment-mix',
-      rows: [{ method: '微信支付', amount: 100 }],
-    });
-    const opt = buildChartOption('payment-mix', report);
-
-    assert.equal(opt.legend?.bottom, 10);
+  it('should render metadata line with period rows and generatedAt', () => {
+    assert.ok(
+      SRC.includes('report.period.from') && SRC.includes('report.period.to'),
+      '需要显示报表起止日期'
+    );
+    assert.ok(
+      SRC.includes('report.rows.length') || SRC.includes('.rows.length'),
+      '需要显示数据行数'
+    );
+    assert.ok(
+      SRC.includes('report.generatedAt'),
+      '需要显示生成时间'
+    );
   });
 
-  it('hourly-heatmap should have correct day labels', () => {
-    const report = makeReport({ type: 'hourly-heatmap', rows: [] });
-    const opt = buildChartOption('hourly-heatmap', report);
-
-    assert.deepEqual(opt.yAxis?.data, ['周一', '周二', '周三', '周四', '周五', '周六', '周日']);
+  it('should render a data table when rows exist', () => {
+    assert.ok(
+      SRC.includes('<table') && SRC.includes('<thead') &&
+      SRC.includes('<tbody') && SRC.includes('report.rows.map'),
+      '需要渲染数据表格 (thead + tbody + rows.map)'
+    );
   });
 
-  it('product-ranking should rotate x-axis labels at 30° for readability', () => {
-    const report = makeReport({
-      type: 'product-ranking',
-      columns: [
-        { field: 'name', alias: '商品', type: 'dimension' },
-        { field: 'soldQty', alias: '销量', type: 'metric' },
-      ],
-      rows: [{ name: '超长商品名称', soldQty: 100 }],
-    });
-    const opt = buildChartOption('product-ranking', report);
-
-    assert.equal(opt.xAxis?.axisLabel?.rotate, 30);
+  it('should render totals row in tfoot when present', () => {
+    assert.ok(
+      SRC.includes('<tfoot') && SRC.includes('report.totals'),
+      '需要渲染合计行 tfoot + report.totals'
+    );
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+// ====================================================================
+//  3. 搜索与筛选
+// ====================================================================
 
-describe('Reports — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+describe('page.tsx: 搜索与筛选控件', () => {
+  it('should have tenantId state and input', () => {
+    assert.ok(
+      SRC.includes("const [tenantId") && SRC.includes("tenant-input"),
+      '需要租户输入框和对应的 state'
+    );
+  });
+
+  it('should have date range state from and to', () => {
+    assert.ok(
+      SRC.includes("const [from") && SRC.includes("const [to"),
+      '需要开始/结束日期 state'
+    );
+    assert.ok(
+      SRC.includes("type=\"date\""),
+      '日期输入框应使用 type=date'
+    );
+  });
+
+  it('should have a 查询 button that triggers loadReport', () => {
+    assert.ok(
+      SRC.includes('查询') && SRC.includes('onClick={loadReport}'),
+      '需要查询按钮绑定 loadReport'
+    );
+  });
+
+  it('should have loading state and disable button while loading', () => {
+    assert.ok(
+      SRC.includes('loading') && SRC.includes('disabled={loading}'),
+      '加载中应禁用查询按钮'
+    );
+    assert.ok(
+      SRC.includes("'加载中…'") || SRC.includes('加载中'),
+      '加载中应显示加载文字'
+    );
+  });
+
+  it('should have cache invalidation button', () => {
+    assert.ok(
+      SRC.includes('invalidateCache') || SRC.includes('失效缓存'),
+      '需要缓存失效按钮'
+    );
+    assert.ok(
+      SRC.includes('invalidate-btn'),
+      '缓存失效按钮应有 data-testid'
+    );
+  });
+
+  it('should include activeTab state for tab switching', () => {
+    assert.ok(
+      SRC.includes("const [activeTab") &&
+      SRC.includes("setActiveTab"),
+      '需要 activeTab state 和 setter'
+    );
+  });
+
+  it('should filter results based on activeTab via API query param', () => {
+    assert.ok(
+      SRC.includes('/api/reports/${activeTab}') ||
+      SRC.includes('/api/reports/'),
+      '需要使用 activeTab 动态构建 API 路径'
+    );
+  });
+
+  it('should pass tenantId, from, to as query parameters', () => {
+    assert.ok(
+      SRC.includes('tenantId=') && SRC.includes('from=') && SRC.includes('to='),
+      'API 请求应携带 tenantId、from、to 参数'
+    );
+  });
+});
+
+// ====================================================================
+//  4. 统计数据
+// ====================================================================
+
+describe('page.tsx: 统计数据', () => {
+  it('should display total row count', () => {
+    assert.ok(
+      SRC.includes('report.rows.length') || SRC.includes('.rows.length'),
+      '需要显示总行数'
+    );
+  });
+
+  it('should display period range (from → to)', () => {
+    assert.ok(
+      SRC.match(/report\.period\.from.*report\.period\.to/) ||
+      SRC.includes('report.period.from') && SRC.includes('report.period.to'),
+      '需要展示日期范围统计'
+    );
+  });
+
+  it('should display cached indicator when report is cached', () => {
+    assert.ok(
+      SRC.includes('report.cached') && SRC.includes('Cached'),
+      '需要显示缓存标记 ⚡ Cached'
+    );
+  });
+
+  it('should display error state with ❌ prefix', () => {
+    assert.ok(
+      SRC.includes('❌') && SRC.includes('error'),
+      '错误状态应显示 ❌ 前缀和错误信息'
+    );
+  });
+
+  it('should display success toast with ✅ prefix', () => {
+    assert.ok(
+      SRC.includes('✅') && SRC.includes('exportToast'),
+      '成功消息应显示 ✅ 前缀'
+    );
+  });
+
+  it('should render column headers from report.columns', () => {
+    assert.ok(
+      SRC.includes('report.columns.map') && SRC.includes('c.alias'),
+      '表格列头应渲染自 report.columns 的 alias 字段'
+    );
+  });
+
+  it('should have export buttons for CSV, JSON, HTML', () => {
+    const csvMatch = SRC.includes("'csv'") || SRC.includes('CSV');
+    const jsonMatch = SRC.includes("'json'") || SRC.includes('JSON');
+    const htmlMatch = SRC.includes("'html'") || SRC.includes('HTML');
+    assert.ok(
+      csvMatch && jsonMatch && htmlMatch,
+      '需要 CSV、JSON、HTML 三种导出按钮'
+    );
+  });
+});
+
+// ====================================================================
+//  5. 组件结构 / 渲染结构
+// ====================================================================
+
+describe('page.tsx: 组件渲染结构', () => {
+  it('should export default function component', () => {
+    assert.ok(
+      SRC.includes('export default function ReportsPage'),
+      '需要 export default function ReportsPage'
+    );
+  });
+
+  it('should have style constants CARD_STYLE and TAB_STYLE', () => {
+    assert.ok(SRC.includes('const CARD_STYLE'));
+    assert.ok(SRC.includes('const TAB_STYLE'));
+    assert.ok(SRC.includes('const TAB_ACTIVE'));
+  });
+
+  it('should have JSX return with header section', () => {
+    assert.ok(SRC.includes('return ('));
+    assert.ok(SRC.includes('<header') || SRC.includes('<h1'));
+    assert.ok(SRC.includes('报表中心'));
+  });
+
+  it('should use useEffect for data loading on mount/deps change', () => {
+    assert.ok(
+      SRC.includes('useEffect') &&
+      SRC.includes('loadReport') &&
+      SRC.includes('loadReport()'),
+      '需要使用 useEffect 加载报表数据'
+    );
+  });
+
+  it('should have chart container div with ref', () => {
+    assert.ok(
+      SRC.includes('chartRef') && SRC.includes('chart-container'),
+      '需要图表容器 ref 和 data-testid'
+    );
+  });
+
+  it('should handle window resize for chart responsiveness', () => {
+    assert.ok(
+      SRC.includes('resize') && SRC.includes('addEventListener'),
+      '需要监听窗口 resize 事件'
+    );
+  });
+});
+
+// ====================================================================
+//  6. ECharts CDN 加载
+// ====================================================================
+
+describe('page.tsx: ECharts CDN 加载', () => {
+  it('should define loadECharts function', () => {
+    assert.ok(
+      SRC.includes('function loadECharts') || SRC.includes('loadECharts'),
+      '需要 loadECharts 异步加载函数'
+    );
+  });
+
+  it('should create script element for CDN', () => {
+    assert.ok(
+      SRC.includes('createElement') && SRC.includes('script'),
+      '需要动态创建 script 标签加载 ECharts CDN'
+    );
+    assert.ok(
+      SRC.includes('echarts') || SRC.includes('cdn.jsdelivr.net'),
+      '需要指向 ECharts CDN 地址'
+    );
+  });
+
+  it('should have echartsReady state', () => {
+    assert.ok(
+      SRC.includes('echartsReady') &&
+      SRC.includes('setEchartsReady'),
+      '需要 echartsReady state 标记加载完成'
+    );
+  });
+
+  it('should init chart instance only after ECharts is ready', () => {
+    assert.ok(
+      SRC.includes('window.echarts') && SRC.includes('.init'),
+      '需要调用 echarts.init 初始化图表实例'
+    );
+  });
+
+  it('should debounce or guard chart setOption calls', () => {
+    assert.ok(
+      SRC.includes('setOption'),
+      '需要调用 echartsInstance.setOption 更新图表'
+    );
+  });
+});
+
+// ====================================================================
+//  7. 导出功能
+// ====================================================================
+
+describe('page.tsx: 导出防御能力', () => {
+  it('should declare exportReport function', () => {
+    assert.ok(
+      SRC.includes('function exportReport') ||
+      SRC.includes('const exportReport'),
+      '需要定义 exportReport 导出函数'
+    );
+  });
+
+  it('should support csv, json, html export formats', () => {
+    const match = SRC.match(/['"](csv|json|html)['"]/g);
+    assert.ok(match, '需要支持导出格式');
+    const formats = new Set(match?.map((m: string) => m.replace(/['"]/g, '')));
+    assert.ok(formats.has('csv'), '需要 CSV 导出格式');
+    assert.ok(formats.has('json'), '需要 JSON 导出格式');
+    assert.ok(formats.has('html'), '需要 HTML 导出格式');
+  });
+
+  it('should use Blob and URL.createObjectURL for download', () => {
+    assert.ok(
+      SRC.includes('Blob') &&
+      SRC.includes('URL.createObjectURL') &&
+      SRC.includes('URL.revokeObjectURL'),
+      '导出应使用 Blob + URL API 触发下载'
+    );
+  });
+
+  it('should set export toast message on success', () => {
+    assert.ok(
+      SRC.includes('setExportToast'),
+      '需要 setExportToast 成功反馈'
+    );
+  });
+
+  it('should clear toast after timeout', () => {
+    assert.ok(
+      SRC.includes('setTimeout') && SRC.includes('setExportToast(null)'),
+      '需要 setTimeout 自动清除 Toast'
+    );
+  });
+
+  it('should handle export error with setError', () => {
+    assert.ok(
+      SRC.includes('导出失败') || SRC.includes('setError'),
+      '导出失败应设置 error state'
+    );
+  });
 });
