@@ -230,7 +230,20 @@ describe('ReconciliationPage', () => {
       success: true, data: { diffs: [], resolvedCount: 0, totalCount: 0, unresolvedCount: 0 }, message: 'OK',
     }));
     render(<ReconciliationPage />);
-    await waitFor(() => assertInDoc('无差异记录'));
+    await waitFor(() => assertInDoc('尚未运行对账'));
+  });
+
+  it('should show all matched message when ran but no diffs', async () => {
+    responseRegistry.clear();
+    setResponseFor('/status', () => ({
+      success: true, data: { inProgress: false, lastRunAt: '2026-07-15T02:00:00Z', lastRunDate: '2026-07-15',
+        totalRuns: 5, lastError: null, lastReportSummary: null }, message: 'OK',
+    }));
+    setResponseFor('/diffs', () => ({
+      success: true, data: { diffs: [], resolvedCount: 0, totalCount: 0, unresolvedCount: 0 }, message: 'OK',
+    }));
+    render(<ReconciliationPage />);
+    await waitFor(() => assertInDoc('对账完成，无差异'));
   });
 
   it('should render date input', async () => {
