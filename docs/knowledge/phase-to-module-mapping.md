@@ -28,6 +28,7 @@
 | Analytics | admin-web/app/analytics/ | 281行 | 43行 | 🆕 | 🔴 | P-Admin 数据 |
 | Knowledge | admin-web/app/knowledge/ | 196行 | 32行 | 🆕 | 🔴 | P-Admin 知识 |
 | Users | admin-web/app/users/ | 158行 | 32行 | 🆕 | 🔴 | P-Admin 用户 |
+| System Monitor | admin-web/app/system-monitor/ | 270行 | 18测试 | 🆕 | 🔴 | P-Admin 系统监控 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
 ### V19 Day2 凌晨 storefront 薄页面补齐 (2026-07-18 02:25-03:10)

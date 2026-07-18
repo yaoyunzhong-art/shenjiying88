@@ -29,4 +29,8 @@
 | campaigns | 1src | 19 |
 | maintenance | 1src | 16 |
 | alliances | 1src | 17 |
-| **合计** | **3src** | **52** |
+| procurement | 1src | 16 |
+| payment-channels | 1src | 15 |
+| points-rules | 1src | 15 |
+| system-monitor | 1src | 18 |
+| **合计** | **8src** | **116** |
