@@ -218,8 +218,8 @@ export default function ReconciliationRulesPage() {
         </div>
       )}
 
-      {/* 概览统计 */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* 规则状态统计条 */}
+      <div className="grid grid-cols-4 gap-4">
         <div className="bg-white border rounded-lg p-4">
           <p className="text-sm text-gray-500">总规则</p>
           <p className="text-2xl font-bold mt-1">{rules.length}</p>
@@ -231,9 +231,15 @@ export default function ReconciliationRulesPage() {
           </p>
         </div>
         <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">自动处理</p>
-          <p className="text-2xl font-bold mt-1 text-blue-600">
-            {rules.filter(r => r.autoResolve).length}
+          <p className="text-sm text-gray-500">已禁用</p>
+          <p className="text-2xl font-bold mt-1 text-gray-400">
+            {rules.filter(r => !r.enabled).length}
+          </p>
+        </div>
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">异常</p>
+          <p className="text-2xl font-bold mt-1 text-orange-600">
+            {rules.filter(r => r.enabled && r.matchRate != null && r.matchRate < 50).length}
           </p>
         </div>
       </div>
