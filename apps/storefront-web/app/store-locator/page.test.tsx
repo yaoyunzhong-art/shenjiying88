@@ -22,6 +22,95 @@ describe('StoreLocatorPage', () => {
     assert.ok(html.includes('全部城市'), 'Should show 全部城市 filter');
   });
 
+  it('renders store list section', () => {
+    const html = renderPage();
+    assert.ok(html.includes('section'), 'Should render store list section');
+  });
+
+  // ── 分类测试：搜索组件 ──────────────────────────────────────
+
+  describe('search components', () => {
+    it('renders search form with input and button', () => {
+      const html = renderPage();
+      assert.ok(html.includes('form'), 'Search form should exist');
+      assert.ok(html.includes('input'), 'Search input should exist');
+      assert.ok(html.includes('button'), 'Search button should exist');
+    });
+
+    it('renders search placeholder text', () => {
+      const html = renderPage();
+      assert.ok(html.includes('搜索门店名称或地址'), 'Search placeholder should render');
+    });
+
+    it('renders submit button with emoji', () => {
+      const html = renderPage();
+      assert.ok(html.includes('🔍'), 'Submit button should have search emoji');
+    });
+  });
+
+  // ── 分类测试：门店卡片 ──────────────────────────────────────
+
+  describe('store cards', () => {
+    it('renders store names from mock data', () => {
+      const html = renderPage();
+      assert.ok(html.includes('旗舰店'), 'Store name should include 旗舰店');
+      assert.ok(html.includes('社区店'), 'Store name should include 社区店');
+    });
+
+    it('renders store addresses', () => {
+      const html = renderPage();
+      assert.ok(html.includes('路'), 'Address should contain road indicator');
+    });
+
+    it('renders status badge text', () => {
+      const html = renderPage();
+      assert.ok(html.includes('营业中'), 'Status badge should show 营业中');
+    });
+  });
+
+  // ── 分类测试：底部导航 ──────────────────────────────────────
+
+  describe('bottom navigation', () => {
+    it('renders nav bar', () => {
+      const html = renderPage();
+      assert.ok(html.includes('nav'), 'Bottom nav should exist');
+    });
+
+    it('renders 4 nav items', () => {
+      const html = renderPage();
+      assert.ok(html.includes('首页'), 'Home nav should exist');
+      assert.ok(html.includes('门店'), 'Store nav should exist');
+      assert.ok(html.includes('卡券'), 'Coupon nav should exist');
+      assert.ok(html.includes('我的'), 'Profile nav should exist');
+    });
+
+    it('renders nav with emoji icons', () => {
+      const html = renderPage();
+      assert.ok(html.includes('🏠'), 'Home icon should render');
+      assert.ok(html.includes('🎫'), 'Coupon icon should render');
+      assert.ok(html.includes('👤'), 'Profile icon should render');
+    });
+  });
+
+  // ── 分类测试：页面结构 ──────────────────────────────────────
+
+  describe('page structure', () => {
+    it('renders main container', () => {
+      const html = renderPage();
+      assert.ok(html.includes('main'), 'Main container should exist');
+    });
+
+    it('renders page title h1', () => {
+      const html = renderPage();
+      assert.ok(html.includes('h1'), 'Page title should be h1');
+    });
+
+    it('renders subtitle text', () => {
+      const html = renderPage();
+      assert.ok(html.includes('查找离您最近的门店'), 'Subtitle should render');
+    });
+  });
+
   it('renders bottom navigation with 4 items', () => {
     const html = renderPage();
     assert.ok(html.includes('首页'), 'Should show 首页 nav');
