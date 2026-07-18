@@ -28,6 +28,198 @@ type ProcTab = 'pending' | 'approved' | 'received' | 'all'
 
 // ── 工具 ──
 
+// ─── 表单弹窗（新增/编辑） ──────────────────────
+
+interface OrderFormData {
+  supplierName: string;
+  department: string;
+  requester: string;
+  storeName: string;
+  expectedDate: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  items: Array<{ name: string; quantity: number; unitPriceCents: number }>;
+}
+
+function OrderFormModal({ onClose, onSave, initial }: {
+  onClose: () => void;
+  onSave: (data: OrderFormData) => void;
+  initial?: OrderFormData;
+}) {
+  const [form, setForm] = useState<OrderFormData>(initial ?? {
+    supplierName: '', department: '', requester: '', storeName: '',
+    expectedDate: '', priority: 'medium',
+    items: [{ name: '', quantity: 1, unitPriceCents: 0 }],
+  });
+
+  const addItem = () => {
+    setForm(f => ({ ...f, items: [...f.items, { name: '', quantity: 1, unitPriceCents: 0 }] }));
+  };
+
+  const updateItem = (idx: number, field: string, value: string | number) => {
+    setForm(f => {
+      const items = f.items.map((item, i) => i === idx ? { ...item, [field]: value } : item);
+      return { ...f, items };
+    });
+  };
+
+  const submit = () => {
+    if (!form.supplierName.trim() || !form.department.trim()) return;
+    onSave(form);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: 12, padding: 24, minWidth: 480, maxWidth: 640, maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>{initial ? '编辑采购单' : '新建采购单'}</h2>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          <div>
+            <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>供应商</label>
+            <input value={form.supplierName} onChange={e => setForm(f => ({...f, supplierName: e.target.value}))}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} placeholder="供应商名称" />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>部门</label>
+            <input value={form.department} onChange={e => setForm(f => ({...f, department: e.target.value}))}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} placeholder="技术部" />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>申请人</label>
+            <input value={form.requester} onChange={e => setForm(f => ({...f, requester: e.target.value}))}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>门店</label>
+            <input value={form.storeName} onChange={e => setForm(f => ({...f, storeName: e.target.value}))}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>期望到货</label>
+            <input type="date" value={form.expectedDate} onChange={e => setForm(f => ({...f, expectedDate: e.target.value}))}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>优先级</label>
+            <select value={form.priority} onChange={e => setForm(f => ({...f, priority: e.target.value as any}))}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
+              <option value="low">低</option><option value="medium">中</option><option value="high">高</option><option value="urgent">紧急</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>采购项</div>
+          {form.items.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+              <input value={item.name} onChange={e => updateItem(idx, 'name', e.target.value)}
+                style={{ flex: 1, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} placeholder="物品名称" />
+              <input type="number" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value) || 0)}
+                style={{ width: 70, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} placeholder="数量" />
+              <input type="number" value={item.unitPriceCents / 100} onChange={e => updateItem(idx, 'unitPriceCents', Math.round(parseFloat(e.target.value) * 100))}
+                style={{ width: 90, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} placeholder="单价" />
+              <span style={{ fontSize: 12, color: '#666', minWidth: 60, textAlign: 'right' }}>
+                ¥{item.unitPriceCents > 0 ? (item.quantity * item.unitPriceCents / 100).toFixed(2) : '0.00'}
+              </span>
+            </div>
+          ))}
+          <button onClick={addItem} style={{ fontSize: 12, color: '#3b82f6', cursor: 'pointer', background: 'none', border: 'none' }}>+ 添加采购项</button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: '1px solid #e5e7eb', paddingTop: 16 }}>
+          <button onClick={onClose} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: 14 }}>取消</button>
+          <button onClick={submit} style={{ padding: '8px 20px', borderRadius: 8, background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>提交</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 状态时间线 ─────────────────────────────────────
+
+const STATUS_STEPS = ['draft', 'submitted', 'approved', 'shipped', 'received'] as const;
+
+function OrderTimeline({ status, createdAt, updatedAt }: { status: string; createdAt: string; updatedAt: string }) {
+  const currentIdx = STATUS_STEPS.indexOf(status as any);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, margin: '12px 0' }}>
+      {STATUS_STEPS.map((step, idx) => {
+        const done = idx <= currentIdx;
+        const active = idx === currentIdx;
+        return (
+          <div key={step} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700,
+              background: active ? '#3b82f6' : done ? '#4ade80' : '#e5e7eb',
+              color: done ? '#fff' : '#999',
+            }}>
+              {done ? (active ? '●' : '✓') : idx + 1}
+            </div>
+            <div style={{ marginLeft: 6, fontSize: 11, color: active ? '#3b82f6' : done ? '#4ade80' : '#999' }}>
+              {{ draft: '草稿', submitted: '审批中', approved: '待发货', shipped: '配送中', received: '已收货' }[step]}
+            </div>
+            {idx < STATUS_STEPS.length - 1 && (
+              <div style={{ flex: 1, height: 2, background: done ? '#4ade80' : '#e5e7eb', margin: '0 6px' }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── 环比统计 ──────────────────────────────────────
+
+function calcMomStats(orders: ProcurementOrder[]) {
+  const now = new Date();
+  const thisMonth = orders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const lastMonth = orders.filter(o => {
+    const d = new Date(o.createdAt);
+    const lm = now.getMonth() - 1;
+    const ly = lm < 0 ? now.getFullYear() - 1 : now.getFullYear();
+    return d.getMonth() === (lm < 0 ? 11 : lm) && d.getFullYear() === ly;
+  });
+
+  const thisAmount = thisMonth.reduce((s, o) => s + o.totalCents, 0);
+  const lastAmount = lastMonth.reduce((s, o) => s + o.totalCents, 0);
+  const change = lastAmount > 0 ? ((thisAmount - lastAmount) / lastAmount * 100).toFixed(1) : '0.0';
+  const trend = lastAmount > 0 ? thisAmount >= lastAmount : true;
+
+  return { thisAmount, lastAmount, change, trend, thisCount: thisMonth.length, lastCount: lastMonth.length };
+}
+
+// ── 核心组件 ──
+
+function ProcStatsRow({ orders }: { orders: ProcurementOrder[] }) {
+  const mom = calcMomStats(orders);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ background: 'rgba(15,23,42,0.03)', borderRadius: 10, padding: '12px 16px' }}>
+        <div style={{ fontSize: 12, color: '#666' }}>本月采购额</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4, color: '#3b82f6' }}>{fmtCents(mom.thisAmount)}</div>
+      </div>
+      <div style={{ background: 'rgba(15,23,42,0.03)', borderRadius: 10, padding: '12px 16px' }}>
+        <div style={{ fontSize: 12, color: '#666' }}>上月采购额</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4, color: '#6b7280' }}>{fmtCents(mom.lastAmount)}</div>
+      </div>
+      <div style={{ background: 'rgba(15,23,42,0.03)', borderRadius: 10, padding: '12px 16px' }}>
+        <div style={{ fontSize: 12, color: '#666' }}>环比变化</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4, color: mom.trend ? '#4ade80' : '#f87171' }}>
+          {mom.trend ? '↑' : '↓'} {mom.change}%
+        </div>
+      </div>
+      <div style={{ background: 'rgba(15,23,42,0.03)', borderRadius: 10, padding: '12px 16px' }}>
+        <div style={{ fontSize: 12, color: '#666' }}>采购单数 (本月/上月)</div>
+        <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>{mom.thisCount} / {mom.lastCount}</div>
+      </div>
+    </div>
+  );
+}
+
 function fmtCents(cents: number): string {
   return `¥${(cents / 100).toFixed(2)}`
 }
