@@ -14,6 +14,7 @@ import {
   UpdatePortalDto,
   PortalQueryDto,
   PortalLoginEntryDto,
+  PortalDto,
   MarketProfileDto,
   RegionalOverrideDto,
   PortalBootstrapResponseDto,
@@ -241,6 +242,26 @@ describe('portal.dto: PortalLoginEntryDto', () => {
   })
 })
 
+describe('portal.dto: PortalDto', () => {
+  it('plainToInstance assigns domainSource on response dto', () => {
+    const dto = plainToInstance(PortalDto, {
+      tenantId: 'tenant-demo',
+      audience: PortalAudience.ToB,
+      scopeType: PortalScopeType.Tenant,
+      scopeCode: 'tenant-demo',
+      marketCode: 'cn-mainland',
+      channel: PortalChannel.Web,
+      name: '租户门户',
+      primaryDomain: 'tenant-demo.example.io',
+      domainSource: 'custom',
+      supportedLanguages: [LanguageCode.ZhCn],
+    })
+
+    assert.equal(dto.primaryDomain, 'tenant-demo.example.io')
+    assert.equal(dto.domainSource, 'custom')
+  })
+})
+
 describe('portal.dto: Bootstrap response DTOs', () => {
   it('MarketProfileDto 支持完整市场画像字段', () => {
     const dto = plainToInstance(MarketProfileDto, {
@@ -292,8 +313,8 @@ describe('portal.dto: Bootstrap response DTOs', () => {
   it('PortalBootstrapResponseDto 支持三层门户和 foundation 元数据', () => {
     const dto = plainToInstance(PortalBootstrapResponseDto, {
       tenantPortal: { scopeCode: 'tenant-demo' },
-      brandPortal: { scopeCode: 'brand-demo' },
-      storePortal: { scopeCode: 'store-001' },
+      brandPortal: { scopeCode: 'brand-demo', domainSource: 'custom' },
+      storePortal: { scopeCode: 'store-001', domainSource: 'default' },
       marketProfile: { marketCode: 'cn-mainland' },
       regionalOverrides: [{ scopeType: 'TENANT', scopeCode: 'tenant-demo', marketCode: 'cn-mainland' }],
       foundationDependencies: ['identity-access'],
@@ -303,6 +324,8 @@ describe('portal.dto: Bootstrap response DTOs', () => {
     assert.equal(dto.tenantPortal.scopeCode, 'tenant-demo')
     assert.equal(dto.brandPortal.scopeCode, 'brand-demo')
     assert.equal(dto.storePortal.scopeCode, 'store-001')
+    assert.equal(dto.brandPortal.domainSource, 'custom')
+    assert.equal(dto.storePortal.domainSource, 'default')
     assert.deepEqual(dto.foundationDependencies, ['identity-access'])
     assert.deepEqual(dto.foundationContracts, ['portal-page:v1'])
   })

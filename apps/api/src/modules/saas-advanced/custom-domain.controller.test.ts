@@ -38,6 +38,19 @@ const TENANT_ROOT = {
   userId: 'admin-root',
   role: 'tenant_admin' as const,
 }
+const BRAND_CTX = {
+  tenantId: 'tenant-governance',
+  brandId: 'brand-governance',
+  userId: 'brand-admin',
+  role: 'brand_admin' as const,
+}
+const STORE_CTX = {
+  tenantId: 'tenant-governance',
+  brandId: 'brand-governance',
+  storeId: 'store-governance',
+  userId: 'store-admin',
+  role: 'store_admin' as const,
+}
 
 /**
  * 辅助: 在 tenant 上下文中调用 controller 方法
@@ -200,6 +213,89 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       assert.equal(afterRemove.item, null)
       assert.equal(afterReselect.resolved, true)
       assert.equal(afterReselect.item?.domain, 'current-reselect-b.example.io')
+    })
+
+    it('支持批量查询多个 scope 当前主域名', async () => {
+      const tenantDomain = await inTenant(TENANT_ROOT, () =>
+        controller.addDomain({ domain: 'batch-current-tenant.example.io' }),
+      )
+      const brandDomain = await inTenant(BRAND_CTX, () =>
+        controller.addDomain({ domain: 'batch-current-brand.example.io' }),
+      )
+      const storeDomain = await inTenant(STORE_CTX, () =>
+        controller.addDomain({ domain: 'batch-current-store.example.io' }),
+      )
+      service.setDnsTxtOverride(tenantDomain.verificationHost, [
+        buildVerificationValue(tenantDomain.verificationToken),
+      ])
+      service.setDnsTxtOverride(brandDomain.verificationHost, [
+        buildVerificationValue(brandDomain.verificationToken),
+      ])
+      service.setDnsTxtOverride(storeDomain.verificationHost, [
+        buildVerificationValue(storeDomain.verificationToken),
+      ])
+      await inTenant(TENANT_ROOT, () => controller.verify(tenantDomain.id))
+      await inTenant(BRAND_CTX, () => controller.verify(brandDomain.id))
+      await inTenant(STORE_CTX, () => controller.verify(storeDomain.id))
+      await inTenant(TENANT_ROOT, () => controller.setPrimary(tenantDomain.id))
+      await inTenant(BRAND_CTX, () => controller.setPrimary(brandDomain.id))
+      await inTenant(STORE_CTX, () => controller.setPrimary(storeDomain.id))
+
+      const batch = await inTenant(TENANT_ROOT, () =>
+        controller.getCurrentPrimaryBatch({
+          items: [
+            { scopeType: 'TENANT' },
+            { scopeType: 'BRAND', brandId: 'brand-governance' },
+            { scopeType: 'STORE', brandId: 'brand-governance', storeId: 'store-governance' },
+          ],
+        }),
+      )
+
+      assert.equal(batch.items.length, 3)
+      assert.equal(batch.items[0].item?.domain, 'batch-current-tenant.example.io')
+      assert.equal(batch.items[1].item?.domain, 'batch-current-brand.example.io')
+      assert.equal(batch.items[2].item?.domain, 'batch-current-store.example.io')
+    })
+
+    it('返回 active 未设主域名治理视图', async () => {
+      const first = await inTenant(BRAND_CTX, () =>
+        controller.addDomain({ domain: 'governance-brand-a.example.io' }),
+      )
+      const second = await inTenant(BRAND_CTX, () =>
+        controller.addDomain({ domain: 'governance-brand-b.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      service.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await inTenant(BRAND_CTX, () => controller.verify(first.id))
+      await inTenant(BRAND_CTX, () => controller.verify(second.id))
+
+      const governance = await inTenant(BRAND_CTX, () => controller.listActiveWithoutPrimary())
+
+      assert.equal(governance.total >= 1, true)
+      assert.equal(governance.items[0].scopeType, 'BRAND')
+      assert.equal(governance.items[0].activeCount >= 2, true)
+    })
+
+    it('brand_admin 查询 STORE scope 批量主域名会被拒绝', async () => {
+      await assert.rejects(
+        () =>
+          inTenant(BRAND_CTX, () =>
+            controller.getCurrentPrimaryBatch({
+              items: [
+                {
+                  scopeType: 'STORE',
+                  brandId: 'brand-governance',
+                  storeId: 'store-governance',
+                },
+              ],
+            }),
+          ),
+        /brand_admin can only query BRAND scope domains/,
+      )
     })
   })
 

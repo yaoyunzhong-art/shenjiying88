@@ -100,5 +100,11 @@ describe('Portal Swagger', () => {
       bootstrapComponent?.properties?.regionalOverrides?.items?.$ref,
       '#/components/schemas/RegionalOverrideDto',
     )
+
+    const portalComponent = doc.components?.schemas?.PortalDto as
+      | { properties?: Record<string, { type?: string; enum?: string[] }> }
+      | undefined
+    assert.equal(portalComponent?.properties?.domainSource?.type, 'string')
+    assert.deepEqual(portalComponent?.properties?.domainSource?.enum, ['custom', 'default'])
   })
 })

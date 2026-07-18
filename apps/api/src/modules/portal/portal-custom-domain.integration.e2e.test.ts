@@ -139,6 +139,7 @@ describe('Portal + CustomDomain Integration E2E', () => {
       .expect(200)
 
     assert.equal(portal.body.data.primaryDomain, 'brand-link.example.io')
+    assert.equal(portal.body.data.domainSource, 'custom')
   })
 
   it('门店主域名切换后，Portal bootstrap 读取到 storePortal 主域名', async () => {
@@ -174,6 +175,7 @@ describe('Portal + CustomDomain Integration E2E', () => {
       .expect(200)
 
     assert.equal(bootstrap.body.data.storePortal.primaryDomain, 'store-link.example.io')
+    assert.equal(bootstrap.body.data.storePortal.domainSource, 'custom')
   })
 
   it('删除品牌当前 primary 后，Portal brand-portal 回退平台默认域名', async () => {
@@ -215,6 +217,7 @@ describe('Portal + CustomDomain Integration E2E', () => {
       portal.body.data.primaryDomain,
       'brand-fallback.tenant-link-brand-fallback.cn-mainland.b2b.local',
     )
+    assert.equal(portal.body.data.domainSource, 'default')
   })
 
   it('删除门店当前 primary 后，Portal bootstrap 回退平台默认 store 域名', async () => {
@@ -257,6 +260,7 @@ describe('Portal + CustomDomain Integration E2E', () => {
       bootstrap.body.data.storePortal.primaryDomain,
       'store-fallback.brand-store-fallback.tenant-link-store-fallback.cn-mainland.local',
     )
+    assert.equal(bootstrap.body.data.storePortal.domainSource, 'default')
   })
 
   it('tenant 删除旧 primary 并重选后，Portal bootstrap 读取到新 tenant 主域名', async () => {
@@ -295,6 +299,7 @@ describe('Portal + CustomDomain Integration E2E', () => {
       .expect(200)
 
     assert.equal(bootstrap.body.data.tenantPortal.primaryDomain, 'tenant-second.example.io')
+    assert.equal(bootstrap.body.data.tenantPortal.domainSource, 'custom')
   })
 
   it('brand 删除旧 primary 并重选后，Portal brand-portal 读取到新 brand 主域名', async () => {
@@ -334,6 +339,7 @@ describe('Portal + CustomDomain Integration E2E', () => {
       .expect(200)
 
     assert.equal(portal.body.data.primaryDomain, 'brand-second.example.io')
+    assert.equal(portal.body.data.domainSource, 'custom')
   })
 
   it('store 删除旧 primary 并重选后，Portal bootstrap 读取到新 store 主域名', async () => {
@@ -374,5 +380,6 @@ describe('Portal + CustomDomain Integration E2E', () => {
       .expect(200)
 
     assert.equal(bootstrap.body.data.storePortal.primaryDomain, 'store-second.example.io')
+    assert.equal(bootstrap.body.data.storePortal.domainSource, 'custom')
   })
 })

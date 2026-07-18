@@ -185,8 +185,11 @@ describe('Portal HTTP E2E', () => {
     try {
       const res = await request(built.app.getHttpServer()).get('/portals/bootstrap').set(TENANT_CN).expect(200)
       assert.equal(res.body.data.tenantPortal.primaryDomain, 'tenant-cn.custom.example.com')
+      assert.equal(res.body.data.tenantPortal.domainSource, 'custom')
       assert.equal(res.body.data.brandPortal.primaryDomain, 'brand-cn.custom.example.com')
+      assert.equal(res.body.data.brandPortal.domainSource, 'custom')
       assert.equal(res.body.data.storePortal.primaryDomain, 'store-cn.custom.example.com')
+      assert.equal(res.body.data.storePortal.domainSource, 'custom')
     } finally {
       await built.app.close()
     }
@@ -207,8 +210,11 @@ describe('Portal HTTP E2E', () => {
       const brand = await request(built.app.getHttpServer()).get('/portals/brand-portal').set(TENANT_CN).expect(200)
       const store = await request(built.app.getHttpServer()).get('/portals/store-portal').set(TENANT_CN).expect(200)
       assert.equal(tenant.body.data.primaryDomain, 'tenant-only.custom.example.com')
+      assert.equal(tenant.body.data.domainSource, 'custom')
       assert.equal(brand.body.data.primaryDomain, 'brand-only.custom.example.com')
+      assert.equal(brand.body.data.domainSource, 'custom')
       assert.equal(store.body.data.primaryDomain, 'store-only.custom.example.com')
+      assert.equal(store.body.data.domainSource, 'custom')
     } finally {
       await built.app.close()
     }
@@ -224,8 +230,11 @@ describe('Portal HTTP E2E', () => {
       const brand = await request(built.app.getHttpServer()).get('/portals/brand-portal').set(TENANT_CN).expect(200)
       const store = await request(built.app.getHttpServer()).get('/portals/store-portal').set(TENANT_CN).expect(200)
       assert.equal(tenant.body.data.primaryDomain, 'tenant-cn.cn-mainland.b2b.local')
+      assert.equal(tenant.body.data.domainSource, 'default')
       assert.equal(brand.body.data.primaryDomain, 'brand-cn.tenant-cn.cn-mainland.b2b.local')
+      assert.equal(brand.body.data.domainSource, 'default')
       assert.equal(store.body.data.primaryDomain, 'store-cn.brand-cn.tenant-cn.cn-mainland.local')
+      assert.equal(store.body.data.domainSource, 'default')
     } finally {
       await built.app.close()
     }

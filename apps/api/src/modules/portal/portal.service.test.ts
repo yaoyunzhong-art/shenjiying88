@@ -104,6 +104,7 @@ describe('portal.service: resolveTenantPortal', () => {
     const portal = svc.resolveTenantPortal(createContext())
 
     assert.equal(portal.primaryDomain, 'tenant-demo.cn-mainland.b2b.local')
+    assert.equal(portal.domainSource, 'default')
   })
 
   it('tenant portal 优先返回 custom primary domain', () => {
@@ -121,6 +122,7 @@ describe('portal.service: resolveTenantPortal', () => {
     const portal = svc.resolveTenantPortal(createContext())
 
     assert.equal(portal.primaryDomain, 'tenant.custom.example.com')
+    assert.equal(portal.domainSource, 'custom')
   })
 })
 
@@ -168,6 +170,7 @@ describe('portal.service: resolveBrandPortal', () => {
     const portal = svc.resolveBrandPortal(createContext())
 
     assert.equal(portal.primaryDomain, 'brand.custom.example.com')
+    assert.equal(portal.domainSource, 'custom')
   })
 })
 
@@ -225,6 +228,7 @@ describe('portal.service: resolveStorePortal', () => {
     const portal = svc.resolveStorePortal(createContext())
 
     assert.equal(portal.primaryDomain, 'store.custom.example.com')
+    assert.equal(portal.domainSource, 'custom')
   })
 })
 
@@ -280,7 +284,26 @@ describe('portal.service: getBootstrap', () => {
     const result = svc.getBootstrap(createContext())
 
     assert.equal(result.tenantPortal.primaryDomain, 'tenant.custom.example.com')
+    assert.equal(result.tenantPortal.domainSource, 'custom')
     assert.equal(result.brandPortal.primaryDomain, 'brand.custom.example.com')
+    assert.equal(result.brandPortal.domainSource, 'custom')
     assert.equal(result.storePortal.primaryDomain, 'store.custom.example.com')
+    assert.equal(result.storePortal.domainSource, 'custom')
+  })
+
+  it('getBootstrap 未命中 custom primary 时三个 scope 都标记 default', () => {
+    const svc = new PortalService(
+      mockMarketService(),
+      mockFoundationService(),
+      undefined,
+      mockDomainResolutionService({
+        findPrimaryDomain: () => null,
+      }),
+    )
+    const result = svc.getBootstrap(createContext())
+
+    assert.equal(result.tenantPortal.domainSource, 'default')
+    assert.equal(result.brandPortal.domainSource, 'default')
+    assert.equal(result.storePortal.domainSource, 'default')
   })
 })

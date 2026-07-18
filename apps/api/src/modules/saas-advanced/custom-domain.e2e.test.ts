@@ -349,4 +349,157 @@ describe('CustomDomain HTTP E2E', () => {
     assert.equal(afterReselect.body.data.resolved, true)
     assert.equal(afterReselect.body.data.item.domain, 'current-second.example.io')
   })
+
+  it('POST /saas/domain/primary/batch/current 支持批量查询 tenant/brand/store 主域名', async () => {
+    const tenantHeaders = {
+      'x-tenant-id': 'tenant-http-batch',
+      'x-user-id': 'tenant-batch-admin',
+      'x-role': 'tenant_admin',
+    }
+    const brandHeaders = {
+      'x-tenant-id': 'tenant-http-batch',
+      'x-brand-id': 'brand-http-batch',
+      'x-user-id': 'brand-batch-admin',
+      'x-role': 'brand_admin',
+    }
+    const storeHeaders = {
+      'x-tenant-id': 'tenant-http-batch',
+      'x-brand-id': 'brand-http-batch',
+      'x-store-id': 'store-http-batch',
+      'x-user-id': 'store-batch-admin',
+      'x-role': 'store_admin',
+    }
+
+    const tenantDomain = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(tenantHeaders)
+      .send({ domain: 'batch-http-tenant.example.io' })
+      .expect(201)
+    const brandDomain = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(brandHeaders)
+      .send({ domain: 'batch-http-brand.example.io' })
+      .expect(201)
+    const storeDomain = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(storeHeaders)
+      .send({ domain: 'batch-http-store.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(tenantDomain.body.data.verificationHost, [
+      buildVerificationValue(tenantDomain.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(brandDomain.body.data.verificationHost, [
+      buildVerificationValue(brandDomain.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(storeDomain.body.data.verificationHost, [
+      buildVerificationValue(storeDomain.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${tenantDomain.body.data.id}/verify`)
+      .set(tenantHeaders)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${brandDomain.body.data.id}/verify`)
+      .set(brandHeaders)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${storeDomain.body.data.id}/verify`)
+      .set(storeHeaders)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${tenantDomain.body.data.id}/primary`)
+      .set(tenantHeaders)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${brandDomain.body.data.id}/primary`)
+      .set(brandHeaders)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${storeDomain.body.data.id}/primary`)
+      .set(storeHeaders)
+      .expect(200)
+
+    const batch = await request(app.getHttpServer())
+      .post('/saas/domain/primary/batch/current')
+      .set(tenantHeaders)
+      .send({
+        items: [
+          { scopeType: 'TENANT' },
+          { scopeType: 'BRAND', brandId: 'brand-http-batch' },
+          { scopeType: 'STORE', brandId: 'brand-http-batch', storeId: 'store-http-batch' },
+        ],
+      })
+      .expect(200)
+
+    assert.equal(batch.body.data.items.length, 3)
+    assert.equal(batch.body.data.items[0].item.domain, 'batch-http-tenant.example.io')
+    assert.equal(batch.body.data.items[1].item.domain, 'batch-http-brand.example.io')
+    assert.equal(batch.body.data.items[2].item.domain, 'batch-http-store.example.io')
+  })
+
+  it('GET /saas/domain/governance/active-without-primary 返回治理视图', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-governance',
+      'x-brand-id': 'brand-http-governance',
+      'x-user-id': 'brand-http-governance-admin',
+      'x-role': 'brand_admin',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'governance-http-a.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'governance-http-b.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${first.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${second.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+
+    const governance = await request(app.getHttpServer())
+      .get('/saas/domain/governance/active-without-primary')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(governance.body.data.total >= 1, true)
+    assert.equal(governance.body.data.items[0].scopeType, 'BRAND')
+    assert.equal(governance.body.data.items[0].activeCount >= 2, true)
+  })
+
+  it('brand_admin 请求 STORE scope 批量主域名返回 403', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/saas/domain/primary/batch/current')
+      .set({
+        'x-tenant-id': 'tenant-http-forbidden',
+        'x-brand-id': 'brand-http-forbidden',
+        'x-user-id': 'brand-http-forbidden-admin',
+        'x-role': 'brand_admin',
+      })
+      .send({
+        items: [
+          { scopeType: 'STORE', brandId: 'brand-http-forbidden', storeId: 'store-http-forbidden' },
+        ],
+      })
+      .expect(403)
+
+    assert.ok(String(res.body.message).includes('brand_admin'))
+  })
 })

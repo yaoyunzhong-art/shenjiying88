@@ -43,6 +43,19 @@ const TENANT_ROOT = {
   userId: 'admin-root',
   role: 'tenant_admin' as const,
 }
+const BRAND_CTX = {
+  tenantId: 'tenant-governance',
+  brandId: 'brand-governance',
+  userId: 'brand-admin',
+  role: 'brand_admin' as const,
+}
+const STORE_CTX = {
+  tenantId: 'tenant-governance',
+  brandId: 'brand-governance',
+  storeId: 'store-governance',
+  userId: 'store-admin',
+  role: 'store_admin' as const,
+}
 
 // 共享 service (MemoryRepository 状态需要单例)
 const SHARED_SERVICE = new CustomDomainService()
@@ -516,6 +529,137 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       assert.equal(afterRemove, null)
       assert.equal(afterReselect?.domain, 'reselect-second.shenjiying88.com')
       assert.equal(afterReselect?.isPrimary, true)
+    })
+
+    it('getCurrentPrimaryBatch 支持批量返回 tenant/brand/store 当前主域名', async () => {
+      const isolatedService = new CustomDomainService()
+      const tenantDomain = await runWithTenant(TENANT_ROOT, async () =>
+        isolatedService.addDomain('batch-tenant.example.io'),
+      )
+      const brandDomain = await runWithTenant(BRAND_CTX, async () =>
+        isolatedService.addDomain('batch-brand.example.io'),
+      )
+      const storeDomain = await runWithTenant(STORE_CTX, async () =>
+        isolatedService.addDomain('batch-store.example.io'),
+      )
+
+      isolatedService.setDnsTxtOverride(tenantDomain.verificationHost, [
+        buildVerificationValue(tenantDomain.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(brandDomain.verificationHost, [
+        buildVerificationValue(brandDomain.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(storeDomain.verificationHost, [
+        buildVerificationValue(storeDomain.verificationToken),
+      ])
+
+      await runWithTenant(TENANT_ROOT, async () => isolatedService.verify(tenantDomain.id))
+      await runWithTenant(BRAND_CTX, async () => isolatedService.verify(brandDomain.id))
+      await runWithTenant(STORE_CTX, async () => isolatedService.verify(storeDomain.id))
+      await runWithTenant(TENANT_ROOT, async () => isolatedService.setPrimary(tenantDomain.id))
+      await runWithTenant(BRAND_CTX, async () => isolatedService.setPrimary(brandDomain.id))
+      await runWithTenant(STORE_CTX, async () => isolatedService.setPrimary(storeDomain.id))
+
+      const batch = await runWithTenant(TENANT_ROOT, async () =>
+        isolatedService.getCurrentPrimaryBatch([
+          { scopeType: 'TENANT' },
+          { scopeType: 'BRAND', brandId: 'brand-governance' },
+          { scopeType: 'STORE', brandId: 'brand-governance', storeId: 'store-governance' },
+        ]),
+      )
+
+      assert.equal(batch.length, 3)
+      assert.equal(batch[0].item?.domain, 'batch-tenant.example.io')
+      assert.equal(batch[1].item?.domain, 'batch-brand.example.io')
+      assert.equal(batch[2].item?.domain, 'batch-store.example.io')
+    })
+
+    it('listActiveWithoutPrimary 返回 active 但未设主域名的治理视图', async () => {
+      const isolatedService = new CustomDomainService()
+      const first = await runWithTenant(BRAND_CTX, async () =>
+        isolatedService.addDomain('governance-a.example.io'),
+      )
+      const second = await runWithTenant(BRAND_CTX, async () =>
+        isolatedService.addDomain('governance-b.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(BRAND_CTX, async () => isolatedService.verify(first.id))
+      await runWithTenant(BRAND_CTX, async () => isolatedService.verify(second.id))
+
+      const governance = await runWithTenant(BRAND_CTX, async () =>
+        isolatedService.listActiveWithoutPrimary(),
+      )
+
+      assert.equal(governance.length, 1)
+      assert.equal(governance[0].scopeType, 'BRAND')
+      assert.equal(governance[0].activeCount, 2)
+      assert.deepEqual(
+        governance[0].candidateDomains.map((item) => item.domain).sort(),
+        ['governance-a.example.io', 'governance-b.example.io'],
+      )
+    })
+
+    it('brand_admin 不可查询 STORE scope 当前主域名', async () => {
+      const isolatedService = new CustomDomainService()
+
+      await assert.rejects(
+        () =>
+          runWithTenant(BRAND_CTX, async () =>
+            isolatedService.getCurrentPrimary({
+              scopeType: 'STORE',
+              brandId: 'brand-governance',
+              storeId: 'store-governance',
+            }),
+          ),
+        /brand_admin can only query BRAND scope domains/,
+      )
+    })
+
+    it('store_admin 的治理视图只返回当前 store scope', async () => {
+      const isolatedService = new CustomDomainService()
+      const visible = await runWithTenant(STORE_CTX, async () =>
+        isolatedService.addDomain('store-visible.example.io'),
+      )
+      const invisible = await runWithTenant(
+        {
+          tenantId: 'tenant-governance',
+          brandId: 'brand-governance',
+          storeId: 'store-other',
+          userId: 'store-other-admin',
+          role: 'store_admin' as const,
+        },
+        async () => isolatedService.addDomain('store-hidden.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(visible.verificationHost, [
+        buildVerificationValue(visible.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(invisible.verificationHost, [
+        buildVerificationValue(invisible.verificationToken),
+      ])
+      await runWithTenant(STORE_CTX, async () => isolatedService.verify(visible.id))
+      await runWithTenant(
+        {
+          tenantId: 'tenant-governance',
+          brandId: 'brand-governance',
+          storeId: 'store-other',
+          userId: 'store-other-admin',
+          role: 'store_admin' as const,
+        },
+        async () => isolatedService.verify(invisible.id),
+      )
+
+      const governance = await runWithTenant(STORE_CTX, async () =>
+        isolatedService.listActiveWithoutPrimary(),
+      )
+
+      assert.equal(governance.length, 1)
+      assert.equal(governance[0].storeId, 'store-governance')
+      assert.equal(governance[0].candidateDomains[0].domain, 'store-visible.example.io')
     })
   })
 

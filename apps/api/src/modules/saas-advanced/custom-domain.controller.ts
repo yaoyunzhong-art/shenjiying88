@@ -22,11 +22,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import { requireTenantContext } from '../../common/context/tenant-context'
 import { CustomDomainService } from './custom-domain.service'
 import { isValidDomain, buildVerificationHost, buildVerificationValue } from './custom-domain.entity'
 import {
   AddDomainRequest,
+  ActiveWithoutPrimaryGovernanceResponse,
+  BatchCurrentPrimaryDomainRequest,
+  BatchCurrentPrimaryDomainResponse,
   CurrentPrimaryDomainQueryRequest,
   CurrentPrimaryDomainResponse,
   DomainDetailResponse,
@@ -87,19 +89,36 @@ export class CustomDomainController {
   async getCurrentPrimary(
     @Query() query: CurrentPrimaryDomainQueryRequest = new CurrentPrimaryDomainQueryRequest(),
   ) {
-    const ctx = requireTenantContext()
-    const scopeType =
-      query.scopeType ?? (ctx.storeId ? 'STORE' : ctx.brandId ? 'BRAND' : 'TENANT')
-    const brandId = query.brandId ?? ctx.brandId
-    const storeId = query.storeId ?? ctx.storeId
-    const item = await this.service.getCurrentPrimary(query)
+    return this.service.getCurrentPrimaryBatch([query]).then((items) => items[0])
+  }
+
+  /**
+   * 批量查询多个作用域当前主域名
+   * POST /saas/domain/primary/batch/current
+   */
+  @ApiOperation({ summary: '批量查询多个作用域当前主域名' })
+  @Post('primary/batch/current')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: BatchCurrentPrimaryDomainRequest })
+  @ApiOkResponse({ type: BatchCurrentPrimaryDomainResponse })
+  async getCurrentPrimaryBatch(@Body() body: BatchCurrentPrimaryDomainRequest) {
     return {
-      scopeType,
-      tenantId: ctx.tenantId,
-      brandId,
-      storeId,
-      resolved: item != null,
-      item,
+      items: await this.service.getCurrentPrimaryBatch(body.items),
+    }
+  }
+
+  /**
+   * 查询 active 但尚未设置主域名的治理视图
+   * GET /saas/domain/governance/active-without-primary
+   */
+  @ApiOperation({ summary: '查询 active 但尚未设置主域名的治理视图' })
+  @Get('governance/active-without-primary')
+  @ApiOkResponse({ type: ActiveWithoutPrimaryGovernanceResponse })
+  async listActiveWithoutPrimary() {
+    const items = await this.service.listActiveWithoutPrimary()
+    return {
+      total: items.length,
+      items,
     }
   }
 
