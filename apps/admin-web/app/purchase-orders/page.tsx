@@ -7,12 +7,15 @@
 
 import React, { useState, useMemo } from 'react';
 
+import { useRouter } from 'next/navigation';
+
 import {
   DataTable,
   Pagination,
   SearchFilterInput,
   StatusBadge,
   PageShell,
+  SubmitButton,
   Tabs,
   usePagination,
   useSearchFilter,
@@ -212,10 +215,16 @@ export default function PurchaseOrdersPage() {
     PURCHASE_ORDER_LIST_SEARCH_FIELDS,
   );
 
+  const router = useRouter();
+
   // ---- 行点击 ----
   const handleRowClick = (item: PurchaseOrderItem) => {
-    // 详情页导航占位 — 后续可替换为路由跳转
-    setSelectedIds([item.id]);
+    router.push(`/purchase-orders/${item.id}`);
+  };
+
+  // ---- 新建采购单 ----
+  const handleCreateNew = () => {
+    router.push('/purchase-orders/form');
   };
 
   // ---- 排序 ----
@@ -248,9 +257,9 @@ export default function PurchaseOrdersPage() {
       {/* 统计卡片 */}
       <StatsCards stats={stats} />
 
-      {/* 搜索 + 筛选 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ flex: 1, maxWidth: 380 }}>
+      {/* 搜索 + ActionBar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, maxWidth: 380, minWidth: 200 }}>
           <SearchFilterInput
             value={searchTerm}
             onChange={setSearchTerm}
@@ -258,8 +267,13 @@ export default function PurchaseOrdersPage() {
             width="100%"
           />
         </div>
-        <div style={{ fontSize: 11, color: '#64748b' }}>
-          共 {sorted.length} 条
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: '#64748b' }}>
+            共 {sorted.length} 条
+          </span>
+          <SubmitButton onClick={handleCreateNew}>
+            ＋ 新建采购单
+          </SubmitButton>
         </div>
       </div>
 
