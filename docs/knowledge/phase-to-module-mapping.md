@@ -29,6 +29,10 @@
 | Knowledge | admin-web/app/knowledge/ | 196行 | 32行 | 🆕 | 🔴 | P-Admin 知识 |
 | Users | admin-web/app/users/ | 158行 | 32行 | 🆕 | 🔴 | P-Admin 用户 |
 | System Monitor | admin-web/app/system-monitor/ | 270行 | 18测试 | 🆕 | 🔴 | P-Admin 系统监控 |
+| Staff | admin-web/app/staff/ | ~300行 | 51测试 | 🆕 | 🔴 | P-36会员 员工管理 |
+| Equipment | admin-web/app/equipment/ | ~300行 | 56测试 | 🆕 | 🔴 | P-30后勤 设备管理 |
+| Approvals | admin-web/app/approvals/ | ~400行 | 53测试 | 🆕 | 🔴 | P-Admin 审批流程 |
+| Notifications | admin-web/app/notifications/ | ~300行 | 40测试 | 🆕 | 🔴 | P-Admin 通知管理 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
 ### V19 Day2 凌晨 storefront 薄页面补齐 (2026-07-18 02:25-03:10)

@@ -34,4 +34,9 @@
 | points-rules | 1src | 15 |
 | system-monitor | 1src | 18 |
 | profit-loss | 1src | 23 |
-| **合计** | **9src** | **139** |
+| staff | 1src | 51 |
+| equipment | 1src | 56 |
+| approvals | 1src | 53 |
+| notifications | 1src | 40 |
+| store-reports | 1src | 31 |
+| **合计** | **14src** | **370** |
