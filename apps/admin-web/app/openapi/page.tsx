@@ -169,6 +169,14 @@ export default function OpenAPIWorkbench() {
       <h1 className="text-3xl font-bold mb-2">🔌 开放 API 工作台</h1>
       <p className="text-gray-500 mb-6">API Key + Webhook + 沙箱 + 限流配额 + HMAC 签名</p>
 
+      {/* API 状态统计条 */}
+      <ApiStatsBar
+        apiKeyCount={apiKeys.length}
+        activeSubscriptions={webhooks.filter(w => w.status === 'ACTIVE').length}
+        todayCalls={usageReport?.totalUsageToday ?? 0}
+        anomalyCount={deliveries.filter(d => d.status === 'FAILED').length + deadLetters.length}
+      />
+
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b">
         {[
@@ -198,6 +206,32 @@ export default function OpenAPIWorkbench() {
       {tab === 'sandboxes' && <SandboxesTab sandboxes={sandboxes} />}
       {tab === 'usage' && <UsageTab report={usageReport} />}
       {tab === 'sign' && <SignTab />}
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════
+// API 状态统计条
+// ════════════════════════════════════════════════
+
+function ApiStatsBar({ apiKeyCount, activeSubscriptions, todayCalls, anomalyCount }: {
+  apiKeyCount: number
+  activeSubscriptions: number
+  todayCalls: number
+  anomalyCount: number
+}) {
+  const stats = [
+    { label: 'API Keys', value: apiKeyCount, color: 'blue' },
+    { label: '活跃订阅', value: activeSubscriptions, color: 'green' },
+    { label: '今日调用', value: todayCalls, color: 'purple', unit: '次' },
+    { label: '异常数', value: anomalyCount, color: anomalyCount > 0 ? 'red' : 'green' },
+  ]
+
+  return (
+    <div className="grid grid-cols-4 gap-4 mb-6">
+      {stats.map(s => (
+        <MetricCard key={s.label} name={s.label} value={s.value} color={s.color} unit={s.unit} />
+      ))}
     </div>
   )
 }
