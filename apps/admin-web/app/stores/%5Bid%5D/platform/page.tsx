@@ -3,6 +3,30 @@
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal, Select, Tabs, Progress } from '@m5/ui';
 
+/* ── 平台配置类型定义 ── */
+interface PlatformConfigItem {
+  id: string;
+  name: string;
+  category: string;
+  status: 'configured' | 'unconfigured' | 'error';
+}
+
+/* ── 平台配置项列表 ── */
+const PLATFORM_CONFIGS: PlatformConfigItem[] = [
+  { id: 'PC-01', name: 'API密钥', category: '基础', status: 'configured' },
+  { id: 'PC-02', name: 'Webhook回调', category: '集成', status: 'configured' },
+  { id: 'PC-03', name: 'OAuth2认证', category: '安全', status: 'configured' },
+  { id: 'PC-04', name: 'IP白名单', category: '安全', status: 'configured' },
+  { id: 'PC-05', name: '频率限制', category: '基础', status: 'configured' },
+  { id: 'PC-06', name: '日志推送', category: '集成', status: 'configured' },
+  { id: 'PC-07', name: '监控告警', category: '运维', status: 'configured' },
+  { id: 'PC-08', name: '数据导出', category: '集成', status: 'unconfigured' },
+  { id: 'PC-09', name: '自定义域名', category: '基础', status: 'unconfigured' },
+  { id: 'PC-10', name: 'SSL证书', category: '安全', status: 'unconfigured' },
+  { id: 'PC-11', name: '邮件服务', category: '集成', status: 'error' },
+  { id: 'PC-12', name: '短信通道', category: '集成', status: 'error' },
+];
+
 interface APIKey {
   id: string; name: string; key: string; status: string;
   created: string; expires: string; lastUsed: string; quota: number; used: number;
@@ -41,12 +65,31 @@ export default function OpenPlatformPage() {
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
 
+  // ── API密钥统计 ──
   const activeKeys = API_KEYS.filter(k => k.status === 'active').length;
   const totalQuota = API_KEYS.reduce((s, k) => s + k.quota, 0);
   const totalUsed = API_KEYS.reduce((s, k) => s + k.used, 0);
   const usagePct = Math.round(totalUsed/totalQuota*100);
 
   const filteredKeys = API_KEYS.filter(k => !search || k.name.includes(search));
+
+  // ── 平台配置统计 ──
+  const configCount = PLATFORM_CONFIGS.length;
+  const configuredCount = PLATFORM_CONFIGS.filter(c => c.status === 'configured').length;
+  const unconfiguredCount = PLATFORM_CONFIGS.filter(c => c.status === 'unconfigured').length;
+  const errorCount = PLATFORM_CONFIGS.filter(c => c.status === 'error').length;
+
+  const configStatsRow = (
+    <div style={{marginBottom:16}}>
+      <div style={{color:'#94a3b8',fontSize:13,marginBottom:8}}>📋 平台配置概览</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
+        <Card><Statistic label="已配置" value={configuredCount} variant="success" /></Card>
+        <Card><Statistic label="未配置" value={unconfiguredCount} variant="warning" /></Card>
+        <Card><Statistic label="异常" value={errorCount} variant="danger" /></Card>
+        <Card><Statistic label="总配置项" value={configCount} /></Card>
+      </div>
+    </div>
+  );
 
   const statsRow = (
     <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:16,marginBottom:16}}>
@@ -70,6 +113,7 @@ export default function OpenPlatformPage() {
           </Space>
         </div>
 
+        {configStatsRow}
         {statsRow}
 
         <Tabs activeKey={tabKey} onChange={setTabKey} items={[

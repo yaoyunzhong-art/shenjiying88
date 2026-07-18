@@ -404,6 +404,50 @@ const mockUiModule = {
   /** Toast 钩子 mock */
   useToast: () => ({ success: () => {}, error: () => {}, warning: () => {}, info: () => {} }),
 
+  // ── Platform page needed components ──
+  Statistic: ({ label, value, variant, prefix, suffix }) => {
+    return React.createElement('div', { 'data-mock': 'Statistic', 'data-label': String(label ?? ''), 'data-value': String(value ?? ''), 'data-variant': variant || '' },
+      prefix ? React.createElement('span', null, String(prefix)) : null,
+      value !== undefined ? React.createElement('span', null, String(value)) : null,
+      suffix ? React.createElement('span', null, String(suffix)) : null,
+    );
+  },
+  Table: ({ rows, columns, rowKey }) => {
+    return React.createElement('div', { 'data-mock': 'Table' },
+      React.createElement('table', null,
+        React.createElement('thead', null,
+          React.createElement('tr', null,
+            ...(columns || []).map((col) =>
+              React.createElement('th', { key: col.key }, col.header || col.key)
+            )
+          )
+        ),
+        React.createElement('tbody', null,
+          ...(rows || []).map((item, idx) =>
+            React.createElement('tr', { key: rowKey ? rowKey(item) : idx },
+              ...(columns || []).map((col) =>
+                React.createElement('td', { key: col.key },
+                  col.render ? col.render(item, idx) : String(item[col.key] ?? '')
+                )
+              )
+            )
+          )
+        )
+      )
+    );
+  },
+  Tag: ({ children, variant }) => {
+    return React.createElement('span', { 'data-mock': 'Tag', 'data-variant': variant || '' }, children);
+  },
+  Space: ({ children, style, ...props }) => {
+    return React.createElement('div', { 'data-mock': 'Space', style: style || {}, ...props }, children);
+  },
+  Input: ({ value, onChange, placeholder, style, type }) => {
+    return React.createElement('input', { 'data-mock': 'Input', value, placeholder: placeholder || '', type: type || 'text', style: style || {}, onChange: onChange || (() => {}) });
+  },
+  Progress: ({ value, height, style }) => {
+    return React.createElement('div', { 'data-mock': 'Progress', 'data-value': String(value ?? 0) });
+  },
   // DataTableSortConfig type export not needed at runtime
 };
 
