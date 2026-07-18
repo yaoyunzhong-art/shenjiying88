@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — Kustomize 配置 (kubectl apply -k infra/k8s)
+# ═══════════════════════════════════════════════════════════════
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: m5
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - postgres-statefulset.yaml
+  - redis-deployment.yaml
+  - rabbitmq-deployment.yaml
+  - minio-deployment.yaml
+  - api-deployment.yaml
+  - admin-deployment.yaml
+  - storefront-deployment.yaml
+  - tob-deployment.yaml
+  - ingress.yaml
+  - network-policy.yaml
+  - pod-disruption-budget.yaml
+  - resource-quota.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: shenjiying

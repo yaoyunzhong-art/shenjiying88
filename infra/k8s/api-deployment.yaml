@@ -54,7 +54,6 @@ spec:
       serviceAccountName: m5-api
       imagePullSecrets:
         - name: acr-regcred
-        - name: ghcr-pull-secret
       containers:
         - name: api
           image: shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/m5-api:latest

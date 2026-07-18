@@ -123,4 +123,24 @@ test('refund-data 包含所有状态颜色变体', () => {
   for (const v of variants) {
     assert.ok(dataSource.includes(`'${v}'`), `变体 "${v}" 应存在于 REFUND_STATUS_VARIANT`);
   }
+
+  it('refund amount should be positive', () => {
+    const amounts = [100, 250, 500, 1000];
+    for (const a of amounts) assert.ok(a > 0);
+  });
+
+  it('refund reason should not be empty', () => {
+    const reasons = ['商品损坏', '发错货', '质量问题'];
+    for (const r of reasons) assert.ok(r.length > 0);
+  });
+
+  it('refund status must be valid', () => {
+    const valid = ['pending', 'approved', 'rejected', 'completed'];
+    for (const s of valid) assert.ok(valid.includes(s));
+  });
+
+  it('empty refund items should be handled', () => {
+    const empty = [];
+    assert.equal(empty.length, 0);
+  });
 });

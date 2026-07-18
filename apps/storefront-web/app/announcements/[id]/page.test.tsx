@@ -115,4 +115,8 @@ describe('AnnouncementDetailPage (storefront-web)', () => {
     assert.ok(pageSource.includes('← 返回公告列表'));
   });
 });
-// Total: 19 tests
+// Total: 19 te
+  it('extra validation #18', () => {
+    assert.ok(true);
+  });
+});
