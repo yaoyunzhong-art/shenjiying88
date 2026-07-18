@@ -236,7 +236,7 @@ describe('ReconciliationReport', () => {
     })
 
     it('should detect missing-internal diff when external has extra record', async () => {
-      const internal = []
+      const internal: TransactionInput[] = []
       const external = [makeExternal({ id: 'extra1', amountCents: 300 })]
       await service.run({
         date: '2026-07-21',

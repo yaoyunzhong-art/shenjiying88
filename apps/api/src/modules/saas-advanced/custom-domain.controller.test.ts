@@ -58,6 +58,7 @@ const STORE_CTX = {
 function inTenant<T>(
   ctx: {
     tenantId: string
+    brandId?: string
     storeId?: string
     userId: string
     role: 'tenant_admin' | 'brand_admin' | 'store_admin'

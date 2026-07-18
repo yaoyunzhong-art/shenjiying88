@@ -435,6 +435,9 @@ export class RecommendPrimaryDomainResponse {
   @ApiPropertyOptional({ example: '优先推荐 active_ssl，且最近一次校验/更新时间更新' })
   recommendationReason?: string
 
+  @ApiPropertyOptional({ example: 'brand_admin 只能操作 BRAND scope 域名' })
+  failureReason?: string
+
   @ApiPropertyOptional({ type: () => DomainListItem, nullable: true })
   item?: DomainListItem | null
 }
@@ -452,6 +455,15 @@ export class BatchRecommendPrimaryDomainResponse {
 
   @ApiProperty({ example: 1 })
   appliedCount!: number
+
+  @ApiPropertyOptional({ example: 2 })
+  matchedTotal?: number
+
+  @ApiPropertyOptional({ example: 0 })
+  skippedCount?: number
+
+  @ApiPropertyOptional({ example: 0 })
+  failedCount?: number
 
   @ApiProperty({ example: 2 })
   resolvedCount!: number
@@ -523,4 +535,147 @@ export class DomainListQueryRequest {
   @Max(100)
   @IsOptional()
   pageSize?: number = 10
+}
+
+export class DomainGovernanceScopeSummaryItem {
+  @ApiProperty({ example: 'BRAND' })
+  scopeType!: string
+
+  @ApiProperty({ example: 'tenant-abc' })
+  tenantId!: string
+
+  @ApiPropertyOptional({ example: 'brand-001' })
+  brandId?: string
+
+  @ApiPropertyOptional({ example: 'store-001' })
+  storeId?: string
+
+  @ApiProperty({ example: 2 })
+  activeDomainCount!: number
+
+  @ApiProperty({ example: true })
+  missingPrimary!: boolean
+
+  @ApiPropertyOptional({ example: 'brand.example.io', nullable: true })
+  currentPrimaryDomain?: string | null
+
+  @ApiPropertyOptional({ example: 'brand-recommend.example.io', nullable: true })
+  recommendedDomain?: string | null
+
+  @ApiPropertyOptional({ example: '优先推荐 active_ssl，且最近一次校验/更新时间更新' })
+  recommendationReason?: string
+}
+
+export class DomainGovernanceSummaryResponse {
+  @ApiProperty({ example: 3 })
+  totalMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: 5 })
+  totalActiveWithoutPrimaryDomains!: number
+
+  @ApiProperty({ example: 2 })
+  recommendedReadyScopes!: number
+
+  @ApiProperty({ example: 1 })
+  tenantMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: 1 })
+  brandMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: 1 })
+  storeMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: true })
+  requiresAttention!: boolean
+
+  @ApiProperty({ example: '2026-07-19T00:00:00.000Z' })
+  lastEvaluatedAt!: string
+
+  @ApiProperty({ type: () => [DomainGovernanceScopeSummaryItem] })
+  currentScopes!: DomainGovernanceScopeSummaryItem[]
+}
+
+export class RecommendPrimaryByQueryRequest {
+  @ApiPropertyOptional({
+    description: '按作用域类型筛选',
+    enum: DOMAIN_SCOPE_VALUES,
+    example: 'BRAND',
+  })
+  @IsIn(DOMAIN_SCOPE_VALUES)
+  @IsOptional()
+  scopeType?: (typeof DOMAIN_SCOPE_VALUES)[number]
+
+  @ApiPropertyOptional({ description: '按品牌作用域过滤', example: 'brand-001' })
+  @IsString()
+  @IsOptional()
+  brandId?: string
+
+  @ApiPropertyOptional({ description: '按门店作用域过滤', example: 'store-001' })
+  @IsString()
+  @IsOptional()
+  storeId?: string
+
+  @ApiPropertyOptional({
+    description: '仅预览推荐结果，不真正执行主域名切换',
+    example: false,
+    default: false,
+  })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  dryRun?: boolean = false
+
+  @ApiPropertyOptional({
+    description: '批量操作时使用上一页的 total 展示页列表，分页查询筛选结果',
+    example: 1,
+    default: 1,
+    minimum: 1,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1
+
+  @ApiPropertyOptional({
+    description: '每页条数',
+    example: 10,
+    default: 10,
+    minimum: 1,
+    maximum: 100,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  pageSize?: number = 10
+
+  @ApiPropertyOptional({
+    description: '治理视图排序字段',
+    enum: GOVERNANCE_SORT_FIELD_VALUES,
+    example: 'activeCount',
+  })
+  @IsIn(GOVERNANCE_SORT_FIELD_VALUES)
+  @IsOptional()
+  sortBy?: (typeof GOVERNANCE_SORT_FIELD_VALUES)[number] = 'activeCount'
+
+  @ApiPropertyOptional({
+    description: '排序方向',
+    enum: DOMAIN_SORT_ORDER_VALUES,
+    example: 'desc',
+  })
+  @IsIn(DOMAIN_SORT_ORDER_VALUES)
+  @IsOptional()
+  sortOrder?: (typeof DOMAIN_SORT_ORDER_VALUES)[number] = 'desc'
+
+  @ApiPropertyOptional({
+    description: '是否批量匹配全部筛选结果（而非仅当前页）',
+    example: false,
+    default: false,
+  })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  applyAllMatched?: boolean = false
 }
