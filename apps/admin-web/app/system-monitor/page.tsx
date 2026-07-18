@@ -130,6 +130,13 @@ export default function SystemMonitorPage() {
   const warningCount = services.filter(s => s.status !== 'healthy').length
   const healthyCount = services.filter(s => s.status === 'healthy').length
 
+  // 系统健康度统计
+  const totalServices = services.length
+  const normalMetricCount = metrics.filter(m => m.status === 'normal').length
+  const warningMetricCount = metrics.filter(m => m.status === 'warning').length + services.filter(s => s.status === 'degraded').length
+  const criticalCount = metrics.filter(m => m.status === 'critical').length + services.filter(s => s.status === 'down').length
+  const totalMonitoredItems = metrics.length + services.length
+
   if (loading && refreshKey === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -154,6 +161,38 @@ export default function SystemMonitorPage() {
           <p className="text-yellow-800 text-sm">{error}</p>
         </div>
       )}
+
+      {/* 系统健康度统计条 */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-white border rounded-lg p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg">✓</div>
+          <div>
+            <p className="text-xs text-gray-500">CPU正常</p>
+            <p className="text-lg font-bold text-gray-900">{normalMetricCount}</p>
+          </div>
+        </div>
+        <div className="bg-white border rounded-lg p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg">✓</div>
+          <div>
+            <p className="text-xs text-gray-500">内存正常</p>
+            <p className="text-lg font-bold text-gray-900">{normalMetricCount}</p>
+          </div>
+        </div>
+        <div className="bg-white border rounded-lg p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg">✓</div>
+          <div>
+            <p className="text-xs text-gray-500">磁盘正常</p>
+            <p className="text-lg font-bold text-gray-900">{healthyCount}</p>
+          </div>
+        </div>
+        <div className="bg-white border rounded-lg p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg">∑</div>
+          <div>
+            <p className="text-xs text-gray-500">总服务数</p>
+            <p className="text-lg font-bold text-gray-900">{totalServices}</p>
+          </div>
+        </div>
+      </div>
 
       {/* 指标卡片 */}
       <div className="grid grid-cols-3 gap-4">
