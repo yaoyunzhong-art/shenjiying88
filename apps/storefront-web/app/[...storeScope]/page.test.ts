@@ -353,13 +353,12 @@ describe('页面组件 — 导出与导入', () => {
   });
 
   it('完整路径与 H5 路径都应展示域名治理工作台入口', () => {
-    assert.ok(PAGE_SRC.includes('域名治理工作台'), '页面应展示域名治理工作台');
-    assert.ok(PAGE_SRC.includes('打开域名治理工作台'), '页面应展示治理工作台 CTA');
+    assert.ok(PAGE_SRC.includes('PortalDomainGovernanceCard'), '页面应展示治理工作台 presenter');
     assert.ok(PAGE_SRC.includes('domainGovernanceWorkspaceHref'), '页面应消费统一治理入口链接');
   });
 
   it('域名治理卡片应展示 domainSource 与缺主 scope 摘要', () => {
-    assert.ok(PAGE_SRC.includes('formatDomainGovernanceSourceSummary'), '页面应使用共享域名来源摘要 formatter');
-    assert.ok(PAGE_SRC.includes('formatDomainGovernanceCountsSummary'), '页面应使用共享域名治理计数 formatter');
+    assert.ok(PAGE_SRC.includes('buildDomainGovernanceDisplayModel'), '页面应使用共享域名治理 display model helper');
+    assert.ok(PAGE_SRC.includes('domainGovernanceDisplayModel'), '页面应向 presenter 传入共享 display model');
   });
 });

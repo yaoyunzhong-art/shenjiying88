@@ -140,14 +140,14 @@ describe('IndexPage 正例', () => {
 
   it('source 有 domainSource 与 domainGovernance 渲染', () => {
     assert.ok(source.includes('domainSource'), 'should render domain source');
-    assert.ok(source.includes('domainGovernance'), 'should render domain governance snapshot');
+    assert.ok(source.includes('buildDomainGovernanceDisplayModel'), 'should build shared domain governance display model');
     assert.ok(source.includes('domainGovernanceWorkspaceHref'), 'should render governance workspace href from snapshot');
   });
 
   it('source has domain governance summary and shared workspace href', () => {
-    assert.ok(source.includes('域名治理摘要'), 'should have domain governance summary');
-    assert.ok(source.includes('治理后台入口'), 'should have governance workspace label');
-    assert.ok(source.includes('bootstrap.domainGovernanceWorkspaceHref'), 'should consume governance workspace href from snapshot');
+    assert.ok(source.includes('DomainGovernancePanel'), 'should render shared domain governance presenter');
+    assert.ok(source.includes('heading="域名治理摘要"'), 'should keep domain governance heading');
+    assert.ok(source.includes('domainGovernanceDisplayModel'), 'should pass shared display model');
   });
 
   it('source uses useState/useEffect', () => {

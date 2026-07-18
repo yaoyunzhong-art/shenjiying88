@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAppContext } from '../../context/AppContext';
@@ -23,7 +24,11 @@ export function SettingsScreen() {
   const [offlineMode, setOfflineMode] = React.useState(state.isOfflineMode);
   const [pushNotifications, setPushNotifications] = React.useState(state.pushNotificationsEnabled);
   const [biometric, setBiometric] = React.useState(state.biometricEnabled);
-  const governanceWorkspaceHref = state.bootstrap.domainGovernanceWorkspaceHref;
+  const domainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    state.bootstrap.domainSource,
+    state.bootstrap.domainGovernance,
+    state.bootstrap.domainGovernanceWorkspaceHref,
+  );
 
   const handleOfflineModeChange = (value: boolean) => {
     setOfflineMode(value);
@@ -53,7 +58,7 @@ export function SettingsScreen() {
   };
 
   const handleDomainGovernancePress = () => {
-    Alert.alert('域名治理工作台', governanceWorkspaceHref);
+    Alert.alert(domainGovernanceDisplayModel.title, domainGovernanceDisplayModel.workspaceHref);
   };
 
   const handleClearCache = () => {
@@ -179,8 +184,8 @@ export function SettingsScreen() {
           <View style={styles.divider} />
           {renderSettingItem(
             '🌍',
-            '域名治理工作台',
-            `缺主 scope ${state.bootstrap.domainGovernance.totalMissingPrimaryScopes} / 域名来源 ${state.bootstrap.domainSource}`,
+            domainGovernanceDisplayModel.title,
+            domainGovernanceDisplayModel.compactSummary,
             <Text style={styles.settingArrow}>›</Text>,
             handleDomainGovernancePress
           )}

@@ -1182,21 +1182,23 @@ export class CustomDomainService {
   private async buildGovernanceSummary(ctx: TenantContext): Promise<DomainGovernanceSummaryResponse> {
     const governance = await this.collectGovernanceItems({}, ctx)
     const currentScopes = await Promise.all(
-      [
-        { scopeType: 'TENANT' as const, tenantId: ctx.tenantId },
-        ctx.brandId
-          ? { scopeType: 'BRAND' as const, tenantId: ctx.tenantId, brandId: ctx.brandId }
-          : null,
-        ctx.brandId && ctx.storeId
-          ? {
-              scopeType: 'STORE' as const,
-              tenantId: ctx.tenantId,
-              brandId: ctx.brandId,
-              storeId: ctx.storeId,
-            }
-          : null,
-      ]
-        .filter((item): item is { scopeType: DomainScopeType; tenantId: string; brandId?: string; storeId?: string } => item != null)
+      (
+        [
+          { scopeType: 'TENANT' as const, tenantId: ctx.tenantId },
+          ctx.brandId
+            ? { scopeType: 'BRAND' as const, tenantId: ctx.tenantId, brandId: ctx.brandId }
+            : null,
+          ctx.brandId && ctx.storeId
+            ? {
+                scopeType: 'STORE' as const,
+                tenantId: ctx.tenantId,
+                brandId: ctx.brandId,
+                storeId: ctx.storeId,
+              }
+            : null,
+        ] as ({ scopeType: 'TENANT'; tenantId: string } | { scopeType: 'BRAND'; tenantId: string; brandId: string } | { scopeType: 'STORE'; tenantId: string; brandId: string; storeId: string } | null)[]
+      )
+        .filter((item): item is { scopeType: 'TENANT'; tenantId: string } | { scopeType: 'BRAND'; tenantId: string; brandId: string } | { scopeType: 'STORE'; tenantId: string; brandId: string; storeId: string } => item != null)
         .map((scope) => this.buildGovernanceScopeSummaryItem(scope)),
     )
 

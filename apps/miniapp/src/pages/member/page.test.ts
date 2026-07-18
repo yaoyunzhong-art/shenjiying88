@@ -147,14 +147,14 @@ describe('MemberPage 正例', () => {
 
   it('source 有 domainSource 与 domainGovernance 字段消费', () => {
     assert.ok(source.includes('domainSource'), 'should reference domain source');
-    assert.ok(source.includes('domainGovernance'), 'should reference domain governance snapshot');
+    assert.ok(source.includes('buildDomainGovernanceDisplayModel'), 'should build shared domain governance display model');
     assert.ok(source.includes('domainGovernanceWorkspaceHref'), 'should reference governance workspace href from snapshot');
   });
 
   it('source 有域名治理摘要与治理后台入口', () => {
-    assert.ok(source.includes('域名治理'), 'should show domain governance summary');
-    assert.ok(source.includes('治理后台入口'), 'should show governance workspace href');
-    assert.ok(source.includes('bootstrap.domainGovernanceWorkspaceHref'), 'should consume governance workspace href from snapshot');
+    assert.ok(source.includes('DomainGovernancePanel'), 'should render shared domain governance presenter');
+    assert.ok(source.includes('heading="域名治理"'), 'should keep domain governance heading');
+    assert.ok(source.includes('domainGovernanceDisplayModel'), 'should pass shared display model');
   });
 
   it('runtime snapshot 初始 deliveryMode 为 fallback', () => {

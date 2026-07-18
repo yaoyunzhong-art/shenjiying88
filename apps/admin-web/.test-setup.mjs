@@ -236,6 +236,9 @@ const mockUiModule = {
     const [value, setValue] = React.useState(initialValue ?? '');
     return { value, debouncedValue: value, setValue };
   },
+  Card: ({ children, style, ...props }) => {
+    return React.createElement('div', { 'data-mock': 'Card', style: style || {}, ...props }, children);
+  },
   StatCard: ({ label, value, variant, suffix, icon }) => {
     return React.createElement('div', { 'data-mock': 'StatCard', 'data-label': String(label ?? ''), 'data-value': String(value ?? '') },
       label ? React.createElement('div', { 'data-testid': 'stat-label' }, String(label)) : null,

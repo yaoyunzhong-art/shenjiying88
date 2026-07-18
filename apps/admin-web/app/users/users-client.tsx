@@ -1,12 +1,12 @@
 /**
  * UsersClient — 用户管理客户端组件
- * 功能: 用户列表、角色筛选、状态管理、统计摘要
+ * 功能: 用户列表、角色筛选、状态管理、统计摘要、角色分布
  */
 
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, StatusBadge, SearchFilterInput, DataTable, Tabs, type DataTableColumn } from '@m5/ui';
+import { Card, StatCard, StatusBadge, SearchFilterInput, DataTable, Tabs, type DataTableColumn } from '@m5/ui';
 
 type UserRole = 'super_admin' | 'store_manager' | 'staff' | 'finance' | 'marketing' | 'ops';
 type UserStatus = 'active' | 'inactive' | 'suspended';
@@ -56,11 +56,12 @@ export default function UsersClient() {
     });
   }, [searchTerm, roleFilter]);
 
-  const stats = useMemo(() => ({
+  const roleStats = useMemo(() => ({
     total: MOCK_USERS.length,
-    active: MOCK_USERS.filter(u => u.status === 'active').length,
-    suspended: MOCK_USERS.filter(u => u.status === 'suspended').length,
-    managers: MOCK_USERS.filter(u => u.role === 'store_manager').length,
+    super_admin: MOCK_USERS.filter(u => u.role === 'super_admin').length,
+    staff: MOCK_USERS.filter(u => u.role === 'staff').length,
+    finance: MOCK_USERS.filter(u => u.role === 'finance').length,
+    ops: MOCK_USERS.filter(u => u.role === 'ops').length,
   }), []);
 
   const columns: DataTableColumn<User>[] = [
@@ -74,11 +75,13 @@ export default function UsersClient() {
 
   return (
     <div style={{ display: 'grid', gap: 24 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-        <Card style={{ padding: 16 }}><div style={{ fontSize: 12, color: '#94a3b8' }}>总用户</div><div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div></Card>
-        <Card style={{ padding: 16 }}><div style={{ fontSize: 12, color: '#94a3b8' }}>活跃</div><div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{stats.active}</div></Card>
-        <Card style={{ padding: 16 }}><div style={{ fontSize: 12, color: '#94a3b8' }}>冻结</div><div style={{ fontSize: 28, fontWeight: 700, color: '#eab308' }}>{stats.suspended}</div></Card>
-        <Card style={{ padding: 16 }}><div style={{ fontSize: 12, color: '#94a3b8' }}>店长</div><div style={{ fontSize: 28, fontWeight: 700 }}>{stats.managers}</div></Card>
+      {/* 用户角色统计条 — 管理员/运营/店员/财务/总用户 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
+        <StatCard label="总用户" value={roleStats.total} variant="default" />
+        <StatCard label="超级管理员" value={roleStats.super_admin} variant="info" />
+        <StatCard label="员工" value={roleStats.staff} variant="success" />
+        <StatCard label="财务" value={roleStats.finance} variant="warning" />
+        <StatCard label="运维" value={roleStats.ops} variant="warning" />
       </div>
 
       <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索用户姓名/邮箱/门店..." />

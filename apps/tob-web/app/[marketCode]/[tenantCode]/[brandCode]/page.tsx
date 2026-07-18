@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PortalConsumerGovernanceSection } from '@m5/ui';
-import { formatDomainGovernanceCountsSummary, formatDomainGovernanceSourceSummary } from '@m5/types';
+import { PortalConsumerGovernanceSection, PortalDomainGovernanceCard } from '@m5/ui';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import { getBrandPortalConsumerSnapshot } from '../../../bootstrap';
 import { GovernanceLinkedSection } from '../../../components/governance-linked-overview';
 
@@ -48,6 +48,11 @@ export default async function BrandPortalPage({
   const { marketCode, tenantCode, brandCode } = await params;
   const snapshot = await getBrandPortalConsumerSnapshot(marketCode, tenantCode, brandCode);
   const { portal, market } = snapshot;
+  const domainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    portal.domainSource,
+    snapshot.domainGovernance,
+    snapshot.domainGovernanceWorkspaceHref,
+  );
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
@@ -75,44 +80,21 @@ export default async function BrandPortalPage({
           </article>
         </div>
 
-        <div
-          style={{
-            marginTop: 20,
-            borderRadius: 16,
-            padding: 18,
-            background: snapshot.domainGovernance.requiresAttention
+        <PortalDomainGovernanceCard
+          model={domainGovernanceDisplayModel}
+          accentColor="#f0abfc"
+          titleColor="#f5f3ff"
+          summaryColor="#ddd6fe"
+          borderColor="rgba(240, 171, 252, 0.16)"
+          buttonBackground="#f0abfc"
+          buttonTextColor="#3b0764"
+          background={
+            domainGovernanceDisplayModel.requiresAttention
               ? 'rgba(127, 29, 29, 0.24)'
-              : 'rgba(15, 23, 42, 0.36)',
-            border: '1px solid rgba(240, 171, 252, 0.16)',
-          }}
-        >
-          <div style={{ fontSize: 12, color: '#e9d5ff' }}>域名治理工作台</div>
-          <div style={{ marginTop: 8, color: '#f5f3ff', fontSize: 16, fontWeight: 700 }}>
-            {formatDomainGovernanceSourceSummary(portal.domainSource, snapshot.domainGovernance)}
-          </div>
-          <div style={{ marginTop: 6, color: '#ddd6fe' }}>
-            {formatDomainGovernanceCountsSummary(snapshot.domainGovernance)}
-          </div>
-          <div style={{ marginTop: 6, fontSize: 12, color: '#f0abfc' }}>
-            治理入口 {snapshot.domainGovernanceWorkspaceHref}
-          </div>
-          <Link
-            href={snapshot.domainGovernanceWorkspaceHref}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              marginTop: 12,
-              borderRadius: 999,
-              padding: '10px 16px',
-              background: '#f0abfc',
-              color: '#3b0764',
-              fontWeight: 700,
-            }}
-          >
-            打开域名治理工作台
-          </Link>
-        </div>
+              : 'rgba(15, 23, 42, 0.36)'
+          }
+          style={{ marginTop: 20 }}
+        />
 
         <PortalConsumerGovernanceSection
           titleColor="#f0abfc"

@@ -74,6 +74,14 @@ export const CATEGORY_OPTIONS: { value: AnnouncementCategory; label: string }[] 
   { value: 'policy', label: '制度政策' },
 ];
 
+export const CATEGORY_TABS = [
+  { key: '', label: '全部' },
+  { key: 'system', label: '系统通知' },
+  { key: 'operation', label: '维护公告' },
+  { key: 'policy', label: '版本更新' },
+  { key: 'promotion', label: '活动通知' },
+] as const;
+
 export const STATUS_LABELS: Record<AnnouncementStatus, string> = {
   draft: '草稿',
   published: '已发布',
@@ -109,6 +117,9 @@ const MOCK_ANNOUNCEMENTS: Announcement[] = [
   { id: 'a6', title: '会员积分制度调整方案', category: 'policy', status: 'draft', priority: 'normal', summary: '拟调整会员积分累积规则，增加有效期限制', content: '', author: '市场部', publishedAt: '', readCount: 0, createdAt: '2026-07-05', updatedAt: '2026-07-05' },
   { id: 'a7', title: '端午假期值班安排', category: 'operation', status: 'archived', priority: 'normal', summary: '端午假期各门店值班表已发布', content: '', author: '运营部', publishedAt: '2026-06-15', readCount: 12540, createdAt: '2026-06-12', updatedAt: '2026-06-15' },
   { id: 'a8', title: 'POS收银系统紧急修复', category: 'system', status: 'archived', priority: 'high', summary: '部分门店POS异常已修复', content: '', author: '技术部', publishedAt: '2026-06-08', readCount: 18920, createdAt: '2026-06-08', updatedAt: '2026-06-08' },
+  { id: 'a9', title: '数据库服务器例行维护通知', category: 'operation', status: 'published', priority: 'normal', summary: '7月20日凌晨1:00-3:00数据库例行维护', content: '', author: '技术部', publishedAt: '2026-07-18', readCount: 4560, createdAt: '2026-07-17', updatedAt: '2026-07-18' },
+  { id: 'a10', title: 'v3.8.0 版本更新日志', category: 'policy', status: 'published', priority: 'normal', summary: '新增数据报表模块，优化权限管理', content: '', author: '产品部', publishedAt: '2026-07-15', readCount: 7890, createdAt: '2026-07-14', updatedAt: '2026-07-15' },
+  { id: 'a11', title: '年中版本功能更新预告', category: 'policy', status: 'draft', priority: 'low', summary: '三季度功能更新计划草稿', content: '', author: '产品部', publishedAt: '', readCount: 0, createdAt: '2026-07-10', updatedAt: '2026-07-10' },
 ];
 
 // ---- 导出纯函数（供测试用） ----
@@ -230,6 +241,7 @@ export default function AnnouncementsPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [activeTab, setActiveTab] = useState('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showForm, setShowForm] = useState(false);
@@ -348,6 +360,63 @@ export default function AnnouncementsPage() {
           <div style={{ fontSize: 12, color: '#666' }}>总阅读</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#722ed1' }}>{stats.totalReads.toLocaleString()}</div>
         </div>
+      </div>
+
+      {/* 分类标签栏 */}
+      <div
+        role="tablist"
+        aria-label="公告分类筛选"
+        style={{
+          display: 'flex',
+          gap: 4,
+          marginBottom: 16,
+          borderBottom: '2px solid #f0f0f0',
+          paddingBottom: 2,
+        }}
+      >
+        {CATEGORY_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            data-tab-key={tab.key}
+            onClick={() => {
+              setActiveTab(tab.key);
+              setCategoryFilter(tab.key);
+            }}
+            style={{
+              padding: '8px 18px',
+              fontSize: 14,
+              border: 'none',
+              background: 'none',
+              cursor: 'pointer',
+              color: activeTab === tab.key ? '#1677ff' : '#666',
+              fontWeight: activeTab === tab.key ? 600 : 400,
+              borderBottom: activeTab === tab.key ? '2px solid #1677ff' : '2px solid transparent',
+              marginBottom: -2,
+              transition: 'all 0.2s',
+            }}
+          >
+            {tab.label}
+            {tab.key && (() => {
+              const count = announcements.filter((a) => a.category === tab.key).length;
+              return count > 0 ? (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    fontSize: 11,
+                    padding: '1px 6px',
+                    borderRadius: 8,
+                    background: activeTab === tab.key ? '#e6f4ff' : '#f5f5f5',
+                    color: activeTab === tab.key ? '#1677ff' : '#999',
+                  }}
+                >
+                  {count}
+                </span>
+              ) : null;
+            })()}
+          </button>
+        ))}
       </div>
 
       {/* 工具栏 */}
@@ -503,7 +572,7 @@ export default function AnnouncementsPage() {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#999' }}>
-                  {search || categoryFilter || statusFilter ? '没有匹配的公告' : '暂无公告，点击上方按钮发布'}
+                  {search || activeTab || categoryFilter || statusFilter ? '没有匹配的公告' : '暂无公告，点击上方按钮发布'}
                 </td>
               </tr>
             ) : (

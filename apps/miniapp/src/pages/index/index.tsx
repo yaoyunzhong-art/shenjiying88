@@ -1,11 +1,13 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
 import type {
+  DomainGovernanceDisplayModel,
   FoundationAlertCatalogItem,
   FoundationAlertDrilldownResponse,
   FoundationAlertMutationResponse,
   RuntimeGovernanceReceipt
 } from '@m5/types';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -43,6 +45,7 @@ import {
   type MiniappSubmitHistoryEntry,
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
+import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
 
 export default function IndexPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
@@ -61,8 +64,11 @@ export default function IndexPage() {
   const [alertDrilldown, setAlertDrilldown] = useState<FoundationAlertDrilldownResponse | null>(null);
   const [alertMutation, setAlertMutation] = useState<FoundationAlertMutationResponse | null>(null);
   const bootstrap = consumerContract.snapshot;
-  const domainGovernance = bootstrap.domainGovernance;
-  const governanceWorkspaceHref = bootstrap.domainGovernanceWorkspaceHref;
+  const domainGovernanceDisplayModel: DomainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    bootstrap.domainSource,
+    bootstrap.domainGovernance,
+    bootstrap.domainGovernanceWorkspaceHref,
+  );
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const activePlan = actionPlans.find((plan) => plan.action === activeAction) ?? null;
   const decision = activePlan?.decision ?? null;
@@ -169,28 +175,13 @@ export default function IndexPage() {
       <View style={{ marginTop: '8px' }}>
         <Text>当前告警焦点：{selectedAlertCode}</Text>
       </View>
-      <View
-        style={{
-          marginTop: '20px',
-          padding: '16px',
-          borderRadius: '16px',
-          background: domainGovernance.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.45)'
-        }}
-      >
-        <Text>
-          域名治理摘要：缺主 scope {domainGovernance.totalMissingPrimaryScopes} / 活跃未设主域名{' '}
-          {domainGovernance.totalActiveWithoutPrimaryDomains}
-        </Text>
-        <View style={{ marginTop: '8px' }}>
-          <Text>
-            治理状态：{domainGovernance.requiresAttention ? '待治理' : '已对齐'} / 可直接补选{' '}
-            {domainGovernance.recommendedReadyScopes}
-          </Text>
-        </View>
-        <View style={{ marginTop: '8px' }}>
-          <Text>治理后台入口：{governanceWorkspaceHref}</Text>
-        </View>
-      </View>
+      <DomainGovernancePanel
+        heading="域名治理摘要"
+        model={domainGovernanceDisplayModel}
+        background={
+          domainGovernanceDisplayModel.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.45)'
+        }
+      />
       <View style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
         <Button onClick={() => {
           setSession(createGuestMemberSession());

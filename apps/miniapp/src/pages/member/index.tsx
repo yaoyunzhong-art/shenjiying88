@@ -1,5 +1,7 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
+import type { DomainGovernanceDisplayModel } from '@m5/types';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -28,6 +30,7 @@ import {
   type MiniappSubmitHistoryEntry,
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
+import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
 
 // 会员等级体系
 const MEMBER_TIERS = [
@@ -57,8 +60,11 @@ export default function MemberPage() {
   const [submitHistory, setSubmitHistory] = useState<MiniappSubmitHistoryEntry[]>([]);
   const [replayOutcome, setReplayOutcome] = useState<MiniappReplayOutcome | null>(null);
   const bootstrap = consumerContract.snapshot;
-  const domainGovernance = bootstrap.domainGovernance;
-  const governanceWorkspaceHref = bootstrap.domainGovernanceWorkspaceHref;
+  const domainGovernanceDisplayModel: DomainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    bootstrap.domainSource,
+    bootstrap.domainGovernance,
+    bootstrap.domainGovernanceWorkspaceHref,
+  );
   const currentTier =
     MEMBER_TIERS.find((item) => item.key === (session.memberTier === 'SVIP' ? 'platinum' : session.memberTier.toLowerCase())) ??
     DEFAULT_MEMBER_TIER;
@@ -152,28 +158,13 @@ export default function MemberPage() {
       <View style={{ marginTop: '8px' }}>
         <Text>Governance：{consumerContract.governance.alerts.map((item) => item.code).join(' / ')}</Text>
       </View>
-      <View
-        style={{
-          marginTop: '20px',
-          padding: '16px',
-          borderRadius: '16px',
-          background: domainGovernance.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.65)'
-        }}
-      >
-        <Text>
-          域名治理：缺主 scope {domainGovernance.totalMissingPrimaryScopes} / 活跃未设主域名{' '}
-          {domainGovernance.totalActiveWithoutPrimaryDomains}
-        </Text>
-        <View style={{ marginTop: '8px' }}>
-          <Text>
-            治理状态：{domainGovernance.requiresAttention ? '待治理' : '已对齐'} / 可直接补选{' '}
-            {domainGovernance.recommendedReadyScopes}
-          </Text>
-        </View>
-        <View style={{ marginTop: '8px' }}>
-          <Text>治理后台入口：{governanceWorkspaceHref}</Text>
-        </View>
-      </View>
+      <DomainGovernancePanel
+        heading="域名治理"
+        model={domainGovernanceDisplayModel}
+        background={
+          domainGovernanceDisplayModel.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.65)'
+        }
+      />
       <View style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
         <Button onClick={() => {
           setSession(createGuestMemberSession());
