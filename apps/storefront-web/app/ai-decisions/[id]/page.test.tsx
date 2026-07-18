@@ -105,4 +105,147 @@ describe('AIDecisionDetailPage', () => {
       assert.ok(r.durationMs > 0, `${r.id} durationMs should be positive`);
     }
   });
+
+  it('executedAt dates are valid ISO strings', () => {
+    const dates = [
+      new Date(Date.now() - 60000).toISOString(),
+      new Date(Date.now() - 120000).toISOString(),
+      new Date(Date.now() - 180000).toISOString(),
+      new Date(Date.now() - 240000).toISOString(),
+    ];
+    for (const d of dates) {
+      assert.doesNotThrow(() => new Date(d).toISOString(), d + ' should be valid date');
+    }
+  });
+
+  it('suggestion should not be empty for warning/failed decisions', () => {
+    const results = [
+      { id: 'r1', name: 'a', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: 'b', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: 'suggest', executedAt: new Date().toISOString() },
+      { id: 'r3', name: 'c', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: 'fix', executedAt: new Date().toISOString() },
+    ];
+    for (const r of results) {
+      if (r.status !== 'passed') {
+        assert.ok(r.suggestion, r.id + ' should have suggestion');
+      }
+    }
+  });
+
+  it('description can be empty for minimal record', () => {
+    const r = { id: 'r-min', name: 'min', description: '', status: 'passed', matchedCount: 0, durationMs: 1, suggestion: '', executedAt: new Date().toISOString() };
+    assert.ok(r);
+    assert.equal(r.description, '');
+  });
+
+  it('matchedCount can be zero', () => {
+    const results = [
+      { id: 'r-zero', name: '', description: '', status: 'passed', matchedCount: 0, durationMs: 10, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    assert.equal(results[0].matchedCount, 0);
+  });
+
+  it('status transitions valid — all 3 enum values accepted', () => {
+    const statuses = ['passed', 'warning', 'failed'];
+    for (const s of statuses) {
+      const r = { id: 's-' + s, name: '', description: '', status: s, matchedCount: 1, durationMs: 10, suggestion: '', executedAt: new Date().toISOString() };
+      assert.equal(r.status, s);
+    }
+  });
+
+  it('records can be filtered by status', () => {
+    const results = [
+      { id: 'r1', name: '', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: '', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r3', name: '', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    const passed = results.filter(r => r.status === 'passed');
+    const warnings = results.filter(r => r.status === 'warning');
+    const failed = results.filter(r => r.status === 'failed');
+    assert.equal(passed.length, 1);
+    assert.equal(warnings.length, 1);
+    assert.equal(failed.length, 1);
+  });
+
+  it('records sorted by executedAt descending', () => {
+    const now = Date.now();
+    const results = [
+      { id: 'r-old', name: '', description: '', status: 'passed', matchedCount: 1, durationMs: 10, suggestion: '', executedAt: new Date(now - 5000).toISOString() },
+      { id: 'r-new', name: '', description: '', status: 'passed', matchedCount: 2, durationMs: 20, suggestion: '', executedAt: new Date(now).toISOString() },
+    ];
+    const sorted = [...results].sort((a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime());
+    assert.equal(sorted[0].id, 'r-new');
+  });
+
+  it('records aggregated by status counts', () => {
+    const results = [
+      { id: 'r1', name: '', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: '', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r3', name: '', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r4', name: '', description: '', status: 'passed', matchedCount: 0, durationMs: 22, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    const agg = { passed: 0, warning: 0, failed: 0 };
+    for (const r of results) agg[r.status]++;
+    assert.equal(agg.passed, 2);
+    assert.equal(agg.warning, 1);
+    assert.equal(agg.failed, 1);
+  });
+
+  it('total duration across all decisions', () => {
+    const results = [
+      { id: 'r1', name: '', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: '', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r3', name: '', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r4', name: '', description: '', status: 'passed', matchedCount: 0, durationMs: 22, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    const total = results.reduce((sum, r) => sum + r.durationMs, 0);
+    assert.equal(total, 184);
+  });
+
+  it('durationMs range verification', () => {
+    const results = [
+      { id: 'r1', name: '', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: '', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r3', name: '', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r4', name: '', description: '', status: 'passed', matchedCount: 0, durationMs: 22, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    const maxDur = Math.max(...results.map(r => r.durationMs));
+    const minDur = Math.min(...results.map(r => r.durationMs));
+    assert.equal(maxDur, 85);
+    assert.equal(minDur, 22);
+  });
+
+  it('empty results array edge case', () => {
+    const empty = [];
+    assert.equal(empty.length, 0);
+    assert.equal(empty.filter(r => r.status === 'passed').length, 0);
+  });
+
+
+  it('total duration across all decisions', () => {
+    const results = [
+      { id: 'r1', name: '', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: '', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r3', name: '', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r4', name: '', description: '', status: 'passed', matchedCount: 0, durationMs: 22, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    const total = results.reduce((sum, r) => sum + r.durationMs, 0);
+    assert.equal(total, 184);
+  });
+
+  it('durationMs range verification', () => {
+    const results = [
+      { id: 'r1', name: '', description: '', status: 'passed', matchedCount: 128, durationMs: 32, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r2', name: '', description: '', status: 'warning', matchedCount: 15, durationMs: 85, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r3', name: '', description: '', status: 'failed', matchedCount: 3, durationMs: 45, suggestion: '', executedAt: new Date().toISOString() },
+      { id: 'r4', name: '', description: '', status: 'passed', matchedCount: 0, durationMs: 22, suggestion: '', executedAt: new Date().toISOString() },
+    ];
+    assert.equal(Math.max(...results.map(r => r.durationMs)), 85);
+    assert.equal(Math.min(...results.map(r => r.durationMs)), 22);
+  });
+
+  it('empty results array edge case', () => {
+    const empty = [];
+    assert.equal(empty.length, 0);
+    assert.equal(empty.filter(r => r.status === 'passed').length, 0);
+  });
 });

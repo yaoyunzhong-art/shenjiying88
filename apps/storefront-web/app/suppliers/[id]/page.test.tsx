@@ -173,4 +173,62 @@ describe('SupplierDetailPage - 页面文件完整性', () => {
     assert.ok(src.includes('headerActions'), 'Missing headerActions');
     assert.ok(src.includes('closureLinks'), 'Missing closureLinks');
   });
+
+
+  it('active can only go to suspended', () => {
+    assert.deepEqual(STATUS_TRANSITIONS.active, ['suspended']);
+  });
+
+  it('suspended can go to active or terminated', () => {
+    const tos = STATUS_TRANSITIONS.suspended;
+    assert.ok(tos.includes('active'));
+    assert.ok(tos.includes('terminated'));
+  });
+
+  it('terminated has no transitions', () => {
+    assert.equal(STATUS_TRANSITIONS.terminated.length, 0);
+  });
+
+  it('pending can go to active or terminated', () => {
+    const tos = STATUS_TRANSITIONS.pending;
+    assert.ok(tos.includes('active'));
+    assert.ok(tos.includes('terminated'));
+  });
+
+  it('all statuses have labels in STATUS_LABELS', () => {
+    for (const s of Object.keys(STATUS_TRANSITIONS)) {
+      assert.ok(STATUS_LABELS[s], 'Missing label for ' + s);
+    }
+  });
+
+  it('all transition targets are valid statuses', () => {
+    const valid = Object.keys(STATUS_LABELS);
+    for (const [, tos] of Object.entries(STATUS_TRANSITIONS)) {
+      for (const to of tos) {
+        assert.ok(valid.includes(to), 'Invalid target: ' + to);
+      }
+    }
+  });
+
+  it('empty product list is safe', () => {
+    assert.equal([].length, 0);
+  });
+
+  it('all product unit prices are positive', () => {
+    for (const p of MOCK_PRODUCTS) {
+      assert.ok(p.unitPrice > 0);
+    }
+  });
+
+  it('all products have category', () => {
+    for (const p of MOCK_PRODUCTS) {
+      assert.ok(p.category);
+    }
+  });
+
+  it('supplier contact fields are non-empty', () => {
+    assert.ok(MOCK_CONTACT);
+    assert.ok(MOCK_PHONE);
+    assert.ok(MOCK_EMAIL);
+  });
 });

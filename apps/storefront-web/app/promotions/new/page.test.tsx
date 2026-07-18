@@ -342,3 +342,60 @@ test('validation — usageLimit = 0 is allowed (unlimited)', () => {
   });
   assert.equal(errors.usageLimit, undefined, 'usageLimit=0 should not error');
 });
+
+test('promotion type values are all defined', () => {
+  const vals = PROMOTION_TYPES.map(t => t.value);
+  assert.equal(vals.length, 4);
+  assert.ok(vals.includes('discount'));
+  assert.ok(vals.includes('coupon'));
+  assert.ok(vals.includes('gift'));
+  assert.ok(vals.includes('flash-sale'));
+});
+
+test('all fields have non-empty label', () => {
+  for (const f of FIELDS) {
+    assert.ok(f.label, f.key + ' has no label');
+  }
+});
+
+test('budget = 0 is allowed', () => {
+  const e = validateFormFields(FIELDS, {
+    title: 'T', type: 'discount', description: 'D',
+    startDate: '2026-01-01', endDate: '2026-01-31',
+    budget: 0, usageLimit: 10, storeName: 'S'
+  });
+  assert.equal(e.budget, undefined);
+});
+
+test('usageLimit = 0 is allowed (unlimited)', () => {
+  const e = validateFormFields(FIELDS, {
+    title: 'T', type: 'discount', description: 'D',
+    startDate: '2026-01-01', endDate: '2026-01-31',
+    budget: 100, usageLimit: 0, storeName: 'S'
+  });
+  assert.equal(e.usageLimit, undefined);
+});
+
+test('mockSubmitPromotion returns Promise with correct shape', async () => {
+  const data = { title: 'T', type: 'discount', description: 'D', startDate: '2026-01-01', endDate: '2026-01-31', budget: 100, usageLimit: 10, storeName: 'S' };
+  const p = mockSubmitPromotion(data);
+  assert.ok(p instanceof Promise);
+  const res = await p;
+  assert.ok(res.message);
+  assert.equal(res.data.title, 'T');
+});
+
+test('all 8 required fields checked on empty input', () => {
+  const e = validateFormFields(FIELDS, {});
+  assert.equal(Object.keys(e).length, 8);
+});
+
+test('endDate before startDate — no validation error for date logic (business logic in submit)', () => {
+  const e = validateFormFields(FIELDS, {
+    title: 'T', type: 'discount', description: 'D',
+    startDate: '2026-07-31', endDate: '2026-07-01',
+    budget: 100, usageLimit: 10, storeName: 'S'
+  });
+  // Validation only checks format, not date ordering — business logic is in submit handler
+  assert.ok(Object.keys(e).length <= 1, 'at most date-ordering error');
+});

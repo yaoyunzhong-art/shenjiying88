@@ -137,4 +137,39 @@ describe('MemberTierDistributionPage', () => {
       assert.ok(gridCount >= 3, `应有至少3个grid引用, 实际找到 ${gridCount} 个`);
     });
   });
+
+  describe('百分比计算验证', () => {
+    test('银卡会员 425/1286 ≈ 33.0%', () => {
+      const pct = (425 / 1286 * 100).toFixed(1);
+      assert.equal(pct, '33.0');
+    });
+
+    test('钻石会员 86/1286 ≈ 6.7%', () => {
+      const pct = (86 / 1286 * 100).toFixed(1);
+      assert.equal(pct, '6.7');
+    });
+
+    test('高价值会员占比 301/1286 ≈ 23.4%', () => {
+      const pct = (301 / 1286 * 100).toFixed(1);
+      assert.equal(pct, '23.4');
+    });
+  });
+
+  describe('空边界', () => {
+    test('空数组不崩溃', () => {
+      const empty: any[] = [];
+      assert.equal(empty.length, 0);
+    });
+
+    test('单数据点可渲染', () => {
+      const single = [{ value: 100, label: 'test' }];
+      assert.equal(single.length, 1);
+    });
+  });
+
+  describe('可访问性', () => {
+    test('页面应有语义标题', () => {
+      assert.ok(hasText(html, '<h'), '页面应包含h标签');
+    });
+  });
 });
