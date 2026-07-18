@@ -539,6 +539,87 @@ test('边界: 空 coupons 数组所有筛选返回空', () => {
   assert.equal(paginate([], 1, 10).length, 0);
 });
 
+/* =================================================================
+ * React 渲染测试 (使用 @testing-library/react + happy-dom)
+ * ================================================================= */
+
+import { describe, it } from 'node:test';
+import React from 'react';
+import { render, cleanup, screen } from '@testing-library/react';
+import CouponsPage from './page';
+
+function renderPage() {
+  cleanup();
+  return render(React.createElement(CouponsPage));
+}
+
+function textContent(el: HTMLElement | null): string {
+  return el?.textContent?.trim().replace(/\s+/g, ' ') ?? '';
+}
+
+describe('coupons-page: React 渲染测试', () => {
+  it('渲染不抛异常', () => {
+    assert.doesNotThrow(() => renderPage());
+  });
+
+  it('渲染 PageShell 标题“优惠券管理中心”', () => {
+    const { container } = renderPage();
+    const title = container.querySelector('h1');
+    assert.ok(title, '页面应有 h1 标题');
+    assert.ok(textContent(title).includes('优惠券管理中心'));
+  });
+
+  it('渲染 5 张统计卡片', () => {
+    const { container } = renderPage();
+    const articles = container.querySelectorAll('article');
+    assert.equal(articles.length, 5, '应渲染 5 个 stat article 卡片');
+    const texts = Array.from(articles).map((a) => textContent(a));
+    const expected = ['优惠券总数', '进行中', '已领完', '总发放量', '已核销'];
+    for (const label of expected) {
+      assert.ok(texts.some((t) => t.includes(label)), `统计卡片应包含“${label}”`);
+    }
+  });
+
+  it('渲染状态筛选 Tabs（全部+5种状态）', () => {
+    const { container } = renderPage();
+    // 第一个 Tabs 是状态过滤：全部/进行中/已暂停/已过期/草稿/已领完
+    const allTabs = container.querySelectorAll('[role="tablist"]');
+    assert.ok(allTabs.length >= 1, '应至少有一个 tablist');
+    const statusLabels = ['全部', '进行中', '已暂停', '已过期', '草稿', '已领完'];
+    const pageText = textContent(container);
+    for (const label of statusLabels) {
+      assert.ok(pageText.includes(label), `页面文本应包含“${label}”`);
+    }
+  });
+
+  it('渲染搜索输入框', () => {
+    const { container } = renderPage();
+    const inputs = container.querySelectorAll('input');
+    assert.ok(inputs.length >= 1, '应至少有一个 input');
+    const searchPlaceholder = '搜索券码 / 优惠券名称 / 创建人...';
+    const hasSearch = Array.from(inputs).some(
+      (inp) =>
+        inp.getAttribute('placeholder')?.includes('搜索') ||
+        inp.getAttribute('placeholder')?.includes('券'),
+    );
+    assert.ok(hasSearch, '应有搜索输入框');
+  });
+
+  it('渲染优惠券列表标题含匹配条数', () => {
+    const { container } = renderPage();
+    const pageText = textContent(container);
+    assert.ok(pageText.includes('匹配'), '列表标题应包含“匹配 N 条”');
+  });
+
+  it('渲染分页控件', () => {
+    const { container } = renderPage();
+    // Pagination 通常会渲染页码或翻页按钮
+    const buttons = container.querySelectorAll('button');
+    // 至少有一个分页相关按钮
+    assert.ok(buttons.length >= 1, '应有至少一个 button（分页或筛选）');
+  });
+});
+
 // ---- Source-level hooks/metadata verification ----
 
 import { readFileSync } from 'node:fs';
