@@ -446,6 +446,77 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       assert.equal(batch.items[1].dryRun, true)
     })
 
+    it('getGovernanceSummary 返回当前上下文治理摘要', async () => {
+      const summaryCtx = {
+        tenantId: 'tenant-controller-summary',
+        brandId: 'brand-controller-summary',
+        storeId: 'store-controller-summary',
+        userId: 'controller-summary-admin',
+        role: 'tenant_admin' as const,
+      }
+      const brandDomain = await inTenant(
+        {
+          tenantId: 'tenant-controller-summary',
+          brandId: 'brand-controller-summary',
+          userId: 'brand-controller-summary-admin',
+          role: 'brand_admin' as const,
+        },
+        () => controller.addDomain({ domain: 'controller-summary-brand.example.io' }),
+      )
+      service.setDnsTxtOverride(brandDomain.verificationHost, [
+        buildVerificationValue(brandDomain.verificationToken),
+      ])
+      await inTenant(
+        {
+          tenantId: 'tenant-controller-summary',
+          brandId: 'brand-controller-summary',
+          userId: 'brand-controller-summary-admin',
+          role: 'brand_admin' as const,
+        },
+        () => controller.verify(brandDomain.id),
+      )
+
+      const summary = await inTenant(summaryCtx, () => controller.getGovernanceSummary())
+
+      assert.equal(summary.requiresAttention, true)
+      assert.equal(summary.brandMissingPrimaryScopes, 1)
+      assert.equal(summary.currentScopes.some((item) => item.scopeType === 'BRAND'), true)
+    })
+
+    it('recommendPrimaryByQuery 支持按筛选结果批量治理执行', async () => {
+      const queryCtx = {
+        tenantId: 'tenant-controller-query',
+        brandId: 'brand-controller-query',
+        userId: 'brand-controller-query-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await inTenant(queryCtx, () =>
+        controller.addDomain({ domain: 'controller-query-a.example.io' }),
+      )
+      const second = await inTenant(queryCtx, () =>
+        controller.addDomain({ domain: 'controller-query-b.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      service.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await inTenant(queryCtx, () => controller.verify(first.id))
+      await inTenant(queryCtx, () => controller.verify(second.id))
+
+      const batch = await inTenant(queryCtx, () =>
+        controller.recommendPrimaryByQuery({
+          scopeType: 'BRAND',
+          brandId: 'brand-controller-query',
+        }),
+      )
+
+      assert.equal(batch.matchedTotal, 1)
+      assert.equal(batch.appliedCount, 1)
+      assert.equal(batch.items[0].item?.isPrimary, true)
+    })
+
     it('brand_admin 查询 STORE scope 批量主域名会被拒绝', async () => {
       await assert.rejects(
         () =>
@@ -469,6 +540,20 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
         () =>
           inTenant(BRAND_CTX, () =>
             controller.recommendPrimary({
+              scopeType: 'STORE',
+              brandId: 'brand-governance',
+              storeId: 'store-governance',
+            }),
+          ),
+        /brand_admin can only query BRAND scope domains/,
+      )
+    })
+
+    it('brand_admin 按筛选结果为 STORE scope 批量推荐主域名会被拒绝', async () => {
+      await assert.rejects(
+        () =>
+          inTenant(BRAND_CTX, () =>
+            controller.recommendPrimaryByQuery({
               scopeType: 'STORE',
               brandId: 'brand-governance',
               storeId: 'store-governance',

@@ -35,7 +35,9 @@ import {
   BatchCurrentPrimaryDomainResponse,
   CurrentPrimaryDomainQueryRequest,
   CurrentPrimaryDomainResponse,
+  DomainGovernanceSummaryResponse,
   RecommendPrimaryDomainRequest,
+  RecommendPrimaryByQueryRequest,
   RecommendPrimaryDomainResponse,
   DomainDetailResponse,
   DomainListQueryRequest,
@@ -148,6 +150,17 @@ export class CustomDomainController {
   }
 
   /**
+   * 获取当前租户/上下文的域名治理摘要
+   * GET /saas/domain/governance/summary
+   */
+  @ApiOperation({ summary: '获取当前上下文的域名治理摘要' })
+  @Get('governance/summary')
+  @ApiOkResponse({ type: DomainGovernanceSummaryResponse })
+  async getGovernanceSummary() {
+    return this.service.getGovernanceSummary()
+  }
+
+  /**
    * 为缺主域名作用域自动推荐并补选 primary
    * POST /saas/domain/governance/primary/recommend
    */
@@ -158,6 +171,19 @@ export class CustomDomainController {
   @ApiOkResponse({ type: RecommendPrimaryDomainResponse })
   async recommendPrimary(@Body() body: RecommendPrimaryDomainRequest) {
     return this.service.recommendPrimary(body)
+  }
+
+  /**
+   * 按治理筛选结果批量推荐并补选 primary
+   * POST /saas/domain/governance/primary/recommend/by-query
+   */
+  @ApiOperation({ summary: '按治理筛选结果批量推荐并补选 primary' })
+  @Post('governance/primary/recommend/by-query')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: RecommendPrimaryByQueryRequest })
+  @ApiOkResponse({ type: BatchRecommendPrimaryDomainResponse })
+  async recommendPrimaryByQuery(@Body() body: RecommendPrimaryByQueryRequest) {
+    return this.service.recommendPrimaryByQuery(body)
   }
 
   /**

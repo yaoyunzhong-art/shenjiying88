@@ -2236,6 +2236,30 @@ export interface PortalBootstrapResponse extends BootstrapFoundationMetadataCont
   regionalOverrides: RegionalConfigOverrideContract[];
 }
 
+export interface PortalDomainGovernanceScopeSummaryContract {
+  scopeType: string;
+  tenantId: string;
+  brandId?: string;
+  storeId?: string;
+  activeDomainCount: number;
+  missingPrimary: boolean;
+  currentPrimaryDomain?: string | null;
+  recommendedDomain?: string | null;
+  recommendationReason?: string;
+}
+
+export interface PortalDomainGovernanceSummaryContract {
+  totalMissingPrimaryScopes: number;
+  totalActiveWithoutPrimaryDomains: number;
+  recommendedReadyScopes: number;
+  tenantMissingPrimaryScopes: number;
+  brandMissingPrimaryScopes: number;
+  storeMissingPrimaryScopes: number;
+  requiresAttention: boolean;
+  lastEvaluatedAt: string;
+  currentScopes: PortalDomainGovernanceScopeSummaryContract[];
+}
+
 export interface WorkbenchNavItemContract {
   key: string;
   label: string;

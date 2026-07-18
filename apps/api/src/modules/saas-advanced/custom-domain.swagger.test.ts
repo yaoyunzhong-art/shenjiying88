@@ -27,8 +27,10 @@ describe('CustomDomain Swagger', () => {
             getCurrentPrimary: async () => null,
             getCurrentPrimaryBatch: async () => [],
             listActiveWithoutPrimary: async () => [],
+            getGovernanceSummary: async () => ({ totalMissingPrimaryScopes: 0, currentScopes: [] }),
             recommendPrimary: async () => ({ applied: true, resolved: true, item: null }),
             recommendPrimaryBatch: async () => ({ total: 0, appliedCount: 0, resolvedCount: 0, items: [] }),
+            recommendPrimaryByQuery: async () => ({ total: 0, appliedCount: 0, resolvedCount: 0, items: [] }),
             verify: async () => ({}),
             requestSsl: async () => ({}),
             resolveTenantByHost: () => null,
@@ -56,7 +58,9 @@ describe('CustomDomain Swagger', () => {
     assert.ok(doc.paths['/saas/domain/primary/current'])
     assert.ok(doc.paths['/saas/domain/primary/batch/current'])
     assert.ok(doc.paths['/saas/domain/governance/active-without-primary'])
+    assert.ok(doc.paths['/saas/domain/governance/summary'])
     assert.ok(doc.paths['/saas/domain/governance/primary/recommend'])
+    assert.ok(doc.paths['/saas/domain/governance/primary/recommend/by-query'])
     assert.ok(doc.paths['/saas/domain/governance/primary/recommend/batch'])
     assert.ok(doc.paths['/saas/domain/{id}'])
     assert.ok(doc.paths['/saas/domain/{id}/verify'])
@@ -71,7 +75,9 @@ describe('CustomDomain Swagger', () => {
     const currentParameters = (currentPrimary?.parameters ?? []) as Array<{ name?: string; in?: string }>
     const batchCurrent = doc.paths['/saas/domain/primary/batch/current'].post
     const governance = doc.paths['/saas/domain/governance/active-without-primary'].get
+    const governanceSummary = doc.paths['/saas/domain/governance/summary'].get
     const recommendPrimary = doc.paths['/saas/domain/governance/primary/recommend'].post
+    const recommendPrimaryByQuery = doc.paths['/saas/domain/governance/primary/recommend/by-query'].post
     const recommendPrimaryBatch = doc.paths['/saas/domain/governance/primary/recommend/batch'].post
     const resolveHost = doc.paths['/saas/domain/resolve/host'].get
     const hostParameter = resolveHost?.parameters?.[0] as { name?: string; in?: string } | undefined
@@ -89,7 +95,9 @@ describe('CustomDomain Swagger', () => {
     assert.ok((governance?.parameters ?? []).some((parameter: any) => parameter.name === 'scopeType'))
     assert.ok((governance?.parameters ?? []).some((parameter: any) => parameter.name === 'page'))
     assert.ok((governance?.parameters ?? []).some((parameter: any) => parameter.name === 'sortBy'))
+    assert.ok(governanceSummary)
     assert.ok(recommendPrimary?.requestBody)
+    assert.ok(recommendPrimaryByQuery?.requestBody)
     assert.ok(recommendPrimaryBatch?.requestBody)
 
     assert.ok(resolveHost)
@@ -110,9 +118,11 @@ describe('CustomDomain Swagger', () => {
     assert.ok(doc.components?.schemas?.BatchCurrentPrimaryDomainResponse)
     assert.ok(doc.components?.schemas?.RecommendPrimaryDomainRequest)
     assert.ok(doc.components?.schemas?.RecommendPrimaryDomainResponse)
+    assert.ok(doc.components?.schemas?.RecommendPrimaryByQueryRequest)
     assert.ok(doc.components?.schemas?.BatchRecommendPrimaryDomainRequest)
     assert.ok(doc.components?.schemas?.BatchRecommendPrimaryDomainResponse)
     assert.ok(doc.components?.schemas?.ActiveWithoutPrimaryGovernanceResponse)
+    assert.ok(doc.components?.schemas?.DomainGovernanceSummaryResponse)
     assert.ok(doc.components?.schemas?.ResolveHostResponse)
   })
 })

@@ -483,10 +483,66 @@ describe('CustomDomainService persistence branch', () => {
     )
 
     assert.equal(batch.total, 2)
+    assert.equal(batch.matchedTotal, 2)
     assert.equal(batch.appliedCount, 1)
+    assert.equal(batch.skippedCount, 1)
     assert.equal(batch.resolvedCount, 2)
     assert.equal(batch.items[0].applied, true)
     assert.equal(batch.items[1].dryRun, true)
+  })
+
+  it('recommendPrimaryByQuery 在 persistence 分支支持按筛选批量补选', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-1',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-query-a.example.io',
+        isPrimary: false,
+      }),
+      createRow({
+        id: 'dom-2',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-query-b.example.io',
+        isPrimary: false,
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    const batch = await runWithTenant(TENANT_CTX, () =>
+      service.recommendPrimaryByQuery({
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+      }),
+    )
+
+    assert.equal(batch.matchedTotal, 1)
+    assert.equal(batch.appliedCount, 1)
+    assert.equal(batch.items[0].item?.isPrimary, true)
+  })
+
+  it('getGovernanceSummaryForRequest 在 persistence 分支返回当前上下文摘要', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-1',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-summary.example.io',
+        isPrimary: false,
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    const summary = await service.getGovernanceSummaryForRequest({
+      tenantId: 'tenant-persist',
+      brandId: 'brand-persist',
+      storeId: 'store-persist',
+    })
+
+    assert.equal(summary.requiresAttention, true)
+    assert.equal(summary.brandMissingPrimaryScopes, 1)
+    assert.equal(summary.currentScopes.some((item) => item.scopeType === 'BRAND'), true)
   })
 
   it('brand_admin 在 persistence 分支不可查询 STORE scope', async () => {

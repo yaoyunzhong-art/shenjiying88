@@ -1,14 +1,23 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, Optional } from '@nestjs/common'
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PortalService } from './portal.service'
-import { PortalBootstrapResponseDto, PortalDto } from './portal.dto'
+import { CustomDomainService } from '../saas-advanced/custom-domain.service'
+import {
+  PortalBootstrapResponseDto,
+  PortalDomainGovernanceSummaryDto,
+  PortalDto,
+} from './portal.dto'
 
 @ApiTags('portal')
 @Controller('portals')
 export class PortalController {
-  constructor(private readonly portalService: PortalService) {}
+  constructor(
+    private readonly portalService: PortalService,
+    @Optional()
+    private readonly customDomainService?: CustomDomainService,
+  ) {}
 
   /** 获取完整的门户 bootstrap 信息（含 tenant/brand/store 门户 + 市场配置 + 基础依赖） */
   @ApiOperation({
@@ -52,5 +61,28 @@ export class PortalController {
   @ApiOkResponse({ type: PortalDto })
   getStorePortal(@TenantContext() tenantContext: RequestTenantContext) {
     return this.portalService.resolveStorePortal(tenantContext)
+  }
+
+  /** 获取当前上下文门户关联的域名治理摘要 */
+  @ApiOperation({
+    summary: '获取门户域名治理摘要',
+    description: '返回当前 tenant/brand/store 上下文对应的主域名治理摘要，用于门户侧展示风险提示与治理入口。',
+  })
+  @Get('domain-governance')
+  @ApiOkResponse({ type: PortalDomainGovernanceSummaryDto })
+  async getDomainGovernance(@TenantContext() tenantContext: RequestTenantContext) {
+    return (
+      (await this.customDomainService?.getGovernanceSummaryForRequest(tenantContext)) ?? {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 0,
+        recommendedReadyScopes: 0,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 0,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: false,
+        lastEvaluatedAt: new Date().toISOString(),
+        currentScopes: [],
+      }
+    )
   }
 }

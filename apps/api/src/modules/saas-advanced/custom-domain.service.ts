@@ -18,14 +18,18 @@ import {
 import { randomUUID } from 'node:crypto'
 import { requireTenantContext, type TenantContext } from '../../common/context/tenant-context'
 import { PrismaService } from '../../prisma/prisma.service'
+import type { RequestTenantContext } from '../tenant/tenant.types'
 import type {
   ActiveWithoutPrimaryGovernanceQueryRequest,
   ActiveWithoutPrimaryScopeItem,
   BatchRecommendPrimaryDomainResponse,
   BatchCurrentPrimaryDomainQueryItem,
   CurrentPrimaryDomainQueryRequest,
+  DomainGovernanceScopeSummaryItem,
+  DomainGovernanceSummaryResponse,
   DomainListQueryRequest,
   RecommendPrimaryDomainRequest,
+  RecommendPrimaryByQueryRequest,
   RecommendPrimaryDomainResponse,
 } from './custom-domain.dto'
 import {
@@ -305,62 +309,7 @@ export class CustomDomainService {
     sortBy: GovernanceSortField
     sortOrder: GovernanceSortOrder
   }> {
-    this.assertGovernanceQueryAccess(query)
-    const activeMappings = (await this.listAccessibleMappings()).filter((mapping) =>
-      this.isActiveMapping(mapping),
-    )
-    const page = Math.max(query.page ?? 1, 1)
-    const pageSize = Math.min(Math.max(query.pageSize ?? 10, 1), 100)
-    const sortBy = query.sortBy ?? 'activeCount'
-    const sortOrder = query.sortOrder ?? 'desc'
-    const grouped = new Map<string, DomainMapping[]>()
-
-    for (const mapping of activeMappings) {
-      const key = this.buildScopeKey(mapping)
-      const group = grouped.get(key) ?? []
-      group.push(mapping)
-      grouped.set(key, group)
-    }
-
-    const items = Array.from(grouped.values())
-      .filter((group) => !group.some((mapping) => mapping.isPrimary === true))
-      .map((group) => {
-        const [first] = group
-        const candidates = this.sortMappings(group, 'createdAt', 'desc')
-        const recommendation = this.selectRecommendation(candidates)
-        return {
-          scopeType: first.scopeType,
-          tenantId: first.tenantId,
-          brandId: first.brandId,
-          storeId: first.storeId,
-          activeCount: group.length,
-          latestUpdatedAt: candidates
-            .map((item) => item.updatedAt)
-            .sort((left, right) => right.localeCompare(left))[0] ?? first.updatedAt,
-          recommendedItem: recommendation.item,
-          recommendationReason: recommendation.reason,
-          candidateDomains: candidates,
-        }
-      })
-      .filter((item) => this.matchesGovernanceFilter(item, query))
-
-    const sorted = this.sortGovernanceItems(items, sortBy, sortOrder)
-    const total = sorted.length
-    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize)
-    const start = (page - 1) * pageSize
-    const pagedItems = sorted.slice(start, start + pageSize)
-
-    return {
-      items: pagedItems,
-      total,
-      page,
-      pageSize,
-      totalPages,
-      hasNextPage: totalPages > 0 && page < totalPages,
-      hasPreviousPage: page > 1 && total > 0,
-      sortBy,
-      sortOrder,
-    }
+    return this.collectGovernanceItems(query)
   }
 
   async recommendPrimary(
@@ -433,13 +382,37 @@ export class CustomDomainService {
   async recommendPrimaryBatch(
     items: RecommendPrimaryDomainRequest[] = [],
   ): Promise<BatchRecommendPrimaryDomainResponse> {
-    const results = await Promise.all(items.map((item) => this.recommendPrimary(item)))
-    return {
-      total: results.length,
-      appliedCount: results.filter((item) => item.applied).length,
-      resolvedCount: results.filter((item) => item.resolved).length,
-      items: results,
-    }
+    const results = await Promise.all(items.map((item) => this.safeRecommendPrimary(item)))
+    return this.summarizeRecommendBatch(results)
+  }
+
+  async recommendPrimaryByQuery(
+    query: RecommendPrimaryByQueryRequest,
+  ): Promise<BatchRecommendPrimaryDomainResponse> {
+    const governance = await this.collectGovernanceItems(query)
+    const targetItems = query.applyAllMatched === true ? governance.allItems : governance.items
+    const requests = targetItems.map<RecommendPrimaryDomainRequest>((item) => ({
+      scopeType: item.scopeType as DomainScopeType,
+      brandId: item.brandId,
+      storeId: item.storeId,
+      dryRun: query.dryRun,
+    }))
+    const results = await Promise.all(requests.map((item) => this.safeRecommendPrimary(item)))
+    return this.summarizeRecommendBatch(results, governance.total)
+  }
+
+  async getGovernanceSummary(): Promise<DomainGovernanceSummaryResponse> {
+    return this.buildGovernanceSummary(requireTenantContext())
+  }
+
+  async getGovernanceSummaryForRequest(
+    context: RequestTenantContext,
+  ): Promise<DomainGovernanceSummaryResponse> {
+    return this.buildGovernanceSummary({
+      tenantId: context.tenantId,
+      brandId: context.brandId,
+      storeId: context.storeId,
+    })
   }
 
   async remove(id: string): Promise<void> {
@@ -770,6 +743,16 @@ export class CustomDomainService {
     }
   }
 
+  private async safeRecommendPrimary(
+    query: RecommendPrimaryDomainRequest,
+  ): Promise<RecommendPrimaryDomainResponse> {
+    try {
+      return await this.recommendPrimary(query)
+    } catch (error: any) {
+      return this.buildFailedRecommendation(query, error)
+    }
+  }
+
   private async pickRecommendationCandidates(
     scope: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
   ): Promise<DomainMapping[]> {
@@ -887,6 +870,13 @@ export class CustomDomainService {
 
   private assertGovernanceQueryAccess(query: ActiveWithoutPrimaryGovernanceQueryRequest): void {
     const ctx = requireTenantContext()
+    this.assertGovernanceQueryAccessForContext(query, ctx)
+  }
+
+  private assertGovernanceQueryAccessForContext(
+    query: ActiveWithoutPrimaryGovernanceQueryRequest,
+    ctx: TenantContext,
+  ): void {
     this.assertRequestedScopeAccess(query.scopeType as DomainScopeType | undefined, ctx)
 
     if (ctx.role === 'brand_admin' && query.brandId && query.brandId !== ctx.brandId) {
@@ -929,6 +919,42 @@ export class CustomDomainService {
       parts.push('同 scope 候选按最近更新时间排序')
     }
     return parts.join('，')
+  }
+
+  private summarizeRecommendBatch(
+    items: RecommendPrimaryDomainResponse[],
+    matchedTotal = items.length,
+  ): BatchRecommendPrimaryDomainResponse {
+    return {
+      total: items.length,
+      matchedTotal,
+      appliedCount: items.filter((item) => item.applied).length,
+      skippedCount: items.filter((item) => !item.applied && !item.failureReason).length,
+      failedCount: items.filter((item) => item.failureReason != null).length,
+      resolvedCount: items.filter((item) => item.resolved).length,
+      items,
+    }
+  }
+
+  private buildFailedRecommendation(
+    query: RecommendPrimaryDomainRequest,
+    error: unknown,
+  ): RecommendPrimaryDomainResponse {
+    const ctx = requireTenantContext()
+    const scopeType = query.scopeType ?? inferScopeType(ctx)
+    return {
+      scopeType,
+      tenantId: ctx.tenantId,
+      brandId: query.brandId ?? ctx.brandId,
+      storeId: query.storeId ?? ctx.storeId,
+      applied: false,
+      dryRun: query.dryRun === true,
+      resolved: false,
+      candidateCount: 0,
+      recommendationReason: '执行失败，未完成主域名补选',
+      failureReason: error instanceof Error ? error.message : String(error),
+      item: null,
+    }
   }
 
   private buildScopeKey(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): string {
@@ -1071,6 +1097,140 @@ export class CustomDomainService {
       case 'activeCount':
       default:
         return String(item.activeCount).padStart(6, '0')
+    }
+  }
+
+  private async collectGovernanceItems(
+    query: ActiveWithoutPrimaryGovernanceQueryRequest = {},
+    ctx: TenantContext = requireTenantContext(),
+  ): Promise<{
+    allItems: ActiveWithoutPrimaryScopeItem[]
+    items: ActiveWithoutPrimaryScopeItem[]
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+    sortBy: GovernanceSortField
+    sortOrder: GovernanceSortOrder
+  }> {
+    this.assertGovernanceQueryAccessForContext(query, ctx)
+    const activeMappings = (await this.listAccessibleMappings(ctx)).filter((mapping) =>
+      this.isActiveMapping(mapping),
+    )
+    const page = Math.max(query.page ?? 1, 1)
+    const pageSize = Math.min(Math.max(query.pageSize ?? 10, 1), 100)
+    const sortBy = query.sortBy ?? 'activeCount'
+    const sortOrder = query.sortOrder ?? 'desc'
+    const grouped = new Map<string, DomainMapping[]>()
+
+    for (const mapping of activeMappings) {
+      const key = this.buildScopeKey(mapping)
+      const group = grouped.get(key) ?? []
+      group.push(mapping)
+      grouped.set(key, group)
+    }
+
+    const allItems = this.sortGovernanceItems(
+      Array.from(grouped.values())
+        .filter((group) => !group.some((mapping) => mapping.isPrimary === true))
+        .map((group) => this.buildGovernanceScopeItem(group))
+        .filter((item) => this.matchesGovernanceFilter(item, query)),
+      sortBy,
+      sortOrder,
+    )
+
+    const total = allItems.length
+    const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize)
+    const start = (page - 1) * pageSize
+    const items = allItems.slice(start, start + pageSize)
+
+    return {
+      allItems,
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasNextPage: totalPages > 0 && page < totalPages,
+      hasPreviousPage: page > 1 && total > 0,
+      sortBy,
+      sortOrder,
+    }
+  }
+
+  private buildGovernanceScopeItem(group: DomainMapping[]): ActiveWithoutPrimaryScopeItem {
+    const [first] = group
+    const candidates = this.sortMappings(group, 'createdAt', 'desc')
+    const recommendation = this.selectRecommendation(candidates)
+    return {
+      scopeType: first.scopeType,
+      tenantId: first.tenantId,
+      brandId: first.brandId,
+      storeId: first.storeId,
+      activeCount: group.length,
+      latestUpdatedAt:
+        candidates.map((item) => item.updatedAt).sort((left, right) => right.localeCompare(left))[0] ??
+        first.updatedAt,
+      recommendedItem: recommendation.item,
+      recommendationReason: recommendation.reason,
+      candidateDomains: candidates,
+    }
+  }
+
+  private async buildGovernanceSummary(ctx: TenantContext): Promise<DomainGovernanceSummaryResponse> {
+    const governance = await this.collectGovernanceItems({}, ctx)
+    const currentScopes = await Promise.all(
+      [
+        { scopeType: 'TENANT' as const, tenantId: ctx.tenantId },
+        ctx.brandId
+          ? { scopeType: 'BRAND' as const, tenantId: ctx.tenantId, brandId: ctx.brandId }
+          : null,
+        ctx.brandId && ctx.storeId
+          ? {
+              scopeType: 'STORE' as const,
+              tenantId: ctx.tenantId,
+              brandId: ctx.brandId,
+              storeId: ctx.storeId,
+            }
+          : null,
+      ]
+        .filter((item): item is { scopeType: DomainScopeType; tenantId: string; brandId?: string; storeId?: string } => item != null)
+        .map((scope) => this.buildGovernanceScopeSummaryItem(scope)),
+    )
+
+    return {
+      totalMissingPrimaryScopes: governance.total,
+      totalActiveWithoutPrimaryDomains: governance.allItems.reduce((sum, item) => sum + item.activeCount, 0),
+      recommendedReadyScopes: governance.allItems.filter((item) => item.recommendedItem != null).length,
+      tenantMissingPrimaryScopes: governance.allItems.filter((item) => item.scopeType === 'TENANT').length,
+      brandMissingPrimaryScopes: governance.allItems.filter((item) => item.scopeType === 'BRAND').length,
+      storeMissingPrimaryScopes: governance.allItems.filter((item) => item.scopeType === 'STORE').length,
+      requiresAttention: governance.total > 0,
+      lastEvaluatedAt: new Date().toISOString(),
+      currentScopes,
+    }
+  }
+
+  private async buildGovernanceScopeSummaryItem(
+    scope: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
+  ): Promise<DomainGovernanceScopeSummaryItem> {
+    const mappings = await this.loadScopeMappings(scope)
+    const activeMappings = mappings.filter((item) => this.isActiveMapping(item))
+    const currentPrimary = activeMappings.find((item) => item.isPrimary === true) ?? null
+    const recommendation = currentPrimary ? { item: null, reason: undefined } : this.selectRecommendation(activeMappings.sort((left, right) => this.compareRecommendationPriority(left, right)))
+
+    return {
+      scopeType: scope.scopeType,
+      tenantId: scope.tenantId,
+      brandId: scope.brandId,
+      storeId: scope.storeId,
+      activeDomainCount: activeMappings.length,
+      missingPrimary: activeMappings.length > 0 && currentPrimary == null,
+      currentPrimaryDomain: currentPrimary?.domain ?? null,
+      recommendedDomain: recommendation.item?.domain ?? null,
+      recommendationReason: recommendation.reason,
     }
   }
 }

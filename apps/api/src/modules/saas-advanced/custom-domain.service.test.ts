@@ -814,6 +814,102 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       assert.equal(brandPrimary, null)
     })
 
+    it('recommendPrimaryBatch 返回失败原因与失败计数', async () => {
+      const isolatedService = new CustomDomainService()
+
+      const batch = await runWithTenant(BRAND_CTX, async () =>
+        isolatedService.recommendPrimaryBatch([
+          {
+            scopeType: 'STORE',
+            brandId: 'brand-governance',
+            storeId: 'store-governance',
+          },
+        ]),
+      )
+
+      assert.equal(batch.total, 1)
+      assert.equal(batch.failedCount, 1)
+      assert.equal(batch.items[0].failureReason?.includes('brand_admin'), true)
+    })
+
+    it('recommendPrimaryByQuery 支持按当前筛选结果批量补选', async () => {
+      const isolatedService = new CustomDomainService()
+      const brandCtx = {
+        tenantId: 'tenant-query-recommend',
+        brandId: 'brand-query-recommend',
+        userId: 'brand-query-recommend-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('query-recommend-a.example.io'),
+      )
+      const second = await runWithTenant(brandCtx, async () =>
+        isolatedService.addDomain('query-recommend-b.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      isolatedService.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(brandCtx, async () => isolatedService.verify(first.id))
+      await runWithTenant(brandCtx, async () => isolatedService.verify(second.id))
+
+      const batch = await runWithTenant(brandCtx, async () =>
+        isolatedService.recommendPrimaryByQuery({
+          scopeType: 'BRAND',
+          brandId: 'brand-query-recommend',
+          dryRun: false,
+        }),
+      )
+
+      assert.equal(batch.matchedTotal, 1)
+      assert.equal(batch.appliedCount, 1)
+      assert.equal(batch.items[0].item?.isPrimary, true)
+    })
+
+    it('getGovernanceSummary 返回当前上下文治理摘要', async () => {
+      const isolatedService = new CustomDomainService()
+      const summaryCtx = {
+        tenantId: 'tenant-summary',
+        brandId: 'brand-summary',
+        storeId: 'store-summary',
+        userId: 'summary-admin',
+        role: 'tenant_admin' as const,
+      }
+      const brandDomain = await runWithTenant(
+        {
+          tenantId: 'tenant-summary',
+          brandId: 'brand-summary',
+          userId: 'brand-summary-admin',
+          role: 'brand_admin' as const,
+        },
+        async () => isolatedService.addDomain('summary-brand.example.io'),
+      )
+      isolatedService.setDnsTxtOverride(brandDomain.verificationHost, [
+        buildVerificationValue(brandDomain.verificationToken),
+      ])
+      await runWithTenant(
+        {
+          tenantId: 'tenant-summary',
+          brandId: 'brand-summary',
+          userId: 'brand-summary-admin',
+          role: 'brand_admin' as const,
+        },
+        async () => isolatedService.verify(brandDomain.id),
+      )
+
+      const summary = await runWithTenant(summaryCtx, async () => isolatedService.getGovernanceSummary())
+
+      assert.equal(summary.requiresAttention, true)
+      assert.equal(summary.brandMissingPrimaryScopes, 1)
+      assert.equal(summary.currentScopes.some((item) => item.scopeType === 'BRAND'), true)
+      assert.equal(
+        summary.currentScopes.find((item) => item.scopeType === 'BRAND')?.recommendedDomain,
+        'summary-brand.example.io',
+      )
+    })
+
     it('brand_admin 不可查询 STORE scope 当前主域名', async () => {
       const isolatedService = new CustomDomainService()
 

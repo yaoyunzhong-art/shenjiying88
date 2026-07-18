@@ -455,3 +455,61 @@ export class PortalBootstrapResponseDto {
   @ApiProperty({ type: () => [String], example: ['portal-page:v1'] })
   foundationContracts!: string[]
 }
+
+export class PortalDomainGovernanceScopeSummaryDto {
+  @ApiProperty({ example: 'BRAND' })
+  scopeType!: string
+
+  @ApiProperty({ example: 'tenant-001' })
+  tenantId!: string
+
+  @ApiPropertyOptional({ example: 'brand-001' })
+  brandId?: string
+
+  @ApiPropertyOptional({ example: 'store-001' })
+  storeId?: string
+
+  @ApiProperty({ example: 2 })
+  activeDomainCount!: number
+
+  @ApiProperty({ example: true })
+  missingPrimary!: boolean
+
+  @ApiPropertyOptional({ example: 'brand-primary.example.io', nullable: true })
+  currentPrimaryDomain?: string | null
+
+  @ApiPropertyOptional({ example: 'brand-recommend.example.io', nullable: true })
+  recommendedDomain?: string | null
+
+  @ApiPropertyOptional({ example: '优先推荐 active_ssl，且最近一次校验/更新时间更新' })
+  recommendationReason?: string
+}
+
+export class PortalDomainGovernanceSummaryDto {
+  @ApiProperty({ example: 2 })
+  totalMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: 3 })
+  totalActiveWithoutPrimaryDomains!: number
+
+  @ApiProperty({ example: 2 })
+  recommendedReadyScopes!: number
+
+  @ApiProperty({ example: 0 })
+  tenantMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: 1 })
+  brandMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: 1 })
+  storeMissingPrimaryScopes!: number
+
+  @ApiProperty({ example: true })
+  requiresAttention!: boolean
+
+  @ApiProperty({ example: '2026-07-18T22:30:00.000Z' })
+  lastEvaluatedAt!: string
+
+  @ApiProperty({ type: () => [PortalDomainGovernanceScopeSummaryDto] })
+  currentScopes!: PortalDomainGovernanceScopeSummaryDto[]
+}

@@ -682,9 +682,91 @@ describe('CustomDomain HTTP E2E', () => {
 
     assert.equal(batch.body.data.total, 2)
     assert.equal(batch.body.data.appliedCount, 1)
+    assert.equal(batch.body.data.skippedCount, 1)
     assert.equal(batch.body.data.resolvedCount, 2)
     assert.equal(batch.body.data.items[0].applied, true)
     assert.equal(batch.body.data.items[1].dryRun, true)
+  })
+
+  it('GET /saas/domain/governance/summary 返回当前上下文治理摘要', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-summary',
+      'x-brand-id': 'brand-http-summary',
+      'x-store-id': 'store-http-summary',
+      'x-user-id': 'tenant-http-summary-admin',
+      'x-role': 'tenant_admin',
+    }
+    const brandHeaders = {
+      'x-tenant-id': 'tenant-http-summary',
+      'x-brand-id': 'brand-http-summary',
+      'x-user-id': 'brand-http-summary-admin',
+      'x-role': 'brand_admin',
+    }
+    const created = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(brandHeaders)
+      .send({ domain: 'summary-http-brand.example.io' })
+      .expect(201)
+    customDomainService.setDnsTxtOverride(created.body.data.verificationHost, [
+      buildVerificationValue(created.body.data.verificationToken),
+    ])
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${created.body.data.id}/verify`)
+      .set(brandHeaders)
+      .expect(200)
+
+    const summary = await request(app.getHttpServer())
+      .get('/saas/domain/governance/summary')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(summary.body.data.requiresAttention, true)
+    assert.equal(summary.body.data.brandMissingPrimaryScopes, 1)
+    assert.equal(
+      summary.body.data.currentScopes.some((item: { scopeType: string }) => item.scopeType === 'BRAND'),
+      true,
+    )
+  })
+
+  it('POST /saas/domain/governance/primary/recommend/by-query 支持按筛选结果批量执行', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-by-query',
+      'x-brand-id': 'brand-http-by-query',
+      'x-user-id': 'brand-http-by-query-admin',
+      'x-role': 'brand_admin',
+    }
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'by-query-http-a.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'by-query-http-b.example.io' })
+      .expect(201)
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+    await request(app.getHttpServer()).post(`/saas/domain/${first.body.data.id}/verify`).set(headers).expect(200)
+    await request(app.getHttpServer()).post(`/saas/domain/${second.body.data.id}/verify`).set(headers).expect(200)
+
+    const batch = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend/by-query')
+      .set(headers)
+      .send({
+        scopeType: 'BRAND',
+        brandId: 'brand-http-by-query',
+        dryRun: false,
+      })
+      .expect(200)
+
+    assert.equal(batch.body.data.matchedTotal, 1)
+    assert.equal(batch.body.data.appliedCount, 1)
+    assert.equal(batch.body.data.items[0].item.isPrimary, true)
   })
 
   it('brand_admin 请求 STORE scope 批量主域名返回 403', async () => {
@@ -738,6 +820,25 @@ describe('CustomDomain HTTP E2E', () => {
         items: [
           { scopeType: 'STORE', brandId: 'brand-http-forbidden', storeId: 'store-http-forbidden' },
         ],
+      })
+      .expect(403)
+
+    assert.ok(String(res.body.message).includes('brand_admin'))
+  })
+
+  it('brand_admin 按筛选结果为 STORE scope 批量执行推荐主域名返回 403', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/saas/domain/governance/primary/recommend/by-query')
+      .set({
+        'x-tenant-id': 'tenant-http-forbidden',
+        'x-brand-id': 'brand-http-forbidden',
+        'x-user-id': 'brand-http-forbidden-admin',
+        'x-role': 'brand_admin',
+      })
+      .send({
+        scopeType: 'STORE',
+        brandId: 'brand-http-forbidden',
+        storeId: 'store-http-forbidden',
       })
       .expect(403)
 

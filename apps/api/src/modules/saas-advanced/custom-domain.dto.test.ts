@@ -8,8 +8,10 @@ import {
   BatchRecommendPrimaryDomainRequest,
   CurrentPrimaryDomainQueryRequest,
   CurrentPrimaryDomainResponse,
+  DomainGovernanceSummaryResponse,
   DomainListQueryRequest,
   RecommendPrimaryDomainRequest,
+  RecommendPrimaryByQueryRequest,
   RecommendPrimaryDomainResponse,
   ValidateDomainRequest,
   ValidateDomainResponse,
@@ -139,6 +141,23 @@ describe('saas-advanced custom-domain dto', () => {
     assert.equal(errors.length, 0)
     assert.equal(dto.items.length, 2)
     assert.equal(dto.items[1].scopeType, 'BRAND')
+  })
+
+  it('RecommendPrimaryByQueryRequest 支持按筛选结果执行与 applyAllMatched', () => {
+    const dto = plainToInstance(RecommendPrimaryByQueryRequest, {
+      scopeType: 'BRAND',
+      brandId: 'brand-001',
+      page: '2',
+      pageSize: '20',
+      sortBy: 'recommendedDomain',
+      sortOrder: 'asc',
+      dryRun: false,
+      applyAllMatched: true,
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.applyAllMatched, true)
+    assert.equal(dto.sortBy, 'recommendedDomain')
   })
 
   it('ValidateDomainResponse 校验通过', () => {
@@ -374,5 +393,32 @@ describe('saas-advanced custom-domain dto', () => {
     assert.equal(resp.dryRun, true)
     assert.equal(resp.candidateCount, 2)
     assert.ok(resp.recommendationReason?.includes('active_ssl'))
+  })
+
+  it('DomainGovernanceSummaryResponse 暴露当前 scope 摘要', () => {
+    const resp: DomainGovernanceSummaryResponse = {
+      totalMissingPrimaryScopes: 1,
+      totalActiveWithoutPrimaryDomains: 2,
+      recommendedReadyScopes: 1,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 1,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: true,
+      lastEvaluatedAt: '2026-07-18T22:30:00Z',
+      currentScopes: [
+        {
+          scopeType: 'BRAND',
+          tenantId: 'tenant-001',
+          brandId: 'brand-001',
+          activeDomainCount: 2,
+          missingPrimary: true,
+          currentPrimaryDomain: null,
+          recommendedDomain: 'brand.example.io',
+          recommendationReason: '优先推荐 active_ssl',
+        },
+      ],
+    }
+    assert.equal(resp.requiresAttention, true)
+    assert.equal(resp.currentScopes[0].recommendedDomain, 'brand.example.io')
   })
 })
