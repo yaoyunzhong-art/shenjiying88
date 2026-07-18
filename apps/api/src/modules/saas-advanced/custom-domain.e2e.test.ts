@@ -195,4 +195,55 @@ describe('CustomDomain HTTP E2E', () => {
     assert.equal(res.body.data.tenantId, 'tenant-http-resolve')
     assert.equal(res.body.data.resolved, true)
   })
+
+  it('POST /saas/domain/:id/primary 切换主域名并回写 isPrimary', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-primary',
+    }
+
+    const first = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'primary-first.example.io' })
+      .expect(201)
+    const second = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'primary-second.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(first.body.data.verificationHost, [
+      buildVerificationValue(first.body.data.verificationToken),
+    ])
+    customDomainService.setDnsTxtOverride(second.body.data.verificationHost, [
+      buildVerificationValue(second.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${first.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${second.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+
+    const switched = await request(app.getHttpServer())
+      .post(`/saas/domain/${second.body.data.id}/primary`)
+      .set(headers)
+      .expect(200)
+    const list = await request(app.getHttpServer())
+      .get('/saas/domain')
+      .set(headers)
+      .query({ keyword: 'primary-', sortBy: 'domain', sortOrder: 'asc', page: 1, pageSize: 10 })
+      .expect(200)
+
+    assert.equal(switched.body.data.isPrimary, true)
+    assert.equal(list.body.data.items.filter((item: { isPrimary?: boolean }) => item.isPrimary).length, 1)
+    assert.equal(
+      list.body.data.items.find((item: { domain: string }) => item.domain === 'primary-second.example.io')
+        ?.isPrimary,
+      true,
+    )
+  })
 })

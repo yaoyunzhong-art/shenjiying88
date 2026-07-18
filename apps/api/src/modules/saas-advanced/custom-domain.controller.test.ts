@@ -274,6 +274,46 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
     })
   })
 
+  // ============ 6.1 POST /saas/domain/:id/primary — 主域名切换 ============
+  describe('POST /saas/domain/:id/primary — setPrimary()', () => {
+    it('active 域名可切换为当前 scope 主域名', async () => {
+      const first = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'primary-a.example.io' }),
+      )
+      const second = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'primary-b.example.io' }),
+      )
+      service.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      service.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await inTenant(TENANT_A, () => controller.verify(first.id))
+      await inTenant(TENANT_A, () => controller.verify(second.id))
+
+      const switched = await inTenant(TENANT_A, () => controller.setPrimary(second.id))
+      const list = await inTenant(TENANT_A, () =>
+        controller.list({ keyword: 'primary-', sortBy: 'domain', sortOrder: 'asc', page: 1, pageSize: 10 }),
+      )
+
+      assert.equal(switched.isPrimary, true)
+      assert.equal(list.items.filter((item) => item.isPrimary).length, 1)
+      assert.equal(list.items.find((item) => item.domain === 'primary-b.example.io')?.isPrimary, true)
+    })
+
+    it('pending 域名切主抛出异常', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'primary-pending.example.io' }),
+      )
+
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.setPrimary(added.id)),
+        /must be active before primary switch/,
+      )
+    })
+  })
+
   // ============ 7. GET /saas/domain/resolve/host — Host 解析 ============
   describe('GET /saas/domain/resolve/host — resolveHost()', () => {
     it('已激活域名通过 host 解析到 tenantId', async () => {

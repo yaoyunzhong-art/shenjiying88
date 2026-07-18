@@ -187,6 +187,29 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       assert.equal(pageResult.sortOrder, 'asc')
       assert.equal(pageResult.items[0].domain, 'sort-alpha.shenjiying88.com')
     })
+
+    it('listPage 返回 total 与 items.length 解耦', async () => {
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('page-total-a.shenjiying88.com'),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('page-total-b.shenjiying88.com'),
+      )
+
+      const pageResult = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.listPage({
+          keyword: 'page-total-',
+          sortBy: 'domain',
+          sortOrder: 'asc',
+          page: 1,
+          pageSize: 1,
+        }),
+      )
+
+      assert.equal(pageResult.items.length, 1)
+      assert.equal(pageResult.total >= 2, true)
+      assert.equal(pageResult.items.length < pageResult.total, true)
+    })
   })
 
   // ============ 5. DNS TXT 校验 (4) ============
@@ -331,6 +354,46 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
     it('未知域名 → null', () => {
       const tenantId = SHARED_SERVICE.resolveTenantByHost('unknown.shenjiying88.com')
       assert.equal(tenantId, null)
+    })
+
+    it('setPrimary 后同 scope 仅保留一个 primary', async () => {
+      const first = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('primary-first.shenjiying88.com'),
+      )
+      const second = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('primary-second.shenjiying88.com'),
+      )
+
+      SHARED_SERVICE.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      SHARED_SERVICE.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.verify(first.id))
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.verify(second.id))
+
+      const switched = await runWithTenant(TENANT_A, async () => SHARED_SERVICE.setPrimary(second.id))
+      const scopedList = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.list({
+          keyword: 'primary-',
+          sortBy: 'domain',
+          sortOrder: 'asc',
+          page: 1,
+          pageSize: 10,
+        }),
+      )
+
+      assert.equal(switched.isPrimary, true)
+      assert.equal(scopedList.filter((item) => item.isPrimary).length, 1)
+      assert.equal(
+        scopedList.find((item) => item.domain === 'primary-second.shenjiying88.com')?.isPrimary,
+        true,
+      )
+      assert.equal(
+        scopedList.find((item) => item.domain === 'primary-first.shenjiying88.com')?.isPrimary,
+        false,
+      )
     })
   })
 

@@ -128,6 +128,18 @@ export class CustomDomainController {
   }
 
   /**
+   * 切换当前 scope 的主域名
+   * POST /saas/domain/:id/primary
+   */
+  @ApiOperation({ summary: '切换主域名' })
+  @Post(':id/primary')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: DomainDetailResponse })
+  async setPrimary(@Param('id') id: string) {
+    return this.service.setPrimary(id)
+  }
+
+  /**
    * Host → tenantId 解析 (CDN/网关用, 无需租户上下文)
    * GET /saas/domain/resolve/host?host=acme.shenjiying88.com
    */

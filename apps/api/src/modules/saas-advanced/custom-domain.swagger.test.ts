@@ -50,6 +50,7 @@ describe('CustomDomain Swagger', () => {
     assert.ok(doc.paths['/saas/domain/{id}'])
     assert.ok(doc.paths['/saas/domain/{id}/verify'])
     assert.ok(doc.paths['/saas/domain/{id}/ssl'])
+    assert.ok(doc.paths['/saas/domain/{id}/primary'])
     assert.ok(doc.paths['/saas/domain/resolve/host'])
     assert.ok(doc.paths['/saas/domain/validate'])
 

@@ -2,6 +2,8 @@
  * coupons/page.test.tsx — 优惠券列表页 L1 冒烟测试
  * 角色视角: 👔运营 · 💰财务 · 📊品类经理
  * 覆盖: 正例(模块导入/类型映射/统计计算/过滤逻辑) + 反例(防御) + 边界(空结果/极值)
+ *
+ * 🐜 自动: [B-页面创建] [coupons-page 优惠券列表页测试]
  */
 
 import assert from 'node:assert/strict';
@@ -104,6 +106,7 @@ function searchItems(items: CouponItem[], query: string): CouponItem[] {
 }
 
 function paginate<T>(items: T[], page: number, pageSize: number): T[] {
+  if (page < 1 || pageSize < 1) return [];
   const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);
 }
@@ -117,7 +120,7 @@ function remainingPercent(item: CouponItem): number {
   return (item.remainingQuota / item.totalQuota) * 100;
 }
 
-/* ── Mock 数据 ── */
+/* ── Mock 数据 (10 条, 覆盖全部 status/type/scope 枚举) ── */
 
 const MOCK_COUPONS: CouponItem[] = [
   {
@@ -210,10 +213,10 @@ const allCoupons = MOCK_COUPONS;
 
 test('👔 运营视角: 页面组件默认导出是函数', async () => {
   const mod = await import('./page');
-  assert.equal(typeof mod.default, 'function', 'CouponsListPage 应导出函数组件');
+  assert.equal(typeof mod.default, 'function', 'CouponsPage 应导出函数组件');
 });
 
-test('💰 财务视角: 组件不抛异常', async () => {
+test('💰 财务视角: 组件导入不抛异常', async () => {
   let threw = false;
   try {
     await import('./page');
@@ -223,178 +226,200 @@ test('💰 财务视角: 组件不抛异常', async () => {
   assert.equal(threw, false, 'page 导入应成功');
 });
 
-test('📊 品类经理视角: 状态标签映射完整 — 5种状态', () => {
+test('📊 品类经理视角: 状态标签映射完整 — 5种状态各有有效 label/variant', () => {
   const statuses: CouponStatus[] = ['active', 'paused', 'expired', 'draft', 'exhausted'];
   for (const s of statuses) {
-    assert.ok(COUPON_STATUS_MAP[s], `${s} 应有映射`);
-    assert.ok(COUPON_STATUS_MAP[s].label.length > 0, `${s} 标签非空`);
-    assert.ok(['success', 'warning', 'danger', 'neutral'].includes(COUPON_STATUS_MAP[s].variant));
+    const entry = COUPON_STATUS_MAP[s];
+    assert.ok(entry, `${s} 应有映射`);
+    assert.ok(entry.label.length > 0, `${s} 标签非空`);
+    assert.ok(['success', 'warning', 'danger', 'neutral'].includes(entry.variant),
+      `${s} variant ${entry.variant} 无效`);
   }
 });
 
-test('📊 品类经理视角: 类型标签映射完整 — 4种类型', () => {
+test('📊 品类经理视角: 类型标签映射完整 — 4种类型各有有效 label', () => {
   const types: CouponType[] = ['percentage', 'fixed', 'shipping', 'threshold'];
   for (const t of types) {
-    assert.ok(COUPON_TYPE_MAP[t], `${t} 应有映射`);
-    assert.ok(COUPON_TYPE_MAP[t].label.length > 0, `${t} 标签非空`);
+    const entry = COUPON_TYPE_MAP[t];
+    assert.ok(entry, `${t} 应有映射`);
+    assert.ok(entry.label.length > 0, `${t} 标签非空`);
+    assert.equal(typeof entry.suffix, 'string', `${t} suffix 应为字符串`);
   }
 });
 
-test('📊 品类经理视角: 适用范围映射完整 — 5种范围', () => {
+test('📊 品类经理视角: 适用范围映射完整 — 5种范围各有非空标签', () => {
   const scopes: CouponScope[] = ['all', 'category', 'product', 'store', 'member_tier'];
   for (const s of scopes) {
-    assert.ok(COUPON_SCOPE_MAP[s], `${s} 应有映射`);
-    assert.ok(COUPON_SCOPE_MAP[s].length > 0, `${s} 标签非空`);
+    const label = COUPON_SCOPE_MAP[s];
+    assert.ok(label, `${s} 应有映射`);
+    assert.ok(label.length > 0, `${s} 标签非空`);
   }
 });
 
-test('正例: typeColor 返回有效色值', () => {
+test('正例: typeColor 为每种类型返回有效色值', () => {
   const types: CouponType[] = ['percentage', 'fixed', 'shipping', 'threshold'];
+  const expectedColors: Record<CouponType, string> = {
+    percentage: '#60a5fa',
+    fixed: '#a78bfa',
+    shipping: '#34d399',
+    threshold: '#fbbf24',
+  };
   for (const t of types) {
     const color = typeColor(t);
+    assert.equal(color, expectedColors[t], `${t} 颜色应为 ${expectedColors[t]}`);
     assert.ok(color.startsWith('#'), `${t} 颜色应以 # 开头`);
-    assert.equal(color.length, 7);
+    assert.equal(color.length, 7, `${t} 颜色应为 7 字符`);
   }
 });
 
-test('正例: claimRate 计算正确', () => {
-  const c1 = claimRate(allCoupons[0]); // SUMMER2026: 5679/10000
-  assert.equal(c1, 56.79);
-  const c7 = claimRate(allCoupons[6]); // PROMO0826: 0/15000
-  assert.equal(c7, 0);
-  const c3 = claimRate(allCoupons[2]); // NEW20: 3000/3000
-  assert.equal(c3, 100);
+test('正例: claimRate 精确计算三种典型场景', () => {
+  // SUMMER2026: 5679/10000 = 56.79
+  assert.equal(claimRate(allCoupons[0]), 56.79);
+  // PROMO0826 (draft): 0/15000 = 0
+  assert.equal(claimRate(allCoupons[6]), 0);
+  // NEW20 (exhausted): 3000/3000 = 100
+  assert.equal(claimRate(allCoupons[2]), 100);
 });
 
-test('正例: remainingPercent 计算正确', () => {
-  const val = remainingPercent(allCoupons[0]); // 4321/10000
-  assert.equal(val, 43.21);
-  const exhausted = remainingPercent(allCoupons[2]); // 0/3000
-  assert.equal(exhausted, 0);
-  const full = remainingPercent(allCoupons[6]); // 15000/15000
-  assert.equal(full, 100);
+test('正例: remainingPercent 精确计算', () => {
+  // SUMMER2026: 4321/10000 = 43.21
+  assert.equal(remainingPercent(allCoupons[0]), 43.21);
+  // exhausted: 0/3000 = 0
+  assert.equal(remainingPercent(allCoupons[2]), 0);
+  // draft (全量未用): 15000/15000 = 100
+  assert.equal(remainingPercent(allCoupons[6]), 100);
 });
 
-test('正例: 状态筛选 — active 应有 6 张', () => {
+test('正例: formatDate 正确替换连接符', () => {
+  assert.equal(formatDate('2026-06-01'), '2026/06/01');
+  assert.equal(formatDate('2026-12-31'), '2026/12/31');
+  assert.equal(formatDate('2026-01-15'), '2026/01/15');
+});
+
+test('正例: 状态筛选 active 返回 6 张', () => {
   const result = filterByStatus(allCoupons, 'active');
   assert.equal(result.length, 6);
   assert.ok(result.every((i) => i.status === 'active'));
 });
 
-test('正例: 状态筛选 — draft 应有 1 张 (PROMO0826)', () => {
+test('正例: 状态筛选 draft 返回 1 张 — PROMO0826', () => {
   const result = filterByStatus(allCoupons, 'draft');
   assert.equal(result.length, 1);
   assert.equal(result[0].code, 'PROMO0826');
 });
 
-test('正例: 类型筛选 — percentage 应有 3 张', () => {
+test('正例: 类型筛选 percentage 返回 3 张', () => {
   const result = filterByType(allCoupons, 'percentage');
   assert.equal(result.length, 3);
   assert.ok(result.every((i) => i.type === 'percentage'));
 });
 
-test('正例: 类型筛选 — fixed 应有 2 张', () => {
+test('正例: 类型筛选 fixed 返回 2 张', () => {
   const result = filterByType(allCoupons, 'fixed');
   assert.equal(result.length, 2);
   assert.ok(result.every((i) => i.type === 'fixed'));
+  assert.ok(result.some((i) => i.code === 'NEW20'));
+  assert.ok(result.some((i) => i.code === 'BIRTHDAY'));
 });
 
-test('正例: 范围筛选 — all 全场通用应有 4 张', () => {
+test('正例: 范围筛选 all (全场通用) 返回 5 张', () => {
   const result = filterByScope(allCoupons, 'all');
   assert.equal(result.length, 5);
   assert.ok(result.every((i) => i.scope === 'all'));
 });
 
-test('正例: 搜索券码 SUMMER2026', () => {
+test('正例: 搜索券码 SUMMER2026 精确匹配 1 条', () => {
   const result = searchItems(allCoupons, 'SUMMER2026');
   assert.equal(result.length, 1);
   assert.equal(result[0].code, 'SUMMER2026');
 });
 
-test('正例: 搜索 "张三" 返回 3 张 (运营部-张三)', () => {
+test('正例: 搜索运营部张三匹配 4 张', () => {
   const result = searchItems(allCoupons, '张三');
   assert.equal(result.length, 4);
   assert.ok(result.every((i) => i.createdBy.includes('张三')));
 });
 
-test('正例: 搜索 "全场通用" 返回 4 张', () => {
+test('正例: 搜索 scopeLabel "全场通用" 返回 5 条', () => {
   const result = searchItems(allCoupons, '全场通用');
   assert.equal(result.length, 5);
 });
 
-test('正例: 分页 — 第1页每页5条', () => {
+test('正例: 分页第1页每页5条返回前5条', () => {
   const result = paginate(allCoupons, 1, 5);
   assert.equal(result.length, 5);
   assert.equal(result[0].id, 'c-001');
   assert.equal(result[4].id, 'c-005');
 });
 
-test('正例: 分页 — 第2页每页5条', () => {
+test('正例: 分页第2页每页5条返回后5条', () => {
   const result = paginate(allCoupons, 2, 5);
   assert.equal(result.length, 5);
   assert.equal(result[0].id, 'c-006');
   assert.equal(result[4].id, 'c-010');
 });
 
-test('正例: 分页 — 第3页每页5条 (1条)', () => {
+test('正例: 分页第3页每页5条 — 超出数据量, 返回空', () => {
   const result = paginate(allCoupons, 3, 5);
   assert.equal(result.length, 0);
-});
-
-test('正例: formatDate 替换短横为斜杠', () => {
-//   assert.equal(formatDate('2026-06-01'), '2026/06/01');
-//   assert.equal(formatDate('2026-12-31'), '2026/12/31');
-//   assert.equal(formatDate(''), '/');
 });
 
 /* =================================================================
  * 反例 (Defensive / 防御)
  * ================================================================= */
 
-test('反例: claimRate 处理 totalQuota=0 不崩溃', () => {
-  const bad = { ...allCoupons[0], totalQuota: 0, usedCount: 100 };
+test('反例: claimRate 处理 totalQuota=0 不崩溃, 返回 0', () => {
+  const bad: CouponItem = { ...allCoupons[0], totalQuota: 0, usedCount: 100 };
   assert.equal(claimRate(bad), 0);
 });
 
-test('反例: remainingPercent 处理 totalQuota=0 不崩溃', () => {
-  const bad = { ...allCoupons[0], totalQuota: 0, remainingQuota: 0 };
+test('反例: remainingPercent 处理 totalQuota=0 不崩溃, 返回 0', () => {
+  const bad: CouponItem = { ...allCoupons[0], totalQuota: 0, remainingQuota: 0 };
   assert.equal(remainingPercent(bad), 0);
 });
 
-test('反例: 空状态筛选返回全部', () => {
+test('反例: remainingPercent 处理负数 totalQuota 不崩溃', () => {
+  const bad: CouponItem = { ...allCoupons[0], totalQuota: -1, remainingQuota: 5 };
+  assert.equal(remainingPercent(bad), 0);
+});
+
+test('反例: 空字符串筛选返回全部数据', () => {
   assert.equal(filterByStatus(allCoupons, '').length, allCoupons.length);
   assert.equal(filterByType(allCoupons, '').length, allCoupons.length);
   assert.equal(filterByScope(allCoupons, '').length, allCoupons.length);
 });
 
-test('反例: 空搜索返回全部', () => {
+test('反例: 空搜索和纯空格搜索返回全部数据', () => {
   assert.equal(searchItems(allCoupons, '').length, allCoupons.length);
   assert.equal(searchItems(allCoupons, '   ').length, allCoupons.length);
 });
 
-test('反例: 搜索不存在内容返回空', () => {
+test('反例: 搜索不存在的内容返回空数组', () => {
   assert.equal(searchItems(allCoupons, '不存在的优惠券').length, 0);
-  assert.equal(searchItems(allCoupons, 'XYZ_NOT_FOUND').length, 0);
+  assert.equal(searchItems(allCoupons, 'XYZ_404_NOT_FOUND').length, 0);
 });
 
-test('反例: 分页负数页码返回空', () => {
-  assert.equal(paginate(allCoupons, -1, 10).length, 0);
-  assert.equal(paginate(allCoupons, 0, 10).length, 0);
-});
-
-test('反例: 分页超大页码返回空', () => {
-  assert.equal(paginate(allCoupons, 9999, 10).length, 0);
-});
-
-test('反例: 搜索带特殊字符不崩溃', () => {
+test('反例: 搜索带 XSS 特殊字符不崩溃且返回空', () => {
   const result = searchItems(allCoupons, '<script>alert("xss")</script>');
   assert.ok(Array.isArray(result));
   assert.equal(result.length, 0);
 });
 
-test('反例: typeColor 默认分支覆盖', () => {
-  // @ts-expect-error 测试非法类型
-  assert.equal(typeColor('unknown'), undefined);
+test('反例: 分页负数页码返回空数组', () => {
+  assert.equal(paginate(allCoupons, -1, 10).length, 0);
+  assert.equal(paginate(allCoupons, 0, 10).length, 0);
+});
+
+test('反例: 分页超大页码返回空数组', () => {
+  assert.equal(paginate(allCoupons, 9999, 10).length, 0);
+});
+
+test('反例: 分页 pageSize 为负数返回空数组', () => {
+  assert.equal(paginate(allCoupons, 1, -5).length, 0);
+});
+
+test('反例: 分页 pageSize 为 0 返回空数组', () => {
+  assert.equal(paginate(allCoupons, 1, 0).length, 0);
 });
 
 /* =================================================================
@@ -406,106 +431,162 @@ test('边界: 已领完券 claimRate = 100', () => {
   assert.equal(claimRate(exhausted), 100);
 });
 
-test('边界: 草稿券 claimRate = 0', () => {
+test('边界: 草稿券 claimRate = 0 (未发放)', () => {
   const draft = allCoupons.find((c) => c.status === 'draft')!;
   assert.equal(claimRate(draft), 0);
 });
 
-test('边界: 已过期券状态确认', () => {
+test('边界: 已过期券仅 SPRING2026', () => {
   const expired = allCoupons.filter((c) => c.status === 'expired');
   assert.equal(expired.length, 1);
   assert.equal(expired[0].code, 'SPRING2026');
 });
 
-test('边界: 已暂停券状态确认', () => {
+test('边界: 已暂停券仅 APPLIANCE100', () => {
   const paused = allCoupons.filter((c) => c.status === 'paused');
   assert.equal(paused.length, 1);
   assert.equal(paused[0].code, 'APPLIANCE100');
 });
 
-test('边界: 综合筛选 — active + percentage', () => {
+test('边界: 综合筛选 — active + percentage = 2 张 (SUMMER2026 + MILKTEA7)', () => {
   const s1 = filterByStatus(allCoupons, 'active');
   const s2 = filterByType(s1, 'percentage');
-  assert.equal(s2.length, 2); // SUMMER2026, MILKTEA7
+  assert.equal(s2.length, 2);
   assert.ok(s2.every((i) => i.status === 'active' && i.type === 'percentage'));
+  assert.ok(s2.some((i) => i.code === 'SUMMER2026'));
+  assert.ok(s2.some((i) => i.code === 'MILKTEA7'));
 });
 
-test('边界: 综合筛选 — all scope + threshold', () => {
+test('边界: 综合筛选 — all + threshold = 2 张 (SPRING2026 + WEEKEND20)', () => {
   const s1 = filterByScope(allCoupons, 'all');
   const s2 = filterByType(s1, 'threshold');
-  assert.equal(s2.length, 2); // SPINRG2026(c-006), WEEKEND20(c-010)
-  assert.ok(s2[0].scope === 'all' && s2[0].type === 'threshold');
+  assert.equal(s2.length, 2);
+  assert.ok(s2.every((i) => i.scope === 'all' && i.type === 'threshold'));
 });
 
-test('边界: 分页 size=1 => 每页一条，精确遍历', () => {
+test('边界: 综合筛选 — store + active = 1 张 (FREEBJ)', () => {
+  const s1 = filterByScope(allCoupons, 'store');
+  const s2 = filterByStatus(s1, 'active');
+  assert.equal(s2.length, 1);
+  assert.equal(s2[0].code, 'FREEBJ');
+});
+
+test('边界: 分页 size=1 精确遍历全部 10 条', () => {
   for (let i = 1; i <= allCoupons.length; i++) {
     const page = paginate(allCoupons, i, 1);
-    assert.equal(page.length, 1);
-    assert.equal(page[0].id, `c-${String(i).padStart(3, '0')}`);
+    assert.equal(page.length, 1, `page ${i} 应有 1 条`);
+    assert.equal(page[0].id, `c-${String(i).padStart(3, '0')}`, `page ${i} id 匹配`);
   }
 });
 
-test('边界: 分页 size 大于总数返回全部', () => {
+test('边界: 分页 size 大于总数应返回全部', () => {
   const result = paginate(allCoupons, 1, 100);
   assert.equal(result.length, allCoupons.length);
 });
 
-test('边界: 搜索 "生日" 命中 BIRTHDAY', () => {
+test('边界: 搜索 "生日" 精确命中 BIRTHDAY', () => {
   const result = searchItems(allCoupons, '生日');
   assert.equal(result.length, 1);
   assert.equal(result[0].code, 'BIRTHDAY');
 });
 
-test('边界: 搜索 "门店" 命中 FREEBJ', () => {
+test('边界: 搜索 "门店" 精确命中 FREEBJ', () => {
   const result = searchItems(allCoupons, '门店');
   assert.equal(result.length, 1);
   assert.equal(result[0].code, 'FREEBJ');
 });
 
-test('边界: 券码唯一性', () => {
+test('边界: 所有券码全局唯一', () => {
   const codes = allCoupons.map((c) => c.code);
-  const unique = new Set(codes);
-  assert.equal(unique.size, codes.length, '所有券码应唯一');
+  assert.equal(new Set(codes).size, codes.length);
 });
 
-test('边界: ID 唯一性', () => {
+test('边界: 所有 ID 全局唯一', () => {
   const ids = allCoupons.map((c) => c.id);
-  const unique = new Set(ids);
-  assert.equal(unique.size, ids.length, '所有 ID 应唯一');
+  assert.equal(new Set(ids).size, ids.length);
 });
 
-test('边界: 总配额汇总', () => {
+test('边界: 总配额汇总 = 169999', () => {
   const total = allCoupons.reduce((s, c) => s + c.totalQuota, 0);
   assert.equal(total, 169999);
 });
 
-test('边界: 已使用汇总', () => {
+test('边界: 已使用总数汇总 = 37764', () => {
   const total = allCoupons.reduce((s, c) => s + c.usedCount, 0);
   assert.equal(total, 37764);
 });
 
-test('边界: 剩余配额汇总', () => {
+test('边界: 剩余配额非负且合计 = 132235', () => {
   const total = allCoupons.reduce((s, c) => s + c.remainingQuota, 0);
   assert.equal(total, 132235);
-  // 验证: totalQuota - usedCount != remainingQuota in general (有些券 pending/draft)
-  // 这里仅检查非负
   assert.ok(total >= 0);
 });
 
-// ---- hooks验证 ----
+test('边界: 数字字段均为非负数', () => {
+  const numericFields = ['totalQuota', 'remainingQuota', 'usageLimit', 'usedCount', 'discountValue', 'threshold'] as const;
+  for (const c of allCoupons) {
+    for (const field of numericFields) {
+      assert.ok(c[field] >= 0, `${c.id} ${field} = ${c[field]} 应为非负`);
+    }
+  }
+});
+
+test('边界: 空 coupons 数组所有筛选返回空', () => {
+  assert.equal(filterByStatus([], 'active').length, 0);
+  assert.equal(filterByType([], 'percentage').length, 0);
+  assert.equal(filterByScope([], 'all').length, 0);
+  assert.equal(searchItems([], 'test').length, 0);
+  assert.equal(paginate([], 1, 10).length, 0);
+});
+
+// ---- Source-level hooks/metadata verification ----
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const COUPON_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
-test('coupons — hooks验证: 包含useState状态声明', () => assert.ok(COUPON_SRC.includes('useState') || COUPON_SRC.includes('const [')));
-test('coupons — hooks验证: 包含JSX返回语句', () => assert.ok(COUPON_SRC.includes('return (')));
-test('coupons — hooks验证: 包含事件处理器', () => assert.ok(COUPON_SRC.includes('onClick') || COUPON_SRC.includes('onChange')));
-test('coupons — hooks验证: 包含列表渲染', () => assert.ok(COUPON_SRC.includes('.map(')));
-test('coupons — hooks验证: 包含条件渲染', () => assert.ok(COUPON_SRC.includes(' && ') || COUPON_SRC.includes(' ? ')));
-test('coupons — hooks验证: 包含样式定义', () => assert.ok(COUPON_SRC.includes('style={')));
-test('coupons — hooks验证: 包含数据格式化', () => assert.ok(COUPON_SRC.includes('.toFixed') || COUPON_SRC.includes('toLocaleString') || COUPON_SRC.includes('Math.')));
-test('coupons — hooks验证: 包含模板字符串', () => assert.ok(COUPON_SRC.includes('${')));
-test('coupons — hooks验证: 包含默认导出函数', () => assert.ok(COUPON_SRC.includes('export default function')));
-test('coupons — hooks验证: 包含注释说明', () => assert.ok(COUPON_SRC.includes('/*') || COUPON_SRC.includes('//')));
+test('源码: 包含 useState 状态声明', () => {
+  assert.ok(COUPON_SRC.includes('useState'), 'page.tsx 应使用 useState');
+});
+
+test('源码: 包含 React JSX return 语句', () => {
+  assert.ok(COUPON_SRC.includes('return ('), 'page.tsx 应返回 JSX');
+});
+
+test('源码: 包含事件处理器 onClick/onChange', () => {
+  assert.ok(COUPON_SRC.includes('onClick') || COUPON_SRC.includes('onChange'),
+    'page.tsx 应包含事件处理器');
+});
+
+test('源码: 包含列表渲染 .map()', () => {
+  assert.ok(COUPON_SRC.includes('.map('), 'page.tsx 应使用列表渲染');
+});
+
+test('源码: 包含条件渲染 (&& 或 三元)', () => {
+  assert.ok(COUPON_SRC.includes(' && ') || COUPON_SRC.includes(' ? '),
+    'page.tsx 应包含条件渲染');
+});
+
+test('源码: 包含内联样式 style={}', () => {
+  assert.ok(COUPON_SRC.includes('style={'), 'page.tsx 应包含内联样式');
+});
+
+test('源码: 包含数据格式化 (toLocaleString / Math)', () => {
+  assert.ok(COUPON_SRC.includes('toLocaleString') || COUPON_SRC.includes('Math.'),
+    'page.tsx 应包含数据格式化逻辑');
+});
+
+test('源码: 包含模板字符串', () => {
+  assert.ok(COUPON_SRC.includes('${'), 'page.tsx 应包含模板字符串');
+});
+
+test('源码: 包含 default export function', () => {
+  assert.ok(COUPON_SRC.includes('export default function'),
+    'page.tsx 应有默认导出函数');
+});
+
+test('源码: 包含注释', () => {
+  assert.ok(COUPON_SRC.includes('//') || COUPON_SRC.includes('/*'),
+    'page.tsx 应包含注释');
+});

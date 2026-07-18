@@ -282,6 +282,44 @@ export class CustomDomainService {
     this.domainsByTenant.get(ctx.tenantId)?.delete(id)
   }
 
+  async setPrimary(id: string): Promise<DomainMapping> {
+    const current = await this.getById(id)
+    if (current.status !== 'active' && current.status !== 'active_ssl') {
+      throw new BadRequestException(
+        `Domain must be active before primary switch. Current: ${current.status}`,
+      )
+    }
+
+    if (this.canUsePersistence()) {
+      await this.customDomains().updateMany({
+        where: this.buildScopeWhere(current),
+        data: { isPrimary: false },
+      })
+      const updated = this.rowToMapping(
+        await this.customDomains().update({
+          where: { id: current.id },
+          data: { isPrimary: true },
+        }),
+      )
+      const scopedRows = await this.customDomains().findMany({
+        where: this.buildScopeWhere(current),
+        orderBy: { createdAt: 'desc' },
+      })
+      for (const row of scopedRows) {
+        this.domainResolution?.upsertFromMapping(this.rowToMapping(row))
+      }
+      return updated
+    }
+
+    const scopedMappings = this.listScopeMappings(current)
+    for (const mapping of scopedMappings) {
+      mapping.isPrimary = mapping.id === current.id
+      this.domainResolution?.upsertFromMapping(mapping)
+    }
+    current.updatedAt = new Date().toISOString()
+    return current
+  }
+
   // ============ 2. DNS TXT 校验 ============
 
   async verify(id: string): Promise<DomainMapping> {
@@ -482,6 +520,53 @@ export class CustomDomainService {
     return (this.prisma as unknown as { customDomain: CustomDomainDelegate }).customDomain
   }
 
+  private buildScopeWhere(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): {
+    tenantId: string
+    scopeType?: DomainScopeType
+    brandId?: string | null
+    storeId?: string | null
+    status?: { in: string[] }
+  } {
+    const where: {
+      tenantId: string
+      scopeType?: DomainScopeType
+      brandId?: string | null
+      storeId?: string | null
+      status?: { in: string[] }
+    } = {
+      tenantId: mapping.tenantId,
+      scopeType: mapping.scopeType,
+    }
+
+    if (mapping.scopeType === 'TENANT') {
+      where.brandId = null
+      where.storeId = null
+      return where
+    }
+
+    if (mapping.scopeType === 'BRAND') {
+      where.brandId = mapping.brandId ?? null
+      where.storeId = null
+      return where
+    }
+
+    where.brandId = mapping.brandId ?? null
+    where.storeId = mapping.storeId ?? null
+    return where
+  }
+
+  private listScopeMappings(
+    current: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>,
+  ): DomainMapping[] {
+    return Array.from(this.domains.values()).filter((mapping) => {
+      if (mapping.tenantId !== current.tenantId) return false
+      if (mapping.scopeType !== current.scopeType) return false
+      if ((mapping.brandId ?? null) !== (current.brandId ?? null)) return false
+      if ((mapping.storeId ?? null) !== (current.storeId ?? null)) return false
+      return true
+    })
+  }
+
   private applyListQuery(items: DomainMapping[], query: DomainListQueryRequest): DomainMapping[] {
     const keyword = query.keyword?.trim().toLowerCase()
     return items.filter((item) => {
@@ -567,7 +652,13 @@ type CustomDomainDelegate = {
     }
   }): Promise<PersistedCustomDomainRow>
   findMany(args: {
-    where?: { tenantId?: string; status?: { in: string[] } }
+    where?: {
+      tenantId?: string
+      scopeType?: DomainScopeType
+      brandId?: string | null
+      storeId?: string | null
+      status?: { in: string[] }
+    }
     orderBy?: { createdAt: 'desc' | 'asc' }
     select?: {
       domain?: true
@@ -587,6 +678,7 @@ type CustomDomainDelegate = {
     where: { id: string }
     data: {
       status: string
+      isPrimary?: boolean
       verificationFailCount?: number
       verifiedAt?: Date
       lastVerifiedAt?: Date
@@ -597,6 +689,17 @@ type CustomDomainDelegate = {
       certificateFingerprint?: string
     }
   }): Promise<PersistedCustomDomainRow>
+  updateMany(args: {
+    where: {
+      tenantId?: string
+      scopeType?: DomainScopeType
+      brandId?: string | null
+      storeId?: string | null
+    }
+    data: {
+      isPrimary: boolean
+    }
+  }): Promise<{ count: number }>
 }
 
 function normalizeDomain(domain: string): string {
