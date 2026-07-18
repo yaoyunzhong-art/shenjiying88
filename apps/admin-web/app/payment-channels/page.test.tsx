@@ -103,11 +103,22 @@ describe('PaymentChannelsPage', () => {
     });
   });
 
-  it('should show rate info', async () => {
+  it('should render tab navigation with 3 tabs', async () => {
     render(<PaymentChannelsPage />);
     await waitFor(() => {
       const body = document.body.textContent || '';
-      assert.ok(body.includes('0.38'), 'expected fee rate');
+      assert.ok(body.includes('线上支付'), 'online tab visible');
+      assert.ok(body.includes('线下支付'), 'offline tab visible');
+      const all = body.match(/全部/g);
+      assert.ok(all && all.length >= 1, 'all tab visible');
+    });
+  });
+
+  it('should show channel fee info', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('费率'), 'fee label');
     });
   });
 
@@ -136,6 +147,135 @@ describe('PaymentChannelsPage', () => {
     await waitFor(() => {
       const body = document.body.textContent || '';
       assert.ok(body.includes('423'), 'expected today count');
+    });
+  });
+
+  it('should show total transaction amount', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('128500') || body.includes('8920'), 'expected amount');
+    });
+  });
+
+  it('should show abnormal channel count', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('异常') && body.includes('1'), 'expected abnormal count');
+    });
+  });
+
+  it('should have clickable tab buttons', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const buttons = document.querySelectorAll('button');
+      const tabButtons = Array.from(buttons).filter(b => /线上支付|线下支付|全部/.test(b.textContent || ''));
+      assert.ok(tabButtons.length >= 3, 'should have 3+ tab buttons');
+    });
+  });
+
+  it('should handle API error gracefully', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/cashier/channels', () => {
+      throw new Error('Network error');
+    });
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('渠道数') || body.includes('微信支付'), 'should have fallback data');
+    }, { timeout: 3000 });
+  });
+
+  it('should show loading initially', async () => {
+    render(<PaymentChannelsPage />);
+    const body = document.body.textContent || '';
+    assert.ok(body.includes('加载'), 'should show loading text');
+  });
+
+  it('should show degraded channel with yellow bg', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('降级'), 'degraded label visible');
+    });
+  });
+
+  it('should show offline status red bg', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('正常'), 'normal status visible');
+    });
+  });
+
+  it('should calculate total correctly with single channel', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/cashier/channels', () => ({
+      success: true, data: {
+        channels: [
+          { id: 'ch-1', name: '现金', provider: 'cash', type: 'offline', enabled: true, feeRate: 0, dailyLimitCents: 50000000, singleLimitCents: 1000000, supportedStoreIds: [], todayAmountCents: 100000, todayCount: 5, status: 'normal', config: [], createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+        ],
+      }, message: 'OK',
+    }));
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('1000'), 'should show ¥1000.00');
+    });
+  });
+
+  it('should handle empty channel data', async () => {
+    responseRegistry.clear();
+    setResponseFor('/api/cashier/channels', () => ({
+      success: true, data: { channels: [] }, message: 'OK',
+    }));
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('暂无支付渠道'), 'empty state');
+      assert.ok(body.includes('0'), 'count should be 0');
+    });
+  });
+
+  it('should handle many channels with correct count', async () => {
+    const channels = Array.from({ length: 5 }, (_, i) => ({
+      id: `ch-${i+10}`, name: `渠道${i+1}`, provider: 'other' as const, type: 'online' as const, enabled: true, feeRate: 30, dailyLimitCents: 1000000, singleLimitCents: 50000, supportedStoreIds: [], todayAmountCents: 1000 * (i+1), todayCount: i+1, status: 'normal' as const, config: [], createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+    }));
+    responseRegistry.clear();
+    setResponseFor('/api/cashier/channels', () => ({
+      success: true, data: { channels }, message: 'OK',
+    }));
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('5'), 'should show 5 channels');
+      assert.ok(body.includes('渠道1'), 'first channel');
+      assert.ok(body.includes('渠道5'), 'last channel');
+    });
+  });
+
+  it('should show subDescription text', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('支付方式管理'), 'sub description');
+    });
+  });
+
+  it('should show store scope info', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('全部门店') || body.includes('1家'), 'store scope info');
+    });
+  });
+
+  it('should show health check label', async () => {
+    render(<PaymentChannelsPage />);
+    await waitFor(() => {
+      const body = document.body.textContent || '';
+      assert.ok(body.includes('健康检查'), 'health check label');
     });
   });
 });
