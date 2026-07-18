@@ -283,6 +283,124 @@ const mockUiModule = {
     children,
     error ? React.createElement('span', { style: { color: 'red' } }, error) : null,
   ),
+
+  /** 表单验证函数 — 运行全部 rules，返回错误映射 */
+  validateFormFields: (fields, values) => {
+    const errors = {};
+    for (const f of fields) {
+      if (f.required && (!values[f.key] || values[f.key] === '')) {
+        errors[f.key] = '此字段不能为空';
+        continue;
+      }
+      if (f.rules) {
+        for (const rule of f.rules) {
+          const msg = rule.validate(values[f.key]);
+          if (msg) {
+            errors[f.key] = msg;
+            break;
+          }
+        }
+      }
+    }
+    return errors;
+  },
+
+  /** 表单页骨架组件 mock */
+  FormPageScaffold: ({ meta, fields, onSubmit, onSuccess, submitLabel, submitVariant, backUrl, topActions, footer, onChange, disabled }) => {
+    const [values, setValues] = React.useState({});
+    const [errors, setErrors] = React.useState({});
+    const [loading, setLoading] = React.useState(false);
+    const [submitResult, setSubmitResult] = React.useState(null);
+
+    const handleChange = (key, value) => {
+      const next = { ...values, [key]: value };
+      setValues(next);
+      onChange?.(key, value);
+      if (errors[key]) {
+        const nextErrors = { ...errors };
+        delete nextErrors[key];
+        setErrors(nextErrors);
+      }
+    };
+
+    const handleSubmitClick = async () => {
+      let allErrors = {};
+      for (const f of fields) {
+        if (f.required && (!values[f.key] || values[f.key] === '')) {
+          allErrors[f.key] = '此字段不能为空';
+        } else if (f.rules) {
+          for (const rule of f.rules) {
+            const msg = rule.validate(values[f.key]);
+            if (msg) {
+              allErrors[f.key] = msg;
+              break;
+            }
+          }
+        }
+      }
+
+      for (const f of fields) {
+        if (f.required && (!values[f.key] || values[f.key] === '' || (typeof values[f.key] === 'string' && !values[f.key].trim()))) {
+          allErrors[f.key] = '此字段不能为空';
+        }
+      }
+
+      setErrors(allErrors);
+
+      if (Object.keys(allErrors).length === 0) {
+        setLoading(true);
+        try {
+          const result = await onSubmit(values);
+          setSubmitResult({ type: 'success', message: result?.message });
+          setLoading(false);
+          if (result && onSuccess) {
+            onSuccess(result);
+          }
+        } catch (err) {
+          setSubmitResult({ type: 'error', message: err.message });
+          setErrors({ __form__: err.message });
+          setLoading(false);
+        }
+      }
+    };
+
+    const errorsList = Object.values(errors).filter(Boolean);
+
+    return React.createElement('div', { 'data-mock': 'FormPageScaffold', 'data-submit-status': submitResult?.type || 'idle' },
+      React.createElement('h1', { 'data-testid': 'form-title' }, meta.title),
+      meta.description ? React.createElement('p', { 'data-testid': 'form-description' }, meta.description) : null,
+      topActions ? React.createElement('div', { 'data-mock': 'FormPageScaffold-topActions' }, topActions) : null,
+      React.createElement('div', { 'data-mock': 'FormPageScaffold-fields' },
+        ...fields.map((f) =>
+          React.createElement('div', { key: f.key, 'data-field-key': f.key },
+            React.createElement('label', null, f.label),
+            React.createElement('input', {
+              'data-testid': `field-${f.key}`,
+              placeholder: f.placeholder || '',
+              'aria-label': f.label,
+              value: values[f.key] || '',
+              onChange: (e) => handleChange(f.key, e.target.value),
+            }),
+            f.helper ? React.createElement('span', { 'data-testid': `helper-${f.key}` }, f.helper) : null,
+            errors[f.key] ? React.createElement('span', { 'data-testid': 'error-${f.key}', style: { color: 'red' } }, errors[f.key]) : null,
+          )
+        )
+      ),
+      errorsList.length > 0 ? React.createElement('div', { 'data-testid': 'form-errors' },
+        ...errorsList.map((e, i) => React.createElement('div', { key: i, style: { color: 'red' } }, e))
+      ) : null,
+      footer ? React.createElement('div', { 'data-mock': 'FormPageScaffold-footer' }, footer) : null,
+      React.createElement('button', {
+        'data-testid': 'submit-btn',
+        disabled: disabled || loading,
+        onClick: handleSubmitClick,
+      }, loading ? '提交中…' : (submitLabel || '提交')),
+    );
+  },
+
+  /** Toast 钩子 mock */
+  useToast: () => ({ success: () => {}, error: () => {}, warning: () => {}, info: () => {} }),
+
   // DataTableSortConfig type export not needed at runtime
 };
 

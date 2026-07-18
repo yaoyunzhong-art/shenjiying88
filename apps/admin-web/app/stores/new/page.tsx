@@ -2,10 +2,13 @@
  * 新建门店 — Store Create Form Page (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 📊市场管理
  * 功能: 表单验证、提交、错误处理
+ *
+ * 新增: StoreFormProgress — 表单进度指示器
+ * 步骤: 基本信息 → 门店配置 → 人员设置 → 完成
  */
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -31,6 +34,100 @@ interface StoreFormData {
   city: string;
   brandCount: string;
   notes: string;
+}
+
+// ---- 进度指示器 ----
+
+const PROGRESS_STEPS = [
+  { label: '基本信息', key: 'basic' },
+  { label: '门店配置', key: 'config' },
+  { label: '人员设置', key: 'staff' },
+  { label: '完成', key: 'complete' },
+];
+
+/** 根据当前填写的字段值推断当前步骤 */
+function inferStep(values: Record<string, unknown>): number {
+  if (values.name && values.code && values.marketCode) return 0;
+  if (values.address && values.contactPhone && values.city) return 1;
+  if (values.riskLevel && values.floorArea) return 2;
+  return 0;
+}
+
+interface StoreFormProgressProps {
+  currentStep: number;
+}
+
+function StoreFormProgress({ currentStep }: StoreFormProgressProps) {
+  return (
+    <div
+      data-testid="store-form-progress"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        padding: '16px 0',
+        marginBottom: '24px',
+      }}
+    >
+      {PROGRESS_STEPS.map((step, idx) => (
+        <React.Fragment key={step.key}>
+          {idx > 0 && (
+            <div
+              data-testid={`progress-connector-${idx}`}
+              style={{
+                flex: 1,
+                height: '2px',
+                maxWidth: '48px',
+                background: idx <= currentStep ? '#1677ff' : '#d9d9d9',
+                transition: 'background 0.3s',
+              }}
+            />
+          )}
+          <div
+            data-testid={`progress-step-${idx}`}
+            data-step-status={
+              idx < currentStep ? 'completed' : idx === currentStep ? 'current' : 'pending'
+            }
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                fontWeight: 600,
+                background: idx <= currentStep ? '#1677ff' : '#f0f0f0',
+                color: idx <= currentStep ? '#fff' : '#999',
+                transition: 'all 0.3s',
+              }}
+            >
+              {idx < currentStep ? '✓' : idx + 1}
+            </div>
+            <span
+              style={{
+                fontSize: '12px',
+                color: idx <= currentStep ? '#1677ff' : '#999',
+                fontWeight: idx === currentStep ? 600 : 400,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {step.label}
+            </span>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
 }
 
 // ---- 常量 ----
@@ -196,6 +293,8 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
 export default function StoreNewPage() {
   const router = useRouter();
   const { success } = useToast();
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({});
+  const currentStep = useMemo(() => inferStep(formValues), [formValues]);
 
   const meta = useMemo(() => ({
     title: '新建门店',
@@ -222,6 +321,10 @@ export default function StoreNewPage() {
     router.push('/stores');
   };
 
+  const handleChange = (key: string, value: unknown) => {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+  };
+
   return (
     <FormPageScaffold
       fields={FIELDS}
@@ -231,6 +334,8 @@ export default function StoreNewPage() {
       backUrl="/stores"
       submitLabel="创建门店"
       submitVariant="primary"
+      topActions={<StoreFormProgress currentStep={currentStep} />}
+      onChange={handleChange}
     />
   );
 }

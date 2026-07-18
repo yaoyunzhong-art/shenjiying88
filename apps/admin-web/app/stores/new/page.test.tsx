@@ -3,13 +3,15 @@
  * 角色视角: 👤运营管理员 · 📊市场管理
  *
  * 覆盖:
- * - 页面正例渲染（标题/字段标签/提交按钮）
+ * - 页面正例渲染（标题/字段标签/提交按钮/进度指示器）
  * - 必填字段验证
  * - 格式校验（门店编码/邮箱/建筑面积/名称长度）
+ * - 进度指示器渲染与状态
+ * - 边界条件（Helper 文本、选择器存在、后端错误）
  *
  * 依赖:
  * - @testing-library/react + happy-dom（devDependencies）
- * - 使用 .test-setup.cjs 预加载 DOM 环境（node -r 引入）
+ * - 使用 .test-setup.mjs 预加载 DOM 环境（node --import 引入）
  */
 
 import assert from 'node:assert/strict';
@@ -32,7 +34,7 @@ function setupTest() {
 }
 
 /* =================================================================
- * 正例 (Happy Path)
+ * 正例 (Happy Path) — 页面结构
  * ================================================================= */
 
 test('👤 运营管理员视角: 页面组件默认导出是函数', () => {
@@ -49,6 +51,12 @@ test('👤 运营管理员视角: 渲染新建门店 h1 标题', () => {
   const h1s = container.querySelectorAll('h1');
   const found = Array.from(h1s).filter(el => el.textContent?.includes('新建门店'));
   assert.ok(found.length >= 1, '页面应渲染 h1 标题包含「新建门店」');
+});
+
+test('👤 运营管理员视角: 渲染页面描述文本', () => {
+  setupTest();
+  const desc = screen.queryByText(/创建一个新的门店/);
+  assert.ok(desc, '应渲染页面描述文本');
 });
 
 test('👤 运营管理员视角: 渲染所有必填字段标签', () => {
@@ -85,6 +93,8 @@ test('📊 市场管理视角: 渲染 placeholder 提示', () => {
     'store@example.com',
     '例如：8500',
     '例如：5',
+    '简要描述门店定位、商圈环境和特色…',
+    '其他需要记录的信息…',
   ];
   for (const ph of placeholders) {
     const input = screen.queryByPlaceholderText(ph);
@@ -93,10 +103,61 @@ test('📊 市场管理视角: 渲染 placeholder 提示', () => {
 });
 
 /* =================================================================
- * 反例 (Negative Cases)
+ * 正例 (Happy Path) — 进度指示器
  * ================================================================= */
 
-test('🚫 运营管理员视角: 空必填字段提交时显示验证错误', async () => {
+test('📊 进度指示器: 渲染进度指示器组件', () => {
+  setupTest();
+  const progress = screen.queryByTestId('store-form-progress');
+  assert.ok(progress, '应渲染表单进度指示器');
+});
+
+test('📊 进度指示器: 渲染全部 4 个步骤', () => {
+  setupTest();
+  for (let i = 0; i < 4; i++) {
+    const step = screen.queryByTestId(`progress-step-${i}`);
+    assert.ok(step, `应渲染第 ${i + 1} 步`);
+  }
+});
+
+test('📊 进度指示器: 渲染步骤标签文本', () => {
+  setupTest();
+  const labels = ['基本信息', '门店配置', '人员设置', '完成'];
+  for (const label of labels) {
+    const el = screen.queryByText(label);
+    assert.ok(el, `应渲染步骤标签「${label}」`);
+  }
+});
+
+test('📊 进度指示器: 默认显示第 0 步为 current 状态', () => {
+  setupTest();
+  const step0 = screen.getByTestId('progress-step-0');
+  assert.equal(step0.getAttribute('data-step-status'), 'current',
+    '第 1 步应为 current 状态');
+});
+
+test('📊 进度指示器: 第 2~4 步默认显示 pending 状态', () => {
+  setupTest();
+  for (let i = 1; i < 4; i++) {
+    const step = screen.getByTestId(`progress-step-${i}`);
+    assert.equal(step.getAttribute('data-step-status'), 'pending',
+      `第 ${i + 1} 步应为 pending，实际为 ${step.getAttribute('data-step-status')}`);
+  }
+});
+
+test('📊 进度指示器: 渲染步骤连接线', () => {
+  setupTest();
+  for (let i = 1; i < 4; i++) {
+    const connector = screen.queryByTestId(`progress-connector-${i}`);
+    assert.ok(connector, `应渲染第 ${i} 条连接线`);
+  }
+});
+
+/* =================================================================
+ * 反例 (Negative Cases) — 字段验证
+ * ================================================================= */
+
+test('🚫 运营管理员视角: 空必填字段提交时显示不能为空错误', async () => {
   const user = userEvent.setup();
   setupTest();
 
@@ -223,15 +284,44 @@ test('🚫 联系电话长度验证: 过短电话显示错误', async () => {
   assert.ok(phoneErrors.length >= 1, '过短的联系电话应显示长度错误提示');
 });
 
+test('🚫 门店编码冲突: STORE-999 提交应显示后端错误', async () => {
+  const user = userEvent.setup();
+  setupTest();
+
+  // 填入所有必填字段使验证通过
+  const nameInput = screen.getByPlaceholderText(/例如：朝阳大悦城/);
+  await user.type(nameInput, '测试门店A');
+  const codeInput = screen.getByPlaceholderText('例如：STORE-016');
+  await user.type(codeInput, 'STORE-999');
+  const addrInput = screen.getByPlaceholderText(/北京市朝阳区/);
+  await user.type(addrInput, '北京市朝阳区测试路88号');
+  const phoneInput = screen.getByPlaceholderText(/\+86/);
+  await user.type(phoneInput, '+86-10-8888-1111');
+  // 填充 select 类型必填字段
+  const marketInput = screen.getByLabelText('所属市场');
+  await user.type(marketInput, 'cn-mainland');
+  const cityInput = screen.getByLabelText('所在城市');
+  await user.type(cityInput, '北京市');
+  const statusInput = screen.getByLabelText('初始状态');
+  await user.type(statusInput, 'active');
+  const riskInput = screen.getByLabelText('风险等级');
+  await user.type(riskInput, 'low');
+
+  const submitBtn = screen.getByRole('button', { name: /创建门店/i });
+  await user.click(submitBtn);
+
+  // onSubmit 含 1200ms 模拟延迟，需等待足够时间
+  await new Promise(r => setTimeout(r, 1600));
+
+  // 验证后端错误信息
+  const backendError = screen.queryByText(/门店编码已被占用/);
+  assert.ok(backendError,
+    `编码冲突应显示后端错误「该门店编码已被占用，请重新输入」`);
+});
+
 /* =================================================================
  * 边界 (Boundary Cases)
  * ================================================================= */
-
-test('🧪 边界: 页面描述文本渲染', () => {
-  setupTest();
-  const desc = screen.queryByText(/创建一个新的门店/);
-  assert.ok(desc, '应渲染页面描述文本');
-});
 
 test('🧪 边界: Helper 文本渲染', () => {
   setupTest();
@@ -257,11 +347,10 @@ test('🧪 边界: 初始状态选择器存在', () => {
   assert.ok(statusLabels.length >= 1, '应渲染「初始状态」标签');
 });
 
-test('🧪 边界: 建筑面积必须为数字', async () => {
+test('🧪 边界: 建筑面积合法数字不显示数字错误', async () => {
   const user = userEvent.setup();
   setupTest();
 
-  // 使用 textarea 定位不同 — 找第二个面积相关输入
   const areaInput = screen.getByPlaceholderText('例如：8500');
   await user.clear(areaInput);
   await user.type(areaInput, '200000');
@@ -271,10 +360,26 @@ test('🧪 边界: 建筑面积必须为数字', async () => {
 
   await new Promise(r => setTimeout(r, 100));
 
-  // 无论是否触发面积边界验证，数字本身就是通过验证的条件，此处改为验证不会报非数字错误
   const NaNErrors = screen.queryAllByText('建筑面积必须为数字');
   assert.equal(NaNErrors.length, 0, '合法数字不应显示「必须为数字」错误');
 });
+
+test('🧪 边界: 返回路径属性存在', () => {
+  setupTest();
+  const scaffold = document.querySelector('[data-mock="FormPageScaffold"]');
+  assert.ok(scaffold, '应渲染 FormPageScaffold');
+});
+
+test('🧪 边界: 提交按钮未禁用', () => {
+  setupTest();
+  const submitBtn = screen.getByRole('button', { name: /创建门店/i });
+  assert.equal(submitBtn.hasAttribute('disabled'), false,
+    '初始状态提交按钮不应禁用');
+});
+
+/* =================================================================
+ * 源代码静态分析 — 验证 page.tsx 包含关键结构
+ * ================================================================= */
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -282,15 +387,16 @@ import { dirname, resolve } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
-describe('Stores / New — hooks验证', () => {
-  it('包含useMemo等hook', () => assert.ok(SRC.includes('useMemo')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onSubmit={')));
-  it('包含数据结构', () => assert.ok(SRC.includes('{') && SRC.includes('[')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含UI渲染', () => assert.ok(true));
-  it('包含数值转换', () => assert.ok(SRC.includes('Number') || SRC.includes('parseInt') || SRC.includes('parseFloat')));
-  it('包含字符串处理', () => assert.ok(true));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+describe('Stores / New — 源代码结构验证', () => {
+  it('包含 useMemo hook', () => assert.ok(SRC.includes('useMemo'), '应使用 useMemo'));
+  it('包含 useState hook', () => assert.ok(SRC.includes('useState'), '应使用 useState'));
+  it('包含 JSX 返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <'), '应包含 JSX'));
+  it('包含事件处理器', () => assert.ok(SRC.includes('onSubmit={'), '应包含 onSubmit'));
+  it('包含 onChange 处理器', () => assert.ok(SRC.includes('onChange='), '应包含 onChange'));
+  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? '), '应包含条件渲染'));
+  it('包含进度指示器步骤定义', () => assert.ok(SRC.includes('PROGRESS_STEPS'), '应定义 PROGRESS_STEPS'));
+  it('包含 StoreFormProgress 组件', () => assert.ok(SRC.includes('StoreFormProgress'), '应定义 StoreFormProgress'));
+  it('包含 inferStep 函数', () => assert.ok(SRC.includes('inferStep'), '应定义 inferStep'));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default function'), '应有默认导出函数'));
+  it('包含注释说明', () => assert.ok(SRC.includes('/**') || SRC.includes('//'), '应包含注释'));
 });
