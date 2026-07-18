@@ -29,7 +29,7 @@
 | campaigns | 1src | 19 |
 | maintenance | 1src | 16 |
 | alliances | 1src | 17 |
-| procurement | 1src | 16 |
+| procurement | 1src | 38 V20✅ |
 | payment-channels | 1src | 15 |
 | points-rules | 1src | 15 |
 | system-monitor | 1src | 18 |
@@ -46,12 +46,12 @@
 | coupon-templates | 1src | 68 |
 | alliances | 1src | 17 |
 | analytics | 1src | 12 |
-| coupons | 1src | 59 |
+| coupons | 1src | 65(7假阳) V20✅ |
 | customer-tags | 1src | 57 |
 | knowledge | 1src | 30 |
 | member | 1src | 80 |
 | reports | 1src | 48 |
-| rules | 1src | 11 |
+| rules | 1src | 40 V20✅ |
 | safety | 1src | 10 |
 | settings | 1src | 13 |
 | **合计** | **29src** | **962** |

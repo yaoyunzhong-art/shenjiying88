@@ -42,10 +42,11 @@
 | Analytics | admin-web/app/analytics/ | ~280行 | 12测试 | 🆕 | 🔴 | P-Admin 数据分析 |
 | Coupons | admin-web/app/coupons/ | ~590行 | 65测试(7假阳) | 🆕 | 🟡已发 | P-48联名 优惠券发放 |
 | Customer Tags | admin-web/app/customer-tags/ | ~250行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
+| Procurement | admin-web/app/procurement/ | ~460行 | 38测试 | 🆕 | 🟡已发 | P-Admin 采购管理 |
 | Knowledge | admin-web/app/knowledge/ | ~200行 | 30测试 | 🆕 | 🔴 | P-Admin 知识库 |
 | Member | admin-web/app/member/ | ~300行 | 80测试 | 🆕 | 🔴 | P-36会员 会员管理 |
 | Reports | admin-web/app/reports/ | ~300行 | 48测试 | 🆕 | 🔴 | P-38财务 报表中心 |
-| Rules | admin-web/app/rules/ | ~300行 | 11测试 | 🆕 | 🔴 | P-Admin 规则管理 |
+| Rules | admin-web/app/rules/ | ~350行 | 40测试 | 🆕 | 🟡已发 | P-Admin 规则管理 |
 | Safety | admin-web/app/safety/ | ~400行 | 10测试 | 🆕 | 🔴 | P-Admin 安防管理 |
 | Settings | admin-web/app/settings/ | ~260行 | 13测试 | 🆕 | 🔴 | P-Admin 设置中心 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
