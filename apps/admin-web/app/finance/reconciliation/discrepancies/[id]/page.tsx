@@ -239,6 +239,50 @@ export default function DiscrepancyDetailPage() {
         </div>
       </div>
 
+      {/* 差异概览统计条 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+          <p className="text-xs text-blue-600 font-medium mb-1">总差额</p>
+          <p className={`text-lg font-bold ${detail.diffCents !== 0 ? 'text-red-700' : 'text-blue-900'}`}>
+            {fmtCents(detail.diffCents)}
+          </p>
+        </div>
+        <div className={`bg-gradient-to-br rounded-lg border p-4 ${detail.resolved ? 'from-green-50 to-green-100 border-green-200' : 'from-gray-50 to-gray-100 border-gray-200'}`}>
+          <p className={`text-xs font-medium mb-1 ${detail.resolved ? 'text-green-600' : 'text-gray-400'}`}>已处理</p>
+          <p className={`text-lg font-bold ${detail.resolved ? 'text-green-900' : 'text-gray-300'}`}>
+            {detail.resolved ? '1' : '0'}
+          </p>
+        </div>
+        <div className={`bg-gradient-to-br rounded-lg border p-4 ${!detail.resolved ? 'from-yellow-50 to-yellow-100 border-yellow-200' : 'from-gray-50 to-gray-100 border-gray-200'}`}>
+          <p className={`text-xs font-medium mb-1 ${!detail.resolved ? 'text-yellow-600' : 'text-gray-400'}`}>未处理</p>
+          <p className={`text-lg font-bold ${!detail.resolved ? 'text-yellow-900' : 'text-gray-300'}`}>
+            {detail.resolved ? '0' : '1'}
+          </p>
+        </div>
+        <div className={`bg-gradient-to-br rounded-lg border p-4 ${
+          detail.kind === 'missing-internal' || detail.kind === 'missing-external'
+            ? 'from-red-50 to-red-100 border-red-200'
+            : detail.kind === 'duplicate'
+              ? 'from-purple-50 to-purple-100 border-purple-200'
+              : 'from-gray-50 to-gray-100 border-gray-200'
+        }`}>
+          <p className={`text-xs font-medium mb-1 ${
+            detail.kind === 'missing-internal' || detail.kind === 'missing-external'
+              ? 'text-red-600'
+              : detail.kind === 'duplicate'
+                ? 'text-purple-600'
+                : 'text-gray-500'
+          }`}>异常</p>
+          <p className={`text-lg font-bold ${
+            detail.kind === 'missing-internal' || detail.kind === 'missing-external'
+              ? 'text-red-900'
+              : detail.kind === 'duplicate'
+                ? 'text-purple-900'
+                : 'text-gray-400'
+          }`}>{diffKindLabel(detail.kind)}</p>
+        </div>
+      </div>
+
       {/* 错误提示 */}
       {error && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
