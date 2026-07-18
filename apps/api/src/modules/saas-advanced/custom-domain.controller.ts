@@ -22,10 +22,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
+import { requireTenantContext } from '../../common/context/tenant-context'
 import { CustomDomainService } from './custom-domain.service'
 import { isValidDomain, buildVerificationHost, buildVerificationValue } from './custom-domain.entity'
 import {
   AddDomainRequest,
+  CurrentPrimaryDomainQueryRequest,
+  CurrentPrimaryDomainResponse,
   DomainDetailResponse,
   DomainListQueryRequest,
   DomainListResponse,
@@ -69,6 +72,35 @@ export class CustomDomainController {
   @ApiOkResponse({ type: DomainListResponse })
   async list(@Query() query: DomainListQueryRequest = new DomainListQueryRequest()) {
     return this.service.listPage(query)
+  }
+
+  /**
+   * 查询当前 scope 的主域名
+   * GET /saas/domain/primary/current
+   */
+  @ApiOperation({ summary: '查询当前作用域主域名' })
+  @ApiQuery({ name: 'scopeType', type: String, required: false, description: '作用域类型，默认按当前租户上下文推断' })
+  @ApiQuery({ name: 'brandId', type: String, required: false, description: '品牌作用域标识' })
+  @ApiQuery({ name: 'storeId', type: String, required: false, description: '门店作用域标识' })
+  @Get('primary/current')
+  @ApiOkResponse({ type: CurrentPrimaryDomainResponse })
+  async getCurrentPrimary(
+    @Query() query: CurrentPrimaryDomainQueryRequest = new CurrentPrimaryDomainQueryRequest(),
+  ) {
+    const ctx = requireTenantContext()
+    const scopeType =
+      query.scopeType ?? (ctx.storeId ? 'STORE' : ctx.brandId ? 'BRAND' : 'TENANT')
+    const brandId = query.brandId ?? ctx.brandId
+    const storeId = query.storeId ?? ctx.storeId
+    const item = await this.service.getCurrentPrimary(query)
+    return {
+      scopeType,
+      tenantId: ctx.tenantId,
+      brandId,
+      storeId,
+      resolved: item != null,
+      item,
+    }
   }
 
   /**

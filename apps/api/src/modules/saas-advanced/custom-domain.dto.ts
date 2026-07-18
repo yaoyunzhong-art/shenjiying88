@@ -173,6 +173,47 @@ export class ResolveHostResponse {
   resolved!: boolean
 }
 
+export class CurrentPrimaryDomainQueryRequest {
+  @ApiPropertyOptional({
+    description: '查询的作用域类型，默认按当前租户上下文推断',
+    enum: DOMAIN_SCOPE_VALUES,
+    example: 'BRAND',
+  })
+  @IsIn(DOMAIN_SCOPE_VALUES)
+  @IsOptional()
+  scopeType?: (typeof DOMAIN_SCOPE_VALUES)[number]
+
+  @ApiPropertyOptional({ description: '品牌作用域标识，不传则尝试使用当前上下文 brandId', example: 'brand-001' })
+  @IsString()
+  @IsOptional()
+  brandId?: string
+
+  @ApiPropertyOptional({ description: '门店作用域标识，不传则尝试使用当前上下文 storeId', example: 'store-001' })
+  @IsString()
+  @IsOptional()
+  storeId?: string
+}
+
+export class CurrentPrimaryDomainResponse {
+  @ApiProperty({ example: 'BRAND' })
+  scopeType!: string
+
+  @ApiProperty({ example: 'tenant-abc' })
+  tenantId!: string
+
+  @ApiPropertyOptional({ example: 'brand-001' })
+  brandId?: string
+
+  @ApiPropertyOptional({ example: 'store-001' })
+  storeId?: string
+
+  @ApiProperty({ example: true })
+  resolved!: boolean
+
+  @ApiPropertyOptional({ type: () => DomainListItem, nullable: true })
+  item?: DomainListItem | null
+}
+
 export class DomainListQueryRequest {
   @ApiPropertyOptional({ description: '按域名关键字模糊搜索', example: 'brand-http' })
   @IsString()

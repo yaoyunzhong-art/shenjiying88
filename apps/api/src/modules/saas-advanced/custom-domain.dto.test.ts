@@ -4,6 +4,8 @@ import { plainToInstance } from 'class-transformer'
 import { validateSync } from 'class-validator'
 import {
   AddDomainRequest,
+  CurrentPrimaryDomainQueryRequest,
+  CurrentPrimaryDomainResponse,
   DomainListQueryRequest,
   ValidateDomainRequest,
   ValidateDomainResponse,
@@ -30,6 +32,27 @@ describe('saas-advanced custom-domain dto', () => {
 
   it('ResolveHostRequest 要求 host 非空', () => {
     const dto = plainToInstance(ResolveHostRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
+  })
+
+  it('CurrentPrimaryDomainQueryRequest 支持 scope 与 brand/store 参数', () => {
+    const dto = plainToInstance(CurrentPrimaryDomainQueryRequest, {
+      scopeType: 'STORE',
+      brandId: 'brand-001',
+      storeId: 'store-001',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.scopeType, 'STORE')
+    assert.equal(dto.brandId, 'brand-001')
+    assert.equal(dto.storeId, 'store-001')
+  })
+
+  it('CurrentPrimaryDomainQueryRequest 拒绝非法 scope', () => {
+    const dto = plainToInstance(CurrentPrimaryDomainQueryRequest, {
+      scopeType: 'PORTAL',
+    })
     const errors = validateSync(dto)
     assert.ok(errors.length > 0)
   })
@@ -242,5 +265,40 @@ describe('saas-advanced custom-domain dto', () => {
     }
     assert.equal(resp.resolved, false)
     assert.equal(resp.tenantId, null)
+  })
+
+  it('CurrentPrimaryDomainResponse 支持已解析主域名响应', () => {
+    const resp: CurrentPrimaryDomainResponse = {
+      scopeType: 'BRAND',
+      tenantId: 'tenant-abc',
+      brandId: 'brand-001',
+      resolved: true,
+      item: {
+        id: 'dom-100',
+        scopeType: 'BRAND',
+        tenantId: 'tenant-abc',
+        brandId: 'brand-001',
+        domain: 'brand.example.com',
+        status: 'active',
+        verificationFailCount: 0,
+        createdAt: '2026-06-01T00:00:00Z',
+        updatedAt: '2026-06-01T00:00:00Z',
+        createdBy: 'user-001',
+        isPrimary: true,
+      },
+    }
+    assert.equal(resp.resolved, true)
+    assert.equal(resp.item?.domain, 'brand.example.com')
+  })
+
+  it('CurrentPrimaryDomainResponse 支持未解析主域名响应', () => {
+    const resp: CurrentPrimaryDomainResponse = {
+      scopeType: 'TENANT',
+      tenantId: 'tenant-abc',
+      resolved: false,
+      item: null,
+    }
+    assert.equal(resp.resolved, false)
+    assert.equal(resp.item, null)
   })
 })

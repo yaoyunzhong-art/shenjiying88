@@ -17,7 +17,7 @@ import {
 import { randomUUID } from 'node:crypto'
 import { requireTenantContext } from '../../common/context/tenant-context'
 import { PrismaService } from '../../prisma/prisma.service'
-import type { DomainListQueryRequest } from './custom-domain.dto'
+import type { CurrentPrimaryDomainQueryRequest, DomainListQueryRequest } from './custom-domain.dto'
 import {
   DomainMapping,
   DomainScopeType,
@@ -252,6 +252,29 @@ export class CustomDomainService {
       throw new NotFoundException(`Domain ${id} not found`)
     }
     return m
+  }
+
+  async getCurrentPrimary(query: CurrentPrimaryDomainQueryRequest = {}): Promise<DomainMapping | null> {
+    const scope = this.resolveScopeSelection(query)
+
+    if (this.canUsePersistence()) {
+      const rows = await this.customDomains().findMany({
+        where: {
+          ...this.buildScopeWhere(scope),
+          status: { in: ['ACTIVE', 'ACTIVE_SSL'] },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      return rows.map((row) => this.rowToMapping(row)).find((item) => item.isPrimary) ?? null
+    }
+
+    return (
+      this.listScopeMappings(scope).find(
+        (mapping) =>
+          mapping.isPrimary === true &&
+          (mapping.status === 'active' || mapping.status === 'active_ssl'),
+      ) ?? null
+    )
   }
 
   async remove(id: string): Promise<void> {
@@ -519,6 +542,29 @@ export class CustomDomainService {
 
   private customDomains(): CustomDomainDelegate {
     return (this.prisma as unknown as { customDomain: CustomDomainDelegate }).customDomain
+  }
+
+  private resolveScopeSelection(
+    query: CurrentPrimaryDomainQueryRequest,
+  ): Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'> {
+    const ctx = requireTenantContext()
+    const scopeType = (query.scopeType as DomainScopeType | undefined) ?? inferScopeType(ctx)
+    const brandId = query.brandId ?? ctx.brandId
+    const storeId = query.storeId ?? ctx.storeId
+
+    if (scopeType === 'BRAND' && !brandId) {
+      throw new BadRequestException('brandId is required for BRAND scope current primary lookup')
+    }
+    if (scopeType === 'STORE' && (!brandId || !storeId)) {
+      throw new BadRequestException('brandId and storeId are required for STORE scope current primary lookup')
+    }
+
+    return {
+      scopeType,
+      tenantId: ctx.tenantId,
+      brandId,
+      storeId,
+    }
   }
 
   private buildScopeWhere(mapping: Pick<DomainMapping, 'scopeType' | 'tenantId' | 'brandId' | 'storeId'>): {

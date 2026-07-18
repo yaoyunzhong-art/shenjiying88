@@ -483,6 +483,35 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
         null,
       )
     })
+
+    it('getCurrentPrimary 可返回当前 tenant scope 主域名，并支持删除后重选', async () => {
+      const first = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('reselect-first.shenjiying88.com'),
+      )
+      const second = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.addDomain('reselect-second.shenjiying88.com'),
+      )
+      SHARED_SERVICE.setDnsTxtOverride(first.verificationHost, [
+        buildVerificationValue(first.verificationToken),
+      ])
+      SHARED_SERVICE.setDnsTxtOverride(second.verificationHost, [
+        buildVerificationValue(second.verificationToken),
+      ])
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.verify(first.id))
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.verify(second.id))
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.setPrimary(first.id))
+
+      const initial = await runWithTenant(TENANT_A, async () => SHARED_SERVICE.getCurrentPrimary())
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.remove(first.id))
+      const afterRemove = await runWithTenant(TENANT_A, async () => SHARED_SERVICE.getCurrentPrimary())
+      await runWithTenant(TENANT_A, async () => SHARED_SERVICE.setPrimary(second.id))
+      const afterReselect = await runWithTenant(TENANT_A, async () => SHARED_SERVICE.getCurrentPrimary())
+
+      assert.equal(initial?.domain, 'reselect-first.shenjiying88.com')
+      assert.equal(afterRemove, null)
+      assert.equal(afterReselect?.domain, 'reselect-second.shenjiying88.com')
+      assert.equal(afterReselect?.isPrimary, true)
+    })
   })
 
   // ============ 8. SSL 指纹工具 (1) ============
