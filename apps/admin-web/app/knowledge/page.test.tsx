@@ -7,8 +7,8 @@
  * 原则: beforeEach 重置，test 自包含
  *
  * 功能覆盖:
- *  - 类型定义（KnowledgeCategory / RecentDocument / KnowledgeSnapshot）
- *  - 数据结构校验（6 个分类 / 5 篇最近文档 / 总数 83 / 阅读量 15420）
+ *  - 类型定义（KnowledgeCategory / KnowledgeTag / RecentDocument / KnowledgeSnapshot）
+ *  - 数据结构校验（6 个分类 / 5 篇最近文档 / 5 个标签 / 总数 83 / 阅读量 15420）
  *  - 分类 icon 有效性
  *  - 最近文档 author / summary 完整性
  *  - 页面标题 "📚 知识库"
@@ -17,6 +17,7 @@
  *  - 加载状态（LoadingSkeleton）
  *  - exort 导出（dynamic / revalidate）
  *  - 空数组边界
+ *  - 知识分类标签（公告/教程/FAQ/政策/其他）
  */
 
 import assert from 'node:assert/strict';
@@ -33,6 +34,11 @@ interface KnowledgeCategory {
   lastUpdated: string;
 }
 
+interface KnowledgeTag {
+  id: string;
+  label: string;
+}
+
 interface RecentDocument {
   id: string;
   title: string;
@@ -47,9 +53,18 @@ interface KnowledgeSnapshot {
   recentDocuments: RecentDocument[];
   totalDocuments: number;
   totalViews: number;
+  tags: KnowledgeTag[];
 }
 
 // ===================== 样本数据 (与 page.tsx 同步) =====================
+
+const TAGS: KnowledgeTag[] = [
+  { id: 'announcement', label: '公告' },
+  { id: 'tutorial', label: '教程' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'policy', label: '政策' },
+  { id: 'other', label: '其他' },
+];
 
 const CATEGORIES: KnowledgeCategory[] = [
   { id: 'ops', name: '运营手册', icon: '📖', docCount: 24, lastUpdated: '2026-07-15' },
@@ -69,6 +84,7 @@ const RECENT_DOCUMENTS: RecentDocument[] = [
 ];
 
 const SNAPSHOT: KnowledgeSnapshot = {
+  tags: TAGS,
   categories: CATEGORIES,
   recentDocuments: RECENT_DOCUMENTS,
   totalDocuments: 83,
@@ -84,6 +100,12 @@ function validateCategory(cat: KnowledgeCategory): void {
   assert.ok(typeof cat.icon === 'string' && cat.icon.length > 0, `分类 icon 为空: ${JSON.stringify(cat)}`);
   assert.ok(typeof cat.docCount === 'number' && cat.docCount >= 0, `分类 docCount 无效: ${JSON.stringify(cat)}`);
   assert.ok(typeof cat.lastUpdated === 'string' && cat.lastUpdated.length > 0, `分类 lastUpdated 为空: ${JSON.stringify(cat)}`);
+}
+
+/** 验证每个标签必填字段不为空 */
+function validateTag(tag: KnowledgeTag): void {
+  assert.ok(typeof tag.id === 'string' && tag.id.length > 0, `标签 id 为空: ${JSON.stringify(tag)}`);
+  assert.ok(typeof tag.label === 'string' && tag.label.length > 0, `标签 label 为空: ${JSON.stringify(tag)}`);
 }
 
 /** 验证每篇最近文档必填字段不为空 */
@@ -118,9 +140,9 @@ describe('KnowledgePage — 正例', () => {
   });
 
   describe('KnowledgeSnapshot 数据结构', () => {
-    it('snapshot 包含 categories / recentDocuments / totalDocuments / totalViews 四个顶级字段', () => {
+    it('snapshot 包含 categories / recentDocuments / totalDocuments / totalViews / tags 五个顶级字段', () => {
       const keys = Object.keys(SNAPSHOT).sort();
-      assert.deepStrictEqual(keys, ['categories', 'recentDocuments', 'totalDocuments', 'totalViews']);
+      assert.deepStrictEqual(keys, ['categories', 'recentDocuments', 'tags', 'totalDocuments', 'totalViews']);
     });
 
     it('categories 为数组且长度为 6', () => {
@@ -133,9 +155,50 @@ describe('KnowledgePage — 正例', () => {
       assert.strictEqual(SNAPSHOT.recentDocuments.length, 5);
     });
 
+    it('tags 为数组且长度为 5', () => {
+      assert.ok(Array.isArray(SNAPSHOT.tags));
+      assert.strictEqual(SNAPSHOT.tags.length, 5);
+    });
+
     it('totalDocuments 为 83，totalViews 为 15420', () => {
       assert.strictEqual(SNAPSHOT.totalDocuments, 83);
       assert.strictEqual(SNAPSHOT.totalViews, 15420);
+    });
+  });
+
+  describe('KnowledgeTag 类型校验', () => {
+    it('每个标签 id 为小写英文+连字符，≥2 字符', () => {
+      for (const tag of SNAPSHOT.tags) {
+        assert.ok(isValidId(tag.id), `标签 id 格式无效: ${tag.id}`);
+      }
+    });
+
+    it('每个标签必填字段均非空', () => {
+      for (const tag of SNAPSHOT.tags) {
+        validateTag(tag);
+      }
+    });
+
+    it('每个标签 label 包含中文汉字', () => {
+      for (const tag of SNAPSHOT.tags) {
+        assert.ok(/[\u4e00-\u9fff]/.test(tag.label) || tag.label === 'FAQ',
+          `标签 ${tag.id} label "${tag.label}" 不包含中文也不是 FAQ`);
+      }
+    });
+
+    it('tags 包含所有预期的五个标签 id', () => {
+      const tagIds = SNAPSHOT.tags.map((t) => t.id).sort();
+      assert.deepStrictEqual(tagIds, ['announcement', 'faq', 'other', 'policy', 'tutorial']);
+    });
+
+    it('tags 包含所有预期的五个标签 label（无序检测）', () => {
+      const tagLabels = SNAPSHOT.tags.map((t) => t.label);
+      assert.strictEqual(tagLabels.length, 5);
+      assert.ok(tagLabels.includes('公告'));
+      assert.ok(tagLabels.includes('教程'));
+      assert.ok(tagLabels.includes('FAQ'));
+      assert.ok(tagLabels.includes('政策'));
+      assert.ok(tagLabels.includes('其他'));
     });
   });
 
@@ -172,6 +235,12 @@ describe('KnowledgePage — 正例', () => {
         assert.ok(datePattern.test(cat.lastUpdated),
           `分类 ${cat.id} lastUpdated "${cat.lastUpdated}" 格式非 YYYY-MM-DD`);
       }
+    });
+
+    it('docCount 至少有两个不同的值', () => {
+      const counts = SNAPSHOT.categories.map((c) => c.docCount);
+      const uniqueCounts = new Set(counts);
+      assert.ok(uniqueCounts.size >= 2, 'docCount 应存在多个不同值');
     });
   });
 
@@ -216,6 +285,13 @@ describe('KnowledgePage — 正例', () => {
       for (const doc of SNAPSHOT.recentDocuments) {
         assert.ok(categoryIds.has(doc.category),
           `文档 ${doc.id} category "${doc.category}" 不匹配任何分类 id`);
+      }
+    });
+
+    it('每篇文档 title 长度 ≥5 字符', () => {
+      for (const doc of SNAPSHOT.recentDocuments) {
+        assert.ok(doc.title.length >= 5,
+          `文档 ${doc.id} title 过短: "${doc.title}" (${doc.title.length} 字符)`);
       }
     });
   });
@@ -280,6 +356,38 @@ describe('KnowledgePage — 正例', () => {
       }
     });
   });
+
+  describe('知识分类标签 — 组件源码', () => {
+    const clientSource = fs.readFileSync(
+      new URL('./knowledge-client.tsx', import.meta.url),
+      'utf-8',
+    );
+
+    it('knowledge-client 包含 data-testid="knowledge-tag-filter"', () => {
+      assert.ok(/knowledge-tag-filter/.test(clientSource));
+    });
+
+    it('knowledge-client 使用模板语法 data-testid={`tag-$\{tag.id}`} 迭代标签', () => {
+      // 组件使用反引号模板渲染每个标签的 data-testid，而不是硬编码
+      assert.ok(/data-testid=\{`tag-\$\{tag\.id\}`\}/.test(clientSource));
+    });
+
+    it('knowledge-client 标签遍历使用 data.tags.map 迭代', () => {
+      assert.ok(/data\.tags\.map/.test(clientSource));
+    });
+
+    it('knowledge-client 中标签 filter 使用 data-active 属性表示选中状态', () => {
+      assert.ok(/data-active=/.test(clientSource));
+    });
+
+    it('knowledge-client 中标签按钮可点击切换状态（setActiveTag）', () => {
+      assert.ok(/setActiveTag/.test(clientSource));
+    });
+
+    it('knowledge-client 中标签 filter 支持取消选中（设为 null）', () => {
+      assert.ok(/activeTag === tag\.id \? null/.test(clientSource));
+    });
+  });
 });
 
 // ===================== 反例 / 边界 =====================
@@ -288,6 +396,7 @@ describe('KnowledgePage — 反例 & 边界', () => {
   describe('空数组边界', () => {
     it('空 categories 数组仍为合法快照', () => {
       const empty: KnowledgeSnapshot = {
+        tags: TAGS,
         categories: [],
         recentDocuments: RECENT_DOCUMENTS,
         totalDocuments: 0,
@@ -301,6 +410,7 @@ describe('KnowledgePage — 反例 & 边界', () => {
 
     it('空 recentDocuments 数组仍为合法快照', () => {
       const empty: KnowledgeSnapshot = {
+        tags: TAGS,
         categories: CATEGORIES,
         recentDocuments: [],
         totalDocuments: CATEGORIES.reduce((s, c) => s + c.docCount, 0),
@@ -308,6 +418,33 @@ describe('KnowledgePage — 反例 & 边界', () => {
       };
       assert.ok(Array.isArray(empty.recentDocuments));
       assert.strictEqual(empty.recentDocuments.length, 0);
+    });
+
+    it('空 tags 数组仍为合法快照', () => {
+      const empty: KnowledgeSnapshot = {
+        tags: [],
+        categories: CATEGORIES,
+        recentDocuments: RECENT_DOCUMENTS,
+        totalDocuments: 83,
+        totalViews: 15420,
+      };
+      assert.ok(Array.isArray(empty.tags));
+      assert.strictEqual(empty.tags.length, 0);
+    });
+
+    it('全部数组为空时的边界快照', () => {
+      const allEmpty: KnowledgeSnapshot = {
+        tags: [],
+        categories: [],
+        recentDocuments: [],
+        totalDocuments: 0,
+        totalViews: 0,
+      };
+      assert.strictEqual(allEmpty.tags.length, 0);
+      assert.strictEqual(allEmpty.categories.length, 0);
+      assert.strictEqual(allEmpty.recentDocuments.length, 0);
+      assert.strictEqual(allEmpty.totalDocuments, 0);
+      assert.strictEqual(allEmpty.totalViews, 0);
     });
   });
 
@@ -323,6 +460,11 @@ describe('KnowledgePage — 反例 & 边界', () => {
       assert.strictEqual(SNAPSHOT.totalDocuments, sumByCategory,
         `totalDocuments(${SNAPSHOT.totalDocuments}) !== 各分类和(${sumByCategory})`);
     });
+
+    it('totalViews 为非负整数', () => {
+      assert.ok(Number.isInteger(SNAPSHOT.totalViews), `totalViews(${SNAPSHOT.totalViews}) 不是整数`);
+      assert.ok(SNAPSHOT.totalViews >= 0, `totalViews(${SNAPSHOT.totalViews}) 为负值`);
+    });
   });
 
   describe('重复 / 唯一性', () => {
@@ -334,6 +476,27 @@ describe('KnowledgePage — 反例 & 边界', () => {
     it('文档 id 无重复', () => {
       const ids = RECENT_DOCUMENTS.map((d) => d.id);
       assert.strictEqual(new Set(ids).size, ids.length, '文档 id 存在重复');
+    });
+
+    it('标签 id 无重复', () => {
+      const ids = TAGS.map((t) => t.id);
+      assert.strictEqual(new Set(ids).size, ids.length, '标签 id 存在重复');
+    });
+  });
+
+  describe('标签字段守卫', () => {
+    it('标签 label 不允许为空串', () => {
+      for (const tag of TAGS) {
+        assert.ok(tag.label.length > 0, `标签 ${tag.id} label 为空`);
+        assert.ok(typeof tag.label === 'string', `标签 ${tag.id} label 不是字符串`);
+      }
+    });
+
+    it('标签 id 不允许为空串', () => {
+      for (const tag of TAGS) {
+        assert.ok(tag.id.length > 0, `标签 ${tag.id} id 为空`);
+        assert.ok(typeof tag.id === 'string', `标签 ${tag.id} id 不是字符串`);
+      }
     });
   });
 });

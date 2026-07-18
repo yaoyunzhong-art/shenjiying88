@@ -25,15 +25,28 @@ interface RecentDocument {
   summary: string;
 }
 
+interface KnowledgeTag {
+  id: string;
+  label: string;
+}
+
 interface KnowledgeSnapshot {
   categories: KnowledgeCategory[];
   recentDocuments: RecentDocument[];
   totalDocuments: number;
   totalViews: number;
+  tags: KnowledgeTag[];
 }
 
 async function loadKnowledge(): Promise<KnowledgeSnapshot> {
   return {
+    tags: [
+      { id: 'announcement', label: '公告' },
+      { id: 'tutorial', label: '教程' },
+      { id: 'faq', label: 'FAQ' },
+      { id: 'policy', label: '政策' },
+      { id: 'other', label: '其他' },
+    ],
     categories: [
       { id: 'ops', name: '运营手册', icon: '📖', docCount: 24, lastUpdated: '2026-07-15' },
       { id: 'device', name: '设备指南', icon: '🔧', docCount: 15, lastUpdated: '2026-07-14' },
