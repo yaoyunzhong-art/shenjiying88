@@ -1,5 +1,3 @@
-// @ts-nocheck
-'use client'
 
 /**
  * staff/page.tsx — 员工管理页
