@@ -77,6 +77,74 @@ describe('SalesClerkPage - Structure & Layout', () => {
     const html = renderPage();
     assert.ok(html.includes('🛍️'), 'Should include emoji in title');
   });
+
+  // ── 分类测试：接待统计 ──────────────────────────────────────
+
+  describe('reception stats', () => {
+    it('renders totalReceptions count', () => {
+      const html = renderPage();
+      assert.ok(html.includes('47'), 'Total receptions should render');
+    });
+
+    it('renders follow-up count', () => {
+      const html = renderPage();
+      // mockFollowUpClients.length = 5
+      assert.ok(html.includes('data-testid="follow-up-count"'), 'Follow-up count element should render');
+    });
+
+    it('renders scripts count', () => {
+      const html = renderPage();
+      // mockScripts.length = 4
+      assert.ok(html.includes('data-testid="scripts-count"'), 'Scripts count element should render');
+    });
+
+    it('renders clerk info text', () => {
+      const html = renderPage();
+      assert.ok(html.includes('张三'), 'Should show clerk name');
+    });
+  });
+
+  // ── 分类测试：页面结构 ──────────────────────────────────────
+
+  describe('page structure', () => {
+    it('renders page header with h1', () => {
+      const html = renderPage();
+      assert.ok(html.includes('h1'), 'Should have h1 element');
+    });
+
+    it('renders today date in header', () => {
+      const today = new Date().toLocaleDateString('zh-CN');
+      const html = renderPage();
+      assert.ok(html.includes(today), 'Today date should render');
+    });
+
+    it('renders main content area id', () => {
+      const html = renderPage();
+      assert.ok(html.includes('sales-clerk-page'), 'Main content area should exist');
+    });
+  });
+
+  // ── 分类测试：业务逻辑 ──────────────────────────────────────
+
+  describe('business logic', () => {
+    it('renders section data-testid attributes', () => {
+      const html = renderPage();
+      assert.ok(html.includes('stats-receptions'), 'Stats testid should exist');
+      assert.ok(html.includes('follow-up-count'), 'Follow-up testid should exist');
+      assert.ok(html.includes('scripts-count'), 'Scripts testid should exist');
+      assert.ok(html.includes('clerk-info'), 'Clerk info testid should exist');
+    });
+
+    it('renders page shell with data-title', () => {
+      const html = renderPage();
+      assert.ok(html.includes('data-title="导购员工作台"'), 'Page should have data-title');
+    });
+
+    it('renders store name in header section', () => {
+      const html = renderPage();
+      assert.ok(html.includes('朝阳旗舰店'), 'Store name should be in rendered output');
+    });
+  });
 });
 
 function renderPage(): string {

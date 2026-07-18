@@ -28,6 +28,78 @@ describe('SalesForecastPage', () => {
     assert.ok(html.includes('7 日销售预测'), 'Panel title should include 7-day forecast');
   });
 
+  it('renders metrics section', () => {
+    const html = renderPage();
+    assert.ok(html.includes('¥52,380'), 'Should render revenue metric');
+    assert.ok(html.includes('88%'), 'Should render confidence metric');
+  });
+
+  it('renders stock recommendation', () => {
+    const html = renderPage();
+    assert.ok(html.includes('补货'), 'Should render restock recommendation');
+  });
+
+  it('renders last update timestamp', () => {
+    const html = renderPage();
+    assert.ok(html.includes('最后更新'), 'Should render update timestamp');
+  });
+
+  it('renders week-over-week comparison', () => {
+    const html = renderPage();
+    assert.ok(html.includes('周同比'), 'Should render WoW comparison');
+    assert.ok(html.includes('+15.3%'), 'Should render WoW percentage');
+  });
+
+  it('renders confidence disclaimer', () => {
+    const html = renderPage();
+    assert.ok(html.includes('预测数据仅供决策参考'), 'Should render disclaimer');
+  });
+
+  // ── 分类测试：数字格式 ──────────────────────────────────────
+
+  describe('metrics formatting', () => {
+    it('renders weekly growth percentage', () => {
+      const html = renderPage();
+      assert.ok(html.includes('15.3%'), 'Growth rate should include decimal');
+    });
+
+    it('renders revenue with ¥ symbol and thousands separator', () => {
+      const html = renderPage();
+      assert.ok(html.includes('¥'), 'Revenue should have yuan symbol');
+      assert.ok(html.includes('52,380'), 'Revenue should have formatted number');
+    });
+
+    it('renders confidence as integer percent', () => {
+      const html = renderPage();
+      assert.ok(html.includes('88%'), 'Confidence should be integer percent');
+    });
+
+    it('renders last update date', () => {
+      const html = renderPage();
+      assert.ok(html.includes('2026-07-16'), 'Update date should be ISO format');
+    });
+  });
+
+  // ── 分类测试：业务逻辑 ──────────────────────────────────────
+
+  describe('business logic indicators', () => {
+    it('renders stock restock recommendation with unit', () => {
+      const html = renderPage();
+      assert.ok(html.includes('3,200'), 'Restock count should be formatted');
+      assert.ok(html.includes('件'), 'Restock should include unit');
+    });
+
+    it('renders 7-day forecast period', () => {
+      const html = renderPage();
+      assert.ok(html.includes('7 日销售预测'), 'Forecast should show 7 days');
+    });
+
+    it('renders AI description', () => {
+      const html = renderPage();
+      assert.ok(html.includes('AI'), 'Should mention AI in description');
+    });
+  });
+
   it('renders panel description', () => {
     const html = renderPage();
     assert.ok(html.includes('历史交易'), 'Panel description should include historical data reference');
