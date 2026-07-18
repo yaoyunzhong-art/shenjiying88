@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { PortalConsumerGovernanceSection, PortalDomainGovernanceCard } from '@m5/ui';
-import { buildDomainGovernanceDisplayModel } from '@m5/types';
+import { buildDomainGovernanceDisplayModel, resolveDomainGovernanceDisplayPreset } from '@m5/types';
 import { getStorePortal, getStorefrontConsumerSnapshot } from '../market-bootstrap';
 import { GovernanceLinkedSection } from '../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../components/runtime-governance-panel';
@@ -339,6 +338,10 @@ export default async function StoreSitePage({
       snapshot.domainGovernance,
       snapshot.domainGovernanceWorkspaceHref,
     );
+    const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+      'STOREFRONT_H5',
+      domainGovernanceDisplayModel.requiresAttention,
+    );
 
     return (
       <main style={{ maxWidth: 720, margin: '0 auto', padding: 20 }}>
@@ -382,17 +385,7 @@ export default async function StoreSitePage({
 
           <PortalDomainGovernanceCard
             model={domainGovernanceDisplayModel}
-            accentColor="#93c5fd"
-            titleColor="#f8fafc"
-            summaryColor="#cbd5e1"
-            borderColor="rgba(148, 163, 184, 0.12)"
-            buttonBackground="#1d4ed8"
-            buttonTextColor="#eff6ff"
-            background={
-              domainGovernanceDisplayModel.requiresAttention
-                ? 'rgba(127, 29, 29, 0.35)'
-                : 'rgba(15, 23, 42, 0.42)'
-            }
+            preset={domainGovernanceDisplayPreset}
             style={{ marginBottom: 16 }}
           />
 
@@ -565,6 +558,10 @@ export default async function StoreSitePage({
     snapshot.domainGovernance,
     snapshot.domainGovernanceWorkspaceHref,
   );
+  const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+    'STOREFRONT_PC',
+    domainGovernanceDisplayModel.requiresAttention,
+  );
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
@@ -644,17 +641,7 @@ export default async function StoreSitePage({
 
         <PortalDomainGovernanceCard
           model={domainGovernanceDisplayModel}
-          accentColor="#93c5fd"
-          titleColor="#f8fafc"
-          summaryColor="#cbd5e1"
-          borderColor="rgba(148, 163, 184, 0.1)"
-          buttonBackground="#1d4ed8"
-          buttonTextColor="#eff6ff"
-          background={
-            domainGovernanceDisplayModel.requiresAttention
-              ? 'rgba(127, 29, 29, 0.28)'
-              : 'rgba(15, 23, 42, 0.45)'
-          }
+          preset={domainGovernanceDisplayPreset}
           style={{ marginBottom: 16 }}
         />
 

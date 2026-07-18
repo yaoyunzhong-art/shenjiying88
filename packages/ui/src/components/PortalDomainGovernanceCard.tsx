@@ -1,29 +1,18 @@
 'use client';
 
 import React from 'react';
-import type { DomainGovernanceDisplayModel } from '@m5/types';
+import type { DomainGovernanceDisplayModel, DomainGovernanceDisplayPreset } from '@m5/types';
+import { resolveDomainGovernanceDisplayPreset } from '@m5/types';
 
 export interface PortalDomainGovernanceCardProps {
   model: DomainGovernanceDisplayModel;
-  accentColor?: string;
-  titleColor?: string;
-  summaryColor?: string;
-  borderColor?: string;
-  buttonBackground?: string;
-  buttonTextColor?: string;
-  background?: string;
+  preset?: DomainGovernanceDisplayPreset;
   style?: React.CSSProperties;
 }
 
 export function PortalDomainGovernanceCard({
   model,
-  accentColor = '#93c5fd',
-  titleColor = '#f8fafc',
-  summaryColor = '#cbd5e1',
-  borderColor = 'rgba(148, 163, 184, 0.12)',
-  buttonBackground = '#1d4ed8',
-  buttonTextColor = '#eff6ff',
-  background = 'rgba(15, 23, 42, 0.42)',
+  preset = resolveDomainGovernanceDisplayPreset('STOREFRONT_PC', model.requiresAttention),
   style,
 }: PortalDomainGovernanceCardProps) {
   return (
@@ -31,35 +20,35 @@ export function PortalDomainGovernanceCard({
       style={{
         borderRadius: 16,
         padding: 16,
-        background,
-        border: `1px solid ${borderColor}`,
+        background: preset.background,
+        border: `1px solid ${preset.borderColor}`,
         ...style,
       }}
     >
-      <div style={{ fontSize: 12, color: accentColor }}>{model.title}</div>
-      <div style={{ marginTop: 6, fontSize: 12, color: summaryColor }}>{model.subtitle}</div>
+      <div style={{ fontSize: 12, color: preset.accentColor }}>{model.title}</div>
+      <div style={{ marginTop: 6, fontSize: 12, color: preset.subtitleColor }}>{model.subtitle}</div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: titleColor }}>{model.sourceSummary}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: preset.titleColor }}>{model.sourceSummary}</span>
         <span
           style={{
             borderRadius: 999,
             padding: '4px 10px',
             fontSize: 12,
             fontWeight: 700,
-            color: model.requiresAttention ? '#fecaca' : '#bbf7d0',
-            background: model.requiresAttention ? 'rgba(127, 29, 29, 0.32)' : 'rgba(20, 83, 45, 0.32)',
+            color: preset.statusColor,
+            background: preset.statusBackground,
           }}
         >
           {model.statusLabel}
         </span>
       </div>
-      <div style={{ marginTop: 6, color: summaryColor }}>{model.countsSummary}</div>
+      <div style={{ marginTop: 6, color: preset.summaryColor }}>{model.countsSummary}</div>
       {model.detailLines.map((line) => (
-        <div key={line} style={{ marginTop: 6, fontSize: 12, color: accentColor }}>
+        <div key={line} style={{ marginTop: 6, fontSize: 12, color: preset.detailColor }}>
           {line}
         </div>
       ))}
-      <div style={{ marginTop: 8, fontSize: 12, color: accentColor }}>{model.workspaceSummary}</div>
+      <div style={{ marginTop: 8, fontSize: 12, color: preset.accentColor }}>{model.workspaceSummary}</div>
       <a
         href={model.workspaceHref}
         style={{
@@ -68,8 +57,8 @@ export function PortalDomainGovernanceCard({
           marginTop: 12,
           borderRadius: 999,
           padding: '8px 14px',
-          background: buttonBackground,
-          color: buttonTextColor,
+          background: preset.buttonBackground,
+          color: preset.buttonTextColor,
           textDecoration: 'none',
           fontSize: 12,
           fontWeight: 600,

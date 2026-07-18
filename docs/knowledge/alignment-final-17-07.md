@@ -31,6 +31,7 @@
 | Analytics(admin-web) | 🆕新建 | ✅ 服务器+客户端 | ✅ 测试文件 | ✅ 已审核 | 🔴 无PRD | admin-web基础 |
 | Knowledge(admin-web) | 🆕新建 | ✅ 服务器+客户端 | ✅ 测试文件 | ✅ 已审核 | 🔴 无PRD | admin-web基础 |
 | Users(admin-web) | 🆕新建 | ✅ 服务器+客户端 | ✅ 测试文件 | ✅ 已审核 | 🔴 无PRD | admin-web基础 |
+| Reports(admin-web) | ✏️增强 | ✅ +统计汇总条 | ✅ 29→78测试 | ✅ 已审核 | 🟡 有PRD | P-39报表 |
 | Account(storefront) | 🆕新建 | ✅ 服务器+客户端 | ✅ 测试文件 | ✅ 已审核 | 🔴 无PRD | P-36会员 |
 | Foundation(admin-web) | ✏️增强 | ✅ +ErrorBoundary | ✅ 已有 | ✅ | 🟡 有PRD | P-Infra-5底座 |
 | RateLimits(admin-web) | ✏️增强 | ✅ +ErrorBoundary | ✅ 已有 | ✅ | 🟡 有PRD | P-Infra-5底座 |

@@ -348,9 +348,7 @@ test('HomeScreen: tapping governance button opens alert with workspace href', ()
   const root = createHomeComponent();
 
   const touchables = findAllTouchables(root.root);
-  const governanceButton = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => collectTextContent(txt.props.children).join('').includes('打开治理入口')),
-  );
+  const governanceButton = touchables.find((t) => t.props.testID === 'domain-governance-cta');
 
   assert.ok(governanceButton, '应找到治理入口按钮');
   governanceButton?.props.onPress();

@@ -20,6 +20,37 @@ import {
   type PurchaseOrderUrgency,
 } from '../purchase-orders-data';
 
+// ---- 采购类型分类标签 ----
+
+export type PurchaseOrderCategory = 'all' | 'normal' | 'urgent' | 'batch';
+
+interface PurchaseOrderCategoryTab {
+  key: PurchaseOrderCategory;
+  label: string;
+}
+
+export const PURCHASE_ORDER_CATEGORIES: PurchaseOrderCategoryTab[] = [
+  { key: 'all', label: '全部' },
+  { key: 'normal', label: '普通采购' },
+  { key: 'urgent', label: '紧急采购' },
+  { key: 'batch', label: '批量采购' },
+];
+
+/** 根据采购类型预设表单字段 */
+export function getCategoryPreset(category: PurchaseOrderCategory): Partial<PurchaseOrderFormValues> {
+  switch (category) {
+    case 'normal':
+      return { urgency: 'normal' };
+    case 'urgent':
+      return { urgency: 'urgent' };
+    case 'batch':
+      return { urgency: 'normal', itemsCount: 10, totalQuantity: 1000 };
+    case 'all':
+    default:
+      return {};
+  }
+}
+
 // ---- 表单字段定义 ----
 
 interface PurchaseOrderFormValues {
@@ -150,6 +181,18 @@ export default function PurchaseOrderFormPage() {
   const [values, setValues] = useState<PurchaseOrderFormValues>(DEFAULT_VALUES);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [activeCategory, setActiveCategory] = useState<PurchaseOrderCategory>('all');
+
+  const handleCategoryChange = useCallback((category: PurchaseOrderCategory) => {
+    setActiveCategory(category);
+    // 选择分类时应用预设值
+    if (category !== 'all') {
+      const preset = getCategoryPreset(category);
+      setValues((prev) => ({ ...prev, ...preset }));
+    }
+    setFieldErrors([]);
+    setSubmitState('idle');
+  }, []);
 
   const getFieldError = useCallback(
     (field: keyof PurchaseOrderFormValues): string | undefined =>
@@ -217,6 +260,37 @@ export default function PurchaseOrderFormPage() {
       }
     >
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
+        {/* ---- 采购类型分类标签 ---- */}
+        <div data-testid="category-tabs" role="tablist" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #e5e7eb', paddingBottom: 0 }}>
+          {PURCHASE_ORDER_CATEGORIES.map((tab) => {
+            const isActive = activeCategory === tab.key;
+            return (
+              <button
+                key={tab.key}
+                role="tab"
+                data-category={tab.key}
+                aria-selected={isActive}
+                onClick={() => handleCategoryChange(tab.key)}
+                disabled={submitState === 'submitting'}
+                style={{
+                  padding: '8px 20px',
+                  border: 'none',
+                  borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
+                  background: 'transparent',
+                  color: isActive ? '#2563eb' : '#6b7280',
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  marginBottom: -2,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
         <form onSubmit={handleSubmit} noValidate>
           {/* ---- 供应商信息 ---- */}
           <FormFieldWithData field="supplierName" label="供应商名称" required error={getFieldError('supplierName')}>

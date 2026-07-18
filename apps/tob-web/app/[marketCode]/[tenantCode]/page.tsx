@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PortalConsumerGovernanceSection, PortalDomainGovernanceCard } from '@m5/ui';
-import { buildDomainGovernanceDisplayModel } from '@m5/types';
+import { buildDomainGovernanceDisplayModel, resolveDomainGovernanceDisplayPreset } from '@m5/types';
 import { getTenantPortalConsumerSnapshot } from '../../bootstrap';
 import { GovernanceLinkedSection } from '../../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../../components/runtime-governance-panel';
@@ -54,6 +54,10 @@ export default async function TenantPortalPage({
     snapshot.domainGovernance,
     snapshot.domainGovernanceWorkspaceHref,
   );
+  const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+    'TOB_TENANT',
+    domainGovernanceDisplayModel.requiresAttention,
+  );
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
@@ -91,17 +95,7 @@ export default async function TenantPortalPage({
 
         <PortalDomainGovernanceCard
           model={domainGovernanceDisplayModel}
-          accentColor="#bae6fd"
-          titleColor="#f8fafc"
-          summaryColor="#cbd5e1"
-          borderColor="rgba(125, 211, 252, 0.16)"
-          buttonBackground="#38bdf8"
-          buttonTextColor="#082f49"
-          background={
-            domainGovernanceDisplayModel.requiresAttention
-              ? 'rgba(127, 29, 29, 0.28)'
-              : 'rgba(15, 23, 42, 0.35)'
-          }
+          preset={domainGovernanceDisplayPreset}
           style={{ marginTop: 20 }}
         />
 

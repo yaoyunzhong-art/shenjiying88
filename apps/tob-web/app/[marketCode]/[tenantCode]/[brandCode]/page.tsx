@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PortalConsumerGovernanceSection, PortalDomainGovernanceCard } from '@m5/ui';
-import { buildDomainGovernanceDisplayModel } from '@m5/types';
+import { buildDomainGovernanceDisplayModel, resolveDomainGovernanceDisplayPreset } from '@m5/types';
 import { getBrandPortalConsumerSnapshot } from '../../../bootstrap';
 import { GovernanceLinkedSection } from '../../../components/governance-linked-overview';
 
@@ -53,6 +53,10 @@ export default async function BrandPortalPage({
     snapshot.domainGovernance,
     snapshot.domainGovernanceWorkspaceHref,
   );
+  const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+    'TOB_BRAND',
+    domainGovernanceDisplayModel.requiresAttention,
+  );
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
@@ -82,17 +86,7 @@ export default async function BrandPortalPage({
 
         <PortalDomainGovernanceCard
           model={domainGovernanceDisplayModel}
-          accentColor="#f0abfc"
-          titleColor="#f5f3ff"
-          summaryColor="#ddd6fe"
-          borderColor="rgba(240, 171, 252, 0.16)"
-          buttonBackground="#f0abfc"
-          buttonTextColor="#3b0764"
-          background={
-            domainGovernanceDisplayModel.requiresAttention
-              ? 'rgba(127, 29, 29, 0.24)'
-              : 'rgba(15, 23, 42, 0.36)'
-          }
+          preset={domainGovernanceDisplayPreset}
           style={{ marginTop: 20 }}
         />
 

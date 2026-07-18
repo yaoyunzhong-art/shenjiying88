@@ -82,11 +82,35 @@ export default function ReportsPage() {
   const [report, setReport] = useState<ReportResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reportStats, setReportStats] = useState<{
+    todayNew: number;
+    pendingReview: number;
+    published: number;
+    total: number;
+  } | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
   const [exportToast, setExportToast] = useState<string | null>(null)
   const [echartsReady, setEchartsReady] = useState(false)
 
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<any>(null)
+
+  // 加载报表统计汇总
+  const loadStats = useCallback(async () => {
+    if (!tenantId) return
+    setStatsLoading(true)
+    try {
+      const res = await fetch(`/api/reports/stats/summary?tenantId=${tenantId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setReportStats(data)
+      }
+    } catch {
+      // 统计汇总为辅助信息，加载失败不阻塞页面
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [tenantId])
 
   // 加载 ECharts
   useEffect(() => {
@@ -94,6 +118,10 @@ export default function ReportsPage() {
       .then(() => setEchartsReady(true))
       .catch((e) => console.error('ECharts load failed:', e))
   }, [])
+
+  useEffect(() => {
+    loadStats()
+  }, [loadStats])
 
   const loadReport = useCallback(async () => {
     if (!tenantId) return
@@ -178,6 +206,43 @@ export default function ReportsPage() {
         <h1 style={{ fontSize: 28, fontWeight: 700, color: '#111827', margin: 0 }}>📊 报表中心</h1>
         <p style={{ color: '#6b7280', marginTop: 4 }}>Phase-39 T169 · 10 类内置报表 + 多维聚合 + LRU 缓存</p>
       </header>
+
+      {/* 报表统计汇总条 */}
+      <div style={{ ...CARD_STYLE, display: 'flex', gap: 16, marginBottom: 16 }} data-testid="stats-summary-bar">
+        {[
+          { label: '今日新增', key: 'todayNew', icon: '📝', color: '#2563eb' },
+          { label: '待审核', key: 'pendingReview', icon: '⏳', color: '#f59e0b' },
+          { label: '已发布', key: 'published', icon: '✅', color: '#10b981' },
+          { label: '总报表', key: 'total', icon: '📊', color: '#8b5cf6' },
+        ].map(stat => (
+          <div
+            key={stat.key}
+            data-testid={`stat-card-${stat.key}`}
+            style={{
+              flex: 1,
+              background: '#f9fafb',
+              borderRadius: 8,
+              padding: '16px 20px',
+              textAlign: 'center',
+              borderLeft: `4px solid ${stat.color}`,
+            }}
+          >
+            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 4 }}>
+              {stat.icon} {stat.label}
+            </div>
+            <div
+              data-testid={`stat-value-${stat.key}`}
+              style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}
+            >
+              {statsLoading
+                ? '…'
+                : reportStats
+                  ? String((reportStats as Record<string, number>)[stat.key] ?? 0)
+                  : '-'}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* 顶部控件 */}
       <div style={CARD_STYLE}>

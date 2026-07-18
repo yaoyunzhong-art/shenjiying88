@@ -2345,6 +2345,197 @@ export interface DomainGovernanceDisplayModel {
   requiresAttention: boolean;
 }
 
+export type DomainGovernanceDisplayPresetKey =
+  | 'STOREFRONT_H5'
+  | 'STOREFRONT_PC'
+  | 'TOB_TENANT'
+  | 'TOB_BRAND'
+  | 'APP_NATIVE'
+  | 'MINIAPP_HOME'
+  | 'MINIAPP_MEMBER';
+
+export interface DomainGovernanceDisplayPresetContract {
+  key: DomainGovernanceDisplayPresetKey;
+  accentColor: string;
+  titleColor: string;
+  subtitleColor: string;
+  summaryColor: string;
+  detailColor: string;
+  borderColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  backgroundAligned: string;
+  backgroundAttention: string;
+  statusAlignedColor: string;
+  statusAlignedBackground: string;
+  statusAttentionColor: string;
+  statusAttentionBackground: string;
+}
+
+export interface DomainGovernanceDisplayPreset {
+  key: DomainGovernanceDisplayPresetKey;
+  accentColor: string;
+  titleColor: string;
+  subtitleColor: string;
+  summaryColor: string;
+  detailColor: string;
+  borderColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  background: string;
+  statusColor: string;
+  statusBackground: string;
+}
+
+export const domainGovernanceDisplayPresetContractMap: Record<
+  DomainGovernanceDisplayPresetKey,
+  DomainGovernanceDisplayPresetContract
+> = {
+  STOREFRONT_H5: {
+    key: 'STOREFRONT_H5',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#cbd5e1',
+    detailColor: '#93c5fd',
+    borderColor: 'rgba(148, 163, 184, 0.12)',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.42)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.35)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  STOREFRONT_PC: {
+    key: 'STOREFRONT_PC',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#cbd5e1',
+    detailColor: '#93c5fd',
+    borderColor: 'rgba(148, 163, 184, 0.1)',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.45)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.28)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  TOB_TENANT: {
+    key: 'TOB_TENANT',
+    accentColor: '#bae6fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#cbd5e1',
+    detailColor: '#bae6fd',
+    borderColor: 'rgba(125, 211, 252, 0.16)',
+    buttonBackground: '#38bdf8',
+    buttonTextColor: '#082f49',
+    backgroundAligned: 'rgba(15, 23, 42, 0.35)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.28)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  TOB_BRAND: {
+    key: 'TOB_BRAND',
+    accentColor: '#f0abfc',
+    titleColor: '#f5f3ff',
+    subtitleColor: '#ddd6fe',
+    summaryColor: '#ddd6fe',
+    detailColor: '#f0abfc',
+    borderColor: 'rgba(240, 171, 252, 0.16)',
+    buttonBackground: '#f0abfc',
+    buttonTextColor: '#3b0764',
+    backgroundAligned: 'rgba(15, 23, 42, 0.36)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.24)',
+    statusAlignedColor: '#dcfce7',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.3)',
+    statusAttentionColor: '#fecdd3',
+    statusAttentionBackground: 'rgba(136, 19, 55, 0.32)',
+  },
+  APP_NATIVE: {
+    key: 'APP_NATIVE',
+    accentColor: '#93C5FD',
+    titleColor: '#F8FAFC',
+    subtitleColor: '#94A3B8',
+    summaryColor: '#CBD5E1',
+    detailColor: '#93C5FD',
+    borderColor: 'transparent',
+    buttonBackground: '#1D4ED8',
+    buttonTextColor: '#EFF6FF',
+    backgroundAligned: '#0F172A',
+    backgroundAttention: '#1E293B',
+    statusAlignedColor: '#BBF7D0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#FECACA',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  MINIAPP_HOME: {
+    key: 'MINIAPP_HOME',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#e2e8f0',
+    detailColor: '#93c5fd',
+    borderColor: 'transparent',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.45)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.35)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  MINIAPP_MEMBER: {
+    key: 'MINIAPP_MEMBER',
+    accentColor: '#c4b5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#ddd6fe',
+    summaryColor: '#e2e8f0',
+    detailColor: '#c4b5fd',
+    borderColor: 'transparent',
+    buttonBackground: '#8b5cf6',
+    buttonTextColor: '#f5f3ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.65)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.35)',
+    statusAlignedColor: '#dcfce7',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecdd3',
+    statusAttentionBackground: 'rgba(136, 19, 55, 0.32)',
+  },
+};
+
+export function resolveDomainGovernanceDisplayPreset(
+  key: DomainGovernanceDisplayPresetKey,
+  requiresAttention: boolean,
+): DomainGovernanceDisplayPreset {
+  const preset = domainGovernanceDisplayPresetContractMap[key];
+
+  return {
+    key: preset.key,
+    accentColor: preset.accentColor,
+    titleColor: preset.titleColor,
+    subtitleColor: preset.subtitleColor,
+    summaryColor: preset.summaryColor,
+    detailColor: preset.detailColor,
+    borderColor: preset.borderColor,
+    buttonBackground: preset.buttonBackground,
+    buttonTextColor: preset.buttonTextColor,
+    background: requiresAttention ? preset.backgroundAttention : preset.backgroundAligned,
+    statusColor: requiresAttention ? preset.statusAttentionColor : preset.statusAlignedColor,
+    statusBackground: requiresAttention
+      ? preset.statusAttentionBackground
+      : preset.statusAlignedBackground,
+  };
+}
+
 export function formatDomainGovernanceFocusScopeLabel(
   scope?: PortalDomainGovernanceScopeSummaryContract,
 ): string {

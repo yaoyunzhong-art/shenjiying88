@@ -8,6 +8,7 @@ const { renderToStaticMarkup } = require(
   PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js'
 );
 const { PortalDomainGovernanceCard } = require('./PortalDomainGovernanceCard');
+const { resolveDomainGovernanceDisplayPreset } = require('@m5/types');
 
 describe('PortalDomainGovernanceCard', () => {
   const model = {
@@ -46,25 +47,22 @@ describe('PortalDomainGovernanceCard', () => {
     assert.ok(html.includes(model.focusScopeSummary), 'should render focus scope summary');
     assert.ok(html.includes(model.recommendationSummary), 'should render recommendation summary');
     assert.ok(html.includes(model.lastEvaluatedSummary), 'should render evaluated summary');
-    assert.ok(html.includes(model.workspaceHref), 'should render workspace href');
+    assert.ok(html.includes('href="/saas/domains?tenantId=tenant-demo'), 'should render workspace href');
     assert.ok(html.includes(model.ctaLabel), 'should render CTA');
   });
 
   test('supports palette overrides', () => {
+    const preset = resolveDomainGovernanceDisplayPreset('TOB_BRAND', true);
     const html = renderToStaticMarkup(
       React.createElement(PortalDomainGovernanceCard, {
         model,
-        accentColor: '#f0abfc',
-        titleColor: '#f5f3ff',
-        summaryColor: '#ddd6fe',
-        buttonBackground: '#f0abfc',
-        buttonTextColor: '#3b0764',
+        preset,
       }),
     );
 
-    assert.ok(html.includes('#f0abfc'), 'should use accent color');
-    assert.ok(html.includes('#f5f3ff'), 'should use title color');
-    assert.ok(html.includes('#ddd6fe'), 'should use summary color');
-    assert.ok(html.includes('#3b0764'), 'should use button text color');
+    assert.ok(html.includes(preset.accentColor), 'should use accent color');
+    assert.ok(html.includes(preset.titleColor), 'should use title color');
+    assert.ok(html.includes(preset.summaryColor), 'should use summary color');
+    assert.ok(html.includes(preset.buttonTextColor), 'should use button text color');
   });
 });

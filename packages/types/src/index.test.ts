@@ -51,6 +51,7 @@ import {
   buildDomainGovernanceDisplayModel,
   buildDomainGovernanceHref,
   buildDomainGovernanceWorkspaceHref,
+  domainGovernanceDisplayPresetContractMap,
   formatDomainGovernanceFocusScopeLabel,
   formatDomainGovernanceLastEvaluatedSummary,
   formatDomainGovernanceRecommendationSummary,
@@ -72,6 +73,7 @@ import {
   adminRuntimeActionPresetContractMap,
   adminRuntimeActionPresetContracts,
   filterFoundationAlertTimelineBySource,
+  resolveDomainGovernanceDisplayPreset,
   filterFoundationAlertTimelineByOwner,
   filterFoundationAlertTimeline,
   findLatestFoundationAlertTimelineEntry,
@@ -1866,6 +1868,48 @@ test('types: domain governance display model exposes richer section contract', (
       requiresAttention: true,
     },
   );
+});
+
+test('types: domain governance display presets stay stable across web and native consumers', () => {
+  assert.deepEqual(Object.keys(domainGovernanceDisplayPresetContractMap).sort(), [
+    'APP_NATIVE',
+    'MINIAPP_HOME',
+    'MINIAPP_MEMBER',
+    'STOREFRONT_H5',
+    'STOREFRONT_PC',
+    'TOB_BRAND',
+    'TOB_TENANT',
+  ]);
+
+  assert.deepEqual(resolveDomainGovernanceDisplayPreset('TOB_BRAND', true), {
+    key: 'TOB_BRAND',
+    accentColor: '#f0abfc',
+    titleColor: '#f5f3ff',
+    subtitleColor: '#ddd6fe',
+    summaryColor: '#ddd6fe',
+    detailColor: '#f0abfc',
+    borderColor: 'rgba(240, 171, 252, 0.16)',
+    buttonBackground: '#f0abfc',
+    buttonTextColor: '#3b0764',
+    background: 'rgba(127, 29, 29, 0.24)',
+    statusColor: '#fecdd3',
+    statusBackground: 'rgba(136, 19, 55, 0.32)',
+  });
+
+  assert.deepEqual(resolveDomainGovernanceDisplayPreset('MINIAPP_HOME', false), {
+    key: 'MINIAPP_HOME',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#e2e8f0',
+    detailColor: '#93c5fd',
+    borderColor: 'transparent',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    background: 'rgba(15, 23, 42, 0.45)',
+    statusColor: '#bbf7d0',
+    statusBackground: 'rgba(20, 83, 45, 0.32)',
+  });
 });
 
 test('types: buildAuditTrailRecordDetailHref encodes auditId safely', () => {

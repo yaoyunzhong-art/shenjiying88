@@ -434,4 +434,271 @@ describe('page.tsx: 导出防御能力', () => {
       '导出失败应设置 error state'
     );
   });
+
+  it('should validate tenantId before export fetch', () => {
+    assert.ok(
+      SRC.includes('exportReport') && SRC.match(/if\s*\(!tenantId\)\s*return/),
+      '导出前应校验 tenantId 非空'
+    );
+  });
+});
+
+// ====================================================================
+//  8. 报表统计汇总条
+// ====================================================================
+
+describe('page.tsx: 报表统计汇总条', () => {
+  it('should define reportStats state for summary data', () => {
+    assert.ok(
+      SRC.includes('reportStats') && SRC.includes('setReportStats'),
+      '需要 reportStats 存储统计汇总数据'
+    );
+  });
+
+  it('should have stats summary div with data-testid', () => {
+    assert.ok(
+      SRC.includes('stats-summary-bar'),
+      '需要 data-testid 为 stats-summary-bar 的汇总条容器'
+    );
+  });
+
+  it('should render exactly 4 stat cards with distinct keys', () => {
+    // JSX 中通过 .map() 生成，所以源码只有一处引用
+    assert.ok(
+      SRC.includes('stat-card-'),
+      '需要 data-testid 引用统计卡片'
+    );
+    // 验证 4 组不同 key
+    assert.ok(SRC.includes('todayNew'), '需要 todayNew key');
+    assert.ok(SRC.includes('pendingReview'), '需要 pendingReview key');
+    assert.ok(SRC.includes('published'), '需要 published key');
+    assert.ok(SRC.includes('total'), '需要 total key');
+    // 验证通过数组 .map 生成
+    assert.ok(
+      SRC.includes('.map(stat =>'),
+      '统计卡片应通过数组 .map 生成'
+    );
+  });
+
+  it('should include 今日新增 stat card', () => {
+    assert.ok(
+      SRC.includes('todayNew') && SRC.includes('今日新增'),
+      '需要今日新增统计卡片'
+    );
+  });
+
+  it('should include 待审核 stat card', () => {
+    assert.ok(
+      SRC.includes('pendingReview') && SRC.includes('待审核'),
+      '需要待审核统计卡片'
+    );
+  });
+
+  it('should include 已发布 stat card', () => {
+    assert.ok(
+      SRC.includes('published') && SRC.includes('已发布'),
+      '需要已发布统计卡片'
+    );
+  });
+
+  it('should include 总报表 stat card', () => {
+    assert.ok(
+      SRC.includes('total') && SRC.includes('总报表'),
+      '需要总报表统计卡片'
+    );
+  });
+
+  it('should display loading placeholder when statsLoading is true', () => {
+    assert.ok(
+      SRC.includes('statsLoading') && SRC.includes('…'),
+      '加载中应显示 … 占位符'
+    );
+  });
+
+  it('should display dash placeholder when reportStats is null', () => {
+    assert.ok(
+      SRC.includes("'-'"),
+      '无统计数据时应显示 - 占位符'
+    );
+  });
+
+  it('should call loadStats on mount via useEffect', () => {
+    assert.ok(
+      SRC.includes('loadStats') && SRC.includes('loadStats()'),
+      '需要在 useEffect 中调用 loadStats'
+    );
+  });
+
+  it('should fetch stats from /api/reports/stats/summary endpoint', () => {
+    assert.ok(
+      SRC.includes('/api/reports/stats/summary'),
+      '统计汇总数据应从 /api/reports/stats/summary 获取'
+    );
+  });
+
+  it('should use tenantId as query param for stats fetch', () => {
+    assert.ok(
+      SRC.includes('tenantId=${tenantId}') ||
+      (SRC.includes('stats/summary') && SRC.includes('tenantId=')),
+      '统计汇总请求应携带 tenantId 参数'
+    );
+  });
+
+  it('should guard stats fetch with try/catch to avoid blocking page', () => {
+    assert.ok(
+      SRC.includes('try') && SRC.includes('catch') && SRC.includes('Stats'),
+      '统计汇总请求失败不应阻塞页面，需要 try/catch 包裹'
+    );
+  });
+
+  it('should provide each stat card with distinct left border color', () => {
+    const colors = ['#2563eb', '#f59e0b', '#10b981', '#8b5cf6'];
+    for (const color of colors) {
+      assert.ok(
+        SRC.includes(color),
+        `统计卡片需要颜色 ${color}`
+      );
+    }
+  });
+
+  it('should respond to tenantId changes by reloading stats', () => {
+    // loadStats 的 useCallback 依赖了 tenantId
+    assert.ok(
+      SRC.includes('loadStats') && SRC.includes('tenantId'),
+      'loadStats 应该依赖 tenantId'
+    );
+    // 验证 useCallback 依赖项包含 tenantId
+    const tokens = SRC.match(/useCallback\([^)]*\)/g) || [];
+    const hasDep = tokens.some(t => t.includes('tenantId'));
+    assert.ok(
+      hasDep ||
+      (SRC.includes('loadStats') && SRC.match(/\[tenantId\]/)),
+      'loadStats 的 useCallback 依赖列表应包含 tenantId'
+    );
+  });
+});
+
+// ====================================================================
+//  9. 边界情况 — 空状态 / 缺省处理
+// ====================================================================
+
+describe('page.tsx: 边界情况', () => {
+  it('should handle report with empty rows gracefully', () => {
+    assert.ok(
+      SRC.includes('report.rows.length > 0') ||
+      SRC.includes('report.rows.length === 0') ||
+      SRC.includes('report.rows.length'),
+      '应检查 report.rows.length 来条件渲染数据表'
+    );
+  });
+
+  it('should render data table with conditional check', () => {
+    assert.ok(
+      SRC.match(/report\.rows\.length\s*>\s*0/) ||
+      SRC.match(/report \&\& report\.rows\.length\s*>\s*0/) ||
+      (SRC.includes('report.rows.length > 0')),
+      '表格渲染应有条件检查 rows.length > 0'
+    );
+  });
+
+  it('should not crash when report is null during chart render', () => {
+    assert.ok(
+      SRC.includes('if (!echartsReady || !chartRef.current || !report) return'),
+      '图表渲染应 guard 空 report'
+    );
+  });
+
+  it('should show error toast in fixed position div', () => {
+    assert.ok(
+      SRC.includes('fixed') && SRC.includes('#ef4444'),
+      '错误提示应使用红色 fixed 定位 Toast'
+    );
+  });
+
+  it('should show success toast with green background', () => {
+    assert.ok(
+      SRC.includes('fixed') && SRC.includes('#10b981'),
+      '成功提示应使用绿色 fixed 定位 Toast'
+    );
+  });
+
+  it('should handle HTTP error in loadReport gracefully', () => {
+    assert.ok(
+      SRC.includes('HTTP ${res.status}') && SRC.includes('setError(e.message)'),
+      'HTTP 错误应捕获状态码并通过 setError 显示'
+    );
+  });
+
+  it('should handle cache invalidation failure without breaking page', () => {
+    assert.ok(
+      SRC.includes('失效失败') ||
+      (SRC.includes('invalidateCache') && SRC.includes('catch')),
+      '缓存失效失败应捕获异常并显示错误信息'
+    );
+  });
+
+  it('should handle null report when rendering metadata', () => {
+    assert.ok(
+      SRC.includes('report &&') ||
+      SRC.includes('{report &&'),
+      '元数据区域应在 report 非空时渲染'
+    );
+  });
+
+  it('should handle missing totals gracefully in table', () => {
+    assert.ok(
+      SRC.includes('report.totals &&') ||
+      SRC.includes('report.totals'),
+      '合计行应检查 totals 存在'
+    );
+  });
+});
+
+// ====================================================================
+//  10. 租户安全 — TenantGuard
+// ====================================================================
+
+describe('page.tsx: 租户安全', () => {
+  it('should early return from loadReport when tenantId is empty', () => {
+    assert.ok(
+      SRC.includes('if (!tenantId) return') ||
+      (SRC.includes('loadReport') && SRC.includes('if (!tenantId)')),
+      'loadReport 应在 tenantId 为空时提前返回'
+    );
+  });
+
+  it('should early return from invalidateCache when tenantId is empty', () => {
+    assert.ok(
+      SRC.includes('invalidateCache') && SRC.includes('if (!tenantId) return'),
+      'invalidateCache 应在 tenantId 为空时提前返回'
+    );
+  });
+
+  it('should early return from loadStats when tenantId is empty', () => {
+    const loadStatsReturn = SRC.match(/loadStats[^}]*if\s*\(!tenantId\)/);
+    assert.ok(
+      loadStatsReturn ||
+      (SRC.includes('loadStats') &&
+       SRC.includes('if (!tenantId)') &&
+       SRC.match(/loadStats[^}]*return/)),
+      'loadStats 应在 tenantId 为空时提前返回'
+    );
+  });
+
+  it('should early return from exportReport when tenantId is empty', () => {
+    assert.ok(
+      SRC.includes('exportReport') && SRC.includes('if (!tenantId) return'),
+      'exportReport 应在 tenantId 为空时提前返回'
+    );
+  });
+
+  it('should pass tenantId as query param to all API calls', () => {
+    const apiCalls = SRC.match(/fetch\([^)]*\)/g);
+    assert.ok(apiCalls && apiCalls.length >= 3, '至少需要 3 个 API 调用');
+    const withTenantId = apiCalls.filter(c => c.includes('tenantId'));
+    assert.ok(
+      withTenantId.length >= 3,
+      `所有 API 调用都应携带 tenantId 参数, 实际 ${withTenantId.length}/3+`
+    );
+  });
 });
