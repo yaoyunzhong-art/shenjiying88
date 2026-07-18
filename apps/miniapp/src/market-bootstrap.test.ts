@@ -128,7 +128,8 @@ test('miniapp bootstrap: fallback snapshot stays aligned to store portal default
     socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default'
   });
 });
 
@@ -142,7 +143,8 @@ test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
     socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default'
   });
 });
 

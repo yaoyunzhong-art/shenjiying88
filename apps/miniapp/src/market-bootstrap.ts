@@ -24,6 +24,7 @@ export interface MiniappBootstrapSnapshot {
   sharePolicy: 'DOMESTIC_SOCIAL_FIRST' | 'GLOBAL_CONTENT_FIRST';
   primaryDomain: string;
   supportedSurfaces: string[];
+  domainSource: string;
 }
 
 export interface MiniappBootstrapContext {
@@ -351,6 +352,7 @@ export function createMiniappFallbackSnapshot(
     sharePolicy: marketPreset.sharePolicy,
     primaryDomain: `${resolvedContext.storeId}.${resolvedContext.brandId}.${resolvedContext.tenantId}.${resolvedContext.marketCode}.local`,
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
   };
 }
 
@@ -370,6 +372,7 @@ export function toMiniappBootstrapSnapshot(
         : 'GLOBAL_CONTENT_FIRST',
     primaryDomain: bootstrap.storePortal.primaryDomain,
     supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
+    domainSource: bootstrap.storePortal.domainSource ?? 'default',
   };
 }
 
