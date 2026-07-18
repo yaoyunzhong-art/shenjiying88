@@ -90,6 +90,91 @@ describe('ReviewsPage - Interactions & Filtering', () => {
     const html = renderPage();
     assert.ok(html.includes('好评率'), 'Should show positive rate');
   });
+
+  // ── 分类测试：统计概览 ──────────────────────────────────────
+
+  describe('review stats', () => {
+    it('renders total review count', () => {
+      const html = renderPage();
+      assert.ok(html.includes('条评价'), 'Total reviews count should render');
+    });
+
+    it('renders average rating', () => {
+      const html = renderPage();
+      assert.ok(html.includes('平均'), 'Average rating should render');
+    });
+
+    it('renders rating distribution', () => {
+      const html = renderPage();
+      assert.ok(html.includes('5分'), '5-star distribution should show');
+      assert.ok(html.includes('4分'), '4-star distribution should show');
+      assert.ok(html.includes('3分'), '3-star distribution should show');
+      assert.ok(html.includes('2分'), '2-star distribution should show');
+      assert.ok(html.includes('1分'), '1-star distribution should show');
+    });
+  });
+
+  // ── 分类测试：评价卡片 ──────────────────────────────────────
+
+  describe('review cards', () => {
+    it('renders review card container', () => {
+      const html = renderPage();
+      assert.ok(html.includes('review-card'), 'Review cards should have testid');
+    });
+
+    it('renders reviewer nickname', () => {
+      const html = renderPage();
+      assert.ok(html.includes('张三'), 'First reviewer name should render');
+      assert.ok(html.includes('李四'), 'Second reviewer name should render');
+      assert.ok(html.includes('王五'), 'Third reviewer name should render');
+    });
+
+    it('renders review content text', () => {
+      const html = renderPage();
+      assert.ok(html.includes('服务态度很好'), 'First review content should render');
+      assert.ok(html.includes('整体不错'), 'Second review content should render');
+      assert.ok(html.includes('排队时间有点长'), 'Third review content should render');
+    });
+  });
+
+  // ── 分类测试：页面结构 ──────────────────────────────────────
+
+  describe('page structure', () => {
+    it('renders page title h1', () => {
+      const html = renderPage();
+      assert.ok(html.includes('h1'), 'Title should be h1');
+    });
+
+    it('renders rating stars display', () => {
+      const html = renderPage();
+      assert.ok(html.includes('★★★★'), 'Should have filled star characters');
+      assert.ok(html.includes('☆☆'), 'Should have empty star characters');
+    });
+
+    it('renders merchant reply section', () => {
+      const html = renderPage();
+      assert.ok(html.includes('商家回复'), 'Merchant reply section should render');
+    });
+  });
+
+  // ── 分类测试：排序筛选 ──────────────────────────────────────
+
+  describe('sort & filter', () => {
+    it('renders sort button labels', () => {
+      const html = renderPage();
+      assert.ok(html.includes('最新'), 'Sort by latest should render');
+      assert.ok(html.includes('最高评分'), 'Sort by highest should render');
+      assert.ok(html.includes('最低评分'), 'Sort by lowest should render');
+      assert.ok(html.includes('有图'), 'Filter by image should render');
+    });
+
+    it('renders store tab buttons', () => {
+      const html = renderPage();
+      assert.ok(html.includes('全部'), 'All stores tab should render');
+      assert.ok(html.includes('旗舰店（国贸）'), 'Store tab should render');
+      assert.ok(html.includes('社区店（望京）'), 'Store tab should render');
+    });
+  });
 });
 
 // Helper types
