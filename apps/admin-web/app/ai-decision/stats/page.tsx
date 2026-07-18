@@ -49,6 +49,26 @@ function computeStats(rules: RuleStat[]) {
   return { total, success, successRate: total > 0 ? +((success / total) * 100).toFixed(1) : 0, avgResp, avgLift };
 }
 
+/** AI决策统计条专用聚合 */
+interface AiDecisionSummary {
+  totalDecisions: number;
+  adoptedCount: number;
+  rejectedCount: number;
+  pendingReviewCount: number;
+}
+
+function computeAiDecisionSummary(rules: RuleStat[]): AiDecisionSummary {
+  // 总决策数 = 总执行次数
+  const totalDecisions = rules.reduce((s, r) => s + r.executionCount, 0);
+  // 采纳数 ≈ successCount
+  const adoptedCount = rules.reduce((s, r) => s + r.successCount, 0);
+  // 拒绝数 ≈ 失败部分
+  const rejectedCount = rules.reduce((s, r) => s + (r.executionCount - r.successCount), 0);
+  // 待审数 ≈ total * 5% 模拟
+  const pendingReviewCount = Math.round(totalDecisions * 0.05);
+  return { totalDecisions, adoptedCount, rejectedCount, pendingReviewCount };
+}
+
 const RESULT_COLORS: Record<string, string> = { success: '#4ade80', partial: '#fbbf24', failure: '#f87171' };
 const SOURCE_COLORS: Record<string, string> = { rule: '#60a5fa', model: '#a78bfa', hybrid: '#2dd4bf' };
 const SEGMENTS: GaugeSegment[] = [
@@ -61,6 +81,7 @@ export default function AiDecisionStatsPage() {
   const [rules] = useState<RuleStat[]>(MOCK_RULES);
 
   const stats = useMemo(() => computeStats(rules), [rules]);
+  const aiSummary = useMemo(() => computeAiDecisionSummary(rules), [rules]);
 
   // 结果分布: 按规则的 successCount 反推 partial+failure 简化示意
   const resultSlices: DonutSlice[] = useMemo(() => {
@@ -101,6 +122,19 @@ export default function AiDecisionStatsPage() {
           <StatCard label="综合成功率" value={`${stats.successRate}%`} variant={stats.successRate >= 85 ? 'success' : 'warning'} />
           <StatCard label="平均响应" value={`${stats.avgResp} ms`} variant="default" />
           <StatCard label="平均提升率" value={`+${stats.avgLift}%`} variant="success" trend={{ value: '+2.1%', positive: true }} />
+        </div>
+
+        {/* AI 决策统计条 */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24,
+          padding: 16, borderRadius: 12,
+          background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(139,92,246,0.08) 100%)',
+          border: '1px solid rgba(99,102,241,0.2)',
+        }}>
+          <StatCard label="AI 决策总数" value={aiSummary.totalDecisions.toLocaleString()} variant="info" />
+          <StatCard label="已采纳" value={aiSummary.adoptedCount.toLocaleString()} variant="success" />
+          <StatCard label="已拒绝" value={aiSummary.rejectedCount.toLocaleString()} variant="error" />
+          <StatCard label="待审核" value={aiSummary.pendingReviewCount.toLocaleString()} variant="warning" />
         </div>
 
         {/* 图表行 */}
