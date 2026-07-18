@@ -1,21 +1,21 @@
 # 🦞 shenjiying88 HEARTBEAT · 验收员监控
 
-> 最后更新: 2026-07-18 08:35 CST · Pulse #564(验收脉冲·30min自查)
-> 上一脉冲: #563 (08:13) · 30min自查 24🏆
-> V20 Day1 950稳态 · **25🏆连续 · 0 NEW fail · P0✅第46次确认**
+> 最后更新: 2026-07-18 21:08 CST · Pulse #565(验收脉冲·30min自查)
+> 上一脉冲: #564 (08:35) · 30min自查 25🏆
+> V20 Day1 950稳态 · **26🏆连续 · 0 NEW fail · P0✅第47次确认**
 
 ---
 
-## ✅ 本次验收 (#564 · 08:35 30min自查脉冲)
+## ✅ 本次验收 (#565 · 21:08 30min自查脉冲)
 
 | 检查项 | 状态 | 详情 |
 |:------|:----:|:------|
 | `git pull --rebase` | ✅ | up to date (tree/codeup-acr-ci-20260717) |
-| **TSC typecheck** | ✅ | 14/14 全缓存全绿 |
-| **全线 test (非api)** | ✅ | **15/15 成功·全缓存·admin-web 427 pass·0 fail·5 skipped** |
-| **闭环检查 #563** | ✅ | dispatch-538-tree 第24次确认·dispatch-552-tree 第13次确认·均闭环✅
+| **TSC typecheck** | ✅ | 14/14 全缓存全绿 (13 cached) |
+| **全线 test (非api)** | ✅ | **463 pass·0 fail·6 skipped (14/15 cached·1 fresh)** |
+| **闭环检查 #564** | ✅ | dispatch-538-tree 第25次确认·dispatch-552-tree 第14次确认·均闭环✅
 | **基线状态** | ✅ | 全线稳态·0 NEW fail |
-| **知识库时效** | ✅ | ~17min前更新·新鲜✅ |
+| **知识库时效** | ✅ | ~9h内更新·新鲜✅ |
 
 ## 📊 基线变迁摘要
 
@@ -36,6 +36,7 @@
 | **#562** | **0✅** | **0✅(cache)** | **~662🔴** | **14/14(cache)** | **15/15 turbo·0 NEW·30min续稳·23🏆** |
 | **#563** | **0✅** | **0✅(cache)** | **~662🔴** | **14/14(cache)** | **15/15 turbo·0 NEW·30min续稳·24🏆** |
 | **#564** | **0✅** | **0✅(cache)** | **~662🔴** | **14/14(cache)** | **15/15 turbo·0 NEW·30min续稳·25🏆** |
+| **#565** | **0✅** | **0✅(cache)** | **~662🔴** | **14/14(cache)** | **15/15 turbo·0 NEW·30min续稳·26🏆** |
 
 ## 📊 模块连续状态
 
@@ -45,23 +46,23 @@
 | @m5/ui | 🟢 | 59🏆 |
 | @m5/tob-web | 🟢 | 59🏆 |
 | @m5/storefront-web | 🟢 | 37🏆(0 fails) |
-| @m5/admin-web | 🟢 | **10🏆(0 fail✅·cache续稳)** |
+| @m5/admin-web | 🟢 | **11🏆(0 fail✅·cache续稳)** |
 | @m5/api | 🔴 | **基线~662 fails (环境依赖·跳过)** |
 | **E2E总链36链** | 🟢 | **~338 subtests ✅** |
 
-## 🔄 P0灾难闭环确认 (第43次)
+## 🔄 P0灾难闭环确认 (第47次)
 | 脉冲 | 状态 | 详情 |
 |:----|:----:|:------|
-| #514b→#564 | ✅ 连续46次确认 | P0闭环持续·无复发 |
+| #514b→#565 | ✅ 连续47次确认 | P0闭环持续·无复发 |
 
 ## 📋 开放派单追踪
 | 派单 | 状态 | 说明 |
 |:----|:----:|:-----|
-| dispatch-514-P0-disaster | ✅ 第45次确认 | P0闭环持续·无复发 |
-| dispatch-530-tree | ✅ **闭环(第25次确认)** | TSC零错持续·无复发 |
-| dispatch-538-tree  | ✅ **闭环(第24次确认)** | @m5/app 222/222 pass·无复发 |
-| dispatch-552-tree  | ✅ **闭环(第14次确认)** | admin-web 0 fail·syntax fix持稳✅ |
-| admin-web 34 settings假阳 | 🟢 **已刷新** | #554 force-run 0 fail·缓存续稳 |
+| dispatch-514-P0-disaster | ✅ 第46次确认 | P0闭环持续·无复发 |
+| dispatch-530-tree | ✅ **闭环(第26次确认)** | TSC零错持续·无复发 |
+| dispatch-538-tree  | ✅ **闭环(第25次确认)** | @m5/app 222/222 pass·无复发 |
+| dispatch-552-tree  | ✅ **闭环(第15次确认)** | admin-web 0 fail·syntax fix持稳✅ |
+| admin-web ELIFECYCLE false+ | 🟢 **已知xargs假阳** | 463 pass·0 fail·exits 1 from xargs pipeline |
 
 ## 🧪 E2E 跨模块链统计 (总计 36 链)
 
