@@ -10,7 +10,7 @@
 |:-----:|:-----|:----|:---------|:---------|:--------:|
 | P-35 | 收银店A | ✅ | cashier(61files) | lyt(31), payment-gateway(20), transactions(18) | 🟡部分 |
 | P-36 | 会员店A | ✅ | member(47), member-level(21), points(20), loyalty(23) | svip(19) | 🟢完成 |
-| P-30 | SSE后勤 | ✅ | logistics(5), reservation(20), maintenance(2) | admin-web inspection(page) | 🟡部分 |
+| P-30 | SSE后勤 | ✅ | logistics(5), reservation(20), maintenance(32) | admin-web inspection(page) | 🟢已增强 |
 | P-31 | 多租户隔离 | ✅ | tenant(45), tenant-config(23) | saas-advanced(25), saas-billing(18) | 🟡部分 |
 | P-37 | 库存采购 | ✅ | inventory(48) | — | 🟡完成 |
 | P-38 | 财务对账 | ✅ | finance(47), reports(29), audit(18), reconciliation-rules(2), profit-loss(2) | currency(19), transactions(18) | 🟡进行中 |
@@ -47,7 +47,7 @@
 | Member | admin-web/app/member/ | ~300行 | 80测试 | 🆕 | 🔴 | P-36会员 会员管理 |
 | Reports | admin-web/app/reports/ | ~300行 | 48测试 | 🆕 | 🔴 | P-38财务 报表中心 |
 | Rules | admin-web/app/rules/ | ~350行 | 40测试 | 🆕 | 🟡已发 | P-Admin 规则管理 |
-| Safety | admin-web/app/safety/ | ~400行 | 10测试 | 🆕 | 🔴 | P-Admin 安防管理 |
+| Safety | admin-web/app/safety/ | ~400行 | 25测试 | ✅V21 | 🟢已增强 | P-Admin 安防管理 |
 | Settings | admin-web/app/settings/ | ~280行 | 37测试 | 🆕 | 🔴 | P-Admin 设置中心 |
 | Account | storefront-web/app/account/ | 498行 | 362行 | 🆕 | 🔴 | P-36会员 |
 
@@ -95,6 +95,10 @@
 | compliance | 33 | ✅22 | 新建P-Infra-2 安全 |
 | gateway | 19 | ✅13 | 新建P-Infra-3 网关 |
 | monitoring | 22 | ✅16 | 新建P-Infra-4 可观测 |
+| OpenAPI | admin-web/app/openapi/ | 81 tests | ✅V21 | 🟢已增强 | P-49开放平台 |
+| Notifications/New | admin-web/app/notifications/new/ | 48 tests | ✅V21 | 🟢已增强 | P-Admin |
+| Stock | admin-web/app/stock/ | 45 tests | 🆕新建 | 🟢已增强 | P-37库存 |
+| Contracts | admin-web/app/contracts/ | 59 tests | 🆕新建 | 🟢已增强 | P-Admin |
 | foundation | 166 | ✅17 | 新建P-Infra-5 底座 |
 
 ### AI组（建议创建 Phase-AI-1~3）
