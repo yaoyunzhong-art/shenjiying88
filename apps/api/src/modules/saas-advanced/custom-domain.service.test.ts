@@ -15,6 +15,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import assert from 'node:assert/strict'
 import { CustomDomainService } from './custom-domain.service'
+import { DomainResolutionService } from './domain-resolution.service'
 import {
   isValidDomain,
   generateVerificationToken,
@@ -23,6 +24,7 @@ import {
   computeSslFingerprint,
 } from './custom-domain.entity'
 import { runWithTenant } from '../../common/context/tenant-context'
+import { PortalService } from '../portal/portal.service'
 
 const TENANT_A = {
   tenantId: 'tenant-A',
@@ -393,6 +395,92 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       assert.equal(
         scopedList.find((item) => item.domain === 'primary-first.shenjiying88.com')?.isPrimary,
         false,
+      )
+    })
+
+    it('删除当前 primary 后清理解析索引并回退平台默认域名', async () => {
+      const domainResolution = new DomainResolutionService()
+      const isolatedService = new CustomDomainService(undefined, domainResolution)
+      const portalService = new PortalService(
+        {
+          getMergedProfile: () => ({
+            marketCode: 'cn-mainland',
+            marketName: '中国大陆',
+            locale: { defaultLanguage: 'zh-CN', supportedLanguages: ['zh-CN'] },
+            timezone: { timezone: 'Asia/Shanghai' },
+            currency: { currencyCode: 'CNY', symbol: '¥' },
+            tax: { taxMode: 'INCLUDED', taxRate: 13, taxLabel: '增值税' },
+            network: {
+              networkRegion: 'CHINA_MAINLAND',
+              apiBaseUrl: 'https://cn-api.m5.local',
+              cdnBaseUrl: 'https://cn-cdn.m5.local',
+              callbackBaseUrl: 'https://cn-hooks.m5.local',
+            },
+            email: {
+              provider: 'SMTP',
+              fromName: 'M5 CN',
+              fromAddress: 'hello@cn.local',
+              replyTo: 'support@cn.local',
+            },
+            social: { primaryPlatforms: ['WECHAT'], supportPlatforms: ['WECHAT'] },
+          }),
+          getOverrides: () => [],
+        } as any,
+        { getDependencySummary: () => ({ dependsOn: [], handoffContracts: [] }) } as any,
+        undefined,
+        domainResolution,
+      )
+
+      const added = await runWithTenant(TENANT_A, async () =>
+        isolatedService.addDomain('fallback-primary.shenjiying88.com'),
+      )
+      isolatedService.setDnsTxtOverride(added.verificationHost, [
+        buildVerificationValue(added.verificationToken),
+      ])
+      await runWithTenant(TENANT_A, async () => isolatedService.verify(added.id))
+      await runWithTenant(TENANT_A, async () => isolatedService.setPrimary(added.id))
+      await runWithTenant(TENANT_A, async () => isolatedService.remove(added.id))
+
+      assert.equal(
+        domainResolution.findPrimaryDomain({
+          scopeType: 'TENANT',
+          tenantId: 'tenant-A',
+        }),
+        null,
+      )
+      assert.equal(isolatedService.resolveTenantByHost('fallback-primary.shenjiying88.com'), null)
+      assert.equal(
+        portalService.resolveTenantPortal({
+          tenantId: 'tenant-A',
+          marketCode: 'cn-mainland',
+        }).primaryDomain,
+        'tenant-A.cn-mainland.b2b.local',
+      )
+    })
+
+    it('连续三次校验失败转 disabled 后不会残留解析结果', async () => {
+      const domainResolution = new DomainResolutionService()
+      const isolatedService = new CustomDomainService(undefined, domainResolution)
+      const added = await runWithTenant(TENANT_A, async () =>
+        isolatedService.addDomain('disabled-fallback.shenjiying88.com'),
+      )
+
+      for (let i = 0; i < 3; i += 1) {
+        await assert.rejects(
+          () => runWithTenant(TENANT_A, async () => isolatedService.verify(added.id)),
+          /DNS TXT 校验失败/,
+        )
+      }
+
+      const updated = await runWithTenant(TENANT_A, async () => isolatedService.getById(added.id))
+      assert.equal(updated.status, 'disabled')
+      assert.equal(isolatedService.resolveTenantByHost('disabled-fallback.shenjiying88.com'), null)
+      assert.equal(
+        domainResolution.findPrimaryDomain({
+          scopeType: 'TENANT',
+          tenantId: 'tenant-A',
+        }),
+        null,
       )
     })
   })

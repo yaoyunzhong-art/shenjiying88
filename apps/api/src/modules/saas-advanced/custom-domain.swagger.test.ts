@@ -70,6 +70,10 @@ describe('CustomDomain Swagger', () => {
     assert.equal(hostParameter?.name, 'host')
     assert.equal(hostParameter?.in, 'query')
 
+    const deleteDomain = doc.paths['/saas/domain/{id}'].delete
+    assert.ok(deleteDomain)
+    assert.ok(deleteDomain?.responses?.['204'])
+
     const addDomain = doc.paths['/saas/domain'].post
     assert.ok(addDomain?.requestBody)
     assert.ok(doc.components?.schemas?.AddDomainRequest)

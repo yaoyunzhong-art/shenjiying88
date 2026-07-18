@@ -280,6 +280,7 @@ export class CustomDomainService {
     this.domains.delete(id)
     this.domainsByName.delete(m.domain)
     this.domainsByTenant.get(ctx.tenantId)?.delete(id)
+    this.domainResolution?.removeHost(m.domain)
   }
 
   async setPrimary(id: string): Promise<DomainMapping> {

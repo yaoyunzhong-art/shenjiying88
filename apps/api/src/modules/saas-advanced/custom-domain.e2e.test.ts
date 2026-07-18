@@ -246,4 +246,47 @@ describe('CustomDomain HTTP E2E', () => {
       true,
     )
   })
+
+  it('DELETE 当前 primary 后 Host 解析回退为 unresolved', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-http-remove-primary',
+    }
+
+    const created = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'remove-primary.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(created.body.data.verificationHost, [
+      buildVerificationValue(created.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${created.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${created.body.data.id}/primary`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .delete(`/saas/domain/${created.body.data.id}`)
+      .set(headers)
+      .expect(204)
+
+    const resolved = await request(app.getHttpServer())
+      .get('/saas/domain/resolve/host')
+      .query({ host: 'remove-primary.example.io' })
+      .expect(200)
+    const list = await request(app.getHttpServer())
+      .get('/saas/domain')
+      .set(headers)
+      .query({ keyword: 'remove-primary', page: 1, pageSize: 10 })
+      .expect(200)
+
+    assert.equal(resolved.body.data.resolved, false)
+    assert.equal(resolved.body.data.tenantId, null)
+    assert.equal(list.body.data.items.length, 0)
+  })
 })

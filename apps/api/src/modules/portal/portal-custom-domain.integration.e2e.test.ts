@@ -175,4 +175,87 @@ describe('Portal + CustomDomain Integration E2E', () => {
 
     assert.equal(bootstrap.body.data.storePortal.primaryDomain, 'store-link.example.io')
   })
+
+  it('删除品牌当前 primary 后，Portal brand-portal 回退平台默认域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-link-brand-fallback',
+      'x-brand-id': 'brand-fallback',
+      'x-role': 'brand_admin',
+    }
+
+    const added = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'brand-fallback.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(added.body.data.verificationHost, [
+      buildVerificationValue(added.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${added.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${added.body.data.id}/primary`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .delete(`/saas/domain/${added.body.data.id}`)
+      .set(headers)
+      .expect(204)
+
+    const portal = await request(app.getHttpServer())
+      .get('/portals/brand-portal')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(
+      portal.body.data.primaryDomain,
+      'brand-fallback.tenant-link-brand-fallback.cn-mainland.b2b.local',
+    )
+  })
+
+  it('删除门店当前 primary 后，Portal bootstrap 回退平台默认 store 域名', async () => {
+    const headers = {
+      'x-tenant-id': 'tenant-link-store-fallback',
+      'x-brand-id': 'brand-store-fallback',
+      'x-store-id': 'store-fallback',
+      'x-role': 'store_admin',
+    }
+
+    const added = await request(app.getHttpServer())
+      .post('/saas/domain')
+      .set(headers)
+      .send({ domain: 'store-fallback.example.io' })
+      .expect(201)
+
+    customDomainService.setDnsTxtOverride(added.body.data.verificationHost, [
+      buildVerificationValue(added.body.data.verificationToken),
+    ])
+
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${added.body.data.id}/verify`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .post(`/saas/domain/${added.body.data.id}/primary`)
+      .set(headers)
+      .expect(200)
+    await request(app.getHttpServer())
+      .delete(`/saas/domain/${added.body.data.id}`)
+      .set(headers)
+      .expect(204)
+
+    const bootstrap = await request(app.getHttpServer())
+      .get('/portals/bootstrap')
+      .set(headers)
+      .expect(200)
+
+    assert.equal(
+      bootstrap.body.data.storePortal.primaryDomain,
+      'store-fallback.brand-store-fallback.tenant-link-store-fallback.cn-mainland.local',
+    )
+  })
 })

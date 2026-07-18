@@ -14,3 +14,21 @@ Rendered files:
 ==> Skipping TLS secret existence check
 ==> Applying ConfigMap and Ingress
 configmap/m5-config configured (server dry run)
+ingress.networking.k8s.io/m5-ingress configured (server dry run)
+==> Skipping production workload restart
+==> Public cutover apply finished
+Backup dir:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/backups/public-cutover/20260718-215450
+
+Suggested verification:
+  scripts/verify-prod-public-endpoints.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example
+
+Quick cluster checks:
+  kubectl -n m5 get ingress m5-ingress
+  kubectl -n m5 get secret m5-tls
+
+Execution mode:
+  kubectl dry-run = server
+  offline         = false
+  skip tls check = true
+  skip restart   = true

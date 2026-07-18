@@ -210,4 +210,39 @@ describe('CustomDomainService persistence branch', () => {
       'brand-new.example.io',
     )
   })
+
+  it('remove 当前 primary 后 persistence 分支清空主域名索引', async () => {
+    const rows = [
+      createRow({ id: 'dom-1', domain: 'brand-remove.example.io', isPrimary: true }),
+    ]
+    const domainResolution = new DomainResolutionService()
+    domainResolution.upsertFromMapping({
+      id: 'dom-1',
+      scopeType: 'BRAND',
+      tenantId: 'tenant-persist',
+      brandId: 'brand-persist',
+      domain: 'brand-remove.example.io',
+      verificationToken: 'token-001',
+      verificationHost: '_verify.brand-remove.example.io',
+      status: 'active',
+      verificationFailCount: 0,
+      createdAt: '2026-07-18T00:00:00.000Z',
+      updatedAt: '2026-07-18T00:00:00.000Z',
+      createdBy: 'user-persist',
+      isPrimary: true,
+    })
+    const service = new CustomDomainService(createPrisma(rows), domainResolution)
+
+    await runWithTenant(TENANT_CTX, () => service.remove('dom-1'))
+
+    assert.equal(rows.length, 0)
+    assert.equal(
+      domainResolution.findPrimaryDomain({
+        scopeType: 'BRAND',
+        tenantId: 'tenant-persist',
+        brandId: 'brand-persist',
+      }),
+      null,
+    )
+  })
 })

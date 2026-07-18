@@ -138,6 +138,41 @@ describe('DomainResolutionService', () => {
     )
   })
 
+  it('删除非主域名 host 不影响当前 primaryDomain 索引', () => {
+    const service = new DomainResolutionService()
+    service.upsertFromMapping(
+      createMapping({
+        scopeType: 'STORE',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+        domain: 'store-primary.example.com',
+        isPrimary: true,
+      }),
+    )
+    service.upsertFromMapping(
+      createMapping({
+        id: 'dom-002',
+        scopeType: 'STORE',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+        domain: 'store-secondary.example.com',
+        isPrimary: false,
+      }),
+    )
+
+    service.removeHost('store-secondary.example.com')
+
+    assert.equal(
+      service.findPrimaryDomain({
+        scopeType: 'STORE',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+      }),
+      'store-primary.example.com',
+    )
+  })
+
   it('同 scope 新 primary 会替换旧 primary', () => {
     const service = new DomainResolutionService()
     service.upsertFromMapping(

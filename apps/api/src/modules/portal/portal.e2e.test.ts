@@ -213,4 +213,21 @@ describe('Portal HTTP E2E', () => {
       await built.app.close()
     }
   })
+
+  it('未命中 primaryDomain 时独立门户接口回退平台默认域名', async () => {
+    const built = await buildApp({
+      findPrimaryDomain: () => null,
+    })
+
+    try {
+      const tenant = await request(built.app.getHttpServer()).get('/portals/tenant-portal').set(TENANT_CN).expect(200)
+      const brand = await request(built.app.getHttpServer()).get('/portals/brand-portal').set(TENANT_CN).expect(200)
+      const store = await request(built.app.getHttpServer()).get('/portals/store-portal').set(TENANT_CN).expect(200)
+      assert.equal(tenant.body.data.primaryDomain, 'tenant-cn.cn-mainland.b2b.local')
+      assert.equal(brand.body.data.primaryDomain, 'brand-cn.tenant-cn.cn-mainland.b2b.local')
+      assert.equal(store.body.data.primaryDomain, 'store-cn.brand-cn.tenant-cn.cn-mainland.local')
+    } finally {
+      await built.app.close()
+    }
+  })
 })
