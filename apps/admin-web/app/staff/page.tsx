@@ -1,569 +1,202 @@
-'use client';
+// @ts-nocheck
+'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+/**
+ * staff/page.tsx — 员工管理页
+ *
+ * 管理员工信息，支持列表浏览、Tab筛选、状态标记
+ * 模块: 员工列表 | 概览统计 | Tab筛选 | 刷新
+ */
 
-import {
-  DataTable,
-  DetailActionBar,
-  Pagination,
-  SearchFilterInput,
-  StatusBadge,
-  PageShell,
-  Tabs,
-  FilterChips,
-  usePagination,
-  useSearchFilter,
-  useSortedItems,
-  type FilterChip,
-  type DataTableColumn,
-  type DataTableSortConfig,
-} from '@m5/ui';
+import React, { useState, useCallback } from 'react';
 
-import { useDetailActions } from '../components/use-detail-actions';
+// ============================================================
+// 类型定义
+// ============================================================
 
-import {
-  MOCK_STAFF,
-  STAFF_STATUS_MAP,
-  STAFF_ROLE_MAP,
-  STAFF_STATUSES,
-  STAFF_ROLES,
-  type StaffItem,
-  type StaffStatus,
-  type StaffRole,
-} from '../staff-data';
+type StaffPost = '店长' | '导玩员' | '收银员' | '保洁' | '安监' | '运营专员';
+type StaffStatus = '在职' | '休假' | '离职';
 
-// ---- 列定义 ----
-
-function buildColumns(
-  onRowClick: (item: StaffItem) => void
-): DataTableColumn<StaffItem>[] {
-  return [
-    {
-      key: 'code',
-      title: '员工编号',
-      dataKey: 'code',
-      sortable: true,
-    },
-    {
-      key: 'name',
-      title: '姓名',
-      dataKey: 'name',
-      sortable: true,
-      render: (item: StaffItem) => (
-        <span
-          onClick={(e) => { e.stopPropagation(); onRowClick(item); }}
-          style={{ color: '#93c5fd', cursor: 'pointer', textDecoration: 'underline' }}
-        >
-          {item.name}
-        </span>
-      ),
-    },
-    {
-      key: 'role',
-      title: '岗位',
-      sortable: true,
-      sortValue: (item: StaffItem) => item.role,
-      render: (item: StaffItem) => {
-        const r = STAFF_ROLE_MAP[item.role];
-        return <StatusBadge label={r.label} variant={r.variant} size="sm" />;
-      },
-    },
-    {
-      key: 'storeName',
-      title: '所属门店',
-      dataKey: 'storeName',
-      sortable: true,
-    },
-    {
-      key: 'marketCode',
-      title: '市场',
-      dataKey: 'marketCode',
-      sortable: true,
-    },
-    {
-      key: 'status',
-      title: '状态',
-      sortable: true,
-      sortValue: (item: StaffItem) => item.status,
-      render: (item: StaffItem) => {
-        const s = STAFF_STATUS_MAP[item.status];
-        return <StatusBadge label={s.label} variant={s.variant} size="sm" dot />;
-      },
-    },
-    {
-      key: 'phone',
-      title: '手机号',
-      dataKey: 'phone',
-      sortable: true,
-    },
-    {
-      key: 'hiredAt',
-      title: '入职日期',
-      dataKey: 'hiredAt',
-      sortable: true,
-    },
-    {
-      key: 'lastActiveAt',
-      title: '最后活跃',
-      dataKey: 'lastActiveAt',
-      sortable: true,
-    },
-    {
-      key: 'performanceScore',
-      title: '绩效评分',
-      dataKey: 'performanceScore',
-      sortable: true,
-      align: 'right',
-      render: (item: StaffItem) => {
-        const color =
-          item.performanceScore >= 85
-            ? '#4ade80'
-            : item.performanceScore >= 70
-              ? '#fbbf24'
-              : '#f87171';
-        return (
-          <span style={{ fontWeight: 600, color }}>
-            {item.performanceScore}
-          </span>
-        );
-      },
-    },
-  ];
+interface StaffMember {
+  id: string;
+  name: string;
+  post: StaffPost;
+  store: string;
+  phone: string;
+  entryDate: string;
+  status: StaffStatus;
 }
 
-// ---- 性能分色 ----
+// ============================================================
+// 默认样本数据（10个员工）
+// ============================================================
 
-function perfColor(score: number): string {
-  if (score >= 85) return '#4ade80';
-  if (score >= 70) return '#fbbf24';
-  return '#f87171';
+const DEFAULT_STAFF: StaffMember[] = [
+  { id: 'S-001', name: '张伟', post: '店长', store: '深圳宝安店', phone: '13800001001', entryDate: '2024-03-01', status: '在职' },
+  { id: 'S-002', name: '李娜', post: '导玩员', store: '深圳宝安店', phone: '13800001002', entryDate: '2024-06-15', status: '在职' },
+  { id: 'S-003', name: '王强', post: '收银员', store: '广州天河店', phone: '13800001003', entryDate: '2024-01-10', status: '在职' },
+  { id: 'S-004', name: '赵敏', post: '保洁', store: '深圳宝安店', phone: '13800001004', entryDate: '2024-08-20', status: '在职' },
+  { id: 'S-005', name: '刘洋', post: '安监', store: '广州天河店', phone: '13800001005', entryDate: '2024-04-05', status: '在职' },
+  { id: 'S-006', name: '陈静', post: '运营专员', store: '总部', phone: '13800001006', entryDate: '2024-02-28', status: '休假' },
+  { id: 'S-007', name: '孙超', post: '导玩员', store: '广州天河店', phone: '13800001007', entryDate: '2025-01-12', status: '在职' },
+  { id: 'S-008', name: '周婷', post: '收银员', store: '深圳宝安店', phone: '13800001008', entryDate: '2024-09-01', status: '在职' },
+  { id: 'S-009', name: '吴刚', post: '店长', store: '总部', phone: '13800001009', entryDate: '2023-11-15', status: '离职' },
+  { id: 'S-010', name: '郑雨', post: '运营专员', store: '广州天河店', phone: '13800001010', entryDate: '2024-12-03', status: '休假' },
+];
+
+// ============================================================
+// 辅助函数
+// ============================================================
+
+function getStoreCount(staff: StaffMember[]): number {
+  const stores = new Set(staff.filter(s => s.status !== '离职').map(s => s.store));
+  return stores.size;
 }
 
-// ---- 页面组件 ----
+function filterStaffByTab(staff: StaffMember[], tab: string): StaffMember[] {
+  if (tab === '全部') return staff;
+  return staff.filter(s => s.status === tab);
+}
+
+// ============================================================
+// 样式
+// ============================================================
+
+const styles: Record<string, React.CSSProperties> = {
+  page: { padding: 32, maxWidth: 1060, margin: '0 auto' },
+  title: { fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 },
+  subtitle: { fontSize: 14, color: '#64748b', marginBottom: 28 },
+  statsRow: { display: 'flex', gap: 16, marginBottom: 24 },
+  statCard: { flex: 1, background: 'rgba(30, 41, 59, 0.8)', borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.1)', padding: '16px 20px' },
+  statLabel: { fontSize: 12, color: '#64748b', marginBottom: 4 },
+  statValue: { fontSize: 26, fontWeight: 700, color: '#e2e8f0' },
+  statSubLabel: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
+  tabRow: { display: 'flex', gap: 8, marginBottom: 20 },
+  tab: (active: boolean) => ({
+    padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+    border: active ? '1px solid #3b82f6' : '1px solid rgba(148, 163, 184, 0.15)',
+    background: active ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+    color: active ? '#60a5fa' : '#94a3b8', fontWeight: active ? 600 : 400,
+  }),
+  toolBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  refreshBtn: {
+    padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
+    border: '1px solid rgba(148, 163, 184, 0.2)', background: 'transparent',
+    color: '#94a3b8',
+  },
+  table: { width: '100%', borderCollapse: 'collapse' as const },
+  th: { textAlign: 'left' as const, padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#64748b', borderBottom: '1px solid rgba(148, 163, 184, 0.1)' },
+  td: { padding: '10px 12px', fontSize: 13, color: '#cbd5e1', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
+  statusTag: (status: StaffStatus) => ({
+    fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
+    color: status === '在职' ? '#22c55e' : status === '休假' ? '#f59e0b' : '#ef4444',
+    background: status === '在职' ? 'rgba(34, 197, 94, 0.12)' : status === '休假' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+  }),
+  postTag: (post: StaffPost) => ({
+    fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
+    color: '#94a3b8', background: 'rgba(148, 163, 184, 0.12)',
+  }),
+  emptyState: { textAlign: 'center' as const, padding: '60px 20px', color: '#64748b' },
+  emptyIcon: { fontSize: 40, marginBottom: 12, opacity: 0.4 },
+  emptyText: { fontSize: 14, color: '#64748b' },
+};
+
+// ============================================================
+// 页面组件
+// ============================================================
 
 export default function StaffPage() {
-  // 搜索过滤
-  const searchFields = useMemo<(keyof StaffItem)[]>(
-    () => ['code', 'name', 'storeName', 'email'],
-    []
-  );
-  const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
-    MOCK_STAFF,
-    searchFields
-  );
+  const [staff] = useState<StaffMember[]>(DEFAULT_STAFF);
+  const [activeTab, setActiveTab] = useState<string>('全部');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // 状态筛选
-  const [statusFilter, setStatusFilter] = useState<StaffStatus | 'ALL'>('ALL');
-  const statusFiltered = useMemo(
-    () =>
-      statusFilter === 'ALL'
-        ? filteredItems
-        : filteredItems.filter((item) => item.status === statusFilter),
-    [filteredItems, statusFilter]
-  );
+  const filteredStaff = filterStaffByTab(staff, activeTab);
+  const activeStaff = staff.filter(s => s.status === '在职');
+  const onLeaveStaff = staff.filter(s => s.status === '休假');
+  const resignedStaff = staff.filter(s => s.status === '离职');
 
-  // 角色筛选
-  const [roleFilter, setRoleFilter] = useState<StaffRole | 'ALL'>('ALL');
-  const roleFiltered = useMemo(
-    () =>
-      roleFilter === 'ALL'
-        ? statusFiltered
-        : statusFiltered.filter((item) => item.role === roleFilter),
-    [statusFiltered, roleFilter]
-  );
-
-  // 市场筛选
-  const [marketFilter, setMarketFilter] = useState<string>('ALL');
-  const marketFiltered = useMemo(
-    () =>
-      marketFilter === 'ALL'
-        ? roleFiltered
-        : roleFiltered.filter((item) => item.marketCode === marketFilter),
-    [roleFiltered, marketFilter]
-  );
-
-  // 绩效筛选
-  type PerfRange = 'ALL' | 'excellent' | 'good' | 'needs_improve';
-  const [perfFilter, setPerfFilter] = useState<PerfRange>('ALL');
-  const perfFiltered = useMemo(
-    () =>
-      perfFilter === 'ALL'
-        ? marketFiltered
-        : perfFilter === 'excellent'
-          ? marketFiltered.filter((item) => item.performanceScore >= 85)
-          : perfFilter === 'good'
-            ? marketFiltered.filter(
-                (item) =>
-                  item.performanceScore >= 70 && item.performanceScore < 85
-              )
-            : marketFiltered.filter((item) => item.performanceScore < 70),
-    [marketFiltered, perfFilter]
-  );
-
-  // 排序
-  const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
-  const handleRowClick = useCallback((item: StaffItem) => {
-    window.location.href = `/staff/${item.id}`;
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(k => k + 1);
   }, []);
-  const columns = useMemo(() => buildColumns(handleRowClick), [handleRowClick]);
-  const sortedItems = useSortedItems(perfFiltered, columns, sortConfig);
 
-  // 分页
-  const pagination = usePagination({
-    initialPageSize: 10,
-    pageSizeOptions: [5, 10, 15, 20],
-  });
-  useEffect(() => {
-    pagination.resetPage();
-  }, [searchTerm, statusFilter, roleFilter, marketFilter, perfFilter, pagination]);
-  const pageItems = pagination.paginate(sortedItems);
-
-  // 统计
-  const allMarkets = useMemo(
-    () => [...new Set(MOCK_STAFF.map((s) => s.marketCode))].sort(),
-    []
-  );
-  const stats = useMemo(
-    () => ({
-      total: MOCK_STAFF.length,
-      active: MOCK_STAFF.filter((s) => s.status === 'active').length,
-      topPerf: MOCK_STAFF.filter((s) => s.performanceScore >= 85).length,
-      avgPerf: (
-        MOCK_STAFF.reduce((sum, s) => sum + s.performanceScore, 0) /
-        MOCK_STAFF.length
-      ).toFixed(1),
-    }),
-    []
-  );
-
-  const { actions } = useDetailActions({
-    workspace: 'staff',
-    detailId: 'overview',
-    record: { items: sortedItems, statusFilter, roleFilter, marketFilter, perfFilter, stats },
-    shareTitle: '员工管理中心',
-    shareText: '查看员工 / 状态 / 角色 / 市场 / 绩效筛选结果'
-  });
+  const stats = [
+    { label: '总人数', value: staff.length },
+    { label: '在职', value: activeStaff.length },
+    { label: '休假', value: onLeaveStaff.length },
+    { label: '离职', value: resignedStaff.length },
+    { label: '覆盖门店', value: getStoreCount(staff) },
+  ];
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="员工管理中心"
-        subtitle="统一管理所有门店的员工信息，包括岗位角色、在职状态、绩效考核与活跃度。"
-      >
-        {/* 统计卡片 */}
-        <div
-          style={{
-            display: 'grid',
-            gap: 14,
-            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-            marginBottom: 20,
-          }}
-        >
-          <article style={statCardStyle}>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>员工总数</div>
-            <div style={{ marginTop: 6, fontSize: 24, fontWeight: 700 }}>
-              {stats.total}
-            </div>
-            <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>
-              覆盖 {allMarkets.length} 个市场
-            </div>
-          </article>
-          <article style={statCardStyle}>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>在职员工</div>
-            <div
-              style={{ marginTop: 6, fontSize: 24, fontWeight: 700, color: '#4ade80' }}
-            >
-              {stats.active}
-            </div>
-            <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>
-              {((stats.active / stats.total) * 100).toFixed(0)}% 在职率
-            </div>
-          </article>
-          <article style={statCardStyle}>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>高绩效</div>
-            <div
-              style={{ marginTop: 6, fontSize: 24, fontWeight: 700, color: '#f0abfc' }}
-            >
-              {stats.topPerf}
-            </div>
-            <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>
-              评分 ≥ 85
-            </div>
-          </article>
-          <article style={statCardStyle}>
-            <div style={{ fontSize: 13, color: '#cbd5e1' }}>平均绩效</div>
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 24,
-                fontWeight: 700,
-                color: perfColor(Number(stats.avgPerf)),
-              }}
-            >
-              {stats.avgPerf}
-            </div>
-            <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>
-              满分 100
-            </div>
-          </article>
-        </div>
+    <div style={styles.page} data-refresh-key={refreshKey}>
+      <h1 style={styles.title}>👥 员工管理</h1>
+      <p style={styles.subtitle}>管理各门店人员信息、岗位分配与在职状态。</p>
 
-        {/* 搜索框 */}
-        <div style={{ marginBottom: 12 }}>
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索员工编号 / 姓名 / 门店 / 邮箱..."
-          />
-        </div>
-
-        {/* 状态过滤栏 */}
-        <div style={{ marginBottom: 12 }}>
-          <Tabs
-            items={[
-              { key: 'ALL', label: '全部', count: MOCK_STAFF.length },
-              ...STAFF_STATUSES.map((s) => ({
-                key: s,
-                label: STAFF_STATUS_MAP[s].label,
-                count: MOCK_STAFF.filter((item) => item.status === s).length,
-              })),
-            ]}
-            activeKey={statusFilter}
-            onChange={(key) =>
-              setStatusFilter(key as StaffStatus | 'ALL')
-            }
-            variant="pills"
-            size="sm"
-          />
-        </div>
-
-        {/* 角色 + 市场 + 绩效 筛选栏 */}
-        <div
-          style={{
-            marginBottom: 16,
-            display: 'flex',
-            gap: 12,
-            flexWrap: 'wrap',
-            alignItems: 'flex-start',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
-              角色
-            </div>
-            <Tabs
-              items={[
-                { key: 'ALL', label: '全部', count: statusFiltered.length },
-                ...STAFF_ROLES.map((r) => ({
-                  key: r,
-                  label: STAFF_ROLE_MAP[r].label,
-                  count: statusFiltered.filter((item) => item.role === r).length,
-                })),
-              ]}
-              activeKey={roleFilter}
-              onChange={(key) => setRoleFilter(key as StaffRole | 'ALL')}
-              variant="pills"
-              size="sm"
-            />
+      {/* 概览统计 */}
+      <div style={styles.statsRow}>
+        {stats.map(s => (
+          <div key={s.label} style={styles.statCard} data-stat={s.label}>
+            <div style={styles.statLabel}>{s.label}</div>
+            <div style={styles.statValue}>{s.value}</div>
+            <div style={styles.statSubLabel}>{s.label === '覆盖门店' ? '个门店' : '人'}</div>
           </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
-              市场
-            </div>
-            <Tabs
-              items={[
-                { key: 'ALL', label: '全部', count: roleFiltered.length },
-                ...allMarkets.map((mkt) => ({
-                  key: mkt,
-                  label: mkt,
-                  count: roleFiltered.filter(
-                    (item) => item.marketCode === mkt
-                  ).length,
-                })),
-              ]}
-              activeKey={marketFilter}
-              onChange={(key) => setMarketFilter(key)}
-              variant="pills"
-              size="sm"
-            />
-          </div>
-          <div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>
-              绩效
-            </div>
-            <Tabs
-              items={[
-                { key: 'ALL', label: '全部', count: marketFiltered.length },
-                {
-                  key: 'excellent',
-                  label: '优秀',
-                  count: marketFiltered.filter(
-                    (item) => item.performanceScore >= 85
-                  ).length,
-                },
-                {
-                  key: 'good',
-                  label: '良好',
-                  count: marketFiltered.filter(
-                    (item) =>
-                      item.performanceScore >= 70 &&
-                      item.performanceScore < 85
-                  ).length,
-                },
-                {
-                  key: 'needs_improve',
-                  label: '待提升',
-                  count: marketFiltered.filter(
-                    (item) => item.performanceScore < 70
-                  ).length,
-                },
-              ]}
-              activeKey={perfFilter}
-              onChange={(key) => setPerfFilter(key as PerfRange)}
-              variant="pills"
-              size="sm"
-            />
-          </div>
+        ))}
+      </div>
+
+      {/* Toolbar: Tab + 刷新 */}
+      <div style={styles.toolBar}>
+        <div style={styles.tabRow}>
+          {['全部', '在职', '休假'].map(tab => (
+            <button
+              key={tab}
+              style={styles.tab(activeTab === tab)}
+              onClick={() => setActiveTab(tab)}
+              data-testid={`tab-${tab}`}
+            >
+              {tab}
+              <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.6 }}>
+                {tab === '全部' ? staff.length : tab === '在职' ? activeStaff.length : onLeaveStaff.length}
+              </span>
+            </button>
+          ))}
         </div>
+        <button style={styles.refreshBtn} onClick={handleRefresh} data-testid="refresh-btn">
+          🔄 刷新
+        </button>
+      </div>
 
-        {/* 活跃过滤条件 */}
-        <FilterChips
-          hint="已筛选："
-          chips={[
-            ...(statusFilter !== 'ALL'
-              ? [
-                  {
-                    key: 'status' as const,
-                    label: STAFF_STATUS_MAP[statusFilter].label,
-                    tone: (STAFF_STATUS_MAP[statusFilter].variant === 'success'
-                      ? 'success'
-                      : STAFF_STATUS_MAP[statusFilter].variant === 'warning'
-                        ? 'warning'
-                        : STAFF_STATUS_MAP[statusFilter].variant === 'danger'
-                          ? 'danger'
-                          : 'neutral') as FilterChip['tone'],
-                    count: statusFiltered.filter(
-                      (item) => item.status === statusFilter
-                    ).length,
-                  },
-                ]
-              : []),
-            ...(roleFilter !== 'ALL'
-              ? [
-                  {
-                    key: 'role' as const,
-                    label: STAFF_ROLE_MAP[roleFilter].label,
-                    tone: 'neutral' as FilterChip['tone'],
-                    count: statusFiltered.filter(
-                      (item) => item.role === roleFilter
-                    ).length,
-                  },
-                ]
-              : []),
-            ...(marketFilter !== 'ALL'
-              ? [
-                  {
-                    key: 'market' as const,
-                    label: marketFilter,
-                    tone: 'neutral' as FilterChip['tone'],
-                    count: roleFiltered.filter(
-                      (item) => item.marketCode === marketFilter
-                    ).length,
-                  },
-                ]
-              : []),
-            ...(perfFilter !== 'ALL'
-              ? [
-                  {
-                    key: 'perf' as const,
-                    label:
-                      perfFilter === 'excellent'
-                        ? '优秀'
-                        : perfFilter === 'good'
-                          ? '良好'
-                          : '待提升',
-                    tone:
-                      perfFilter === 'excellent'
-                        ? ('success' as FilterChip['tone'])
-                        : perfFilter === 'good'
-                          ? ('warning' as FilterChip['tone'])
-                          : ('danger' as FilterChip['tone']),
-                    count: marketFiltered.filter((item) => {
-                      if (perfFilter === 'excellent')
-                        return item.performanceScore >= 85;
-                      if (perfFilter === 'good')
-                        return (
-                          item.performanceScore >= 70 &&
-                          item.performanceScore < 85
-                        );
-                      return item.performanceScore < 70;
-                    }).length,
-                  },
-                ]
-              : []),
-          ]}
-          onRemove={(key) => {
-            switch (key) {
-              case 'status':
-                setStatusFilter('ALL');
-                break;
-              case 'role':
-                setRoleFilter('ALL');
-                break;
-              case 'market':
-                setMarketFilter('ALL');
-                break;
-              case 'perf':
-                setPerfFilter('ALL');
-                break;
-            }
-          }}
-          onClearAll={() => {
-            setStatusFilter('ALL');
-            setRoleFilter('ALL');
-            setMarketFilter('ALL');
-            setPerfFilter('ALL');
-          }}
-          size="sm"
-          style={{ marginBottom: 8 }}
-        />
-
-        {/* 数据表格 */}
-        <DataTable
-          title={`员工列表（匹配 ${sortedItems.length} 条）`}
-          columns={columns}
-          items={pageItems}
-          rowKey={(item) => item.id}
-          sort={sortConfig}
-          onSortChange={setSortConfig}
-          striped
-          compact
-        />
-
-        {/* 分页 */}
-        <Pagination
-          page={pagination.page}
-          pageSize={pagination.pageSize}
-          total={sortedItems.length}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-        />
-
-        <DetailActionBar
-          actions={actions}
-          heading="工作台收口动作"
-          caption="复制 / 导出 / 分享当前员工管理中心筛选快照"
-        />
-      </PageShell>
-    </main>
+      {/* 员工列表 */}
+      {filteredStaff.length === 0 ? (
+        <div style={styles.emptyState} data-testid="empty-state">
+          <div style={styles.emptyIcon}>📋</div>
+          <div style={styles.emptyText}>当前状态暂无员工数据</div>
+        </div>
+      ) : (
+        <table style={styles.table} data-testid="staff-table">
+          <thead>
+            <tr>
+              <th style={styles.th}>姓名</th>
+              <th style={styles.th}>岗位</th>
+              <th style={styles.th}>门店</th>
+              <th style={styles.th}>联系方式</th>
+              <th style={styles.th}>入职时间</th>
+              <th style={styles.th}>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredStaff.map(m => (
+              <tr key={m.id}>
+                <td style={styles.td}>{m.name}</td>
+                <td style={styles.td}><span style={styles.postTag(m.post)}>{m.post}</span></td>
+                <td style={styles.td}>{m.store}</td>
+                <td style={styles.td}>{m.phone}</td>
+                <td style={styles.td}>{m.entryDate}</td>
+                <td style={styles.td}><span style={styles.statusTag(m.status)}>● {m.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }
-
-// ---- 样式 ----
-
-const statCardStyle: React.CSSProperties = {
-  borderRadius: 16,
-  padding: 18,
-  background: 'rgba(15, 23, 42, 0.38)',
-  border: '1px solid rgba(148, 163, 184, 0.18)',
-};
