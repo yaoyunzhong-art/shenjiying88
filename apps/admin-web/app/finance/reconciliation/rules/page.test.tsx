@@ -200,4 +200,20 @@ describe('ReconciliationRulesPage — hooks验证', () => {
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
+
+  // 类型安全
+  it('无 any 类型', () => assert.ok(!SRC.includes(': any')));
+  it('无 @ts-nocheck', () => assert.ok(!SRC.includes('@ts-nocheck')));
+  it('无 @ts-ignore', () => assert.ok(!SRC.includes('@ts-ignore')));
+
+  // 结构完整性
+  it('非空函数体', () => assert.ok(SRC.length > 500));
+  it('包含fragment或div包围', () => assert.ok(SRC.includes('<>') || SRC.includes('<div')));
+  it('包含useEffect', () => assert.ok(SRC.includes('useEffect')));
+  it('包含setState调用', () => assert.ok(SRC.includes('set') && SRC.includes('(')));
+  it('包含样式类名', () => assert.ok(SRC.includes('className') || SRC.includes('style={')));
+  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
+  it('包含过滤逻辑', () => assert.ok(SRC.includes('.filter(')));
+  it('包含注释', () => assert.ok(SRC.includes('/**') || SRC.includes('//')));
+  it('包含useCallback', () => assert.ok(SRC.includes('useCallback')));
 });
