@@ -126,10 +126,8 @@ function mockSubmitPromotion(
 ): Promise<{ data: Record<string, unknown>; message: string }> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('服务端繁忙，请稍后重试'));
-        return;
-      }
+      // 移除随机失败逻辑 — 测试环境不应有随机行为
+      // 错误场景由单独的反例测试覆盖
       resolve({ data, message: `促销活动「${data.title}」创建成功！` });
     }, 800);
   });
