@@ -991,6 +991,40 @@ export interface DomainGovernanceDisplayModel {
     detailLines: string[];
     requiresAttention: boolean;
 }
+export type DomainGovernanceDisplayPresetKey = 'STOREFRONT_H5' | 'STOREFRONT_PC' | 'TOB_TENANT' | 'TOB_BRAND' | 'APP_NATIVE' | 'MINIAPP_HOME' | 'MINIAPP_MEMBER';
+export interface DomainGovernanceDisplayPresetContract {
+    key: DomainGovernanceDisplayPresetKey;
+    accentColor: string;
+    titleColor: string;
+    subtitleColor: string;
+    summaryColor: string;
+    detailColor: string;
+    borderColor: string;
+    buttonBackground: string;
+    buttonTextColor: string;
+    backgroundAligned: string;
+    backgroundAttention: string;
+    statusAlignedColor: string;
+    statusAlignedBackground: string;
+    statusAttentionColor: string;
+    statusAttentionBackground: string;
+}
+export interface DomainGovernanceDisplayPreset {
+    key: DomainGovernanceDisplayPresetKey;
+    accentColor: string;
+    titleColor: string;
+    subtitleColor: string;
+    summaryColor: string;
+    detailColor: string;
+    borderColor: string;
+    buttonBackground: string;
+    buttonTextColor: string;
+    background: string;
+    statusColor: string;
+    statusBackground: string;
+}
+export declare const domainGovernanceDisplayPresetContractMap: Record<DomainGovernanceDisplayPresetKey, DomainGovernanceDisplayPresetContract>;
+export declare function resolveDomainGovernanceDisplayPreset(key: DomainGovernanceDisplayPresetKey, requiresAttention: boolean): DomainGovernanceDisplayPreset;
 export declare function formatDomainGovernanceFocusScopeLabel(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceFocusScopeSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceRecommendationSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;

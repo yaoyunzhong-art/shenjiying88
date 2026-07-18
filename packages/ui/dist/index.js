@@ -26020,16 +26020,11 @@ function PortalConsumerGovernanceSection({
 }
 
 // src/components/PortalDomainGovernanceCard.tsx
+var import_types3 = require("@m5/types");
 var import_jsx_runtime109 = require("react/jsx-runtime");
 function PortalDomainGovernanceCard({
   model,
-  accentColor = "#93c5fd",
-  titleColor = "#f8fafc",
-  summaryColor = "#cbd5e1",
-  borderColor = "rgba(148, 163, 184, 0.12)",
-  buttonBackground = "#1d4ed8",
-  buttonTextColor = "#eff6ff",
-  background = "rgba(15, 23, 42, 0.42)",
+  preset = (0, import_types3.resolveDomainGovernanceDisplayPreset)("STOREFRONT_PC", model.requiresAttention),
   style
 }) {
   return /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)(
@@ -26038,15 +26033,15 @@ function PortalDomainGovernanceCard({
       style: {
         borderRadius: 16,
         padding: 16,
-        background,
-        border: `1px solid ${borderColor}`,
+        background: preset.background,
+        border: `1px solid ${preset.borderColor}`,
         ...style
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { fontSize: 12, color: accentColor }, children: model.title }),
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, fontSize: 12, color: summaryColor }, children: model.subtitle }),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { fontSize: 12, color: preset.accentColor }, children: model.title }),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, fontSize: 12, color: preset.subtitleColor }, children: model.subtitle }),
         /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)("div", { style: { marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("span", { style: { fontSize: 16, fontWeight: 700, color: titleColor }, children: model.sourceSummary }),
+          /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("span", { style: { fontSize: 16, fontWeight: 700, color: preset.titleColor }, children: model.sourceSummary }),
           /* @__PURE__ */ (0, import_jsx_runtime109.jsx)(
             "span",
             {
@@ -26055,16 +26050,16 @@ function PortalDomainGovernanceCard({
                 padding: "4px 10px",
                 fontSize: 12,
                 fontWeight: 700,
-                color: model.requiresAttention ? "#fecaca" : "#bbf7d0",
-                background: model.requiresAttention ? "rgba(127, 29, 29, 0.32)" : "rgba(20, 83, 45, 0.32)"
+                color: preset.statusColor,
+                background: preset.statusBackground
               },
               children: model.statusLabel
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, color: summaryColor }, children: model.countsSummary }),
-        model.detailLines.map((line) => /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, fontSize: 12, color: accentColor }, children: line }, line)),
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 8, fontSize: 12, color: accentColor }, children: model.workspaceSummary }),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, color: preset.summaryColor }, children: model.countsSummary }),
+        model.detailLines.map((line) => /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, fontSize: 12, color: preset.detailColor }, children: line }, line)),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 8, fontSize: 12, color: preset.accentColor }, children: model.workspaceSummary }),
         /* @__PURE__ */ (0, import_jsx_runtime109.jsx)(
           "a",
           {
@@ -26075,8 +26070,8 @@ function PortalDomainGovernanceCard({
               marginTop: 12,
               borderRadius: 999,
               padding: "8px 14px",
-              background: buttonBackground,
-              color: buttonTextColor,
+              background: preset.buttonBackground,
+              color: preset.buttonTextColor,
               textDecoration: "none",
               fontSize: 12,
               fontWeight: 600
@@ -26091,7 +26086,7 @@ function PortalDomainGovernanceCard({
 
 // src/components/FoundationAlertLinkedOverview.tsx
 var import_react66 = require("react");
-var import_types3 = require("@m5/types");
+var import_types4 = require("@m5/types");
 var import_jsx_runtime110 = require("react/jsx-runtime");
 function renderSectionShell(hasShell, title, description, titleStyle4, descriptionStyle, sectionStyle3, children) {
   if (!hasShell) {
@@ -26288,7 +26283,7 @@ function FoundationAlertLinkedOverviewSection({
           activateFocus(
             item.focusCode,
             `\u6982\u89C8\u5361 / ${item.label}`,
-            (0, import_types3.buildFoundationAlertRecentOperationFilterState)(
+            (0, import_types4.buildFoundationAlertRecentOperationFilterState)(
               item.recentOperation
             )
           );
@@ -26328,7 +26323,7 @@ function FoundationAlertLinkedOverviewSection({
           activateFocus(
             item.code,
             `Top risk / ${item.code}`,
-            (0, import_types3.buildFoundationAlertRecentOperationFilterState)(item.recentOperation)
+            (0, import_types4.buildFoundationAlertRecentOperationFilterState)(item.recentOperation)
           );
         }
       }
@@ -26349,7 +26344,7 @@ function FoundationAlertLinkedOverviewSection({
           activateFocus(
             item.code,
             `Catalog triage / ${item.code}`,
-            (0, import_types3.buildFoundationAlertRecentOperationFilterState)(item.recentOperation)
+            (0, import_types4.buildFoundationAlertRecentOperationFilterState)(item.recentOperation)
           );
         }
       }

@@ -2,11 +2,18 @@
  * 概览仪表盘 Dashboard — admin-web 首页看板
  * 角色: 👔店长
  * 功能: 关键指标卡片、门店营收趋势、设备运行状态、今日待办、实时客流、预警摘要
+ * 视图: 总览/运营/财务/增长 四视角切换
  */
 
 import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell, ErrorBoundary, Card, StatCard } from '@m5/ui';
 import DashboardClient from './dashboard-client';
+
+export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth';
+
+export function isDashboardView(v: string): v is DashboardView {
+  return ['overview', 'operations', 'financial', 'growth'].includes(v);
+}
 
 interface DashboardStats {
   todayRevenue: number;
@@ -17,6 +24,10 @@ interface DashboardStats {
   pendingAlerts: number;
   completionRate: number;
   avgVisitDuration: number; // minutes
+  monthlyRevenue: number;
+  monthlyOrders: number;
+  weeklyGrowth: number;
+  customerSatisfaction: number;
 }
 
 async function loadDashboardStats(): Promise<DashboardStats> {
@@ -30,6 +41,10 @@ async function loadDashboardStats(): Promise<DashboardStats> {
     pendingAlerts: 3,
     completionRate: 78,
     avgVisitDuration: 45,
+    monthlyRevenue: 312800,
+    monthlyOrders: 2460,
+    weeklyGrowth: 8.5,
+    customerSatisfaction: 92,
   };
 }
 
@@ -52,6 +67,9 @@ export default async function DashboardPage() {
           title="📊 概览仪表盘"
           subtitle="门店运营核心指标一览 · 实时数据 · 快速入口"
         >
+          {/* 视图切换Tab: 总览/运营/财务/增长 */}
+          <DashboardViewTabs />
+
           {/* 统计摘要卡片 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
             {summaryCards.map(card => (
@@ -70,6 +88,44 @@ export default async function DashboardPage() {
         </PageShell>
       </main>
     </ErrorBoundary>
+  );
+}
+
+/** 仪表盘视图Tab组件 — 总览/运营/财务/增长 */
+function DashboardViewTabs() {
+  const tabs = [
+    { key: 'overview' as const, label: '📊 总览' },
+    { key: 'operations' as const, label: '⚙️ 运营' },
+    { key: 'financial' as const, label: '💰 财务' },
+    { key: 'growth' as const, label: '📈 增长' },
+  ];
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 4 }} role="tablist" aria-label="仪表盘视图">
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={false}
+            disabled
+            style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: '#94a3b8',
+              background: 'rgba(15,23,42,0.3)',
+              border: '1px solid rgba(148,163,184,0.14)',
+              borderRadius: 8,
+              padding: '8px 16px',
+              cursor: 'default',
+              opacity: 0.7,
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

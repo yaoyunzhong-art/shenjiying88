@@ -1,7 +1,7 @@
 export { Col, Descriptions, Form, Row, message } from 'antd';
 import * as React from 'react';
 import React__default, { ReactNode, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import { FoundationAlertTimelineFilterState, DomainGovernanceDisplayModel, FoundationAlertCode, FoundationAlertTimelineEntry, FoundationAlertDrilldownResponse, FoundationAlertCatalogItem, FoundationOperationsAlert, FoundationAlertMutationKind, FoundationAlertRuntimeCallbackStalledDetail, FoundationAlertTimelineMetrics as FoundationAlertTimelineMetrics$1, FoundationAlertTimelineDigest } from '@m5/types';
+import { FoundationAlertTimelineFilterState, DomainGovernanceDisplayModel, DomainGovernanceDisplayPreset, FoundationAlertCode, FoundationAlertTimelineEntry, FoundationAlertDrilldownResponse, FoundationAlertCatalogItem, FoundationOperationsAlert, FoundationAlertMutationKind, FoundationAlertRuntimeCallbackStalledDetail, FoundationAlertTimelineMetrics as FoundationAlertTimelineMetrics$1, FoundationAlertTimelineDigest } from '@m5/types';
 
 /** 游戏机台状态 */
 type MachineStatus = 'online' | 'offline' | 'maintenance' | 'full';
@@ -5146,16 +5146,10 @@ declare function PortalConsumerGovernanceSection({ title, titleColor, primaryTex
 
 interface PortalDomainGovernanceCardProps {
     model: DomainGovernanceDisplayModel;
-    accentColor?: string;
-    titleColor?: string;
-    summaryColor?: string;
-    borderColor?: string;
-    buttonBackground?: string;
-    buttonTextColor?: string;
-    background?: string;
+    preset?: DomainGovernanceDisplayPreset;
     style?: React__default.CSSProperties;
 }
-declare function PortalDomainGovernanceCard({ model, accentColor, titleColor, summaryColor, borderColor, buttonBackground, buttonTextColor, background, style, }: PortalDomainGovernanceCardProps): React__default.JSX.Element;
+declare function PortalDomainGovernanceCard({ model, preset, style, }: PortalDomainGovernanceCardProps): React__default.JSX.Element;
 
 interface FoundationAlertAcknowledgementLike {
     actorId?: string | null;

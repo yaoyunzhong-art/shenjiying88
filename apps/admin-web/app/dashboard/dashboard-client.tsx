@@ -1,12 +1,14 @@
 /**
  * DashboardClient — 仪表盘客户端组件
- * 功能: 营收趋势、设备状态、待办事项、实时客流
+ * 功能: 营收趋势、设备状态、待办事项、实时客流、多视图Tab切换(总览/运营/财务/增长)
  */
 
 'use client';
 
 import { useState } from 'react';
 import { Card, StatusBadge, DataTable, Tabs, type DataTableColumn } from '@m5/ui';
+
+export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth';
 
 interface DashboardStats {
   todayRevenue: number;
@@ -17,6 +19,10 @@ interface DashboardStats {
   pendingAlerts: number;
   completionRate: number;
   avgVisitDuration: number;
+  monthlyRevenue: number;
+  monthlyOrders: number;
+  weeklyGrowth: number;
+  customerSatisfaction: number;
 }
 
 // 模拟趋势数据（最近7天）
@@ -62,6 +68,34 @@ const MOCK_DEVICES: DeviceStatus[] = [
   { id: 'd6', name: '空调系统', status: 'error', uptime: '—' },
 ];
 
+// 模拟财务数据（月度）
+const MOCK_FINANCIAL_MONTHS = [
+  { month: '2月', revenue: 285000, cost: 195000, profit: 90000 },
+  { month: '3月', revenue: 302000, cost: 208000, profit: 94000 },
+  { month: '4月', revenue: 278000, cost: 190000, profit: 88000 },
+  { month: '5月', revenue: 325000, cost: 215000, profit: 110000 },
+  { month: '6月', revenue: 298000, cost: 202000, profit: 96000 },
+  { month: '7月', revenue: 312800, cost: 210000, profit: 102800 },
+];
+
+// 模拟增长指标
+const MOCK_GROWTH_METRICS = [
+  { metric: '月营收增长率', value: '+8.5%', trend: 'up' as const, description: '环比上月增长' },
+  { metric: '月订单增长率', value: '+12.3%', trend: 'up' as const, description: '环比上月增长' },
+  { metric: '客单价', value: '¥146.50', trend: 'up' as const, description: '同比 +5.2%' },
+  { metric: '会员复购率', value: '67%', trend: 'up' as const, description: '同比 +3.1%' },
+  { metric: '新客占比', value: '32%', trend: 'down' as const, description: '环比 -1.2%' },
+  { metric: '流失率', value: '5.8%', trend: 'down' as const, description: '环比 -0.3% ✅' },
+];
+
+// 模拟运营数据
+const MOCK_OPERATIONS = [
+  { area: 'VR体验区', occupancy: 78, peakTime: '14:00-17:00', status: 'normal' as const },
+  { area: '街机区', occupancy: 65, peakTime: '13:00-16:00', status: 'normal' as const },
+  { area: '娃娃机区', occupancy: 45, peakTime: '15:00-18:00', status: 'normal' as const },
+  { area: '休息区', occupancy: 82, peakTime: '12:00-14:00', status: 'busy' as const },
+];
+
 const STATUS_VARIANTS: Record<string, 'success' | 'danger' | 'warning' | 'neutral'> = {
   online: 'success',
   offline: 'danger',
@@ -69,9 +103,16 @@ const STATUS_VARIANTS: Record<string, 'success' | 'danger' | 'warning' | 'neutra
   error: 'danger',
 };
 
-export default function DashboardClient({ stats }: { stats: DashboardStats }) {
-  const [activeTab, setActiveTab] = useState<'trend' | 'devices' | 'todos'>('trend');
-
+/** 总览视图 - 营收趋势 + 设备状态 + 待办 */
+function OverviewView({
+  stats,
+  activeSubTab,
+  setActiveSubTab,
+}: {
+  stats: DashboardStats;
+  activeSubTab: string;
+  setActiveSubTab: (v: string) => void;
+}) {
   const todoColumns: DataTableColumn<TodoItem>[] = [
     { key: 'title', title: '待办事项', dataKey: 'title', sortable: true, render: (item) => <span style={{ color: item.priority === 'high' ? '#f87171' : item.priority === 'medium' ? '#fbbf24' : '#94a3b8' }}>{item.title}</span> },
     { key: 'priority', title: '优先级', dataKey: 'priority', sortable: true, render: (item) => <StatusBadge label={item.priority === 'high' ? '🔴紧急' : item.priority === 'medium' ? '🟡普通' : '🟢低优'} variant={item.priority === 'high' ? 'danger' : item.priority === 'medium' ? 'warning' : 'success'} size="sm" /> },
@@ -114,12 +155,12 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
           { key: 'devices', label: '🔧 设备状态', count: MOCK_DEVICES.filter(d => d.status !== 'online').length },
           { key: 'todos', label: '📋 待办', count: MOCK_TODOS.filter(t => t.status !== 'completed').length },
         ]}
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as typeof activeTab)}
+        activeKey={activeSubTab}
+        onChange={(key) => setActiveSubTab(key)}
         variant="pills"
       />
 
-      {activeTab === 'trend' && (
+      {activeSubTab === 'trend' && (
         <Card title="7日营收对比" style={{ padding: 16 }}>
           <div style={{ display: 'grid', gap: 8 }}>
             {MOCK_REVENUE_TREND.map(day => (
@@ -133,7 +174,7 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
         </Card>
       )}
 
-      {activeTab === 'devices' && (
+      {activeSubTab === 'devices' && (
         <div style={{ display: 'grid', gap: 8 }}>
           {MOCK_DEVICES.map(device => (
             <div key={device.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: 10, background: 'rgba(15,23,42,0.3)' }}>
@@ -152,7 +193,7 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
         </div>
       )}
 
-      {activeTab === 'todos' && (
+      {activeSubTab === 'todos' && (
         <DataTable
           columns={todoColumns}
           items={MOCK_TODOS}
@@ -163,11 +204,180 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
       )}
 
       {/* 空状态: 无待办 */}
-      {stats.pendingAlerts === 0 && activeTab === 'todos' && (
+      {stats.pendingAlerts === 0 && activeSubTab === 'todos' && (
         <Card variant="outlined" style={{ padding: 24, textAlign: 'center' }}>
           <div style={{ fontSize: 14, color: '#22c55e', fontWeight: 600 }}>✓ 所有待办已完成</div>
         </Card>
       )}
+    </div>
+  );
+}
+
+/** 运营视图 - 区域运营数据 */
+function OperationsView() {
+  return (
+    <div style={{ display: 'grid', gap: 16 }}>
+      <Card title="各区域运营数据" style={{ padding: 16 }}>
+        <div style={{ display: 'grid', gap: 12 }}>
+          {MOCK_OPERATIONS.map(op => (
+            <div key={op.area} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(148,163,184,0.1)' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{op.area}</div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>高峰: {op.peakTime}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>{op.occupancy}%</div>
+                <StatusBadge
+                  label={op.status === 'busy' ? '🔴繁忙' : '🟢正常'}
+                  variant={op.status === 'busy' ? 'danger' : 'success'}
+                  size="sm"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card title="设备概览" style={{ padding: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {[
+            { label: '总设备', value: '48' },
+            { label: '在线', value: '42', color: '#22c55e' },
+            { label: '维护中', value: '1', color: '#eab308' },
+            { label: '故障', value: '1', color: '#ef4444' },
+          ].map(item => (
+            <div key={item.label} style={{ textAlign: 'center', padding: 12, borderRadius: 8, background: 'rgba(15,23,42,0.3)' }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: item.color ?? '#e2e8f0' }}>{item.value}</div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/** 财务视图 - 月度营收/成本/利润对比 */
+function FinancialView({ stats }: { stats: DashboardStats }) {
+  const maxRevenue = Math.max(...MOCK_FINANCIAL_MONTHS.map(m => m.revenue));
+  return (
+    <div style={{ display: 'grid', gap: 16 }}>
+      <Card title="月度财务数据" style={{ padding: 16 }}>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {MOCK_FINANCIAL_MONTHS.map(month => {
+            const barWidth = (month.revenue / maxRevenue) * 100;
+            return (
+              <div key={month.month}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>
+                  <span>{month.month}</span>
+                  <span>¥{month.revenue.toLocaleString()}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 4, background: 'rgba(15,23,42,0.3)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${barWidth}%`, borderRadius: 4, background: 'linear-gradient(90deg, #3b82f6, #60a5fa)' }} />
+                </div>
+                <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                  <span>成本: ¥{month.cost.toLocaleString()}</span>
+                  <span style={{ color: '#22c55e' }}>利润: ¥{month.profit.toLocaleString()}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+      <Card title="月度汇总" style={{ padding: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ textAlign: 'center', padding: 12, borderRadius: 8, background: 'rgba(15,23,42,0.3)' }}>
+            <div style={{ fontSize: 12, color: '#64748b' }}>本月营收</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#60a5fa' }}>¥{stats.monthlyRevenue.toLocaleString()}</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: 12, borderRadius: 8, background: 'rgba(15,23,42,0.3)' }}>
+            <div style={{ fontSize: 12, color: '#64748b' }}>本月订单</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#e2e8f0' }}>{stats.monthlyOrders}</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: 12, borderRadius: 8, background: 'rgba(15,23,42,0.3)' }}>
+            <div style={{ fontSize: 12, color: '#64748b' }}>满意度</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#22c55e' }}>{stats.customerSatisfaction}%</div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/** 增长视图 - 关键增长指标 */
+function GrowthView() {
+  return (
+    <div style={{ display: 'grid', gap: 16 }}>
+      <Card title="增长指标" style={{ padding: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {MOCK_GROWTH_METRICS.map(metric => (
+            <div key={metric.metric} style={{ padding: 16, borderRadius: 10, background: 'rgba(15,23,42,0.3)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>{metric.metric}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4, color: metric.trend === 'up' ? '#22c55e' : '#f87171' }}>
+                    {metric.value}
+                  </div>
+                </div>
+                <div style={{ fontSize: 24 }}>{metric.trend === 'up' ? '📈' : '📉'}</div>
+              </div>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 8 }}>{metric.description}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/** 默认视图（无匹配fallback） */
+function FallbackView({ view }: { view: string }) {
+  return (
+    <Card variant="outlined" style={{ padding: 24, textAlign: 'center' }}>
+      <div style={{ fontSize: 14, color: '#ef4444', fontWeight: 600 }}>
+        ⚠️ 未知视图: {view}
+      </div>
+    </Card>
+  );
+}
+
+export default function DashboardClient({ stats }: { stats: DashboardStats }) {
+  const [activeView, setActiveView] = useState<DashboardView>('overview');
+  const [activeSubTab, setActiveSubTab] = useState<string>('trend');
+
+  const viewTabs = [
+    { key: 'overview' as const, label: '📊 总览' },
+    { key: 'operations' as const, label: '⚙️ 运营' },
+    { key: 'financial' as const, label: '💰 财务' },
+    { key: 'growth' as const, label: '📈 增长' },
+  ];
+
+  const renderView = () => {
+    switch (activeView) {
+      case 'overview':
+        return <OverviewView stats={stats} activeSubTab={activeSubTab} setActiveSubTab={setActiveSubTab} />;
+      case 'operations':
+        return <OperationsView />;
+      case 'financial':
+        return <FinancialView stats={stats} />;
+      case 'growth':
+        return <GrowthView />;
+      default:
+        return <FallbackView view={activeView} />;
+    }
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: 24 }}>
+      {/* 视图切换Tab: 总览/运营/财务/增长 */}
+      <Tabs
+        items={viewTabs}
+        activeKey={activeView}
+        onChange={(key) => setActiveView(key as DashboardView)}
+        variant="segment"
+        fill
+      />
+
+      {renderView()}
     </div>
   );
 }

@@ -2341,8 +2341,41 @@ export interface DomainGovernanceDisplayModel {
   focusScopeSummary: string;
   recommendationSummary: string;
   lastEvaluatedSummary: string;
+  headerSection: DomainGovernanceHeaderSection;
+  detailSectionTitle: string;
+  detailGroups: DomainGovernanceDetailGroup[];
+  footerSection: DomainGovernanceFooterSection;
+  workspaceSlot: DomainGovernanceDetailSlot;
   detailLines: string[];
   requiresAttention: boolean;
+}
+
+export type DomainGovernanceDetailSlotTone = 'primary' | 'summary' | 'accent';
+
+export interface DomainGovernanceDetailSlot {
+  key: string;
+  label: string;
+  value: string;
+  tone: DomainGovernanceDetailSlotTone;
+}
+
+export interface DomainGovernanceDetailGroup {
+  key: string;
+  title: string;
+  slots: DomainGovernanceDetailSlot[];
+}
+
+export interface DomainGovernanceHeaderSection {
+  eyebrow: string;
+  subtitle: string;
+  titleSlot: DomainGovernanceDetailSlot;
+  statusBadge: DomainGovernanceDetailSlot;
+  summarySlots: DomainGovernanceDetailSlot[];
+}
+
+export interface DomainGovernanceFooterSection {
+  workspaceSlot: DomainGovernanceDetailSlot;
+  ctaLabel: string;
 }
 
 export type DomainGovernanceDisplayPresetKey =
@@ -2586,6 +2619,103 @@ export function formatDomainGovernanceLastEvaluatedSummary(
   return `最近评估 ${summary.lastEvaluatedAt}`;
 }
 
+export function buildDomainGovernanceHeaderSection(
+  domainSource: string,
+  summary: PortalDomainGovernanceSummaryContract,
+): DomainGovernanceHeaderSection {
+  const statusLabel = getDomainGovernanceAttentionLabel(summary);
+
+  return {
+    eyebrow: '域名治理工作台',
+    subtitle: '统一域名缺口、推荐补选和治理入口展示',
+    titleSlot: {
+      key: 'source-summary',
+      label: '域名来源',
+      value: formatDomainGovernanceSourceSummary(domainSource, summary),
+      tone: 'primary',
+    },
+    statusBadge: {
+      key: 'status-badge',
+      label: '治理状态',
+      value: statusLabel,
+      tone: 'accent',
+    },
+    summarySlots: [
+      {
+        key: 'counts-summary',
+        label: '治理概览',
+        value: formatDomainGovernanceCountsSummary(summary),
+        tone: 'summary',
+      },
+      {
+        key: 'status-summary',
+        label: '状态摘要',
+        value: `治理状态：${statusLabel} / 可直接补选 ${summary.recommendedReadyScopes}`,
+        tone: 'summary',
+      },
+    ],
+  };
+}
+
+export function buildDomainGovernanceDetailGroups(
+  summary: PortalDomainGovernanceSummaryContract,
+): DomainGovernanceDetailGroup[] {
+  const focusScope = selectDomainGovernanceFocusScope(summary);
+
+  return [
+    {
+      key: 'focus-scope',
+      title: '焦点 scope',
+      slots: [
+        {
+          key: 'focus-scope-summary',
+          label: formatDomainGovernanceFocusScopeLabel(focusScope),
+          value: formatDomainGovernanceFocusScopeSummary(focusScope),
+          tone: 'accent',
+        },
+      ],
+    },
+    {
+      key: 'recommendation',
+      title: '推荐补选',
+      slots: [
+        {
+          key: 'recommendation-summary',
+          label: '推荐主域名',
+          value: formatDomainGovernanceRecommendationSummary(focusScope),
+          tone: 'summary',
+        },
+      ],
+    },
+    {
+      key: 'timeline',
+      title: '评估时间',
+      slots: [
+        {
+          key: 'last-evaluated-summary',
+          label: '最近评估',
+          value: formatDomainGovernanceLastEvaluatedSummary(summary),
+          tone: 'summary',
+        },
+      ],
+    },
+  ];
+}
+
+export function buildDomainGovernanceFooterSection(
+  workspaceHref: string,
+): DomainGovernanceFooterSection {
+  return {
+    workspaceSlot: {
+      key: 'workspace-entry',
+      label: '治理入口',
+      value: workspaceHref,
+      tone: 'accent',
+    },
+    ctaLabel: '打开域名治理工作台',
+  };
+}
+
 export function buildDomainGovernanceDisplayModel(
   domainSource: string,
   summary: PortalDomainGovernanceSummaryContract,
@@ -2598,6 +2728,9 @@ export function buildDomainGovernanceDisplayModel(
   const focusScopeSummary = formatDomainGovernanceFocusScopeSummary(focusScope);
   const recommendationSummary = formatDomainGovernanceRecommendationSummary(focusScope);
   const lastEvaluatedSummary = formatDomainGovernanceLastEvaluatedSummary(summary);
+  const headerSection = buildDomainGovernanceHeaderSection(domainSource, summary);
+  const detailGroups = buildDomainGovernanceDetailGroups(summary);
+  const footerSection = buildDomainGovernanceFooterSection(workspaceHref);
 
   return {
     title: '域名治理工作台',
@@ -2614,6 +2747,11 @@ export function buildDomainGovernanceDisplayModel(
     focusScopeSummary,
     recommendationSummary,
     lastEvaluatedSummary,
+    headerSection,
+    detailSectionTitle: '治理明细',
+    detailGroups,
+    footerSection,
+    workspaceSlot: footerSection.workspaceSlot,
     detailLines: [focusScopeSummary, recommendationSummary, lastEvaluatedSummary],
     requiresAttention: summary.requiresAttention,
   };
