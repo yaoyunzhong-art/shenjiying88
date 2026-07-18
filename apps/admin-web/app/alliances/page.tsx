@@ -28,7 +28,7 @@ interface Alliance {
   updatedAt: string
 }
 
-type AllianceTab = 'active' | 'expired' | 'all'
+type AllianceTab = 'all' | 'active' | 'expired' | 'terminated'
 
 // ── 工具 ──
 
@@ -68,6 +68,7 @@ const defaultAlliances: Alliance[] = [
   { id: 'al-2', name: '泡泡玛特IP联名', partnerName: '泡泡玛特', description: 'LABUBU主题联名盲盒+积分', type: 'ip', status: 'active', startDate: '2026-07-01', endDate: '2026-10-31', couponCount: 3000, redeemedCount: 892, costCents: 8000000, revenueCents: 25000000, newMemberCount: 1560, contactPerson: '王总监', contactPhone: '139****9012', tenantId: 't1', createdBy: 'admin', createdAt: '2026-06-10T00:00:00Z', updatedAt: '2026-07-14T14:00:00Z' },
   { id: 'al-3', name: '星巴克联名活动', partnerName: '星巴克', description: '消费满¥188赠星巴克饮品券', type: 'brand', status: 'expired', startDate: '2026-03-01', endDate: '2026-05-31', couponCount: 8000, redeemedCount: 6754, costCents: 12000000, revenueCents: 58000000, newMemberCount: 4890, contactPerson: '陈主管', contactPhone: '136****3456', tenantId: 't1', createdBy: 'admin', createdAt: '2026-02-15T00:00:00Z', updatedAt: '2026-06-01T10:00:00Z' },
   { id: 'al-4', name: '支付宝渠道联名', partnerName: '支付宝', description: '支付宝会员专享到店优惠', type: 'member', status: 'active', startDate: '2026-04-01', endDate: '2026-12-31', couponCount: 10000, redeemedCount: 4210, costCents: 3000000, revenueCents: 12000000, newMemberCount: 3200, contactPerson: '赵经理', contactPhone: '137****7890', tenantId: 't1', createdBy: 'admin', createdAt: '2026-03-20T00:00:00Z', updatedAt: '2026-07-12T09:00:00Z' },
+  { id: 'al-5', name: '美团渠道合作', partnerName: '美团', description: '美团外卖会员联合促销，合作终止', type: 'brand', status: 'terminated', startDate: '2026-01-01', endDate: '2026-03-31', couponCount: 6000, redeemedCount: 5120, costCents: 4000000, revenueCents: 15000000, newMemberCount: 1800, contactPerson: '刘经理', contactPhone: '135****1234', tenantId: 't1', createdBy: 'admin', createdAt: '2025-12-15T00:00:00Z', updatedAt: '2026-04-01T10:00:00Z' },
 ]
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
@@ -106,7 +107,8 @@ export default function AlliancesPage() {
   const filtered = alliances.filter(a => {
     if (tabView === 'all') return true
     if (tabView === 'active') return a.status === 'active' || a.status === 'negotiating'
-    if (tabView === 'expired') return a.status === 'expired' || a.status === 'terminated'
+    if (tabView === 'expired') return a.status === 'expired'
+    if (tabView === 'terminated') return a.status === 'terminated'
     return true
   })
 
@@ -164,12 +166,12 @@ export default function AlliancesPage() {
       {/* Tab */}
       <div className="border-b border-gray-200">
         <nav className="flex space-x-4">
-          {(['active', 'expired', 'all'] as AllianceTab[]).map(tab => (
+          {(['all', 'active', 'expired', 'terminated'] as AllianceTab[]).map(tab => (
             <button key={tab} onClick={() => setTabView(tab)}
               className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
                 tabView === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}>
-              {{ active: '进行中', expired: '已结束', all: '全部' }[tab]}
+              {{ all: '全部', active: '生效中', expired: '已到期', terminated: '已终止' }[tab]}
             </button>
           ))}
         </nav>
