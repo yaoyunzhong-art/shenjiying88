@@ -98,6 +98,80 @@ describe('DeviceInspectionPage - Data Display & Filters', () => {
     assert.ok(html.includes('高'), 'Should include 高 option');
     assert.ok(html.includes('低'), 'Should include 低 option');
   });
+
+  // ── 分类测试：操作按钮 ──────────────────────────────────────
+
+  describe('action buttons', () => {
+    it('renders create inspection task button', () => {
+      const html = renderPage();
+      assert.ok(html.includes('创建巡检任务'), 'Create task button should render');
+    });
+
+    it('renders export report button', () => {
+      const html = renderPage();
+      assert.ok(html.includes('导出报告'), 'Export button should render');
+    });
+
+    it('renders search filter input element', () => {
+      const html = renderPage();
+      assert.ok(html.includes('search-filter-input'), 'Search filter input testid should exist');
+    });
+  });
+
+  // ── 分类测试：统计卡片 ──────────────────────────────────────
+
+  describe('stat cards', () => {
+    it('renders total inspection count', () => {
+      const html = renderPage();
+      assert.ok(html.includes('总巡检'), 'Total stat should render');
+    });
+
+    it('renders pending count', () => {
+      const html = renderPage();
+      assert.ok(html.includes('待巡检'), 'Pending stat should render');
+    });
+
+    it('renders passed count', () => {
+      const html = renderPage();
+      assert.ok(html.includes('已通过'), 'Passed stat should render');
+    });
+
+    it('renders failed count label', () => {
+      const html = renderPage();
+      assert.ok(html.includes('不合格'), 'Failed stat should render');
+    });
+
+    it('renders stat card data-testid', () => {
+      const html = renderPage();
+      assert.ok(html.includes('stat-card'), 'Stat cards should have testid');
+    });
+  });
+
+  // ── 分类测试：页面结构 ──────────────────────────────────────
+
+  describe('page structure', () => {
+    it('renders page shell with testid', () => {
+      const html = renderPage();
+      assert.ok(html.includes('page-shell'), 'Page shell should have testid');
+    });
+
+    it('renders pagination component', () => {
+      const html = renderPage();
+      assert.ok(html.includes('Prev'), 'Previous page button should exist');
+      assert.ok(html.includes('Next'), 'Next page button should exist');
+      assert.ok(html.includes('1/17'), 'Page info should exist');
+    });
+
+    it('renders data table with testid', () => {
+      const html = renderPage();
+      assert.ok(html.includes('data-table'), 'Data table should have testid');
+    });
+
+    it('renders proper row count attribute', () => {
+      const html = renderPage();
+      assert.ok(html.includes('data-row-count'), 'Row count attribute should exist');
+    });
+  });
 });
 
 function renderPage(): string {
