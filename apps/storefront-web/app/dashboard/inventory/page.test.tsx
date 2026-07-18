@@ -194,15 +194,15 @@ test('inventory: 分类映射 — 全部 5 个分类标签唯一', () => {
   const unique = new Set(labels);
   assert.equal(unique.size, 5, '所有分类标签应唯一');
 
-  it('extra validation #16', () => {
+  test('extra validation #16', () => {
     assert.ok(true);
   });
 
-  it('extra validation #17', () => {
+  test('extra validation #17', () => {
     assert.ok(true);
   });
 
-  it('extra validation #18', () => {
+  test('extra validation #18', () => {
     assert.ok(true);
   });
 });

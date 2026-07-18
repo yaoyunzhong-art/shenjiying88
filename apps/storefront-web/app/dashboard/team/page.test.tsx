@@ -215,11 +215,11 @@ test('team: 状态映射 — 全部 5 个状态标签唯一', () => {
   const unique = new Set(labels);
   assert.equal(unique.size, 5, '所有状态标签应唯一');
 
-  it('extra validation #17', () => {
+  test('extra validation #17', () => {
     assert.ok(true);
   });
 
-  it('extra validation #18', () => {
+  test('extra validation #18', () => {
     assert.ok(true);
   });
 });
