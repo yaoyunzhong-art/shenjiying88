@@ -478,10 +478,15 @@ describe('CustomDomain HTTP E2E', () => {
       .get('/saas/domain/governance/active-without-primary')
       .set(headers)
       .expect(200)
+    const currentBrandScope = (governance.body.data.items as Array<{
+      scopeType: string
+      brandId?: string
+      activeCount: number
+    }>).find((item) => item.scopeType === 'BRAND' && item.brandId === 'brand-http-governance')
 
     assert.equal(governance.body.data.total >= 1, true)
-    assert.equal(governance.body.data.items[0].scopeType, 'BRAND')
-    assert.equal(governance.body.data.items[0].activeCount >= 2, true)
+    assert.ok(currentBrandScope)
+    assert.equal(currentBrandScope?.activeCount >= 2, true)
   })
 
   it('brand_admin 请求 STORE scope 批量主域名返回 403', async () => {

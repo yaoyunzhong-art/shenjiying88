@@ -216,13 +216,31 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
     })
 
     it('支持批量查询多个 scope 当前主域名', async () => {
-      const tenantDomain = await inTenant(TENANT_ROOT, () =>
+      const batchTenantCtx = {
+        tenantId: 'tenant-batch',
+        userId: 'tenant-batch-admin',
+        role: 'tenant_admin' as const,
+      }
+      const batchBrandCtx = {
+        tenantId: 'tenant-batch',
+        brandId: 'brand-batch',
+        userId: 'brand-batch-admin',
+        role: 'brand_admin' as const,
+      }
+      const batchStoreCtx = {
+        tenantId: 'tenant-batch',
+        brandId: 'brand-batch',
+        storeId: 'store-batch',
+        userId: 'store-batch-admin',
+        role: 'store_admin' as const,
+      }
+      const tenantDomain = await inTenant(batchTenantCtx, () =>
         controller.addDomain({ domain: 'batch-current-tenant.example.io' }),
       )
-      const brandDomain = await inTenant(BRAND_CTX, () =>
+      const brandDomain = await inTenant(batchBrandCtx, () =>
         controller.addDomain({ domain: 'batch-current-brand.example.io' }),
       )
-      const storeDomain = await inTenant(STORE_CTX, () =>
+      const storeDomain = await inTenant(batchStoreCtx, () =>
         controller.addDomain({ domain: 'batch-current-store.example.io' }),
       )
       service.setDnsTxtOverride(tenantDomain.verificationHost, [
@@ -234,19 +252,19 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       service.setDnsTxtOverride(storeDomain.verificationHost, [
         buildVerificationValue(storeDomain.verificationToken),
       ])
-      await inTenant(TENANT_ROOT, () => controller.verify(tenantDomain.id))
-      await inTenant(BRAND_CTX, () => controller.verify(brandDomain.id))
-      await inTenant(STORE_CTX, () => controller.verify(storeDomain.id))
-      await inTenant(TENANT_ROOT, () => controller.setPrimary(tenantDomain.id))
-      await inTenant(BRAND_CTX, () => controller.setPrimary(brandDomain.id))
-      await inTenant(STORE_CTX, () => controller.setPrimary(storeDomain.id))
+      await inTenant(batchTenantCtx, () => controller.verify(tenantDomain.id))
+      await inTenant(batchBrandCtx, () => controller.verify(brandDomain.id))
+      await inTenant(batchStoreCtx, () => controller.verify(storeDomain.id))
+      await inTenant(batchTenantCtx, () => controller.setPrimary(tenantDomain.id))
+      await inTenant(batchBrandCtx, () => controller.setPrimary(brandDomain.id))
+      await inTenant(batchStoreCtx, () => controller.setPrimary(storeDomain.id))
 
-      const batch = await inTenant(TENANT_ROOT, () =>
+      const batch = await inTenant(batchTenantCtx, () =>
         controller.getCurrentPrimaryBatch({
           items: [
             { scopeType: 'TENANT' },
-            { scopeType: 'BRAND', brandId: 'brand-governance' },
-            { scopeType: 'STORE', brandId: 'brand-governance', storeId: 'store-governance' },
+            { scopeType: 'BRAND', brandId: 'brand-batch' },
+            { scopeType: 'STORE', brandId: 'brand-batch', storeId: 'store-batch' },
           ],
         }),
       )
@@ -258,10 +276,16 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
     })
 
     it('返回 active 未设主域名治理视图', async () => {
-      const first = await inTenant(BRAND_CTX, () =>
+      const governanceBrandCtx = {
+        tenantId: 'tenant-governance-missing',
+        brandId: 'brand-governance-missing',
+        userId: 'brand-governance-missing-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await inTenant(governanceBrandCtx, () =>
         controller.addDomain({ domain: 'governance-brand-a.example.io' }),
       )
-      const second = await inTenant(BRAND_CTX, () =>
+      const second = await inTenant(governanceBrandCtx, () =>
         controller.addDomain({ domain: 'governance-brand-b.example.io' }),
       )
       service.setDnsTxtOverride(first.verificationHost, [
@@ -270,14 +294,17 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       service.setDnsTxtOverride(second.verificationHost, [
         buildVerificationValue(second.verificationToken),
       ])
-      await inTenant(BRAND_CTX, () => controller.verify(first.id))
-      await inTenant(BRAND_CTX, () => controller.verify(second.id))
+      await inTenant(governanceBrandCtx, () => controller.verify(first.id))
+      await inTenant(governanceBrandCtx, () => controller.verify(second.id))
 
-      const governance = await inTenant(BRAND_CTX, () => controller.listActiveWithoutPrimary())
+      const governance = await inTenant(governanceBrandCtx, () => controller.listActiveWithoutPrimary())
+      const currentBrandScope = governance.items.find(
+        (item) => item.scopeType === 'BRAND' && item.brandId === 'brand-governance-missing',
+      )
 
       assert.equal(governance.total >= 1, true)
-      assert.equal(governance.items[0].scopeType, 'BRAND')
-      assert.equal(governance.items[0].activeCount >= 2, true)
+      assert.ok(currentBrandScope)
+      assert.equal(currentBrandScope?.activeCount >= 2, true)
     })
 
     it('brand_admin 查询 STORE scope 批量主域名会被拒绝', async () => {

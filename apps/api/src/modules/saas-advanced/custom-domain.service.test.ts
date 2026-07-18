@@ -533,13 +533,31 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
 
     it('getCurrentPrimaryBatch 支持批量返回 tenant/brand/store 当前主域名', async () => {
       const isolatedService = new CustomDomainService()
-      const tenantDomain = await runWithTenant(TENANT_ROOT, async () =>
+      const batchTenantCtx = {
+        tenantId: 'tenant-batch',
+        userId: 'tenant-batch-admin',
+        role: 'tenant_admin' as const,
+      }
+      const batchBrandCtx = {
+        tenantId: 'tenant-batch',
+        brandId: 'brand-batch',
+        userId: 'brand-batch-admin',
+        role: 'brand_admin' as const,
+      }
+      const batchStoreCtx = {
+        tenantId: 'tenant-batch',
+        brandId: 'brand-batch',
+        storeId: 'store-batch',
+        userId: 'store-batch-admin',
+        role: 'store_admin' as const,
+      }
+      const tenantDomain = await runWithTenant(batchTenantCtx, async () =>
         isolatedService.addDomain('batch-tenant.example.io'),
       )
-      const brandDomain = await runWithTenant(BRAND_CTX, async () =>
+      const brandDomain = await runWithTenant(batchBrandCtx, async () =>
         isolatedService.addDomain('batch-brand.example.io'),
       )
-      const storeDomain = await runWithTenant(STORE_CTX, async () =>
+      const storeDomain = await runWithTenant(batchStoreCtx, async () =>
         isolatedService.addDomain('batch-store.example.io'),
       )
 
@@ -553,18 +571,18 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
         buildVerificationValue(storeDomain.verificationToken),
       ])
 
-      await runWithTenant(TENANT_ROOT, async () => isolatedService.verify(tenantDomain.id))
-      await runWithTenant(BRAND_CTX, async () => isolatedService.verify(brandDomain.id))
-      await runWithTenant(STORE_CTX, async () => isolatedService.verify(storeDomain.id))
-      await runWithTenant(TENANT_ROOT, async () => isolatedService.setPrimary(tenantDomain.id))
-      await runWithTenant(BRAND_CTX, async () => isolatedService.setPrimary(brandDomain.id))
-      await runWithTenant(STORE_CTX, async () => isolatedService.setPrimary(storeDomain.id))
+      await runWithTenant(batchTenantCtx, async () => isolatedService.verify(tenantDomain.id))
+      await runWithTenant(batchBrandCtx, async () => isolatedService.verify(brandDomain.id))
+      await runWithTenant(batchStoreCtx, async () => isolatedService.verify(storeDomain.id))
+      await runWithTenant(batchTenantCtx, async () => isolatedService.setPrimary(tenantDomain.id))
+      await runWithTenant(batchBrandCtx, async () => isolatedService.setPrimary(brandDomain.id))
+      await runWithTenant(batchStoreCtx, async () => isolatedService.setPrimary(storeDomain.id))
 
-      const batch = await runWithTenant(TENANT_ROOT, async () =>
+      const batch = await runWithTenant(batchTenantCtx, async () =>
         isolatedService.getCurrentPrimaryBatch([
           { scopeType: 'TENANT' },
-          { scopeType: 'BRAND', brandId: 'brand-governance' },
-          { scopeType: 'STORE', brandId: 'brand-governance', storeId: 'store-governance' },
+          { scopeType: 'BRAND', brandId: 'brand-batch' },
+          { scopeType: 'STORE', brandId: 'brand-batch', storeId: 'store-batch' },
         ]),
       )
 
@@ -576,10 +594,16 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
 
     it('listActiveWithoutPrimary 返回 active 但未设主域名的治理视图', async () => {
       const isolatedService = new CustomDomainService()
-      const first = await runWithTenant(BRAND_CTX, async () =>
+      const governanceBrandCtx = {
+        tenantId: 'tenant-governance-missing',
+        brandId: 'brand-governance-missing',
+        userId: 'brand-governance-missing-admin',
+        role: 'brand_admin' as const,
+      }
+      const first = await runWithTenant(governanceBrandCtx, async () =>
         isolatedService.addDomain('governance-a.example.io'),
       )
-      const second = await runWithTenant(BRAND_CTX, async () =>
+      const second = await runWithTenant(governanceBrandCtx, async () =>
         isolatedService.addDomain('governance-b.example.io'),
       )
       isolatedService.setDnsTxtOverride(first.verificationHost, [
@@ -588,10 +612,10 @@ describe('Phase 96 自定义域名 (V10 Sprint 2 Day 22)', () => {
       isolatedService.setDnsTxtOverride(second.verificationHost, [
         buildVerificationValue(second.verificationToken),
       ])
-      await runWithTenant(BRAND_CTX, async () => isolatedService.verify(first.id))
-      await runWithTenant(BRAND_CTX, async () => isolatedService.verify(second.id))
+      await runWithTenant(governanceBrandCtx, async () => isolatedService.verify(first.id))
+      await runWithTenant(governanceBrandCtx, async () => isolatedService.verify(second.id))
 
-      const governance = await runWithTenant(BRAND_CTX, async () =>
+      const governance = await runWithTenant(governanceBrandCtx, async () =>
         isolatedService.listActiveWithoutPrimary(),
       )
 

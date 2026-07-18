@@ -25,9 +25,12 @@ describe('CustomDomain Swagger', () => {
             }),
             remove: async () => undefined,
             getCurrentPrimary: async () => null,
+            getCurrentPrimaryBatch: async () => [],
+            listActiveWithoutPrimary: async () => [],
             verify: async () => ({}),
             requestSsl: async () => ({}),
             resolveTenantByHost: () => null,
+            setPrimary: async () => ({}),
           },
         },
       ],
@@ -49,6 +52,8 @@ describe('CustomDomain Swagger', () => {
 
     assert.ok(doc.paths['/saas/domain'])
     assert.ok(doc.paths['/saas/domain/primary/current'])
+    assert.ok(doc.paths['/saas/domain/primary/batch/current'])
+    assert.ok(doc.paths['/saas/domain/governance/active-without-primary'])
     assert.ok(doc.paths['/saas/domain/{id}'])
     assert.ok(doc.paths['/saas/domain/{id}/verify'])
     assert.ok(doc.paths['/saas/domain/{id}/ssl'])
@@ -60,6 +65,8 @@ describe('CustomDomain Swagger', () => {
     const listParameters = (listDomains?.parameters ?? []) as Array<{ name?: string; in?: string }>
     const currentPrimary = doc.paths['/saas/domain/primary/current'].get
     const currentParameters = (currentPrimary?.parameters ?? []) as Array<{ name?: string; in?: string }>
+    const batchCurrent = doc.paths['/saas/domain/primary/batch/current'].post
+    const governance = doc.paths['/saas/domain/governance/active-without-primary'].get
     const resolveHost = doc.paths['/saas/domain/resolve/host'].get
     const hostParameter = resolveHost?.parameters?.[0] as { name?: string; in?: string } | undefined
 
@@ -71,6 +78,8 @@ describe('CustomDomain Swagger', () => {
     assert.ok(currentParameters.some((parameter) => parameter.name === 'scopeType' && parameter.in === 'query'))
     assert.ok(currentParameters.some((parameter) => parameter.name === 'brandId' && parameter.in === 'query'))
     assert.ok(currentParameters.some((parameter) => parameter.name === 'storeId' && parameter.in === 'query'))
+    assert.ok(batchCurrent?.requestBody)
+    assert.ok(governance)
 
     assert.ok(resolveHost)
     assert.deepEqual(resolveHost?.tags, ['saas-domain'])
@@ -86,6 +95,9 @@ describe('CustomDomain Swagger', () => {
     assert.ok(doc.components?.schemas?.AddDomainRequest)
     assert.ok(doc.components?.schemas?.DomainListResponse)
     assert.ok(doc.components?.schemas?.CurrentPrimaryDomainResponse)
+    assert.ok(doc.components?.schemas?.BatchCurrentPrimaryDomainRequest)
+    assert.ok(doc.components?.schemas?.BatchCurrentPrimaryDomainResponse)
+    assert.ok(doc.components?.schemas?.ActiveWithoutPrimaryGovernanceResponse)
     assert.ok(doc.components?.schemas?.ResolveHostResponse)
   })
 })

@@ -42,6 +42,11 @@ const STORE_CTX = {
   userId: 'user-persist',
   role: 'store_admin' as const,
 }
+const TENANT_ROOT_CTX = {
+  tenantId: 'tenant-persist',
+  userId: 'tenant-root-user',
+  role: 'tenant_admin' as const,
+}
 
 const originalNodeEnv = process.env.NODE_ENV
 
@@ -336,6 +341,99 @@ describe('CustomDomainService persistence branch', () => {
         storeId: 'store-persist',
       }),
       'store-second.example.io',
+    )
+  })
+
+  it('getCurrentPrimaryBatch 在 persistence 分支支持批量治理查询', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-tenant',
+        scopeType: 'TENANT',
+        brandId: null,
+        domain: 'tenant-primary.example.io',
+        isPrimary: true,
+      }),
+      createRow({
+        id: 'dom-brand',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-primary.example.io',
+        isPrimary: true,
+      }),
+      createRow({
+        id: 'dom-store',
+        scopeType: 'STORE',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+        domain: 'store-primary.example.io',
+        isPrimary: true,
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    const batch = await runWithTenant(TENANT_ROOT_CTX, () =>
+      service.getCurrentPrimaryBatch([
+        { scopeType: 'TENANT' },
+        { scopeType: 'BRAND', brandId: 'brand-persist' },
+        { scopeType: 'STORE', brandId: 'brand-persist', storeId: 'store-persist' },
+      ]),
+    )
+
+    assert.equal(batch.length, 3)
+    assert.equal(batch[0].item?.domain, 'tenant-primary.example.io')
+    assert.equal(batch[1].item?.domain, 'brand-primary.example.io')
+    assert.equal(batch[2].item?.domain, 'store-primary.example.io')
+  })
+
+  it('listActiveWithoutPrimary 在 persistence 分支返回缺主域名 scope', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-1',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-governance-a.example.io',
+        isPrimary: false,
+      }),
+      createRow({
+        id: 'dom-2',
+        scopeType: 'BRAND',
+        brandId: 'brand-persist',
+        domain: 'brand-governance-b.example.io',
+        isPrimary: false,
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    const governance = await runWithTenant(TENANT_CTX, () => service.listActiveWithoutPrimary())
+
+    assert.equal(governance.length, 1)
+    assert.equal(governance[0].scopeType, 'BRAND')
+    assert.equal(governance[0].activeCount, 2)
+  })
+
+  it('brand_admin 在 persistence 分支不可查询 STORE scope', async () => {
+    const rows = [
+      createRow({
+        id: 'dom-1',
+        scopeType: 'STORE',
+        brandId: 'brand-persist',
+        storeId: 'store-persist',
+        domain: 'store-forbidden.example.io',
+        isPrimary: true,
+      }),
+    ]
+    const service = new CustomDomainService(createPrisma(rows))
+
+    await assert.rejects(
+      () =>
+        runWithTenant(TENANT_CTX, () =>
+          service.getCurrentPrimary({
+            scopeType: 'STORE',
+            brandId: 'brand-persist',
+            storeId: 'store-persist',
+          }),
+        ),
+      /brand_admin can only query BRAND scope domains/,
     )
   })
 })
