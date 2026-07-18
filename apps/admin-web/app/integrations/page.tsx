@@ -107,6 +107,7 @@ export default function IntegrationsPage() {
   })
 
   const activeCount = integrations.filter(i => i.status === 'active').length
+  const inactiveCount = integrations.filter(i => i.status === 'inactive').length
   const errorCount = integrations.filter(i => i.status === 'error').length
 
   if (loading) {
@@ -141,16 +142,16 @@ export default function IntegrationsPage() {
           <p className="text-2xl font-bold mt-1">{integrations.length}</p>
         </div>
         <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">活跃</p>
+          <p className="text-sm text-gray-500">已启用</p>
           <p className="text-2xl font-bold mt-1 text-green-600">{activeCount}</p>
+        </div>
+        <div className="bg-white border rounded-lg p-4">
+          <p className="text-sm text-gray-500">已禁用</p>
+          <p className="text-2xl font-bold mt-1 text-gray-500">{inactiveCount}</p>
         </div>
         <div className="bg-white border rounded-lg p-4">
           <p className="text-sm text-gray-500">异常</p>
           <p className="text-2xl font-bold mt-1 text-red-600">{errorCount}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">API调用(本月)</p>
-          <p className="text-2xl font-bold mt-1 text-blue-600">12.8K</p>
         </div>
       </div>
 
