@@ -40,7 +40,7 @@
 | Coupon Templates | admin-web/app/coupon-templates/ | ~300行 | 68测试 | 🆕 | 🔴 | P-35收银 优惠券模板 |
 | Alliances | admin-web/app/alliances/ | ~240行 | 17测试 | 🆕 | 🔴 | P-48联名 联盟管理 |
 | Analytics | admin-web/app/analytics/ | ~280行 | 12测试 | 🆕 | 🔴 | P-Admin 数据分析 |
-| Coupons | admin-web/app/coupons/ | ~500行 | 59测试 | 🆕 | 🔴 | P-48联名 优惠券发放 |
+| Coupons | admin-web/app/coupons/ | ~590行 | 65测试(7假阳) | 🆕 | 🟡已发 | P-48联名 优惠券发放 |
 | Customer Tags | admin-web/app/customer-tags/ | ~250行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
 | Knowledge | admin-web/app/knowledge/ | ~200行 | 30测试 | 🆕 | 🔴 | P-Admin 知识库 |
 | Member | admin-web/app/member/ | ~300行 | 80测试 | 🆕 | 🔴 | P-36会员 会员管理 |

@@ -11,9 +11,11 @@ import {
   type AppBootstrapWiring,
   type FoundationConsumerDescriptor,
   type MarketProfileContract,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
   type PortalLoginEntryContract,
-  type TobPortalContract
+  type TobPortalContract,
+  buildDomainGovernanceHref
 } from '@m5/types';
 
 export const tobWebBootstrap = getFoundationAppBootstrapWiring('tob-web');
@@ -24,6 +26,8 @@ export interface TobPortalConsumerSnapshot {
   consumerDescriptor: FoundationConsumerDescriptor;
   portal: TobPortalContract;
   market: MarketProfileContract;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
   foundationDependencies: string[];
   foundationContracts: string[];
   regionalOverridesCount: number;
@@ -45,6 +49,39 @@ export interface TobPortalConsumerSnapshot {
 }
 
 export type TobGovernanceReadModel = FoundationGovernanceReadModel;
+
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: []
+  };
+}
+
+function resolveDomainGovernanceWorkspaceHref(
+  summary: PortalDomainGovernanceSummaryContract,
+  marketCode: string
+): string {
+  const scope =
+    summary.currentScopes.find((item) => item.missingPrimary) ??
+    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    summary.currentScopes[0];
+
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType
+  });
+}
 
 function getFallbackMarketProfile(marketCode: string): MarketProfileContract {
   const profiles: Record<string, MarketProfileContract> = {
@@ -326,6 +363,20 @@ async function loadPortalConsumerDescriptor(
   return loadFoundationConsumerDescriptor(createPortalClient(marketCode, tenantCode, brandCode), 'portal');
 }
 
+async function loadPortalDomainGovernance(
+  marketCode: string,
+  tenantCode: string,
+  brandCode?: string
+): Promise<PortalDomainGovernanceSummaryContract> {
+  try {
+    return await createPortalClient(marketCode, tenantCode, brandCode).getPortalDomainGovernanceSummary({
+      cache: 'no-store'
+    });
+  } catch {
+    return createFallbackDomainGovernanceSummary();
+  }
+}
+
 export const loadTobGovernanceReadModel: (
   marketCode: string,
   tenantCode: string,
@@ -337,10 +388,11 @@ async function buildPortalConsumerSnapshot(
   tenantCode: string,
   brandCode?: string
 ): Promise<TobPortalConsumerSnapshot> {
-  const [bootstrap, governance, consumerDescriptor] = await Promise.all([
+  const [bootstrap, governance, consumerDescriptor, domainGovernance] = await Promise.all([
     loadPortalBootstrap(marketCode, tenantCode, brandCode),
     loadTobGovernanceReadModel(marketCode, tenantCode, brandCode),
-    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode)
+    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode),
+    loadPortalDomainGovernance(marketCode, tenantCode, brandCode)
   ]);
 
   const fallback = brandCode
@@ -360,6 +412,8 @@ async function buildPortalConsumerSnapshot(
     ...snapshotBase,
     portal,
     market: bootstrap?.marketProfile ?? fallback.market,
+    domainGovernance,
+    domainGovernanceWorkspaceHref: resolveDomainGovernanceWorkspaceHref(domainGovernance, portal.marketCode),
     governance
   };
 }

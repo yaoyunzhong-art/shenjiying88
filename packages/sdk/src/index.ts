@@ -42,6 +42,7 @@ import type {
   IntegrationWebhookSourceContract,
   ObservabilitySignalContract,
   PortalBootstrapResponse,
+  PortalDomainGovernanceSummaryContract,
   QuotaLedgerRecord,
   RateLimitPolicyRecord,
   RateLimitWorkspace,
@@ -944,6 +945,10 @@ export class ApiClient {
 
   async getPortalBootstrap(init: RequestInit = {}) {
     return this.getData<PortalBootstrapResponse>('/portals/bootstrap', init);
+  }
+
+  async getPortalDomainGovernanceSummary(init: RequestInit = {}) {
+    return this.getData<PortalDomainGovernanceSummaryContract>('/portals/domain-governance', init);
   }
 
   async getWorkbenchBootstrap(init: RequestInit = {}) {

@@ -10,6 +10,7 @@ import {
   type FoundationOperationsAlert,
   type FoundationOperationsOverviewSummary,
   type FoundationFrontendBootstrapState,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
   type RuntimeGovernanceReceipt
 } from '@m5/types';
@@ -23,6 +24,8 @@ export interface NativeAppBootstrapSnapshot {
   socialPlatforms: string[];
   primaryDomain: string;
   supportedSurfaces: string[];
+  domainSource: string;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
 }
 
 export interface NativeAppBootstrapContext {
@@ -371,6 +374,20 @@ const nativeAppCheckoutCatalog: NativeAppCheckoutItem[] = [
   }
 ];
 
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: []
+  };
+}
+
 export function createNativeAppFallbackSnapshot(
   context: NativeAppBootstrapContext = defaultNativeAppContext
 ): NativeAppBootstrapSnapshot {
@@ -384,11 +401,16 @@ export function createNativeAppFallbackSnapshot(
     emailProvider: resolvedContext.marketCode === 'cn-mainland' ? 'ALIYUN_DM' : 'SENDGRID',
     socialPlatforms: resolvedContext.marketCode === 'cn-mainland' ? ['WECHAT', 'XIAOHONGSHU'] : ['LINKEDIN', 'INSTAGRAM'],
     primaryDomain: `${resolvedContext.storeId}.${resolvedContext.brandId}.${resolvedContext.tenantId}.${resolvedContext.marketCode}.local`,
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: createFallbackDomainGovernanceSummary()
   };
 }
 
-export function toNativeAppBootstrapSnapshot(bootstrap: PortalBootstrapResponse): NativeAppBootstrapSnapshot {
+export function toNativeAppBootstrapSnapshot(
+  bootstrap: PortalBootstrapResponse,
+  domainGovernance: PortalDomainGovernanceSummaryContract = createFallbackDomainGovernanceSummary()
+): NativeAppBootstrapSnapshot {
   return {
     deliveryMode: 'api',
     marketCode: bootstrap.marketProfile.marketCode,
@@ -397,7 +419,9 @@ export function toNativeAppBootstrapSnapshot(bootstrap: PortalBootstrapResponse)
     emailProvider: bootstrap.marketProfile.email.provider,
     socialPlatforms: bootstrap.marketProfile.social.primaryPlatforms,
     primaryDomain: bootstrap.storePortal.primaryDomain,
-    supportedSurfaces: bootstrap.storePortal.supportedSurfaces
+    supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
+    domainSource: bootstrap.storePortal.domainSource ?? 'default',
+    domainGovernance
   };
 }
 
@@ -417,8 +441,14 @@ export async function loadNativeAppBootstrapSnapshot(
   context: NativeAppBootstrapContext = defaultNativeAppContext
 ): Promise<NativeAppBootstrapSnapshot> {
   try {
-    const bootstrap = await createNativeAppBootstrapClient(context).getPortalBootstrap();
-    return toNativeAppBootstrapSnapshot(bootstrap);
+    const client = createNativeAppBootstrapClient(context);
+    const [bootstrap, domainGovernance] = await Promise.all([
+      client.getPortalBootstrap(),
+      client
+        .getPortalDomainGovernanceSummary({ cache: 'no-store' })
+        .catch(() => createFallbackDomainGovernanceSummary())
+    ]);
+    return toNativeAppBootstrapSnapshot(bootstrap, domainGovernance);
   } catch {
     return createNativeAppFallbackSnapshot(context);
   }

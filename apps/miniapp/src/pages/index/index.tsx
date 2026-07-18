@@ -4,8 +4,10 @@ import type {
   FoundationAlertCatalogItem,
   FoundationAlertDrilldownResponse,
   FoundationAlertMutationResponse,
+  PortalDomainGovernanceSummaryContract,
   RuntimeGovernanceReceipt
 } from '@m5/types';
+import { buildDomainGovernanceHref } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -44,6 +46,25 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 
+function resolveDomainGovernanceWorkspaceHref(
+  summary: PortalDomainGovernanceSummaryContract,
+  marketCode: string
+) {
+  const scope =
+    summary.currentScopes.find((item) => item.missingPrimary) ??
+    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    summary.currentScopes[0];
+
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType,
+  });
+}
+
 export default function IndexPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
     createMiniappRuntimeConsumerContract(miniappMarketBootstrap)
@@ -61,6 +82,8 @@ export default function IndexPage() {
   const [alertDrilldown, setAlertDrilldown] = useState<FoundationAlertDrilldownResponse | null>(null);
   const [alertMutation, setAlertMutation] = useState<FoundationAlertMutationResponse | null>(null);
   const bootstrap = consumerContract.snapshot;
+  const domainGovernance = bootstrap.domainGovernance;
+  const governanceWorkspaceHref = resolveDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const activePlan = actionPlans.find((plan) => plan.action === activeAction) ?? null;
   const decision = activePlan?.decision ?? null;
@@ -143,6 +166,9 @@ export default function IndexPage() {
         <Text>门店域名：{bootstrap.primaryDomain}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
+        <Text>域名来源：{bootstrap.domainSource}</Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
         <Text>
           当前会员态：{session.memberTier} / {session.authenticated ? '已登录' : '未登录'}
         </Text>
@@ -163,6 +189,28 @@ export default function IndexPage() {
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>当前告警焦点：{selectedAlertCode}</Text>
+      </View>
+      <View
+        style={{
+          marginTop: '20px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: domainGovernance.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.45)'
+        }}
+      >
+        <Text>
+          域名治理摘要：缺主 scope {domainGovernance.totalMissingPrimaryScopes} / 活跃未设主域名{' '}
+          {domainGovernance.totalActiveWithoutPrimaryDomains}
+        </Text>
+        <View style={{ marginTop: '8px' }}>
+          <Text>
+            治理状态：{domainGovernance.requiresAttention ? '待治理' : '已对齐'} / 可直接补选{' '}
+            {domainGovernance.recommendedReadyScopes}
+          </Text>
+        </View>
+        <View style={{ marginTop: '8px' }}>
+          <Text>治理后台入口：{governanceWorkspaceHref}</Text>
+        </View>
       </View>
       <View style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
         <Button onClick={() => {

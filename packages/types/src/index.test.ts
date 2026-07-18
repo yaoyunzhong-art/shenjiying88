@@ -48,6 +48,7 @@ import {
   buildFoundationWorkspaceHref,
   buildAuditTrailHref,
   buildAuditTrailRecordDetailHref,
+  buildDomainGovernanceHref,
   readAuditTrailRecordDetailParam,
   normalizeFoundationAlertTimelineFilterState,
   buildRuntimeGovernanceCallbackStallDetail,
@@ -1647,6 +1648,27 @@ test('types: buildAuditTrailHref encodes special characters in the purpose query
   assert.equal(
     buildAuditTrailHref({ source: 's', purpose: 's:sub/with space' }),
     '/audit-trail?source=s&purpose=s%3Asub%2Fwith+space'
+  );
+});
+
+test('types: domain governance workspace href keeps shared query encoding stable', () => {
+  assert.equal(buildDomainGovernanceHref(), '/saas/domains');
+  assert.equal(
+    buildDomainGovernanceHref({
+      tenantId: 'tenant-1',
+      brandId: '',
+      storeId: 'store-1',
+      scopeType: 'STORE',
+    }),
+    '/saas/domains?tenantId=tenant-1&storeId=store-1&scopeType=STORE'
+  );
+  assert.equal(
+    buildDomainGovernanceHref({
+      tenantId: 'tenant with space',
+      brandId: 'brand/1',
+      marketCode: 'cn-mainland',
+    }),
+    '/saas/domains?tenantId=tenant+with+space&brandId=brand%2F1&marketCode=cn-mainland'
   );
 });
 

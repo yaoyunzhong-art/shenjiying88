@@ -1,5 +1,6 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
+import { buildDomainGovernanceHref, type PortalDomainGovernanceSummaryContract } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -29,6 +30,25 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 
+function resolveDomainGovernanceWorkspaceHref(
+  summary: PortalDomainGovernanceSummaryContract,
+  marketCode: string
+) {
+  const scope =
+    summary.currentScopes.find((item) => item.missingPrimary) ??
+    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    summary.currentScopes[0];
+
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType,
+  });
+}
+
 // 会员等级体系
 const MEMBER_TIERS = [
   { key: 'bronze', level: '铜牌会员', label: '铜牌会员', minPoints: 0, color: '#cd7f32' },
@@ -55,6 +75,8 @@ export default function MemberPage() {
   const [submitHistory, setSubmitHistory] = useState<MiniappSubmitHistoryEntry[]>([]);
   const [replayOutcome, setReplayOutcome] = useState<MiniappReplayOutcome | null>(null);
   const bootstrap = consumerContract.snapshot;
+  const domainGovernance = bootstrap.domainGovernance;
+  const governanceWorkspaceHref = resolveDomainGovernanceWorkspaceHref(domainGovernance, bootstrap.marketCode);
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const visiblePlans = actionPlans.filter((plan) => plan.action !== 'booking-submit');
   const activePlan = visiblePlans.find((plan) => plan.action === activeAction) ?? null;
@@ -106,6 +128,9 @@ export default function MemberPage() {
           会话：{session.authenticated ? '已登录' : '游客'} / 校验：{memberRuntime.sessionVerified ? '通过' : '未校验'}
         </Text>
       </View>
+      <View style={{ marginTop: '8px' }}>
+        <Text>域名来源：{bootstrap.domainSource}</Text>
+      </View>
       {memberRuntime.profile ? (
         <View style={{ marginTop: '8px' }}>
           <Text>
@@ -138,6 +163,28 @@ export default function MemberPage() {
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>Governance：{consumerContract.governance.alerts.map((item) => item.code).join(' / ')}</Text>
+      </View>
+      <View
+        style={{
+          marginTop: '20px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: domainGovernance.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.65)'
+        }}
+      >
+        <Text>
+          域名治理：缺主 scope {domainGovernance.totalMissingPrimaryScopes} / 活跃未设主域名{' '}
+          {domainGovernance.totalActiveWithoutPrimaryDomains}
+        </Text>
+        <View style={{ marginTop: '8px' }}>
+          <Text>
+            治理状态：{domainGovernance.requiresAttention ? '待治理' : '已对齐'} / 可直接补选{' '}
+            {domainGovernance.recommendedReadyScopes}
+          </Text>
+        </View>
+        <View style={{ marginTop: '8px' }}>
+          <Text>治理后台入口：{governanceWorkspaceHref}</Text>
+        </View>
       </View>
       <View style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
         <Button onClick={() => {

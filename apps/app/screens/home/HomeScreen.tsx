@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { buildDomainGovernanceHref } from '@m5/types';
+import { useBootstrap } from '../../context/AppContext';
 
 // 模拟数据
 const mockStats = {
@@ -68,11 +70,26 @@ const quickActions: Record<Role, { id: string; title: string; icon: string; rout
 
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const bootstrap = useBootstrap();
   
   // 模拟当前角色，实际应从全局状态或API获取
   const currentRole: Role = 'shop_manager';
   const role = roleConfig[currentRole];
   const actions = quickActions[currentRole];
+
+  const governanceScope =
+    bootstrap.domainGovernance.currentScopes.find((item) => item.missingPrimary) ??
+    bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    bootstrap.domainGovernance.currentScopes[0];
+
+  const governanceWorkspaceHref = buildDomainGovernanceHref({
+    tenantId: governanceScope?.tenantId,
+    brandId: governanceScope?.brandId,
+    storeId: governanceScope?.storeId,
+    marketCode: bootstrap.marketCode,
+    scopeType: governanceScope?.scopeType,
+  });
 
   const getStatConfig = (type: string) => {
     const configs: Record<string, { value: string | number; label: string; bgColor: string }> = {
@@ -109,6 +126,29 @@ export function HomeScreen() {
             </View>
           );
         })}
+      </View>
+
+      <View style={styles.governanceCard}>
+        <View style={styles.governanceHeader}>
+          <Text style={styles.governanceTitle}>域名治理</Text>
+          <Text style={styles.governanceStatus}>
+            {bootstrap.domainGovernance.requiresAttention ? '待治理' : '已对齐'}
+          </Text>
+        </View>
+        <Text style={styles.governanceMeta}>
+          缺主 scope {bootstrap.domainGovernance.totalMissingPrimaryScopes} / 活跃未设主域名{' '}
+          {bootstrap.domainGovernance.totalActiveWithoutPrimaryDomains}
+        </Text>
+        <Text style={styles.governanceMeta}>
+          域名来源 {bootstrap.domainSource} / 可直接补选 {bootstrap.domainGovernance.recommendedReadyScopes}
+        </Text>
+        <Text style={styles.governanceHref}>治理入口 {governanceWorkspaceHref}</Text>
+        <TouchableOpacity
+          style={styles.governanceButton}
+          onPress={() => Alert.alert('域名治理工作台', governanceWorkspaceHref)}
+        >
+          <Text style={styles.governanceButtonText}>打开治理入口</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 快捷操作 */}
@@ -180,6 +220,30 @@ const styles = StyleSheet.create({
   statCard: { flex: 1, padding: 16, borderRadius: 16, alignItems: 'center' },
   statValue: { fontSize: 22, fontWeight: '700', color: '#fff' },
   statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  governanceCard: {
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: '#0F172A',
+  },
+  governanceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  governanceTitle: { fontSize: 18, fontWeight: '700', color: '#F8FAFC' },
+  governanceStatus: { fontSize: 13, fontWeight: '700', color: '#93C5FD' },
+  governanceMeta: { marginTop: 8, fontSize: 14, color: '#CBD5E1' },
+  governanceHref: { marginTop: 8, fontSize: 12, color: '#93C5FD' },
+  governanceButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#1D4ED8',
+  },
+  governanceButtonText: { fontSize: 13, fontWeight: '700', color: '#EFF6FF' },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',

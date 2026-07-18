@@ -121,6 +121,31 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
   };
 }
 
+function createDomainGovernanceFixture() {
+  return {
+    totalMissingPrimaryScopes: 1,
+    totalActiveWithoutPrimaryDomains: 2,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 1,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'BRAND',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'brand-demo.tenant-demo.us-default.local',
+        recommendationReason: '优先选择 active_ssl'
+      }
+    ]
+  };
+}
+
 test('native app bootstrap: fallback snapshot stays aligned to app defaults', () => {
   assert.deepEqual(createNativeAppFallbackSnapshot(), {
     deliveryMode: 'fallback',
@@ -130,12 +155,24 @@ test('native app bootstrap: fallback snapshot stays aligned to app defaults', ()
     emailProvider: 'SENDGRID',
     socialPlatforms: ['LINKEDIN', 'INSTAGRAM'],
     primaryDomain: 'store-001.brand-demo.tenant-demo.us-default.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: {
+      totalMissingPrimaryScopes: 0,
+      totalActiveWithoutPrimaryDomains: 0,
+      recommendedReadyScopes: 0,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 0,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: false,
+      lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+      currentScopes: []
+    }
   });
 });
 
 test('native app bootstrap: maps portal bootstrap into runtime snapshot', () => {
-  assert.deepEqual(toNativeAppBootstrapSnapshot(createPortalBootstrapFixture()), {
+  assert.deepEqual(toNativeAppBootstrapSnapshot(createPortalBootstrapFixture(), createDomainGovernanceFixture()), {
     deliveryMode: 'api',
     marketCode: 'us-default',
     defaultLanguage: 'en-US',
@@ -143,7 +180,9 @@ test('native app bootstrap: maps portal bootstrap into runtime snapshot', () => 
     emailProvider: 'SENDGRID',
     socialPlatforms: ['LINKEDIN', 'INSTAGRAM'],
     primaryDomain: 'store-001.brand-demo.tenant-demo.us-default.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: createDomainGovernanceFixture()
   });
 });
 
@@ -180,6 +219,18 @@ test('native app bootstrap: loads runtime consumer contract from api and governa
           message: 'OK',
           data: createPortalBootstrapFixture(),
           timestamp: '2026-06-12T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z'
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       );
@@ -253,6 +304,8 @@ test('native app bootstrap: loads runtime consumer contract from api and governa
   const contract = await loadNativeAppRuntimeConsumerContract();
 
   assert.equal(contract.snapshot.deliveryMode, 'api');
+  assert.equal(contract.snapshot.domainSource, 'default');
+  assert.equal(contract.snapshot.domainGovernance.currentScopes[0]?.scopeType, 'BRAND');
   assert.equal(contract.scope.scopePath, 'us-default / tenant-demo / brand-demo / store-001');
   assert.equal(contract.governance.deliveryMode, 'api');
   assert.deepEqual(contract.governance.alerts.map((item) => item.code), ['approval-execution-failures']);

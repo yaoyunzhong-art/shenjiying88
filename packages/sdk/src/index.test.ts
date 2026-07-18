@@ -92,6 +92,7 @@ test('sdk: exposes typed bootstrap shortcuts', async () => {
   await client.getFoundationBootstrap();
   await client.getMarketBootstrap();
   await client.getPortalBootstrap();
+  await client.getPortalDomainGovernanceSummary();
   await client.getWorkbenchBootstrap();
   await client.getFoundationAlertCatalog();
   await client.getFoundationOverview();
@@ -103,6 +104,7 @@ test('sdk: exposes typed bootstrap shortcuts', async () => {
     'http://localhost:3001/api/v1/foundation/bootstrap',
     'http://localhost:3001/api/v1/markets/bootstrap',
     'http://localhost:3001/api/v1/portals/bootstrap',
+    'http://localhost:3001/api/v1/portals/domain-governance',
     'http://localhost:3001/api/v1/workbenches/bootstrap',
     'http://localhost:3001/api/v1/foundation/overview/alerts/catalog',
     'http://localhost:3001/api/v1/foundation/overview',

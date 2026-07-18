@@ -88,6 +88,22 @@ export const PRIORITY_COLORS: Record<RulePriority, string> = {
   low: '#16a34a',
 };
 
+export const CATEGORY_COLORS: Record<RuleCategory, string> = {
+  'risk-control': '#ef4444',
+  member: '#3b82f6',
+  promotion: '#f59e0b',
+  notification: '#8b5cf6',
+  operation: '#10b981',
+};
+
+export const CATEGORY_BG_COLORS: Record<RuleCategory, string> = {
+  'risk-control': 'rgba(239, 68, 68, 0.12)',
+  member: 'rgba(59, 130, 246, 0.12)',
+  promotion: 'rgba(245, 158, 11, 0.12)',
+  notification: 'rgba(139, 92, 246, 0.12)',
+  operation: 'rgba(16, 185, 129, 0.12)',
+};
+
 const STATUS_LIST: RuleStatus[] = ['enabled', 'disabled', 'draft', 'archived'];
 const PRIORITY_LIST: RulePriority[] = ['critical', 'high', 'medium', 'low'];
 
@@ -218,7 +234,21 @@ export default function RulesPage() {
         key: 'category',
         title: '分类',
         sortable: true,
-        render: (item: RuleItem) => CATEGORY_LABELS[item.category],
+        render: (item: RuleItem) => (
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '2px 10px',
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              color: CATEGORY_COLORS[item.category],
+              background: CATEGORY_BG_COLORS[item.category],
+            }}
+          >
+            {CATEGORY_LABELS[item.category]}
+          </span>
+        ),
       },
       {
         key: 'status',
@@ -278,6 +308,18 @@ export default function RulesPage() {
     return { total, enabled, critical, lowSuccess };
   }, []);
 
+  const categoryStats = useMemo(() => {
+    const entries = CATEGORY_LIST.map((cat) => ({
+      category: cat,
+      label: CATEGORY_LABELS[cat],
+      count: MOCK_RULES.filter((r) => r.category === cat).length,
+      color: CATEGORY_COLORS[cat],
+      bg: CATEGORY_BG_COLORS[cat],
+    }));
+    const maxCount = Math.max(...entries.map((e) => e.count), 1);
+    return { entries, maxCount };
+  }, []);
+
   return (
     <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
       <PageShell title="规则管理" subtitle={`共 ${stats.total} 条规则 · ${stats.enabled} 条启用 · ${stats.critical} 条严重优先级`}>
@@ -317,6 +359,62 @@ export default function RulesPage() {
             </div>
             <div style={{ marginTop: 4, fontSize: 12, color: '#94a3b8' }}>需优化</div>
           </article>
+        </div>
+
+        {/* 分类统计条 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 16,
+            padding: '10px 14px',
+            borderRadius: 12,
+            background: 'rgba(15, 23, 42, 0.28)',
+            border: '1px solid rgba(148, 163, 184, 0.12)',
+          }}
+        >
+          <span style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap' }}>分类分布</span>
+          <div style={{ flex: 1, display: 'flex', gap: 2, height: 8, borderRadius: 4, overflow: 'hidden' }}>
+            {categoryStats.entries.map((e) => (
+              <div
+                key={e.category}
+                style={{
+                  width: `${(e.count / stats.total) * 100}%`,
+                  background: e.color,
+                  minWidth: e.count > 0 ? 2 : 0,
+                }}
+                title={`${e.label}: ${e.count}条`}
+              />
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {categoryStats.entries.map((e) => (
+              <span
+                key={e.category}
+                style={{
+                  fontSize: 11,
+                  color: '#cbd5e1',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: e.color,
+                  }}
+                />
+                {e.label}
+                <span style={{ color: '#64748b' }}>{e.count}</span>
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* 搜索框 */}

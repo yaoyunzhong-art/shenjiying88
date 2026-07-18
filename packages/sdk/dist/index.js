@@ -596,6 +596,9 @@ var ApiClient = class {
   async getPortalBootstrap(init = {}) {
     return this.getData("/portals/bootstrap", init);
   }
+  async getPortalDomainGovernanceSummary(init = {}) {
+    return this.getData("/portals/domain-governance", init);
+  }
   async getWorkbenchBootstrap(init = {}) {
     return this.getData("/workbenches/bootstrap", init);
   }

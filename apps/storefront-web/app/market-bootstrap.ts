@@ -10,8 +10,10 @@ import {
   getFoundationAppBootstrapWiring,
   type AppBootstrapWiring,
   type FoundationConsumerDescriptor,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
-  type StorePortalContract
+  type StorePortalContract,
+  buildDomainGovernanceHref
 } from '@m5/types';
 
 export const storefrontWebBootstrap = getFoundationAppBootstrapWiring('storefront-web');
@@ -21,6 +23,8 @@ export interface StorefrontConsumerSnapshot {
   wiring: AppBootstrapWiring;
   consumerDescriptor: FoundationConsumerDescriptor;
   portal: StorePortalContract;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
   foundationDependencies: string[];
   foundationContracts: string[];
   regionalOverridesCount: number;
@@ -45,6 +49,39 @@ export interface StorefrontConsumerSnapshot {
 export type StorefrontGovernanceReadModel = FoundationGovernanceReadModel;
 
 const STOREFRONT_SUPPORTED_LANGUAGES = ['zh-CN', 'en-US'];
+
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: [],
+  };
+}
+
+function resolveDomainGovernanceWorkspaceHref(
+  summary: PortalDomainGovernanceSummaryContract,
+  marketCode: string
+): string {
+  const scope =
+    summary.currentScopes.find((item) => item.missingPrimary) ??
+    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    summary.currentScopes[0];
+
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType,
+  });
+}
 
 function getFallbackDefaultLanguage(marketCode: string): string {
   return marketCode === 'cn-mainland' ? 'zh-CN' : 'en-US';
@@ -136,6 +173,21 @@ async function loadPortalConsumerDescriptor(
   return loadFoundationConsumerDescriptor(createStorePortalClient(marketCode, tenantCode, brandCode, storeCode), 'portal');
 }
 
+async function loadPortalDomainGovernance(
+  marketCode: string,
+  tenantCode: string,
+  brandCode: string,
+  storeCode: string
+): Promise<PortalDomainGovernanceSummaryContract> {
+  try {
+    return await createStorePortalClient(marketCode, tenantCode, brandCode, storeCode).getPortalDomainGovernanceSummary({
+      cache: 'no-store',
+    });
+  } catch {
+    return createFallbackDomainGovernanceSummary();
+  }
+}
+
 export const loadStorefrontGovernanceReadModel: (
   marketCode: string,
   tenantCode: string,
@@ -149,10 +201,11 @@ export async function getStorefrontConsumerSnapshot(
   brandCode: string,
   storeCode: string
 ): Promise<StorefrontConsumerSnapshot> {
-  const [bootstrap, governance, consumerDescriptor] = await Promise.all([
+  const [bootstrap, governance, consumerDescriptor, domainGovernance] = await Promise.all([
     loadPortalBootstrap(marketCode, tenantCode, brandCode, storeCode),
     loadStorefrontGovernanceReadModel(marketCode, tenantCode, brandCode, storeCode),
-    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode, storeCode)
+    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode, storeCode),
+    loadPortalDomainGovernance(marketCode, tenantCode, brandCode, storeCode),
   ]);
   const portal =
     bootstrap?.storePortal ?? getFallbackStorePortal(marketCode, tenantCode, brandCode, storeCode, bootstrap);
@@ -165,6 +218,8 @@ export async function getStorefrontConsumerSnapshot(
   return {
     ...snapshotBase,
     portal,
+    domainGovernance,
+    domainGovernanceWorkspaceHref: resolveDomainGovernanceWorkspaceHref(domainGovernance, portal.marketCode),
     scope: {
       scopePath: `${portal.marketCode} / ${portal.tenantCode} / ${portal.brandCode} / ${portal.storeCode}`,
       ...snapshotBase.scope

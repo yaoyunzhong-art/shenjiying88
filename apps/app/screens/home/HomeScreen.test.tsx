@@ -36,18 +36,24 @@ function createHomeComponent() {
   return root;
 }
 
+function collectTextContent(node: unknown, chunks: string[] = []): string[] {
+  if (typeof node === 'string' || typeof node === 'number') {
+    chunks.push(String(node));
+    return chunks;
+  }
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectTextContent(item, chunks));
+    return chunks;
+  }
+  if (node && typeof node === 'object' && 'props' in (node as Record<string, unknown>)) {
+    collectTextContent((node as { props?: { children?: unknown } }).props?.children, chunks);
+  }
+  return chunks;
+}
+
 function findByText(root: ReturnType<typeof create>['root'], text: string) {
   const all = root.findAllByType(Text);
-  return all.find((t) => {
-    const content = t.props.children;
-    if (typeof content === 'string' && content.includes(text)) return true;
-    if (Array.isArray(content)) {
-      return content.some(
-        (c: unknown) => typeof c === 'string' && c.includes(text),
-      );
-    }
-    return false;
-  });
+  return all.find((t) => collectTextContent(t.props.children).join('').includes(text));
 }
 
 function findAllTouchables(root: ReturnType<typeof create>['root']) {
@@ -200,41 +206,19 @@ test('HomeScreen: renders sections in correct order', () => {
   const root = createHomeComponent();
 
   const allTexts = root.root.findAllByType(Text);
-  const sectionIndices: number[] = [];
+  const sectionTitles = allTexts.filter((t) => {
+    const style = Array.isArray(t.props.style) ? Object.assign({}, ...t.props.style) : t.props.style;
+    return style?.fontSize === 18 && style?.fontWeight === '700' && style?.marginBottom === 12;
+  });
+  const sectionTexts = sectionTitles.map((item) => collectTextContent(item.props.children).join(''));
 
-  // 提取所有章节标题的位置
-  const labels = ['快捷操作', '待办任务', '门店公告'];
-  for (const label of labels) {
-    const idx = allTexts.findIndex(
-      (t) =>
-        (typeof t.props.children === 'string' && t.props.children.includes(label)) ||
-        (Array.isArray(t.props.children) &&
-          t.props.children.some((c: unknown) => typeof c === 'string' && String(c).includes(label))),
-    );
-    // fallback: check ReactElement children for text match on complex nested structures
-    const idxFallback = idx < 0
-      ? allTexts.findIndex((t) => {
-          const allChildStrings: string[] = [];
-          const collectStrings = (node: unknown) => {
-            if (typeof node === 'string') allChildStrings.push(node);
-            else if (node && typeof node === 'object' && 'props' in (node as any)) {
-              const n = node as any;
-              if (n.props?.children) collectStrings(n.props.children);
-            } else if (Array.isArray(node)) {
-              node.forEach(collectStrings);
-            }
-          };
-          collectStrings(t.props.children);
-          return allChildStrings.some((s) => String(s).includes(label));
-        })
-      : idx;
-    if (idxFallback >= 0) sectionIndices.push(idxFallback);
-  }
-
-  // 验证顺序：快捷操作 < 待办任务 < 门店公告
-  assert.equal(sectionIndices.length, 3, '应找到3个章节标题');
+  assert.equal(sectionTitles.length, 3, '应找到3个 section title');
+  assert.ok(sectionTexts[0]?.includes('快捷操作'), '第一个 section 应为快捷操作');
+  assert.ok(sectionTexts[1]?.includes('待办任务'), '第二个 section 应为待办任务');
+  assert.ok(sectionTexts[2]?.includes('门店公告'), '第三个 section 应为门店公告');
   assert.ok(
-    sectionIndices[0] < sectionIndices[1] && sectionIndices[1] < sectionIndices[2],
+    allTexts.indexOf(sectionTitles[0]) < allTexts.indexOf(sectionTitles[1]) &&
+      allTexts.indexOf(sectionTitles[1]) < allTexts.indexOf(sectionTitles[2]),
     '章节顺序应为：快捷操作 → 待办任务 → 门店公告',
   );
 });

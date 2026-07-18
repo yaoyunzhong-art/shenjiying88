@@ -34,6 +34,7 @@ __export(index_exports, {
   buildConfigurationHref: () => buildConfigurationHref,
   buildConfigurationOperationDetailHref: () => buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref: () => buildConfigurationSecretDetailHref,
+  buildDomainGovernanceHref: () => buildDomainGovernanceHref,
   buildFoundationAlertLinkedFocusContext: () => buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams: () => buildFoundationAlertLinkedFocusSearchParams,
   buildFoundationAlertOptimisticReadState: () => buildFoundationAlertOptimisticReadState,
@@ -1173,6 +1174,16 @@ var foundationAlertCatalogFallback = [
     unmutePath: "/foundation/overview/alerts/lyt-connection-governance-risk/unmute"
   }
 ];
+function buildDomainGovernanceHref(query = {}) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === "string" && value.length > 0) {
+      params.set(key, value);
+    }
+  }
+  const queryString = params.toString();
+  return queryString ? `/saas/domains?${queryString}` : "/saas/domains";
+}
 var defaultRoleWorkbenchContracts = [
   {
     role: "SUPER_ADMIN",
@@ -1940,6 +1951,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   buildConfigurationHref,
   buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref,
+  buildDomainGovernanceHref,
   buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams,
   buildFoundationAlertOptimisticReadState,

@@ -2260,6 +2260,27 @@ export interface PortalDomainGovernanceSummaryContract {
   currentScopes: PortalDomainGovernanceScopeSummaryContract[];
 }
 
+export interface DomainGovernanceWorkspaceQuery {
+  tenantId?: string;
+  brandId?: string;
+  storeId?: string;
+  marketCode?: string;
+  scopeType?: string;
+}
+
+export function buildDomainGovernanceHref(query: DomainGovernanceWorkspaceQuery = {}): string {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'string' && value.length > 0) {
+      params.set(key, value);
+    }
+  }
+
+  const queryString = params.toString();
+  return queryString ? `/saas/domains?${queryString}` : '/saas/domains';
+}
+
 export interface WorkbenchNavItemContract {
   key: string;
   label: string;

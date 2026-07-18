@@ -960,6 +960,14 @@ export interface PortalDomainGovernanceSummaryContract {
     lastEvaluatedAt: string;
     currentScopes: PortalDomainGovernanceScopeSummaryContract[];
 }
+export interface DomainGovernanceWorkspaceQuery {
+    tenantId?: string;
+    brandId?: string;
+    storeId?: string;
+    marketCode?: string;
+    scopeType?: string;
+}
+export declare function buildDomainGovernanceHref(query?: DomainGovernanceWorkspaceQuery): string;
 export interface WorkbenchNavItemContract {
     key: string;
     label: string;

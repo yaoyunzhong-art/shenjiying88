@@ -10,6 +10,7 @@ import {
   type FoundationOperationsAlert,
   type FoundationOperationsOverviewSummary,
   type FoundationFrontendBootstrapState,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
   type RuntimeGovernanceReceipt,
 } from '@m5/types';
@@ -25,6 +26,7 @@ export interface MiniappBootstrapSnapshot {
   primaryDomain: string;
   supportedSurfaces: string[];
   domainSource: string;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
 }
 
 export interface MiniappBootstrapContext {
@@ -310,6 +312,20 @@ const emptyGovernanceOverviewSummary: FoundationOperationsOverviewSummary = {
   staleDrills: 0,
 };
 
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: [],
+  };
+}
+
 function resolveMiniappFallbackMarketPreset(marketCode: string): {
   defaultLanguage: string;
   supportedLanguages: string[];
@@ -353,11 +369,13 @@ export function createMiniappFallbackSnapshot(
     primaryDomain: `${resolvedContext.storeId}.${resolvedContext.brandId}.${resolvedContext.tenantId}.${resolvedContext.marketCode}.local`,
     supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
     domainSource: 'default',
+    domainGovernance: createFallbackDomainGovernanceSummary(),
   };
 }
 
 export function toMiniappBootstrapSnapshot(
   bootstrap: PortalBootstrapResponse,
+  domainGovernance: PortalDomainGovernanceSummaryContract = createFallbackDomainGovernanceSummary(),
 ): MiniappBootstrapSnapshot {
   return {
     deliveryMode: 'api',
@@ -373,6 +391,7 @@ export function toMiniappBootstrapSnapshot(
     primaryDomain: bootstrap.storePortal.primaryDomain,
     supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
     domainSource: bootstrap.storePortal.domainSource ?? 'default',
+    domainGovernance,
   };
 }
 
@@ -402,8 +421,14 @@ export async function loadMiniappBootstrapSnapshot(
   context: MiniappBootstrapContext = defaultMiniappContext,
 ): Promise<MiniappBootstrapSnapshot> {
   try {
-    const bootstrap = await createMiniappBootstrapClient(context).getPortalBootstrap();
-    return toMiniappBootstrapSnapshot(bootstrap);
+    const client = createMiniappBootstrapClient(context);
+    const [bootstrap, domainGovernance] = await Promise.all([
+      client.getPortalBootstrap(),
+      client
+        .getPortalDomainGovernanceSummary({ cache: 'no-store' })
+        .catch(() => createFallbackDomainGovernanceSummary()),
+    ]);
+    return toMiniappBootstrapSnapshot(bootstrap, domainGovernance);
   } catch {
     return createMiniappFallbackSnapshot(context);
   }

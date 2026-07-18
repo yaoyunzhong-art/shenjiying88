@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { buildDomainGovernanceHref } from '@m5/types';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAppContext } from '../../context/AppContext';
@@ -23,6 +24,18 @@ export function SettingsScreen() {
   const [offlineMode, setOfflineMode] = React.useState(state.isOfflineMode);
   const [pushNotifications, setPushNotifications] = React.useState(state.pushNotificationsEnabled);
   const [biometric, setBiometric] = React.useState(state.biometricEnabled);
+  const governanceScope =
+    state.bootstrap.domainGovernance.currentScopes.find((item) => item.missingPrimary) ??
+    state.bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    state.bootstrap.domainGovernance.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    state.bootstrap.domainGovernance.currentScopes[0];
+  const governanceWorkspaceHref = buildDomainGovernanceHref({
+    tenantId: governanceScope?.tenantId,
+    brandId: governanceScope?.brandId,
+    storeId: governanceScope?.storeId,
+    marketCode: state.bootstrap.marketCode,
+    scopeType: governanceScope?.scopeType,
+  });
 
   const handleOfflineModeChange = (value: boolean) => {
     setOfflineMode(value);
@@ -49,6 +62,10 @@ export function SettingsScreen() {
 
   const handleLanguagePress = () => {
     navigation.navigate('LanguageSettings');
+  };
+
+  const handleDomainGovernancePress = () => {
+    Alert.alert('域名治理工作台', governanceWorkspaceHref);
   };
 
   const handleClearCache = () => {
@@ -170,6 +187,14 @@ export function SettingsScreen() {
             '简体中文',
             <Text style={styles.settingArrow}>›</Text>,
             handleLanguagePress
+          )}
+          <View style={styles.divider} />
+          {renderSettingItem(
+            '🌍',
+            '域名治理工作台',
+            `缺主 scope ${state.bootstrap.domainGovernance.totalMissingPrimaryScopes} / 域名来源 ${state.bootstrap.domainSource}`,
+            <Text style={styles.settingArrow}>›</Text>,
+            handleDomainGovernancePress
           )}
         </Card>
       </View>
