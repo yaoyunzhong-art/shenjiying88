@@ -15,7 +15,7 @@
 | 🟢 ② 测试 | 测试文件存在 & 0 fail | `.test.tsx` 不skip |
 | 🟢 ③ 审计 | 圈梁表更新 | `phase-to-module-mapping.md` |
 | 🟡 ④ PRD | 新建页面24h补PRD | PRD摘要卡 |
-| 🟠 ⑤ 知识赋能 | 派单含知识引用 | `📚 知识赋能参考` 节 |
+| 🟠 ⑤ 知识赋能 | 数据库自动检索 → 注入派单 | `POST /api/empower-cards/match` (PostgreSQL) |
 
 ### 知识体系 V2 — 五环知识工厂
 
@@ -89,17 +89,27 @@ V20 是**截止冲刺+知识体系升级版**。核心目标：
 | **20:00** | 晚会汇总+6门签署 | 🎤 赋能报告→签署 | 签署报告 |
 | **22:00** | V21 L4日评分+进化 | 🔑 **F1使用率+F3退化+F4评分+F5清理** | usage-stats/daily-brief |
 
-## 知识赋能应用场景 (V20)
+## 知识赋能体系 V2 数据库实现（ADR-046）
 
-### 场景1: 派单注入 (A1)
-每次派单末尾加入 `📚 知识赋能参考` 节，自动检索最相关3条知识。
-```markdown
----
-📚 知识赋能参考:
-- [竞品] 订阅制会员收入全国平均22% (ZVZO2026, 90分)
-- [技术] RLS 8护栏模式 (NestJS Courses, 85分)
-- [合规] GA/T 2380-2026 schema隔离 (国家标准, 95分)
----
+### 架构变更：markdown → PostgreSQL + REST API
+
+```
+之前: 龙虾哥手动写 📚 知识赋能参考 节 (markdown管理, 难以检索)
+现在: POST /api/empower-cards/match + POST /api/empower-cards/:id/quote (数据库+API)
+```
+
+### 场景1: 派单注入 (A1) — 数据库自动检索
+
+每次派单前调用 API 自动获取 top-3：
+
+```
+POST /api/empower-cards/match
+Body: { "module": "P-38 checkin", "keywords": ["成本现金流"] }
+
+Response: top-3 { card.id, tag, summary, freshness_score }
+
+→ 注入到 prompt 的 📚 知识赋能参考 节
+→ 派单后 POST /api/empower-cards/:id/quote 记录引用
 ```
 
 ### 场景2: 代码审查阻断 (A2)
@@ -110,23 +120,40 @@ V20 是**截止冲刺+知识体系升级版**。核心目标：
 ```
 
 ### 场景3: 知识使用审计 (F1)
-每日 22:00 统计每条知识被引用次数。
+通过 empower_card_quote_log 表实时统计。
+```
+GET /api/empower-cards/stats/today  → 今日引用数+新增数
+SELECT * FROM empower_card_quote_log WHERE quoted_at >= CURRENT_DATE
+```
 
 ### 场景4: 退化曲线 (F3)
-未被引用的知识每7天降10分，<50提醒，<20归档。
+每日 22:00 自动执行：
+```
+POST /api/empower-cards/decay
+→ 24h未引⼊卡片 freshness_score -= 10
+→ freshness_score < 20 自动删除
+```
 
 ### 场景5: 赋能评分 (F4)
-每日评分 = 知识引用次数×10 + 新增知识×5
+```
+今日评分 = 引用次数×10 + 新增卡片×5
+GET /api/empower-cards/stats/today → { score, quotes, newCards }
+```
 
 ## 剩余工作
 
 | 模块 | 状态 | 下一步 |
 |:-----|:----:|:-------|
-| 📚 知识体系 V2 框架 | ✅ ADR+实现文档 | 持续执行 |
-| 🎯 派单注入 (A1) | ✅ 已在本轮使用 | 固化到所有派单 |
-| 📊 使用统计 (F1) | ⏳ 待首次22:00执行 | 今晚首次 |
-| 📉 退化曲线 (F3) | ⏳ 待首次22:00执行 | 今晚首次 |
-| 🧹 老化清理 (F5) | ⏳ 待下周日执行 | 可用知识基线 |
+| 📚 知识体系 V2 框架 | ✅ ADR-045+046+实现文档 | 持续执行 |
+| 🗄️ 数据库表(empower_card) | ✅ PostgreSQL + 全文索引 | 数据填充 |
+| 🔌 REST API 7端点 | ✅ controller+service | 集成派单流程 |
+| 📥 导入脚本 | ✅ import-empower-cards.ts | 首次执行 |
+| 🎯 派单注入 (A1) | ✅ 通过API自动匹配 | 固化到所有派单流程 |
+| 📊 使用统计 (F1) | ✅ 数据库实时统计 | 22:00首次audit |
+| 📉 退化曲线 (F3) | ✅ 24h衰减 | 22:00首次执行 |
+| ⭐ 赋能评分 (F4) | ✅ API实时计算 | 14:00午间检查 |
+| 🧹 老化清理 (F5) | ✅ 自动删除<20分 | 10天后首次触发 |
+| 📋 文档对齐 | ✅ MEMORY+v20-roadmap+ADR-046 | commit |
 | 📖 能力基线 (A4) | ⏳ 待下周日执行 | |
 | 🏢 P-38 财务最后一公里 | 🟡 税务模块 + 测试 | 12:00-14:00 |
 | 📱 Pad端体验增强 | 🟡 至少1页 | 14:00-16:00 |
