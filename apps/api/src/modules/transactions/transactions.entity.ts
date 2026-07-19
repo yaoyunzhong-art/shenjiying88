@@ -307,3 +307,23 @@ export interface MemberTransactionTimelineEntry {
   paidAt?: string
   closedAt?: string
 }
+
+export interface TransactionOrderListItem {
+  orderId: string
+  orderNo: string
+  memberId: string
+  status: CashierOrder['status'] | TransactionRefundStatus | string
+  totalAmount: number
+  paidAmount: number
+  refundedAmount: number
+  currency: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TransactionOrderListPage {
+  items: TransactionOrderListItem[]
+  total: number
+  page: number
+  pageSize: number
+}

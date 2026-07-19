@@ -82,6 +82,10 @@ export class ListTransactionOrdersQueryDto {
   paymentStatus?: string
   closeReason?: string
   hasRefund?: boolean
+  fromDate?: string
+  toDate?: string
+  page?: number
+  pageSize?: number
   limit?: number
 }
 

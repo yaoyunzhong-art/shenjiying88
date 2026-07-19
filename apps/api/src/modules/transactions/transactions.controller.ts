@@ -48,7 +48,7 @@ export class TransactionsController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: ListTransactionOrdersQueryDto = {} as ListTransactionOrdersQueryDto
   ) {
-    return this.transactionsService.listOrderTransactions(tenantContext, query)
+    return this.transactionsService.listOrderListPage(tenantContext, query)
   }
 
   @Get('persistent/snapshots/orders')

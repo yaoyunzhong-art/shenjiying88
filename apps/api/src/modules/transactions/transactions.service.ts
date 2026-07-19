@@ -49,6 +49,8 @@ import {
   type TransactionRefundDashboardStatusGroup,
   type MemberTransactionTimelineEntry,
   type TransactionAggregate,
+  type TransactionOrderListItem,
+  type TransactionOrderListPage,
   type TransactionRefundRecord,
   type LytOrderSnapshot,
   type LytPaymentSnapshot
@@ -1051,6 +1053,40 @@ export class TransactionsService {
     return typeof limit === 'number' ? aggregates.slice(0, limit) : aggregates
   }
 
+  listOrderListPage(
+    tenantContext: RequestTenantContext,
+    query?: ListTransactionOrdersQueryDto
+  ): TransactionOrderListPage {
+    const pageSize = query?.pageSize && query.pageSize > 0 ? query.pageSize : 20
+    const page = query?.page && query.page > 0 ? query.page : 1
+
+    const filteredAggregates = this.listOrderTransactions(tenantContext, {
+      ...query,
+      limit: undefined
+    }).filter((aggregate) => {
+      if (query?.fromDate && aggregate.order.createdAt.localeCompare(query.fromDate) < 0) {
+        return false
+      }
+      if (query?.toDate && aggregate.order.createdAt.localeCompare(query.toDate) > 0) {
+        return false
+      }
+      return true
+    })
+
+    const total = filteredAggregates.length
+    const start = (page - 1) * pageSize
+    const items = filteredAggregates
+      .slice(start, start + pageSize)
+      .map((aggregate) => this.toTransactionOrderListItem(aggregate))
+
+    return {
+      items,
+      total,
+      page,
+      pageSize
+    }
+  }
+
   async timeoutCloseOrder(
     orderId: string,
     tenantContext: RequestTenantContext,
@@ -1738,5 +1774,31 @@ export class TransactionsService {
         }
       })
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+  }
+
+  private toTransactionOrderListItem(aggregate: TransactionAggregate): TransactionOrderListItem {
+    const order = aggregate.order
+    const paidAmount = aggregate.payment?.status === CashierPaymentStatus.Succeeded
+      ? aggregate.payment.amount
+      : 0
+    const refundedAmount = this.getCompletedRefundAmount(aggregate.refunds)
+    const latestRefund = aggregate.refunds[0]
+
+    return {
+      orderId: order.orderId,
+      orderNo: order.orderId,
+      memberId: order.memberId,
+      status: latestRefund?.status === TransactionRefundStatus.Pending
+        ? 'REFUNDING'
+        : latestRefund?.status === TransactionRefundStatus.Completed
+          ? TransactionRefundStatus.Completed
+          : order.status,
+      totalAmount: order.totalAmount,
+      paidAmount,
+      refundedAmount,
+      currency: order.currency,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt
+    }
   }
 }
