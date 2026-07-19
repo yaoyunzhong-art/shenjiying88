@@ -314,8 +314,8 @@ describe('account — 边界与反例', () => {
 
   it('34. 分类过滤不存在分类返回空', () => {
     // 传入无效分类名（类型强制）
-    const result = (MOCK_NOTIFICATIONS as any[]).filter(
-      (n: any) => n.category === 'invalid_category',
+    const result = (MOCK_NOTIFICATIONS as unknown as Array<Record<string, string>>).filter(
+      (n) => n.category === 'invalid_category',
     );
     assert.equal(result.length, 0);
   });
