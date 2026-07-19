@@ -119,6 +119,7 @@ import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
 import { OpenAPIModule } from './modules/openapi/openapi.module';
 import { LocaleModule } from './modules/locale/locale.module';
 import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
+import { EmpowerCardModule } from './modules/empower-card/empower-card.module';
 import { ScoutModule } from './modules/scout/scout.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { RlsModule } from './modules/rls/rls.module';
@@ -283,6 +284,7 @@ import { ProcurementOrderModule } from './modules/procurement-order/procurement-
     OpenAPIModule,
     LocaleModule,
     DbKnowledgeModule,
+    EmpowerCardModule,
     ScoutModule,
     LogisticsModule,
     RlsModule,
