@@ -190,6 +190,68 @@ describe('AnalyticsService', () => {
     assert.equal(silence?.recommendations[0]?.suggestedCampaignKind, 'RE_ENGAGEMENT')
   })
 
+  it('getDiagnostics flags member-activity-thinning when settlement is low and zero activity', () => {
+    const harness = createHarness()
+    const { analyticsService, loyaltyService } = harness
+    ensureMember(harness)
+    // Exactly 1 settlement, no coupon redemption — but settlement may produce pointsOut
+    // Use a settlement with known low engagement characteristics
+    void loyaltyService.settleFailedOrderFromSnapshots(
+      buildLytOrder('thin-001'),
+      buildLytPayment('thin-001', 'pay-thin-001')
+    )
+    const diagnostics = analyticsService.getDiagnostics(tenantContext)
+    const thinning = diagnostics.find((d) => d.ruleId.startsWith('member-activity-thinning'))
+    assert.ok(thinning)
+    assert.equal(thinning.severity, DiagnosticSeverity.Info)
+    assert.equal(thinning.category, DiagnosticCategory.MemberActivity)
+    assert.equal(thinning.recommendations[0]?.priority, 40)
+    assert.equal(thinning.recommendations[0]?.actionCode, 'increase-touchpoint-frequency')
+  })
+
+  it('getDiagnostics member-activity-thinning does not fire when settlement >= 3', () => {
+    const harness = createHarness()
+    const { analyticsService, loyaltyService } = harness
+    ensureMember(harness)
+    for (let i = 0; i < 3; i += 1) {
+      void loyaltyService.settlePaidOrderFromSnapshots(
+        buildLytOrder(`o-many-${i}`),
+        buildLytPayment(`o-many-${i}`, `p-many-${i}`)
+      )
+    }
+    const diagnostics = analyticsService.getDiagnostics(tenantContext)
+    const thinning = diagnostics.find((d) => d.ruleId.startsWith('member-activity-thinning'))
+    assert.equal(thinning, undefined)
+  })
+
+  it('getDiagnostics member-activity-thinning does not fire when settlement count is 0', () => {
+    const { analyticsService } = createHarness()
+    const diagnostics = analyticsService.getDiagnostics(tenantContext)
+    const thinning = diagnostics.find((d) => d.ruleId.startsWith('member-activity-thinning'))
+    assert.equal(thinning, undefined)
+  })
+
+  it('getDiagnostics points-outflow-dominant does not fire when pointsIn >= pointsOut * 1.3', () => {
+    const { analyticsService } = createHarness()
+    // Empty data — pointsIn and pointsOut are both 0 => condition not met
+    const diagnostics = analyticsService.getDiagnostics(tenantContext)
+    const outflow = diagnostics.find((d) => d.ruleId.startsWith('points-outflow-dominant'))
+    assert.equal(outflow, undefined)
+  })
+
+  it('getDiagnostics does not fire payment failure diagnostic at 100% success', async () => {
+    const harness = createHarness()
+    const { analyticsService, loyaltyService } = harness
+    ensureMember(harness)
+    await loyaltyService.settlePaidOrderFromSnapshots(buildLytOrder('ok-100-1'), buildLytPayment('ok-100-1', 'pay-ok-100-1'))
+    await loyaltyService.settlePaidOrderFromSnapshots(buildLytOrder('ok-100-2'), buildLytPayment('ok-100-2', 'pay-ok-100-2'))
+    const diagnostics = analyticsService.getDiagnostics(tenantContext)
+    const paymentDiag = diagnostics.find((d) => d.ruleId.startsWith('payment-success-rate-low'))
+    assert.equal(paymentDiag, undefined)
+    const silence = diagnostics.find((d) => d.ruleId.startsWith('no-settlement-activity'))
+    assert.equal(silence, undefined)
+  })
+
   it('getDiagnostics flags blindbox shortfall when coupons move but blindboxes do not', () => {
     const { analyticsService, loyaltyService } = createHarness()
     const plan = loyaltyService.registerCouponPlan({
