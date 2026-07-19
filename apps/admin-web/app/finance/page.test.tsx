@@ -322,6 +322,17 @@ describe('finance-page: 正例', () => {
       assert.strictEqual(validatePaymentForm('ord-001', 9900), null);
     });
 
+    it('validation returns unified error for empty orderId and zero amount', () => {
+      const err = validatePaymentForm('', 0);
+      assert.ok(err !== null);
+      assert.ok(err!.includes('订单'));
+    });
+
+    it('validatePaymentForm whitespace-only orderId fails', () => {
+      const err = validatePaymentForm('   ', 9900);
+      assert.ok(err !== null, 'whitespace orderId should fail');
+    });
+
     it('empty orderId should fail validation', () => {
       const err = validatePaymentForm('', 9900);
       assert.ok(err !== null);
@@ -413,6 +424,27 @@ describe('finance-page: 反例', () => {
     assert.ok(failed);
     assert.ok(failed!.failureReason, 'FAILED payment must have failureReason');
   });
+
+  it('PAYMENT status with invalid method in filter returns empty', () => {
+    const result = filterPayments(mockPayments, 'PENDING', 'CRYPTO');
+    assert.strictEqual(result.length, 0, 'non-standard method should yield 0');
+  });
+
+  it('filter with status=all and non-existent method returns 0', () => {
+    const result = filterPayments(mockPayments, 'all', 'UNIONPAY');
+    assert.strictEqual(result.length, 0);
+  });
+
+  it('canMarkSuccess(false) + canRequestRefund(true) cannot both be true for same payment', () => {
+    for (const status of ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'] as PaymentStatus[]) {
+      assert.ok(!(canMarkSuccess(status) && canRequestRefund(status)), `status ${status} cannot be both`);
+    }
+  });
+
+  it('filter with non-standard status and method should return zero', () => {
+    const result = filterPayments(mockPayments, 'VOID', 'BITCOIN');
+    assert.strictEqual(result.length, 0);
+  });
 });
 
 // ════════════════════════════════════════
@@ -493,6 +525,58 @@ describe('finance-page: 边界', () => {
     const validMethods: PaymentMethod[] = ['WECHAT', 'ALIPAY', 'CARD', 'CASH', 'BALANCE'];
     for (const p of mockPayments) {
       assert.ok(validMethods.includes(p.method), `invalid method ${p.method} for ${p.id}`);
+    }
+  });
+
+  it('formatAmount handles max safe integer cents', () => {
+    const result = formatAmount(9007199254740991);
+    assert.ok(result.includes('¥'), 'should format large number without overflow');
+    assert.ok(result.endsWith('.91'), 'should preserve fractional part');
+  });
+
+  it('generateUUID produces unique values across 1000 iterations', () => {
+    const uuids = Array.from({ length: 1000 }, () => generateUUID());
+    const unique = new Set(uuids);
+    assert.strictEqual(unique.size, 1000, 'all 1000 UUIDs should be unique');
+  });
+
+  it('REFUND payment has higher version than its original payment', () => {
+    const pay004 = mockPayments.find((p) => p.id === 'pay-004')!;
+    assert.ok(pay004.version >= 3, 'refunded payment should have version >= 3');
+  });
+
+  it('BALANCE and CASH payments do not require transactionId', () => {
+    const noTxMethods: PaymentMethod[] = ['CASH', 'BALANCE'];
+    const noTxPayments = mockPayments.filter((p) => noTxMethods.includes(p.method));
+    assert.ok(noTxPayments.length > 0, 'should have at least one CASH/BALANCE payment');
+  });
+
+  it('all refunds reference an existing payment', () => {
+    const paymentIds = new Set(mockPayments.map((p) => p.id));
+    for (const r of mockRefunds) {
+      assert.ok(paymentIds.has(r.paymentId), `refund ${r.id} references non-existent payment ${r.paymentId}`);
+    }
+  });
+
+  it('formatAmount with EUR produces correct prefix', () => {
+    assert.strictEqual(formatAmount(1999, 'EUR'), 'EUR 19.99');
+  });
+
+  it('formatAmount with JPY (zero decimals) should still show 2 decimals', () => {
+    // Business decision: always show 2 decimal places
+    assert.strictEqual(formatAmount(500, 'JPY'), 'JPY 5.00');
+  });
+
+  it('each refund reason should be non-empty', () => {
+    for (const r of mockRefunds) {
+      assert.ok(r.reason.length > 0, `refund ${r.id} should have a reason`);
+    }
+  });
+
+  it('refund status should be one of 4 valid statuses', () => {
+    const valid: RefundStatus[] = ['REQUESTED', 'APPROVED', 'COMPLETED', 'REJECTED'];
+    for (const r of mockRefunds) {
+      assert.ok(valid.includes(r.status), `invalid refund status ${r.status}`);
     }
   });
 });

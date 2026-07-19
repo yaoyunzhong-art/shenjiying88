@@ -136,6 +136,27 @@ describe('notifications: 页面渲染', () => {
   it('component is a function', () => {
     assert.equal(typeof NotificationsPage, 'function');
   });
+
+  it('renders table with rule categories', () => {
+    const { container } = setup();
+    const rows = container.querySelectorAll('tbody tr');
+    assert.ok(rows.length >= 4, 'should render at least 4 rule rows');
+  });
+
+  it('renders channel section cards', () => {
+    const { container } = setup();
+    const body = container.textContent ?? '';
+    assert.ok(body.includes('Push 推送'), 'push channel');
+    assert.ok(body.includes('短信'), 'sms channel');
+    assert.ok(body.includes('邮件'), 'email channel');
+    assert.ok(body.includes('App内'), 'in-app channel');
+  });
+
+  it('renders enabled/disabled status for each rule', () => {
+    const { container } = setup();
+    const tags = container.querySelectorAll('span[style*="#22c55e"], span[style*="#ef4444"]');
+    assert.ok(tags.length >= 5, 'each rule should have a status indicator');
+  });
 });
 
 describe('notifications: 数据类型', () => {
@@ -259,6 +280,50 @@ describe('notifications: 业务逻辑', () => {
     const secRule: NotifRule = { id: 'sec', category: 'security', enabled: true, channels: ['sms', 'email', 'in_app'], maxPerTimeUnit: 5, timeUnit: 'hour', quietStart: '', quietEnd: '' };
     assert.ok(secRule.enabled);
     assert.equal(secRule.channels.length, 3);
+  });
+
+  it('isInQuietPeriod handles cross-midnight into early morning', () => {
+    const rule: NotifRule = { id: 'cm', category: 'order', enabled: true, channels: ['push'], maxPerTimeUnit: 10, timeUnit: 'hour', quietStart: '22:00', quietEnd: '08:00' };
+    assert.ok(isInQuietPeriod('23:30', rule), '23:30在跨天静默期');
+    assert.ok(isInQuietPeriod('01:00', rule), '01:00在跨天静默期');
+    assert.ok(isInQuietPeriod('07:59', rule), '07:59在跨天静默期');
+  });
+
+  it('isInQuietPeriod handles non-cross-midnight quiet period', () => {
+    const rule: NotifRule = { id: 'ncm', category: 'order', enabled: true, channels: ['push'], maxPerTimeUnit: 10, timeUnit: 'hour', quietStart: '12:00', quietEnd: '14:00', };
+    assert.ok(isInQuietPeriod('12:30', rule), '12:30在中午静默期');
+    assert.ok(!isInQuietPeriod('14:00', rule), '14:00不在中午静默期');
+    assert.ok(!isInQuietPeriod('11:59', rule), '11:59不在中午静默期');
+  });
+
+  it('validateFrequency rejects when recentCount exceeds maxPerTimeUnit (slightly over)', () => {
+    const rule: NotifRule = { id: 'freq-test', category: 'order', enabled: true, channels: ['push'], maxPerTimeUnit: 3, timeUnit: 'hour', quietStart: '', quietEnd: '' };
+    assert.ok(!validateFrequency(rule, 4), '4 > 3 should be rejected');
+  });
+
+  it('validateFrequency true when exactly at max', () => {
+    const rule: NotifRule = { id: 'freq-bound', category: 'order', enabled: true, channels: ['push'], maxPerTimeUnit: 5, timeUnit: 'hour', quietStart: '', quietEnd: '' };
+    assert.ok(validateFrequency(rule, 5), '5 <= 5 should be allowed');
+  });
+
+  it('validateQuietPeriods flags cross-midnight overlap correctly', () => {
+    const periods: QuietPeriod[] = [
+      { start: '22:00', end: '06:00' },
+      { start: '05:00', end: '08:00' },
+    ];
+    const errors = validateQuietPeriods(periods);
+    assert.ok(errors.length > 0, 'should detect overlap across midnight boundary');
+    assert.ok(errors.some(e => e.includes('重叠')), 'error should mention overlap');
+  });
+
+  it('validateQuietPeriods handles three overlapping periods', () => {
+    const periods: QuietPeriod[] = [
+      { start: '22:00', end: '08:00' },
+      { start: '00:00', end: '04:00' },
+      { start: '02:00', end: '06:00' },
+    ];
+    const errors = validateQuietPeriods(periods);
+    assert.ok(errors.length >= 2, 'multiple overlaps detected');
   });
 
   it('empty channels array means notifications blocked for that rule', () => {
