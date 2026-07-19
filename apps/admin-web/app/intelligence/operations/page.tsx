@@ -5,7 +5,6 @@ import { useState, useCallback } from 'react'
 interface ChoiceOption {
   id: string; label: string; description: string; pros: string[]
   cons: string[]; estimatedEffect: string
-  /** P-50 V2: 同城竞品数据佐证 */
   dataEvidence?: string
 }
 
@@ -14,7 +13,6 @@ interface AdviceQuestion {
   aiSuggestion: string; options: ChoiceOption[]
 }
 
-/** 历史案例数据 */
 interface HistoricalCase {
   year: number; month: number; activityName: string
   storeCount: number; avgTrafficIncrease: string
@@ -24,14 +22,20 @@ interface HistoricalCase {
 const CATEGORY_LABELS: Record<string, string> = {
   pricing: '💰 定价策略', activity: '🎯 活动方案',
   equipment: '🛠️ 设备更新', promotion: '🏷️ 促销应对',
-  // P-50 V2: 新增3类
   recruit: '🤝 联名活动/IP跨界',
   seasonal: '🏖️ 暑假/寒假限定',
   blindbox: '🎁 盲盒/抽奖促销合规版',
 }
 
+const CITY_OPTIONS = ['上海', '北京', '广州', '深圳', '成都', '杭州', '南京']
+const CITY_DISTRICTS: Record<string, string[]> = {
+  '上海': ['徐汇','浦东','静安'], '北京': ['朝阳','海淀','东城'],
+  '广州': ['天河','越秀','海珠'], '深圳': ['南山','福田','罗湖'],
+  '成都': ['锦江','武侯','成华'], '杭州': ['西湖','滨江','上城'],
+  '南京': ['鼓楼','秦淮','建邺'],
+}
+
 const MOCK_QUESTIONS: AdviceQuestion[] = [
-  // ── 原有4类 ──
   {
     id: 'pricing-1', category: 'pricing',
     question: '周末高峰时段如何定价？',
@@ -72,18 +76,16 @@ const MOCK_QUESTIONS: AdviceQuestion[] = [
       { id: 'r-c', label: '场景升级', description: '¥99畅玩+饮品', pros: ['客单价提升'], cons: ['需配套'], estimatedEffect: '月收入+18%', dataEvidence: '同城4家场景升级竞品，平均收入+20%' },
     ],
   },
-  // ── P-50 V2: 联名活动/IP跨界 ──
   {
     id: 'recruit-1', category: 'recruit',
     question: '是否需要引入联名或IP跨界活动？',
-    aiSuggestion: '结合门店定位和客流画像，建议选择与客群匹配的轻IP进行短期联名',
+    aiSuggestion: '建议选择与客群匹配的轻IP进行短期联名',
     options: [
-      { id: 'rc-a', label: '大型IP联名', description: '合作知名IP打造主题快闪', pros: ['引爆流量','媒体曝光高','客单价提升'], cons: ['版权费高昂','谈判周期长','档期受限'], estimatedEffect: '客流+55%', dataEvidence: '同城5家竞品IP联名后，客流平均+65%' },
+      { id: 'rc-a', label: '大型IP联名', description: '合作知名IP打造主题快闪', pros: ['引爆流量','媒体曝光高','客单价提升'], cons: ['版权费高昂','谈判周期长','档期受限'], estimatedEffect: '客流+55%', dataEvidence: '同城5家竞品IP联名，客流平均+65%' },
       { id: 'rc-b', label: '游戏/品牌跨界', description: '与奶茶/潮玩等品牌联合促销', pros: ['成本分摊','双向导流','灵活性高'], cons: ['需双方配合','品牌调性需匹配'], estimatedEffect: '客流+30%', dataEvidence: '同城6家竞品跨界合作，客流平均+32%' },
-      { id: 'rc-c', label: '自有IP孵化', description: '设计门店专属IP形象并推向社交平台', pros: ['长期资产','低成本迭代'], cons: ['见效慢','运营投入高'], estimatedEffect: '客流+15%', dataEvidence: '同城3家竞品尝试自有IP，平均+18%' },
+      { id: 'rc-c', label: '自有IP孵化', description: '设计门店专属IP形象', pros: ['长期资产','低成本迭代'], cons: ['见效慢','运营投入高'], estimatedEffect: '客流+15%', dataEvidence: '同城3家竞品尝试自有IP，平均+18%' },
     ],
   },
-  // ── P-50 V2: 暑假/寒假限定 ──
   {
     id: 'seasonal-1', category: 'seasonal',
     question: '暑假/寒假假期推出什么限定活动？',
@@ -94,20 +96,18 @@ const MOCK_QUESTIONS: AdviceQuestion[] = [
       { id: 'ss-c', label: '学生专场', description: '凭学生证工作日5折', pros: ['精准靶向','提升非高峰利用率'], cons: ['身份验证难','学生消费力有限'], estimatedEffect: '客流+20%', dataEvidence: '同城10家竞品设学生专场，非高峰使用率+20%' },
     ],
   },
-  // ── P-50 V2: 盲盒/抽奖促销合规版 ──
   {
     id: 'blindbox-1', category: 'blindbox',
     question: '盲盒/抽奖促销如何设计？',
-    aiSuggestion: '参考同城合规案例，建议设计透明度高的抽奖机制（保底+公示概率）',
+    aiSuggestion: '建议设计透明度高的抽奖机制（保底+公示概率）',
     options: [
       { id: 'bb-a', label: '消费抽盲盒', description: '每消费¥88抽1次，奖品含手机/周边/免单券', pros: ['刺激复购','社交传播强'], cons: ['奖品成本高','需公示概率合规'], estimatedEffect: '客流+50%', dataEvidence: '同城8家竞品推消费抽奖，客流平均+55%' },
       { id: 'bb-b', label: '积分翻牌', description: '100积分翻1次牌，中奖率≥50%', pros: ['积分消耗快','成本可控'], cons: ['吸引力一般','需足够积分池'], estimatedEffect: '积分消耗+40%', dataEvidence: '同城6家竞品设积分翻牌，积分活动率+45%' },
-      { id: 'bb-c', label: '满额赠盲盒', description: '满¥128赠送限定盲盒一个（明盒/暗盒可选）', pros: ['提升客单价','合规风险低'], cons: ['盲盒成本','赠品管理'], estimatedEffect: '客单价+18%', dataEvidence: '同城10家竞品用满赠盲盒，客单价平均+20%' },
+      { id: 'bb-c', label: '满额赠盲盒', description: '满¥128赠送限定盲盒一个', pros: ['提升客单价','合规风险低'], cons: ['盲盒成本','赠品管理'], estimatedEffect: '客单价+18%', dataEvidence: '同城10家竞品用满赠盲盒，客单价平均+20%' },
     ],
   },
 ]
 
-/** P-50 V2: 历史案例数据（模拟） */
 const MOCK_HISTORICAL_CASES: HistoricalCase[] = [
   { year: 2025, month: 7, activityName: '抖音团购', storeCount: 12, avgTrafficIncrease: '+42%', avgRevenueIncrease: '+18%', note: '暑假档期转化率较高' },
   { year: 2025, month: 8, activityName: '周末主题赛', storeCount: 8, avgTrafficIncrease: '+28%', avgRevenueIncrease: '+22%', note: '比赛类活动连带销售突出' },
@@ -117,11 +117,12 @@ const MOCK_HISTORICAL_CASES: HistoricalCase[] = [
 ]
 
 export default function OperationsPage() {
+  const [city, setCity] = useState('')
+  const [district, setDistrict] = useState('')
   const [questions] = useState(MOCK_QUESTIONS)
   const [selected, setSelected] = useState<Record<string, string>>({})
   const [aiAdvice, setAiAdvice] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('ALL')
-  /** P-50 V2: 活动类型是否显示历史案例视图 */
   const [showHistorical, setShowHistorical] = useState(false)
 
   const filtered = activeCategory === 'ALL' ? questions : questions.filter(q => q.category === activeCategory)
@@ -133,13 +134,36 @@ export default function OperationsPage() {
     if (q) setAiAdvice(`🤖 AI建议: ${q.aiSuggestion}\n\n你的选择: ${q.options.find(o => o.id === optId)?.label}`)
   }, [questions])
 
+  const districts = city ? CITY_DISTRICTS[city] || ['中心区'] : []
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-2">💡 运营参谋</h1>
       <p className="text-gray-500 mb-6">AI为你提供多个可行方案，你来做选择题，不做填空题。</p>
 
+      {/* 城市选择器 */}
+      <div className="bg-blue-50 border border-blue-100 rounded p-3 mb-4 flex items-center gap-4">
+        <span className="text-sm font-medium text-blue-700">🎯 同城数据参考:</span>
+        <select value={city} onChange={e => { setCity(e.target.value); setDistrict('') }}
+          className="border rounded px-2 py-1 text-sm bg-white">
+          <option value="">选择城市</option>
+          {CITY_OPTIONS.map(c => <option key={c}>{c}</option>)}
+        </select>
+        <select value={district} onChange={e => setDistrict(e.target.value)}
+          className="border rounded px-2 py-1 text-sm bg-white" disabled={!city}>
+          <option value="">选择区域</option>
+          {districts.map(d => <option key={d}>{d}</option>)}
+        </select>
+        {city && district && (
+          <span className="text-xs text-green-600">✅ 正在使用{city}{district}的竞品数据</span>
+        )}
+        {(!city || !district) && (
+          <span className="text-xs text-blue-500">选择城市+区域后可获取同城竞品参考</span>
+        )}
+      </div>
+
       {/* 分类筛选 */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 mb-3 flex-wrap">
         <button onClick={() => setActiveCategory('ALL')}
           className={`px-3 py-1 rounded text-sm ${activeCategory === 'ALL' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>全部</button>
         {categories.map(c => (
@@ -150,43 +174,34 @@ export default function OperationsPage() {
         ))}
       </div>
 
-      {/* P-50 V2: 活动方案视图切换 */}
+      {/* 历史案例切换 */}
       {activeCategory === 'activity' && (
         <div className="flex items-center gap-2 mb-4">
-          <button
-            onClick={() => setShowHistorical(false)}
-            className={`px-3 py-1 rounded text-sm ${!showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-            📝 选择题模式
-          </button>
-          <button
-            onClick={() => setShowHistorical(true)}
-            className={`px-3 py-1 rounded text-sm ${showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-            📊 历史案例模式
-          </button>
+          <button onClick={() => setShowHistorical(false)}
+            className={`px-3 py-1 rounded text-sm ${!showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>📝 选择题模式</button>
+          <button onClick={() => setShowHistorical(true)}
+            className={`px-3 py-1 rounded text-sm ${showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>📊 历史案例模式</button>
         </div>
       )}
 
-      {/* P-50 V2: 历史案例视图 */}
+      {/* 历史案例视图 */}
       {showHistorical && activeCategory === 'activity' && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h3 className="font-bold text-lg mb-4">📊 同城活动历史案例</h3>
           <p className="text-xs text-gray-500 mb-4">基于同城竞品的历史活动效果数据</p>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm" data-testid="historical-cases-table">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left">
-                  <th className="py-2 pr-4">时间</th>
-                  <th className="py-2 pr-4">活动类型</th>
-                  <th className="py-2 pr-4">竞品采用数</th>
-                  <th className="py-2 pr-4">平均客流增长</th>
-                  <th className="py-2 pr-4">平均收入增长</th>
-                  <th className="py-2 pr-4">备注</th>
+                  <th className="py-2 pr-4">时间</th><th className="py-2 pr-4">活动类型</th>
+                  <th className="py-2 pr-4">竞品采用</th><th className="py-2 pr-4">客流增长</th>
+                  <th className="py-2 pr-4">收入增长</th><th className="py-2 pr-4">备注</th>
                 </tr>
               </thead>
               <tbody>
                 {MOCK_HISTORICAL_CASES.map((h, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50" data-testid={`historical-case-row-${idx}`}>
-                    <td className="py-2 pr-4 text-gray-600">{h.year}.{String(h.month).padStart(2, '0')}</td>
+                  <tr key={idx} className="border-b hover:bg-gray-50">
+                    <td className="py-2 pr-4 text-gray-600">{h.year}.{String(h.month).padStart(2,'0')}</td>
                     <td className="py-2 pr-4 font-medium">{h.activityName}</td>
                     <td className="py-2 pr-4">{h.storeCount}家</td>
                     <td className="py-2 pr-4 text-green-600">{h.avgTrafficIncrease}</td>
@@ -200,14 +215,14 @@ export default function OperationsPage() {
         </div>
       )}
 
-      {/* AI建议面板 */}
+      {/* AI建议 */}
       {aiAdvice && !showHistorical && (
         <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6 whitespace-pre-line text-sm text-blue-800">
           {aiAdvice}
         </div>
       )}
 
-      {/* 问题列表（选择题模式） */}
+      {/* 问题列表 */}
       {!showHistorical && (
         <div className="space-y-6">
           {filtered.map(q => (
@@ -217,7 +232,6 @@ export default function OperationsPage() {
               </div>
               <h3 className="font-bold text-lg mb-1">{q.question}</h3>
               <p className="text-xs text-blue-600 mb-4">💡 {q.aiSuggestion}</p>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {q.options.map(opt => {
                   const isSelected = selected[q.id] === opt.id
@@ -229,11 +243,8 @@ export default function OperationsPage() {
                         {isSelected && <span className="text-blue-600 text-xs">✓ 已选</span>}
                       </div>
                       <p className="text-xs text-gray-600 mb-2">{opt.description}</p>
-                      {/* P-50 V2: 显示 dataEvidence */}
                       {opt.dataEvidence && (
-                        <p className="text-xs text-orange-600 mb-2" data-testid={`data-evidence-${opt.id}`}>
-                          📋 {opt.dataEvidence}
-                        </p>
+                        <p className="text-xs text-orange-600 mb-2">📋 {opt.dataEvidence}</p>
                       )}
                       <div className="flex gap-1 flex-wrap mb-2">
                         {opt.pros.map(p => <span key={p} className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">+{p}</span>)}
