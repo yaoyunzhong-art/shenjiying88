@@ -465,7 +465,7 @@ test('反例: 仅有type/scope空时其他字段不报错', () => {
 // hasErrors 内部使用 Object.keys(errors) 所以 undefined/null 会抛异常
 // 这是 page.tsx 实现行为，我们在测试中验证异常而非返回值
 test('正例: hasErrors 对包含额外key的对象返回true', () => {
-  assert.equal(hasErrors({ length: 0, name: 'err' } as any), true);
+  assert.equal(hasErrors({ length: 0, name: 'err' } as unknown as import('./page').FormErrors), true);
 });
 
 test('正例: hasErrors 对空对象返回false（已有此测试，重确认程序性质）', () => {

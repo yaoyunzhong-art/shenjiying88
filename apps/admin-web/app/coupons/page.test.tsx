@@ -540,51 +540,64 @@ test('边界: 空 coupons 数组所有筛选返回空', () => {
 });
 
 /* =================================================================
- * React 渲染测试 (使用 @testing-library/react + happy-dom)
+ * 源码结构分析 (纯 node:test, 无 JSX 渲染依赖)
  * ================================================================= */
 
 import { describe, it } from 'node:test';
-import React from 'react';
-import { render, cleanup, screen } from '@testing-library/react';
-import CouponsPage from './page';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function renderPage() {
-  cleanup();
-  return render(React.createElement(CouponsPage));
-}
-
-function textContent(el: HTMLElement | null): string {
-  return el?.textContent?.trim().replace(/\s+/g, ' ') ?? '';
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PAGE_SOURCE = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('coupons-page: 源码结构分析', () => {
-  const src = fs.readFileSync('apps/admin-web/app/coupons/page.tsx', 'utf-8')
-
   it('源码含"优惠券管理中心"标题字符串', () => {
-    assert.ok(src.includes('优惠券管理中心'), '源码应包含标题')
+    assert.ok(PAGE_SOURCE.includes('优惠券管理中心'), '源码应包含标题')
   })
 
   it('源码含统计卡片相关关键词', () => {
-    assert.ok(src.includes('优惠券总数') || src.includes('进行中') || src.includes('已领完'), '源码应有统计卡片')
+    assert.ok(PAGE_SOURCE.includes('优惠券总数') || PAGE_SOURCE.includes('进行中') || PAGE_SOURCE.includes('已领完'), '源码应有统计卡片')
   })
 
   it('源码含状态筛选', () => {
-    assert.ok(src.includes('全部') && src.includes('已过期'), '源码应含全部/已过期等状态')
+    assert.ok(PAGE_SOURCE.includes('全部') && PAGE_SOURCE.includes('已过期'), '源码应含全部/已过期等状态')
   })
 
   it('源码含搜索输入框', () => {
-    assert.ok(src.includes('搜索券码') || src.includes('placeholder') || src.includes('搜索'), '源码应含搜索功能')
+    assert.ok(PAGE_SOURCE.includes('搜索券码') || PAGE_SOURCE.includes('placeholder') || PAGE_SOURCE.includes('搜索'), '源码应含搜索功能')
   })
 
-  it('源码含按钮', () => {
-    assert.ok(src.includes('button') || src.includes('Button'), '源码应含button')
+  it('源码含 UI 交互元素', () => {
+    assert.ok(PAGE_SOURCE.includes('onClick') || PAGE_SOURCE.includes('onChange'), '源码应含事件绑定')
   })
 
   it('源码含列表渲染', () => {
-    assert.ok(src.includes('.map('), '源码应含列表渲染')
+    assert.ok(PAGE_SOURCE.includes('.map('), '源码应含列表渲染')
   })
 
   it('源码含分页逻辑', () => {
-    assert.ok(src.includes('pagination') || src.includes('Pagination'), '源码应含分页')
+    assert.ok(PAGE_SOURCE.includes('pagination') || PAGE_SOURCE.includes('Pagination'), '源码应含分页')
+  })
+
+  it('源码使用 "use client" 指令', () => {
+    assert.ok(PAGE_SOURCE.includes("'use client'"), '源码应含 use client')
+  })
+
+  it('源码含 useMemo 性能优化', () => {
+    assert.ok(PAGE_SOURCE.includes('useMemo'), '源码应使用 useMemo')
+  })
+
+  it('源码含 useCallback 性能优化', () => {
+    assert.ok(PAGE_SOURCE.includes('useCallback'), '源码应使用 useCallback')
+  })
+
+  it('源码含统计数据 (Stats)', () => {
+    assert.ok(PAGE_SOURCE.includes('stats.') || PAGE_SOURCE.includes('统计'), '源码应有统计数据')
+  })
+
+  it('源码含状态流转确认弹窗', () => {
+    assert.ok(PAGE_SOURCE.includes('过期预警') || PAGE_SOURCE.includes('expiredSoon'), '源码应有过期预警')
   })
 })
