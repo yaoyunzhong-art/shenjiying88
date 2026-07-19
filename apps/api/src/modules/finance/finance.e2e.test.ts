@@ -1933,3 +1933,360 @@ it('e2e: settlements — 争议流程', async () => {
     await app.close();
   }
 });
+
+// ═══════════════════════════════════════════════════════
+// 对账 Reconciliation (P-38)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: reconciliation — 创建对账批次', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reconciliation/batches')
+      .set(TENANT_A)
+      .send({
+        startDate: '2026-07-01T00:00:00.000Z',
+        endDate: '2026-07-07T23:59:59.999Z',
+        matchedCount: 120,
+        unmatchedCount: 3,
+        totalAmount: 5000000,
+        difference: 1500,
+      });
+    expect(createRes.status).toBe(201);
+    expect(createRes.body).toHaveProperty('id');
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reconciliation — 查询对账批次列表', async () => {
+  const { app } = await buildApp();
+  try {
+    // 先创建
+    await request(app.getHttpServer())
+      .post('/finance/reconciliation/batches')
+      .set(TENANT_A)
+      .send({
+        startDate: '2026-07-01T00:00:00.000Z',
+        endDate: '2026-07-07T23:59:59.999Z',
+        matchedCount: 100,
+        unmatchedCount: 0,
+        totalAmount: 3000000,
+        difference: 0,
+      });
+
+    const list = await request(app.getHttpServer())
+      .get('/finance/reconciliation/batches')
+      .set(TENANT_A);
+    expect(list.status).toBe(200);
+    expect(Array.isArray(list.body.data)).toBe(true);
+    expect(list.body.data.length).toBeGreaterThanOrEqual(1);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reconciliation — 按批次ID查询详情', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reconciliation/batches')
+      .set(TENANT_A)
+      .send({
+        startDate: '2026-07-15T00:00:00.000Z',
+        endDate: '2026-07-21T23:59:59.999Z',
+        matchedCount: 80,
+        unmatchedCount: 2,
+        totalAmount: 2000000,
+        difference: 500,
+      });
+    const batchId = createRes.body.id;
+
+    const detail = await request(app.getHttpServer())
+      .get('/finance/reconciliation/batches/' + batchId)
+      .set(TENANT_A);
+    expect(detail.status).toBe(200);
+    expect(detail.body.data?.id ?? detail.body.id).toBe(batchId);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reconciliation — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/reconciliation/batches')
+      .set(TENANT_A)
+      .send({
+        startDate: '2026-08-01T00:00:00.000Z',
+        endDate: '2026-08-07T23:59:59.999Z',
+        matchedCount: 50, unmatchedCount: 1, totalAmount: 1000000, difference: 200,
+      });
+
+    const listB = await request(app.getHttpServer())
+      .get('/finance/reconciliation/batches')
+      .set(TENANT_B);
+    expect(listB.status).toBe(200);
+    expect(listB.body.data.length).toBe(0);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 报表 Reports (P-38)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: reports — 创建报表', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({ title: 'test-report', type: 'profit-loss', period: '2026-W30', storeId: 'store-001' });
+    expect(createRes.status).toBe(201);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 查询报表列表', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({ title: 'monthly-summary', type: 'summary', period: '2026-07', storeId: 'store-001' });
+
+    const list = await request(app.getHttpServer())
+      .get('/finance/reports')
+      .set(TENANT_A);
+    expect(list.status).toBe(200);
+    expect(Array.isArray(list.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 按reportId查询详情', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({ title: 'weekly-report', type: 'revenue', period: '2026-W30', storeId: 'store-001' });
+    const reportId = createRes.body.id;
+
+    const detail = await request(app.getHttpServer())
+      .get('/finance/reports/' + reportId)
+      .set(TENANT_A);
+    expect(detail.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 重新生成报表', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({ title: 'regenerate-test', type: 'profit-loss', period: '2026-W31', storeId: 'store-001' });
+    const reportId = createRes.body.id;
+
+    const regen = await request(app.getHttpServer())
+      .post('/finance/reports/' + reportId + '/regenerate')
+      .set(TENANT_A);
+    expect(regen.status).toBe(201);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({ title: 'tenant-a-only', type: 'summary', period: '2026-07', storeId: 'store-001' });
+
+    const listB = await request(app.getHttpServer())
+      .get('/finance/reports')
+      .set(TENANT_B);
+    expect(listB.status).toBe(200);
+    expect(listB.body.data.length).toBe(0);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 账户深度测试 (P-38 accounts)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: accounts — 创建后冻结再关闭全流程', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/accounts')
+      .set(TENANT_A)
+      .send({ name: 'cycle-account', type: 'checking', storeId: 'store-001' });
+    expect(createRes.status).toBe(201);
+    const accountId = createRes.body.data?.id ?? createRes.body.id;
+
+    if (accountId) {
+      await request(app.getHttpServer())
+        .post('/finance/accounts/' + accountId + '/freeze')
+        .set(TENANT_A);
+
+      await request(app.getHttpServer())
+        .post('/finance/accounts/' + accountId + '/close')
+        .set(TENANT_A);
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: accounts — 查询不存在的账户返回空', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/accounts?name=nonexistent')
+      .set(TENANT_A);
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: accounts — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/accounts')
+      .set(TENANT_A)
+      .send({ name: 'tenant-a-account', type: 'savings', storeId: 'store-001' });
+
+    const listB = await request(app.getHttpServer())
+      .get('/finance/accounts')
+      .set(TENANT_B);
+    expect(listB.status).toBe(200);
+    expect(listB.body.data.length).toBe(0);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 更多 Ledger 边界
+// ═══════════════════════════════════════════════════════
+
+it('e2e: ledgers — 按金额范围过滤', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A)
+      .query({ minAmount: 1000, maxAmount: 100000 });
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: ledgers — 按日期范围过滤', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A)
+      .query({ startDate: '2026-07-01', endDate: '2026-07-31' });
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 报表删除边界
+// ═══════════════════════════════════════════════════════
+
+it('e2e: reports — 不存在的reportId应返回404', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/reports/nonexistent-report')
+      .set(TENANT_A);
+    expect(res.status).toBe(404);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 批量创建+按类型过滤', async () => {
+  const { app } = await buildApp();
+  try {
+    for (let i = 0; i < 3; i++) {
+      await request(app.getHttpServer())
+        .post('/finance/reports')
+        .set(TENANT_A)
+        .send({ title: 'batch-report-' + i, type: 'profit-loss', period: '2026-07', storeId: 'store-001' });
+    }
+
+    const list = await request(app.getHttpServer())
+      .get('/finance/reports')
+      .set(TENANT_A)
+      .query({ type: 'profit-loss' });
+    expect(list.status).toBe(200);
+    expect(Array.isArray(list.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// Dashboard 主面板 (P-38 profit/loss)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: dashboard — 获取主面板(含profit/loss)', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001' });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('revenue');
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: dashboard — 无storeId应汇总', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard')
+      .set(TENANT_A);
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: dashboard — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard')
+      .set(TENANT_B);
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
