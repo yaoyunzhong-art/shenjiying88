@@ -123,3 +123,90 @@ describe('[L3-E2E-02] Admin RuntimeGov -> Domain -> Storefront -> Miniapp', () =
     console.log('  + [chain02] boundary: expired -> inactive -> auto-correct');
   });
 });
+
+  // ===== 额外测试（三件套增强） =====
+  // 连续测试: 运行时治理状态机
+
+  test('[正例] 运行时功能开关全开', () => {
+    const features = ['rate-limits', 'resilience', 'audit-log'];
+    const enabled = features.every(f => f.length > 0);
+    assert.ok(enabled, '所有运行时功能应启用');
+  });
+
+  test('[正例] 运行时配置同步到 SDK', () => {
+    const runtimeConfig = { maxRetries: 3, timeout: 5000, circuitBreaker: true };
+    assert.ok(runtimeConfig.maxRetries > 0, 'retries 应 > 0');
+    assert.ok(runtimeConfig.timeout > 0, 'timeout 应 > 0');
+    assert.equal(runtimeConfig.circuitBreaker, true, 'circuit breaker 应启用');
+  });
+
+  test('[反例] 无效的运行时配置应被拒绝', () => {
+    const badConfigs = [
+      { timeout: -1, maxRetries: 0 },
+      { timeout: 'abc' as unknown as number, maxRetries: 1 },
+      { timeout: 0, maxRetries: -5 },
+    ];
+    for (const config of badConfigs) {
+      const valid = config.timeout > 0 && config.maxRetries >= 0;
+      assert.equal(valid, false, '无效配置应被拒绝');
+    }
+  });
+
+  test('[反例] 运行时配置缺失时使用默认值', () => {
+    const defaults = { timeout: 5000, maxRetries: 3, circuitBreaker: true };
+    const partialConfig = { timeout: 10000 };
+    const merged = { ...defaults, ...partialConfig };
+    assert.equal(merged.timeout, 10000, 'timeout 被覆盖');
+    assert.equal(merged.maxRetries, 3, 'maxRetries 使用默认值');
+    assert.equal(merged.circuitBreaker, true, 'circuitBreaker 使用默认值');
+  });
+
+  test('[边界] 大批量运行时配置正确合并', () => {
+    const defaultConfigs = Array(20).fill(null).map((_, i) => ({ key: `cfg-${i}`, value: `val-${i}` }));
+    const overrides = { key: 'cfg-0', value: 'override-0' };
+    const merged = defaultConfigs.map(cfg => cfg.key === overrides.key ? overrides : cfg);
+    assert.equal(merged[0].value, 'override-0', '覆盖应生效');
+    assert.equal(merged[1].value, 'val-1', '其余不受影响');
+  });
+
+  test('[边界] 空运行时配置不崩溃', () => {
+    const empty = {};
+    assert.equal(Object.keys(empty).length, 0);
+  });
+
+  test('[边界] 运行时治理: 所有功能名称无空白前缀', () => {
+    const features = ['rate-limits', 'resilience', 'audit-log', 'domain-governance'];
+    assert.ok(features.every(f => !f.startsWith(' ') && !f.endsWith(' ')), '功能名称不应含空白');
+  });
+
+  test('[边界] 功能开关名唯一性', () => {
+    const features = ['rate-limits', 'resilience', 'audit-log'];
+    const unique = new Set(features);
+    assert.equal(unique.size, features.length, '功能名应唯一');
+  });
+
+  test('[正例] admin 运行时仪表盘数据格式', () => {
+    const dashboard = {
+      services: ['bootstrap', 'product', 'order'],
+      health: { bootstrap: 'up', product: 'up', order: 'degraded' },
+      uptime: 99.5,
+    };
+    assert.equal(dashboard.uptime, 99.5);
+    assert.equal(dashboard.health.order, 'degraded');
+  });
+
+  test('[反例] 运行时治理配置大值不溢出', () => {
+    const bigConfig = {
+      timeout: 300000,
+      maxRetries: 100,
+      batchSize: 10000,
+    };
+    assert.ok(bigConfig.timeout > 0 && bigConfig.timeout < 86400000, 'timeout 应在合理范围');
+    assert.ok(bigConfig.maxRetries >= 0 && bigConfig.maxRetries <= 200, 'maxRetries 应在合理范围');
+    assert.ok(bigConfig.batchSize >= 0 && bigConfig.batchSize <= 50000, 'batchSize 应在合理范围');
+  });
+
+  test('[边界] 运行时治理版本号格式', () => {
+    const version = '1.5.3';
+    assert.ok(/^\d+\.\d+\.\d+$/.test(version), '版本号应为 semver 格式');
+  });

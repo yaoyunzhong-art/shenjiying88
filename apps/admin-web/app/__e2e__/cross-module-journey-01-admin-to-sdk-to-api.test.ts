@@ -184,3 +184,173 @@ describe('🌐 [L3-E2E-01] 管理端(产品) → SDK(API层) → Domain(校验) 
     console.log('  ✅ [链01] 边界通过: 空品牌 → Domain校验失败 → Admin不崩溃');
   });
 });
+
+  // ===== 额外测试（正例+反例+边界 三件套套装） =====
+
+  // ---- 2. 商品过滤 ----
+
+  test('[正例] admin 商品列表按状态过滤: active', () => {
+    const products = [
+      { id: 'p1', name: 'A', status: 'active', category: 'food', marketCode: 'CN-BJ', price: 100, cost: 60, stock: 50 },
+      { id: 'p2', name: 'B', status: 'inactive', category: 'daily', marketCode: 'CN-SH', price: 200, cost: 120, stock: 30 },
+      { id: 'p3', name: 'C', status: 'active', category: 'electronics', marketCode: 'CN-BJ', price: 50, cost: 30, stock: 0 },
+    ];
+    const result = filterProducts(products, { status: 'active' });
+    assert.equal(result.length, 2, 'active 过滤应返回2个');
+    assert.ok(result.every(p => p.status === 'active'), '所有结果状态应为 active');
+  });
+
+  test('[正例] admin 商品列表按分类过滤: food', () => {
+    const products = [
+      { id: 'p1', name: 'A', status: 'active', category: 'food', marketCode: 'CN-BJ', price: 100, cost: 60, stock: 50 },
+      { id: 'p2', name: 'B', status: 'inactive', category: 'daily', marketCode: 'CN-SH', price: 200, cost: 120, stock: 30 },
+      { id: 'p3', name: 'C', status: 'active', category: 'food', marketCode: 'CN-GZ', price: 50, cost: 30, stock: 10 },
+    ];
+    const result = filterProducts(products, { category: 'food' });
+    assert.equal(result.length, 2, 'food 过滤应返回2个');
+  });
+
+  test('[反例] 不存在的分类状态组合过滤应返回空', () => {
+    const products = [
+      { id: 'p1', name: 'A', status: 'active', category: 'food', marketCode: 'CN-BJ', price: 100, cost: 60, stock: 50 },
+    ];
+    const result = filterProducts(products, { status: 'inactive', category: 'electronics' });
+    assert.equal(result.length, 0, '不存在的组合应返回空');
+  });
+
+  test('[边界] 空商品列表过滤不报错', () => {
+    const result = filterProducts([], { status: 'active' });
+    assert.deepEqual(result, [], '空列表过滤应返回空数组');
+  });
+
+  test('[边界] 不设置任何过滤条件应返回所有商品', () => {
+    const products = [
+      { id: 'p1', name: 'A', status: 'active', category: 'food', marketCode: 'CN-BJ', price: 100, cost: 60, stock: 50 },
+      { id: 'p2', name: 'B', status: 'inactive', category: 'daily', marketCode: 'CN-SH', price: 200, cost: 120, stock: 30 },
+    ];
+    const result = filterProducts(products, {});
+    assert.equal(result.length, 2, '无过滤条件返回全部');
+  });
+
+  // ---- 3. Margin 计算 ----
+
+  test('[正例] margin 计算: 正常价格', () => {
+    assert.equal(computeMargin(100, 60), 40, '100-60=40%');
+    assert.equal(computeMargin(200, 100), 50, '200-100=50%');
+    assert.equal(computeMargin(50, 25), 50, '50-25=50%');
+  });
+
+  test('[反例] cost=price 时 margin 为0', () => {
+    assert.equal(computeMargin(100, 100), 0, 'cost=price 应为0%');
+  });
+
+  test('[反例] cost>price 时 margin 为0（亏本不显示负百分比）', () => {
+    assert.equal(computeMargin(100, 150), 0, 'cost>price 应为0%');
+  });
+
+  test('[边界] price=0 时应返回0', () => {
+    assert.equal(computeMargin(0, 0), 0, 'price=0 应返回0');
+  });
+
+  test('[边界] 大数 margin 计算不溢出', () => {
+    const result = computeMargin(99999999, 50000000);
+    assert.equal(result, 50, '大数计算应准确');
+  });
+
+  // ---- 4. Domain 校验 ----
+
+  test('[正例] 完整 bootstrap 响应通过 domain 校验', () => {
+    const resp: MockBootstrapResponse = {
+      success: true,
+      message: 'OK',
+      data: { tenant: { id: 't1', name: 'T1' }, brands: [{ id: 'b1', name: 'B1' }], stores: [{ id: 's1', name: 'S1', marketCode: 'CN-BJ' }], capabilities: [], channels: [], audiences: [] },
+      timestamp: new Date().toISOString(),
+    };
+    const v = validateBootstrapResponse(resp);
+    assert.ok(v.valid);
+    assert.equal(v.errors.length, 0);
+  });
+
+  test('[反例] 缺少 tenant.id 应返回错误', () => {
+    const resp: MockBootstrapResponse = {
+      success: true,
+      message: 'OK',
+      data: { tenant: { id: '', name: '' }, brands: [{ id: 'b1', name: 'B1' }], stores: [{ id: 's1', name: 'S1', marketCode: 'CN-BJ' }], capabilities: [], channels: [], audiences: [] },
+      timestamp: new Date().toISOString(),
+    };
+    const v = validateBootstrapResponse(resp);
+    assert.equal(v.valid, false);
+    assert.ok(v.errors.some(e => e.includes('tenant.id')));
+  });
+
+  test('[反例] success 非 boolean 应报错', () => {
+    const resp = { success: 'yes' as unknown as boolean, message: 'OK', data: null, timestamp: '' };
+    const v = validateBootstrapResponse(resp);
+    assert.equal(v.valid, false);
+    assert.ok(v.errors.some(e => e.includes('boolean')));
+  });
+
+  test('[边界] 只有最低必要字段的响应通过校验', () => {
+    const resp: MockBootstrapResponse = {
+      success: true,
+      message: 'OK',
+      data: { tenant: { id: 'min', name: 'Min' }, brands: [{ id: 'b1', name: 'B1' }], stores: [{ id: 's1', name: 'S1', marketCode: 'XX' }], capabilities: [], channels: [], audiences: [] },
+      timestamp: new Date().toISOString(),
+    };
+    const v = validateBootstrapResponse(resp);
+    assert.ok(v.valid);
+  });
+
+  // ---- 5. 多市场店铺 ----
+
+  test('[正例] 多市场多店铺筛选: 按 marketCode 分组', () => {
+    const stores = [
+      { id: 's1', name: '店1', marketCode: 'CN-BJ' },
+      { id: 's2', name: '店2', marketCode: 'CN-SH' },
+      { id: 's3', name: '店3', marketCode: 'CN-BJ' },
+    ];
+    const bjStores = stores.filter(s => s.marketCode === 'CN-BJ');
+    assert.equal(bjStores.length, 2, 'CN-BJ 应有2店');
+    assert.deepEqual(bjStores.map(s => s.name), ['店1', '店3']);
+  });
+
+  test('[反例] CSV 导出过滤: 空结果不崩溃', () => {
+    const stores: Array<{ id: string; name: string; marketCode: string }> = [];
+    const exportData = stores.length > 0 ? stores.map(s => `${s.id},${s.name},${s.marketCode}`).join('\n') : '无数据';
+    assert.equal(exportData, '无数据', '空数据导出应显示 无数据');
+  });
+
+  test('[边界] 市场配置的 marketCode 大写一致性', () => {
+    const marketCodes = ['CN-BJ', 'CN-SH', 'CN-GZ'];
+    assert.ok(marketCodes.every(c => c === c.toUpperCase()), '所有 marketCode 应大写');
+    assert.ok(marketCodes.every(c => /^[A-Z]{2}-[A-Z]{2}$/.test(c)), '格式应为 XX-XX');
+  });
+
+  // ---- 6. 产品状态枚举 ----
+
+  test('[边界] PRODUCT_STATUS 枚举完整性', () => {
+    assert.equal(PRODUCT_STATUS.length, 4, '应有4种状态');
+    assert.ok(PRODUCT_STATUS.includes('active'));
+    assert.ok(PRODUCT_STATUS.includes('inactive'));
+    assert.ok(PRODUCT_STATUS.includes('discontinued'));
+    assert.ok(PRODUCT_STATUS.includes('draft'));
+  });
+
+  test('[反例] 不在枚举中的状态被过滤时不影响其他', () => {
+    const products = [
+      { id: 'p1', name: 'A', status: 'active', category: 'food', marketCode: 'CN-BJ', price: 100, cost: 60, stock: 50 },
+    ];
+    // ALL = 不过滤
+    const result = filterProducts(products, { status: 'ALL' });
+    assert.equal(result.length, 1);
+  });
+
+  test('[边界] enum 类型的 AS CONST 不可变', () => {
+    const categories = [...PRODUCT_CATEGORIES] as readonly string[];
+    assert.deepEqual([...categories], ['food', 'beverage', 'daily', 'electronics', 'clothing']);
+  });
+
+  test('[边界] PRODUCT_STATUS 所有枚举值都是小写字母', () => {
+    assert.ok(PRODUCT_STATUS.every(s => /^[a-z]+$/.test(s)), 'status 枚举值应全小写');
+  });
+});

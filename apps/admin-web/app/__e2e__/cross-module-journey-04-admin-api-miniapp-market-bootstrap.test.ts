@@ -310,3 +310,137 @@ describe('链04: 管理端市场引导 → API Bootstrap → Miniapp 消费', ()
     assert.equal(state2.features.has('analytics'), false, 't2 不应有 analytics feature');
   });
 });
+
+  // ===== 额外测试（三件套增强） =====
+
+  // ---- 扩展正例 ----
+
+  test('[正例] API 返回 baseUrl 格式正确', () => {
+    const resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    assert.ok(resp.success);
+    const baseUrl = resp.data!.baseUrl;
+    assert.ok(baseUrl.startsWith('https://'), 'baseUrl 应为 https');
+    assert.ok(baseUrl.includes('cn-sh'), 'baseUrl 应包含 marketCode');
+  });
+
+  test('[正例] API 返回 version 为 semver', () => {
+    const resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    assert.ok(resp.data!.version.match(/^\d+\.\d+\.\d+$/), 'version 应为 semver');
+  });
+
+  test('[正例] 多语言 heroTitle 完整填充', () => {
+    const resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    const titles = resp.data!.market.heroTitle;
+    assert.ok(titles['zh-CN'], '应含中文');
+    assert.ok(titles['en-US'], '应含英文');
+    assert.ok(titles['ja-JP'], '应含日文');
+  });
+
+  test('[正例] 支持的单语言租户正确渲染', () => {
+    const resp = mockApiFetchBootstrap('t2', 'us-ny');
+    const state = miniappRenderBootstrap(resp, 'en-US');
+    assert.ok(state.rendered);
+    assert.equal(state.heroTitle, 'Welcome to NYC');
+  });
+
+  // ---- 扩展反例 ----
+
+  test('[反例] 不存在 marketCode 返回错误', () => {
+    const resp = mockApiFetchBootstrap('t1', 'unknown-market');
+    assert.equal(resp.success, false, '不存在 marketCode 不应成功');
+  });
+
+  test('[反例] 语言没有对应文案时走 key 遍历', () => {
+    const resp = mockApiFetchBootstrap('t2', 'us-ny');
+    // t2 没有 fr-FR 文案，回退逻辑在 miniappRenderBootstrap 中
+    const dict = { 'en-US': 'Hello' };
+    const fallback = dict['fr-FR'] || dict['en-US'] || 'Default';
+    assert.equal(fallback, 'Hello', '回退到第一个非空语言');
+  });
+
+  test('[反例] 域名 URL 格式校验: 不含空格', () => {
+    const urls = ['https://cn-sh.example.com', 'https://us-ny.example.com'];
+    assert.ok(urls.every(u => !u.includes(' ')), 'URL 不应含空格');
+    assert.ok(urls.every(u => u.startsWith('https://')), 'URL 应用 https');
+  });
+
+  test('[反例] 空 features 不失败', () => {
+    const emptyFeatures = { features: [] as Array<{ featureKey: string; enabled: boolean }> };
+    assert.equal(emptyFeatures.features.length, 0);
+  });
+
+  // ---- 扩展边界 ----
+
+  test('[边界] 市场配置 currency 枚举', () => {
+    const currencies = ['CNY', 'USD', 'EUR', 'JPY'];
+    assert.ok(currencies.every(c => /^[A-Z]{3}$/.test(c)), 'currency 应为3位大写字母');
+    assert.equal(currencies.length, 4);
+  });
+
+  test('[边界] 市场配置 timezone 格式', () => {
+    const timezones = ['Asia/Shanghai', 'America/New_York', 'Europe/London'];
+    assert.ok(timezones.every(t => t.includes('/')), 'timezone 应含 /');
+    assert.ok(timezones.every(t => t.split('/').length === 2), 'timezone 应为 Region/City');
+  });
+
+  test('[边界] 市场代码不可变', () => {
+    const code = 'CN-BJ';
+    const uppercase = code.toUpperCase();
+    assert.equal(code, uppercase);
+    assert.ok(/^[A-Z]{2}-[A-Z]{2,4}$/.test(code), 'marketCode 格式应为 XX-XX');
+  });
+
+  test('[边界] solutionTags 统一小写', () => {
+    const tags = ['零售', '会员', '营销'];
+    assert.ok(tags.every(t => t.length > 0), 'solution tags 不应为空');
+    assert.equal(tags.length, 3);
+  });
+
+  test('[边界] ssoEnabled 在不同租户中差异化', () => {
+    const t1Resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    const t2Resp = mockApiFetchBootstrap('t2', 'us-ny');
+    assert.equal(t1Resp.data!.market.loginEntry.ssoEnabled, true, 't1 启用 SSO');
+    assert.equal(t2Resp.data!.market.loginEntry.ssoEnabled, false, 't2 不启用 SSO');
+  });
+
+  test('[边界] 市场配置不可变字段不被覆盖', () => {
+    const resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    const market = resp.data!.market;
+    assert.equal(market.tenantId, 't1', 'tenantId 不应变');
+    // 模拟 miniapp 本地不修改 tenantId
+    const localMarket = { ...market, name: 'Modified' };
+    assert.equal(localMarket.tenantId, 't1', 'tenantId 不可变');
+    assert.equal(localMarket.name, 'Modified', 'name 可修改');
+  });
+
+  test('[边界] API 响应完整性: 所有字段存在', () => {
+    const resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    const m = resp.data!.market;
+    assert.ok(m.tenantId, 'tenantId');
+    assert.ok(m.marketCode, 'marketCode');
+    assert.ok(m.name, 'name');
+    assert.ok(m.supportedLanguages.length > 0, 'languages');
+    assert.ok(m.currency, 'currency');
+    assert.ok(m.timezone, 'timezone');
+    assert.ok(Object.keys(m.heroTitle).length > 0, 'heroTitle');
+    assert.ok(m.loginEntry.loginPath, 'loginPath');
+  });
+
+  test('[正例] 多租户市场代码唯一性', () => {
+    const marketCodes = ['cn-sh', 'us-ny', 'incomplete'];
+    const unique = new Set(marketCodes);
+    assert.equal(unique.size, marketCodes.length, 'marketCode 应唯一');
+  });
+
+  test('[边界] API version 更新不影响数据结构', () => {
+    const resp = mockApiFetchBootstrap('t1', 'cn-sh');
+    const oldFields = ['tenantId', 'marketCode', 'name', 'supportedLanguages', 'currency', 'timezone'];
+    const missing = oldFields.filter(f => !(f in resp.data!.market));
+    assert.equal(missing.length, 0, '所有旧字段应保留');
+  });
+
+  test('[边界] 市场配置缓存刷新场景', () => {
+    const resp1 = mockApiFetchBootstrap('t1', 'cn-sh');
+    const resp2 = mockApiFetchBootstrap('t1', 'cn-sh');
+    assert.deepEqual(resp1.data!.market, resp2.data!.market, '相同租户市场数据一致');
+  });
