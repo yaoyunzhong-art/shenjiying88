@@ -204,6 +204,8 @@ export default function FeasibilityPage() {
             <p className="text-sm text-blue-700">{report.marketTrend}</p>
           </div>
 
+          <BudgetComparison city={city} district={district} baseBudget={budget} tier={tier} />
+
           {/* 财务全景表 */}
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-lg font-bold mb-4">💰 财务全景表 (P-50 V2)</h2>
@@ -492,4 +494,84 @@ async function simulateFinance(city: string, district: string, budget: number, a
       paybackMonths: Math.max(1, Math.round(paybackMonths * 1.15)),
     },
   }
+}
+
+/**
+ * 预算对比 — 同时计算3个预算档次的分析
+ */
+function BudgetComparison({ city, district, baseBudget, tier }: {
+  city: string; district: string; baseBudget: number; tier: string
+}) {
+  const [comparison, setComparison] = useState<{ budget: number; score: number; payback: number; revenue: number }[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const runComparison = async () => {
+    setLoading(true)
+    const budgets = [
+      Math.max(100, baseBudget - 100),
+      baseBudget,
+      Math.min(2000, baseBudget + 200),
+    ]
+    const results = await Promise.all(budgets.map(async b => {
+      const rep = await simulateReport(city, district, b)
+      const fin = await simulateFinance(city, district, b, 400, tier)
+      return { budget: b, score: rep.score, payback: fin.paybackMonths, revenue: fin.revenueEstimate.estimatedMonthlyRevenue }
+    }))
+    setComparison(results)
+    setLoading(false)
+  }
+
+  if (!city) return null
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <h2 className="font-bold mb-3">📊 预算对比分析</h2>
+      <button onClick={runComparison} disabled={loading}
+        className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50 mb-3">
+        {loading ? '计算中...' : '🔍 对比三档预算'}
+      </button>
+      {comparison.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 border text-left">预算</th>
+                {comparison.map(c => (
+                  <th key={c.budget} className={`p-2 border text-right ${c.budget === baseBudget ? 'bg-blue-50' : ''}`}>
+                    {c.budget}万{c.budget === baseBudget ? ' ←当前' : ''}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b">
+                <td className="p-2 border font-medium">可行性评分</td>
+                {comparison.map(c => (
+                  <td key={c.budget} className={`p-2 border text-right font-mono ${c.budget === baseBudget ? 'bg-blue-50' : ''}`}>
+                    {c.score}/100
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b">
+                <td className="p-2 border font-medium">预估月收入</td>
+                {comparison.map(c => (
+                  <td key={c.budget} className={`p-2 border text-right font-mono ${c.budget === baseBudget ? 'bg-blue-50' : ''}`}>
+                    ¥{(c.revenue / 10000).toFixed(1)}万
+                  </td>
+                ))}
+              </tr>
+              <tr className="border-b">
+                <td className="p-2 border font-medium">回收期</td>
+                {comparison.map(c => (
+                  <td key={c.budget} className={`p-2 border text-right font-mono ${c.budget === baseBudget ? 'bg-blue-50' : ''}`}>
+                    {c.payback >= 999 ? '∞' : `${c.payback}月`}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 }
