@@ -33,7 +33,7 @@ describe('SeoService', () => {
 
   it('metadata: 删除', () => {
     svc.upsertMetadata('/del', { title: 'x', description: 'x', keywords: [], canonical: 'x', tenantId: 't1' })
-    svc.deleteMetadata('/del', 'zh-CN')
+    svc.deleteMetadata('/del')
     assert.throws(() => svc.getMetadata("/nonexistent", "zh-CN"))
   })
 
@@ -96,9 +96,9 @@ describe('SeoService', () => {
   // ── 反例 ──
   it('反例: 不存在的路径抛异常', () => { assert.throws(() => svc.getMetadata("/nonexistent", "zh-CN")) })
 
-  it('反例: 删除不存在的抛异常', () => { assert.throws(() => svc.deleteMetadata('/nonexistent', 'zh-CN')) })
+  it('反例: 删除不存在的抛异常', () => { assert.throws(() => svc.deleteMetadata('/nonexistent')) })
 
-  it('反例: 空城市抛异常', () => { assert.throws(() => svc.searchGeoLocations('')) })
+  it('反例: 空城市抛异常', () => { assert.throws(() => svc.searchGeoLocations('', '')) })
 
   it('边界: 空租户列表', () => { assert.equal(svc.listMetadata({ tenantId: 'no-tenant', locale: 'zh-CN', page: 1, pageSize: 20 }).items.length, 0) })
 })
