@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
+import { Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import {
   DataTable,
@@ -18,6 +18,9 @@ import {
   type DataTableSortConfig,
 } from '@m5/ui';
 
+// P1-3: 共享层收口 — 从 API 加载订单数据, API 不可用时回落 MOCK
+import { createBusinessClient } from '@m5/sdk';
+
 import {
   MOCK_ORDERS,
   ORDER_STATUS_MAP,
@@ -29,6 +32,52 @@ import {
   type OrderStatus,
   type OrderChannel,
 } from '../orders-data';
+
+// ── API 客户端 (client-side singleton) ──
+
+function getBizClient() {
+  if (typeof window === 'undefined') return null;
+  if (!(window as any).__m5_biz_client) {
+    (window as any).__m5_biz_client = createBusinessClient();
+  }
+  return (window as any).__m5_biz_client as ReturnType<typeof createBusinessClient>;
+}
+
+/** 将后端订单数据映射为 OrderItem 前端类型 */
+function mapApiOrderToOrderItem(apiOrder: any): OrderItem {
+  const rawAmount = (apiOrder.totalAmount ?? 0) / 100;
+  const rawPaid = (apiOrder.paidAmount ?? 0) / 100;
+  const rawRefunded = (apiOrder.refundedAmount ?? 0) / 100;
+
+  // 根据后端 status -> 前端 OrderStatus
+  const backendStatus = (apiOrder.status ?? '').toLowerCase();
+  let status: OrderStatus = 'pending';
+  if (['draft', 'pending'].includes(backendStatus)) status = 'pending';
+  else if (backendStatus === 'paid') status = 'confirmed';
+  else if (backendStatus === 'fulfilled') status = 'delivered';
+  else if (['cancelled', 'canceled'].includes(backendStatus)) status = 'cancelled';
+  else if (['refunded', 'partially_refunded'].includes(backendStatus)) status = 'refunded';
+  else if (backendStatus === 'timeout') status = 'cancelled';
+
+  return {
+    id: apiOrder.orderId ?? apiOrder.id ?? '',
+    orderNo: apiOrder.orderNo ?? apiOrder.orderId ?? '',
+    customerName: apiOrder.memberId ?? '—',
+    customerPhone: '',
+    channel: 'online' as OrderChannel,
+    status,
+    itemCount: (apiOrder.items ?? []).length,
+    totalAmount: rawAmount,
+    discountAmount: apiOrder.discountCents ? apiOrder.discountCents / 100 : 0,
+    paidAmount: rawPaid,
+    storeName: '',
+    marketCode: apiOrder.currency ?? 'CNY',
+    salesClerk: '',
+    note: '',
+    createdAt: apiOrder.createdAt ?? '',
+    updatedAt: apiOrder.updatedAt ?? '',
+  };
+}
 
 // ---- 金额格式化 ----
 
@@ -223,8 +272,36 @@ function OrdersPageContent() {
     () => ['orderNo', 'customerName', 'customerPhone', 'storeName', 'salesClerk'],
     []
   );
+
+  // ── 数据源 (API first, fallback to mock) ──
+  const [orders, setOrders] = useState<OrderItem[]>(MOCK_ORDERS);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+
+    const biz = getBizClient();
+    if (!biz) {
+      setOrdersLoading(false);
+      return;
+    }
+
+    biz.orders.list()
+      .then((apiOrders: any) => {
+        if (Array.isArray(apiOrders) && apiOrders.length > 0) {
+          setOrders(apiOrders.map(mapApiOrderToOrderItem));
+        }
+      })
+      .catch(() => {
+        // API 不可用, 保持 MOCK_ORDERS 回退
+      })
+      .finally(() => setOrdersLoading(false));
+  }, []);
+
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
-    MOCK_ORDERS,
+    orders,
     searchFields
   );
 
@@ -292,26 +369,26 @@ function OrdersPageContent() {
   }, [searchTerm, statusFilter, channelFilter, marketFilter, amountFilter, pagination]);
   const pageItems = pagination.paginate(sortedItems);
 
-  // 统计
+  // 统计 (基于实时 orders)
   const allMarkets = useMemo(
-    () => [...new Set(MOCK_ORDERS.map((o) => o.marketCode))].sort(),
-    []
+    () => [...new Set(orders.map((o) => o.marketCode))].sort(),
+    [orders]
   );
   const stats = useMemo(
     () => ({
-      total: MOCK_ORDERS.length,
-      pending: MOCK_ORDERS.filter((o) => o.status === 'pending' || o.status === 'confirmed').length,
-      processing: MOCK_ORDERS.filter((o) => o.status === 'processing' || o.status === 'shipped').length,
-      completed: MOCK_ORDERS.filter((o) => o.status === 'delivered').length,
-      cancelled: MOCK_ORDERS.filter((o) => o.status === 'cancelled' || o.status === 'refunded').length,
-      totalRevenue: MOCK_ORDERS
+      total: orders.length,
+      pending: orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length,
+      processing: orders.filter((o) => o.status === 'processing' || o.status === 'shipped').length,
+      completed: orders.filter((o) => o.status === 'delivered').length,
+      cancelled: orders.filter((o) => o.status === 'cancelled' || o.status === 'refunded').length,
+      totalRevenue: orders
         .filter((o) => o.status === 'delivered')
         .reduce((sum, o) => sum + o.paidAmount, 0),
-      avgOrderValue: (
-        MOCK_ORDERS.reduce((sum, o) => sum + o.totalAmount, 0) / MOCK_ORDERS.length
-      ).toFixed(0),
+      avgOrderValue: orders.length > 0
+        ? (orders.reduce((sum, o) => sum + o.totalAmount, 0) / orders.length).toFixed(0)
+        : '0',
     }),
-    []
+    [orders]
   );
 
   return (
@@ -413,11 +490,11 @@ function OrdersPageContent() {
         <div style={{ marginBottom: 12 }}>
           <Tabs
             items={[
-              { key: 'ALL', label: '全部', count: MOCK_ORDERS.length },
+              { key: 'ALL', label: '全部', count: orders.length },
               ...ORDER_STATUSES.map((s) => ({
                 key: s,
                 label: ORDER_STATUS_MAP[s].label,
-                count: MOCK_ORDERS.filter((item) => item.status === s).length,
+                count: orders.filter((item) => item.status === s).length,
               })),
             ]}
             activeKey={statusFilter}

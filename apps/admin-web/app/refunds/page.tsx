@@ -1,5 +1,6 @@
 /**
  * 退款管理 — Refund List Page (Next.js App Router)
+ * P1-3 共享层收口: API 优先加载, 不可用时回落 mock
  *
  * 功能:
  * - 管理门店退款申请审批与处理流程
@@ -9,30 +10,23 @@
  * - 统计概览：待处理 / 已退款总额 / 今日新增
  * - 空状态 / 加载中 / 搜索无结果 / 错误回退
  */
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { getRefunds } from './refund-data';
+import { getRefunds, loadRefundsFromApi } from './refund-data';
+import type { RefundItem } from './refund-types';
 import { RefundListClient } from './refund-list-client';
 
-export const metadata: Metadata = {
-  title: '退款管理 - M5 指挥台',
-  description:
-    '管理门店退换货申请审批与处理流程，支持仅退款、换货、退货退款等多种类型。状态筛选、订单号搜索，统计待处理退款和已退款总额。',
-  openGraph: {
-    title: '退款管理 | 门店退款处理',
-    description: '管理门店退款审批与处理流程，支持仅退款、换货、退货退款等多种类型',
-    type: 'website',
-  },
-};
-
 /** 退款统计卡片 */
-function RefundSummaryCards({ refunds }: { refunds: unknown[] }) {
-  const pending = refunds.filter((r: any) => r.status === 'pending' || r.status === 'review').length;
-  const approved = refunds.filter((r: any) => r.status === 'approved' || r.status === 'refunded').length;
+function RefundSummaryCards({ refunds }: { refunds: RefundItem[] }) {
+  const pending = refunds.filter((r: any) => r.status === 'pending' || r.status === 'review' || r.status === 'pending_approval').length;
+  const approved = refunds.filter((r: any) => r.status === 'approved' || r.status === 'refunded' || r.status === 'completed').length;
   const rejected = refunds.filter((r: any) => r.status === 'rejected').length;
   const totalAmount = refunds
-    .filter((r: any) => r.status === 'refunded' || r.status === 'approved')
+    .filter((r: any) => r.status === 'refunded' || r.status === 'approved' || r.status === 'completed')
     .reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
 
   const SUMMARY_ITEMS = [
@@ -108,8 +102,27 @@ function RefundEmptyState() {
   );
 }
 
+/** 主页面: API 优先加载, 不可用时回落 mock */
 export default function RefundsPage() {
-  const refunds = getRefunds();
+  const [refunds, setRefunds] = useState<RefundItem[]>(getRefunds());
+  const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+
+    loadRefundsFromApi()
+      .then((apiRefunds) => {
+        if (apiRefunds && apiRefunds.length > 0) {
+          setRefunds(apiRefunds);
+        }
+      })
+      .catch(() => {
+        // API 不可用, 保持 mock fallback
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <>
@@ -129,12 +142,14 @@ export default function RefundsPage() {
       />
 
       {/* 统计摘要 */}
-      {refunds && refunds.length > 0 && <RefundSummaryCards refunds={refunds} />}
+      {!loading && refunds && refunds.length > 0 && <RefundSummaryCards refunds={refunds} />}
 
       {/* 主列表 */}
       <ErrorBoundary fallback={<RefundListErrorFallback />}>
         <Suspense fallback={<RefundListLoadingFallback />}>
-          {refunds && refunds.length > 0 ? (
+          {loading ? (
+            <RefundListLoadingFallback />
+          ) : refunds && refunds.length > 0 ? (
             <RefundListClient refunds={refunds} />
           ) : refunds && refunds.length === 0 ? (
             <RefundEmptyState />

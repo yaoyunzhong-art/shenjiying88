@@ -1,11 +1,55 @@
 /**
  * 退款管理 — 数据层
- * 模拟后台 API 数据，提供增删改查操作接口
+ * P1-3 共享层收口: 优先调用真实 API，不可用时回落 mock
  */
 
+import { createBusinessClient } from '@m5/sdk';
 import type { RefundItem } from './refund-types';
 
-/** 模拟退款申请数据（可从 API 替换） */
+/** API 客户端 (client-side singleton) */
+function getBizClient() {
+  if (typeof window === 'undefined') return null;
+  if (!(window as any).__m5_biz_client) {
+    (window as any).__m5_biz_client = createBusinessClient();
+  }
+  return (window as any).__m5_biz_client as ReturnType<typeof createBusinessClient>;
+}
+
+/** 将后端退款记录映射为前端 RefundItem */
+function mapApiRefundToRefundItem(apiRefund: any, index: number): RefundItem {
+  // 后端 status 映射
+  const bs = (apiRefund.status ?? '').toLowerCase();
+  let status: RefundItem['status'] = 'pending_approval';
+  if (bs === 'pending') status = 'pending_approval';
+  else if (bs === 'approved' || bs === 'reviewed') status = 'approved';
+  else if (bs === 'processing') status = 'processing';
+  else if (bs === 'refunded' || bs === 'success' || bs === 'completed') status = 'completed';
+  else if (bs === 'rejected' || bs === 'declined') status = 'rejected';
+  else if (bs === 'cancelled' || bs === 'canceled') status = 'cancelled';
+
+  return {
+    id: apiRefund.refundId ?? apiRefund.id ?? `RF-API-${index}`,
+    orderId: apiRefund.orderId ?? '',
+    type: 'refund',
+    status,
+    channel: 'original',
+    customerName: apiRefund.memberId ?? '—',
+    customerPhone: '',
+    storeId: '',
+    storeName: '',
+    amount: apiRefund.refundAmount ?? apiRefund.amountCents ?? 0,
+    reason: apiRefund.reason ?? '',
+    remark: apiRefund.reviewNote ?? '',
+    createdAt: apiRefund.requestedAt ?? apiRefund.createdAt ?? '',
+    processedAt: apiRefund.completedAt ?? apiRefund.reviewedAt ?? undefined,
+    processedBy: apiRefund.reviewedBy ?? apiRefund.operator ?? undefined,
+    productName: '',
+    productSku: '',
+    quantity: 1,
+  };
+}
+
+/** 从 API 加载退款列表，不可用时回落 mock */
 export function getRefunds(): RefundItem[] {
   return [
     {
@@ -215,6 +259,23 @@ export function countByStatus(items: RefundItem[], status: string): number {
 /** 计算退款总金额（分） */
 export function totalAmount(items: RefundItem[]): number {
   return items.reduce((sum, i) => sum + i.amount, 0);
+}
+
+/**
+ * 异步加载退款列表 (API 优先)
+ * 用于客户端组件, API 不可用时返回 null, 调用方保留 mock fallback
+ */
+export async function loadRefundsFromApi(): Promise<RefundItem[] | null> {
+  const biz = getBizClient();
+  if (!biz) return null;
+
+  try {
+    const apiRefunds = await biz.refunds.list();
+    if (!Array.isArray(apiRefunds) || apiRefunds.length === 0) return null;
+    return apiRefunds.map((r: any, i: number) => mapApiRefundToRefundItem(r, i));
+  } catch {
+    return null;
+  }
 }
 
 /** 按门店分组退款数 */

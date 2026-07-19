@@ -1868,6 +1868,270 @@ export function subscribeStream(
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// P1-3: 共享层收口 — Business API 端点 (checkout/cashier/orders/refunds/payments)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
+ *
+ * 用法:
+ * ```ts
+ * const biz = createBusinessClient()
+ * const orders = await biz.orders.list()
+ * const member = await biz.member.lookup('13800138001')
+ * ```
+ */
+export function createBusinessClient(baseUrl?: string) {
+  const api = new ApiClient({ baseUrl: baseUrl ?? getDefaultApiBaseUrl() });
+
+  return {
+    // ── Checkout (POST /api/v1/transactions/checkout) ──
+    checkout: {
+      /** 发起结账 */
+      start: (body: {
+        memberId: string;
+        items: Array<{ productId: string; quantity: number; unitPriceCents: number }>;
+        paymentChannel: string;
+        couponCode?: string;
+      }, init?: RequestInit) =>
+        api.postData<{ orderId: string; transactionId: string; totalCents: number }>('/transactions/checkout', body, init),
+    },
+
+    // ── Orders (GET/POST /api/v1/transactions/orders) ──
+    orders: {
+      /** 订单列表 */
+      list: (query?: {
+        memberId?: string;
+        status?: string;
+        paymentStatus?: string;
+        limit?: number;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          orderId: string;
+          orderNo: string;
+          memberId: string;
+          status: string;
+          totalAmount: number;
+          paidAmount: number;
+          refundedAmount: number;
+          currency: string;
+          createdAt: string;
+          updatedAt: string;
+        }>>('/transactions/orders', {
+          ...init,
+          headers: {
+            'content-type': 'application/json',
+            ...(init?.headers ?? {}),
+            ...(query ? { 'x-query-params': JSON.stringify(query) } : {}),
+          },
+        }),
+
+      /** 订单详情 */
+      get: (orderId: string, init?: RequestInit) =>
+        api.getData<{
+          orderId: string;
+          orderNo: string;
+          memberId: string;
+          status: string;
+          totalAmount: number;
+          paidAmount: number;
+          refundedAmount: number;
+          currency: string;
+          items?: Array<{ productId: string; productName: string; quantity: number; unitPriceCents: number }>;
+          createdAt: string;
+          updatedAt: string;
+        }>(`/transactions/orders/${orderId}`, init),
+
+      /** 订单退款记录 */
+      listRefunds: (orderId: string, init?: RequestInit) =>
+        api.getData<Array<{
+          refundId: string;
+          amount: number;
+          reason: string;
+          status: string;
+          requestedAt: string;
+        }>>(`/transactions/orders/${orderId}/refunds`, init),
+    },
+
+    // ── Cashier (GET/POST /api/v1/cashier/*) ──
+    cashier: {
+      /** 会员查找 (手机号/卡号) */
+      lookupMember: (query: string, init?: RequestInit) =>
+        api.getData<{
+          id: string;
+          name: string;
+          phone: string;
+          memberNo: string;
+          tier: string;
+          points: number;
+          discountRate: number;
+        } | null>(`/cashier/members/lookup?q=${encodeURIComponent(query)}`, init),
+
+      /** 会员消费记录 (走 transactions 模块) */
+      listMemberTransactions: (memberId: string, init?: RequestInit) =>
+        api.getData<Array<{
+          orderId: string;
+          orderNo: string;
+          status: string;
+          totalAmount: number;
+          currency: string;
+          paymentStatus?: string;
+          createdAt: string;
+        }>>(`/transactions/members/${memberId}`, init),
+
+      /** 商品扫码查询 */
+      lookupProduct: (sku: string, init?: RequestInit) =>
+        api.getData<{ sku: string; name: string; price: number; category: string } | null>(
+          `/cashier/products/${encodeURIComponent(sku)}`, init,
+        ),
+
+      /** 支付渠道统计 */
+      getChannelStats: (init?: RequestInit) =>
+        api.getData<Array<{ channel: string; today: number; month: number }>>('/cashier/stats/channels', init),
+
+      /** 创建订单 (POS) */
+      createOrder: (body: {
+        clientOrderId: string;
+        memberId?: string;
+        items: Array<{ productId: string; quantity: number; unitPriceCents: number; discountCents?: number }>;
+        discountCents?: number;
+        taxCents?: number;
+      }, init?: RequestInit) =>
+        api.postData('/cashier/orders', body, init),
+
+      /** 提交订单 (DRAFT → PENDING) */
+      submitOrder: (orderId: string, init?: RequestInit) =>
+        api.postData(`/cashier/orders/${orderId}/submit`, {}, init),
+
+      /** 创建支付 */
+      createPayment: (orderId: string, body: {
+        method: 'CASH' | 'WECHAT' | 'ALIPAY' | 'CARD';
+        amountCents: number;
+      }, init?: RequestInit) =>
+        api.postData(`/cashier/orders/${orderId}/payments`, body, init),
+
+      /** 创建退款 */
+      createRefund: (orderId: string, body: {
+        paymentId: string;
+        amountCents: number;
+        reason: string;
+      }, init?: RequestInit) =>
+        api.postData(`/cashier/orders/${orderId}/refunds`, body, init),
+    },
+
+    // ── Refunds (GET/POST /api/v1/transactions/refunds) ──
+    refunds: {
+      /** 退款列表 */
+      list: (query?: {
+        memberId?: string;
+        orderId?: string;
+        status?: string;
+        limit?: number;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          refundId: string;
+          tenantId: string;
+          orderId: string;
+          paymentId: string;
+          memberId: string;
+          refundAmount: number;
+          reason: string;
+          operator?: string;
+          status: string;
+          requestedAt: string;
+          completedAt?: string;
+          reviewedAt?: string;
+          reviewedBy?: string;
+          reviewNote?: string;
+        }>>('/transactions/refunds', {
+          ...init,
+          headers: {
+            'content-type': 'application/json',
+            ...(init?.headers ?? {}),
+          },
+          ...(query ? { body: JSON.stringify(query) } : {}),
+        }),
+
+      /** 待处理退款 */
+      listPending: (query?: { limit?: number }, init?: RequestInit) =>
+        api.getData('/transactions/refunds/pending', {
+          ...init,
+          headers: {
+            'content-type': 'application/json',
+            ...(init?.headers ?? {}),
+          },
+        }),
+
+      /** 退款 dashboard */
+      getDashboard: (init?: RequestInit) =>
+        api.getData('/transactions/refunds/dashboard', init),
+
+      /** 退款详情 */
+      get: (refundId: string, init?: RequestInit) =>
+        api.getData<{
+          refundId: string;
+          orderId: string;
+          paymentId: string;
+          memberId: string;
+          refundAmount: number;
+          reason: string;
+          status: string;
+          requestedAt: string;
+          completedAt?: string;
+          reviewedAt?: string;
+          reviewedBy?: string;
+          reviewNote?: string;
+        }>(`/transactions/refunds/${refundId}`, init),
+
+      /** 审批退款 */
+      approve: (refundId: string, body: { operator?: string; note?: string }, init?: RequestInit) =>
+        api.postData(`/transactions/refunds/${refundId}/approve`, body, init),
+
+      /** 拒绝退款 */
+      reject: (refundId: string, body: { operator?: string; note?: string }, init?: RequestInit) =>
+        api.postData(`/transactions/refunds/${refundId}/reject`, body, init),
+    },
+
+    // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──
+    paymentGateway: {
+      /** 发起支付 */
+      pay: (body: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        provider: string;
+        metadata?: Record<string, unknown>;
+        locale?: string;
+        returnUrl?: string;
+        webhookUrl?: string;
+      }, init?: RequestInit) =>
+        api.postData('/payment-gateway/pay', body, init),
+
+      /** 查询支付结果 */
+      queryPayment: (transactionId: string, init?: RequestInit) =>
+        api.getData(`/payment-gateway/pay/${transactionId}`, init),
+
+      /** 发起退款 */
+      refund: (body: {
+        transactionId: string;
+        amount: number;
+        reason: string;
+      }, init?: RequestInit) =>
+        api.postData('/payment-gateway/refund', body, init),
+
+      /** 查询退款状态 */
+      queryRefund: (refundId: string, init?: RequestInit) =>
+        api.getData(`/payment-gateway/refund/${refundId}`, init),
+    },
+
+    // ── Convenience: 原始 ApiClient 实例 (用于自定义请求) ──
+    raw: api,
+  };
+}
+
+export type BusinessClient = ReturnType<typeof createBusinessClient>;
+
 /** 计算下次 backoff 延迟 (供测试与 UI 共享)
  *  - attemptNum = 1 → initialDelayMs (第一次重试前)
  *  - attemptNum = 2 → initialDelayMs * multiplier
