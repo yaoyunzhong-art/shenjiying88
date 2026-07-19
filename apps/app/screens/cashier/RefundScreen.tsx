@@ -45,8 +45,11 @@ export function RefundScreen() {
   } catch {
     route = { params: fallbackRouteParams } as RouteProp<RefundParams, 'Refund'>;
   }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
 
-  const { orderId, orderNo, amount: initialAmount, reason: initialReason } = route.params ?? {};
+  const { orderId, orderNo, amount: initialAmount, reason: initialReason } = routeParams ?? {};
 
   const [refundAmount, setRefundAmount] = useState(initialAmount?.toString() ?? '');
   const [refundReason, setRefundReason] = useState(initialReason ?? '');

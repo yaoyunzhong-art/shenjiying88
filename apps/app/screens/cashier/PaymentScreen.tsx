@@ -58,9 +58,12 @@ export function PaymentScreen() {
   } catch {
     route = { params: fallbackRouteParams } as RouteProp<PaymentParams, 'Payment'>;
   }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
 
-  const initialAmount = route.params?.amount;
-  const initialChannel = route.params?.paymentChannel ?? 'WECHAT_PAY';
+  const initialAmount = routeParams?.amount;
+  const initialChannel = routeParams?.paymentChannel ?? 'WECHAT_PAY';
   const [amount, setAmount] = useState(initialAmount?.toString() ?? '');
   const [selectedChannel, setSelectedChannel] = useState<PaymentChannel>(initialChannel);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -132,11 +135,11 @@ export function PaymentScreen() {
     setLoading(true);
     try {
       const paymentPaidAt = new Date().toISOString();
-      const aggregate = route.params?.orderId
-        ? await submitNativeAppOrderPayment(route.params.orderId, {
+      const aggregate = routeParams?.orderId
+        ? await submitNativeAppOrderPayment(routeParams.orderId, {
             amount: numericAmount,
             paymentChannel: selectedChannel,
-            externalPaymentId: `app-pos-${route.params.orderId}`,
+            externalPaymentId: `app-pos-${routeParams.orderId}`,
             paidAt: paymentPaidAt,
             source: 'app-cashier',
           })
@@ -146,9 +149,9 @@ export function PaymentScreen() {
         {
           text: '确定',
           onPress: () => {
-            if (route.params?.orderId) {
+            if (routeParams?.orderId) {
               navigation.navigate?.('OrderDetail', {
-                orderId: route.params.orderId,
+                orderId: routeParams.orderId,
                 paymentStatus: 'PAID',
                 paymentAmount: aggregate?.payment?.amount ?? numericAmount,
                 paymentPaidAt: aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? paymentPaidAt,
@@ -195,20 +198,20 @@ export function PaymentScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {(route.params?.orderId || route.params?.orderNo) && (
+        {(routeParams?.orderId || routeParams?.orderNo) && (
           <Card style={styles.orderCard}>
             <Text style={styles.orderTitle}>待支付订单</Text>
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>订单号</Text>
-              <Text style={styles.orderValue}>{route.params?.orderNo ?? 'N/A'}</Text>
+              <Text style={styles.orderValue}>{routeParams?.orderNo ?? 'N/A'}</Text>
             </View>
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>订单ID</Text>
-              <Text style={styles.orderValue}>{route.params?.orderId ?? 'N/A'}</Text>
+              <Text style={styles.orderValue}>{routeParams?.orderId ?? 'N/A'}</Text>
             </View>
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>待收金额</Text>
-              <Text style={styles.orderValue}>¥{(route.params?.amount ?? 0).toFixed(2)}</Text>
+              <Text style={styles.orderValue}>¥{(routeParams?.amount ?? 0).toFixed(2)}</Text>
             </View>
           </Card>
         )}

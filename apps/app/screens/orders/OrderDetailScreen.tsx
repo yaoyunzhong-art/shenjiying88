@@ -115,7 +115,7 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
   },
 };
 
-const defaultMockOrderDetail = mockOrderDetails['order-001'];
+const defaultMockOrderDetail = mockOrderDetails['order-001']!;
 
 const statusLabels: Record<string, string> = {
   PENDING: '待支付',
@@ -175,6 +175,9 @@ export function OrderDetailScreen() {
   } catch {
     route = { params: fallbackRouteParams } as RouteProp<OrderDetailParams, 'OrderDetail'>;
   }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
   const shouldFetchAggregate = (() => {
     const globals = globalThis as {
       __mockRoute?: OrderDetailParams['OrderDetail'];
@@ -186,7 +189,7 @@ export function OrderDetailScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    const orderId = route.params?.orderId;
+    const orderId = routeParams?.orderId;
 
     if (!orderId || !shouldFetchAggregate) {
       return;
@@ -207,24 +210,23 @@ export function OrderDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [route.params?.orderId, shouldFetchAggregate]);
-
-  const baseOrder = mockOrderDetails[route.params?.orderId ?? defaultMockOrderDetail.orderId] ?? defaultMockOrderDetail;
+  }, [routeParams?.orderId, shouldFetchAggregate]);
+  const baseOrder = mockOrderDetails[routeParams?.orderId ?? defaultMockOrderDetail.orderId]! ?? defaultMockOrderDetail;
   const latestAggregateRefund = aggregate?.refunds?.length
     ? [...aggregate.refunds].sort((left, right) =>
         new Date(right.requestedAt).getTime() - new Date(left.requestedAt).getTime(),
       )[0]
     : undefined;
-  const effectiveRefundStatus = route.params?.refundStatus
+  const effectiveRefundStatus = routeParams?.refundStatus
     ?? (latestAggregateRefund
       ? (['REFUNDED', 'COMPLETED', 'SUCCEEDED'].includes(latestAggregateRefund.status) ? 'REFUNDED' : 'PENDING')
       : undefined);
-  const effectiveRefundAmount = route.params?.refundRequestedAmount ?? latestAggregateRefund?.refundAmount;
-  const effectiveRefundReason = route.params?.refundReason ?? latestAggregateRefund?.reason;
-  const effectiveRefundRequestedAt = route.params?.refundRequestedAt ?? latestAggregateRefund?.requestedAt;
-  const effectiveRefundCompletedAt = route.params?.refundCompletedAt ?? latestAggregateRefund?.completedAt;
+  const effectiveRefundAmount = routeParams?.refundRequestedAmount ?? latestAggregateRefund?.refundAmount;
+  const effectiveRefundReason = routeParams?.refundReason ?? latestAggregateRefund?.reason;
+  const effectiveRefundRequestedAt = routeParams?.refundRequestedAt ?? latestAggregateRefund?.requestedAt;
+  const effectiveRefundCompletedAt = routeParams?.refundCompletedAt ?? latestAggregateRefund?.completedAt;
   const hasSuccessfulPayment =
-    (route.params?.paymentStatus === 'PAID' && typeof route.params?.paymentAmount === 'number')
+    (routeParams?.paymentStatus === 'PAID' && typeof routeParams?.paymentAmount === 'number')
     || aggregate?.order.status === 'PAID';
   const hasCompletedRefund =
     effectiveRefundStatus === 'REFUNDED' &&
@@ -234,13 +236,13 @@ export function OrderDetailScreen() {
     typeof effectiveRefundAmount === 'number';
   const order = {
     ...baseOrder,
-    orderId: aggregate?.order.orderId ?? route.params?.orderId ?? baseOrder.orderId,
+    orderId: aggregate?.order.orderId ?? routeParams?.orderId ?? baseOrder.orderId,
     memberId: aggregate?.order.memberId ?? baseOrder.memberId,
-    totalAmount: route.params?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
-    paymentChannel: route.params?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
-    paidAt: route.params?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,
+    totalAmount: routeParams?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
+    paymentChannel: routeParams?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
+    paidAt: routeParams?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,
     pointsEarned: aggregate?.settlement?.pointsEarned
-      ?? (route.params?.paymentAmount ? Math.round(route.params.paymentAmount) : baseOrder.pointsEarned),
+      ?? (routeParams?.paymentAmount ? Math.round(routeParams.paymentAmount) : baseOrder.pointsEarned),
     status: hasCompletedRefund
       ? 'REFUNDED'
       : hasPendingRefund
@@ -261,16 +263,16 @@ export function OrderDetailScreen() {
   };
 
   const handleRefund = () => {
-    navigation.navigate('Refund' as never, {
+    navigation.navigate!('Refund' as never, {
       orderId: order.orderId,
       orderNo: order.orderNo,
       amount: order.totalAmount,
-      reason: route.params?.refundReason,
+      reason: routeParams?.refundReason,
     } as never);
   };
 
   const handleConfirmPayment = () => {
-    navigation.navigate('Payment' as never, {
+    navigation.navigate!('Payment' as never, {
       orderId: order.orderId,
       orderNo: order.orderNo,
       amount: order.totalAmount,
@@ -279,24 +281,24 @@ export function OrderDetailScreen() {
   };
 
   const handleBackToOrders = () => {
-    if (route.params?.refundStatus) {
-      navigation.navigate('Orders' as never, {
+    if (routeParams?.refundStatus) {
+      navigation.navigate!('Orders' as never, {
         orderId: order.orderId,
-        refundStatus: route.params.refundStatus,
-        refundRequestedAmount: route.params.refundRequestedAmount,
-        refundReason: route.params.refundReason,
-        refundRequestedAt: route.params.refundRequestedAt,
-        refundCompletedAt: route.params.refundCompletedAt,
+        refundStatus: routeParams.refundStatus,
+        refundRequestedAmount: routeParams.refundRequestedAmount,
+        refundReason: routeParams.refundReason,
+        refundRequestedAt: routeParams.refundRequestedAt,
+        refundCompletedAt: routeParams.refundCompletedAt,
       } as never);
       return;
     }
-    if (route.params?.paymentStatus === 'PAID') {
-      navigation.navigate('Orders' as never, {
+    if (routeParams?.paymentStatus === 'PAID') {
+      navigation.navigate!('Orders' as never, {
         orderId: order.orderId,
         paymentStatus: 'PAID',
-        paymentAmount: route.params.paymentAmount,
-        paymentPaidAt: route.params.paymentPaidAt,
-        paymentChannel: route.params.paymentChannel,
+        paymentAmount: routeParams.paymentAmount,
+        paymentPaidAt: routeParams.paymentPaidAt,
+        paymentChannel: routeParams.paymentChannel,
       } as never);
       return;
     }

@@ -152,6 +152,26 @@ export interface NativeAppTransactionAggregate {
   refunds: NativeAppTransactionRefund[];
 }
 
+export interface NativeAppOrderListItem {
+  orderId: string;
+  orderNo: string;
+  memberId: string;
+  status: string;
+  totalAmount: number;
+  paidAmount: number;
+  refundedAmount: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NativeAppOrderListQuery {
+  memberId?: string;
+  status?: string;
+  paymentStatus?: string;
+  limit?: number;
+}
+
 export interface NativeAppTransactionRuntimeSnapshot {
   deliveryMode: 'api' | 'fallback';
   aggregate: NativeAppTransactionAggregate | null;
@@ -1052,6 +1072,22 @@ export async function getNativeAppOrderTransaction(
   return client.getData<NativeAppTransactionAggregate>(
     `/transactions/orders/${orderId}`,
     { cache: 'no-store' },
+  )
+}
+
+export async function listNativeAppOrders(
+  query?: NativeAppOrderListQuery,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppOrderListItem[]> {
+  const client = createNativeAppBootstrapClient(context)
+  return client.getData<NativeAppOrderListItem[]>(
+    '/transactions/orders',
+    {
+      cache: 'no-store',
+      headers: query ? {
+        'x-query-params': JSON.stringify(query),
+      } : undefined,
+    },
   )
 }
 

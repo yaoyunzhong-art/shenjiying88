@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,13 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderCard } from '../../components/OrderCard';
+import {
+  listNativeAppOrders,
+  type NativeAppOrderListItem,
+  type NativeAppOrderListQuery,
+} from '../../market-bootstrap';
+
+type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
 
 type OrderStackParamList = {
   OrderList: {
@@ -17,14 +24,25 @@ type OrderStackParamList = {
     paymentStatus?: 'PAID';
     paymentAmount?: number;
     paymentPaidAt?: string;
-    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+    paymentChannel?: PaymentChannel;
     refundStatus?: 'PENDING' | 'REFUNDED';
     refundRequestedAmount?: number;
     refundReason?: string;
     refundRequestedAt?: string;
     refundCompletedAt?: string;
   } | undefined;
-  OrderDetail: { orderId: string };
+  OrderDetail: {
+    orderId: string;
+    paymentStatus?: 'PAID';
+    paymentAmount?: number;
+    paymentPaidAt?: string;
+    paymentChannel?: PaymentChannel;
+    refundStatus?: 'PENDING' | 'REFUNDED';
+    refundRequestedAmount?: number;
+    refundReason?: string;
+    refundRequestedAt?: string;
+    refundCompletedAt?: string;
+  };
 };
 
 type OrderListNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderList'>;
@@ -39,7 +57,7 @@ interface OrderItem {
   status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
   createdAt: string;
   paidAt?: string;
-  paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+  paymentChannel?: PaymentChannel;
   itemCount: number;
 }
 
@@ -96,6 +114,63 @@ const statusFilters: { id: OrderStatus; label: string }[] = [
   { id: 'REFUNDED', label: '已退款' },
 ];
 
+function resolveOrderStatus(
+  status?: string,
+  fallbackStatus: OrderItem['status'] = 'PENDING',
+): OrderItem['status'] {
+  switch (status) {
+    case 'PAID':
+      return 'PAID';
+    case 'PENDING':
+    case 'PENDING_PAYMENT':
+      return 'PENDING';
+    case 'REFUNDED':
+      return 'REFUNDED';
+    case 'REFUNDING':
+      return 'REFUND_PENDING';
+    case 'CANCELLED':
+    case 'CLOSED':
+      return 'CANCELLED';
+    default:
+      return fallbackStatus;
+  }
+}
+
+function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
+  const matchedMockOrder = mockOrders.find((item) => item.orderId === order.orderId);
+
+  return {
+    orderId: order.orderId,
+    orderNo: order.orderNo,
+    totalAmount: order.totalAmount,
+    currency: order.currency,
+    status: resolveOrderStatus(order.status, matchedMockOrder?.status ?? 'PENDING'),
+    createdAt: order.createdAt,
+    paidAt: matchedMockOrder?.paidAt,
+    paymentChannel: matchedMockOrder?.paymentChannel,
+    itemCount: matchedMockOrder?.itemCount ?? 0,
+  };
+}
+
+function buildOrderListQuery(filter: OrderStatus): NativeAppOrderListQuery | undefined {
+  switch (filter) {
+    case 'PENDING':
+      return {
+        status: 'PENDING_PAYMENT',
+      };
+    case 'PAID':
+      return {
+        status: 'PAID',
+      };
+    case 'REFUNDED':
+      return {
+        status: 'REFUNDED',
+      };
+    default:
+      return undefined;
+  }
+}
+
 export function OrderListScreen() {
   const fallbackNavigation = (globalThis as {
     __mockNavigation?: OrderListNavigationProp;
@@ -115,33 +190,80 @@ export function OrderListScreen() {
   } catch {
     route = { params: fallbackRouteParams } as RouteProp<OrderStackParamList, 'OrderList'>;
   }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
+  const shouldFetchOrders = (() => {
+    const globals = globalThis as {
+      __mockRoute?: OrderStackParamList['OrderList'];
+      __mockOrderListFetchEnabled?: boolean;
+    };
+    return !globals.__mockRoute || globals.__mockOrderListFetchEnabled === true;
+  })();
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus>('ALL');
   const [refreshing, setRefreshing] = useState(false);
-  const [orders] = useState<OrderItem[]>(mockOrders);
+  const [apiOrders, setApiOrders] = useState<OrderItem[] | null>(null);
+  const currentQuery = buildOrderListQuery(selectedFilter);
 
-  const ordersWithRuntimeState = orders.map((order) => {
-    if (order.orderId !== route.params?.orderId) {
+  const loadOrders = useCallback(async (query: NativeAppOrderListQuery | undefined = currentQuery) => {
+    const result = await listNativeAppOrders(query);
+    setApiOrders(result.map(mapApiOrderToOrderItem));
+  }, [currentQuery]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!shouldFetchOrders) {
+      setApiOrders(null);
+      return;
+    }
+
+    listNativeAppOrders(currentQuery)
+      .then((result) => {
+        if (!cancelled) {
+          setApiOrders(result.map(mapApiOrderToOrderItem));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setApiOrders(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentQuery, shouldFetchOrders]);
+
+  const orders = apiOrders ?? mockOrders;
+  const routeRuntimeOrder = routeParams?.orderId && !orders.some((order) => order.orderId === routeParams.orderId)
+    ? mockOrders.find((order) => order.orderId === routeParams.orderId)
+    : undefined;
+  const ordersWithRuntimeFallback = routeRuntimeOrder ? [...orders, routeRuntimeOrder] : orders;
+
+  const ordersWithRuntimeState = ordersWithRuntimeFallback.map((order) => {
+    if (order.orderId !== routeParams?.orderId) {
       return order;
     }
 
-    if (route.params?.paymentStatus === 'PAID') {
+    if (routeParams?.paymentStatus === 'PAID') {
       return {
         ...order,
         status: 'PAID' as const,
-        totalAmount: route.params.paymentAmount ?? order.totalAmount,
-        paidAt: route.params.paymentPaidAt ?? order.paidAt,
-        paymentChannel: route.params.paymentChannel ?? order.paymentChannel,
+        totalAmount: routeParams.paymentAmount ?? order.totalAmount,
+        paidAt: routeParams.paymentPaidAt ?? order.paidAt,
+        paymentChannel: routeParams.paymentChannel ?? order.paymentChannel,
       };
     }
 
-    if (route.params?.refundStatus === 'PENDING') {
+    if (routeParams?.refundStatus === 'PENDING') {
       return {
         ...order,
         status: 'REFUND_PENDING' as const,
       };
     }
 
-    if (route.params?.refundStatus === 'REFUNDED') {
+    if (routeParams?.refundStatus === 'REFUNDED') {
       return {
         ...order,
         status: 'REFUNDED' as const,
@@ -181,8 +303,19 @@ export function OrderListScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    if (!shouldFetchOrders) {
+      setTimeout(() => setRefreshing(false), 1000);
+      return;
+    }
+
+    loadOrders()
+      .catch(() => {
+        setApiOrders(null);
+      })
+      .finally(() => {
+        setRefreshing(false);
+      });
+  }, [loadOrders, shouldFetchOrders]);
 
   const renderFilterTab = ({ id, label }: { id: OrderStatus; label: string }) => (
     <TouchableOpacity

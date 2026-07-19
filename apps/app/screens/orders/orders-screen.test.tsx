@@ -158,6 +158,20 @@ function getRenderedOrderCard(root: ReturnType<typeof create>, orderNo: string) 
   return renderFlatListOrderCards(root).find((card) => Boolean(findByText(card.root, orderNo)));
 }
 
+function getHeaderValue(init: RequestInit | undefined, key: string) {
+  if (!init?.headers) {
+    return undefined;
+  }
+  if (typeof Headers !== 'undefined' && init.headers instanceof Headers) {
+    return init.headers.get(key) ?? undefined;
+  }
+  if (Array.isArray(init.headers)) {
+    const matched = init.headers.find(([headerKey]) => headerKey.toLowerCase() === key.toLowerCase());
+    return matched?.[1];
+  }
+  return (init.headers as Record<string, string | undefined>)[key];
+}
+
 /* ================================================================== */
 /*  ORDER LIST SCREEN TESTS                                            */
 /* ================================================================== */
@@ -248,6 +262,301 @@ test('OrderListScreen: merges paid params into matching order card', () => {
   });
 
   assert.ok(findTextInOrderCards(root, '已完成'), '收款完成回带后列表卡片应显示已完成');
+});
+
+test('OrderListScreen: prefers real order list payload when list fetch is enabled', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: [
+          {
+            orderId: 'order-001',
+            orderNo: 'ORDAPI20260720001',
+            memberId: 'member-api-001',
+            status: 'REFUNDING',
+            totalAmount: 188,
+            paidAmount: 188,
+            refundedAmount: 0,
+            currency: 'CNY',
+            createdAt: '2026-07-20T04:10:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+          },
+          {
+            orderId: 'order-002',
+            orderNo: 'ORDAPI20260720002',
+            memberId: 'member-api-002',
+            status: 'PENDING_PAYMENT',
+            totalAmount: 120,
+            paidAmount: 0,
+            refundedAmount: 0,
+            currency: 'CNY',
+            createdAt: '2026-07-20T04:11:00.000Z',
+            updatedAt: '2026-07-20T04:11:00.000Z',
+          },
+        ],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent();
+      await Promise.resolve();
+    });
+
+    const flatList = getOrderListFlatList(root);
+    assert.equal(flatList.props.data.length, 2, '启用真实列表后应使用接口返回的订单数量');
+    assert.ok(findTextInOrderCards(root, 'ORDAPI20260720001'), '启用真实列表后应展示接口返回的订单号');
+    assert.ok(findTextInOrderCards(root, '¥188.00'), '启用真实列表后应展示接口返回的金额');
+    assert.ok(findTextInOrderCards(root, '退款审核中'), '启用真实列表后应按接口状态映射退款审核中');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+  }
+});
+
+test('OrderListScreen: runtime params still override fetched order list state', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: [
+          {
+            orderId: 'order-002',
+            orderNo: 'ORDAPI20260720002',
+            memberId: 'member-api-002',
+            status: 'PENDING_PAYMENT',
+            totalAmount: 120,
+            paidAmount: 0,
+            refundedAmount: 0,
+            currency: 'CNY',
+            createdAt: '2026-07-20T04:11:00.000Z',
+            updatedAt: '2026-07-20T04:11:00.000Z',
+          },
+        ],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent({
+        orderId: 'order-002',
+        paymentStatus: 'PAID',
+        paymentAmount: 128,
+        paymentPaidAt: '2026-07-20T05:20:00.000Z',
+        paymentChannel: 'ALIPAY',
+      });
+      await Promise.resolve();
+    });
+
+    assert.ok(findTextInOrderCards(root, '已完成'), '真实列表场景下仍应承接支付回带状态');
+    assert.ok(findTextInOrderCards(root, '¥128.00'), '真实列表场景下仍应承接支付回带金额');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+  }
+});
+
+test('OrderListScreen: paid filter passes status query to real order list api', async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+    if (!url.endsWith('/transactions/orders')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    const queryHeader = getHeaderValue(init, 'x-query-params');
+    const query = queryHeader ? JSON.parse(queryHeader) as Record<string, unknown> : {};
+    const data = query.status === 'PAID'
+      ? [{
+          orderId: 'order-004',
+          orderNo: 'ORDAPI20260720004',
+          memberId: 'member-api-004',
+          status: 'PAID',
+          totalAmount: 68,
+          paidAmount: 68,
+          refundedAmount: 0,
+          currency: 'CNY',
+          createdAt: '2026-07-20T04:12:00.000Z',
+          updatedAt: '2026-07-20T04:12:00.000Z',
+        }]
+      : [
+          {
+            orderId: 'order-001',
+            orderNo: 'ORDAPI20260720001',
+            memberId: 'member-api-001',
+            status: 'REFUNDING',
+            totalAmount: 188,
+            paidAmount: 188,
+            refundedAmount: 0,
+            currency: 'CNY',
+            createdAt: '2026-07-20T04:10:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+          },
+          {
+            orderId: 'order-002',
+            orderNo: 'ORDAPI20260720002',
+            memberId: 'member-api-002',
+            status: 'PENDING_PAYMENT',
+            totalAmount: 120,
+            paidAmount: 0,
+            refundedAmount: 0,
+            currency: 'CNY',
+            createdAt: '2026-07-20T04:11:00.000Z',
+            updatedAt: '2026-07-20T04:11:00.000Z',
+          },
+        ];
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data,
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent();
+      await Promise.resolve();
+    });
+
+    const touchables = findAllTouchables(root.root);
+    const paidTab = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '已完成'),
+    );
+    assert.ok(paidTab, '已完成选项卡应在');
+
+    await act(async () => {
+      paidTab!.props.onPress();
+      await Promise.resolve();
+    });
+
+    assert.equal(fetchCalls.length, 2, '切换到已完成筛选后应再次请求真实列表');
+    assert.equal(
+      getHeaderValue(fetchCalls[1]?.init, 'x-query-params'),
+      JSON.stringify({ status: 'PAID' }),
+      '已完成筛选应把 PAID 状态下沉到真实列表 query',
+    );
+    assert.ok(findTextInOrderCards(root, 'ORDAPI20260720004'), '已完成筛选后应展示服务端返回的已完成订单');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+  }
+});
+
+test('OrderListScreen: refunded filter keeps runtime refund order visible with real api filtering', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    const queryHeader = getHeaderValue(init, 'x-query-params');
+    const query = queryHeader ? JSON.parse(queryHeader) as Record<string, unknown> : {};
+    const data = query.status === 'REFUNDED'
+      ? [{
+          orderId: 'order-003',
+          orderNo: 'ORDAPI20260720003',
+          memberId: 'member-api-003',
+          status: 'REFUNDED',
+          totalAmount: 320,
+          paidAmount: 320,
+          refundedAmount: 320,
+          currency: 'CNY',
+          createdAt: '2026-07-20T04:13:00.000Z',
+          updatedAt: '2026-07-20T04:13:00.000Z',
+        }]
+      : [{
+          orderId: 'order-002',
+          orderNo: 'ORDAPI20260720002',
+          memberId: 'member-api-002',
+          status: 'PENDING_PAYMENT',
+          totalAmount: 120,
+          paidAmount: 0,
+          refundedAmount: 0,
+          currency: 'CNY',
+          createdAt: '2026-07-20T04:11:00.000Z',
+          updatedAt: '2026-07-20T04:11:00.000Z',
+        }];
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data,
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent({
+        orderId: 'order-001',
+        refundStatus: 'PENDING',
+      });
+      await Promise.resolve();
+    });
+
+    const touchables = findAllTouchables(root.root);
+    const refundedTab = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '已退款'),
+    );
+    assert.ok(refundedTab, '已退款选项卡应在');
+
+    await act(async () => {
+      refundedTab!.props.onPress();
+      await Promise.resolve();
+    });
+
+    const flatList = getOrderListFlatList(root);
+    const orderIds = (flatList.props.data as Array<{ orderId: string }>).map((item) => item.orderId);
+    assert.ok(orderIds.includes('order-001'), '真实筛选下也应补回当前退款运行态订单');
+    assert.ok(findTextInOrderCards(root, '退款审核中'), '补回的运行态订单应展示退款审核中');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+  }
 });
 
 test('OrderListScreen: default filter is ALL', () => {
