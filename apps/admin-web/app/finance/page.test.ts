@@ -109,3 +109,40 @@ test('[边界] 页面应定义财务状态标签常量', () => {
   const statusLabels = /状态|已支付|未支付|待审核|已退款|STATUS|PENDING|SUCCESS|FAILED|REFUNDED/i.test(src);
   assert.ok(statusLabels, '页面应有财务状态标签');
 });
+
+test('[正例] 页面应有分页或滚动加载', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const hasPagination = /pagination|pageSize|currentPage|page\.tsx|loadMore|分页|翻页/i.test(src);
+  assert.ok(hasPagination, '财务列表应有分页能力');
+});
+
+test('[正例] 页面应支持筛选/search', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const hasFilter = /filter|search|查询|筛选|搜索|Search|typeSelector|Dropdown|Select/i.test(src);
+  assert.ok(hasFilter, '财务页面应有筛选/搜索功能');
+});
+
+test('[反例] 应避免超大整数比较时使用 parseInt', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const hasParseInt = /parseInt\s*\(.*amount/.test(src);
+  const hasNumber = /Number\(.*amount/.test(src);
+  assert.ok(!hasParseInt || hasNumber, '金额转换推荐使用 Number 而非 parseInt');
+});
+
+test('[边界] 页面应处理搜索结果为空的UI', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const emptyCheck = /空|empty|暂无|noData|isEmpty|无数据|Empty/i.test(src);
+  assert.ok(emptyCheck, '应有空数据展示 UI');
+});
+
+test('[边界] 页面应支持日期范围查询', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const dateRange = /startDate|endDate|dateRange|RangePicker|日期范围|DatePicker\.RangePicker|dayjs|moment/i.test(src);
+  assert.ok(dateRange, '财务页面应有日期范围查询');
+});
+
+test('[边界] 应处理负金额/退款场景', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  hasRefund = /refund|退款|negative|负数|退|Refund/i.test(src);
+  assert.ok(hasRefund, '财务页面应有退款/负数处理');
+});
