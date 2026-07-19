@@ -84,17 +84,23 @@ interface ArchiveResult {
 
 async function applyDecay(pool: pg.Pool): Promise<DecayResult> {
   // 24h 未引用的卡片 freshness_score -= 10
+  // 注意: 新建 <24h 的卡片不退化 (created_at > NOW()-interval '24h')
   const decayResult = await pool.query(`
     UPDATE empower_card
     SET freshness_score = GREATEST(freshness_score - 10, 0),
         updated_at = NOW()
     WHERE freshness_score > 20
       AND (last_quoted_at IS NULL OR last_quoted_at < NOW() - INTERVAL '24 hours')
+      AND (created_at IS NULL OR created_at < NOW() - INTERVAL '24 hours')
   `)
 
-  // freshness_score < 20 自动删除
+  // freshness_score < 20 软删除: 改为 20 (生命周期保持), 仅删除 <5 的
   const archiveResult = await pool.query(`
-    DELETE FROM empower_card WHERE freshness_score < 20
+    DELETE FROM empower_card WHERE freshness_score < 5
+  `)
+  const min20Result = await pool.query(`
+    UPDATE empower_card SET freshness_score = 20, updated_at = NOW()
+    WHERE freshness_score > 0 AND freshness_score < 20
   `)
 
   return {
