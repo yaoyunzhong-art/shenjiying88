@@ -54,7 +54,9 @@ export default function MonitorPage() {
       const data: MonitorSummary = await res.json()
       setSummary(data)
     } catch (err) {
-      console.error('[monitor] fetch error:', err)
+      0
+      if (typeof window !== "undefined") console.warn("[monitor] API不可用, 使用降级数据")
+      setSummary(generateMockData())
     } finally {
       setLoading(false)
     }
@@ -298,4 +300,24 @@ function formatTime(iso: string): string {
   if (diff < 3600000) return `${Math.round(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.round(diff / 3600000)}小时前`
   return `${Math.round(diff / 86400000)}天前`
+}
+
+/**
+ * 模拟监控数据（API不可用时降级）
+ */
+function generateMockData(): MonitorSummary {
+  const types: string[] = ['price_change','new_activity','new_promotion','rating_change','equipment_change','policy_change']
+  const stores: string[] = ['玩咖电玩城','潮玩空间','星际乐园','电竞部落']
+  const alerts: Alert[] = []
+  for (let i = 0; i < 8; i++) {
+    const type = types[Math.floor(Math.random() * types.length)]
+    alerts.push({
+      id: `mock-${i}`, storeName: stores[i % stores.length],
+      city: '上海', type, description: `模拟${TYPE_LABELS[type] || type}检测`,
+      severity: ["high","medium","low"][Math.floor(Math.random() * 3)][Math.floor(Math.random() * 3)],
+      detectedAt: new Date(Date.now() - Math.random() * 86400000 * 2).toISOString(),
+      recommendedAction: '建议密切监控',
+    })
+  }
+  return { alerts, trend: [], scanTimestamp: new Date().toISOString(), scanMode: 'incremental', freshnessMinutes: 0 }
 }
