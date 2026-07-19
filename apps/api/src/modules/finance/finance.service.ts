@@ -123,6 +123,15 @@ export class FinanceService {
     return ledger
   }
 
+  deleteLedger(
+    ledgerId: string,
+    tenantContext: RequestTenantContext
+  ): { success: boolean } {
+    const ledger = this.getLedger(ledgerId, tenantContext)
+    ledgerStore.delete(ledgerId)
+    return { success: true }
+  }
+
   // ═══════════════════════════════════════════════════
   // 账户管理 (Account)
   // ═══════════════════════════════════════════════════
