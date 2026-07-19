@@ -155,6 +155,7 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
 import { ProcurementOrderModule } from './modules/procurement-order/procurement-order.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 @Module({
   imports: [
@@ -322,6 +323,7 @@ import { IntelligenceModule } from './modules/intelligence/intelligence.module';
     SeoModule,
     IntelligenceModule,
     ModulesModule,
+    CategoriesModule,
   ],
   providers: [
     RequestGovernanceService,
