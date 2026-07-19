@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { getNativeAppOrderTransaction, type NativeAppTransactionAggregate } from '../../market-bootstrap';
 
 type OrderDetailParams = {
   OrderDetail: {
@@ -131,6 +132,25 @@ const channelLabels: Record<string, string> = {
   MEMBER_CARD: '会员卡',
 };
 
+function resolveOrderStatus(status?: string): OrderStatus | undefined {
+  switch (status) {
+    case 'PAID':
+      return 'PAID';
+    case 'PENDING':
+    case 'PENDING_PAYMENT':
+      return 'PENDING';
+    case 'REFUNDED':
+      return 'REFUNDED';
+    case 'REFUNDING':
+      return 'REFUND_PENDING';
+    case 'CANCELLED':
+    case 'CLOSED':
+      return 'CANCELLED';
+    default:
+      return undefined;
+  }
+}
+
 export function OrderDetailScreen() {
   const fallbackNavigation = (globalThis as {
     __mockNavigation?: {
@@ -155,32 +175,79 @@ export function OrderDetailScreen() {
   } catch {
     route = { params: fallbackRouteParams } as RouteProp<OrderDetailParams, 'OrderDetail'>;
   }
+  const shouldFetchAggregate = (() => {
+    const globals = globalThis as {
+      __mockRoute?: OrderDetailParams['OrderDetail'];
+      __mockOrderFetchEnabled?: boolean;
+    };
+    return !globals.__mockRoute || globals.__mockOrderFetchEnabled === true;
+  })();
+  const [aggregate, setAggregate] = useState<NativeAppTransactionAggregate | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const orderId = route.params?.orderId;
+
+    if (!orderId || !shouldFetchAggregate) {
+      return;
+    }
+
+    getNativeAppOrderTransaction(orderId)
+      .then((result) => {
+        if (!cancelled) {
+          setAggregate(result);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAggregate(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [route.params?.orderId, shouldFetchAggregate]);
+
   const baseOrder = mockOrderDetails[route.params?.orderId ?? defaultMockOrderDetail.orderId] ?? defaultMockOrderDetail;
+  const latestAggregateRefund = aggregate?.refunds?.length
+    ? [...aggregate.refunds].sort((left, right) =>
+        new Date(right.requestedAt).getTime() - new Date(left.requestedAt).getTime(),
+      )[0]
+    : undefined;
+  const effectiveRefundStatus = route.params?.refundStatus
+    ?? (latestAggregateRefund
+      ? (['REFUNDED', 'COMPLETED', 'SUCCEEDED'].includes(latestAggregateRefund.status) ? 'REFUNDED' : 'PENDING')
+      : undefined);
+  const effectiveRefundAmount = route.params?.refundRequestedAmount ?? latestAggregateRefund?.refundAmount;
+  const effectiveRefundReason = route.params?.refundReason ?? latestAggregateRefund?.reason;
+  const effectiveRefundRequestedAt = route.params?.refundRequestedAt ?? latestAggregateRefund?.requestedAt;
+  const effectiveRefundCompletedAt = route.params?.refundCompletedAt ?? latestAggregateRefund?.completedAt;
   const hasSuccessfulPayment =
-    route.params?.paymentStatus === 'PAID' &&
-    typeof route.params?.paymentAmount === 'number';
+    (route.params?.paymentStatus === 'PAID' && typeof route.params?.paymentAmount === 'number')
+    || aggregate?.order.status === 'PAID';
   const hasCompletedRefund =
-    route.params?.refundStatus === 'REFUNDED' &&
-    typeof route.params?.refundRequestedAmount === 'number';
+    effectiveRefundStatus === 'REFUNDED' &&
+    typeof effectiveRefundAmount === 'number';
   const hasPendingRefund =
-    route.params?.refundStatus === 'PENDING' &&
-    typeof route.params?.refundRequestedAmount === 'number';
+    effectiveRefundStatus === 'PENDING' &&
+    typeof effectiveRefundAmount === 'number';
   const order = {
     ...baseOrder,
-    orderId: route.params?.orderId ?? baseOrder.orderId,
-    totalAmount: route.params?.paymentAmount ?? baseOrder.totalAmount,
-    paymentChannel: route.params?.paymentChannel ?? baseOrder.paymentChannel,
-    paidAt: route.params?.paymentPaidAt ?? baseOrder.paidAt,
-    pointsEarned: route.params?.paymentAmount
-      ? Math.round(route.params.paymentAmount)
-      : baseOrder.pointsEarned,
+    orderId: aggregate?.order.orderId ?? route.params?.orderId ?? baseOrder.orderId,
+    memberId: aggregate?.order.memberId ?? baseOrder.memberId,
+    totalAmount: route.params?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
+    paymentChannel: route.params?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
+    paidAt: route.params?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,
+    pointsEarned: aggregate?.settlement?.pointsEarned
+      ?? (route.params?.paymentAmount ? Math.round(route.params.paymentAmount) : baseOrder.pointsEarned),
     status: hasCompletedRefund
       ? 'REFUNDED'
       : hasPendingRefund
         ? 'REFUND_PENDING'
         : hasSuccessfulPayment
           ? 'PAID'
-          : baseOrder.status,
+          : (resolveOrderStatus(aggregate?.order.status) ?? baseOrder.status),
   };
 
   const formatDate = (dateStr: string) => {
@@ -290,22 +357,22 @@ export function OrderDetailScreen() {
               </View>
               <View style={styles.statusRow}>
                 <Text style={styles.statusKey}>{hasCompletedRefund ? '退款金额' : '申请金额'}</Text>
-                <Text style={styles.statusValue}>¥{route.params.refundRequestedAmount!.toFixed(2)}</Text>
+                <Text style={styles.statusValue}>¥{effectiveRefundAmount!.toFixed(2)}</Text>
               </View>
               <View style={styles.statusRow}>
                 <Text style={styles.statusKey}>退款原因</Text>
-                <Text style={styles.statusValue}>{route.params?.refundReason ?? '未填写'}</Text>
+                <Text style={styles.statusValue}>{effectiveRefundReason ?? '未填写'}</Text>
               </View>
-              {route.params?.refundRequestedAt ? (
+              {effectiveRefundRequestedAt ? (
                 <View style={styles.statusRow}>
                   <Text style={styles.statusKey}>{hasCompletedRefund ? '申请时间' : '申请时间'}</Text>
-                  <Text style={styles.statusValue}>{formatDate(route.params.refundRequestedAt)}</Text>
+                  <Text style={styles.statusValue}>{formatDate(effectiveRefundRequestedAt)}</Text>
                 </View>
               ) : null}
-              {hasCompletedRefund && route.params?.refundCompletedAt ? (
+              {hasCompletedRefund && effectiveRefundCompletedAt ? (
                 <View style={styles.statusRow}>
                   <Text style={styles.statusKey}>完成时间</Text>
-                  <Text style={styles.statusValue}>{formatDate(route.params.refundCompletedAt)}</Text>
+                  <Text style={styles.statusValue}>{formatDate(effectiveRefundCompletedAt)}</Text>
                 </View>
               ) : null}
             </Card>

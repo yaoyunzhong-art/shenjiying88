@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
-import { create } from 'react-test-renderer';
+import { act, create } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl } from 'react-native';
 
 /* ------------------------------------------------------------------ */
@@ -464,6 +464,73 @@ test('OrderDetailScreen: renders pending order status for order-002', () => {
   assert.ok(findByText(root.root, '待支付'), '待支付订单应显示待支付状态');
   assert.ok(findByText(root.root, 'ORD20260612002'), '应显示 order-002 的订单号');
   assert.ok(findByText(root.root, '¥89.50'), '应显示待支付订单金额');
+});
+
+test('OrderDetailScreen: prefers real aggregate payload when order fetch is enabled', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders/order-002')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: {
+          order: {
+            orderId: 'order-002',
+            memberId: 'member-api-002',
+            currency: 'CNY',
+            totalAmount: 120,
+            status: 'PENDING_PAYMENT',
+            latestPaymentId: 'payment-order-002',
+            createdAt: '2026-06-12T11:15:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+          },
+          payment: {
+            paymentId: 'payment-order-002',
+            orderId: 'order-002',
+            channel: 'ALIPAY',
+            amount: 120,
+            status: 'PENDING',
+            externalPaymentId: 'app-pos-order-002',
+            createdAt: '2026-06-12T11:15:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+          },
+          settlement: {
+            settlementId: 'settlement-order-002',
+            pointsEarned: 120,
+            pointsBalance: 120,
+          },
+          pointsLedger: [],
+          couponRedemptions: [],
+          blindboxFulfillments: [],
+          refunds: [],
+        },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderDetailComponent({ orderId: 'order-002' });
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, '支付宝'), '启用真实聚合后应展示接口返回的支付渠道');
+    assert.ok(findByText(root.root, '¥120.00'), '启用真实聚合后应展示接口返回的支付金额');
+    assert.ok(findByText(root.root, 'member-api-002'), '启用真实聚合后应展示接口返回的会员ID');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
 });
 
 test('OrderDetailScreen: renders member information section', () => {

@@ -1044,6 +1044,17 @@ export async function submitNativeAppOrderPayment(
   }
 }
 
+export async function getNativeAppOrderTransaction(
+  orderId: string,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppTransactionAggregate> {
+  const client = createNativeAppBootstrapClient(context)
+  return client.getData<NativeAppTransactionAggregate>(
+    `/transactions/orders/${orderId}`,
+    { cache: 'no-store' },
+  )
+}
+
 export async function submitNativeAppOrderRefund(
   orderId: string,
   refundPayload: NativeAppRefundPayload,
