@@ -3,7 +3,6 @@
 import React from 'react';
 import type { DomainGovernanceDisplayModel, DomainGovernanceDisplayPreset } from '@m5/types';
 import {
-  buildDomainGovernanceRenderSections,
   resolveDomainGovernanceDetailSlotColor,
   resolveDomainGovernanceDisplayPreset,
 } from '@m5/types';
@@ -19,9 +18,7 @@ export function PortalDomainGovernanceCard({
   preset = resolveDomainGovernanceDisplayPreset('STOREFRONT_PC', model.requiresAttention),
   style,
 }: PortalDomainGovernanceCardProps) {
-  const headerSection = model.headerSection;
-  const footerSection = model.footerSection;
-  const renderSections = buildDomainGovernanceRenderSections(model);
+  const renderSections = model.renderSections;
 
   return (
     <div
@@ -33,10 +30,10 @@ export function PortalDomainGovernanceCard({
         ...style,
       }}
     >
-      <div style={{ fontSize: 12, color: preset.accentColor }}>{headerSection.eyebrow}</div>
-      <div style={{ marginTop: 6, fontSize: 12, color: preset.subtitleColor }}>{headerSection.subtitle}</div>
+      <div style={{ fontSize: 12, color: preset.accentColor }}>{model.eyebrow}</div>
+      <div style={{ marginTop: 6, fontSize: 12, color: preset.subtitleColor }}>{model.subtitle}</div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: preset.titleColor }}>{headerSection.titleSlot.value}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: preset.titleColor }}>{model.title}</span>
         <span
           style={{
             borderRadius: 999,
@@ -47,15 +44,15 @@ export function PortalDomainGovernanceCard({
             background: preset.statusBackground,
           }}
         >
-          {headerSection.statusBadge.value}
+          {model.statusLabel}
         </span>
       </div>
-      {renderSections.map((section) => (
-        <div key={section.key} style={{ marginTop: 12 }}>
+      {renderSections.map((section, sectionIndex) => (
+        <div key={`${section.title}-${sectionIndex}`} style={{ marginTop: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: preset.accentColor }}>{section.title}</div>
-          {section.slots.map((slot) => (
+          {section.slots.map((slot, slotIndex) => (
             <div
-              key={slot.key}
+              key={`${section.title}-${slot.label}-${slotIndex}`}
               style={{ marginTop: 6, fontSize: 12, color: resolveDomainGovernanceDetailSlotColor(preset, slot.tone) }}
             >
               {slot.label}：{slot.value}
@@ -64,7 +61,7 @@ export function PortalDomainGovernanceCard({
         </div>
       ))}
       <a
-        href={model.footerSection.workspaceSlot.value}
+        href={model.workspaceHref}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -78,7 +75,7 @@ export function PortalDomainGovernanceCard({
           fontWeight: 600,
         }}
       >
-        {footerSection.ctaLabel}
+        {model.ctaLabel}
       </a>
     </div>
   );
