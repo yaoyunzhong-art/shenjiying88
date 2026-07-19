@@ -466,4 +466,83 @@ describe('AIReviewerController', () => {
       assert.equal(result.findings, 0)
     })
   })
+
+  describe('POST /ai-reviewer/review — review 响应格式验证', () => {
+    it('正例: sessionId 格式为 review- 前缀', () => {
+      const svc = makeMockService()
+      const ctrl = createController(svc)
+      const result = ctrl.review({
+        files: [{ path: 'src/test.ts', content: 'quota.increment()' }],
+      })
+      assert.ok(result.sessionId.startsWith('review-'))
+    })
+
+    it('正例: createdAt 为 ISO 时间字符串', () => {
+      const svc = makeMockService()
+      const ctrl = createController(svc)
+      const result = ctrl.review({
+        files: [{ path: 'src/test.ts', content: 'const x = 1' }],
+      })
+      assert.ok(!isNaN(Date.parse(result.createdAt)))
+    })
+
+    it('边界: 大量文件审查时正确返回 totalFiles', () => {
+      const svc = makeMockService()
+      const ctrl = createController(svc)
+      const manyFiles = Array.from({ length: 100 }, (_, i) => ({
+        path: `src/file-${i}.ts`,
+        content: `const x = ${i}`,
+      }))
+      const result = ctrl.review({ files: manyFiles })
+      assert.equal(result.totalFiles, 100)
+    })
+  })
+
+  describe('POST /ai-reviewer/rules — 注册规则后统计刷新', () => {
+    it('正例: 注册新规则后 stats 的 findingsBySeverity 更新', () => {
+      const svc = makeMockService()
+      const ctrl = createController(svc)
+
+      ctrl.registerRule({
+        ruleId: 'new-error-rule',
+        ruleName: 'New Error',
+        description: 'Test',
+        severity: 'error',
+        pattern: 'forbidden',
+        reference: '',
+      })
+
+      const stats = ctrl.getStats()
+      assert.equal(stats.findingsBySeverity.error, 2) // original 1 + new 1
+    })
+
+    it('反例: 注册规则后 listRules 应返回包含新规则', () => {
+      const svc = makeMockService()
+      const ctrl = createController(svc)
+
+      ctrl.registerRule({
+        ruleId: 'my-custom',
+        ruleName: 'Custom',
+        description: 'Custom rule',
+        severity: 'warn',
+        pattern: 'custom-pattern',
+        reference: 'docs/custom.md',
+      })
+
+      const rules = ctrl.listRules()
+      assert.ok(rules.some((r) => r.ruleId === 'my-custom'))
+      assert.ok(rules.some((r) => r.severity === 'warn'))
+    })
+  })
+
+  describe('GET /ai-reviewer/rules/:ruleId — 获取规则边界', () => {
+    it('边界: 获取规则后验证返回对象的 pattern 是 RegExp 实例', () => {
+      const svc = makeMockService()
+      const ctrl = createController(svc)
+      const rule = ctrl.getRule('quota-double-increment') as any
+      assert.ok(rule.pattern instanceof RegExp)
+      assert.ok(rule.pattern.test('quota.increment()'))
+      assert.ok(!rule.pattern.test('normal.code()'))
+    })
+  })
 })
