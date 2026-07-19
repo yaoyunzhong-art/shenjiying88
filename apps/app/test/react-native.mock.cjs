@@ -18,7 +18,33 @@ const TouchableOpacity = createComponent('TouchableOpacity');
 const Switch = createComponent('Switch');
 const Alert = { alert: function alert() {} };
 const ScrollView = createComponent('ScrollView');
-const FlatList = createComponent('FlatList');
+const FlatList = function (props) {
+  const { data, renderItem, ListEmptyComponent, refreshControl, contentContainerStyle, keyExtractor, showsVerticalScrollIndicator } = props;
+  const items = [];
+  if (data && data.length > 0 && typeof renderItem === 'function') {
+    data.forEach((item, index) => {
+      const rendered = renderItem({ item, index, separators: {} });
+      if (rendered) items.push(rendered);
+    });
+  } else if (typeof ListEmptyComponent === 'function') {
+    items.push(ListEmptyComponent());
+  } else if (ListEmptyComponent) {
+    items.push(ListEmptyComponent);
+  }
+  if (refreshControl) {
+    items.push(refreshControl);
+  }
+  // Add any other children
+  if (props.children) {
+    if (Array.isArray(props.children)) {
+      items.push(...props.children);
+    } else {
+      items.push(props.children);
+    }
+  }
+  return React.createElement('FlatList', props, ...items);
+};
+FlatList.displayName = 'FlatList';
 const SectionList = createComponent('SectionList');
 const Image = createComponent('Image');
 const TextInput = createComponent('TextInput');
@@ -28,6 +54,7 @@ const Pressable = createComponent('Pressable');
 const KeyboardAvoidingView = createComponent('KeyboardAvoidingView');
 const SafeAreaView = createComponent('SafeAreaView');
 const StatusBar = createComponent('StatusBar');
+const RefreshControl = createComponent('RefreshControl');
 const StyleSheet = {
   create: function create(styles) { return styles; },
   flatten: function flatten() {},
@@ -95,6 +122,7 @@ module.exports = {
   KeyboardAvoidingView,
   SafeAreaView,
   StatusBar,
+  RefreshControl,
   StyleSheet,
   Platform,
   Dimensions,
