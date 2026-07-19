@@ -14,6 +14,11 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: false
+  },
+  // ⚠️ 2026-07-20: 允许page.tsx导出interfaces/helpers（多个page.tsx需要重构到独立文件）
+  // TODO: 将工具函数移出page.tsx到独立的analytics-data.ts等文件
+  experimental: {
+    strictNextPageExport: false
   }
 };
 

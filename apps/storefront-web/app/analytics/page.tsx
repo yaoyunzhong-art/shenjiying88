@@ -137,19 +137,19 @@ const MOCK_ANOMALIES: AnomalyRecord[] = [
 //  Pure helper functions (mirrored in page.test.ts)
 // ============================================================
 
-export function computeKpiTotals(kpis: KpiCard[]): { positiveTrends: number; negativeTrends: number; avgTrend: number } {
+function computeKpiTotals(kpis: KpiCard[]): { positiveTrends: number; negativeTrends: number; avgTrend: number } {
   const positiveTrends = kpis.filter(k => k.trend > 0).length;
   const negativeTrends = kpis.filter(k => k.trend < 0).length;
   const avgTrend = kpis.length > 0 ? Math.round(kpis.reduce((s, k) => s + k.trend, 0) / kpis.length * 10) / 10 : 0;
   return { positiveTrends, negativeTrends, avgTrend };
 }
 
-export function computePeakHour(traffic: HourlyTraffic[]): { hour: number; visitors: number; revenue: number } | null {
+function computePeakHour(traffic: HourlyTraffic[]): { hour: number; visitors: number; revenue: number } | null {
   if (traffic.length === 0) return null;
   return traffic.reduce((peak, curr) => curr.visitors > peak.visitors ? curr : peak, traffic[0]);
 }
 
-export function computeCategoryInsights(categories: CategoryMetric[]): {
+function computeCategoryInsights(categories: CategoryMetric[]): {
   totalSales: number;
   totalRevenue: number;
   topCategory: string;
@@ -164,7 +164,7 @@ export function computeCategoryInsights(categories: CategoryMetric[]): {
   return { totalSales, totalRevenue, topCategory, positiveGrowth, negativeGrowth };
 }
 
-export function computeDailyAverages(days: DailyComparison[]): {
+function computeDailyAverages(days: DailyComparison[]): {
   avgRevenue: number;
   avgOrders: number;
   avgAOV: number;
@@ -184,7 +184,7 @@ export function computeDailyAverages(days: DailyComparison[]): {
   return { avgRevenue, avgOrders, avgAOV, avgVisitors, maxRevenueDay: max.date, minRevenueDay: min.date };
 }
 
-export function computeRevenueGrowth(days: DailyComparison[]): number {
+function computeRevenueGrowth(days: DailyComparison[]): number {
   if (days.length < 2) return 0;
   const mid = Math.floor(days.length / 2);
   const firstHalf = days.slice(0, mid).reduce((s, d) => s + d.revenue, 0);
@@ -193,15 +193,15 @@ export function computeRevenueGrowth(days: DailyComparison[]): number {
   return Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
 }
 
-export function countUnresolvedAnomalies(anomalies: AnomalyRecord[]): number {
+function countUnresolvedAnomalies(anomalies: AnomalyRecord[]): number {
   return anomalies.filter(a => !a.resolved).length;
 }
 
-export function filterAnomaliesBySeverity(anomalies: AnomalyRecord[], severity: 'low' | 'medium' | 'high'): AnomalyRecord[] {
+function filterAnomaliesBySeverity(anomalies: AnomalyRecord[], severity: 'low' | 'medium' | 'high'): AnomalyRecord[] {
   return anomalies.filter(a => a.severity === severity);
 }
 
-export function anomalySeverityWeight(severity: 'low' | 'medium' | 'high'): number {
+function anomalySeverityWeight(severity: 'low' | 'medium' | 'high'): number {
   const map = { low: 1, medium: 2, high: 3 };
   return map[severity];
 }

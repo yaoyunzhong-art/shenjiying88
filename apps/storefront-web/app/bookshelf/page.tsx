@@ -48,7 +48,7 @@ export interface BookshelfSnapshot {
 }
 
 /** 分类标签映射 */
-export const CATEGORY_LABELS: Record<ArticleCategory, string> = {
+const CATEGORY_LABELS: Record<ArticleCategory, string> = {
   'game-guide': '游玩攻略',
   'device-tutorial': '设备教程',
   promotion: '优惠活动',
@@ -59,14 +59,14 @@ export const CATEGORY_LABELS: Record<ArticleCategory, string> = {
 };
 
 /** 状态标签映射 */
-export const STATUS_LABELS: Record<ArticleStatus, string> = {
+const STATUS_LABELS: Record<ArticleStatus, string> = {
   published: '已发布',
   draft: '草稿',
   archived: '已归档',
 };
 
 /** 默认书架数据（fallback） */
-export function getDefaultBookshelfSnapshot(): BookshelfSnapshot {
+function getDefaultBookshelfSnapshot(): BookshelfSnapshot {
   return {
     categories: ['game-guide', 'device-tutorial', 'promotion', 'faq', 'policy', 'news'],
     hotTags: ['新手入门', 'VR 体验', '会员福利', '周末活动', '门店公告'],
@@ -223,7 +223,7 @@ export function getDefaultBookshelfSnapshot(): BookshelfSnapshot {
 }
 
 /** 按分类筛选文章 */
-export function filterByCategory(
+function filterByCategory(
   articles: ArticleSnapshot[],
   category: ArticleCategory | 'ALL',
 ): ArticleSnapshot[] {
@@ -231,7 +231,7 @@ export function filterByCategory(
 }
 
 /** 按搜索词匹配文章（标题/摘要/作者/标签） */
-export function searchArticles(
+function searchArticles(
   articles: ArticleSnapshot[],
   term: string,
 ): ArticleSnapshot[] {
@@ -247,7 +247,7 @@ export function searchArticles(
 }
 
 /** 按状态过滤文章 */
-export function filterByStatus(
+function filterByStatus(
   articles: ArticleSnapshot[],
   status: ArticleStatus | 'ALL',
 ): ArticleSnapshot[] {
@@ -255,7 +255,7 @@ export function filterByStatus(
 }
 
 /** 统计 */
-export function computeArticleStats(articles: ArticleSnapshot[]) {
+function computeArticleStats(articles: ArticleSnapshot[]) {
   const published = articles.filter((a) => a.status === 'published').length;
   const categories = new Set(articles.map((a) => a.category)).size;
   const totalViews = articles.reduce((s, a) => s + a.viewCount, 0);
@@ -264,13 +264,13 @@ export function computeArticleStats(articles: ArticleSnapshot[]) {
 }
 
 /** 分页 */
-export function paginateArticles<T>(items: T[], page: number, pageSize: number): T[] {
+function paginateArticles<T>(items: T[], page: number, pageSize: number): T[] {
   if (page < 1 || pageSize < 1) return [];
   return items.slice((page - 1) * pageSize, page * pageSize);
 }
 
 /** 排序 */
-export function sortArticles(
+function sortArticles(
   articles: ArticleSnapshot[],
   by: 'viewCount' | 'publishedAt' | 'updatedAt' | 'title',
   order: 'asc' | 'desc' = 'desc',

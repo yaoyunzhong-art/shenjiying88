@@ -36,7 +36,7 @@ export interface StaffRecord {
 // 常量配置
 // ============================================================
 
-export const ROLE_LABELS: Record<StaffRole, string> = {
+const ROLE_LABELS: Record<StaffRole, string> = {
   manager: '店长',
   sales: '导购员',
   cashier: '收银员',
@@ -45,7 +45,7 @@ export const ROLE_LABELS: Record<StaffRole, string> = {
   customer_service: '客服',
 };
 
-export const ROLE_VARIANTS: Record<StaffRole, 'success' | 'info' | 'warning' | 'danger' | 'neutral'> = {
+const ROLE_VARIANTS: Record<StaffRole, 'success' | 'info' | 'warning' | 'danger' | 'neutral'> = {
   manager: 'success',
   sales: 'info',
   cashier: 'warning',
@@ -54,7 +54,7 @@ export const ROLE_VARIANTS: Record<StaffRole, 'success' | 'info' | 'warning' | '
   customer_service: 'info',
 };
 
-export const STATUS_LABELS: Record<StaffStatus, string> = {
+const STATUS_LABELS: Record<StaffStatus, string> = {
   active: '在岗',
   on_leave: '请假',
   vacation: '休假',
@@ -62,7 +62,7 @@ export const STATUS_LABELS: Record<StaffStatus, string> = {
   resigned: '已离职',
 };
 
-export const STATUS_VARIANTS: Record<StaffStatus, 'success' | 'warning' | 'info' | 'neutral' | 'danger'> = {
+const STATUS_VARIANTS: Record<StaffStatus, 'success' | 'warning' | 'info' | 'neutral' | 'danger'> = {
   active: 'success',
   on_leave: 'warning',
   vacation: 'info',
@@ -70,14 +70,14 @@ export const STATUS_VARIANTS: Record<StaffStatus, 'success' | 'warning' | 'info'
   resigned: 'danger',
 };
 
-export const SHIFT_LABELS: Record<ShiftType, string> = {
+const SHIFT_LABELS: Record<ShiftType, string> = {
   morning: '早班 08:00-16:00',
   afternoon: '中班 12:00-20:00',
   night: '晚班 16:00-00:00',
   rest: '休息',
 };
 
-export const FILTER_TABS = [
+const FILTER_TABS = [
   { key: 'all', label: '全部' },
   { key: 'active', label: '在岗' },
   { key: 'on_leave', label: '请假' },
@@ -126,7 +126,7 @@ export interface StaffStats {
   avgPerformance: number;
 }
 
-export function computeStaffStats(records: StaffRecord[]): StaffStats {
+function computeStaffStats(records: StaffRecord[]): StaffStats {
   if (records.length === 0) {
     return { total: 0, active: 0, onLeave: 0, vacation: 0, offDuty: 0, resigned: 0, morningShift: 0, afternoonShift: 0, nightShift: 0, restShift: 0, departmentCount: 0, avgPerformance: 0 };
   }
