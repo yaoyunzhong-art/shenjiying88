@@ -79,7 +79,23 @@ export class VenueDataService {
         this.logger.warn(`DB query failed for city=${city}: ${e.message}, falling back`)
       }
     }
-    return FALLBACK_DENSITY[city] ? [{ id: 0, name: `${city}竞品`, city, region: null, category: null, rating: null, price: null, equipment: null }] : []
+    // 检查是否有任何该城市的条目
+    if (!city) return []
+    const cityKey = Object.keys(FALLBACK_DENSITY).find(k => k.startsWith(city))
+    if (cityKey) {
+      const fallback = FALLBACK_DENSITY[cityKey]
+      return Array.from({ length: fallback.count }, (_, i) => ({
+        id: i,
+        name: `${city}竞品${i + 1}`,
+        city,
+        region: null,
+        category: null,
+        rating: null,
+        price: null,
+        equipment: null,
+      }))
+    }
+    return []
   }
 
   /** 获取竞品密度和平均价格 */
