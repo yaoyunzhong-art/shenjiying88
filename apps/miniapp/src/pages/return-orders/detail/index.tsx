@@ -41,6 +41,12 @@ const STATUS_COLORS: Record<ReturnStatus, string> = {
 
 const STATUS_STEPS = ['pending', 'inspecting', 'approved', 'refunded'] as const;
 
+function getStatusStepIndex(status: ReturnStatus): number {
+  if (status === 'exchanged') return STATUS_STEPS.indexOf('approved');
+  if (status === 'rejected' || status === 'closed') return STATUS_STEPS.indexOf('inspecting');
+  return STATUS_STEPS.findIndex((s) => s === status);
+}
+
 const NEXT_ACTION_LABELS: Record<string, string> = {
   inspecting: '开始质检',
   approved: '同意退货',
@@ -71,7 +77,7 @@ const MOCK_DETAIL: ReturnOrderDetail = {
 // ---- 子组件：状态步骤条 ----
 
 function StatusSteps({ status }: { status: ReturnStatus }) {
-  const currentIdx = STATUS_STEPS.findIndex((s) => s === status);
+  const currentIdx = getStatusStepIndex(status);
 
   return (
     <View style={{ display: 'flex', alignItems: 'center', padding: '12px 0' }}>
@@ -257,7 +263,7 @@ export default function ReturnOrderDetailPage() {
   }, [detail.status]);
 
   const currentStepIndex = useMemo(
-    () => STATUS_STEPS.findIndex((s) => s === localStatus),
+    () => getStatusStepIndex(localStatus),
     [localStatus],
   );
 
@@ -268,7 +274,7 @@ export default function ReturnOrderDetailPage() {
       content: `确定要${actionLabel}该退货单吗？${remark ? `\n备注: ${remark}` : ''}`,
       success: (res) => {
         if (res.confirm) {
-          void executeMiniappPurchaseReturnAction(returnId, action).then((result) => {
+          void executeMiniappPurchaseReturnAction(returnId, action, remark).then((result) => {
             setLocalStatus(result.nextStatus);
             setDeliveryNote(result.note);
             Taro.showToast({

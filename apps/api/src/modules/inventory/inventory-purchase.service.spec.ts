@@ -46,6 +46,9 @@ enum ReturnStatus {
   Shipped = 'SHIPPED',
   Rejected = 'REJECTED',
   Approved = 'APPROVED',
+  Refunded = 'REFUNDED',
+  Exchanged = 'EXCHANGED',
+  Closed = 'CLOSED',
   Completed = 'COMPLETED'
 }
 
@@ -495,19 +498,55 @@ function rejectReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
   return ret
 }
 
-function completeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+function refundReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
   const ret = returnStore.get(returnId)
   if (!ret) throw new Error(`Return ${returnId} not found`)
   const o = poStore.get(ret.purchaseOrderId)
   if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
 
-  if (ret.status !== ReturnStatus.Approved && ret.status !== ReturnStatus.Rejected) {
-    throw new Error(`Not completable (${ret.status})`)
-  }
-  ret.status = ReturnStatus.Completed
+  if (ret.status !== ReturnStatus.Approved) throw new Error(`Not refundable (${ret.status})`)
+  ret.status = ReturnStatus.Refunded
   ret.completedAt = now()
   returnStore.set(returnId, ret)
   return ret
+}
+
+function exchangeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
+
+  if (ret.status !== ReturnStatus.Approved) throw new Error(`Not exchangeable (${ret.status})`)
+  ret.status = ReturnStatus.Exchanged
+  ret.completedAt = now()
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function closeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
+
+  if (
+    ret.status !== ReturnStatus.Pending &&
+    ret.status !== ReturnStatus.Approved &&
+    ret.status !== ReturnStatus.Rejected &&
+    ret.status !== ReturnStatus.Refunded &&
+    ret.status !== ReturnStatus.Exchanged
+  ) {
+    throw new Error(`Not closable (${ret.status})`)
+  }
+  ret.status = ReturnStatus.Closed
+  ret.completedAt = now()
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function completeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  return closeReturn(returnId, ctx)
 }
 
 function getStats(ctx: TenantCtx) {
@@ -729,7 +768,7 @@ describe('InventoryPurchaseService', () => {
       expect(ret.totalAmount).toBe(200)
     })
 
-    it('should approve and complete return', () => {
+    it('should approve and refund return', () => {
       const o = createPO(tenant, {
         supplierName: 'S1',
         items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
@@ -741,8 +780,8 @@ describe('InventoryPurchaseService', () => {
 
       const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
       approveReturn(ret.id, tenant)
-      const completed = completeReturn(ret.id, tenant)
-      expect(completed.status).toBe(ReturnStatus.Completed)
+      const refunded = refundReturn(ret.id, tenant)
+      expect(refunded.status).toBe(ReturnStatus.Refunded)
     })
 
     it('should inspect then approve return', () => {
@@ -762,6 +801,22 @@ describe('InventoryPurchaseService', () => {
       expect(approved.status).toBe(ReturnStatus.Approved)
     })
 
+    it('should approved then exchange return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      approveReturn(ret.id, tenant)
+      const exchanged = exchangeReturn(ret.id, tenant)
+      expect(exchanged.status).toBe(ReturnStatus.Exchanged)
+    })
+
     it('should reject then close return', () => {
       const o = createPO(tenant, {
         supplierName: 'S1',
@@ -774,9 +829,24 @@ describe('InventoryPurchaseService', () => {
 
       const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
       const rejected = rejectReturn(ret.id, tenant)
-      const completed = completeReturn(ret.id, tenant)
+      const completed = closeReturn(ret.id, tenant)
       expect(rejected.status).toBe(ReturnStatus.Rejected)
-      expect(completed.status).toBe(ReturnStatus.Completed)
+      expect(completed.status).toBe(ReturnStatus.Closed)
+    })
+
+    it('should pending close return directly', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const closed = closeReturn(ret.id, tenant)
+      expect(closed.status).toBe(ReturnStatus.Closed)
     })
 
     it('should not exceed available quantity', () => {

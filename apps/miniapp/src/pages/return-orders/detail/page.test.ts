@@ -74,6 +74,12 @@ describe('return-orders/detail 页面源码分析', () => {
     assert.match(SOURCE, /STATUS_STEPS/);
   });
 
+  it('应包含终态步骤索引修正函数', () => {
+    assert.match(SOURCE, /function getStatusStepIndex/);
+    assert.match(SOURCE, /status === 'exchanged'/);
+    assert.match(SOURCE, /status === 'rejected' \|\| status === 'closed'/);
+  });
+
   it('STATUS_STEPS 应包含 4 个步骤', () => {
     const steps = ['pending', 'inspecting', 'approved', 'refunded'];
     for (const step of steps) {
@@ -222,7 +228,7 @@ describe('退货单详情页代码完整性', () => {
 
   it('应通过 runtime 提交退货动作，并对缺失后端动作保留演示态提示', () => {
     assert.match(SOURCE, /executeMiniappPurchaseReturnAction/);
-    assert.match(SOURCE, /已提交真实退货质检动作|已提交真实退货驳回动作|已提交真实退货审批动作/);
+    assert.match(SOURCE, /remark/);
     assert.match(SOURCE, /result\.deliveryMode === 'api'/);
     assert.match(SOURCE, /setDeliveryNote\(result\.note\)/);
   });

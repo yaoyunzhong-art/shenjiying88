@@ -769,14 +769,10 @@ export class InventoryPurchaseService {
     return returnOrder
   }
 
-  /**
-   * 驳回退货
-   */
-  rejectReturn(
+  private resolveReturn(
     returnId: string,
-    tenantContext: RequestTenantContext,
-    reviewerInfo: { reviewerId: string; reviewerName: string; comment?: string }
-  ): PurchaseReturn {
+    tenantContext: RequestTenantContext
+  ): { returnOrder: PurchaseReturn; order: EnhancedPurchaseOrder } {
     const returnOrder = returnStore.get(returnId)
     if (!returnOrder) {
       throw new Error(`Return order ${returnId} not found`)
@@ -786,6 +782,19 @@ export class InventoryPurchaseService {
     if (!order || order.tenantId !== tenantContext.tenantId) {
       throw new Error(`Purchase order ${returnOrder.purchaseOrderId} not found`)
     }
+
+    return { returnOrder, order }
+  }
+
+  /**
+   * 驳回退货
+   */
+  rejectReturn(
+    returnId: string,
+    tenantContext: RequestTenantContext,
+    reviewerInfo: { reviewerId: string; reviewerName: string; comment?: string }
+  ): PurchaseReturn {
+    const { returnOrder } = this.resolveReturn(returnId, tenantContext)
 
     if (
       returnOrder.status !== PurchaseReturnStatus.Pending &&
@@ -807,37 +816,97 @@ export class InventoryPurchaseService {
   }
 
   /**
-   * 完成退货
+   * 退款
+   */
+  refundReturn(
+    returnId: string,
+    tenantContext: RequestTenantContext,
+    reviewerInfo?: { operatorId?: string; operatorName?: string; comment?: string }
+  ): PurchaseReturn {
+    const { returnOrder } = this.resolveReturn(returnId, tenantContext)
+
+    if (returnOrder.status !== PurchaseReturnStatus.Approved) {
+      throw new Error(`Return order ${returnId} must be approved before refund (status: ${returnOrder.status})`)
+    }
+
+    const now = new Date().toISOString()
+    returnOrder.status = PurchaseReturnStatus.Refunded
+    returnOrder.completedAt = now
+    returnOrder.approvedBy = reviewerInfo?.operatorId ?? returnOrder.approvedBy
+    returnOrder.reasonDetail = reviewerInfo?.comment ?? returnOrder.reasonDetail
+    returnOrder.updatedAt = now
+    returnStore.set(returnId, returnOrder)
+
+    this.logger.log(`Return refunded: ${returnOrder.returnOrderNo}`)
+    return returnOrder
+  }
+
+  /**
+   * 换货
+   */
+  exchangeReturn(
+    returnId: string,
+    tenantContext: RequestTenantContext,
+    reviewerInfo?: { operatorId?: string; operatorName?: string; comment?: string }
+  ): PurchaseReturn {
+    const { returnOrder } = this.resolveReturn(returnId, tenantContext)
+
+    if (returnOrder.status !== PurchaseReturnStatus.Approved) {
+      throw new Error(`Return order ${returnId} must be approved before exchange (status: ${returnOrder.status})`)
+    }
+
+    const now = new Date().toISOString()
+    returnOrder.status = PurchaseReturnStatus.Exchanged
+    returnOrder.completedAt = now
+    returnOrder.approvedBy = reviewerInfo?.operatorId ?? returnOrder.approvedBy
+    returnOrder.reasonDetail = reviewerInfo?.comment ?? returnOrder.reasonDetail
+    returnOrder.updatedAt = now
+    returnStore.set(returnId, returnOrder)
+
+    this.logger.log(`Return exchanged: ${returnOrder.returnOrderNo}`)
+    return returnOrder
+  }
+
+  /**
+   * 关闭退货
+   */
+  closeReturn(
+    returnId: string,
+    tenantContext: RequestTenantContext,
+    reviewerInfo?: { operatorId?: string; operatorName?: string; comment?: string }
+  ): PurchaseReturn {
+    const { returnOrder } = this.resolveReturn(returnId, tenantContext)
+
+    if (
+      returnOrder.status !== PurchaseReturnStatus.Pending &&
+      returnOrder.status !== PurchaseReturnStatus.Approved &&
+      returnOrder.status !== PurchaseReturnStatus.Rejected &&
+      returnOrder.status !== PurchaseReturnStatus.Refunded &&
+      returnOrder.status !== PurchaseReturnStatus.Exchanged
+    ) {
+      throw new Error(`Return order ${returnId} cannot be closed (status: ${returnOrder.status})`)
+    }
+
+    const now = new Date().toISOString()
+    returnOrder.status = PurchaseReturnStatus.Closed
+    returnOrder.completedAt = now
+    returnOrder.approvedBy = reviewerInfo?.operatorId ?? returnOrder.approvedBy
+    returnOrder.reasonDetail = reviewerInfo?.comment ?? returnOrder.reasonDetail
+    returnOrder.updatedAt = now
+    returnStore.set(returnId, returnOrder)
+
+    this.logger.log(`Return closed: ${returnOrder.returnOrderNo}`)
+    return returnOrder
+  }
+
+  /**
+   * 完成退货（兼容旧接口）
    */
   completeReturn(
     returnId: string,
     tenantContext: RequestTenantContext
   ): PurchaseReturn {
-    const returnOrder = returnStore.get(returnId)
-    if (!returnOrder) {
-      throw new Error(`Return order ${returnId} not found`)
-    }
-
-    const order = purchaseOrderStore.get(returnOrder.purchaseOrderId)
-    if (!order || order.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Purchase order ${returnOrder.purchaseOrderId} not found`)
-    }
-
-    if (
-      returnOrder.status !== PurchaseReturnStatus.Approved &&
-      returnOrder.status !== PurchaseReturnStatus.Rejected
-    ) {
-      throw new Error(`Return order ${returnId} must be approved or rejected before completion (status: ${returnOrder.status})`)
-    }
-
-    const now = new Date().toISOString()
-    returnOrder.status = PurchaseReturnStatus.Completed
-    returnOrder.completedAt = now
-    returnOrder.updatedAt = now
-    returnStore.set(returnId, returnOrder)
-
-    this.logger.log(`Return completed: ${returnOrder.returnOrderNo}`)
-    return returnOrder
+    return this.closeReturn(returnId, tenantContext)
   }
 
   // ═══════════════════════════════════════════════════════

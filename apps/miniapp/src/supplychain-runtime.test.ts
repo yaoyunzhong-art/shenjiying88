@@ -189,38 +189,60 @@ describe('supplychain-runtime 映射', () => {
   });
 
   it('退货动作映射应识别 approved 为真实审批接口', () => {
-    const execution = resolveMiniappReturnActionExecution('return-1', 'approved');
+    const execution = resolveMiniappReturnActionExecution('return-1', 'approved', '审批备注');
 
     assert.equal(execution.supported, true);
     assert.equal(execution.apiNextStatus, 'approved');
     assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/approve');
+    assert.equal((execution.request?.body as { comment?: string }).comment, '审批备注');
   });
 
   it('退货动作映射应识别 inspecting 为真实质检接口', () => {
-    const execution = resolveMiniappReturnActionExecution('return-1', 'inspecting');
+    const execution = resolveMiniappReturnActionExecution('return-1', 'inspecting', '质检备注');
 
     assert.equal(execution.supported, true);
     assert.equal(execution.apiNextStatus, 'inspecting');
     assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/inspect');
+    assert.equal((execution.request?.body as { comment?: string }).comment, '质检备注');
   });
 
   it('退货动作映射应识别 rejected 为真实驳回接口', () => {
-    const execution = resolveMiniappReturnActionExecution('return-1', 'rejected');
+    const execution = resolveMiniappReturnActionExecution('return-1', 'rejected', '驳回备注');
 
     assert.equal(execution.supported, true);
     assert.equal(execution.apiNextStatus, 'rejected');
     assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/reject');
+    assert.equal((execution.request?.body as { comment?: string }).comment, '驳回备注');
   });
 
-  it('退货动作映射应将 refunded 收口到 complete 接口', () => {
-    const execution = resolveMiniappReturnActionExecution('return-1', 'refunded');
+  it('退货动作映射应将 refunded 路由到 refund 接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'refunded', '退款备注');
+
+    assert.equal(execution.supported, true);
+    assert.equal(execution.apiNextStatus, 'refunded');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/refund');
+    assert.equal((execution.request?.body as { comment?: string }).comment, '退款备注');
+  });
+
+  it('退货动作映射应将 exchanged 路由到 exchange 接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'exchanged', '换货备注');
+
+    assert.equal(execution.supported, true);
+    assert.equal(execution.apiNextStatus, 'exchanged');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/exchange');
+    assert.equal((execution.request?.body as { comment?: string }).comment, '换货备注');
+  });
+
+  it('退货动作映射应将 closed 路由到 close 接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'closed', '关闭备注');
 
     assert.equal(execution.supported, true);
     assert.equal(execution.apiNextStatus, 'closed');
-    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/complete');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/close');
+    assert.equal((execution.request?.body as { comment?: string }).comment, '关闭备注');
   });
 
-  it('退货动作映射应将 pending 关闭标记为 fallback-only', () => {
+  it('退货动作映射应将 pending 标记为 fallback-only', () => {
     const execution = resolveMiniappReturnActionExecution('return-1', 'pending');
 
     assert.equal(execution.supported, false);

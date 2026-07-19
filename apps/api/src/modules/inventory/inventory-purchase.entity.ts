@@ -43,6 +43,10 @@ export enum PurchaseReturnStatus {
   Approved = 'APPROVED',
   Shipped = 'SHIPPED',
   Rejected = 'REJECTED',
+  Refunded = 'REFUNDED',
+  Exchanged = 'EXCHANGED',
+  Closed = 'CLOSED',
+  // Legacy terminal value kept for backward compatibility with older snapshots.
   Completed = 'COMPLETED'
 }
 

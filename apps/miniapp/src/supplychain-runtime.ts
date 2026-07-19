@@ -228,6 +228,11 @@ function normalizeReturnStatus(status?: string): MiniappReturnStatus {
       return 'approved';
     case 'SHIPPED':
       return 'inspecting';
+    case 'REFUNDED':
+      return 'refunded';
+    case 'EXCHANGED':
+      return 'exchanged';
+    case 'CLOSED':
     case 'COMPLETED':
       return 'closed';
     default:
@@ -412,6 +417,7 @@ export function buildMiniappPurchaseOrderActionRequest(
 export function resolveMiniappReturnActionExecution(
   returnId: string,
   nextStatus: MiniappReturnStatus,
+  remark?: string,
 ): {
   supported: boolean;
   apiNextStatus: MiniappReturnStatus;
@@ -427,6 +433,7 @@ export function resolveMiniappReturnActionExecution(
         body: {
           approverId: miniappSupplychainActor.id,
           approverName: miniappSupplychainActor.name,
+          comment: remark || '由小程序退货详情页发起审批。',
         },
       },
       note: '已提交真实退货审批动作。',
@@ -442,7 +449,7 @@ export function resolveMiniappReturnActionExecution(
         body: {
           inspectorId: miniappSupplychainActor.id,
           inspectorName: miniappSupplychainActor.name,
-          comment: '由小程序退货详情页发起质检。',
+          comment: remark || '由小程序退货详情页发起质检。',
         },
       },
       note: '已提交真实退货质检动作。',
@@ -458,21 +465,58 @@ export function resolveMiniappReturnActionExecution(
         body: {
           reviewerId: miniappSupplychainActor.id,
           reviewerName: miniappSupplychainActor.name,
-          comment: '由小程序退货详情页发起驳回。',
+          comment: remark || '由小程序退货详情页发起驳回。',
         },
       },
       note: '已提交真实退货驳回动作。',
     };
   }
 
-  if (nextStatus === 'refunded' || nextStatus === 'exchanged' || nextStatus === 'closed') {
+  if (nextStatus === 'refunded') {
+    return {
+      supported: true,
+      apiNextStatus: 'refunded',
+      request: {
+        path: `/inventory/purchase/returns/${returnId}/refund`,
+        body: {
+          operatorId: miniappSupplychainActor.id,
+          operatorName: miniappSupplychainActor.name,
+          comment: remark || '由小程序退货详情页发起退款。',
+        },
+      },
+      note: '已提交真实退款动作。',
+    };
+  }
+
+  if (nextStatus === 'exchanged') {
+    return {
+      supported: true,
+      apiNextStatus: 'exchanged',
+      request: {
+        path: `/inventory/purchase/returns/${returnId}/exchange`,
+        body: {
+          operatorId: miniappSupplychainActor.id,
+          operatorName: miniappSupplychainActor.name,
+          comment: remark || '由小程序退货详情页发起换货。',
+        },
+      },
+      note: '已提交真实换货动作。',
+    };
+  }
+
+  if (nextStatus === 'closed') {
     return {
       supported: true,
       apiNextStatus: 'closed',
       request: {
-        path: `/inventory/purchase/returns/${returnId}/complete`,
+        path: `/inventory/purchase/returns/${returnId}/close`,
+        body: {
+          operatorId: miniappSupplychainActor.id,
+          operatorName: miniappSupplychainActor.name,
+          comment: remark || '由小程序退货详情页发起关闭。',
+        },
       },
-      note: '已提交真实退货完成动作，页面状态收口为已关闭。',
+      note: '已提交真实关闭动作。',
     };
   }
 
@@ -635,8 +679,9 @@ export async function deleteMiniappPurchaseOrder(
 export async function executeMiniappPurchaseReturnAction(
   returnId: string,
   nextStatus: MiniappReturnStatus,
+  remark?: string,
 ): Promise<MiniappSupplychainMutationResult<MiniappReturnStatus>> {
-  const execution = resolveMiniappReturnActionExecution(returnId, nextStatus);
+  const execution = resolveMiniappReturnActionExecution(returnId, nextStatus, remark);
 
   if (!execution.supported || !execution.request) {
     return {

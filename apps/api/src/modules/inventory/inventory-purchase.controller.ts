@@ -365,8 +365,47 @@ export class InventoryPurchaseController {
   }
 
   /**
+   * POST /api/inventory/purchase/returns/:returnId/refund
+   * 退款
+   */
+  @Post('returns/:returnId/refund')
+  refundReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
+  ) {
+    return this.purchaseService.refundReturn(returnId, tenantContext, body)
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/exchange
+   * 换货
+   */
+  @Post('returns/:returnId/exchange')
+  exchangeReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
+  ) {
+    return this.purchaseService.exchangeReturn(returnId, tenantContext, body)
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/close
+   * 关闭退货
+   */
+  @Post('returns/:returnId/close')
+  closeReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
+  ) {
+    return this.purchaseService.closeReturn(returnId, tenantContext, body)
+  }
+
+  /**
    * POST /api/inventory/purchase/returns/:returnId/complete
-   * 完成退货
+   * 完成退货（兼容旧接口，内部收口到 close）
    */
   @Post('returns/:returnId/complete')
   completeReturn(
