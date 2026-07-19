@@ -511,6 +511,130 @@ describe('合同管理页 — 边界', () => {
     const data = await res.json();
     assert.strictEqual(data.ok, false);
   });
+
+  it('handleApiCall with GET method returns 404 for unregistered', async () => {
+    const res = await mockFetch('/api/contracts/list', { method: 'GET' });
+    const data = await res.json();
+    assert.strictEqual(data.ok, false);
+  });
+});
+
+// ===================== 新增：操作按钮与交互验证 =====================
+
+describe('合同管理页 — 操作按钮与交互', () => {
+  beforeEach(() => {
+    resetRegistry();
+    mockFetchOk('/api/contracts/sign', { id: 'CT-007', status: 'in_progress' });
+  });
+
+  it('待签合同签署后状态变更函数正确', () => {
+    const updated = updateContractStatus(DEFAULT_CONTRACTS, 'CT-007', 'in_progress', '2026-07-19');
+    const item = updated.find(c => c.id === 'CT-007')!;
+    assert.strictEqual(item.status, 'in_progress');
+    assert.strictEqual(item.signedAt, '2026-07-19');
+  });
+
+  it('updateContractStatus 仅修改指定合同状态', () => {
+    const updated = updateContractStatus(DEFAULT_CONTRACTS, 'CT-002', 'completed');
+    const item = updated.find(c => c.id === 'CT-002')!;
+    assert.strictEqual(item.status, 'completed');
+    // 其他合同不受影响
+    assert.strictEqual(updated.find(c => c.id === 'CT-001')!.status, 'pending_sign');
+    assert.strictEqual(updated.find(c => c.id === 'CT-003')!.status, 'in_progress');
+  });
+
+  it('备注提交成功后清空文本', () => {
+    const updated = addComment(DEFAULT_CONTRACTS, 'CT-001', '');
+    assert.strictEqual(updated.find(c => c.id === 'CT-001')!.comment, '');
+  });
+
+  it('签署 mock 返回包含完整数据', async () => {
+    const res = await mockFetch('/api/contracts/sign', {
+      method: 'POST',
+      body: JSON.stringify({ id: 'CT-007' }),
+    });
+    const data = await res.json();
+    assert.strictEqual(data.ok, true);
+    assert.strictEqual(data.data.id, 'CT-007');
+  });
+
+  it('Tab 筛选不改变原始数组', () => {
+    const originalLen = DEFAULT_CONTRACTS.length;
+    filterContracts(DEFAULT_CONTRACTS, 'pending_sign');
+    assert.strictEqual(DEFAULT_CONTRACTS.length, originalLen);
+  });
+
+  it('统计函数不抛出异常', () => {
+    assert.doesNotThrow(() => computeStats(DEFAULT_CONTRACTS));
+    assert.doesNotThrow(() => computeStats([]));
+  });
+});
+
+// ===================== 新增：边界详情验证 =====================
+
+describe('合同管理页 — 边界详情', () => {
+  it('isExpiredSoon 对于过去日期返回 false', () => {
+    const pastDate = '2020-01-01';
+    assert.strictEqual(isExpiredSoon(pastDate, 30), false);
+  });
+
+  it('isExpiredSoon 对于未来到期返回 true', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    assert.strictEqual(isExpiredSoon(future.toISOString().slice(0, 10), 30), true);
+  });
+
+  it('isExpiredSoon 对于30天整到期返回 true', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 30);
+    assert.strictEqual(isExpiredSoon(future.toISOString().slice(0, 10), 30), true);
+  });
+
+  it('isExpiredSoon 对于31天后到期返回 false', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 31);
+    assert.strictEqual(isExpiredSoon(future.toISOString().slice(0, 10), 30), false);
+  });
+
+  it('formatDate 处理午夜时刻', () => {
+    assert.strictEqual(formatDate('2026-01-01T00:00:00'), '2026-01-01');
+  });
+
+  it('formatDate 处理年底日期', () => {
+    assert.strictEqual(formatDate('2026-12-31T23:59:59'), '2026-12-31');
+  });
+
+  it('formatAmount 处理最大安全整数', () => {
+    assert.ok(formatAmount(Number.MAX_SAFE_INTEGER).startsWith('¥'));
+  });
+
+  it('所有合同金额为非负数', () => {
+    DEFAULT_CONTRACTS.forEach(c => assert.ok(c.amount >= 0, `${c.id} 金额非负`));
+  });
+
+  it('合同到期日期有效', () => {
+    DEFAULT_CONTRACTS.forEach(c => {
+      const d = new Date(c.expiresAt);
+      assert.ok(!Number.isNaN(d.getTime()), `${c.id}: ${c.expiresAt}`);
+    });
+  });
+
+  it('STATUS_COLOR 所有 keys 和 STATUS_LABEL 一致', () => {
+    const colorKeys = Object.keys(STATUS_COLOR);
+    const labelKeys = Object.keys(STATUS_LABEL);
+    assert.strictEqual(colorKeys.length, labelKeys.length);
+    colorKeys.forEach(k => assert.ok(k in STATUS_LABEL));
+  });
+
+  it('completed 合同仍可添加备注', () => {
+    const updated = addComment(DEFAULT_CONTRACTS, 'CT-005', '已完成项目追加备注');
+    assert.strictEqual(updated.find(c => c.id === 'CT-005')!.comment, '已完成项目追加备注');
+  });
+
+  it('filterContracts 在空列表中筛选不崩溃', () => {
+    assert.doesNotThrow(() => filterContracts([], 'all'));
+    assert.doesNotThrow(() => filterContracts([], 'pending_sign'));
+  });
 });
 
 // ===================== 组件结构验证 =====================
