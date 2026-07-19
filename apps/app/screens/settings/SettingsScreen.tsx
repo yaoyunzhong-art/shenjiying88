@@ -29,11 +29,9 @@ export function SettingsScreen() {
     state.bootstrap.domainGovernance,
     state.bootstrap.domainGovernanceWorkspaceHref,
   );
-  const domainGovernanceHeaderSection = domainGovernanceDisplayModel.headerSection;
-  const domainGovernanceWorkspaceSlot = domainGovernanceDisplayModel.footerSection.workspaceSlot;
   const domainGovernanceSubtitle = [
-    domainGovernanceHeaderSection.summarySlots[0]?.value,
-    domainGovernanceHeaderSection.titleSlot.value,
+    domainGovernanceDisplayModel.summaryText,
+    domainGovernanceDisplayModel.title,
   ]
     .filter(Boolean)
     .join(' / ');
@@ -66,7 +64,7 @@ export function SettingsScreen() {
   };
 
   const handleDomainGovernancePress = () => {
-    Alert.alert(domainGovernanceHeaderSection.eyebrow, domainGovernanceWorkspaceSlot.value);
+    Alert.alert(domainGovernanceDisplayModel.eyebrow, domainGovernanceDisplayModel.workspaceHref);
   };
 
   const handleClearCache = () => {
@@ -192,7 +190,7 @@ export function SettingsScreen() {
           <View style={styles.divider} />
           {renderSettingItem(
             '🌍',
-            domainGovernanceHeaderSection.eyebrow,
+            domainGovernanceDisplayModel.eyebrow,
             domainGovernanceSubtitle,
             <Text style={styles.settingArrow}>›</Text>,
             handleDomainGovernancePress
