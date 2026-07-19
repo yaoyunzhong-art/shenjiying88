@@ -106,7 +106,7 @@ export default function SEOPage() {
       {!loading && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <a href="/seo/metadata" className="block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow border-l-4 border-blue-500">
+            <a href="/seo/health" className="block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow border-l-4 border-red-500"><h3 className="font-bold mb-2">SEO 健康报告</h3><p className="text-sm text-gray-500">扫描+评分+问题列表</p></a><a href="/seo/metadata" className="block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow border-l-4 border-blue-500">
               <h3 className="font-bold mb-2">SEO 元数据管理</h3>
               <p className="text-sm text-gray-500">管理页面 title/description/keywords/canonical · {stats?.totalMetadata} 条</p>
             </a>
