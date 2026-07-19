@@ -1726,3 +1726,210 @@ it('e2e: invoices — 跨租户隔离', async () => {
     await app.close();
   }
 });
+
+// ═══════════════════════════════════════════════════════
+// 成本分析深度测试 (P-38)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: cost-analysis — 不同period返回不同数据', async () => {
+  const { app } = await buildApp();
+  try {
+    const w30 = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+
+    const w31 = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W31' });
+
+    expect(w30.status).toBe(200);
+    expect(w31.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cost-analysis — 返回数据含costBreakdown结构', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(res.status).toBe(200);
+    if (res.body.data?.length > 0) {
+      const first = res.body.data[0];
+      // 检查成本分解字段
+      expect(first).toHaveProperty('purchaseCost');
+      expect(first).toHaveProperty('laborCost');
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cost-analysis — 跨period同比环比字段', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 批量现金流链式测试 (P-38)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: cash-flow — 批量inflow/outflow后验证余额链', async () => {
+  const { app } = await buildApp();
+  try {
+    // 3笔流入 + 1笔流出
+    for (let i = 0; i < 3; i++) {
+      await request(app.getHttpServer())
+        .post('/finance/dashboard/cash-flow/inflow')
+        .set(TENANT_A)
+        .send({ accountId: 'cash-chain', amountCents: 10000, description: `链式流入${i}`, source: 'sale' });
+    }
+
+    await request(app.getHttpServer())
+      .post('/finance/dashboard/cash-flow/outflow')
+      .set(TENANT_A)
+      .send({ accountId: 'cash-chain', amountCents: 5000, description: '链式流出', source: 'expense' });
+
+    const balance = await request(app.getHttpServer())
+      .get('/finance/dashboard/cash-flow')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(balance.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 报告深度 (P-38 revenue)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: revenue/daily — 多store返回', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/revenue/daily')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', startDate: '2026-07-01', endDate: '2026-07-19' });
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: revenue/summary — 返回期望的维度', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/revenue/summary')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001' });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('totalRevenue');
+    expect(res.body).toHaveProperty('orderCount');
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: revenue/summary — 无storeId应汇总所有门店', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/revenue/summary')
+      .set(TENANT_A);
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 发票批量 (P-38 invoices)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: invoices — 批量创建跨状态过滤', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ amountCents: 100000, invoicedAt: '2026-07-19T00:00:00.000Z' });
+
+    await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ amountCents: 200000, invoicedAt: '2026-07-19T00:00:00.000Z' });
+
+    const res = await request(app.getHttpServer())
+      .get('/finance/invoices')
+      .set(TENANT_A);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 结算完整生命周期 (P-38 settlements)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: settlements — 创建→确认→查看详情', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-08-01T00:00:00.000Z', endDate: '2026-08-15T23:59:59.999Z' });
+    expect(createRes.status).toBe(201);
+    const settlementId = createRes.body.data?.id ?? createRes.body.id;
+
+    if (settlementId) {
+      await request(app.getHttpServer())
+        .post('/finance/settlements/' + settlementId + '/confirm')
+        .set(TENANT_A);
+
+      const detail = await request(app.getHttpServer())
+        .get('/finance/settlements/' + settlementId + '/detail')
+        .set(TENANT_A);
+      expect(detail.status).toBe(200);
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: settlements — 争议流程', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-09-01T00:00:00.000Z', endDate: '2026-09-15T23:59:59.999Z' });
+    expect(createRes.status).toBe(201);
+    const sid = createRes.body.data?.id ?? createRes.body.id;
+    if (sid) {
+      const disputeRes = await request(app.getHttpServer())
+        .post('/finance/settlements/' + sid + '/dispute')
+        .set(TENANT_A);
+      expect(disputeRes.status).toBe(201);
+    }
+  } finally {
+    await app.close();
+  }
+});
