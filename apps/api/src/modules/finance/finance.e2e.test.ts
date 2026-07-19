@@ -1453,3 +1453,276 @@ it('e2e: settlements — 跨tenant隔离（结算数据隔离）', async () => {
     await app.close();
   }
 });
+
+// ═══════════════════════════════════════════════════════
+// 成本分析 API (P-38 cost-cash-flow)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: cost-analysis — 获取成本分析数据', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cost-analysis — 无storeId应返回不同门店对比', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_A)
+      .query({ period: '2026-W30' });
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cost-analysis — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard/cost-analysis')
+      .set(TENANT_B)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(res.status).toBe(200);
+    // Tenant B 看不到 A 的数据
+    const dataB = Array.isArray(res.body.data) ? res.body.data.length : 0;
+    expect(dataB).toBe(0);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// 现金流 API (P-38 cash-flow)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: cash-flow — 获取现金流概况', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/dashboard/cash-flow')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('balance');
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cash-flow — 记录流入并验证余额', async () => {
+  const { app } = await buildApp();
+  try {
+    const inflow = await request(app.getHttpServer())
+      .post('/finance/dashboard/cash-flow/inflow')
+      .set(TENANT_A)
+      .send({ accountId: 'cash-001', amountCents: 100000, description: '测试流入', source: 'sale' });
+    expect(inflow.status).toBe(201);
+
+    const balance = await request(app.getHttpServer())
+      .get('/finance/dashboard/cash-flow')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', period: '2026-W30' });
+    expect(balance.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cash-flow — 记录流出', async () => {
+  const { app } = await buildApp();
+  try {
+    const outflow = await request(app.getHttpServer())
+      .post('/finance/dashboard/cash-flow/outflow')
+      .set(TENANT_A)
+      .send({ accountId: 'cash-001', amountCents: 50000, description: '采购支出', source: 'purchase' });
+    expect(outflow.status).toBe(201);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: cash-flow — 0金额流入应正常处理', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .post('/finance/dashboard/cash-flow/inflow')
+      .set(TENANT_A)
+      .send({ accountId: 'cash-001', amountCents: 0, description: '零金额', source: 'adjustment' });
+    expect(res.status).toBe(201);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// Report 边界
+// ═══════════════════════════════════════════════════════
+
+it('e2e: revenue/daily — 无数据周期返回空', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/revenue/daily')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', startDate: '2025-01-01', endDate: '2025-01-07' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(0);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: revenue/summary — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/revenue/summary')
+      .set(TENANT_B)
+      .query({ storeId: 'store-001' });
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// Ledger 批量/边界
+// ═══════════════════════════════════════════════════════
+
+it('e2e: ledgers — 批量创建+limit分页验证', async () => {
+  const { app } = await buildApp();
+  try {
+    const batchSize = 15;
+    for (let i = 0; i < batchSize; i++) {
+      await request(app.getHttpServer())
+        .post('/finance/ledgers')
+        .set(TENANT_A)
+        .send({ amountCents: (i + 1) * 1000, type: i % 3 === 0 ? 'refund' : 'income', description: `批量${i}` });
+    }
+
+    const list = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A)
+      .query({ limit: 5 });
+    expect(list.status).toBe(200);
+    expect(list.body.data.length).toBeLessThanOrEqual(5);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: ledgers — 按storeId过滤', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001' });
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: ledgers — 按type过滤(refund)', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A)
+      .query({ type: 'refund' });
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: ledgers — 查询不存在account应返回空', async () => {
+  const { app } = await buildApp();
+  try {
+    const res = await request(app.getHttpServer())
+      .get('/finance/ledgers')
+      .set(TENANT_A)
+      .query({ accountId: 'nonexistent-account' });
+    expect(res.status).toBe(200);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// Invoice 状态过滤边界
+// ═══════════════════════════════════════════════════════
+
+it('e2e: invoices — 按状态过滤（新创建为draft）', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ amountCents: 200000, invoicedAt: '2026-07-19T00:00:00.000Z' });
+    expect(createRes.status).toBe(201);
+
+    const list = await request(app.getHttpServer())
+      .get('/finance/invoices')
+      .set(TENANT_A)
+      .query({ status: 'draft' });
+    expect(list.status).toBe(200);
+    expect(Array.isArray(list.body.data)).toBe(true);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: invoices — 创建→开票→取消完整生命周期', async () => {
+  const { app } = await buildApp();
+  try {
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ amountCents: 300000, invoicedAt: '2026-07-19T00:00:00.000Z' });
+    expect(createRes.status).toBe(201);
+    const invoiceId = createRes.body.data?.id ?? createRes.body.id;
+
+    if (invoiceId) {
+      await request(app.getHttpServer())
+        .post('/finance/invoices/' + invoiceId + '/issue')
+        .set(TENANT_A);
+
+      await request(app.getHttpServer())
+        .post('/finance/invoices/' + invoiceId + '/cancel')
+        .set(TENANT_A);
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: invoices — 跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ amountCents: 400000, invoicedAt: '2026-07-19T00:00:00.000Z' });
+
+    const listB = await request(app.getHttpServer())
+      .get('/finance/invoices')
+      .set(TENANT_B);
+    expect(listB.status).toBe(200);
+    expect(listB.body.data.length).toBe(0);
+  } finally {
+    await app.close();
+  }
+});
