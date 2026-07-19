@@ -1,5 +1,6 @@
 /**
  * seo.controller.ts — P-49 SEO 数据模块控制器
+ * V2 增强: 结构化数据生成 + GEO搜索 + 健康检测 + 评分
  */
 import {
   Body,
@@ -8,354 +9,138 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Put,
   Query,
 } from '@nestjs/common'
 import { SeoService } from './seo.service'
-import { ChangeFreq } from './seo.entity'
-
-// ── Controller ──────────────────────────────────────────────────────────────
+import { GeoSearchService } from './geo-search.service'
+import { SeoHealthService } from './seo-health.service'
+import type { ChangeFreq } from './seo.entity'
 
 @Controller('seo')
 export class SeoController {
-  constructor(private readonly seoService: SeoService) {}
+  constructor(
+    private readonly seoService: SeoService,
+    private readonly geoSearchService: GeoSearchService,
+    private readonly seoHealthService: SeoHealthService,
+  ) {}
 
-  // ── Metadata ──────────────────────────────────────────────────────────
-
-  @Post('metadata')
-  createMetadata(
-    @Body()
-    body: {
-      path: string
-      title: string
-      description: string
-      keywords?: string[]
-      canonical: string
-      locale?: string
-      ogImage?: string
-      tenantId?: string
-    },
-  ) {
-    try {
-      return this.seoService.upsertMetadata(body.path, {
-        title: body.title,
-        description: body.description,
-        keywords: body.keywords,
-        canonical: body.canonical,
-        locale: body.locale,
-        ogImage: body.ogImage,
-        tenantId: body.tenantId,
-      })
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '创建 SEO 元数据失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
-  }
+  // ── Metadata CRUD ──
 
   @Put('metadata')
-  upsertMetadata(
-    @Body()
-    body: {
-      path: string
-      title: string
-      description: string
-      keywords?: string[]
-      canonical: string
-      locale?: string
-      ogImage?: string
-      tenantId?: string
-    },
-  ) {
-    try {
-      return this.seoService.upsertMetadata(body.path, {
-        title: body.title,
-        description: body.description,
-        keywords: body.keywords,
-        canonical: body.canonical,
-        locale: body.locale,
-        ogImage: body.ogImage,
-        tenantId: body.tenantId,
-      })
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '更新 SEO 元数据失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  upsertMetadata(@Body() body: { path: string; title: string; description: string; keywords?: string[]; canonical: string; locale?: string; tenantId?: string }) {
+    return this.seoService.upsertMetadata(body.path, body)
+  }
+
+  @Get('metadata/:path')
+  getMetadata(@Param('path') path: string, @Query('locale') locale?: string) {
+    const meta = this.seoService.getMetadata(path, locale || 'zh-CN')
+    if (!meta) throw new NotFoundException(`路径 ${path} 无SEO元数据`)
+    return meta
+  }
+
+  @Delete('metadata/:path')
+  deleteMetadata(@Param('path') path: string, @Query('locale') locale?: string) {
+    this.seoService.deleteMetadata(path)
+    return { success: true }
   }
 
   @Get('metadata')
-  listMetadata(
-    @Query('tenantId') tenantId?: string,
-    @Query('locale') locale?: string,
-    @Query('page') page?: string,
-    @Query('pageSize') pageSize?: string,
-  ) {
+  listMetadata(@Query('tenantId') tenantId?: string, @Query('locale') locale?: string, @Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.seoService.listMetadata({
-      tenantId,
-      locale,
+      tenantId, locale,
       page: page ? parseInt(page, 10) : undefined,
       pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
     })
   }
 
-  @Get('metadata/:path')
-  getMetadata(
-    @Param('path') path: string,
-    @Query('locale') locale?: string,
-  ) {
-    try {
-      return this.seoService.getMetadata(path, locale)
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.NOT_FOUND)
-      }
-      throw new HttpException(
-        '获取 SEO 元数据失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
-  }
-
-  @Delete('metadata/:path')
-  deleteMetadata(@Param('path') path: string) {
-    try {
-      this.seoService.deleteMetadata(path)
-      return { success: true }
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.NOT_FOUND)
-      }
-      throw new HttpException(
-        '删除 SEO 元数据失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
-  }
-
-  // ── Sitemap ───────────────────────────────────────────────────────────
+  // ── Sitemap CRUD ──
 
   @Post('sitemap')
-  createSitemap(
-    @Body()
-    body: {
-      path: string
-      changefreq?: ChangeFreq
-      priority?: number
-      lastmod?: string
-      tenantId?: string
-    },
-  ) {
-    try {
-      return this.seoService.upsertSitemap(body.path, {
-        changefreq: body.changefreq,
-        priority: body.priority,
-        lastmod: body.lastmod,
-        tenantId: body.tenantId,
-      })
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '创建 Sitemap 条目失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
-  }
-
-  @Put('sitemap')
-  upsertSitemap(
-    @Body()
-    body: {
-      path: string
-      changefreq?: ChangeFreq
-      priority?: number
-      lastmod?: string
-      tenantId?: string
-    },
-  ) {
-    try {
-      return this.seoService.upsertSitemap(body.path, {
-        changefreq: body.changefreq,
-        priority: body.priority,
-        lastmod: body.lastmod,
-        tenantId: body.tenantId,
-      })
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '更新 Sitemap 条目失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
-  }
-
-  @Post('sitemap/batch')
-  batchUpsertSitemap(
-    @Body()
-    body: {
-      entries: Array<{
-        path: string
-        changefreq?: ChangeFreq
-        priority?: number
-        lastmod?: string
-        tenantId?: string
-      }>
-    },
-  ) {
-    try {
-      return this.seoService.batchUpsertSitemap(body.entries)
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '批量更新 Sitemap 失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  createSitemap(@Body() body: { path: string; changefreq?: ChangeFreq; priority?: number; tenantId?: string }) {
+    return this.seoService.upsertSitemap(body.path, body)
   }
 
   @Get('sitemap')
-  getSitemapEntries(
-    @Query('tenantId') tenantId?: string,
-    @Query('changefreq') changefreq?: ChangeFreq,
-  ) {
-    return this.seoService.getSitemapEntries(tenantId, changefreq)
+  listSitemap(@Query('tenantId') tenantId?: string, @Query('changefreq') changefreq?: ChangeFreq) {
+    return this.seoService.getSitemapEntries(tenantId || 'default', changefreq)
   }
 
   @Get('sitemap/:path')
-  getSitemapByPath(@Param('path') path: string) {
-    try {
-      return this.seoService.getSitemapByPath(path)
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.NOT_FOUND)
-      }
-      throw new HttpException(
-        '获取 Sitemap 条目失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  getSitemapByPath(@Param('path') path: string, @Query('tenantId') tenantId?: string) {
+    const entries = this.seoService.getSitemapEntries(tenantId || 'default').filter(e => e.path === path)
+    return entries[0] || null
   }
 
-  @Delete('sitemap/:path')
-  deleteSitemap(@Param('path') path: string) {
-    try {
-      this.seoService.deleteSitemap(path)
-      return { success: true }
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.NOT_FOUND)
-      }
-      throw new HttpException(
-        '删除 Sitemap 条目失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  @Post('sitemap/batch')
+  batchSitemap(@Body() body: { entries: { path: string; changefreq?: ChangeFreq; priority?: number; tenantId?: string }[] }) {
+    return this.seoService.batchUpsertSitemap(body.entries)
   }
 
-  // ── GeoLocation ───────────────────────────────────────────────────────
+  // ── GeoLocation CRUD ──
 
   @Post('geo-locations')
-  createGeoLocation(
-    @Body()
-    body: {
-      city: string
-      district: string
-      landmark: string
-      lat: number
-      lng: number
-      radiusKm?: number
-      tenantId?: string
-    },
-  ) {
-    try {
-      return this.seoService.createGeoLocation({
-        city: body.city,
-        district: body.district,
-        landmark: body.landmark,
-        lat: body.lat,
-        lng: body.lng,
-        radiusKm: body.radiusKm,
-        tenantId: body.tenantId,
-      })
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '创建 GEO 位置失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  createGeoLocation(@Body() body: { city: string; district: string; landmark: string; lat: number; lng: number; radiusKm?: number; tenantId?: string }) {
+    return this.seoService.createGeoLocation(body)
   }
 
   @Get('geo-locations')
-  getAllGeoLocations(@Query('tenantId') tenantId?: string) {
+  listGeoLocations(@Query('tenantId') tenantId?: string) {
     return this.seoService.getAllGeoLocations(tenantId)
   }
 
   @Get('geo-locations/search')
-  searchGeoLocations(
-    @Query('city') city: string,
-    @Query('district') district: string,
-    @Query('keyword') keyword?: string,
-  ) {
-    try {
-      return this.seoService.searchGeoLocations(city, district, keyword)
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.BAD_REQUEST)
-      }
-      throw new HttpException(
-        '搜索 GEO 位置失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
+  searchGeoLocations(@Query('city') city: string, @Query('district') district: string, @Query('keyword') keyword?: string) {
+    try { return this.seoService.searchGeoLocations(city, district, keyword) } catch (err: any) {
+      throw new HttpException(err.message || '搜索失败', HttpStatus.BAD_REQUEST)
     }
   }
 
-  @Get('geo-locations/:id')
-  getGeoLocationById(@Param('id') id: string) {
-    try {
-      return this.seoService.getGeoLocationById(id)
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.NOT_FOUND)
-      }
-      throw new HttpException(
-        '获取 GEO 位置失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  // ── V2 增强: 结构化数据生成 ──
+
+  @Post('generate-structured-data/:path')
+  generateStructuredData(@Param('path') path: string, @Body() body?: { pageType?: 'store' | 'event' | 'page' }) {
+    const pageType = body?.pageType || 'page'
+    const meta = this.seoService.getMetadata(path, 'zh-CN')
+    if (!meta) throw new NotFoundException(`路径 ${path} 无SEO元数据`)
+    const base = { '@context': 'https://schema.org', '@id': `https://domain.com${path}#webpage`, name: meta.title, description: meta.description, url: `https://domain.com${path}` }
+    if (pageType === 'store') return { ...base, '@type': ['LocalBusiness', 'EntertainmentBusiness'] }
+    if (pageType === 'event') return { ...base, '@type': 'Event' }
+    return { ...base, '@type': 'WebPage', isPartOf: { '@type': 'WebSite', '@id': 'https://domain.com#website', url: 'https://domain.com' } }
   }
 
-  @Delete('geo-locations/:id')
-  deleteGeoLocation(@Param('id') id: string) {
-    try {
-      this.seoService.deleteGeoLocation(id)
-      return { success: true }
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new HttpException(err.message, HttpStatus.NOT_FOUND)
-      }
-      throw new HttpException(
-        '删除 GEO 位置失败',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      )
-    }
+  // ── V2 增强: GEO搜索 ──
+
+  @Post('geo-search')
+  geoSearch(@Body() body: { query: string; city?: string; district?: string; lat?: number; lng?: number; page?: number; pageSize?: number }) {
+    return this.geoSearchService.search({ query: body.query, city: body.city, district: body.district, lat: body.lat, lng: body.lng, page: body.page, pageSize: body.pageSize })
+  }
+
+  // ── V2 增强: 健康报告 ──
+
+  @Get('health')
+  getHealth(@Query('tenantId') tenantId?: string) {
+    return this.seoHealthService.generateHealthReport(tenantId || 'default')
+  }
+
+  // ── V2 增强: SEO统计 ──
+
+  @Get('stats')
+  getStats(@Query('tenantId') tenantId?: string) {
+    const tid = tenantId || 'default'
+    const metadata = this.seoService.listMetadata({ tenantId: tid })
+    const sitemaps = this.seoService.getSitemapEntries(tid)
+    const geos = this.seoService.getAllGeoLocations(tid)
+    return { totalMetadata: metadata.total, totalSitemaps: sitemaps.length, totalGeos: geos.length, lastUpdated: new Date().toISOString() }
+  }
+
+  // ── V2 增强: 页面评分 ──
+
+  @Get('score-page')
+  scorePage(@Query('path') path: string, @Query('title') title: string, @Query('description') description: string) {
+    return { path, score: this.seoHealthService.scorePage(path, title || '', description || '') }
   }
 }
