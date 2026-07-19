@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, test } from 'node:test'
-import { GET, POST } from './route'
+import { GET as routeGET, POST as routePOST } from './route'
 
 const originalEnv = { LOGISTICS_API_BASE: process.env.LOGISTICS_API_BASE }
 const originalFetch = globalThis.fetch
+const GET = routeGET as unknown as (request: Request) => ReturnType<typeof routeGET>
+const POST = routePOST as unknown as (request: Request) => ReturnType<typeof routePOST>
 
 afterEach(() => {
   if (originalEnv.LOGISTICS_API_BASE === undefined) {

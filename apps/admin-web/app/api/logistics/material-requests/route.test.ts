@@ -165,8 +165,13 @@ describe('logistics material requests route', () => {
         headers: {
           'x-tenant-id': 'tenant-p30',
           'x-actor-id': 'admin-store-inventory',
+          'x-actor-type': 'employee-user',
+          'x-actor-name': 'Admin Store Inventory',
           'x-actor-roles': 'TENANT_ADMIN,OPERATIONS',
-          'x-actor-permissions': 'logistics.inventory.read,logistics.inventory.write'
+          'x-actor-permissions': 'logistics.inventory.read,logistics.inventory.write',
+          'x-actor-authenticated': 'true',
+          'x-roles': 'TENANT_ADMIN,OPERATIONS',
+          'x-permissions': 'logistics.inventory.read,logistics.inventory.write'
         }
       })
     )
@@ -177,9 +182,17 @@ describe('logistics material requests route', () => {
     )
     assert.equal(new Headers(capturedHeaders).get('x-tenant-id'), 'tenant-p30')
     assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-type'), 'employee-user')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-name'), 'Admin Store Inventory')
     assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
     assert.equal(
       new Headers(capturedHeaders).get('x-actor-permissions'),
+      'logistics.inventory.read,logistics.inventory.write'
+    )
+    assert.equal(new Headers(capturedHeaders).get('x-actor-authenticated'), 'true')
+    assert.equal(new Headers(capturedHeaders).get('x-roles'), 'TENANT_ADMIN,OPERATIONS')
+    assert.equal(
+      new Headers(capturedHeaders).get('x-permissions'),
       'logistics.inventory.read,logistics.inventory.write'
     )
     assert.equal(response.status, 200)
@@ -190,7 +203,7 @@ describe('logistics material requests route', () => {
     let capturedHeaders: HeadersInit | undefined
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input, init) => {
+    globalThis.fetch = (async (_input, init) => {
       capturedHeaders = init?.headers
       return new Response(JSON.stringify([]), {
         status: 200,
@@ -212,7 +225,7 @@ describe('logistics material requests route', () => {
     let capturedHeaders: HeadersInit | undefined
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input, init) => {
+    globalThis.fetch = (async (_input, init) => {
       capturedHeaders = init?.headers
       return new Response(JSON.stringify([]), {
         status: 200,
@@ -233,7 +246,7 @@ describe('logistics material requests route', () => {
     let capturedHeaders: HeadersInit | undefined
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input, init) => {
+    globalThis.fetch = (async (_input, init) => {
       capturedHeaders = init?.headers
       return new Response(JSON.stringify([]), {
         status: 200,
@@ -378,7 +391,10 @@ describe('logistics material requests route', () => {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-tenant-id': 'tenant-p30'
+          'x-tenant-id': 'tenant-p30',
+          'x-actor-id': 'admin-store-inventory',
+          'x-actor-permissions': 'logistics.inventory.read,logistics.inventory.write',
+          'x-actor-authenticated': 'true'
         },
         body: JSON.stringify({
           requesterName: '门店后勤',
@@ -390,6 +406,12 @@ describe('logistics material requests route', () => {
     assert.equal(capturedUrl, 'http://localhost:3001/api/v1/logistics/material-requests')
     assert.equal(new Headers(capturedHeaders).get('content-type'), 'application/json')
     assert.equal(new Headers(capturedHeaders).get('x-tenant-id'), 'tenant-p30')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
+    assert.equal(
+      new Headers(capturedHeaders).get('x-actor-permissions'),
+      'logistics.inventory.read,logistics.inventory.write'
+    )
+    assert.equal(new Headers(capturedHeaders).get('x-actor-authenticated'), 'true')
     assert.match(capturedBody, /晚班耗材补充/)
     assert.equal(response.status, 200)
   })
@@ -398,7 +420,7 @@ describe('logistics material requests route', () => {
     let capturedBody = ''
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input, init) => {
+    globalThis.fetch = (async (_input, init) => {
       capturedBody = String(init?.body ?? '')
       return new Response(JSON.stringify({ id: 'material-003', status: 'pending_approval' }), {
         status: 200,
@@ -507,7 +529,9 @@ describe('logistics material requests route', () => {
           'content-type': 'application/json',
           'x-tenant-id': 'tenant-p30',
           'x-actor-id': 'admin-store-inventory',
-          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS'
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS',
+          'x-actor-permissions': 'logistics.inventory.write',
+          'x-actor-authenticated': 'true'
         },
         body: JSON.stringify({ approverName: '后勤主管', note: '通过' })
       }),
@@ -520,6 +544,8 @@ describe('logistics material requests route', () => {
     )
     assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
     assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-permissions'), 'logistics.inventory.write')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-authenticated'), 'true')
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { id: 'material-003', status: 'approved' })
   })
@@ -547,7 +573,7 @@ describe('logistics material requests route', () => {
     let capturedBody = ''
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input, init) => {
+    globalThis.fetch = (async (_input, init) => {
       capturedBody = String(init?.body ?? '')
       return new Response(JSON.stringify({ id: 'material-004', status: 'approved' }), {
         status: 200,
@@ -615,7 +641,9 @@ describe('logistics material requests route', () => {
           'content-type': 'application/json',
           'x-tenant-id': 'tenant-p30',
           'x-actor-id': 'admin-store-inventory',
-          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS'
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS',
+          'x-actor-permissions': 'logistics.inventory.write',
+          'x-actor-authenticated': 'true'
         },
         body: JSON.stringify({ operatorName: '仓管员', note: '已出库' })
       }),
@@ -628,6 +656,8 @@ describe('logistics material requests route', () => {
     )
     assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
     assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-permissions'), 'logistics.inventory.write')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-authenticated'), 'true')
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { id: 'material-003', status: 'outbound' })
   })
@@ -655,7 +685,7 @@ describe('logistics material requests route', () => {
     let capturedBody = ''
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input, init) => {
+    globalThis.fetch = (async (_input, init) => {
       capturedBody = String(init?.body ?? '')
       return new Response(JSON.stringify({ id: 'material-006', status: 'outbound' }), {
         status: 200,

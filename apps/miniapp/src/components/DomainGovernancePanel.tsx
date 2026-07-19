@@ -1,6 +1,5 @@
 import { View, Text, Button } from '@tarojs/components';
 import type { DomainGovernanceDisplayModel } from '@m5/types';
-import { buildDomainGovernanceRenderSections } from '@m5/types';
 
 interface DomainGovernancePanelProps {
   model: DomainGovernanceDisplayModel;
@@ -13,9 +12,7 @@ export function DomainGovernancePanel({
   heading,
   background,
 }: DomainGovernancePanelProps) {
-  const headerSection = model.headerSection;
-  const footerSection = model.footerSection;
-  const renderSections = buildDomainGovernanceRenderSections(model);
+  const renderSections = model.renderSections;
 
   return (
     <View
@@ -28,32 +25,32 @@ export function DomainGovernancePanel({
     >
       <Text>{heading}</Text>
       <View style={{ marginTop: '8px' }}>
-        <Text>{headerSection.eyebrow}</Text>
+        <Text>{model.eyebrow}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
-        <Text>{headerSection.subtitle}</Text>
+        <Text>{model.subtitle}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
-        <Text>{headerSection.titleSlot.value}</Text>
+        <Text>{model.title}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
-        <Text>{headerSection.statusBadge.label}：{headerSection.statusBadge.value}</Text>
+        <Text>治理状态：{model.statusLabel}</Text>
       </View>
-      {renderSections.map((section) => (
-        <View key={section.key} style={{ marginTop: '8px' }}>
+      {renderSections.map((section, sectionIndex) => (
+        <View key={`${section.title}-${sectionIndex}`} style={{ marginTop: '8px' }}>
           <Text>{section.title}</Text>
-          {section.slots.map((slot) => (
-            <View key={slot.key} style={{ marginTop: '6px' }}>
-              <Text>{slot.label}：{slot.value}</Text>
+          {section.items.map((item, itemIndex) => (
+            <View key={`${section.title}-${item.label}-${itemIndex}`} style={{ marginTop: '6px' }}>
+              <Text>{item.label}：{item.value}</Text>
             </View>
           ))}
         </View>
       ))}
       <View style={{ marginTop: '12px' }}>
-        <Text>{footerSection.workspaceSlot.label}：{footerSection.workspaceSlot.value}</Text>
+        <Text>{model.workspaceLabel}：{model.workspaceHref}</Text>
       </View>
       <View style={{ marginTop: '12px' }}>
-        <Button>{footerSection.ctaLabel}</Button>
+        <Button>{model.ctaLabel}</Button>
       </View>
     </View>
   );

@@ -34,12 +34,8 @@ __export(index_exports, {
   buildConfigurationHref: () => buildConfigurationHref,
   buildConfigurationOperationDetailHref: () => buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref: () => buildConfigurationSecretDetailHref,
-  buildDomainGovernanceDetailGroups: () => buildDomainGovernanceDetailGroups,
   buildDomainGovernanceDisplayModel: () => buildDomainGovernanceDisplayModel,
-  buildDomainGovernanceFooterSection: () => buildDomainGovernanceFooterSection,
-  buildDomainGovernanceHeaderSection: () => buildDomainGovernanceHeaderSection,
   buildDomainGovernanceHref: () => buildDomainGovernanceHref,
-  buildDomainGovernanceRenderSections: () => buildDomainGovernanceRenderSections,
   buildDomainGovernanceWorkspaceHref: () => buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext: () => buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams: () => buildFoundationAlertLinkedFocusSearchParams,
@@ -137,7 +133,7 @@ __export(index_exports, {
   readResilienceRecoveryPlanDetailParam: () => readResilienceRecoveryPlanDetailParam,
   readResilienceRetryPolicyDetailParam: () => readResilienceRetryPolicyDetailParam,
   readResilienceSignalDetailParam: () => readResilienceSignalDetailParam,
-  resolveDomainGovernanceDetailSlotColor: () => resolveDomainGovernanceDetailSlotColor,
+  resolveDomainGovernanceRenderItemColor: () => resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset: () => resolveDomainGovernanceDisplayPreset,
   resolveFoundationAlertFocusCode: () => resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode: () => resolveFoundationAlertSelectedCode,
@@ -1223,7 +1219,7 @@ function formatDomainGovernanceCountsSummary(summary) {
 function formatDomainGovernanceSourceSummary(domainSource, summary) {
   return `\u57DF\u540D\u6765\u6E90 ${domainSource} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
 }
-function resolveDomainGovernanceDetailSlotColor(preset, tone) {
+function resolveDomainGovernanceRenderItemColor(preset, tone) {
   if (tone === "primary") {
     return preset.titleColor;
   }
@@ -1402,48 +1398,45 @@ function formatDomainGovernanceRecommendationSummary(scope) {
 function formatDomainGovernanceLastEvaluatedSummary(summary) {
   return `\u6700\u8FD1\u8BC4\u4F30 ${summary.lastEvaluatedAt}`;
 }
-function buildDomainGovernanceHeaderSection(domainSource, summary) {
+function buildDomainGovernanceDisplayModel(domainSource, summary, workspaceHref) {
   const statusLabel = getDomainGovernanceAttentionLabel(summary);
-  return {
-    eyebrow: "\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
-    subtitle: "\u7EDF\u4E00\u57DF\u540D\u7F3A\u53E3\u3001\u63A8\u8350\u8865\u9009\u548C\u6CBB\u7406\u5165\u53E3\u5C55\u793A",
-    titleSlot: {
-      key: "source-summary",
-      label: "\u57DF\u540D\u6765\u6E90",
-      value: formatDomainGovernanceSourceSummary(domainSource, summary),
-      tone: "primary"
-    },
-    statusBadge: {
-      key: "status-badge",
-      label: "\u6CBB\u7406\u72B6\u6001",
-      value: statusLabel,
-      tone: "accent"
-    },
-    summarySlots: [
-      {
-        key: "counts-summary",
-        label: "\u6CBB\u7406\u6982\u89C8",
-        value: formatDomainGovernanceCountsSummary(summary),
-        tone: "summary"
-      },
-      {
-        key: "status-summary",
-        label: "\u72B6\u6001\u6458\u8981",
-        value: `\u6CBB\u7406\u72B6\u6001\uFF1A${statusLabel} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`,
-        tone: "summary"
-      }
-    ]
-  };
-}
-function buildDomainGovernanceDetailGroups(summary) {
   const focusScope = selectDomainGovernanceFocusScope(summary);
-  return [
+  const eyebrow = "\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0";
+  const subtitle = "\u7EDF\u4E00\u57DF\u540D\u7F3A\u53E3\u3001\u63A8\u8350\u8865\u9009\u548C\u6CBB\u7406\u5165\u53E3\u5C55\u793A";
+  const title = formatDomainGovernanceSourceSummary(domainSource, summary);
+  const summaryText = formatDomainGovernanceCountsSummary(summary);
+  const workspaceLabel = "\u6CBB\u7406\u5165\u53E3";
+  const ctaLabel = "\u6253\u5F00\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0";
+  const renderSections = [
     {
-      key: "focus-scope",
-      title: "\u7126\u70B9 scope",
-      slots: [
+      title: "\u6CBB\u7406\u6982\u89C8",
+      items: [
         {
-          key: "focus-scope-summary",
+          label: "\u57DF\u540D\u6765\u6E90",
+          value: title,
+          tone: "primary"
+        },
+        {
+          label: "\u6CBB\u7406\u72B6\u6001",
+          value: statusLabel,
+          tone: "accent"
+        },
+        {
+          label: "\u6CBB\u7406\u6982\u89C8",
+          value: summaryText,
+          tone: "summary"
+        },
+        {
+          label: "\u72B6\u6001\u6458\u8981",
+          value: `\u6CBB\u7406\u72B6\u6001\uFF1A${statusLabel} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`,
+          tone: "summary"
+        }
+      ]
+    },
+    {
+      title: "\u7126\u70B9 scope",
+      items: [
+        {
           label: formatDomainGovernanceFocusScopeLabel(focusScope),
           value: formatDomainGovernanceFocusScopeSummary(focusScope),
           tone: "accent"
@@ -1451,11 +1444,9 @@ function buildDomainGovernanceDetailGroups(summary) {
       ]
     },
     {
-      key: "recommendation",
       title: "\u63A8\u8350\u8865\u9009",
-      slots: [
+      items: [
         {
-          key: "recommendation-summary",
           label: "\u63A8\u8350\u4E3B\u57DF\u540D",
           value: formatDomainGovernanceRecommendationSummary(focusScope),
           tone: "summary"
@@ -1463,53 +1454,36 @@ function buildDomainGovernanceDetailGroups(summary) {
       ]
     },
     {
-      key: "timeline",
       title: "\u8BC4\u4F30\u65F6\u95F4",
-      slots: [
+      items: [
         {
-          key: "last-evaluated-summary",
           label: "\u6700\u8FD1\u8BC4\u4F30",
           value: formatDomainGovernanceLastEvaluatedSummary(summary),
           tone: "summary"
         }
       ]
+    },
+    {
+      title: workspaceLabel,
+      items: [
+        {
+          label: workspaceLabel,
+          value: workspaceHref,
+          tone: "accent"
+        }
+      ]
     }
   ];
-}
-function buildDomainGovernanceFooterSection(workspaceHref) {
   return {
-    workspaceSlot: {
-      key: "workspace-entry",
-      label: "\u6CBB\u7406\u5165\u53E3",
-      value: workspaceHref,
-      tone: "accent"
-    },
-    ctaLabel: "\u6253\u5F00\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0"
-  };
-}
-function buildDomainGovernanceRenderSections(model) {
-  return [
-    {
-      key: "summary",
-      title: "\u6CBB\u7406\u6982\u89C8",
-      slots: [model.headerSection.titleSlot, model.headerSection.statusBadge, ...model.headerSection.summarySlots]
-    },
-    ...model.detailGroups,
-    {
-      key: "workspace",
-      title: model.footerSection.workspaceSlot.label,
-      slots: [model.footerSection.workspaceSlot]
-    }
-  ];
-}
-function buildDomainGovernanceDisplayModel(domainSource, summary, workspaceHref) {
-  const headerSection = buildDomainGovernanceHeaderSection(domainSource, summary);
-  const detailGroups = buildDomainGovernanceDetailGroups(summary);
-  const footerSection = buildDomainGovernanceFooterSection(workspaceHref);
-  return {
-    headerSection,
-    detailGroups,
-    footerSection,
+    eyebrow,
+    subtitle,
+    title,
+    statusLabel,
+    summaryText,
+    renderSections,
+    workspaceLabel,
+    workspaceHref,
+    ctaLabel,
     requiresAttention: summary.requiresAttention
   };
 }
@@ -2280,12 +2254,8 @@ function buildIntegrationOrchestrationHref(query = {}) {
   buildConfigurationHref,
   buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref,
-  buildDomainGovernanceDetailGroups,
   buildDomainGovernanceDisplayModel,
-  buildDomainGovernanceFooterSection,
-  buildDomainGovernanceHeaderSection,
   buildDomainGovernanceHref,
-  buildDomainGovernanceRenderSections,
   buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams,
@@ -2383,7 +2353,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   readResilienceRecoveryPlanDetailParam,
   readResilienceRetryPolicyDetailParam,
   readResilienceSignalDetailParam,
-  resolveDomainGovernanceDetailSlotColor,
+  resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset,
   resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode,

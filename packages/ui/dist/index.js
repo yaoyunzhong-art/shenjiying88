@@ -26027,9 +26027,7 @@ function PortalDomainGovernanceCard({
   preset = (0, import_types3.resolveDomainGovernanceDisplayPreset)("STOREFRONT_PC", model.requiresAttention),
   style
 }) {
-  const headerSection = model.headerSection;
-  const footerSection = model.footerSection;
-  const renderSections = (0, import_types3.buildDomainGovernanceRenderSections)(model);
+  const renderSections = model.renderSections;
   return /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)(
     "div",
     {
@@ -26041,10 +26039,10 @@ function PortalDomainGovernanceCard({
         ...style
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { fontSize: 12, color: preset.accentColor }, children: headerSection.eyebrow }),
-        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, fontSize: 12, color: preset.subtitleColor }, children: headerSection.subtitle }),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { fontSize: 12, color: preset.accentColor }, children: model.eyebrow }),
+        /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { marginTop: 6, fontSize: 12, color: preset.subtitleColor }, children: model.subtitle }),
         /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)("div", { style: { marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("span", { style: { fontSize: 16, fontWeight: 700, color: preset.titleColor }, children: headerSection.titleSlot.value }),
+          /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("span", { style: { fontSize: 16, fontWeight: 700, color: preset.titleColor }, children: model.title }),
           /* @__PURE__ */ (0, import_jsx_runtime109.jsx)(
             "span",
             {
@@ -26056,29 +26054,29 @@ function PortalDomainGovernanceCard({
                 color: preset.statusColor,
                 background: preset.statusBackground
               },
-              children: headerSection.statusBadge.value
+              children: model.statusLabel
             }
           )
         ] }),
-        renderSections.map((section) => /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)("div", { style: { marginTop: 12 }, children: [
+        renderSections.map((section, sectionIndex) => /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)("div", { style: { marginTop: 12 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime109.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: preset.accentColor }, children: section.title }),
-          section.slots.map((slot) => /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)(
+          section.items.map((item, itemIndex) => /* @__PURE__ */ (0, import_jsx_runtime109.jsxs)(
             "div",
             {
-              style: { marginTop: 6, fontSize: 12, color: (0, import_types3.resolveDomainGovernanceDetailSlotColor)(preset, slot.tone) },
+              style: { marginTop: 6, fontSize: 12, color: (0, import_types3.resolveDomainGovernanceRenderItemColor)(preset, item.tone) },
               children: [
-                slot.label,
+                item.label,
                 "\uFF1A",
-                slot.value
+                item.value
               ]
             },
-            slot.key
+            `${section.title}-${item.label}-${itemIndex}`
           ))
-        ] }, section.key)),
+        ] }, `${section.title}-${sectionIndex}`)),
         /* @__PURE__ */ (0, import_jsx_runtime109.jsx)(
           "a",
           {
-            href: model.footerSection.workspaceSlot.value,
+            href: model.workspaceHref,
             style: {
               display: "inline-flex",
               alignItems: "center",
@@ -26091,7 +26089,7 @@ function PortalDomainGovernanceCard({
               fontSize: 12,
               fontWeight: 600
             },
-            children: footerSection.ctaLabel
+            children: model.ctaLabel
           }
         )
       ]

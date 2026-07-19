@@ -153,6 +153,7 @@ import { DeviceUsageReportModule } from './modules/device-usage-report/device-us
 import { EmployeePerformanceReviewModule } from './modules/employee-performance-review/employee-performance-review.module';
 import { CustomerSatisfactionModule } from './modules/customer-satisfaction/customer-satisfaction.module';
 import { ProcurementOrderModule } from './modules/procurement-order/procurement-order.module';
+import { SeoModule } from './modules/seo/seo.module';
 
 @Module({
   imports: [
@@ -317,6 +318,7 @@ import { ProcurementOrderModule } from './modules/procurement-order/procurement-
     EmployeePerformanceReviewModule,
     CustomerSatisfactionModule,
     ProcurementOrderModule,
+    SeoModule,
     ModulesModule,
   ],
   providers: [

@@ -360,7 +360,9 @@ function buildHeaders(options, headers) {
 }
 function buildActorHeaders(options) {
   const roles = Array.from(new Set((options.roles ?? []).map((item) => item.trim()).filter(Boolean)));
-  const permissions = Array.from(new Set((options.permissions ?? []).map((item) => item.trim()).filter(Boolean)));
+  const permissions = Array.from(
+    new Set((options.permissions ?? []).map((item) => item.trim()).filter(Boolean))
+  );
   return {
     "x-actor-id": options.actorId,
     ...options.actorType ? { "x-actor-type": options.actorType } : {},
@@ -1263,6 +1265,7 @@ function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier
 0 && (module.exports = {
   ApiClient,
   ApiError,
+  buildActorHeaders,
   buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay,

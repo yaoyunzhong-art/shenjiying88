@@ -20,6 +20,8 @@ test('tob domain governance: tenant portal page renders governance workspace ent
   assert.ok(TENANT_PAGE_SRC.includes('buildDomainGovernanceDisplayModel'), 'tenant 页面应使用共享域名治理 display model helper');
   assert.ok(TENANT_PAGE_SRC.includes('domainGovernanceWorkspaceHref'), 'tenant 页面应展示统一治理入口链接');
   assert.ok(TENANT_PAGE_SRC.includes('domainGovernanceDisplayModel'), 'tenant 页面应传入治理展示模型');
+  assert.ok(!TENANT_PAGE_SRC.includes('headerSection'), 'tenant 页面不应直读旧 headerSection');
+  assert.ok(!TENANT_PAGE_SRC.includes('footerSection'), 'tenant 页面不应直读旧 footerSection');
 });
 
 test('tob domain governance: brand portal page renders governance workspace entry', () => {
@@ -27,4 +29,6 @@ test('tob domain governance: brand portal page renders governance workspace entr
   assert.ok(BRAND_PAGE_SRC.includes('buildDomainGovernanceDisplayModel'), 'brand 页面应使用共享域名治理 display model helper');
   assert.ok(BRAND_PAGE_SRC.includes('domainGovernanceWorkspaceHref'), 'brand 页面应展示统一治理入口链接');
   assert.ok(BRAND_PAGE_SRC.includes('domainGovernanceDisplayModel'), 'brand 页面应传入治理展示模型');
+  assert.ok(!BRAND_PAGE_SRC.includes('headerSection'), 'brand 页面不应直读旧 headerSection');
+  assert.ok(!BRAND_PAGE_SRC.includes('footerSection'), 'brand 页面不应直读旧 footerSection');
 });

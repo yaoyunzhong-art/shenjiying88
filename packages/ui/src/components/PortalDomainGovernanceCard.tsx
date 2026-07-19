@@ -3,7 +3,7 @@
 import React from 'react';
 import type { DomainGovernanceDisplayModel, DomainGovernanceDisplayPreset } from '@m5/types';
 import {
-  resolveDomainGovernanceDetailSlotColor,
+  resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset,
 } from '@m5/types';
 
@@ -50,12 +50,12 @@ export function PortalDomainGovernanceCard({
       {renderSections.map((section, sectionIndex) => (
         <div key={`${section.title}-${sectionIndex}`} style={{ marginTop: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: preset.accentColor }}>{section.title}</div>
-          {section.slots.map((slot, slotIndex) => (
+          {section.items.map((item, itemIndex) => (
             <div
-              key={`${section.title}-${slot.label}-${slotIndex}`}
-              style={{ marginTop: 6, fontSize: 12, color: resolveDomainGovernanceDetailSlotColor(preset, slot.tone) }}
+              key={`${section.title}-${item.label}-${itemIndex}`}
+              style={{ marginTop: 6, fontSize: 12, color: resolveDomainGovernanceRenderItemColor(preset, item.tone) }}
             >
-              {slot.label}：{slot.value}
+              {item.label}：{item.value}
             </div>
           ))}
         </div>

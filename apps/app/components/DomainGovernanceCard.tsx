@@ -2,8 +2,7 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { DomainGovernanceDisplayModel, DomainGovernanceDisplayPreset } from '@m5/types';
 import {
-  buildDomainGovernanceRenderSections,
-  resolveDomainGovernanceDetailSlotColor,
+  resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset,
 } from '@m5/types';
 
@@ -17,17 +16,15 @@ export function DomainGovernanceCard({
   preset = resolveDomainGovernanceDisplayPreset('APP_NATIVE', model.requiresAttention),
 }: DomainGovernanceCardProps) {
   const detailSectionTitle = '治理明细';
-  const headerSection = model.headerSection;
-  const footerSection = model.footerSection;
-  const renderSections = buildDomainGovernanceRenderSections(model);
+  const renderSections = model.renderSections;
 
   return (
     <View style={[styles.card, { backgroundColor: preset.background }]}>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={[styles.eyebrow, { color: preset.accentColor }]}>{headerSection.eyebrow}</Text>
-          <Text style={[styles.title, { color: preset.titleColor }]}>{headerSection.titleSlot.value}</Text>
-          <Text style={[styles.subtitle, { color: preset.subtitleColor }]}>{headerSection.subtitle}</Text>
+          <Text style={[styles.eyebrow, { color: preset.accentColor }]}>{model.eyebrow}</Text>
+          <Text style={[styles.title, { color: preset.titleColor }]}>{model.title}</Text>
+          <Text style={[styles.subtitle, { color: preset.subtitleColor }]}>{model.subtitle}</Text>
         </View>
         <Text
           style={[
@@ -38,16 +35,19 @@ export function DomainGovernanceCard({
             },
           ]}
         >
-          {headerSection.statusBadge.value}
+          {model.statusLabel}
         </Text>
       </View>
       <Text style={[styles.sectionTitle, { color: preset.accentColor }]}>{detailSectionTitle}</Text>
-      {renderSections.map((section) => (
-        <View key={section.key} style={styles.section}>
+      {renderSections.map((section, sectionIndex) => (
+        <View key={`${section.title}-${sectionIndex}`} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: preset.accentColor }]}>{section.title}</Text>
-          {section.slots.map((slot) => (
-            <Text key={slot.key} style={[styles.detail, { color: resolveDomainGovernanceDetailSlotColor(preset, slot.tone) }]}>
-              {slot.label}：{slot.value}
+          {section.items.map((item, itemIndex) => (
+            <Text
+              key={`${section.title}-${item.label}-${itemIndex}`}
+              style={[styles.detail, { color: resolveDomainGovernanceRenderItemColor(preset, item.tone) }]}
+            >
+              {item.label}：{item.value}
             </Text>
           ))}
         </View>
@@ -55,9 +55,9 @@ export function DomainGovernanceCard({
       <TouchableOpacity
         testID="domain-governance-cta"
         style={[styles.button, { backgroundColor: preset.buttonBackground }]}
-        onPress={() => Alert.alert(headerSection.eyebrow, footerSection.workspaceSlot.value)}
+        onPress={() => Alert.alert(model.eyebrow, model.workspaceHref)}
       >
-        <Text style={[styles.buttonText, { color: preset.buttonTextColor }]}>{footerSection.ctaLabel}</Text>
+        <Text style={[styles.buttonText, { color: preset.buttonTextColor }]}>{model.ctaLabel}</Text>
       </TouchableOpacity>
     </View>
   );

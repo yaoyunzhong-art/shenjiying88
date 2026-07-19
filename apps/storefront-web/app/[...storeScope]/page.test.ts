@@ -361,4 +361,9 @@ describe('页面组件 — 导出与导入', () => {
     assert.ok(PAGE_SRC.includes('buildDomainGovernanceDisplayModel'), '页面应使用共享域名治理 display model helper');
     assert.ok(PAGE_SRC.includes('domainGovernanceDisplayModel'), '页面应向 presenter 传入共享 display model');
   });
+
+  it('域名治理页面不应直读旧 header/footer 包装结构', () => {
+    assert.ok(!PAGE_SRC.includes('headerSection'), '页面不应直读旧 headerSection');
+    assert.ok(!PAGE_SRC.includes('footerSection'), '页面不应直读旧 footerSection');
+  });
 });

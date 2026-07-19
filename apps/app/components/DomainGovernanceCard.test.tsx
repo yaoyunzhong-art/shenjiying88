@@ -11,43 +11,41 @@ Alert.alert = ((title: string, message?: string) => {
 }) as typeof Alert.alert;
 
 const model = {
-  headerSection: {
-    eyebrow: '域名治理工作台',
-    subtitle: '统一域名缺口、推荐补选和治理入口展示',
-    titleSlot: {
-      key: 'source-summary',
-      label: '域名来源',
-      value: '域名来源 custom / 可直接补选 1',
-      tone: 'primary' as const,
-    },
-    statusBadge: {
-      key: 'status-badge',
-      label: '治理状态',
-      value: '待治理',
-      tone: 'accent' as const,
-    },
-    summarySlots: [
-      {
-        key: 'counts-summary',
-        label: '治理概览',
-        value: '缺主 scope 2 / 活跃未设主域名 3',
-        tone: 'summary' as const,
-      },
-      {
-        key: 'status-summary',
-        label: '状态摘要',
-        value: '治理状态：待治理 / 可直接补选 1',
-        tone: 'summary' as const,
-      },
-    ],
-  },
-  detailGroups: [
+  eyebrow: '域名治理工作台',
+  subtitle: '统一域名缺口、推荐补选和治理入口展示',
+  title: '域名来源 custom / 可直接补选 1',
+  statusLabel: '待治理',
+  summaryText: '缺主 scope 2 / 活跃未设主域名 3',
+  renderSections: [
     {
-      key: 'focus-scope',
-      title: '焦点 scope',
-      slots: [
+      title: '治理概览',
+      items: [
         {
-          key: 'focus-scope-summary',
+          label: '域名来源',
+          value: '域名来源 custom / 可直接补选 1',
+          tone: 'primary' as const,
+        },
+        {
+          label: '治理状态',
+          value: '待治理',
+          tone: 'accent' as const,
+        },
+        {
+          label: '治理概览',
+          value: '缺主 scope 2 / 活跃未设主域名 3',
+          tone: 'summary' as const,
+        },
+        {
+          label: '状态摘要',
+          value: '治理状态：待治理 / 可直接补选 1',
+          tone: 'summary' as const,
+        },
+      ],
+    },
+    {
+      title: '焦点 scope',
+      items: [
+        {
           label: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
           value: '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
           tone: 'accent' as const,
@@ -55,11 +53,9 @@ const model = {
       ],
     },
     {
-      key: 'recommendation',
       title: '推荐补选',
-      slots: [
+      items: [
         {
-          key: 'recommendation-summary',
           label: '推荐主域名',
           value: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
           tone: 'summary' as const,
@@ -67,16 +63,10 @@ const model = {
       ],
     },
   ],
-  footerSection: {
-    workspaceSlot: {
-      key: 'workspace-entry',
-      label: '治理入口',
-      value:
-        '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
-      tone: 'accent' as const,
-    },
-    ctaLabel: '打开域名治理工作台',
-  },
+  workspaceLabel: '治理入口',
+  workspaceHref:
+    '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
+  ctaLabel: '打开域名治理工作台',
   requiresAttention: true,
 };
 
@@ -107,13 +97,13 @@ test('DomainGovernanceCard renders shared render sections contract', () => {
   alertCalls.length = 0;
   const root = create(<DomainGovernanceCard model={model} />);
 
-  assert.ok(findByText(root.root, model.headerSection.eyebrow), '应渲染 header eyebrow');
-  assert.ok(findByText(root.root, model.headerSection.titleSlot.value), '应渲染 header title slot');
+  assert.ok(findByText(root.root, model.eyebrow), '应渲染 header eyebrow');
+  assert.ok(findByText(root.root, model.title), '应渲染 header title slot');
   assert.ok(findByText(root.root, '治理概览'), '应渲染 shared header section title');
   assert.ok(findByText(root.root, '治理明细'), '应渲染 detail section title');
-  assert.ok(findByText(root.root, model.detailGroups[0].title), '应渲染 detail group label');
-  assert.ok(findByText(root.root, model.footerSection.workspaceSlot.label), '应渲染 footer workspace label');
-  assert.ok(findByText(root.root, model.footerSection.ctaLabel), '应渲染 footer CTA');
+  assert.ok(findByText(root.root, model.renderSections[1].title), '应渲染 detail group label');
+  assert.ok(findByText(root.root, model.workspaceLabel), '应渲染 footer workspace label');
+  assert.ok(findByText(root.root, model.ctaLabel), '应渲染 footer CTA');
 });
 
 test('DomainGovernanceCard CTA opens shared workspace slot value', () => {
@@ -124,7 +114,7 @@ test('DomainGovernanceCard CTA opens shared workspace slot value', () => {
   assert.ok(cta, '应找到治理 CTA');
   cta?.props.onPress();
   assert.deepEqual(alertCalls[0], {
-    title: model.headerSection.eyebrow,
-    message: model.footerSection.workspaceSlot.value,
+    title: model.eyebrow,
+    message: model.workspaceHref,
   });
 });

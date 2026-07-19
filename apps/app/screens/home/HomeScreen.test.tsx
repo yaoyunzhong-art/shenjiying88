@@ -157,6 +157,16 @@ test('HomeScreen: renders stats cards for shop_manager role', () => {
   assert.ok(taskLabel, '应显示待办任务');
 });
 
+test('HomeScreen: renders domain governance card with shared top-level fields', () => {
+  mockNavigateCalls.length = 0;
+  alertCalls.length = 0;
+  const root = createHomeComponent();
+
+  assert.ok(findByText(root.root, '域名治理工作台'), '应显示域名治理眉标');
+  assert.ok(findByText(root.root, '域名来源 custom / 可直接补选 1'), '应显示共享 title');
+  assert.ok(findByText(root.root, '打开域名治理工作台'), '应显示治理 CTA');
+});
+
 test('HomeScreen: renders revenue value formatted as currency', () => {
   mockNavigateCalls.length = 0;
   alertCalls.length = 0;
