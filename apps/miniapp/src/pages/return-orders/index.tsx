@@ -4,24 +4,17 @@
  * 功能: 列表搜索、状态筛选、分页浏览
  */
 import { View, Text, Button, Input, Picker } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
+import {
+  loadMiniappPurchaseReturns,
+  type MiniappReturnOrderListItem,
+} from '../../supplychain-runtime';
 
 // ---- 类型 ----
 
-type ReturnStatus = 'pending' | 'inspecting' | 'approved' | 'rejected' | 'refunded' | 'exchanged' | 'closed';
-
-interface ReturnOrder {
-  id: string;
-  returnNo: string;
-  customerName: string;
-  phone: string;
-  productName: string;
-  reason: string;
-  amount: number;
-  status: ReturnStatus;
-  createdDate: string;
-}
+type ReturnStatus = MiniappReturnOrderListItem['status'];
+type ReturnOrder = MiniappReturnOrderListItem;
 
 const STATUS_OPTIONS = ['全部', '待处理', '质检中', '已通过', '已拒绝', '已退款', '已换货', '已关闭'] as const;
 const STATUS_MAP: Record<string, ReturnStatus | 'ALL'> = {
@@ -61,37 +54,54 @@ const MOCK_RETURNS: ReturnOrder[] = [
 const PAGE_SIZE = 5;
 
 export default function ReturnOrdersPage() {
+  const [returns, setReturns] = useState<ReturnOrder[]>(MOCK_RETURNS);
+  const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示退货数据。');
   const [searchText, setSearchText] = useState('');
   const [statusIdx, setStatusIdx] = useState(0);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadMiniappPurchaseReturns(MOCK_RETURNS).then((snapshot) => {
+      if (!cancelled) {
+        setReturns(snapshot.data);
+        setDeliveryNote(snapshot.note);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const statusLabel = (STATUS_OPTIONS[statusIdx] ?? '全部') as string;
   const statusFilter: ReturnStatus | 'ALL' = STATUS_MAP[statusLabel] ?? 'ALL';
 
   const filtered = useMemo(() => {
     const raw = searchText
-      ? MOCK_RETURNS.filter(
+      ? returns.filter(
           (r) =>
             r.returnNo.toLowerCase().includes(searchText.toLowerCase()) ||
             r.customerName.includes(searchText) ||
             r.productName.includes(searchText),
         )
-      : MOCK_RETURNS;
+      : returns;
     return statusFilter === 'ALL'
       ? raw
       : raw.filter((r) => r.status === statusFilter);
-  }, [searchText, statusFilter]);
+  }, [returns, searchText, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const stats = useMemo(() => {
-    const total = MOCK_RETURNS.length;
-    const totalAmount = MOCK_RETURNS.reduce((s, r) => s + r.amount, 0);
-    const pending = MOCK_RETURNS.filter((r) => r.status === 'pending').length;
+    const total = returns.length;
+    const totalAmount = returns.reduce((s, r) => s + r.amount, 0);
+    const pending = returns.filter((r) => r.status === 'pending').length;
     return { total, totalAmount, pending };
-  }, []);
+  }, [returns]);
 
   const handleSearch = () => setPage(1);
 
@@ -101,7 +111,7 @@ export default function ReturnOrdersPage() {
   };
 
   const goToDetail = (id: string) => {
-    Taro.showToast({ title: `查看退货单 ${id}`, icon: 'none' });
+    void Taro.navigateTo({ url: `/pages/return-orders/detail/index?id=${id}` });
   };
 
   const formatAmount = (v: number): string => {
@@ -113,6 +123,9 @@ export default function ReturnOrdersPage() {
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       {/* 标题 */}
       <Text style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9' }}>退货售后</Text>
+      <View style={{ marginTop: 8 }}>
+        <Text style={{ fontSize: 12, color: '#94a3b8' }}>{deliveryNote}</Text>
+      </View>
 
       {/* 统计卡片 */}
       <View style={{ display: 'flex', gap: '8px', marginTop: 16 }}>
@@ -269,7 +282,7 @@ export default function ReturnOrdersPage() {
   );
 }
 
-const cardStyle: React.CSSProperties = {
+const cardStyle: CSSProperties = {
   flex: 1, padding: '12px', borderRadius: 10,
   background: 'rgba(15, 23, 42, 0.4)',
   border: '1px solid rgba(148,163,184,0.1)',

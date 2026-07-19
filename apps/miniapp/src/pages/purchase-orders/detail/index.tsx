@@ -4,39 +4,18 @@
  * 功能: 详情展示、状态流转、编辑/删除操作
  */
 import { View, Text, Button, ScrollView } from '@tarojs/components';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Taro from '@tarojs/taro';
+import {
+  loadMiniappPurchaseOrderDetail,
+  type MiniappPurchaseOrderDetail,
+} from '../../../supplychain-runtime';
 
 // ---- 类型 ----
 
-type OrderStatus = 'draft' | 'submitted' | 'confirmed' | 'shipped' | 'received' | 'cancelled';
-
-interface PurchaseOrderItem {
-  sku: string;
-  name: string;
-  spec: string;
-  qty: number;
-  unit: string;
-  unitPrice: number;
-  amount: number;
-}
-
-interface PurchaseOrderDetail {
-  id: string;
-  orderNo: string;
-  supplier: string;
-  supplierContact: string;
-  supplierPhone: string;
-  totalAmount: number;
-  status: OrderStatus;
-  items: PurchaseOrderItem[];
-  itemsCount: number;
-  orderDate: string;
-  expectedDate: string;
-  remark: string;
-  creator: string;
-  approver: string;
-}
+type OrderStatus = MiniappPurchaseOrderDetail['status'];
+type PurchaseOrderItem = MiniappPurchaseOrderDetail['items'][number];
+type PurchaseOrderDetail = MiniappPurchaseOrderDetail;
 
 // ---- 常量 ----
 
@@ -88,11 +67,36 @@ function getStatusActions(status: OrderStatus): OrderStatus[] {
   return STATUS_TRANSITIONS[status] ?? [];
 }
 
+function resolveCurrentOrderId(): string {
+  return Taro.getCurrentInstance()?.router?.params?.id ?? MOCK_DETAIL.id;
+}
+
 // ---- 组件 ----
 
-const PurchaseOrderDetailPage: React.FC = () => {
-  const [detail] = useState<PurchaseOrderDetail>(MOCK_DETAIL);
+const PurchaseOrderDetailPage = () => {
+  const [detail, setDetail] = useState<PurchaseOrderDetail>(MOCK_DETAIL);
+  const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示采购单详情。');
   const [localStatus, setLocalStatus] = useState<OrderStatus>(detail.status);
+  const orderId = useMemo(() => resolveCurrentOrderId(), []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadMiniappPurchaseOrderDetail(orderId, MOCK_DETAIL).then((snapshot) => {
+      if (!cancelled) {
+        setDetail(snapshot.data);
+        setDeliveryNote(snapshot.note);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
+  useEffect(() => {
+    setLocalStatus(detail.status);
+  }, [detail.status]);
 
   const handleStatusChange = (newStatus: OrderStatus) => {
     Taro.showModal({
@@ -138,6 +142,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
         </View>
         <Text style={{ fontSize: 12, color: '#999' }}>创建日期: {detail.orderDate}</Text>
         <Text style={{ fontSize: 12, color: '#999', marginTop: 4 }}>预计到货: {detail.expectedDate}</Text>
+        <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{deliveryNote}</Text>
       </View>
 
       {/* 供应商信息 */}
@@ -262,5 +267,5 @@ function InfoRow({ label, value }: InfoRowProps) {
 }
 
 export default PurchaseOrderDetailPage;
-export { formatAmount, getStatusActions, MOCK_DETAIL };
+export { formatAmount, getStatusActions, MOCK_DETAIL, resolveCurrentOrderId };
 export type { PurchaseOrderDetail, PurchaseOrderItem, OrderStatus, InfoRowProps };

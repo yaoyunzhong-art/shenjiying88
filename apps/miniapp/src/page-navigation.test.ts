@@ -15,7 +15,7 @@ import {
 /**
  * miniapp (Taro) Page Navigation — L1 页面导航冒烟测试 (JMeter 风格: 正例 + 反例 + 边界)
  *
- * 根据 app.config.ts 页面路由表定义: ['pages/index/index', 'pages/member/index']
+ * 根据 app.config.ts 页面路由表定义，当前覆盖首页、会员页和供应链高频页
  * 模拟页面间导航行为：路由解析、导航决策、页面间数据传递、
  * 无效路径拒绝、深层嵌套导航、循环导航保护。
  */
@@ -53,7 +53,19 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
 const APP_ROUTES: string[] = [
   'pages/index/index',
   'pages/member/index',
+  'pages/purchase-orders/index',
+  'pages/purchase-orders/detail/index',
+  'pages/return-orders/index',
+  'pages/return-orders/detail/index',
 ];
+
+const AUTH_REQUIRED_ROUTES = new Set<string>([
+  'pages/member/index',
+  'pages/purchase-orders/index',
+  'pages/purchase-orders/detail/index',
+  'pages/return-orders/index',
+  'pages/return-orders/detail/index',
+]);
 
 interface NavigationTarget {
   route: string;
@@ -107,7 +119,7 @@ function resolveNavigation(
 
   // 检查授权 — 需要登录
   const memberRoute = 'pages/member/index';
-  if (to === memberRoute && !authenticated) {
+  if (AUTH_REQUIRED_ROUTES.has(to) && !authenticated) {
     return {
       allowed: false,
       redirectTo: 'pages/index/index',
@@ -134,7 +146,7 @@ function resolveNavigation(
     redirectTo: to,
     reason: 'NAVIGATE',
     requiresAuth: false,
-    isTabBar: to === memberRoute,
+      isTabBar: to === memberRoute,
   };
 }
 
@@ -176,6 +188,16 @@ test('miniapp navigation: member page route is registered', () => {
   assert.equal(isRouteRegistered('pages/member/index'), true);
 });
 
+test('miniapp navigation: purchase orders routes are registered', () => {
+  assert.equal(isRouteRegistered('pages/purchase-orders/index'), true);
+  assert.equal(isRouteRegistered('pages/purchase-orders/detail/index'), true);
+});
+
+test('miniapp navigation: return orders routes are registered', () => {
+  assert.equal(isRouteRegistered('pages/return-orders/index'), true);
+  assert.equal(isRouteRegistered('pages/return-orders/detail/index'), true);
+});
+
 test('miniapp navigation: member can navigate from index to member', () => {
   const decision = resolveNavigation('pages/index/index', 'pages/member/index', true, 'MEMBER');
 
@@ -185,8 +207,33 @@ test('miniapp navigation: member can navigate from index to member', () => {
   assert.equal(decision.isTabBar, true);
 });
 
+test('miniapp navigation: authenticated operator can navigate to purchase orders list', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/purchase-orders/index', true, 'MEMBER');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/purchase-orders/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
+test('miniapp navigation: authenticated operator can navigate to return orders detail', () => {
+  const decision = resolveNavigation('pages/return-orders/index', 'pages/return-orders/detail/index', true, 'SVIP');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/return-orders/detail/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
 test('miniapp navigation: guest navigates from index to member requires login', () => {
   const decision = resolveNavigation('pages/index/index', 'pages/member/index', false, 'GUEST');
+
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.redirectTo, 'pages/index/index');
+  assert.equal(decision.reason, 'AUTH_REQUIRED');
+  assert.equal(decision.requiresAuth, true);
+});
+
+test('miniapp navigation: guest cannot navigate to purchase orders list', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/purchase-orders/index', false, 'GUEST');
 
   assert.equal(decision.allowed, false);
   assert.equal(decision.redirectTo, 'pages/index/index');
@@ -441,9 +488,16 @@ test('miniapp navigation: SVIP member still blocked from member page when unauth
   assert.equal(decision.reason, 'AUTH_REQUIRED');
 });
 
-test('miniapp navigation: app config pages list has exactly 2 routes', () => {
-  assert.equal(APP_ROUTES.length, 2);
-  assert.deepEqual(APP_ROUTES, ['pages/index/index', 'pages/member/index']);
+test('miniapp navigation: app config pages list has exactly 6 routes', () => {
+  assert.equal(APP_ROUTES.length, 6);
+  assert.deepEqual(APP_ROUTES, [
+    'pages/index/index',
+    'pages/member/index',
+    'pages/purchase-orders/index',
+    'pages/purchase-orders/detail/index',
+    'pages/return-orders/index',
+    'pages/return-orders/detail/index',
+  ]);
 });
 
 test('miniapp navigation: valid route contains only lowercase characters', () => {

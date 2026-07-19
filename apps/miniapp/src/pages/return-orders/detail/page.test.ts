@@ -213,6 +213,13 @@ describe('退货单详情页代码完整性', () => {
     assert.match(SOURCE, /删除确认/);
   });
 
+  it('应从路由参数读取退货 id 并通过 runtime 加载真实详情', () => {
+    assert.match(SOURCE, /resolveCurrentReturnId/);
+    assert.match(SOURCE, /getCurrentInstance\(\)\?\.router\?\.params\?\.id/);
+    assert.match(SOURCE, /loadMiniappPurchaseReturnDetail/);
+    assert.match(SOURCE, /deliveryNote/);
+  });
+
   it('应包含 navigateBack 返回', () => {
     assert.match(SOURCE, /navigateBack/);
   });

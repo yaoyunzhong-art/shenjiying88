@@ -98,9 +98,16 @@ describe('return-orders/index 页面源码分析', () => {
     assert.match(SOURCE, /暂无符合条件的退货单/);
   });
 
-  it('应包含点击跳转（goToDetail）', () => {
+  it('应包含点击跳转（goToDetail -> navigateTo 详情页）', () => {
     assert.match(SOURCE, /goToDetail/);
-    assert.match(SOURCE, /showToast/);
+    assert.match(SOURCE, /navigateTo/);
+    assert.match(SOURCE, /\/pages\/return-orders\/detail\/index\?id=/);
+  });
+
+  it('应通过 supplychain runtime 加载真实退货列表并展示 deliveryNote', () => {
+    assert.match(SOURCE, /loadMiniappPurchaseReturns/);
+    assert.match(SOURCE, /deliveryNote/);
+    assert.match(SOURCE, /当前展示本地演示退货数据/);
   });
 
   it('应包含底部记录条数统计', () => {

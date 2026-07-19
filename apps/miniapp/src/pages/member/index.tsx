@@ -1,5 +1,6 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
+import Taro from '@tarojs/taro';
 import type { DomainGovernanceDisplayModel } from '@m5/types';
 import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import {
@@ -31,6 +32,11 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
+
+const MEMBER_OPERATION_SHORTCUTS = [
+  { label: '采购单', route: '/pages/purchase-orders/index' },
+  { label: '退货售后', route: '/pages/return-orders/index' },
+] as const;
 
 // 会员等级体系
 const MEMBER_TIERS = [
@@ -101,6 +107,10 @@ export default function MemberPage() {
     };
   }, []);
 
+  const openOperationalPage = (route: string) => {
+    void Taro.navigateTo({ url: route });
+  };
+
   return (
     <View style={{ padding: '32px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       <Text>
@@ -146,6 +156,23 @@ export default function MemberPage() {
       ) : null}
       <View style={{ marginTop: '8px' }}>
         <Text>Scope：{consumerContract.scope.scopePath} / {consumerContract.scope.mismatchStrategy}</Text>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(15, 23, 42, 0.55)',
+        }}
+      >
+        <Text>供应链高频操作</Text>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {MEMBER_OPERATION_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>

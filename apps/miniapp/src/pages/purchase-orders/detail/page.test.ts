@@ -88,6 +88,14 @@ describe('purchase-orders/detail 源码 — 边界集', () => {
     assert.ok(src.includes('function getStatusActions'), 'getStatusActions 函数缺失');
   });
 
+  it('应从路由参数读取订单 id 并通过 runtime 加载真实详情', () => {
+    const src = getSource();
+    assert.ok(src.includes('resolveCurrentOrderId'), '缺少订单 id 解析');
+    assert.ok(src.includes('getCurrentInstance()?.router?.params?.id'), '缺少路由参数读取');
+    assert.ok(src.includes('loadMiniappPurchaseOrderDetail'), '缺少真实详情加载');
+    assert.ok(src.includes('deliveryNote'), '缺少交付模式提示');
+  });
+
   it('应处理 cancelled 状态的按钮隐藏逻辑', () => {
     const src = getSource();
     assert.ok(src.includes("localStatus !== 'cancelled'"), 'cancelled 状态处理逻辑缺失');

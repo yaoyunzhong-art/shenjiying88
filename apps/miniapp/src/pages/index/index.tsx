@@ -1,5 +1,6 @@
 import { View, Text, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
+import Taro from '@tarojs/taro';
 import type {
   DomainGovernanceDisplayModel,
   FoundationAlertCatalogItem,
@@ -46,6 +47,11 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
+
+const OPERATION_SHORTCUTS = [
+  { label: '采购单', route: '/pages/purchase-orders/index' },
+  { label: '退货售后', route: '/pages/return-orders/index' },
+] as const;
 
 export default function IndexPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
@@ -129,6 +135,15 @@ export default function IndexPage() {
     };
   }, []);
 
+  const openOperationalPage = (route: string, label: string) => {
+    if (!session.authenticated) {
+      Taro.showToast({ title: `请先登录后进入${label}`, icon: 'none' });
+      return;
+    }
+
+    void Taro.navigateTo({ url: route });
+  };
+
   return (
     <View style={{ padding: '32px', color: '#e2e8f0', background: '#020617', minHeight: '100vh' }}>
       <Text>
@@ -157,6 +172,23 @@ export default function IndexPage() {
         <Text>
           当前会员态：{session.memberTier} / {session.authenticated ? '已登录' : '未登录'}
         </Text>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(15, 23, 42, 0.55)',
+        }}
+      >
+        <Text>经营高频入口</Text>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {OPERATION_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>Scope：{consumerContract.scope.scopePath} / {consumerContract.scope.mismatchStrategy}</Text>
