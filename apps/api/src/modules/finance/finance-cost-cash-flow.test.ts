@@ -186,6 +186,253 @@ describe('CostAnalysisService', () => {
       expect(cat.percentage).toBeLessThanOrEqual(100)
     }
   })
+
+  // ── 大金额边界: getCostAnalysis ──
+
+  it('should handle very large integer storeId for getCostAnalysis', async () => {
+    // Long numeric storeId to stress hash→amount path
+    const analysis = await costAnalysis.getCostAnalysis('store-999999999999999', '2026-12')
+    expect(analysis.categories).toHaveLength(3)
+    expect(analysis.totalCostCents).toBeGreaterThanOrEqual(0)
+    expect(Number.isFinite(analysis.monthOverMonthChange)).toBe(true)
+    expect(Number.isFinite(analysis.yearOverYearChange)).toBe(true)
+  })
+
+  it('should handle far-future period (2099-12)', async () => {
+    // prevPeriod will be 2099-11, yoyPeriod will be 2098-12
+    // Both produce hash-based values so they should work
+    const analysis = await costAnalysis.getCostAnalysis('store-A1', '2099-12')
+    expect(analysis.categories).toHaveLength(3)
+    expect(Number.isFinite(analysis.monthOverMonthChange)).toBe(true)
+    expect(Number.isFinite(analysis.yearOverYearChange)).toBe(true)
+  })
+
+  it('should handle ancient period (1970-01) as valid input', async () => {
+    // Period far in the past — prevPeriod is 1969-12, yoyPeriod is 1969-01
+    const analysis = await costAnalysis.getCostAnalysis('store-A1', '1970-01')
+    expect(analysis.categories).toHaveLength(3)
+    // monthOverMonthChange should be a finite number
+    expect(Number.isFinite(analysis.monthOverMonthChange)).toBe(true)
+    expect(Number.isFinite(analysis.yearOverYearChange)).toBe(true)
+  })
+
+  it('should handle period that causes prevPeriod year to wrap negative', async () => {
+    // Period '0000-01' → prevPeriod returns '0000-00' is handled by service
+    const analysis = await costAnalysis.getCostAnalysis('store-A1', '0000-01')
+    expect(analysis.categories).toHaveLength(3)
+    // All numeric properties should still be finite
+    expect(Number.isFinite(analysis.monthOverMonthChange)).toBe(true)
+    expect(Number.isFinite(analysis.yearOverYearChange)).toBe(true)
+  })
+
+  // ── 大金额边界: compareStoreCosts ──
+
+  it('should handle compareStoreCosts with very long storeIds', async () => {
+    const results = await costAnalysis.compareStoreCosts(
+      ['store-very-long-name-that-exceeds-typical-max-length-for-a-store-identifier-1234567890'],
+      '2026-06'
+    )
+    expect(results).toHaveLength(1)
+    expect(results[0].totalCostCents).toBeGreaterThanOrEqual(0)
+  })
+
+  // ── 无效输入反例: getCostAnalysis ──
+
+  it('should handle getCostAnalysis with malformed period (not YYYY-MM)', async () => {
+    // Period 'not-a-date' — split returns NaN, prevPeriod returns 'NaN-NaN'
+    const analysis = await costAnalysis.getCostAnalysis('store-A1', 'not-a-date')
+    expect(analysis.categories).toHaveLength(3)
+    // Should not throw — service handles gracefully
+    expect(typeof analysis.totalCostCents).toBe('number')
+    expect(Number.isFinite(analysis.totalCostCents)).toBe(true)
+  })
+
+  it('should handle compareStoreCosts with invalid storeId containing special chars', async () => {
+    // Special characters that could affect hash computation
+    const results = await costAnalysis.compareStoreCosts(
+      ['store-special-!@#$%^&*()_+-=[]{}|;:<>?,./'],
+      '2026-06'
+    )
+    expect(results).toHaveLength(1)
+    expect(results[0].totalCostCents).toBeGreaterThanOrEqual(0)
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 新增: CashFlowService 边界场景 (反例 + 大金额 + 非法操作)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('CashFlowService - 边界 & 反例', () => {
+  let cashFlow: CashFlowService
+
+  beforeEach(() => {
+    cashFlow = new CashFlowService()
+    cashFlow.reset()
+  })
+
+  // ── 大金额边界 ──
+
+  it('should handle extremely large inflow amount (Number.MAX_SAFE_INTEGER / 2)', async () => {
+    const hugeAmount = Math.floor(Number.MAX_SAFE_INTEGER / 2)
+    await cashFlow.recordInflow({
+      accountId: 'acct-huge',
+      date: '2026-07-15',
+      amountCents: hugeAmount,
+      category: '大额入账'
+    })
+    expect(cashFlow.getBalance('acct-huge')).toBe(1000000 + hugeAmount)
+
+    const report = await cashFlow.getCashFlow('acct-huge', '2026-07')
+    expect(report.totalInflowCents).toBe(hugeAmount)
+    expect(report.totalOutflowCents).toBe(0)
+    expect(report.netFlowCents).toBe(hugeAmount)
+  })
+
+  it('should handle extremely large outflow amount causing deeply negative balance', async () => {
+    const hugeOutflow = 9_999_999_999
+    await cashFlow.recordOutflow({
+      accountId: 'acct-huge-out',
+      date: '2026-07-15',
+      amountCents: hugeOutflow,
+      category: '大额支出'
+    })
+    // Balance goes deeply negative
+    expect(cashFlow.getBalance('acct-huge-out')).toBe(1000000 - hugeOutflow)
+    expect(cashFlow.getBalance('acct-huge-out')).toBeLessThan(0)
+
+    const report = await cashFlow.getCashFlow('acct-huge-out', '2026-07')
+    expect(report.totalOutflowCents).toBe(hugeOutflow)
+    expect(report.netFlowCents).toBe(-hugeOutflow)
+  })
+
+  // ── 零金额反例 ──
+
+  it('should handle zero outflow with default category', async () => {
+    await cashFlow.recordOutflow({
+      accountId: 'acct-zero-out',
+      date: '2026-07-15',
+      amountCents: 0,
+      category: ''
+    })
+    expect(cashFlow.getBalance('acct-zero-out')).toBe(1000000)
+    const report = await cashFlow.getCashFlow('acct-zero-out', '2026-07')
+    expect(report.totalOutflowCents).toBe(0)
+  })
+
+  // ── 未来日期边界 ──
+
+  it('should handle future date record (year 2099)', async () => {
+    await cashFlow.recordInflow({
+      accountId: 'acct-future',
+      date: '2099-12-25',
+      amountCents: 50000,
+      category: '未来入账'
+    })
+    expect(cashFlow.getBalance('acct-future')).toBe(1000000 + 50000)
+    // Querying 2026-07 should NOT see the future transaction
+    const report = await cashFlow.getCashFlow('acct-future', '2026-07')
+    expect(report.totalInflowCents).toBe(0)
+  })
+
+  it('should correctly report future transaction when queried with matching future period', async () => {
+    await cashFlow.recordInflow({
+      accountId: 'acct-future-q',
+      date: '2099-12-15',
+      amountCents: 88888,
+      category: '未来入账'
+    })
+    const report = await cashFlow.getCashFlow('acct-future-q', '2099-12')
+    expect(report.totalInflowCents).toBe(88888)
+    const day15 = report.dailyFlows.find((d) => d.date === '2099-12-15')
+    expect(day15).toBeDefined()
+    expect(day15!.inflowCents).toBe(88888)
+  })
+
+  // ── 重复操作反例 ──
+
+  it('should correctly accumulate duplicate recordInflow on same day and account', async () => {
+    // Multiple recordInflow with same parameters should stack
+    await cashFlow.recordInflow({ accountId: 'acct-dup', date: '2026-07-10', amountCents: 10000, category: '重复入账' })
+    await cashFlow.recordInflow({ accountId: 'acct-dup', date: '2026-07-10', amountCents: 10000, category: '重复入账' })
+    await cashFlow.recordInflow({ accountId: 'acct-dup', date: '2026-07-10', amountCents: 10000, category: '重复入账' })
+
+    expect(cashFlow.getBalance('acct-dup')).toBe(1000000 + 30000)
+
+    const report = await cashFlow.getCashFlow('acct-dup', '2026-07')
+    expect(report.totalInflowCents).toBe(30000)
+    const day10 = report.dailyFlows.find((d) => d.date === '2026-07-10')
+    expect(day10).toBeDefined()
+    expect(day10!.inflowCents).toBe(30000)
+  })
+
+  it('should isolate balance across different accounts with same date and amount', async () => {
+    // Two separate accounts with identical operations should not interfere
+    await cashFlow.recordInflow({ accountId: 'acct-iso-a', date: '2026-07-15', amountCents: 50000, category: '入账' })
+    await cashFlow.recordOutflow({ accountId: 'acct-iso-b', date: '2026-07-15', amountCents: 30000, category: '支出' })
+
+    expect(cashFlow.getBalance('acct-iso-a')).toBe(1000000 + 50000)
+    expect(cashFlow.getBalance('acct-iso-b')).toBe(1000000 - 30000)
+
+    const reportA = await cashFlow.getCashFlow('acct-iso-a', '2026-07')
+    expect(reportA.totalOutflowCents).toBe(0) // outflow for acct-iso-b should NOT bleed into acct-iso-a
+
+    const reportB = await cashFlow.getCashFlow('acct-iso-b', '2026-07')
+    expect(reportB.totalInflowCents).toBe(0) // inflow for acct-iso-a should NOT bleed into acct-iso-b
+  })
+
+  // ── 无效ID反例 ──
+
+  it('should handle empty account ID gracefully', async () => {
+    await cashFlow.recordInflow({
+      accountId: '',
+      date: '2026-07-15',
+      amountCents: 10000,
+      category: '空ID入账'
+    })
+    // Empty string as accountId creates its own entry
+    expect(cashFlow.getBalance('')).toBe(1000000 + 10000)
+
+    const report = await cashFlow.getCashFlow('', '2026-07')
+    expect(report.totalInflowCents).toBe(10000)
+  })
+
+  it('should handle whitespace account ID', async () => {
+    await cashFlow.recordOutflow({
+      accountId: '   ',
+      date: '2026-07-15',
+      amountCents: 5000,
+      category: '空格ID支出'
+    })
+    expect(cashFlow.getBalance('   ')).toBe(1000000 - 5000)
+  })
+
+  // ── reset 反例 ──
+
+  it('should treat reset with non-existent accountId as no-op', async () => {
+    // reset with an accountId that was never created should not throw
+    expect(() => {
+      cashFlow.reset('acct-never-created')
+    }).not.toThrow()
+    // Account still gets default balance on getBalance
+    expect(cashFlow.getBalance('acct-never-created')).toBe(1000000)
+  })
+
+  // ── getCashFlow 空结果 ──
+
+  it('should return empty daily flows for completely unknown period', async () => {
+    await cashFlow.recordInflow({ accountId: 'acct-empty-p', date: '2026-07-10', amountCents: 50000, category: '入账' })
+    // Query a period where no transactions exist
+    const report = await cashFlow.getCashFlow('acct-empty-p', '2024-01')
+    expect(report.totalInflowCents).toBe(0)
+    expect(report.totalOutflowCents).toBe(0)
+    expect(report.netFlowCents).toBe(0)
+    // Daily flows still generated for first 28 days
+    expect(report.dailyFlows).toHaveLength(28)
+    for (const entry of report.dailyFlows) {
+      expect(entry.inflowCents).toBe(0)
+      expect(entry.outflowCents).toBe(0)
+    }
+  })
 })
 
 // ══════════════════════════════════════════════════════════════════════════════

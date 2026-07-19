@@ -283,6 +283,86 @@ describe('FinanceSettlementCron', () => {
     expect(notes.length).toBeGreaterThanOrEqual(1)
     expect(notes.length).toBeLessThanOrEqual(3)
   })
+
+  // ── 边界: 大金额结算 ─────────────────────────────────────
+
+  it('simulateSettlementAmount should produce a large amount for some store+periodic combos', () => {
+    const sim = (settlement as unknown as {
+      simulateSettlementAmount(s: string, p: string, k: string): number
+    }).simulateSettlementAmount
+    // The maximum possible is (9999 % 10000 + 1) * 100 = 1,000,000 cents = 10,000元
+    const amount = sim.call(settlement, 'store-A1', 'monthly', '2099-12-ZZ9999')
+    expect(amount).toBeGreaterThan(0)
+    expect(amount).toBeLessThanOrEqual(1_000_100) // theoretical max based on hash
+    expect(Number.isInteger(amount)).toBe(true)
+  })
+
+  // ── 反例: 空/无效ID ──────────────────────────────────────
+
+  it('acknowledgeNotification with empty string id returns false', () => {
+    const result = settlement.acknowledgeNotification('')
+    expect(result).toBe(false)
+  })
+
+  it('acknowledgeNotification with nullish-like id returns false', () => {
+    const result = settlement.acknowledgeNotification('undefined')
+    expect(result).toBe(false)
+  })
+
+  // ── 反例: 重复已读 = 幂等 ──────────────────────────────
+
+  it('acknowledgeAll when already fully acknowledged returns 0', () => {
+    // First acknowledge all
+    settlement.acknowledgeAll()
+    // Second acknowledgeAll should return 0 since none are unread
+    const count = settlement.acknowledgeAll()
+    expect(count).toBe(0)
+  })
+
+  // ── 反例: 重复操作幂等 ──────────────────────────────────
+
+  it('getHistory with zero limit returns empty array', () => {
+    const history = settlement.getHistory(0)
+    expect(history).toHaveLength(0)
+  })
+
+  it('getHistory with negative limit returns empty array', () => {
+    const history = settlement.getHistory(-5)
+    expect(history).toHaveLength(0)
+  })
+
+  // ── 边界: 多次循环累计 ──────────────────────────────────
+
+  it('should accumulate history correctly after many runPeriodic calls', async () => {
+    // Run 5 daily settlements
+    for (let i = 0; i < 5; i++) {
+      await settlement.runPeriodic({ periodicity: 'daily' })
+    }
+    const history = settlement.getHistory(100)
+    // Each run settles 4 stores = 20 results; but duplicate period keys are skipped
+    // Only first daily run should produce results; subsequent are empty
+    expect(history.length).toBe(4)
+
+    const metrics = settlement.getMetrics()
+    expect(metrics.totalSettlements).toBe(4)
+    expect(metrics.totalCompleted).toBe(4)
+    expect(metrics.totalFailed).toBe(0)
+  })
+
+  // ── 反例: 非法状态通知确认后重新获取 ───────────────────────
+
+  it('acknowledged notifications should not appear in getUnacknowledgedNotifications', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+    const notes = settlement.getUnacknowledgedNotifications()
+    expect(notes.length).toBeGreaterThan(0)
+
+    // Acknowledge the first one
+    settlement.acknowledgeNotification(notes[0].id)
+    const after = settlement.getUnacknowledgedNotifications()
+    // The acknowledged note should be gone
+    const stillPresent = after.find((n) => n.id === notes[0].id)
+    expect(stillPresent).toBeUndefined()
+  })
 })
 
-// Total: 30 test cases
+// Total: 41 test cases + 2 additional = 43
