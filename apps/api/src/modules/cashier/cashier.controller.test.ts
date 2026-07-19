@@ -3,6 +3,9 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import type { Order, Payment, Refund, CreateOrderInput, CreatePaymentInput, CreateRefundInput, OrderItem } from '@m5/types'
 import { CashierController } from './cashier.controller'
+import { CashierService } from './cashier.service'
+import { MemberService } from '../member/member.service'
+import { InventoryItemService } from '../inventory/inventory-item.service'
 // ── Mock services (lean interface matching real usage) ──
 interface MockOrderService {
   create: (input: CreateOrderInput, context: Record<string, string>) => Order
@@ -108,10 +111,15 @@ function makeController(
   paymentOverrides?: Partial<MockPaymentService>,
   refundOverrides?: Partial<MockRefundService>
 ): CashierController {
+  const memberService = new MemberService()
+  const inventoryItemService = new InventoryItemService()
+  const cashierService = new CashierService(memberService)
   return new CashierController(
     makeMockOrderService(orderOverrides) as never,
     makeMockPaymentService(paymentOverrides) as never,
-    makeMockRefundService(refundOverrides) as never
+    makeMockRefundService(refundOverrides) as never,
+    cashierService,
+    inventoryItemService
   )
 }
 const HEADERS = {

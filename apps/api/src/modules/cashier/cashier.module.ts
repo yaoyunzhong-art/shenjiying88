@@ -13,6 +13,7 @@ import { PaymentChannelRegistry } from './ports/payment-channel.registry'
 import { PaymentChannelBootstrap } from './ports/payment-channel.bootstrap'
 import { CashierToLytBridge } from './bridges/cashier-to-lyt.bridge'
 import { LytToCashierBridge } from './bridges/lyt-to-cashier.bridge'
+import { InventoryItemModule } from '../inventory/inventory-item.module'
 import { CommercialBillingModule } from '../foundation/commercial-billing/commercial-billing.module'
 
 /**
@@ -53,7 +54,7 @@ import { CommercialBillingModule } from '../foundation/commercial-billing/commer
  *       CommercialBillingModule 提供 BillingWall (P3-5, 调用方付费拦截)
  */
 @Module({
-  imports: [MemberModule, LoyaltyModule, CommercialBillingModule],
+  imports: [MemberModule, LoyaltyModule, InventoryItemModule, CommercialBillingModule],
   controllers: [CashierController, CashierBillingController, CashierSseController],
   providers: [
     CashierService,

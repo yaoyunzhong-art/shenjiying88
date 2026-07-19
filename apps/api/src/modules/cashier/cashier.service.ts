@@ -21,7 +21,7 @@ const paymentStore = new Map<string, CashierPayment>()
 @Injectable()
 export class CashierService {
   constructor(
-    private readonly memberService: MemberService,
+    readonly memberService: MemberService,
     @Optional()
     private readonly loyaltyService?: LoyaltyService,
     @Optional()

@@ -105,9 +105,9 @@ describe('CashierModule', () => {
   // 正例 — 方法签名存在性 (反射验证 Controller/Service 原型)
   // ═══════════════════════════════════════════════════════════════
 
-  it('正例: CashierController 暴露 11 个公共方法', () => {
+  it('正例: CashierController 暴露 14 个公共方法', () => {
     const methods = getProtoMethods(CashierController.prototype)
-    assert.ok(methods.length >= 11, `expected >=11 methods, got ${methods.length}`)
+    assert.ok(methods.length >= 14, `expected >=14 methods, got ${methods.length}`)
     assert.ok(methods.includes('createOrder'))
     assert.ok(methods.includes('submitOrder'))
     assert.ok(methods.includes('cancelOrder'))
@@ -119,6 +119,9 @@ describe('CashierModule', () => {
     assert.ok(methods.includes('paymentCallback'))
     assert.ok(methods.includes('createRefund'))
     assert.ok(methods.includes('getRefund'))
+    assert.ok(methods.includes('lookupMember'))
+    assert.ok(methods.includes('lookupProduct'))
+    assert.ok(methods.includes('getChannelStats'))
   })
 
   it('正例: CashierService 暴露核心公共方法', () => {
@@ -141,12 +144,14 @@ describe('CashierModule', () => {
   // 反例 — 异常场景 (无 mock, 纯源码分析)
   // ═══════════════════════════════════════════════════════════════
 
-  it('反例: 控制器构造函数期望 3 个参数 (orderService/paymentService/refundService)', () => {
+  it('反例: 控制器构造函数期望 5 个参数 (orderService/paymentService/refundService/cashierService/inventoryItemService)', () => {
     const paramNames = getConstructorParamNames(CashierController)
-    assert.ok(paramNames.length >= 3, `expected >=3 ctor params, got ${paramNames.length}`)
+    assert.ok(paramNames.length >= 5, `expected >=5 ctor params, got ${paramNames.length}`)
     assert.ok(paramNames.some((n) => n.includes('orderService')))
     assert.ok(paramNames.some((n) => n.includes('paymentService')))
     assert.ok(paramNames.some((n) => n.includes('refundService')))
+    assert.ok(paramNames.some((n) => n.includes('cashierService')))
+    assert.ok(paramNames.some((n) => n.includes('inventoryItemService')))
   })
 
   it('反例: CashierService 构造函数期望 memberService 为必选', () => {

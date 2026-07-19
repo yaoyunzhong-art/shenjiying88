@@ -411,6 +411,18 @@ export class InventoryItemService {
     this.auditLogs.set(itemId, log)
   }
 
+  /**
+   * 通过 SKU 查询库存商品
+   */
+  getBySku(sku: string, tenantId: string): InventoryItem | null {
+    const indexKey = `${tenantId}:${sku}`
+    const itemId = this.skuIndex.get(indexKey)
+    if (!itemId) return null
+    const item = this.items.get(itemId)
+    if (!item || item.tenantId !== tenantId) return null
+    return { ...item }
+  }
+
   /** 测试/重置 */
   reset(): void {
     this.items.clear()
