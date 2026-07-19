@@ -244,9 +244,27 @@ const mockUiModule = {
     });
     return sorted;
   },
-  useSearchFilter: (initialValue) => {
-    const [value, setValue] = React.useState(initialValue ?? '');
-    return { value, debouncedValue: value, setValue };
+  useSearchFilter: (items, fields) => {
+    const [searchTerm, setSearchTerm] = React.useState('');
+    // items can be either (items, fields) or (initialValue) depending on call site
+    // If first arg is a string, it's the old usage pattern
+    if (typeof items === 'string') {
+      return { value: items, debouncedValue: items, setValue: setSearchTerm, filteredItems: [], searchTerm: items, setSearchTerm };
+    }
+    const filteredItems = React.useMemo(
+      () => (Array.isArray(items)
+        ? items.filter((item) => {
+            if (!searchTerm) return true;
+            const q = searchTerm.toLowerCase();
+            return (fields || []).some((field) => {
+              const val = item[field];
+              return val != null && String(val).toLowerCase().includes(q);
+            });
+          })
+        : []),
+      [items, searchTerm, fields]
+    );
+    return { searchTerm, setSearchTerm, filteredItems, value: searchTerm, debouncedValue: searchTerm, setValue: setSearchTerm };
   },
   Card: ({ children, style, ...props }) => {
     return React.createElement('div', { 'data-mock': 'Card', style: style || {}, ...props }, children);
