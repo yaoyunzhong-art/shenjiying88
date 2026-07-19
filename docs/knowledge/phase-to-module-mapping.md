@@ -120,6 +120,45 @@
 | ai-forecast | 36 | ✅23 | P-AI-5 预测 |
 | ai-marketing | 30 | ✅18 | P-AI-6 营销 |
 
+### tob-web 全量页面测试拉升 (2026-07-19 13:22 · V21 Day1)
+
+| 页面 | 位置 | 原测试 | 现测试 | 审计 | PRD |
+|:-----|:-----|:-----:|:-----:|:----:|:---:|
+| alerts | tob-web/app/alerts/ | 2 | **49** | ✅V21 | 🟡已有 |
+| coupons | tob-web/app/coupons/ | 2 | **47** | ✅V21 | 🟡已有 |
+| operations | tob-web/app/operations/ | 2 | **32** | ✅V21 | 🟡已有 |
+| member-center | tob-web/app/member-center/ | 4 | **46** | ✅V21 | 🟡已有 |
+| ai-marketing | tob-web/app/ai-marketing/ | 6 | **38** | ✅V21 | 🟡已有 |
+| team-building | tob-web/app/team-building/ | 6 | **38** | ✅V21 | 🟡已有 |
+| members | tob-web/app/members/ | 8 | **39** | ✅V21 | 🟡已有 |
+| notifications | tob-web/app/notifications/ | 0 | **40** | ✅V21 | 🟡已有 |
+| coupon-center | tob-web/app/coupon-center/ | 6 | **63** | ✅V21 | 🟡已有 |
+| tournament | tob-web/app/tournament/ | 6 | **62** | ✅V21 | 🟡已有 |
+| i18n-demo | tob-web/app/i18n-demo/ | 0 | **37** | ✅V21 | 🟡已有 |
+| ai-sales-panel | tob-web/app/ai-sales-panel/ | 6 | **60** | ✅V21 | 🟡已有 |
+| **总计** | **12页** | **48** | **~551** | **✅** | — |
+
+### app端 屏幕测试增强 (2026-07-19 12:30 · V21 Day1)
+
+| 屏幕 | 位置 | 原测试 | 现测试 |
+|:-----|:-----|:-----:|:-----:|
+| cashier | apps/app/screens/cashier/ | 0 | **28** |
+| orders | apps/app/screens/orders/ | 0 | **27** |
+| member | apps/app/screens/member/ | 0 | **24** |
+| **总计** | **3屏幕** | **0** | **79** |
+
+### mobile端 + Pad端 屏幕测试增强 (2026-07-19 12:45 · V21 Day1)
+
+| 屏幕 | 位置 | 原测试 | 现测试 |
+|:-----|:-----|:-----:|:-----:|
+| OrderDetailScreen | mobile/src/screens/ | 0 | **37** |
+| PromotionsScreen | mobile/src/screens/ | 0 | **31** |
+| InventoryScreen | mobile/src/screens/ | 0 | **33** |
+| BranchManagerDashboard | mobile/src/screens/ | 0 | **12** |
+| BranchSelectorScreen | mobile/src/screens/ | 0 | **12** |
+| MemberDetailScreen | mobile/src/screens/ | 0 | **24** |
+| **总计** | **6屏幕** | **0** | **149** |
+
 ---
 
-*🦞 龙虾哥 · Phase→模块映射 · 2026-07-14*
+*🦞 龙虾哥 · Phase→模块映射 · 2026-07-19 V21 Day1 更新*
