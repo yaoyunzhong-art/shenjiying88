@@ -2290,3 +2290,554 @@ it('e2e: dashboard — 跨租户隔离', async () => {
     await app.close();
   }
 });
+
+// ═══════════════════════════════════════════════════════
+// P-38 补充: 跨账期 营收差异检测 (通过 settlement + daily revenue 模拟)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: revenue — 跨账期营收汇总对比 (两期收入不同)', async () => {
+  const { app } = await buildApp();
+  try {
+    // 第1期: 7月上旬 收入 8000
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 5000, description: '7月上旬门票', category: 'ticket', recordedAt: '2026-07-05T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 3000, description: '7月上旬商品', category: 'merchandise', recordedAt: '2026-07-08T12:00:00.000Z' });
+
+    // 第2期: 7月下旬 收入 12000
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 7000, description: '7月下旬门票', category: 'ticket', recordedAt: '2026-07-20T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 5000, description: '7月下旬活动', category: 'event', recordedAt: '2026-07-25T12:00:00.000Z' });
+
+    // 第3期: 8月上旬 — 零收入
+    // (故意不创建流水)
+
+    // 创建结算 A (7月上半月)
+    const stlA = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-07-01T00:00:00.000Z', endDate: '2026-07-15T23:59:59.999Z' });
+    assert.equal(stlA.status, 201);
+    assert.equal(stlA.body.data.totalRevenue, 8000);
+
+    // 创建结算 B (7月下半月)
+    const stlB = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-07-16T00:00:00.000Z', endDate: '2026-07-31T23:59:59.999Z' });
+    assert.equal(stlB.status, 201);
+    assert.equal(stlB.body.data.totalRevenue, 12000);
+
+    // 验证两期收入不同
+    assert.ok(stlB.body.data.totalRevenue > stlA.body.data.totalRevenue);
+    assert.equal(stlB.body.data.totalRevenue - stlA.body.data.totalRevenue, 4000);
+
+    // 创建结算 C (8月上旬 — 无数据应收入为0)
+    const stlC = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-08-01T00:00:00.000Z', endDate: '2026-08-07T23:59:59.999Z' });
+    assert.equal(stlC.status, 201);
+    assert.equal(stlC.body.data.totalRevenue, 0);
+    assert.equal(stlC.body.data.totalExpense, 0);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: revenue — 跨账期差异: 同周期内收入升级对比', async () => {
+  const { app } = await buildApp();
+  try {
+    // W31 营收明细
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 6000, description: 'W31 门票', category: 'ticket', recordedAt: '2026-07-28T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Expense, amount: 2000, description: 'W31 采购', category: 'purchase', recordedAt: '2026-07-29T12:00:00.000Z' });
+
+    // W32 营收明细
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 9000, description: 'W32 门票', category: 'ticket', recordedAt: '2026-08-05T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Expense, amount: 3000, description: 'W32 采购', category: 'purchase', recordedAt: '2026-08-06T12:00:00.000Z' });
+
+    // W31 结算
+    const stlW31 = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-07-27T00:00:00.000Z', endDate: '2026-08-02T23:59:59.999Z' });
+    assert.equal(stlW31.status, 201);
+    assert.equal(stlW31.body.data.totalRevenue, 6000);
+    assert.equal(stlW31.body.data.totalExpense, 2000);
+    assert.equal(stlW31.body.data.netProfit, 4000);
+
+    // W32 结算
+    const stlW32 = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-08-03T00:00:00.000Z', endDate: '2026-08-09T23:59:59.999Z' });
+    assert.equal(stlW32.status, 201);
+    assert.equal(stlW32.body.data.totalRevenue, 9000);
+    assert.equal(stlW32.body.data.totalExpense, 3000);
+    assert.equal(stlW32.body.data.netProfit, 6000);
+
+    // 跨周对比: W32 净利增长 50%
+    assert.equal(stlW32.body.data.netProfit - stlW31.body.data.netProfit, 2000);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: revenue — 跨账期日营收差异检测', async () => {
+  const { app } = await buildApp();
+  try {
+    // 两天的日营收数据
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 3000, description: 'Day1收入', category: 'ticket', recordedAt: '2026-08-10T10:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 4500, description: 'Day2收入', category: 'ticket', recordedAt: '2026-08-11T10:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 2000, description: 'Day3收入', category: 'merchandise', recordedAt: '2026-08-10T14:00:00.000Z' });
+
+    // 查日营收 Aug 10
+    const day1 = await request(app.getHttpServer())
+      .get('/finance/revenue/daily')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', date: '2026-08-10' });
+    assert.equal(day1.status, 200);
+    assert.equal(day1.body.data.revenue, 5000);
+    assert.equal(day1.body.data.transactionCount, 2);
+
+    // 查日营收 Aug 11 (只有1笔)
+    const day2 = await request(app.getHttpServer())
+      .get('/finance/revenue/daily')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001', date: '2026-08-11' });
+    assert.equal(day2.status, 200);
+    assert.equal(day2.body.data.revenue, 4500);
+    assert.equal(day2.body.data.transactionCount, 1);
+
+    // 跨日差异检测: day1 > day2
+    assert.ok(day1.body.data.revenue > day2.body.data.revenue, 'Day1营收应高于Day2');
+    // 差额
+    assert.equal(day1.body.data.revenue - day2.body.data.revenue, 500);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// P-38 补充: 发票冲红 + 退款
+// ═══════════════════════════════════════════════════════
+
+it('e2e: invoices — 发票冲红(取消)后记录退款流水', async () => {
+  const { app } = await buildApp();
+  try {
+    // 原始收入
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 5000, description: '原门票收入', category: 'ticket' });
+
+    // 创建发票
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ orderId: 'red-ink-001', amount: 5000, type: InvoiceType.Regular });
+    assert.equal(createRes.status, 201);
+    const invId = createRes.body.data.id;
+
+    // 开票
+    const issueRes = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invId}/issue`)
+      .set(TENANT_A);
+    assert.equal(issueRes.status, 201);
+    assert.equal(issueRes.body.data.status, InvoiceStatus.Issued);
+
+    // 冲红 → 取消发票
+    const cancelRes = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invId}/cancel`)
+      .set(TENANT_A);
+    assert.equal(cancelRes.status, 201);
+    assert.equal(cancelRes.body.data.status, InvoiceStatus.Cancelled);
+
+    // 记录退款流水 (模拟退票)
+    const refundLedger = await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Refund, amount: 5000, description: '发票冲红退款', category: 'refund', orderId: 'red-ink-001' });
+    assert.equal(refundLedger.status, 201);
+    assert.equal(refundLedger.body.data.type, LedgerType.Refund);
+    assert.equal(refundLedger.body.data.amount, 5000);
+    assert.equal(refundLedger.body.data.orderId, 'red-ink-001');
+
+    // 验证余额: 原始收入 - 退款 = 0
+    assert.equal(refundLedger.body.data.balance, 0);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: invoices — 冲红后重新开票 (取消后重建)', async () => {
+  const { app } = await buildApp();
+  try {
+    // 原始收入
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 3000, description: '商品销售', category: 'merchandise' });
+
+    // 创建发票A
+    const invA = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ orderId: 'rebill-001', amount: 3000, type: InvoiceType.Regular });
+    const invAId = invA.body.data.id;
+
+    // 开票
+    await request(app.getHttpServer())
+      .post(`/finance/invoices/${invAId}/issue`)
+      .set(TENANT_A);
+
+    // 冲红(取消)发票A
+    await request(app.getHttpServer())
+      .post(`/finance/invoices/${invAId}/cancel`)
+      .set(TENANT_A);
+
+    // 退款流水
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Refund, amount: 3000, description: '发票A冲红退款', category: 'refund', orderId: 'rebill-001' });
+
+    // 创建发票B (重开)
+    const invB = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ orderId: 'rebill-002', amount: 3200, type: InvoiceType.Vat, buyerInfo: { company: '重开公司' } });
+    assert.equal(invB.status, 201);
+    assert.equal(invB.body.data.amount, 3200);
+    assert.equal(invB.body.data.status, InvoiceStatus.Draft);
+
+    // 新发票开票
+    const issueB = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invB.body.data.id}/issue`)
+      .set(TENANT_A);
+    assert.equal(issueB.status, 201);
+    assert.equal(issueB.body.data.status, InvoiceStatus.Issued);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: invoices — 含税发票冲红 + taxAmount 准确性', async () => {
+  const { app } = await buildApp();
+  try {
+    // 含税发票创建
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({
+        orderId: 'tax-red-ink',
+        amount: 1000,
+        taxAmount: 130,
+        type: InvoiceType.Vat,
+        buyerInfo: { company: '增值税购买方', taxId: 'VAT987654' },
+      });
+    assert.equal(createRes.status, 201);
+    assert.equal(createRes.body.data.totalAmount, 1130);
+    const invId = createRes.body.data.id;
+
+    // 开票
+    const issueRes = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invId}/issue`)
+      .set(TENANT_A);
+    assert.equal(issueRes.status, 201);
+
+    // 冲红(取消)
+    const cancelRes = await request(app.getHttpServer())
+      .post(`/finance/invoices/${invId}/cancel`)
+      .set(TENANT_A);
+    assert.equal(cancelRes.status, 201);
+    assert.equal(cancelRes.body.data.status, InvoiceStatus.Cancelled);
+    assert.equal(cancelRes.body.data.taxAmount, 130);
+
+    // 校验: 取消后taxAmount仍保留
+    const getRes = await request(app.getHttpServer())
+      .get(`/finance/invoices/${invId}`)
+      .set(TENANT_A);
+    assert.equal(getRes.body.data.taxAmount, 130);
+    assert.equal(getRes.body.data.totalAmount, 1130);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// P-38 补充: 财务权限拒绝 (非admin)
+// ═══════════════════════════════════════════════════════
+
+it('e2e: permission — 非admin不能确认跨租户结算', async () => {
+  const { app } = await buildApp();
+  try {
+    // Tenant A 创建结算
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-08-01T00:00:00.000Z', endDate: '2026-08-31T23:59:59.999Z' });
+    assert.equal(createRes.status, 201);
+    const stlId = createRes.body.data.id;
+
+    // Tenant B (非admin/不同租户) 确认 A 的结算 → 应失败 (500)
+    const confirmByB = await request(app.getHttpServer())
+      .post(`/finance/settlements/${stlId}/confirm`)
+      .set(TENANT_B);
+    assert.equal(confirmByB.status, 500);
+
+    // Tenant B 争议 A 的结算 → 也应失败
+    const disputeByB = await request(app.getHttpServer())
+      .post(`/finance/settlements/${stlId}/dispute`)
+      .set(TENANT_B);
+    assert.equal(disputeByB.status, 500);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: permission — 非admin不能查看对方发票详情', async () => {
+  const { app } = await buildApp();
+  try {
+    // Tenant A 创建并签发发票
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/invoices')
+      .set(TENANT_A)
+      .send({ orderId: 'private-inv', amount: 9999, type: InvoiceType.Regular });
+    const invId = createRes.body.data.id;
+
+    // Tenant B 试图查看 A 的发票 → 应失败 (500)
+    const getByB = await request(app.getHttpServer())
+      .get(`/finance/invoices/${invId}`)
+      .set(TENANT_B);
+    assert.equal(getByB.status, 500);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: permission — 非admin不能删除对方流水', async () => {
+  const { app } = await buildApp();
+  try {
+    // Tenant A 创建流水
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 8888, description: 'A专属收入', category: 'private' });
+    assert.equal(createRes.status, 201);
+    const ledgerId = createRes.body.data.id;
+
+    // Tenant B (非admin) 删除 → 应失败 (500)
+    const delByB = await request(app.getHttpServer())
+      .delete(`/finance/ledgers/${ledgerId}`)
+      .set(TENANT_B);
+    assert.equal(delByB.status, 500);
+
+    // A 的流水仍然存在
+    const stillExists = await request(app.getHttpServer())
+      .get(`/finance/ledgers/${ledgerId}`)
+      .set(TENANT_A);
+    assert.equal(stillExists.status, 200);
+    assert.equal(stillExists.body.data.amount, 8888);
+  } finally {
+    await app.close();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// P-38 补充: 多 settlement 合并
+// ═══════════════════════════════════════════════════════
+
+it('e2e: settlements — 多门店多结算查询与合并汇总', async () => {
+  const { app } = await buildApp();
+  try {
+    const TENANT_A_STORE2 = { ...TENANT_A, 'x-store-id': 'store-002' };
+
+    // 门店1 结算: 两期
+    await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({
+        storeId: 'store-001',
+        startDate: '2026-07-01T00:00:00.000Z',
+        endDate: '2026-07-15T23:59:59.999Z',
+      });
+    await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({
+        storeId: 'store-001',
+        startDate: '2026-07-16T00:00:00.000Z',
+        endDate: '2026-07-31T23:59:59.999Z',
+      });
+
+    // 门店2 结算: 一期
+    await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A_STORE2)
+      .send({
+        storeId: 'store-002',
+        startDate: '2026-07-01T00:00:00.000Z',
+        endDate: '2026-07-31T23:59:59.999Z',
+      });
+
+    // 查询全部 (不限storeId)
+    const allRes = await request(app.getHttpServer())
+      .get('/finance/settlements')
+      .set(TENANT_A);
+    assert.equal(allRes.status, 200);
+    assert.equal(allRes.body.data.length, 3);
+
+    // 按storeId过滤
+    const store1Res = await request(app.getHttpServer())
+      .get('/finance/settlements')
+      .set(TENANT_A)
+      .query({ storeId: 'store-001' });
+    assert.equal(store1Res.status, 200);
+    assert.equal(store1Res.body.data.length, 2);
+    assert.ok(store1Res.body.data.every((s: any) => s.storeId === 'store-001'));
+
+    const store2Res = await request(app.getHttpServer())
+      .get('/finance/settlements')
+      .set(TENANT_A_STORE2)
+      .query({ storeId: 'store-002' });
+    assert.equal(store2Res.status, 200);
+    assert.equal(store2Res.body.data.length, 1);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: settlements — 多结算状态过滤 (Pending + Confirmed)', async () => {
+  const { app } = await buildApp();
+  try {
+    // 创建 Pending 结算
+    const pendingRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-09-01T00:00:00.000Z', endDate: '2026-09-15T23:59:59.999Z' });
+    const pendingId = pendingRes.body.data.id;
+
+    // 创建 Disputed 结算
+    const disputedRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-09-16T00:00:00.000Z', endDate: '2026-09-30T23:59:59.999Z' });
+    const disputedId = disputedRes.body.data.id;
+    await request(app.getHttpServer())
+      .post(`/finance/settlements/${disputedId}/dispute`)
+      .set(TENANT_A);
+
+    // 创建 Confirmed 结算
+    const confirmRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({ startDate: '2026-10-01T00:00:00.000Z', endDate: '2026-10-15T23:59:59.999Z' });
+    const confirmId = confirmRes.body.data.id;
+    await request(app.getHttpServer())
+      .post(`/finance/settlements/${confirmId}/confirm`)
+      .set(TENANT_A);
+
+    // 查询 Pending
+    const pendingList = await request(app.getHttpServer())
+      .get('/finance/settlements')
+      .set(TENANT_A)
+      .query({ settlementStatus: SettlementStatus.Pending });
+    assert.equal(pendingList.status, 200);
+    assert.ok(pendingList.body.data.some((s: any) => s.id === pendingId));
+
+    // 查询 Confirmed
+    const confirmedList = await request(app.getHttpServer())
+      .get('/finance/settlements')
+      .set(TENANT_A)
+      .query({ settlementStatus: SettlementStatus.Confirmed });
+    assert.equal(confirmedList.status, 200);
+    assert.ok(confirmedList.body.data.some((s: any) => s.id === confirmId));
+
+    // 查询 Disputed
+    const disputedList = await request(app.getHttpServer())
+      .get('/finance/settlements')
+      .set(TENANT_A)
+      .query({ settlementStatus: SettlementStatus.Disputed });
+    assert.equal(disputedList.status, 200);
+    assert.ok(disputedList.body.data.some((s: any) => s.id === disputedId));
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: settlements — 合并结算: 带收入/支出账期汇总', async () => {
+  const { app } = await buildApp();
+  try {
+    // 在 2026-11 账期内创建多笔流水
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 10000, description: '11月门票', category: 'ticket', recordedAt: '2026-11-05T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Revenue, amount: 5000, description: '11月商品', category: 'merchandise', recordedAt: '2026-11-10T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Expense, amount: 3000, description: '11月采购', category: 'purchase', recordedAt: '2026-11-12T12:00:00.000Z' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({ type: LedgerType.Refund, amount: 1000, description: '11月退款', category: 'refund', recordedAt: '2026-11-15T12:00:00.000Z' });
+
+    // 创建结算 (不传 totalRevenue/totalExpense → 自动从流水计算)
+    const stlRes = await request(app.getHttpServer())
+      .post('/finance/settlements')
+      .set(TENANT_A)
+      .send({
+        startDate: '2026-11-01T00:00:00.000Z',
+        endDate: '2026-11-30T23:59:59.999Z',
+      });
+    assert.equal(stlRes.status, 201);
+    assert.equal(stlRes.body.data.totalRevenue, 15000);
+    assert.equal(stlRes.body.data.totalExpense, 3000);
+    assert.equal(stlRes.body.data.netProfit, 12000);
+
+    // 确认结算
+    const confirmRes = await request(app.getHttpServer())
+      .post(`/finance/settlements/${stlRes.body.data.id}/confirm`)
+      .set(TENANT_A);
+    assert.equal(confirmRes.status, 201);
+    assert.equal(confirmRes.body.data.settlementStatus, SettlementStatus.Confirmed);
+    assert.ok(confirmRes.body.data.settledAt);
+  } finally {
+    await app.close();
+  }
+});
