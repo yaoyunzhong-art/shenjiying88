@@ -156,6 +156,7 @@ import { ProcurementOrderModule } from './modules/procurement-order/procurement-
 import { SeoModule } from './modules/seo/seo.module';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { TeamBuildingModule } from './modules/team-building/team-building.module';
 
 @Module({
   imports: [
@@ -324,6 +325,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     IntelligenceModule,
     ModulesModule,
     CategoriesModule,
+    TeamBuildingModule,
   ],
   providers: [
     RequestGovernanceService,
