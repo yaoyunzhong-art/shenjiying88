@@ -1,13 +1,17 @@
 /**
  * PromotionsScreen.test.tsx - 促销活动管理页面测试
- * 使用 react-test-renderer 进行渲染测试
+ * node:test + react-test-renderer
+ * 三态覆盖: 正常渲染 / 空数据 / 边界过滤 + 交互
  */
-import { describe, it, expect, vi } from 'vitest';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import React from 'react';
 import { create, act } from 'react-test-renderer';
-import { PromotionsScreen, Promotion } from './PromotionsScreen';
+import { PromotionsScreen, type Promotion } from './PromotionsScreen';
 
-// ---- 测试辅助数据 ----
+/* ------------------------------------------------------------------ */
+/*  Test fixtures                                                      */
+/* ------------------------------------------------------------------ */
 
 const MOCK_PROMOTIONS: Promotion[] = [
   {
@@ -44,219 +48,432 @@ const MOCK_PROMOTIONS: Promotion[] = [
     budget: 10000,
     spent: 10000,
   },
+  {
+    id: 'p4',
+    title: '会员日双倍积分',
+    type: 'coupon',
+    status: 'paused',
+    startDate: '2026-07-15',
+    endDate: '2026-07-15',
+    usageCount: 89,
+    budget: 15000,
+    spent: 4450,
+  },
+  {
+    id: 'p5',
+    title: '双十一秒杀',
+    type: 'flash',
+    status: 'active',
+    startDate: '2026-11-11',
+    endDate: '2026-11-11',
+    usageCount: 0,
+    budget: 30000,
+    spent: 0,
+  },
 ];
 
-/** 遍历渲染树收集所有文本字符串 */
-function collectTexts(node: any): string[] {
-  const texts: string[] = [];
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
-  function walk(n: any) {
-    if (n === null || n === undefined) return;
-    if (typeof n === 'string') {
-      texts.push(n);
-      return;
+function collectTexts(node: unknown, chunks: string[] = []): string[] {
+  if (typeof node === 'string' || typeof node === 'number') {
+    chunks.push(String(node));
+    return chunks;
+  }
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectTexts(item, chunks));
+    return chunks;
+  }
+  if (node && typeof node === 'object') {
+    const obj = node as Record<string, unknown>;
+    if (obj.props && typeof obj.props === 'object') {
+      const p = obj.props as Record<string, unknown>;
+      if ('children' in p) {
+        collectTexts(p.children, chunks);
+      }
     }
-    if (typeof n === 'number') {
-      texts.push(String(n));
-      return;
-    }
-    // React element
-    if (n.props?.children) {
-      const kids = Array.isArray(n.props.children)
-        ? n.props.children
-        : [n.props.children];
-      kids.forEach(walk);
-    }
-    // rendered children array
-    if (n.children) {
-      n.children.forEach(walk);
+    if (obj.children && Array.isArray(obj.children)) {
+      obj.children.forEach((c: unknown) => collectTexts(c, chunks));
     }
   }
-
-  walk(node);
-  return texts;
+  return chunks;
 }
 
-/** 查找 TouchableOpacity 并触发 onPress */
-function pressByText(root: ReturnType<typeof create>, label: string): boolean {
+function getRenderedText(root: ReturnType<typeof create>): string {
+  const texts = collectTexts(root.toJSON());
+  return texts.join('');
+}
+
+function pressFilterByLabel(root: ReturnType<typeof create>, label: string): boolean {
   const json = root.toJSON();
   let pressed = false;
 
-  function findAndPress(node: any): boolean {
+  function walk(node: unknown): boolean {
     if (!node || pressed) return false;
-    // React test renderer renders TouchableOpacity with type and props
-    if (node.props?.onPress) {
-      const texts = collectTexts(node);
-      if (texts.some((t) => t.includes(label))) {
-        act(() => node.props.onPress());
-        pressed = true;
-        return true;
+    const n = node as Record<string, unknown>;
+    if (n.props && typeof n.props === 'object') {
+      const p = n.props as Record<string, unknown>;
+      if (typeof p.onPress === 'function') {
+        const texts = collectTexts(node);
+        if (texts.some((t) => t.includes(label))) {
+          act(() => (p.onPress as () => void)());
+          pressed = true;
+          return true;
+        }
       }
     }
-    if (node.children) {
-      for (const child of node.children) {
-        if (findAndPress(child)) return true;
+    if (n.children && Array.isArray(n.children)) {
+      for (const child of n.children) {
+        if (walk(child)) return true;
       }
     }
     return false;
   }
 
-  findAndPress(json);
+  walk(json);
   return pressed;
 }
 
-/** 收集渲染后的所有可见文本（不含 React 内部 Fiber 节点） */
-function getRenderedTexts(root: ReturnType<typeof create>): string {
-  const texts = collectTexts(root.toJSON());
-  return texts.join('|');
-}
+function pressCardByTitle(root: ReturnType<typeof create>, title: string): boolean {
+  const json = root.toJSON();
+  let pressed = false;
 
-// ---- 测试用例 ----
-
-describe('PromotionsScreen', () => {
-  it('renders all promotions when filter is "all"', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    const text = getRenderedTexts(root);
-
-    expect(text).toContain('国庆全场8折');
-    expect(text).toContain('新人优惠券');
-    expect(text).toContain('已结束活动');
-  });
-
-  it('shows empty state when no promotions', () => {
-    const root = create(<PromotionsScreen promotions={[]} />);
-    expect(getRenderedTexts(root)).toContain('暂无促销活动');
-  });
-
-  it('filters promotions by active status', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    expect(pressByText(root, '进行中')).toBe(true);
-
-    const text = getRenderedTexts(root);
-    expect(text).toContain('国庆全场8折');
-    expect(text).not.toContain('新人优惠券');
-    expect(text).not.toContain('已结束活动');
-  });
-
-  it('filters promotions by draft status', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    pressByText(root, '草稿');
-
-    const text = getRenderedTexts(root);
-    expect(text).not.toContain('国庆全场8折');
-    expect(text).toContain('新人优惠券');
-    expect(text).not.toContain('已结束活动');
-  });
-
-  it('filters promotions by ended status', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    pressByText(root, '已结束');
-
-    const text = getRenderedTexts(root);
-    expect(text).not.toContain('国庆全场8折');
-    expect(text).not.toContain('新人优惠券');
-    expect(text).toContain('已结束活动');
-  });
-
-  it('calls onPromotionPress when a card is tapped', () => {
-    const onPress = vi.fn();
-    const root = create(
-      <PromotionsScreen promotions={MOCK_PROMOTIONS} onPromotionPress={onPress} />,
-    );
-
-    // 找到包含活动标题的节点并触发其 onPress
-    const json = root.toJSON();
-    const targetTitle = '国庆全场8折';
-
-    function findPromotionCard(node: any): boolean {
-      if (!node) return false;
-      if (node.props?.onPress) {
+  function walk(node: unknown): boolean {
+    if (!node || pressed) return false;
+    const n = node as Record<string, unknown>;
+    if (n.props && typeof n.props === 'object') {
+      const p = n.props as Record<string, unknown>;
+      if (typeof p.onPress === 'function') {
         const texts = collectTexts(node);
-        if (texts.some((t) => t.includes(targetTitle))) {
-          act(() => node.props.onPress());
+        if (texts.some((t) => t.includes(title))) {
+          act(() => (p.onPress as () => void)());
+          pressed = true;
           return true;
         }
       }
-      if (node.children) {
-        for (const child of node.children) {
-          if (findPromotionCard(child)) return true;
-        }
-      }
-      return false;
     }
+    if (n.children && Array.isArray(n.children)) {
+      for (const child of n.children) {
+        if (walk(child)) return true;
+      }
+    }
+    return false;
+  }
 
-    expect(findPromotionCard(json)).toBe(true);
-    expect(onPress).toHaveBeenCalledTimes(1);
-    expect(onPress).toHaveBeenCalledWith(MOCK_PROMOTIONS[0]);
+  walk(json);
+  return pressed;
+}
+
+/* ================================================================== */
+/*  正例: 正常渲染 + 核心数据                                          */
+/* ================================================================== */
+
+test('PromotionsScreen: renders all promotions when filter is "all"', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('国庆全场8折'));
+  assert.ok(text.includes('新人优惠券'));
+  assert.ok(text.includes('已结束活动'));
+  assert.ok(text.includes('会员日双倍积分'));
+  assert.ok(text.includes('双十一秒杀'));
+});
+
+test('PromotionsScreen: displays promotion type labels', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('折扣'));
+  assert.ok(text.includes('优惠券'));
+  assert.ok(text.includes('赠品'));
+  assert.ok(text.includes('限时秒杀'));
+});
+
+test('PromotionsScreen: displays status labels', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('进行中'));
+  assert.ok(text.includes('草稿'));
+  assert.ok(text.includes('已结束'));
+  assert.ok(text.includes('已暂停'));
+});
+
+test('PromotionsScreen: displays date ranges', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('2026-10-01'));
+  assert.ok(text.includes('2026-10-07'));
+});
+
+test('PromotionsScreen: displays usage count on active promotion', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('128'));
+});
+
+test('PromotionsScreen: displays budget and spent amounts', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('¥18,200'));
+  assert.ok(text.includes('¥50,000'));
+});
+
+test('PromotionsScreen: renders all filter chip labels', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('全部'));
+  assert.ok(text.includes('进行中'));
+  assert.ok(text.includes('草稿'));
+  assert.ok(text.includes('已暂停'));
+  assert.ok(text.includes('已结束'));
+});
+
+test('PromotionsScreen: renders budget progress percentage', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />);
+  const text = getRenderedText(root);
+  // 18200/50000 = 36%
+  assert.ok(text.includes('36'));
+  assert.ok(text.includes('%'));
+});
+
+test('PromotionsScreen: renders 100% progress for fully spent promotion', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[2]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('100%'));
+});
+
+test('PromotionsScreen: renders 0% progress for zero budget edge case', () => {
+  const zeroBudget: Promotion = { ...MOCK_PROMOTIONS[2], budget: 0, spent: 0 };
+  const root = create(<PromotionsScreen promotions={[zeroBudget]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('0'));
+  assert.ok(text.includes('%'));
+});
+
+test('PromotionsScreen: renders promotion card stats labels', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('使用次数'));
+  assert.ok(text.includes('已消耗'));
+  assert.ok(text.includes('总预算'));
+});
+
+test('PromotionsScreen: renders empty state text for empty promotions', () => {
+  const root = create(<PromotionsScreen promotions={[]} />);
+  assert.ok(getRenderedText(root).includes('暂无促销活动'));
+});
+
+test('PromotionsScreen: renders card title with numberOfLines=1', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />).root;
+  const titleTexts = root.findAllByProps({ numberOfLines: 1 });
+  assert.ok(titleTexts.length > 0);
+  const titles = titleTexts.map((t) => String(t.props.children));
+  assert.ok(titles.some((t) => t.includes('国庆全场8折')));
+});
+
+/* ================================================================== */
+/*  交互: 过滤切换                                                     */
+/* ================================================================== */
+
+test('PromotionsScreen: filters by active status', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  assert.ok(pressFilterByLabel(root, '进行中'));
+
+  const text = getRenderedText(root);
+  assert.ok(text.includes('国庆全场8折'));
+  assert.ok(text.includes('双十一秒杀'));
+  assert.ok(!text.includes('新人优惠券'));
+  assert.ok(!text.includes('已结束活动'));
+  assert.ok(!text.includes('会员日双倍积分'));
+});
+
+test('PromotionsScreen: filters by draft status', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  assert.ok(pressFilterByLabel(root, '草稿'));
+
+  const text = getRenderedText(root);
+  assert.ok(text.includes('新人优惠券'));
+  assert.ok(!text.includes('国庆全场8折'));
+  assert.ok(!text.includes('已结束活动'));
+});
+
+test('PromotionsScreen: filters by ended status', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  assert.ok(pressFilterByLabel(root, '已结束'));
+
+  const text = getRenderedText(root);
+  assert.ok(text.includes('已结束活动'));
+  assert.ok(!text.includes('国庆全场8折'));
+  assert.ok(!text.includes('新人优惠券'));
+});
+
+test('PromotionsScreen: filters by paused status', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  assert.ok(pressFilterByLabel(root, '已暂停'));
+
+  const text = getRenderedText(root);
+  assert.ok(text.includes('会员日双倍积分'));
+  assert.ok(!text.includes('国庆全场8折'));
+  assert.ok(!text.includes('新人优惠券'));
+  assert.ok(!text.includes('双十一秒杀'));
+});
+
+test('PromotionsScreen: returns to all after switching filter back', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+
+  pressFilterByLabel(root, '草稿');
+  let text = getRenderedText(root);
+  assert.ok(!text.includes('国庆全场8折'));
+
+  pressFilterByLabel(root, '全部');
+  text = getRenderedText(root);
+  assert.ok(text.includes('国庆全场8折'));
+  assert.ok(text.includes('新人优惠券'));
+  assert.ok(text.includes('已结束活动'));
+});
+
+test('PromotionsScreen: switches filters multiple times safely', () => {
+  const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+
+  pressFilterByLabel(root, '进行中');
+  let text = getRenderedText(root);
+  assert.ok(text.includes('国庆全场8折'));
+
+  pressFilterByLabel(root, '已暂停');
+  text = getRenderedText(root);
+  assert.ok(text.includes('会员日双倍积分'));
+  assert.ok(!text.includes('国庆全场8折'));
+
+  pressFilterByLabel(root, '已结束');
+  text = getRenderedText(root);
+  assert.ok(text.includes('已结束活动'));
+  assert.ok(!text.includes('会员日双倍积分'));
+});
+
+test('PromotionsScreen: each create gives fresh component with default "all" filter', () => {
+  const root1 = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+  const root2 = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
+
+  pressFilterByLabel(root1, '草稿');
+  const text1 = getRenderedText(root1);
+  assert.ok(text1.includes('新人优惠券'));
+  assert.ok(!text1.includes('国庆全场8折'));
+
+  // root2 is a fresh component with default "all" filter
+  const text2 = getRenderedText(root2);
+  assert.ok(text2.includes('国庆全场8折'));
+});
+
+/* ================================================================== */
+/*  交互: 促销卡片点击                                                  */
+/* ================================================================== */
+
+test('PromotionsScreen: calls onPromotionPress when card is tapped', () => {
+  const calls: Promotion[] = [];
+  const onPress = (p: Promotion) => { calls.push(p); };
+  const root = create(
+    <PromotionsScreen promotions={MOCK_PROMOTIONS} onPromotionPress={onPress} />,
+  );
+
+  assert.ok(pressCardByTitle(root, '国庆全场8折'));
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].id, 'p1');
+});
+
+test('PromotionsScreen: onPromotionPress called with correct promotion data', () => {
+  const calls: Promotion[] = [];
+  const onPress = (p: Promotion) => { calls.push(p); };
+  const root = create(
+    <PromotionsScreen promotions={MOCK_PROMOTIONS} onPromotionPress={onPress} />,
+  );
+
+  assert.ok(pressCardByTitle(root, '双十一秒杀'));
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].id, 'p5');
+  assert.equal(calls[0].type, 'flash');
+});
+
+test('PromotionsScreen: onPromotionPress fires only for tapped card', () => {
+  const calls: Promotion[] = [];
+  const onPress = (p: Promotion) => { calls.push(p); };
+  const root = create(
+    <PromotionsScreen promotions={MOCK_PROMOTIONS} onPromotionPress={onPress} />,
+  );
+
+  assert.ok(pressCardByTitle(root, '新人优惠券'));
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].title, '新人优惠券');
+});
+
+/* ================================================================== */
+/*  边界: 空数据 / 默认 prop                                           */
+/* ================================================================== */
+
+test('PromotionsScreen: shows empty state when filter matches nothing', () => {
+  // Use only active promotions - filtering by 草稿 (draft) should show empty
+  const onlyActive = MOCK_PROMOTIONS.filter((p) => p.status === 'active');
+  const root = create(<PromotionsScreen promotions={onlyActive} />);
+  // Before filter: active items shown
+  assert.ok(getRenderedText(root).includes('国庆全场8折'));
+  // After filter by draft: empty state
+  pressFilterByLabel(root, '草稿');
+  assert.ok(getRenderedText(root).includes('暂无促销活动'));
+});
+
+test('PromotionsScreen: empty promotions stays empty with any filter', () => {
+  const root = create(<PromotionsScreen promotions={[]} />);
+  assert.ok(getRenderedText(root).includes('暂无促销活动'));
+
+  pressFilterByLabel(root, '进行中');
+  assert.ok(getRenderedText(root).includes('暂无促销活动'));
+
+  pressFilterByLabel(root, '草稿');
+  assert.ok(getRenderedText(root).includes('暂无促销活动'));
+});
+
+test('PromotionsScreen: uses default promotions when no prop provided', () => {
+  const root = create(<PromotionsScreen />);
+  const text = getRenderedText(root);
+  // The source internal MOCK_PROMOTIONS
+  assert.ok(text.includes('国庆全场8折'));
+  assert.ok(text.includes('新人满100减20'));
+  assert.ok(text.includes('买一送一特惠'));
+});
+
+test('PromotionsScreen: renders with default props without crashing', () => {
+  assert.doesNotThrow(() => {
+    create(<PromotionsScreen />);
   });
+});
 
-  it('displays promotion type labels correctly', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    expect(getRenderedTexts(root)).toContain('折扣');
-  });
+/* ================================================================== */
+/*  边界: 全状态 / 全类型渲染验证                                        */
+/* ================================================================== */
 
-  it('displays date range correctly', () => {
-    const root = create(
-      <PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />,
-    );
-    const text = getRenderedTexts(root);
-    expect(text).toContain('2026-10-01');
-    expect(text).toContain('2026-10-07');
-  });
+test('PromotionsScreen: renders discount type label correctly', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('折扣'));
+});
 
-  it('handles non-existent filter showing empty state', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    pressByText(root, '已暂停');
-    expect(getRenderedTexts(root)).toContain('暂无促销活动');
-  });
+test('PromotionsScreen: renders flash sale type correctly', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[4]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('限时秒杀'));
+  assert.ok(text.includes('双十一秒杀'));
+});
 
-  it('handles empty promotions gracefully in filter', () => {
-    const root = create(<PromotionsScreen promotions={[]} />);
-    pressByText(root, '进行中');
-    expect(getRenderedTexts(root)).toContain('暂无促销活动');
-  });
+test('PromotionsScreen: renders single promotion card without issues', () => {
+  const single: Promotion[] = [MOCK_PROMOTIONS[0]];
+  const root = create(<PromotionsScreen promotions={single} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('国庆全场8折'));
+  assert.ok(text.includes('进行中'));
+});
 
-  it('renders budget usage count on active promotion', () => {
-    const root = create(
-      <PromotionsScreen promotions={[MOCK_PROMOTIONS[0]]} />,
-    );
-    const text = getRenderedTexts(root);
-    expect(text).toContain('128');
-    expect(text).toContain('¥18,200');
-    expect(text).toContain('¥50,000');
-  });
-
-  it('renders 100% progress for fully spent promotion', () => {
-    const root = create(
-      <PromotionsScreen promotions={[MOCK_PROMOTIONS[2]]} />,
-    );
-    const texts = getRenderedTexts(root);
-    expect(texts).toContain('100');
-    expect(texts).toContain('%');
-  });
-
-  it('renders all filter chip labels', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-    const text = getRenderedTexts(root);
-    expect(text).toContain('全部');
-    expect(text).toContain('进行中');
-    expect(text).toContain('草稿');
-    expect(text).toContain('已暂停');
-    expect(text).toContain('已结束');
-  });
-
-  it('switches between filters correctly multiple times', () => {
-    const root = create(<PromotionsScreen promotions={MOCK_PROMOTIONS} />);
-
-    // 全部 => 草稿 => 进行中 => 已结束
-    pressByText(root, '草稿');
-    expect(getRenderedTexts(root)).toContain('新人优惠券');
-
-    pressByText(root, '进行中');
-    expect(getRenderedTexts(root)).toContain('国庆全场8折');
-    expect(getRenderedTexts(root)).not.toContain('新人优惠券');
-
-    pressByText(root, '已结束');
-    expect(getRenderedTexts(root)).toContain('已结束活动');
-  });
+test('PromotionsScreen: renders paused promotion card structure', () => {
+  const root = create(<PromotionsScreen promotions={[MOCK_PROMOTIONS[3]]} />);
+  const text = getRenderedText(root);
+  assert.ok(text.includes('会员日双倍积分'));
+  assert.ok(text.includes('已暂停'));
+  assert.ok(text.includes('89'));
 });
