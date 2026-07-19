@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  buildMiniappPurchaseOrderActionRequest,
   flattenPurchaseReturns,
   mapPurchaseOrderToDetail,
   mapPurchaseOrderToListItem,
+  resolveMiniappReturnActionExecution,
   resolvePurchaseReturnDetail,
   type MiniappPurchaseOrderDetail,
   type MiniappReturnOrderDetail,
@@ -148,5 +150,80 @@ describe('supplychain-runtime 映射', () => {
     const detail = resolvePurchaseReturnDetail([apiOrder], 'missing-return', fallbackReturnDetail);
 
     assert.equal(detail, null);
+  });
+
+  it('采购单动作映射应将 confirmed 路由到 approve 接口', () => {
+    const request = buildMiniappPurchaseOrderActionRequest('order-1', 'confirmed', fallbackPurchaseDetail);
+
+    assert.equal(request.path, '/inventory/purchase/orders/order-1/approve');
+    assert.deepEqual(request.body, {
+      approverId: 'miniapp-supplychain-operator',
+      approverName: '小程序供应链操作员',
+      comment: '由小程序采购单详情页发起审批通过。',
+    });
+  });
+
+  it('采购单收货动作应构造 receive 请求体', () => {
+    const request = buildMiniappPurchaseOrderActionRequest('order-1', 'received', {
+      ...fallbackPurchaseDetail,
+      items: [
+        {
+          productId: 'prod-1',
+          sku: 'SKU-001',
+          name: '玫瑰精华面膜',
+          spec: '30ml/盒',
+          qty: 2,
+          unit: '件',
+          unitPrice: 100,
+          amount: 200,
+        },
+      ],
+    });
+
+    assert.equal(request.path, '/inventory/purchase/orders/order-1/receive');
+    assert.deepEqual(request.body, {
+      items: [{ productId: 'prod-1', receivedQuantity: 2, damagedQuantity: 0 }],
+      warehouseNote: '回退备注',
+      operatorId: 'miniapp-supplychain-operator',
+    });
+  });
+
+  it('退货动作映射应识别 approved 为真实审批接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'approved');
+
+    assert.equal(execution.supported, true);
+    assert.equal(execution.apiNextStatus, 'approved');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/approve');
+  });
+
+  it('退货动作映射应识别 inspecting 为真实质检接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'inspecting');
+
+    assert.equal(execution.supported, true);
+    assert.equal(execution.apiNextStatus, 'inspecting');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/inspect');
+  });
+
+  it('退货动作映射应识别 rejected 为真实驳回接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'rejected');
+
+    assert.equal(execution.supported, true);
+    assert.equal(execution.apiNextStatus, 'rejected');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/reject');
+  });
+
+  it('退货动作映射应将 refunded 收口到 complete 接口', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'refunded');
+
+    assert.equal(execution.supported, true);
+    assert.equal(execution.apiNextStatus, 'closed');
+    assert.equal(execution.request?.path, '/inventory/purchase/returns/return-1/complete');
+  });
+
+  it('退货动作映射应将 pending 关闭标记为 fallback-only', () => {
+    const execution = resolveMiniappReturnActionExecution('return-1', 'pending');
+
+    assert.equal(execution.supported, false);
+    assert.equal(execution.apiNextStatus, 'pending');
   });
 });

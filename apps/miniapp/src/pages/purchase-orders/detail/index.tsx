@@ -7,6 +7,8 @@ import { View, Text, Button, ScrollView } from '@tarojs/components';
 import { useEffect, useMemo, useState } from 'react';
 import Taro from '@tarojs/taro';
 import {
+  deleteMiniappPurchaseOrder,
+  executeMiniappPurchaseOrderAction,
   loadMiniappPurchaseOrderDetail,
   type MiniappPurchaseOrderDetail,
 } from '../../../supplychain-runtime';
@@ -104,8 +106,14 @@ const PurchaseOrderDetailPage = () => {
       content: `确定将订单状态变更为「${STATUS_LABELS[newStatus]}」吗？`,
       success: (res) => {
         if (res.confirm) {
-          setLocalStatus(newStatus);
-          Taro.showToast({ title: '状态更新成功', icon: 'success' });
+          void executeMiniappPurchaseOrderAction(orderId, newStatus, detail).then((result) => {
+            setLocalStatus(result.nextStatus);
+            setDeliveryNote(result.note);
+            Taro.showToast({
+              title: result.deliveryMode === 'api' ? '状态已同步' : '已切演示态',
+              icon: 'success',
+            });
+          });
         }
       },
     });
@@ -121,8 +129,11 @@ const PurchaseOrderDetailPage = () => {
       content: '删除后无法恢复，是否继续？',
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '删除成功', icon: 'success' });
-          Taro.navigateBack();
+          void deleteMiniappPurchaseOrder(orderId).then((result) => {
+            setDeliveryNote(result.note);
+            Taro.showToast({ title: '删除成功', icon: 'success' });
+            Taro.navigateBack();
+          });
         }
       },
     });

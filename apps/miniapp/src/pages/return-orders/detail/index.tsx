@@ -3,10 +3,11 @@
  * 角色视角: 🧾 仓管/售后
  * 功能: 详情展示、状态流转（质检→通过/拒绝→退款/换货/关闭）、编辑/删除
  */
-import { View, Text, Button, ScrollView, Textarea, Picker } from '@tarojs/components';
+import { View, Text, Button, ScrollView, Textarea } from '@tarojs/components';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
 import {
+  executeMiniappPurchaseReturnAction,
   loadMiniappPurchaseReturnDetail,
   type MiniappReturnOrderDetail,
 } from '../../../supplychain-runtime';
@@ -267,8 +268,14 @@ export default function ReturnOrderDetailPage() {
       content: `确定要${actionLabel}该退货单吗？${remark ? `\n备注: ${remark}` : ''}`,
       success: (res) => {
         if (res.confirm) {
-          setLocalStatus(action);
-          Taro.showToast({ title: `${actionLabel}成功`, icon: 'success' });
+          void executeMiniappPurchaseReturnAction(returnId, action).then((result) => {
+            setLocalStatus(result.nextStatus);
+            setDeliveryNote(result.note);
+            Taro.showToast({
+              title: result.deliveryMode === 'api' ? `${actionLabel}已同步` : `${actionLabel}演示态`,
+              icon: 'success',
+            });
+          });
         }
       },
     });

@@ -220,6 +220,13 @@ describe('退货单详情页代码完整性', () => {
     assert.match(SOURCE, /deliveryNote/);
   });
 
+  it('应通过 runtime 提交退货动作，并对缺失后端动作保留演示态提示', () => {
+    assert.match(SOURCE, /executeMiniappPurchaseReturnAction/);
+    assert.match(SOURCE, /已提交真实退货质检动作|已提交真实退货驳回动作|已提交真实退货审批动作/);
+    assert.match(SOURCE, /result\.deliveryMode === 'api'/);
+    assert.match(SOURCE, /setDeliveryNote\(result\.note\)/);
+  });
+
   it('应包含 navigateBack 返回', () => {
     assert.match(SOURCE, /navigateBack/);
   });

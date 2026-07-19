@@ -96,6 +96,13 @@ describe('purchase-orders/detail 源码 — 边界集', () => {
     assert.ok(src.includes('deliveryNote'), '缺少交付模式提示');
   });
 
+  it('应通过 runtime 提交采购单状态动作与删除动作', () => {
+    const src = getSource();
+    assert.ok(src.includes('executeMiniappPurchaseOrderAction'), '缺少采购单动作提交');
+    assert.ok(src.includes('deleteMiniappPurchaseOrder'), '缺少采购单删除提交');
+    assert.ok(src.includes("result.deliveryMode === 'api'"), '缺少 api/fallback 提示分流');
+  });
+
   it('应处理 cancelled 状态的按钮隐藏逻辑', () => {
     const src = getSource();
     assert.ok(src.includes("localStatus !== 'cancelled'"), 'cancelled 状态处理逻辑缺失');

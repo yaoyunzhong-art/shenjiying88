@@ -108,6 +108,7 @@ export interface MiniappPurchaseOrderListItem {
 }
 
 export interface MiniappPurchaseOrderDetailItem {
+  productId?: string;
   sku: string;
   name: string;
   spec: string;
@@ -171,6 +172,13 @@ export interface MiniappSupplychainSnapshot<T> {
   note: string;
 }
 
+export interface MiniappSupplychainMutationResult<TStatus extends string> {
+  deliveryMode: DeliveryMode;
+  success: boolean;
+  nextStatus: TStatus;
+  note: string;
+}
+
 function createMiniappSupplychainClient() {
   return new ApiClient({
     baseUrl: getDefaultApiBaseUrl(),
@@ -214,6 +222,8 @@ function normalizeReturnStatus(status?: string): MiniappReturnStatus {
   switch (status) {
     case 'PENDING':
       return 'pending';
+    case 'REJECTED':
+      return 'rejected';
     case 'APPROVED':
       return 'approved';
     case 'SHIPPED':
@@ -267,6 +277,7 @@ export function mapPurchaseOrderToDetail(
     totalAmount: order.totalAmount,
     status: normalizePurchaseOrderStatus(order.status),
     items: order.items.map((item) => ({
+      productId: item.productId,
       sku: item.sku,
       name: item.productName,
       spec: item.sku,
@@ -335,6 +346,141 @@ export function resolvePurchaseReturnDetail(
   }
 
   return null;
+}
+
+interface MiniappActionRequest {
+  path: string;
+  body?: unknown;
+}
+
+const miniappSupplychainActor = {
+  id: 'miniapp-supplychain-operator',
+  name: '小程序供应链操作员',
+} as const;
+
+export function buildMiniappPurchaseOrderActionRequest(
+  orderId: string,
+  nextStatus: MiniappPurchaseOrderStatus,
+  detail: MiniappPurchaseOrderDetail,
+): MiniappActionRequest {
+  switch (nextStatus) {
+    case 'submitted':
+      return {
+        path: `/inventory/purchase/orders/${orderId}/submit`,
+        body: { submittedBy: miniappSupplychainActor.name },
+      };
+    case 'confirmed':
+      return {
+        path: `/inventory/purchase/orders/${orderId}/approve`,
+        body: {
+          approverId: miniappSupplychainActor.id,
+          approverName: miniappSupplychainActor.name,
+          comment: '由小程序采购单详情页发起审批通过。',
+        },
+      };
+    case 'shipped':
+      return {
+        path: `/inventory/purchase/orders/${orderId}/place`,
+        body: { placedBy: miniappSupplychainActor.name },
+      };
+    case 'received':
+      return {
+        path: `/inventory/purchase/orders/${orderId}/receive`,
+        body: {
+          items: detail.items.map((item) => ({
+            productId: item.productId ?? item.sku,
+            receivedQuantity: item.qty,
+            damagedQuantity: 0,
+          })),
+          warehouseNote: detail.remark || '由小程序采购单详情页发起收货。',
+          operatorId: miniappSupplychainActor.id,
+        },
+      };
+    case 'cancelled':
+      return {
+        path: `/inventory/purchase/orders/${orderId}/cancel`,
+        body: {
+          cancelledBy: miniappSupplychainActor.name,
+          reason: detail.remark || '由小程序采购单详情页发起取消。',
+        },
+      };
+    default:
+      throw new Error(`Unsupported purchase order action: ${nextStatus}`);
+  }
+}
+
+export function resolveMiniappReturnActionExecution(
+  returnId: string,
+  nextStatus: MiniappReturnStatus,
+): {
+  supported: boolean;
+  apiNextStatus: MiniappReturnStatus;
+  request?: MiniappActionRequest;
+  note: string;
+} {
+  if (nextStatus === 'approved') {
+    return {
+      supported: true,
+      apiNextStatus: 'approved',
+      request: {
+        path: `/inventory/purchase/returns/${returnId}/approve`,
+        body: {
+          approverId: miniappSupplychainActor.id,
+          approverName: miniappSupplychainActor.name,
+        },
+      },
+      note: '已提交真实退货审批动作。',
+    };
+  }
+
+  if (nextStatus === 'inspecting') {
+    return {
+      supported: true,
+      apiNextStatus: 'inspecting',
+      request: {
+        path: `/inventory/purchase/returns/${returnId}/inspect`,
+        body: {
+          inspectorId: miniappSupplychainActor.id,
+          inspectorName: miniappSupplychainActor.name,
+          comment: '由小程序退货详情页发起质检。',
+        },
+      },
+      note: '已提交真实退货质检动作。',
+    };
+  }
+
+  if (nextStatus === 'rejected') {
+    return {
+      supported: true,
+      apiNextStatus: 'rejected',
+      request: {
+        path: `/inventory/purchase/returns/${returnId}/reject`,
+        body: {
+          reviewerId: miniappSupplychainActor.id,
+          reviewerName: miniappSupplychainActor.name,
+          comment: '由小程序退货详情页发起驳回。',
+        },
+      },
+      note: '已提交真实退货驳回动作。',
+    };
+  }
+
+  if (nextStatus === 'refunded' || nextStatus === 'exchanged' || nextStatus === 'closed') {
+    return {
+      supported: true,
+      apiNextStatus: 'closed',
+      request: {
+        path: `/inventory/purchase/returns/${returnId}/complete`,
+      },
+      note: '已提交真实退货完成动作，页面状态收口为已关闭。',
+    };
+  }
+
+  return {
+    supported: false,
+    apiNextStatus: nextStatus,
+    note: '当前后端尚未提供该退货流转动作，已保留为小程序演示态切换。',
+  };
 }
 
 export async function loadMiniappPurchaseOrders(
@@ -436,6 +582,88 @@ export async function loadMiniappPurchaseReturnDetail(
       deliveryMode: 'fallback',
       data: fallback,
       note: '当前无法读取真实退货详情，已回退到本地演示数据。',
+    };
+  }
+}
+
+export async function executeMiniappPurchaseOrderAction(
+  orderId: string,
+  nextStatus: MiniappPurchaseOrderStatus,
+  detail: MiniappPurchaseOrderDetail,
+): Promise<MiniappSupplychainMutationResult<MiniappPurchaseOrderStatus>> {
+  const request = buildMiniappPurchaseOrderActionRequest(orderId, nextStatus, detail);
+
+  try {
+    await createMiniappSupplychainClient().postData(request.path, request.body ?? {});
+    return {
+      deliveryMode: 'api',
+      success: true,
+      nextStatus,
+      note: '已提交真实采购单状态动作，当前页面状态已同步更新。',
+    };
+  } catch {
+    return {
+      deliveryMode: 'fallback',
+      success: true,
+      nextStatus,
+      note: '当前无法提交真实采购单状态动作，已回退到小程序演示态切换。',
+    };
+  }
+}
+
+export async function deleteMiniappPurchaseOrder(
+  orderId: string,
+): Promise<MiniappSupplychainMutationResult<'deleted'>> {
+  try {
+    await createMiniappSupplychainClient().deleteData(`/inventory/purchase/orders/${orderId}`);
+    return {
+      deliveryMode: 'api',
+      success: true,
+      nextStatus: 'deleted',
+      note: '已提交真实采购单删除动作。',
+    };
+  } catch {
+    return {
+      deliveryMode: 'fallback',
+      success: true,
+      nextStatus: 'deleted',
+      note: '当前无法提交真实采购单删除动作，已回退到小程序演示态删除。',
+    };
+  }
+}
+
+export async function executeMiniappPurchaseReturnAction(
+  returnId: string,
+  nextStatus: MiniappReturnStatus,
+): Promise<MiniappSupplychainMutationResult<MiniappReturnStatus>> {
+  const execution = resolveMiniappReturnActionExecution(returnId, nextStatus);
+
+  if (!execution.supported || !execution.request) {
+    return {
+      deliveryMode: 'fallback',
+      success: true,
+      nextStatus: execution.apiNextStatus,
+      note: execution.note,
+    };
+  }
+
+  try {
+    await createMiniappSupplychainClient().postData(
+      execution.request.path,
+      execution.request.body ?? {},
+    );
+    return {
+      deliveryMode: 'api',
+      success: true,
+      nextStatus: execution.apiNextStatus,
+      note: execution.note,
+    };
+  } catch {
+    return {
+      deliveryMode: 'fallback',
+      success: true,
+      nextStatus: execution.apiNextStatus,
+      note: '当前无法提交真实退货流转动作，已回退到小程序演示态切换。',
     };
   }
 }
