@@ -101,4 +101,4 @@ export const DEFAULT_NOISE_MULTIPLIER = 1.0
 export const DEFAULT_MAX_GRADIENT_NORM = 1.0
 export const DEFAULT_PRIVACY_EPSILON = 4.0
 export const DEFAULT_PRIVACY_DELTA = 1e-5
-export const AGGREGATION_METHODS: AggregationMethod[] = ['fedavg', 'fedprox', 'scaffold']
+export const AGGREGATION_METHODS = ['fedavg', 'fedprox', 'scaffold'] as const

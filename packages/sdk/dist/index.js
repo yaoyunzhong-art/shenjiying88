@@ -26,6 +26,7 @@ __export(index_exports, {
   buildRuntimeGovernanceReplayRequest: () => buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest: () => buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay: () => computeBackoffDelay,
+  createBusinessClient: () => createBusinessClient,
   createFoundationAlertClient: () => createFoundationAlertClient,
   createFoundationAlertMutationExecutor: () => createFoundationAlertMutationExecutor,
   createFoundationAlertPanelClientAccess: () => createFoundationAlertPanelClientAccess,
@@ -1257,6 +1258,120 @@ function subscribeStream(client, opts) {
     getLastEventId: () => lastEventId
   };
 }
+function buildBusinessOrderListPath(query) {
+  if (!query) {
+    return "/transactions/orders";
+  }
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== void 0 && value !== null && String(value).length > 0) {
+      params.set(key, String(value));
+    }
+  });
+  const search = params.toString();
+  return search ? `/transactions/orders?${search}` : "/transactions/orders";
+}
+function normalizeBusinessOrderListResponse(payload) {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length
+    };
+  }
+  return payload;
+}
+function createBusinessClient(baseUrl) {
+  const api = new ApiClient({ baseUrl: baseUrl ?? getDefaultApiBaseUrl() });
+  return {
+    // ── Checkout (POST /api/v1/transactions/checkout) ──
+    checkout: {
+      /** 发起结账 */
+      start: (body, init) => api.postData("/transactions/checkout", body, init)
+    },
+    // ── Orders (GET/POST /api/v1/transactions/orders) ──
+    orders: {
+      /** 订单列表 */
+      list: (query, init) => api.getData(
+        buildBusinessOrderListPath(query),
+        init
+      ).then((payload) => normalizeBusinessOrderListResponse(payload).items),
+      /** 订单分页列表 */
+      listPage: (query, init) => api.getData(
+        buildBusinessOrderListPath(query),
+        init
+      ).then((payload) => normalizeBusinessOrderListResponse(payload)),
+      /** 订单详情 */
+      get: (orderId, init) => api.getData(`/transactions/orders/${orderId}`, init),
+      /** 订单退款记录 */
+      listRefunds: (orderId, init) => api.getData(`/transactions/orders/${orderId}/refunds`, init)
+    },
+    // ── Cashier (GET/POST /api/v1/cashier/*) ──
+    cashier: {
+      /** 会员查找 (手机号/卡号) */
+      lookupMember: (query, init) => api.getData(`/cashier/members/lookup?q=${encodeURIComponent(query)}`, init),
+      /** 会员消费记录 (走 transactions 模块) */
+      listMemberTransactions: (memberId, init) => api.getData(`/transactions/members/${memberId}`, init),
+      /** 商品扫码查询 */
+      lookupProduct: (sku, init) => api.getData(
+        `/cashier/products/${encodeURIComponent(sku)}`,
+        init
+      ),
+      /** 支付渠道统计 */
+      getChannelStats: (init) => api.getData("/cashier/stats/channels", init),
+      /** 创建订单 (POS) */
+      createOrder: (body, init) => api.postData("/cashier/orders", body, init),
+      /** 提交订单 (DRAFT → PENDING) */
+      submitOrder: (orderId, init) => api.postData(`/cashier/orders/${orderId}/submit`, {}, init),
+      /** 创建支付 */
+      createPayment: (orderId, body, init) => api.postData(`/cashier/orders/${orderId}/payments`, body, init),
+      /** 创建退款 */
+      createRefund: (orderId, body, init) => api.postData(`/cashier/orders/${orderId}/refunds`, body, init)
+    },
+    // ── Refunds (GET/POST /api/v1/transactions/refunds) ──
+    refunds: {
+      /** 退款列表 */
+      list: (query, init) => api.getData("/transactions/refunds", {
+        ...init,
+        headers: {
+          "content-type": "application/json",
+          ...init?.headers ?? {}
+        },
+        ...query ? { body: JSON.stringify(query) } : {}
+      }),
+      /** 待处理退款 */
+      listPending: (query, init) => api.getData("/transactions/refunds/pending", {
+        ...init,
+        headers: {
+          "content-type": "application/json",
+          ...init?.headers ?? {}
+        }
+      }),
+      /** 退款 dashboard */
+      getDashboard: (init) => api.getData("/transactions/refunds/dashboard", init),
+      /** 退款详情 */
+      get: (refundId, init) => api.getData(`/transactions/refunds/${refundId}`, init),
+      /** 审批退款 */
+      approve: (refundId, body, init) => api.postData(`/transactions/refunds/${refundId}/approve`, body, init),
+      /** 拒绝退款 */
+      reject: (refundId, body, init) => api.postData(`/transactions/refunds/${refundId}/reject`, body, init)
+    },
+    // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──
+    paymentGateway: {
+      /** 发起支付 */
+      pay: (body, init) => api.postData("/payment-gateway/pay", body, init),
+      /** 查询支付结果 */
+      queryPayment: (transactionId, init) => api.getData(`/payment-gateway/pay/${transactionId}`, init),
+      /** 发起退款 */
+      refund: (body, init) => api.postData("/payment-gateway/refund", body, init),
+      /** 查询退款状态 */
+      queryRefund: (refundId, init) => api.getData(`/payment-gateway/refund/${refundId}`, init)
+    },
+    // ── Convenience: 原始 ApiClient 实例 (用于自定义请求) ──
+    raw: api
+  };
+}
 function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier = 2) {
   const safeAttempt = Math.max(0, attemptNum - 1);
   return initialDelayMs * Math.pow(backoffMultiplier, safeAttempt);
@@ -1269,6 +1384,7 @@ function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier
   buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay,
+  createBusinessClient,
   createFoundationAlertClient,
   createFoundationAlertMutationExecutor,
   createFoundationAlertPanelClientAccess,

@@ -543,6 +543,245 @@ interface SseSubscription {
  * ```
  */
 declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): SseSubscription;
+interface BusinessOrderListItem {
+    orderId: string;
+    orderNo: string;
+    memberId: string;
+    status: string;
+    totalAmount: number;
+    paidAmount: number;
+    refundedAmount: number;
+    currency: string;
+    createdAt: string;
+    updatedAt: string;
+}
+interface BusinessOrderListPage {
+    items: BusinessOrderListItem[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+/**
+ * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
+ *
+ * 用法:
+ * ```ts
+ * const biz = createBusinessClient()
+ * const orders = await biz.orders.list()
+ * const member = await biz.member.lookup('13800138001')
+ * ```
+ */
+declare function createBusinessClient(baseUrl?: string): {
+    checkout: {
+        /** 发起结账 */
+        start: (body: {
+            memberId: string;
+            items: Array<{
+                productId: string;
+                quantity: number;
+                unitPriceCents: number;
+            }>;
+            paymentChannel: string;
+            couponCode?: string;
+        }, init?: RequestInit) => Promise<{
+            orderId: string;
+            transactionId: string;
+            totalCents: number;
+        }>;
+    };
+    orders: {
+        /** 订单列表 */
+        list: (query?: {
+            memberId?: string;
+            status?: string;
+            paymentStatus?: string;
+            limit?: number;
+            fromDate?: string;
+            toDate?: string;
+            page?: number;
+            pageSize?: number;
+        }, init?: RequestInit) => Promise<BusinessOrderListItem[]>;
+        /** 订单分页列表 */
+        listPage: (query?: {
+            memberId?: string;
+            status?: string;
+            paymentStatus?: string;
+            limit?: number;
+            fromDate?: string;
+            toDate?: string;
+            page?: number;
+            pageSize?: number;
+        }, init?: RequestInit) => Promise<BusinessOrderListPage>;
+        /** 订单详情 */
+        get: (orderId: string, init?: RequestInit) => Promise<{
+            orderId: string;
+            orderNo: string;
+            memberId: string;
+            status: string;
+            totalAmount: number;
+            paidAmount: number;
+            refundedAmount: number;
+            currency: string;
+            items?: Array<{
+                productId: string;
+                productName: string;
+                quantity: number;
+                unitPriceCents: number;
+            }>;
+            createdAt: string;
+            updatedAt: string;
+        }>;
+        /** 订单退款记录 */
+        listRefunds: (orderId: string, init?: RequestInit) => Promise<{
+            refundId: string;
+            amount: number;
+            reason: string;
+            status: string;
+            requestedAt: string;
+        }[]>;
+    };
+    cashier: {
+        /** 会员查找 (手机号/卡号) */
+        lookupMember: (query: string, init?: RequestInit) => Promise<{
+            id: string;
+            name: string;
+            phone: string;
+            memberNo: string;
+            tier: string;
+            points: number;
+            discountRate: number;
+        } | null>;
+        /** 会员消费记录 (走 transactions 模块) */
+        listMemberTransactions: (memberId: string, init?: RequestInit) => Promise<{
+            orderId: string;
+            orderNo: string;
+            status: string;
+            totalAmount: number;
+            currency: string;
+            paymentStatus?: string;
+            createdAt: string;
+        }[]>;
+        /** 商品扫码查询 */
+        lookupProduct: (sku: string, init?: RequestInit) => Promise<{
+            sku: string;
+            name: string;
+            price: number;
+            category: string;
+        } | null>;
+        /** 支付渠道统计 */
+        getChannelStats: (init?: RequestInit) => Promise<{
+            channel: string;
+            today: number;
+            month: number;
+        }[]>;
+        /** 创建订单 (POS) */
+        createOrder: (body: {
+            clientOrderId: string;
+            memberId?: string;
+            items: Array<{
+                productId: string;
+                quantity: number;
+                unitPriceCents: number;
+                discountCents?: number;
+            }>;
+            discountCents?: number;
+            taxCents?: number;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 提交订单 (DRAFT → PENDING) */
+        submitOrder: (orderId: string, init?: RequestInit) => Promise<unknown>;
+        /** 创建支付 */
+        createPayment: (orderId: string, body: {
+            method: "CASH" | "WECHAT" | "ALIPAY" | "CARD";
+            amountCents: number;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 创建退款 */
+        createRefund: (orderId: string, body: {
+            paymentId: string;
+            amountCents: number;
+            reason: string;
+        }, init?: RequestInit) => Promise<unknown>;
+    };
+    refunds: {
+        /** 退款列表 */
+        list: (query?: {
+            memberId?: string;
+            orderId?: string;
+            status?: string;
+            limit?: number;
+        }, init?: RequestInit) => Promise<{
+            refundId: string;
+            tenantId: string;
+            orderId: string;
+            paymentId: string;
+            memberId: string;
+            refundAmount: number;
+            reason: string;
+            operator?: string;
+            status: string;
+            requestedAt: string;
+            completedAt?: string;
+            reviewedAt?: string;
+            reviewedBy?: string;
+            reviewNote?: string;
+        }[]>;
+        /** 待处理退款 */
+        listPending: (query?: {
+            limit?: number;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 退款 dashboard */
+        getDashboard: (init?: RequestInit) => Promise<unknown>;
+        /** 退款详情 */
+        get: (refundId: string, init?: RequestInit) => Promise<{
+            refundId: string;
+            orderId: string;
+            paymentId: string;
+            memberId: string;
+            refundAmount: number;
+            reason: string;
+            status: string;
+            requestedAt: string;
+            completedAt?: string;
+            reviewedAt?: string;
+            reviewedBy?: string;
+            reviewNote?: string;
+        }>;
+        /** 审批退款 */
+        approve: (refundId: string, body: {
+            operator?: string;
+            note?: string;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 拒绝退款 */
+        reject: (refundId: string, body: {
+            operator?: string;
+            note?: string;
+        }, init?: RequestInit) => Promise<unknown>;
+    };
+    paymentGateway: {
+        /** 发起支付 */
+        pay: (body: {
+            orderId: string;
+            amount: number;
+            currency: string;
+            provider: string;
+            metadata?: Record<string, unknown>;
+            locale?: string;
+            returnUrl?: string;
+            webhookUrl?: string;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 查询支付结果 */
+        queryPayment: (transactionId: string, init?: RequestInit) => Promise<unknown>;
+        /** 发起退款 */
+        refund: (body: {
+            transactionId: string;
+            amount: number;
+            reason: string;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 查询退款状态 */
+        queryRefund: (refundId: string, init?: RequestInit) => Promise<unknown>;
+    };
+    raw: ApiClient;
+};
+type BusinessClient = ReturnType<typeof createBusinessClient>;
 /** 计算下次 backoff 延迟 (供测试与 UI 共享)
  *  - attemptNum = 1 → initialDelayMs (第一次重试前)
  *  - attemptNum = 2 → initialDelayMs * multiplier
@@ -551,4 +790,4 @@ declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): 
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessClient, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };

@@ -170,6 +170,17 @@ export interface NativeAppOrderListQuery {
   status?: string;
   paymentStatus?: string;
   limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface NativeAppOrderListPage {
+  items: NativeAppOrderListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface NativeAppTransactionRuntimeSnapshot {
@@ -1075,13 +1086,44 @@ export async function getNativeAppOrderTransaction(
   )
 }
 
-export async function listNativeAppOrders(
+function buildNativeAppOrderListPath(query?: NativeAppOrderListQuery): string {
+  if (!query) {
+    return '/transactions/orders'
+  }
+
+  const params = new URLSearchParams()
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      params.set(key, String(value))
+    }
+  })
+
+  const search = params.toString()
+  return search ? `/transactions/orders?${search}` : '/transactions/orders'
+}
+
+function normalizeNativeAppOrderListPage(
+  payload: NativeAppOrderListItem[] | NativeAppOrderListPage,
+): NativeAppOrderListPage {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length,
+    }
+  }
+
+  return payload
+}
+
+export async function listNativeAppOrdersPage(
   query?: NativeAppOrderListQuery,
   context: NativeAppBootstrapContext = defaultNativeAppContext,
-): Promise<NativeAppOrderListItem[]> {
+): Promise<NativeAppOrderListPage> {
   const client = createNativeAppBootstrapClient(context)
-  return client.getData<NativeAppOrderListItem[]>(
-    '/transactions/orders',
+  const result = await client.getData<NativeAppOrderListItem[] | NativeAppOrderListPage>(
+    buildNativeAppOrderListPath(query),
     {
       cache: 'no-store',
       headers: query ? {
@@ -1089,6 +1131,16 @@ export async function listNativeAppOrders(
       } : undefined,
     },
   )
+
+  return normalizeNativeAppOrderListPage(result)
+}
+
+export async function listNativeAppOrders(
+  query?: NativeAppOrderListQuery,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppOrderListItem[]> {
+  const result = await listNativeAppOrdersPage(query, context)
+  return result.items
 }
 
 export async function submitNativeAppOrderRefund(

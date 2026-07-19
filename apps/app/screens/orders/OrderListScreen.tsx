@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderCard } from '../../components/OrderCard';
 import {
-  listNativeAppOrders,
+  listNativeAppOrdersPage,
   type NativeAppOrderListItem,
   type NativeAppOrderListQuery,
 } from '../../market-bootstrap';
@@ -48,6 +48,7 @@ type OrderStackParamList = {
 type OrderListNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderList'>;
 
 type OrderStatus = 'ALL' | 'PENDING' | 'PAID' | 'REFUNDED';
+type OrderDateRange = 'ALL_TIME' | 'LAST_7_DAYS' | 'LAST_30_DAYS';
 
 interface OrderItem {
   orderId: string;
@@ -114,6 +115,14 @@ const statusFilters: { id: OrderStatus; label: string }[] = [
   { id: 'REFUNDED', label: '已退款' },
 ];
 
+const dateRangeFilters: { id: OrderDateRange; label: string }[] = [
+  { id: 'ALL_TIME', label: '全部时间' },
+  { id: 'LAST_7_DAYS', label: '近7天' },
+  { id: 'LAST_30_DAYS', label: '近30天' },
+];
+
+const ORDER_LIST_PAGE_SIZE = 10;
+
 function resolveOrderStatus(
   status?: string,
   fallbackStatus: OrderItem['status'] = 'PENDING',
@@ -152,23 +161,68 @@ function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
   };
 }
 
-function buildOrderListQuery(filter: OrderStatus): NativeAppOrderListQuery | undefined {
+function getOrderListNow(): Date {
+  const mockedNow = (globalThis as {
+    __mockOrderListNow?: string | number | Date;
+  }).__mockOrderListNow;
+
+  if (!mockedNow) {
+    return new Date();
+  }
+
+  return mockedNow instanceof Date ? mockedNow : new Date(mockedNow);
+}
+
+function buildOrderListQuery(
+  filter: OrderStatus,
+  range: OrderDateRange,
+  page = 1,
+  pageSize = ORDER_LIST_PAGE_SIZE,
+): NativeAppOrderListQuery {
+  const query: NativeAppOrderListQuery = {
+    page,
+    pageSize,
+  };
+
   switch (filter) {
     case 'PENDING':
-      return {
-        status: 'PENDING_PAYMENT',
-      };
+      query.status = 'PENDING_PAYMENT';
+      break;
     case 'PAID':
-      return {
-        status: 'PAID',
-      };
+      query.status = 'PAID';
+      break;
     case 'REFUNDED':
-      return {
-        status: 'REFUNDED',
-      };
+      query.status = 'REFUNDED';
+      break;
     default:
-      return undefined;
+      break;
   }
+
+  if (range !== 'ALL_TIME') {
+    const now = getOrderListNow();
+    const fromDate = new Date(now);
+    const offsetDays = range === 'LAST_7_DAYS' ? 6 : 29;
+    fromDate.setDate(fromDate.getDate() - offsetDays);
+    query.fromDate = fromDate.toISOString();
+    query.toDate = now.toISOString();
+  }
+
+  return query;
+}
+
+function mergePagedOrders(previous: OrderItem[] | null, next: OrderItem[]): OrderItem[] {
+  const merged = [...(previous ?? [])];
+
+  next.forEach((item) => {
+    const existingIndex = merged.findIndex((order) => order.orderId === item.orderId);
+    if (existingIndex >= 0) {
+      merged[existingIndex] = item;
+      return;
+    }
+    merged.push(item);
+  });
+
+  return merged;
 }
 
 export function OrderListScreen() {
@@ -201,39 +255,58 @@ export function OrderListScreen() {
     return !globals.__mockRoute || globals.__mockOrderListFetchEnabled === true;
   })();
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus>('ALL');
+  const [selectedDateRange, setSelectedDateRange] = useState<OrderDateRange>('ALL_TIME');
+  const [currentPage, setCurrentPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [apiOrders, setApiOrders] = useState<OrderItem[] | null>(null);
-  const currentQuery = buildOrderListQuery(selectedFilter);
+  const baseQuery = useMemo(
+    () => buildOrderListQuery(selectedFilter, selectedDateRange),
+    [selectedFilter, selectedDateRange],
+  );
 
-  const loadOrders = useCallback(async (query: NativeAppOrderListQuery | undefined = currentQuery) => {
-    const result = await listNativeAppOrders(query);
-    setApiOrders(result.map(mapApiOrderToOrderItem));
-  }, [currentQuery]);
+  const loadOrders = useCallback(async (
+    query: NativeAppOrderListQuery = baseQuery,
+    mode: 'replace' | 'append' = 'replace',
+  ) => {
+    const result = await listNativeAppOrdersPage(query);
+    const mappedOrders = result.items.map(mapApiOrderToOrderItem);
+    setApiOrders((previousOrders) => (
+      mode === 'append' ? mergePagedOrders(previousOrders, mappedOrders) : mappedOrders
+    ));
+    setHasMore(result.page * result.pageSize < result.total);
+    return result;
+  }, [baseQuery]);
 
   useEffect(() => {
     let cancelled = false;
 
     if (!shouldFetchOrders) {
       setApiOrders(null);
+      setHasMore(false);
       return;
     }
 
-    listNativeAppOrders(currentQuery)
+    setCurrentPage(1);
+    listNativeAppOrdersPage(baseQuery)
       .then((result) => {
         if (!cancelled) {
-          setApiOrders(result.map(mapApiOrderToOrderItem));
+          setApiOrders(result.items.map(mapApiOrderToOrderItem));
+          setHasMore(result.page * result.pageSize < result.total);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setApiOrders(null);
+          setHasMore(false);
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [currentQuery, shouldFetchOrders]);
+  }, [baseQuery, shouldFetchOrders]);
 
   const orders = apiOrders ?? mockOrders;
   const routeRuntimeOrder = routeParams?.orderId && !orders.some((order) => order.orderId === routeParams.orderId)
@@ -308,26 +381,79 @@ export function OrderListScreen() {
       return;
     }
 
-    loadOrders()
+    const refreshQuery = buildOrderListQuery(selectedFilter, selectedDateRange);
+    setCurrentPage(1);
+    loadOrders(refreshQuery, 'replace')
       .catch(() => {
         setApiOrders(null);
+        setHasMore(false);
       })
       .finally(() => {
         setRefreshing(false);
       });
-  }, [loadOrders, shouldFetchOrders]);
+  }, [loadOrders, selectedDateRange, selectedFilter, shouldFetchOrders]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!shouldFetchOrders || loadingMore || !hasMore) {
+      return;
+    }
+
+    const nextPage = currentPage + 1;
+    const nextQuery = buildOrderListQuery(selectedFilter, selectedDateRange, nextPage);
+    setLoadingMore(true);
+
+    loadOrders(nextQuery, 'append')
+      .then((result) => {
+        setCurrentPage(nextPage);
+        setHasMore(result.page * result.pageSize < result.total);
+      })
+      .catch(() => {
+        setHasMore(false);
+      })
+      .finally(() => {
+        setLoadingMore(false);
+      });
+  }, [currentPage, hasMore, loadOrders, loadingMore, selectedDateRange, selectedFilter, shouldFetchOrders]);
+
+  const handleFilterChange = useCallback((nextFilter: OrderStatus) => {
+    setSelectedFilter(nextFilter);
+    setCurrentPage(1);
+  }, []);
+
+  const handleDateRangeChange = useCallback((nextRange: OrderDateRange) => {
+    setSelectedDateRange(nextRange);
+    setCurrentPage(1);
+  }, []);
 
   const renderFilterTab = ({ id, label }: { id: OrderStatus; label: string }) => (
     <TouchableOpacity
       key={id}
       style={[styles.filterTab, selectedFilter === id && styles.filterTabActive]}
-      onPress={() => setSelectedFilter(id)}
+      onPress={() => handleFilterChange(id)}
       activeOpacity={0.7}
     >
       <Text
         style={[
           styles.filterTabText,
           selectedFilter === id && styles.filterTabTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderDateRangeTab = ({ id, label }: { id: OrderDateRange; label: string }) => (
+    <TouchableOpacity
+      key={id}
+      style={[styles.dateRangeTab, selectedDateRange === id && styles.dateRangeTabActive]}
+      onPress={() => handleDateRangeChange(id)}
+      activeOpacity={0.7}
+    >
+      <Text
+        style={[
+          styles.dateRangeTabText,
+          selectedDateRange === id && styles.dateRangeTabTextActive,
         ]}
       >
         {label}
@@ -355,10 +481,34 @@ export function OrderListScreen() {
     </View>
   );
 
+  const renderListFooter = () => {
+    if (!shouldFetchOrders || !apiOrders?.length || !hasMore) {
+      return <View style={styles.listFooterSpacer} />;
+    }
+
+    return (
+      <View style={styles.listFooter}>
+        <TouchableOpacity
+          style={[styles.loadMoreButton, loadingMore && styles.loadMoreButtonDisabled]}
+          onPress={handleLoadMore}
+          activeOpacity={0.7}
+          disabled={loadingMore}
+        >
+          <Text style={styles.loadMoreButtonText}>
+            {loadingMore ? '加载中...' : '加载更多'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.filterContainer}>
         {statusFilters.map(renderFilterTab)}
+      </View>
+      <View style={styles.dateRangeContainer}>
+        {dateRangeFilters.map(renderDateRangeTab)}
       </View>
       <FlatList
         data={filteredOrders}
@@ -369,6 +519,7 @@ export function OrderListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={renderEmptyList}
+        ListFooterComponent={renderListFooter}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -407,9 +558,58 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  dateRangeTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    borderRadius: 16,
+    backgroundColor: '#F2F4F7',
+  },
+  dateRangeTabActive: {
+    backgroundColor: '#E8F1FF',
+  },
+  dateRangeTabText: {
+    fontSize: 12,
+    color: '#667085',
+  },
+  dateRangeTabTextActive: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
   listContent: {
     paddingVertical: 8,
     flexGrow: 1,
+  },
+  listFooter: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 20,
+  },
+  listFooterSpacer: {
+    height: 12,
+  },
+  loadMoreButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D0D5DD',
+  },
+  loadMoreButtonDisabled: {
+    opacity: 0.7,
+  },
+  loadMoreButtonText: {
+    fontSize: 14,
+    color: '#344054',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,

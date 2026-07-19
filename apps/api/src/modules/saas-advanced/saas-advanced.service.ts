@@ -11,26 +11,36 @@
  *   SsoService              SSO 单点登录服务
  *   DomainResolutionService 域名解析服务
  *
- * 实体类型 ─────────────────────
- *   SsoConfig               SSO 配置
- *   SsoProvider             SSO 提供商
+ * SSO 实体 ─────────────────────
+ *   SsoProtocol             saml | oidc
+ *   SsoConnectionStatus     active | disabled | pending_verification
+ *   SamlConfig              SAML 配置
+ *   OidcConfig              OIDC 配置
  *   SsoConnection           SSO 连接记录
- *   CustomDomainConfig      域名配置
- *   CustomDomainEntity      域名实体
- *   DomainVerification      域名验证记录
- *   DomainDnsRecord         DNS 记录
+ *   UserSsoIdentity         用户 SSO 身份映射
+ *   ParsedSamlAssertion     SAML 断言解析结果
+ *
+ * 域名实体 ─────────────────────
+ *   DomainScopeType         TENANT | BRAND | STORE
+ *   DomainStatus            域名状态
+ *   SslProvider             letsencrypt | custom
+ *   DomainMapping           域名映射
  *
  * DTO 类型 ─────────────────────
- *   AddDomainRequest        添加域名请求
- *   ValidateDomainRequest   验证域名请求
- *   DomainVerifyHint        域名验证提示
- *   DomainSslInfo           SSL 信息
- *   DomainListItem          域名列表项
- *   DomainListResponse      域名列表响应
- *   ResolveHostRequest      解析主机请求
- *   ResolveHostResponse     解析主机响应
- *   RecommendPrimaryDomainRequest 推荐主域名请求
- *   RecommendPrimaryDomainResponse 推荐主域名响应
+ *   AddDomainRequest / ValidateDomainRequest / ValidateDomainResponse
+ *   DomainVerifyHint / DomainSslInfo / DomainListItem
+ *   DomainListResponse / DomainDetailResponse
+ *   ResolveHostRequest / ResolveHostResponse
+ *   RecommendPrimaryDomainRequest / RecommendPrimaryDomainResponse
+ *
+ * 工具函数 ─────────────────────
+ *   generateConnectionId / generateIdentityId / generateSamlRequestId
+ *   generateOidcState / generatePkceVerifier / deriveCodeChallenge
+ *   extractEmailDomain / validateSamlConfig / validateOidcConfig
+ *   buildSamlAuthnRequest / buildOidcAuthUrl / buildSamlLogoutRequest
+ *   parseSamlAssertion
+ *   generateVerificationToken / buildVerificationHost
+ *   buildVerificationValue / isValidDomain / computeSslFingerprint
  *
  * ═══ 使用示例 ═══════════════════════════════════════════════════════
  *
@@ -48,10 +58,40 @@ export { SsoService } from './sso.service'
 export { DomainResolutionService } from './domain-resolution.service'
 
 // ─── SSO 实体 ───────────────────────────────────────────────────────────────
-export type { SsoConfig, SsoProvider, SsoConnection } from './sso.entity'
+export type {
+  SsoProtocol,
+  SsoConnectionStatus,
+  SamlConfig,
+  OidcConfig,
+  SsoConnection,
+  UserSsoIdentity,
+  ParsedSamlAssertion,
+} from './sso.entity'
+export {
+  generateConnectionId,
+  generateIdentityId,
+  generateSamlRequestId,
+  generateOidcState,
+  generatePkceVerifier,
+  deriveCodeChallenge,
+  extractEmailDomain,
+  validateSamlConfig,
+  validateOidcConfig,
+  buildSamlAuthnRequest,
+  buildOidcAuthUrl,
+  buildSamlLogoutRequest,
+  parseSamlAssertion,
+} from './sso.entity'
 
 // ─── 自定义域名实体 ─────────────────────────────────────────────────────────
-export type { CustomDomainConfig, CustomDomainEntity, DomainVerification, DomainDnsRecord } from './custom-domain.entity'
+export type { DomainScopeType, DomainStatus, SslProvider, DomainMapping } from './custom-domain.entity'
+export {
+  generateVerificationToken,
+  buildVerificationHost,
+  buildVerificationValue,
+  isValidDomain,
+  computeSslFingerprint,
+} from './custom-domain.entity'
 
 // ─── DTO ────────────────────────────────────────────────────────────────────
 export {
@@ -76,3 +116,10 @@ export {
   RecommendPrimaryDomainRequest,
   RecommendPrimaryDomainResponse,
 } from './custom-domain.dto'
+
+// ─── SaaS 常量 ───────────────────────────────────────────────────────────────
+export const DEFAULT_SSL_PROVIDER = 'letsencrypt'
+export const DOMAIN_VERIFICATION_TTL_SECONDS = 300
+export const MAX_CUSTOM_DOMAINS_PER_TENANT = 10
+export const DNS_PROPAGATION_WAIT_MS = 60_000 // 1 min
+export const SSO_SESSION_DURATION_HOURS = 24

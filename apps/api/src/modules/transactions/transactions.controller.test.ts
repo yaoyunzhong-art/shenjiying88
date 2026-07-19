@@ -177,20 +177,22 @@ describe('transactions controller', () => {
     it('should list all orders for tenant', async () => {
       await checkoutAndPay('m-4', 10, 'ep-4')
       const result = controller.listOrderTransactions(CTX)
-      assert.ok(result.length >= 1)
+      assert.ok(result.items.length >= 1)
+      assert.ok(result.total >= 1)
+      assert.equal(result.page, 1)
     })
 
     it('should filter by memberId', async () => {
       await checkoutAndPay('m-5', 20, 'ep-5')
       const result = controller.listOrderTransactions(CTX, { memberId: 'm-5' })
-      result.forEach(r => assert.equal(r.order.memberId, 'm-5'))
+      result.items.forEach((item) => assert.equal(item.memberId, 'm-5'))
     })
 
     it('should filter by hasRefund=true (boundary)', async () => {
       const created = await checkoutAndPay('m-rf', 100, 'ep-rf')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'test', refundAmount: 50 })
       const result = controller.listOrderTransactions(CTX, { hasRefund: true })
-      assert.ok(result.some(r => r.order.orderId === created.order.orderId))
+      assert.ok(result.items.some((item) => item.orderId === created.order.orderId))
     })
   })
 

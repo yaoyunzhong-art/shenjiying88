@@ -1872,6 +1872,66 @@ export function subscribeStream(
 // P1-3: 共享层收口 — Business API 端点 (checkout/cashier/orders/refunds/payments)
 // ═══════════════════════════════════════════════════════════════════════════
 
+export interface BusinessOrderListItem {
+  orderId: string;
+  orderNo: string;
+  memberId: string;
+  status: string;
+  totalAmount: number;
+  paidAmount: number;
+  refundedAmount: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessOrderListPage {
+  items: BusinessOrderListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+function buildBusinessOrderListPath(query?: {
+  memberId?: string;
+  status?: string;
+  paymentStatus?: string;
+  limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  if (!query) {
+    return '/transactions/orders';
+  }
+
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      params.set(key, String(value));
+    }
+  });
+
+  const search = params.toString();
+  return search ? `/transactions/orders?${search}` : '/transactions/orders';
+}
+
+function normalizeBusinessOrderListResponse(
+  payload: BusinessOrderListItem[] | BusinessOrderListPage
+): BusinessOrderListPage {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length,
+    };
+  }
+
+  return payload;
+}
+
 /**
  * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
  *
@@ -1906,26 +1966,31 @@ export function createBusinessClient(baseUrl?: string) {
         status?: string;
         paymentStatus?: string;
         limit?: number;
+        fromDate?: string;
+        toDate?: string;
+        page?: number;
+        pageSize?: number;
       }, init?: RequestInit) =>
-        api.getData<Array<{
-          orderId: string;
-          orderNo: string;
-          memberId: string;
-          status: string;
-          totalAmount: number;
-          paidAmount: number;
-          refundedAmount: number;
-          currency: string;
-          createdAt: string;
-          updatedAt: string;
-        }>>('/transactions/orders', {
-          ...init,
-          headers: {
-            'content-type': 'application/json',
-            ...(init?.headers ?? {}),
-            ...(query ? { 'x-query-params': JSON.stringify(query) } : {}),
-          },
-        }),
+        api.getData<BusinessOrderListItem[] | BusinessOrderListPage>(
+          buildBusinessOrderListPath(query),
+          init,
+        ).then((payload) => normalizeBusinessOrderListResponse(payload).items),
+
+      /** 订单分页列表 */
+      listPage: (query?: {
+        memberId?: string;
+        status?: string;
+        paymentStatus?: string;
+        limit?: number;
+        fromDate?: string;
+        toDate?: string;
+        page?: number;
+        pageSize?: number;
+      }, init?: RequestInit) =>
+        api.getData<BusinessOrderListItem[] | BusinessOrderListPage>(
+          buildBusinessOrderListPath(query),
+          init,
+        ).then((payload) => normalizeBusinessOrderListResponse(payload)),
 
       /** 订单详情 */
       get: (orderId: string, init?: RequestInit) =>

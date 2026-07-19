@@ -150,6 +150,21 @@ function renderFlatListOrderCards(root: ReturnType<typeof create>) {
   );
 }
 
+function renderOrderListFooter(root: ReturnType<typeof create>) {
+  const flatList = getOrderListFlatList(root);
+  const footer = flatList.props.ListFooterComponent;
+  if (!footer) {
+    return undefined;
+  }
+
+  const footerElement = typeof footer === 'function' ? footer() : footer;
+  if (!footerElement) {
+    return undefined;
+  }
+
+  return create(footerElement);
+}
+
 function findTextInOrderCards(root: ReturnType<typeof create>, text: string) {
   return renderFlatListOrderCards(root).some((card) => Boolean(findByText(card.root, text)));
 }
@@ -170,6 +185,37 @@ function getHeaderValue(init: RequestInit | undefined, key: string) {
     return matched?.[1];
   }
   return (init.headers as Record<string, string | undefined>)[key];
+}
+
+function getOrderListQuery(init: RequestInit | undefined) {
+  const queryHeader = getHeaderValue(init, 'x-query-params');
+  return queryHeader ? JSON.parse(queryHeader) as Record<string, unknown> : {};
+}
+
+function isOrderListRequest(url: string) {
+  return url.includes('/transactions/orders');
+}
+
+function getOrderListRequestQuery(url: string, init?: RequestInit) {
+  const parsedUrl = new URL(url, 'http://localhost');
+  const queryFromUrl = Object.fromEntries(parsedUrl.searchParams.entries());
+  const queryFromHeader = getOrderListQuery(init);
+  return {
+    ...queryFromHeader,
+    ...queryFromUrl,
+  };
+}
+
+function buildOrderListPageData(
+  items: Array<Record<string, unknown>>,
+  options?: { total?: number; page?: number; pageSize?: number },
+) {
+  return {
+    items,
+    total: options?.total ?? items.length,
+    page: options?.page ?? 1,
+    pageSize: options?.pageSize ?? 10,
+  };
 }
 
 /* ================================================================== */
@@ -270,7 +316,7 @@ test('OrderListScreen: prefers real order list payload when list fetch is enable
   globalThis.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
-    if (!url.endsWith('/transactions/orders')) {
+    if (!isOrderListRequest(url)) {
       throw new Error(`unexpected request: ${url}`);
     }
 
@@ -278,7 +324,7 @@ test('OrderListScreen: prefers real order list payload when list fetch is enable
       JSON.stringify({
         success: true,
         message: 'OK',
-        data: [
+        data: buildOrderListPageData([
           {
             orderId: 'order-001',
             orderNo: 'ORDAPI20260720001',
@@ -303,7 +349,7 @@ test('OrderListScreen: prefers real order list payload when list fetch is enable
             createdAt: '2026-07-20T04:11:00.000Z',
             updatedAt: '2026-07-20T04:11:00.000Z',
           },
-        ],
+        ]),
       }),
       { status: 200, headers: { 'content-type': 'application/json' } },
     );
@@ -334,7 +380,7 @@ test('OrderListScreen: runtime params still override fetched order list state', 
   globalThis.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
-    if (!url.endsWith('/transactions/orders')) {
+    if (!isOrderListRequest(url)) {
       throw new Error(`unexpected request: ${url}`);
     }
 
@@ -342,7 +388,7 @@ test('OrderListScreen: runtime params still override fetched order list state', 
       JSON.stringify({
         success: true,
         message: 'OK',
-        data: [
+        data: buildOrderListPageData([
           {
             orderId: 'order-002',
             orderNo: 'ORDAPI20260720002',
@@ -355,7 +401,7 @@ test('OrderListScreen: runtime params still override fetched order list state', 
             createdAt: '2026-07-20T04:11:00.000Z',
             updatedAt: '2026-07-20T04:11:00.000Z',
           },
-        ],
+        ]),
       }),
       { status: 200, headers: { 'content-type': 'application/json' } },
     );
@@ -391,12 +437,11 @@ test('OrderListScreen: paid filter passes status query to real order list api', 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     fetchCalls.push({ url, init });
-    if (!url.endsWith('/transactions/orders')) {
+    if (!isOrderListRequest(url)) {
       throw new Error(`unexpected request: ${url}`);
     }
 
-    const queryHeader = getHeaderValue(init, 'x-query-params');
-    const query = queryHeader ? JSON.parse(queryHeader) as Record<string, unknown> : {};
+    const query = getOrderListRequestQuery(url, init);
     const data = query.status === 'PAID'
       ? [{
           orderId: 'order-004',
@@ -441,7 +486,7 @@ test('OrderListScreen: paid filter passes status query to real order list api', 
       JSON.stringify({
         success: true,
         message: 'OK',
-        data,
+        data: buildOrderListPageData(data),
       }),
       { status: 200, headers: { 'content-type': 'application/json' } },
     );
@@ -466,10 +511,10 @@ test('OrderListScreen: paid filter passes status query to real order list api', 
     });
 
     assert.equal(fetchCalls.length, 2, '切换到已完成筛选后应再次请求真实列表');
-    assert.equal(
-      getHeaderValue(fetchCalls[1]?.init, 'x-query-params'),
-      JSON.stringify({ status: 'PAID' }),
-      '已完成筛选应把 PAID 状态下沉到真实列表 query',
+    assert.deepEqual(
+      getOrderListRequestQuery(fetchCalls[1]!.url, fetchCalls[1]?.init),
+      { status: 'PAID', page: '1', pageSize: '10' },
+      '已完成筛选应把 PAID 状态与分页参数一起下沉到真实列表 query',
     );
     assert.ok(findTextInOrderCards(root, 'ORDAPI20260720004'), '已完成筛选后应展示服务端返回的已完成订单');
   } finally {
@@ -485,12 +530,11 @@ test('OrderListScreen: refunded filter keeps runtime refund order visible with r
   globalThis.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    if (!url.endsWith('/transactions/orders')) {
+    if (!isOrderListRequest(url)) {
       throw new Error(`unexpected request: ${url}`);
     }
 
-    const queryHeader = getHeaderValue(init, 'x-query-params');
-    const query = queryHeader ? JSON.parse(queryHeader) as Record<string, unknown> : {};
+    const query = getOrderListRequestQuery(url, init);
     const data = query.status === 'REFUNDED'
       ? [{
           orderId: 'order-003',
@@ -521,7 +565,7 @@ test('OrderListScreen: refunded filter keeps runtime refund order visible with r
       JSON.stringify({
         success: true,
         message: 'OK',
-        data,
+        data: buildOrderListPageData(data),
       }),
       { status: 200, headers: { 'content-type': 'application/json' } },
     );
@@ -552,6 +596,165 @@ test('OrderListScreen: refunded filter keeps runtime refund order visible with r
     const orderIds = (flatList.props.data as Array<{ orderId: string }>).map((item) => item.orderId);
     assert.ok(orderIds.includes('order-001'), '真实筛选下也应补回当前退款运行态订单');
     assert.ok(findTextInOrderCards(root, '退款审核中'), '补回的运行态订单应展示退款审核中');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+  }
+});
+
+test('OrderListScreen: last 7 days range passes date query to real order list api', async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListNow = '2026-07-20T12:00:00.000Z';
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+    if (!isOrderListRequest(url)) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: buildOrderListPageData([]),
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent();
+      await Promise.resolve();
+    });
+
+    const touchables = findAllTouchables(root.root);
+    const last7DaysTab = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '近7天'),
+    );
+    assert.ok(last7DaysTab, '近7天选项卡应在');
+
+    await act(async () => {
+      last7DaysTab!.props.onPress();
+      await Promise.resolve();
+    });
+
+    assert.equal(fetchCalls.length, 2, '切换到近7天后应再次请求真实列表');
+    assert.deepEqual(
+      getOrderListRequestQuery(fetchCalls[1]!.url, fetchCalls[1]?.init),
+      {
+        page: '1',
+        pageSize: '10',
+        fromDate: '2026-07-14T12:00:00.000Z',
+        toDate: '2026-07-20T12:00:00.000Z',
+      },
+      '近7天筛选应把 fromDate/toDate 与分页参数一起下沉到真实列表 query',
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListNow;
+  }
+});
+
+test('OrderListScreen: load more passes next page query and keeps runtime order visible', async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+    if (!isOrderListRequest(url)) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    const query = getOrderListRequestQuery(url, init);
+    const data = query.page === '2'
+      ? Array.from({ length: 10 }, (_, index) => ({
+          orderId: `page-2-order-${index + 1}`,
+          orderNo: `ORDAPI20260720P2${String(index + 1).padStart(2, '0')}`,
+          memberId: `member-page2-${index + 1}`,
+          status: 'PAID',
+          totalAmount: 80 + index,
+          paidAmount: 80 + index,
+          refundedAmount: 0,
+          currency: 'CNY',
+          createdAt: '2026-07-20T06:10:00.000Z',
+          updatedAt: '2026-07-20T06:10:00.000Z',
+        }))
+      : Array.from({ length: 10 }, (_, index) => ({
+          orderId: `page-1-order-${index + 1}`,
+          orderNo: `ORDAPI20260720P1${String(index + 1).padStart(2, '0')}`,
+          memberId: `member-page1-${index + 1}`,
+          status: 'PENDING_PAYMENT',
+          totalAmount: 50 + index,
+          paidAmount: 0,
+          refundedAmount: 0,
+          currency: 'CNY',
+          createdAt: '2026-07-20T05:10:00.000Z',
+          updatedAt: '2026-07-20T05:10:00.000Z',
+        }));
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: buildOrderListPageData(
+          data,
+          query.page === '2'
+            ? { total: 20, page: 2, pageSize: 10 }
+            : { total: 20, page: 1, pageSize: 10 },
+        ),
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent({
+        orderId: 'order-001',
+        paymentStatus: 'PAID',
+        paymentAmount: 156,
+        paymentPaidAt: '2026-07-20T05:20:00.000Z',
+        paymentChannel: 'WECHAT_PAY',
+      });
+      await Promise.resolve();
+    });
+
+    const footer = renderOrderListFooter(root);
+    const loadMoreButton = footer?.root.findAllByType(TouchableOpacity).find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '加载更多'),
+    );
+    assert.ok(loadMoreButton, '真实列表有下一页时应显示加载更多按钮');
+
+    await act(async () => {
+      loadMoreButton!.props.onPress();
+      await Promise.resolve();
+    });
+
+    assert.equal(fetchCalls.length, 2, '点击加载更多后应请求下一页');
+    assert.deepEqual(
+      getOrderListRequestQuery(fetchCalls[1]!.url, fetchCalls[1]?.init),
+      { page: '2', pageSize: '10' },
+      '加载更多应把下一页分页参数下沉到真实列表 query',
+    );
+
+    const flatList = getOrderListFlatList(root);
+    const orderIds = (flatList.props.data as Array<{ orderId: string }>).map((item) => item.orderId);
+    assert.ok(orderIds.includes('order-001'), '分页场景下也应保留当前运行态订单');
+    assert.ok(orderIds.includes('page-2-order-1'), '加载更多后应追加第二页订单');
+    assert.ok(findTextInOrderCards(root, '已完成'), '分页场景下当前运行态订单仍应承接支付成功状态');
   } finally {
     globalThis.fetch = originalFetch;
     // @ts-expect-error cleanup

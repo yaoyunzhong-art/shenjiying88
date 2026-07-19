@@ -73,9 +73,22 @@ class TestTransactionsController {
   }
 
   @Get('orders')
-  listOrders(@Req() req: Request) {
+  listOrders(@Req() req: Request, @Query() query: Record<string, unknown>) {
     const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.transactionsService.listOrderTransactions(tenantContext)
+    return this.transactionsService.listOrderListPage(tenantContext, {
+      memberId: query.memberId as string | undefined,
+      status: query.status as string | undefined,
+      paymentStatus: query.paymentStatus as string | undefined,
+      closeReason: query.closeReason as string | undefined,
+      hasRefund: query.hasRefund === undefined
+        ? undefined
+        : String(query.hasRefund) === 'true',
+      fromDate: query.fromDate as string | undefined,
+      toDate: query.toDate as string | undefined,
+      page: query.page ? Number(query.page) : undefined,
+      pageSize: query.pageSize ? Number(query.pageSize) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
+    })
   }
 
   @Post('orders/:orderId/refunds')
@@ -377,15 +390,13 @@ it('e2e: list transactions scoped by tenant', async () => {
     await settleOrder(app, cashierService, memberService, loyaltyService, 'm-1', 50, 'ext-pay-list-1')
 
     const listA = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_A)
-    assert.ok(listA.body.data.length >= 1)
-    for (const tx of listA.body.data) {
-      assert.equal(tx.order.tenantContext.tenantId, 'tenant-A')
-    }
+    assert.ok(listA.body.data.items.length >= 1)
+    assert.ok(listA.body.data.total >= 1)
+    assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
 
     const listB = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_B)
-    for (const tx of listB.body.data) {
-      assert.equal(tx.order.tenantContext.tenantId, 'tenant-B')
-    }
+    assert.equal(listB.body.data.total, 0)
+    assert.equal(listB.body.data.items.length, 0)
   } finally {
     await app.close()
   }
@@ -681,10 +692,9 @@ it('e2e: list orders scoped by tenant', async () => {
     await settleOrder(app, cashierService, memberService, loyaltyService, 'm-1', 50, 'ext-pay-scope-2')
 
     const listA = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_A)
-    assert.ok(listA.body.data.length >= 2)
-    for (const tx of listA.body.data) {
-      assert.equal(tx.order.tenantContext.tenantId, 'tenant-A')
-    }
+    assert.ok(listA.body.data.items.length >= 2)
+    assert.equal(listA.body.data.total, 2)
+    assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
   } finally {
     await app.close()
   }
@@ -838,7 +848,8 @@ it('e2e: POST /transactions creates batch orders', async () => {
     const listOrders = await request(app.getHttpServer())
       .get('/transactions/orders')
       .set(TENANT_A)
-    assert.ok(listOrders.body.data.length >= 2)
+    assert.ok(listOrders.body.data.items.length >= 2)
+    assert.ok(listOrders.body.data.total >= 2)
   } finally {
     await app.close()
   }

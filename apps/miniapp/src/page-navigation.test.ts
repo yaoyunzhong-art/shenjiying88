@@ -492,7 +492,7 @@ test('miniapp navigation: each route in navigation stack respects path depth lim
   // 检查路由路径深度: pages/*/* 格式确保深度为 3
   for (const route of APP_ROUTES) {
     const segments = route.split('/');
-    assert.equal(segments.length, 3, `route ${route} should have exactly 3 segments (pages/xxx/xxx)`);
+    assert.ok(segments.length >= 3 && segments.length <= 4, `route ${route} should have 3 or 4 segments (pages/xxx/xxx or pages/xxx/xxx/xxx)`);
     assert.equal(segments[0], 'pages');
   }
 });

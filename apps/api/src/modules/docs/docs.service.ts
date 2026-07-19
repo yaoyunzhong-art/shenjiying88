@@ -63,10 +63,18 @@ export {
 // ─── 实用常量 ───────────────────────────────────────────────────────────────
 export const DEFAULT_DOC_TITLE = 'API Documentation'
 export const DEFAULT_DOC_VERSION = '1.0.0'
-export const SUPPORTED_EXPORT_FORMATS: DocExportFormat[] = [
+export const SUPPORTED_EXPORT_FORMATS = [
   'openapi-json',
   'openapi-yaml',
   'redoc-html',
   'postman-collection',
   'insomnia-export',
 ]
+export const DEFAULT_DOC_SERVERS = ['http://localhost:3000']
+export const DOC_GENERATION_TIMEOUT_MS = 30_000
+export const MAX_ENDPOINTS_PER_PAGE = 100
+export const DEFAULT_REDOC_THEME = 'light' as const
+export const DOC_SWAGGER_UI_PATH = 'docs'
+export const DOC_REDOC_PATH = 'redoc'
+export const DOC_OPENAPI_JSON_PATH = 'openapi.json'
+export const DOC_OPENAPI_YAML_PATH = 'openapi.yaml'

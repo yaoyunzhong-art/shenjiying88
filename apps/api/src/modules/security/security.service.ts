@@ -11,23 +11,38 @@
  *   WAFService                 Web 应用防火墙 (规则引擎 & 事件管理)
  *
  * 实体类型 ─────────────────────
- *   SecurityPolicy             安全策略定义
- *   SecurityScanResult         扫描结果
- *   Vulnerability              漏洞信息 (CWE/severity/file/line)
- *   WafRule                    WAF 规则 (pattern/action/rateLimit)
- *   WafRuleGroup               WAF 规则组
- *   SecurityEvent              安全事件 (source/type/ip)
- *   IpReputationEntry          IP 信誉记录 (score/category/lastSeen)
+ *   VulnerabilitySeverity      漏洞严重性 (info/low/medium/high/critical)
+ *   VulnerabilityCategory      漏洞分类
+ *   SecurityVulnerability      漏洞信息 (CWE/severity/file/line)
+ *   SecurityScanTarget         扫描目标
+ *   SecurityScanSummary        扫描摘要
+ *   SecurityReport             安全报告
+ *   WAFRuleAction              WAF 动作 (allow/block/challenge/log)
+ *   WAFConditionType           规则条件类型
+ *   WAFConditionOperator       条件操作符
+ *   WAFRule                    WAF 规则
+ *   WAFDecision                WAF 决策
+ *   WAFLogEntry                WAF 日志条目
+ *   ScanRequest / BatchScanRequest / CreateWAFRuleRequest
  *
- * DTO ──────────────────────────
- *   CreateSecurityPolicyDto    创建安全策略
- *   UpdateSecurityPolicyDto    更新安全策略
- *   CreateWafRuleDto           创建 WAF 规则
- *   UpdateWafRuleDto           更新 WAF 规则
+ * 常量 ─────────────────────────
+ *   SECURITY_SCAN_SEVERITY_ORDER 严重性排序
+ *   WAF_DEFAULT_ACTION          默认 WAF 动作
+ *   IP_REPUTATION_CACHE_TTL_MS  IP 信誉缓存 TTL
+ *   MAX_VULNERABILITY_REPORT_LENGTH 报告最大长度
+ *   WAF_RATE_LIMIT_WINDOW_MS    限流窗口
+ *   WAF_RATE_LIMIT_MAX_REQUESTS 限流阈值
+ *   SECURITY_AUDIT_ENABLED      审计开关
+ *   IP_REPUTATION_GOOD/BAD_THRESHOLD 信誉阈值
+ *   SECURITY_SCAN_MAX_FILES     扫描文件上限
+ *   SECURITY_SCAN_TIMEOUT_MS    扫描超时
+ *   WAF_LOG_RETENTION_DAYS      WAF 日志保留天数
+ *   SCANNER_DEFAULT_LANGUAGE    默认扫描语言
+ *   SCANNER_DEFAULT_RULESET     默认规则集
  *
  * ═══ 使用示例 ═══════════════════════════════════════════════════════
  *
- *   import { SecurityScannerService, WAFService, Vulnerability } from './security.service'
+ *   import { SecurityScannerService, WAFService, SecurityVulnerability } from './security.service'
  *   const scanner = app.get(SecurityScannerService)
  *   const waf = app.get(WAFService)
  *   const results = await scanner.scanCode(diffContent)
@@ -41,22 +56,22 @@ export { WAFService } from './waf.service'
 
 // ─── 实体类型 ───────────────────────────────────────────────────────────────
 export type {
-  SecurityPolicy,
-  SecurityScanResult,
-  Vulnerability,
-  WafRule,
-  WafRuleGroup,
-  SecurityEvent,
-  IpReputationEntry,
+  VulnerabilitySeverity,
+  VulnerabilityCategory,
+  SecurityVulnerability,
+  SecurityScanTarget,
+  SecurityScanSummary,
+  SecurityReport,
+  WAFRuleAction,
+  WAFConditionType,
+  WAFConditionOperator,
+  WAFRule,
+  WAFDecision,
+  WAFLogEntry,
+  ScanRequest,
+  BatchScanRequest,
+  CreateWAFRuleRequest,
 } from './security.entity'
-
-// ─── DTO ────────────────────────────────────────────────────────────────────
-export type {
-  CreateSecurityPolicyDto,
-  UpdateSecurityPolicyDto,
-  CreateWafRuleDto,
-  UpdateWafRuleDto,
-} from './security.dto'
 
 // ─── 安全常量 ───────────────────────────────────────────────────────────────
 export const SECURITY_SCAN_SEVERITY_ORDER = ['critical', 'high', 'medium', 'low'] as const
@@ -68,3 +83,13 @@ export const WAF_RATE_LIMIT_MAX_REQUESTS = 1000
 export const SECURITY_AUDIT_ENABLED = true
 export const IP_REPUTATION_GOOD_THRESHOLD = 0.7
 export const IP_REPUTATION_BAD_THRESHOLD = 0.3
+export const SECURITY_SCAN_MAX_FILES = 100
+export const SECURITY_SCAN_TIMEOUT_MS = 120_000
+export const WAF_LOG_RETENTION_DAYS = 90
+export const VULNERABILITY_PRIORITY_ORDER: string[] = ['critical', 'high', 'medium', 'low']
+export const DEFAULT_POLICY_NAME_PREFIX = 'sec_policy_' as const
+export const SECURITY_EVENT_RETENTION_DAYS = 30
+export const MAX_WAF_RULES_PER_GROUP = 50
+export const WAF_DEFAULT_SENSITIVITY_LEVEL = 'medium' as const
+export const SCANNER_DEFAULT_LANGUAGE = 'typescript' as const
+export const SCANNER_DEFAULT_RULESET = 'owasp-top10' as const
