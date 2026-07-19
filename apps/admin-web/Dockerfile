@@ -32,6 +32,7 @@ WORKDIR /workspace
 
 # 复制所有需要的源码
 COPY tsconfig.base.json ./
+COPY packages/config-typescript ./packages/config-typescript
 COPY packages/types ./packages/types
 COPY packages/domain ./packages/domain
 COPY packages/sdk ./packages/sdk
@@ -48,7 +49,7 @@ RUN pnpm --filter @m5/ui build
 RUN pnpm --filter @m5/admin-web build
 
 # 使用 pnpm deploy 提取生产依赖 (含 workspace packages 产物)
-RUN pnpm deploy --filter @m5/admin-web --prod /workspace/deploy/admin-web
+RUN pnpm deploy --legacy --filter @m5/admin-web --prod /workspace/deploy/admin-web
 
 # Next.js standalone 会把产物放在 .next/standalone
 # 但 pnpm deploy 会创建纯 prod node_modules, 需要把 .next 复制过去

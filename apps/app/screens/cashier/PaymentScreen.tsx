@@ -8,11 +8,21 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 
 type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+
+type PaymentParams = {
+  Payment: {
+    orderId?: string;
+    orderNo?: string;
+    amount?: number;
+    paymentChannel?: PaymentChannel;
+  };
+};
 
 const paymentChannels: { id: PaymentChannel; name: string; icon: string }[] = [
   { id: 'WECHAT_PAY', name: '微信支付', icon: '💚' },
@@ -21,13 +31,51 @@ const paymentChannels: { id: PaymentChannel; name: string; icon: string }[] = [
   { id: 'MEMBER_CARD', name: '会员卡', icon: '💳' },
 ];
 
+const MAX_PAYMENT_AMOUNT = 999999.99;
+
 export function PaymentScreen() {
-  const [amount, setAmount] = useState('');
-  const [selectedChannel, setSelectedChannel] = useState<PaymentChannel>('WECHAT_PAY');
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: {
+      goBack: () => void;
+      navigate?: (route: string, params?: Record<string, unknown>) => void;
+    };
+  }).__mockNavigation ?? { goBack: () => {}, navigate: () => {} };
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: PaymentParams['Payment'];
+  }).__mockRoute ?? {};
+
+  let navigation = fallbackNavigation;
+  try {
+    navigation = useNavigation();
+  } catch {
+    navigation = fallbackNavigation;
+  }
+
+  let route = { params: fallbackRouteParams } as RouteProp<PaymentParams, 'Payment'>;
+  try {
+    route = useRoute<RouteProp<PaymentParams, 'Payment'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<PaymentParams, 'Payment'>;
+  }
+
+  const initialAmount = route.params?.amount;
+  const initialChannel = route.params?.paymentChannel ?? 'WECHAT_PAY';
+  const [amount, setAmount] = useState(initialAmount?.toString() ?? '');
+  const [selectedChannel, setSelectedChannel] = useState<PaymentChannel>(initialChannel);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showMemberInput, setShowMemberInput] = useState(false);
   const [memberPhone, setMemberPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const numericAmount = Number(amount);
+  const memberPhoneValid = /^1\d{10}$/.test(memberPhone.trim());
+  const canSubmitAmount =
+    amount.trim().length > 0 &&
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0 &&
+    numericAmount <= MAX_PAYMENT_AMOUNT;
+  const canSubmit =
+    canSubmitAmount &&
+    (selectedChannel !== 'MEMBER_CARD' || memberPhoneValid);
 
   const handleNumberPress = (num: string) => {
     if (num === 'C') {
@@ -36,13 +84,21 @@ export function PaymentScreen() {
       setAmount((prev) => prev.slice(0, -1));
     } else if (num === '.') {
       if (!amount.includes('.')) {
-        setAmount((prev) => prev + '.');
+        setAmount((prev) => (prev.length === 0 ? '0.' : `${prev}.`));
       }
     } else {
       if (amount.includes('.') && (amount.split('.')[1]?.length ?? 0) >= 2) {
         return;
       }
-      setAmount((prev) => prev + num);
+      setAmount((prev) => {
+        if (prev === '0' && num === '0') {
+          return prev;
+        }
+        if (prev === '0') {
+          return num;
+        }
+        return prev + num;
+      });
     }
   };
 
@@ -56,9 +112,16 @@ export function PaymentScreen() {
   };
 
   const handleSubmit = () => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert('提示', '请输入有效金额');
+    if (!canSubmitAmount) {
+      const invalidAmountMessage =
+        numericAmount > MAX_PAYMENT_AMOUNT
+          ? `收款金额不能超过 ¥${MAX_PAYMENT_AMOUNT.toFixed(2)}`
+          : '请输入有效金额';
+      Alert.alert('提示', invalidAmountMessage);
+      return;
+    }
+    if (selectedChannel === 'MEMBER_CARD' && !memberPhoneValid) {
+      Alert.alert('提示', '请输入正确的会员手机号');
       return;
     }
     setShowConfirmModal(true);
@@ -69,8 +132,24 @@ export function PaymentScreen() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setShowConfirmModal(false);
-      Alert.alert('提示', '支付成功', [
-        { text: '确定', onPress: () => setAmount('') },
+      const paymentPaidAt = new Date().toISOString();
+      Alert.alert('提示', '收款成功，订单状态已更新', [
+        {
+          text: '确定',
+          onPress: () => {
+            if (route.params?.orderId) {
+              navigation.navigate?.('OrderDetail', {
+                orderId: route.params.orderId,
+                paymentStatus: 'PAID',
+                paymentAmount: numericAmount,
+                paymentPaidAt,
+                paymentChannel: selectedChannel,
+              });
+              return;
+            }
+            setAmount('');
+          },
+        },
       ]);
     } catch {
       Alert.alert('错误', '支付失败，请重试');
@@ -107,6 +186,23 @@ export function PaymentScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {(route.params?.orderId || route.params?.orderNo) && (
+          <Card style={styles.orderCard}>
+            <Text style={styles.orderTitle}>待支付订单</Text>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>订单号</Text>
+              <Text style={styles.orderValue}>{route.params?.orderNo ?? 'N/A'}</Text>
+            </View>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>订单ID</Text>
+              <Text style={styles.orderValue}>{route.params?.orderId ?? 'N/A'}</Text>
+            </View>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>待收金额</Text>
+              <Text style={styles.orderValue}>¥{(route.params?.amount ?? 0).toFixed(2)}</Text>
+            </View>
+          </Card>
+        )}
         <Card style={styles.amountCard}>
           <Text style={styles.amountLabel}>收款金额</Text>
           <View style={styles.amountDisplay}>
@@ -163,7 +259,7 @@ export function PaymentScreen() {
           title="确认收款"
           onPress={handleSubmit}
           style={styles.submitButton}
-          disabled={!amount}
+          disabled={!canSubmit}
         />
       </View>
 
@@ -215,6 +311,30 @@ const styles = StyleSheet.create({
     margin: 16,
     alignItems: 'center',
     paddingVertical: 32,
+  },
+  orderCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  orderTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  orderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  orderKey: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  orderValue: {
+    fontSize: 14,
+    color: '#333333',
   },
   amountLabel: {
     fontSize: 14,

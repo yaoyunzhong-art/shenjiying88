@@ -1,7 +1,9 @@
 // 📝 订单管理 · 订单查询/审核/退款处理 · 看板+筛选+退款功能
+// ✅ 真实 API 数据源 (`biz.orders.list()`), API 不可用时兜底到 seed 数据
 'use client';
-import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Input, Select, Statistic, Row, Col, Modal, message, Tooltip, Tabs, Empty, Popconfirm, Badge } from '@m5/ui';
+import { useState, useMemo, useEffect } from 'react';
+import { PageShell, Card, Table, Tag, Button, Space, Input, Select, Statistic, Row, Col, Modal, message, Tooltip, Empty, Popconfirm, Badge, Spin } from '@m5/ui';
+import { getBizClient } from '../../../lib/sdk';
 
 interface Order {
   id: string; customer: string; items: string; amount: number;
@@ -9,7 +11,60 @@ interface Order {
   time: string; note?: string; contact?: string;
 }
 
-const DATA: Order[] = [
+// ---- API 数据映射 ----
+
+function mapStatus(apiStatus: string): Order['status'] {
+  const map: Record<string, Order['status']> = {
+    'DRAFT': 'pending',
+    'PENDING': 'pending',
+    'PAID': 'completed',
+    'COMPLETED': 'completed',
+    'FULFILLED': 'completed',
+    'REFUNDED': 'refunded',
+    'REFUNDING': 'refunded',
+    'CANCELLED': 'cancelled',
+    'PARTIAL_REFUND': 'refunded',
+  };
+  return map[apiStatus] ?? 'pending';
+}
+
+function mapMethod(method?: string): string {
+  if (!method) return '其他';
+  const map: Record<string, string> = { 'CASH': '现金', 'WECHAT': '微信', 'ALIPAY': '支付宝', 'CARD': '刷卡' };
+  return map[method] ?? method;
+}
+
+/** 从 SDK 拉取订单列表 */
+async function fetchOrders(): Promise<Order[]> {
+  const biz = getBizClient();
+  if (!biz) return [];
+
+  try {
+    const records = await biz.orders.list();
+    if (!records || records.length === 0) return [];
+
+    return records.map((order: any) => ({
+      id: order.orderNo || order.orderId,
+      customer: order.memberName ?? order.customer ?? '未知',
+      items: Array.isArray(order.items)
+        ? order.items.map((i: any) => i.productName || i.name).filter(Boolean).join(', ')
+        : '商品',
+      amount: order.totalAmount ?? order.paidAmount ?? 0,
+      method: mapMethod(order.paymentStatus ?? order.paymentChannel),
+      status: mapStatus(order.status),
+      time: order.createdAt ? new Date(order.createdAt).toLocaleString('zh-CN') : '',
+      note: order.remark ?? order.note,
+      contact: order.memberPhone ?? order.contact,
+    }));
+  } catch (e) {
+    console.warn('[OrdersPage] SDK fetch failed, fallback to seed data', e);
+    return [];
+  }
+}
+
+// ---- 兜底种子数据（API 不可用时） ----
+
+const FALLBACK: Order[] = [
   { id: 'ORD-001', customer: '张明', items: '游戏套餐x1', amount: 168, method: '微信', status: 'completed', time: '2026-07-12 14:30', contact: '138****1234' },
   { id: 'ORD-002', customer: '李芳', items: '游戏币x50', amount: 85, method: '支付宝', status: 'completed', time: '2026-07-12 13:15' },
   { id: 'ORD-003', customer: '王强', items: '充值200', amount: 200, method: '微信', status: 'completed', time: '2026-07-12 12:00' },
@@ -24,6 +79,8 @@ const DATA: Order[] = [
   { id: 'ORD-012', customer: '孙丽', items: '生日派对套餐B', amount: 880, method: '微信', status: 'refunded', time: '2026-07-10 18:00', note: '退款-场地冲突' },
 ];
 
+// ---- 状态/支付方式映射 ----
+
 const SCFG: Record<string, { color: string; label: string }> = {
   completed: { color: 'green', label: '已完成' },
   pending: { color: 'blue', label: '待处理' },
@@ -31,27 +88,40 @@ const SCFG: Record<string, { color: string; label: string }> = {
   cancelled: { color: 'default', label: '已取消' },
 };
 
-const methodTag: Record<string, string> = { '微信': 'green', '支付宝': 'blue', '现金': 'orange', '刷卡': 'purple' };
+const methodTag: Record<string, string> = { '微信': 'green', '支付宝': 'blue', '现金': 'orange', '刷卡': 'purple', '其他': 'default' };
+
+// ---- 组件 ----
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [showRefund, setShowRefund] = useState<Order | null>(null);
   const [showDetail, setShowDetail] = useState<Order | null>(null);
-  const [tab, setTab] = useState('list');
+
+  // 加载真实数据，失败时用兜底
+  useEffect(() => {
+    fetchOrders().then(data => {
+      if (data.length > 0) setOrders(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const displayData = orders.length > 0 ? orders : FALLBACK;
 
   const filtered = useMemo(() => {
-    let r = DATA;
+    let r = displayData;
     if (statusFilter !== 'all') r = r.filter(o => o.status === statusFilter);
     if (methodFilter !== 'all') r = r.filter(o => o.method === methodFilter);
     if (search) r = r.filter(o => o.customer.includes(search) || o.id.includes(search) || (o.contact && o.contact.includes(search)));
     return r;
-  }, [search, statusFilter, methodFilter]);
+  }, [search, statusFilter, methodFilter, displayData]);
 
-  const totalRevenue = DATA.filter(o => o.status === 'completed').reduce((s, o) => s + o.amount, 0);
-  const pendingRevenue = DATA.filter(o => o.status === 'pending').reduce((s, o) => s + o.amount, 0);
-  const refundedTotal = DATA.filter(o => o.status === 'refunded').reduce((s, o) => s + o.amount, 0);
+  const totalRevenue = displayData.filter(o => o.status === 'completed').reduce((s, o) => s + o.amount, 0);
+  const pendingRevenue = displayData.filter(o => o.status === 'pending').reduce((s, o) => s + o.amount, 0);
+  const refundedTotal = displayData.filter(o => o.status === 'refunded').reduce((s, o) => s + o.amount, 0);
 
   const cols = [
     { title: '单号', dataIndex: 'id', width: 90 },
@@ -78,14 +148,15 @@ export default function OrdersPage() {
   return (
     <PageShell>
       <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#fafafa', margin: 0 }}>📝 订单管理</h2>
+          {loading && <Spin size="small" />}
         </div>
 
         <Row gutter={[16, 16]}>
-          <Col span={4}><Card size="small"><Statistic title="总订单" value={DATA.length} /></Card></Col>
-          <Col span={5}><Card size="small"><Statistic title="已完成" value={DATA.filter(o => o.status === 'completed').length} valueStyle={{ color: '#34d399' }} suffix={`/ ${DATA.length}`} /></Card></Col>
-          <Col span={5}><Card size="small"><Statistic title="待处理" value={DATA.filter(o => o.status === 'pending').length} valueStyle={{ color: '#60a5fa' }} /></Card></Col>
+          <Col span={4}><Card size="small"><Statistic title="总订单" value={displayData.length} /></Card></Col>
+          <Col span={5}><Card size="small"><Statistic title="已完成" value={displayData.filter(o => o.status === 'completed').length} valueStyle={{ color: '#34d399' }} suffix={`/ ${displayData.length}`} /></Card></Col>
+          <Col span={5}><Card size="small"><Statistic title="待处理" value={displayData.filter(o => o.status === 'pending').length} valueStyle={{ color: '#60a5fa' }} /></Card></Col>
           <Col span={5}><Card size="small"><Statistic title="营收" value={totalRevenue.toLocaleString()} prefix="¥" valueStyle={{ color: '#fbbf24' }} /></Card></Col>
           <Col span={5}><Card size="small"><Statistic title="退款总计" value={refundedTotal.toLocaleString()} prefix="¥" valueStyle={{ color: '#f59e0b' }} /></Card></Col>
         </Row>

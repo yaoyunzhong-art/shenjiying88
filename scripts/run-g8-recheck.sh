@@ -7,6 +7,7 @@ Usage:
   scripts/run-g8-recheck.sh \
     --env-file <path> \
     [--release-env-file <path>] \
+    [--refresh-acr-regcred] \
     [--namespace m5] \
     [--window-id <id>] \
     [--log-root infra/k8s/cutover-logs] \
@@ -16,7 +17,8 @@ Usage:
 Behavior:
   1. Capture current DNS answers for api/admin/store/tob hosts
   2. Capture current live TLS secret status
-  3. Run scripts/run-g8-formal-window-ready.sh
+  3. Optionally refresh acr-regcred by delegating to scripts/run-g8-formal-window-ready.sh
+  4. Run scripts/run-g8-formal-window-ready.sh
   4. Write a compact recheck summary into the same window log directory
 EOF
 }
@@ -31,6 +33,7 @@ LOG_ROOT="$ROOT_DIR/infra/k8s/cutover-logs"
 CERT_FILE=""
 KEY_FILE=""
 TLS_MANIFEST=""
+REFRESH_ACR_REGCRED="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +44,10 @@ while [[ $# -gt 0 ]]; do
     --release-env-file)
       RELEASE_ENV_FILE="${2:-}"
       shift 2
+      ;;
+    --refresh-acr-regcred)
+      REFRESH_ACR_REGCRED="true"
+      shift
       ;;
     --namespace)
       NAMESPACE="${2:-}"
@@ -176,6 +183,9 @@ ready_args=(
   --window-id "$WINDOW_ID"
   --log-root "$LOG_ROOT"
 )
+if [[ "$REFRESH_ACR_REGCRED" == "true" ]]; then
+  ready_args+=(--refresh-acr-regcred)
+fi
 if [[ -n "$RELEASE_ENV_FILE" ]]; then
   ready_args+=(--release-env-file "$RELEASE_ENV_FILE")
 fi
@@ -197,6 +207,7 @@ fi
   echo
   echo "- window_id: \`$WINDOW_ID\`"
   echo "- readiness_status: \`$readiness_status\`"
+  echo "- refresh_acr_regcred: \`$REFRESH_ACR_REGCRED\`"
   echo "- dns_log: [10-dns-recheck.log](file://$DNS_LOG)"
   echo "- tls_log: [11-tls-secret-recheck.log](file://$TLS_LOG)"
   echo "- readiness_log: [00-formal-ready.log](file://$LOG_DIR/00-formal-ready.log)"

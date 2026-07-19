@@ -7,12 +7,14 @@ usage() {
   scripts/preflight-k8s-release.sh \
     [--k8s-dir infra/k8s] \
     [--public-env-file infra/k8s/templates/m5-public-endpoints.env.example] \
-    [--release-env-file infra/k8s/templates/m5-release-images.env.example]
+    [--release-env-file infra/k8s/templates/m5-release-images.env.example] \
+    [--check-live-prod]
 
 目的:
   1. 校验 K8s 主清单是否仍引用旧的 GHCR 口径
   2. 校验 ConfigMap 中不再携带 DATABASE_URL 之类高敏值
   3. 校验 Secret 模板、Kustomize 和公网切流模板能本地静态通过
+  4. 可选串联生产检查：acr-regcred、live TLS secret、公网 endpoint 探活
 EOF
 }
 
@@ -20,6 +22,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 K8S_DIR="$ROOT_DIR/infra/k8s"
 PUBLIC_ENV_FILE="$ROOT_DIR/infra/k8s/templates/m5-public-endpoints.env.example"
 RELEASE_ENV_FILE=""
+CHECK_LIVE_PROD="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,6 +37,10 @@ while [[ $# -gt 0 ]]; do
     --release-env-file)
       RELEASE_ENV_FILE="${2:-}"
       shift 2
+      ;;
+    --check-live-prod)
+      CHECK_LIVE_PROD="true"
+      shift
       ;;
     -h|--help)
       usage
@@ -137,6 +144,20 @@ if [[ -n "$RELEASE_ENV_FILE" ]]; then
   fi
 fi
 
+if [[ "$CHECK_LIVE_PROD" == "true" ]]; then
+  live_check_scripts=(
+    "$ROOT_DIR/scripts/check-acr-regcred-expiry.sh"
+    "$ROOT_DIR/scripts/verify-m5-tls-secret.sh"
+    "$ROOT_DIR/scripts/verify-prod-public-endpoints.sh"
+  )
+  for file in "${live_check_scripts[@]}"; do
+    if [[ ! -f "$file" ]]; then
+      echo "::error::缺少生产检查脚本: $file" >&2
+      exit 1
+    fi
+  done
+fi
+
 if [[ -f "$PUBLIC_ENV_FILE" ]]; then
   bash "$ROOT_DIR/scripts/preflight-prod-public-cutover.sh" \
     --env-file "$PUBLIC_ENV_FILE" \
@@ -146,9 +167,32 @@ else
   echo "::warning::未找到公网 env 模板，跳过公网切流离线预检: $PUBLIC_ENV_FILE"
 fi
 
+if [[ "$CHECK_LIVE_PROD" == "true" ]]; then
+  if [[ ! -f "$PUBLIC_ENV_FILE" ]]; then
+    echo "::error::开启 --check-live-prod 时，必须提供有效的 --public-env-file" >&2
+    exit 1
+  fi
+
+  echo "==> 开始生产检查: acr-regcred"
+  bash "$ROOT_DIR/scripts/check-acr-regcred-expiry.sh"
+  echo
+
+  echo "==> 开始生产检查: live TLS secret"
+  bash "$ROOT_DIR/scripts/verify-m5-tls-secret.sh" \
+    --env-file "$PUBLIC_ENV_FILE"
+  echo
+
+  echo "==> 开始生产检查: public endpoints"
+  bash "$ROOT_DIR/scripts/verify-prod-public-endpoints.sh" \
+    --env-file "$PUBLIC_ENV_FILE" \
+    --strict
+  echo
+fi
+
 echo "K8s release preflight 通过:"
 echo "- k8s dir: $K8S_DIR"
 echo "- public env: $PUBLIC_ENV_FILE"
 if [[ -n "$RELEASE_ENV_FILE" ]]; then
   echo "- release env: $RELEASE_ENV_FILE"
 fi
+echo "- live prod checks: $CHECK_LIVE_PROD"

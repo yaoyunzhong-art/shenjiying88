@@ -7,7 +7,7 @@ interface OrderCardProps {
   orderNo: string;
   totalAmount: number;
   currency: string;
-  status: 'PENDING' | 'PAID' | 'REFUNDED' | 'CANCELLED';
+  status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
   createdAt: string;
   itemCount: number;
   onPress?: () => void;
@@ -16,6 +16,7 @@ interface OrderCardProps {
 const statusLabels: Record<string, string> = {
   PENDING: '待支付',
   PAID: '已完成',
+  REFUND_PENDING: '退款审核中',
   REFUNDED: '已退款',
   CANCELLED: '已取消',
 };
@@ -23,6 +24,7 @@ const statusLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   PENDING: '#FF9500',
   PAID: '#34C759',
+  REFUND_PENDING: '#5856D6',
   REFUNDED: '#5856D6',
   CANCELLED: '#999999',
 };

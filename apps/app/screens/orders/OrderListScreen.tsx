@@ -7,12 +7,23 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderCard } from '../../components/OrderCard';
 
 type OrderStackParamList = {
-  OrderList: undefined;
+  OrderList: {
+    orderId?: string;
+    paymentStatus?: 'PAID';
+    paymentAmount?: number;
+    paymentPaidAt?: string;
+    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+    refundStatus?: 'PENDING' | 'REFUNDED';
+    refundRequestedAmount?: number;
+    refundReason?: string;
+    refundRequestedAt?: string;
+    refundCompletedAt?: string;
+  } | undefined;
   OrderDetail: { orderId: string };
 };
 
@@ -25,8 +36,10 @@ interface OrderItem {
   orderNo: string;
   totalAmount: number;
   currency: string;
-  status: 'PENDING' | 'PAID' | 'REFUNDED' | 'CANCELLED';
+  status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
   createdAt: string;
+  paidAt?: string;
+  paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
   itemCount: number;
 }
 
@@ -38,6 +51,8 @@ const mockOrders: OrderItem[] = [
     currency: 'CNY',
     status: 'PAID',
     createdAt: '2026-06-12T10:30:00.000Z',
+    paidAt: '2026-06-12T10:35:00.000Z',
+    paymentChannel: 'WECHAT_PAY',
     itemCount: 3,
   },
   {
@@ -47,6 +62,7 @@ const mockOrders: OrderItem[] = [
     currency: 'CNY',
     status: 'PENDING',
     createdAt: '2026-06-12T11:15:00.000Z',
+    paymentChannel: 'WECHAT_PAY',
     itemCount: 2,
   },
   {
@@ -56,6 +72,8 @@ const mockOrders: OrderItem[] = [
     currency: 'CNY',
     status: 'REFUNDED',
     createdAt: '2026-06-11T14:20:00.000Z',
+    paidAt: '2026-06-11T14:25:00.000Z',
+    paymentChannel: 'ALIPAY',
     itemCount: 5,
   },
   {
@@ -65,6 +83,8 @@ const mockOrders: OrderItem[] = [
     currency: 'CNY',
     status: 'PAID',
     createdAt: '2026-06-10T09:45:00.000Z',
+    paidAt: '2026-06-10T09:47:00.000Z',
+    paymentChannel: 'CASH',
     itemCount: 1,
   },
 ];
@@ -77,17 +97,86 @@ const statusFilters: { id: OrderStatus; label: string }[] = [
 ];
 
 export function OrderListScreen() {
-  const navigation = useNavigation<OrderListNavigationProp>();
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: OrderListNavigationProp;
+  }).__mockNavigation;
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: OrderStackParamList['OrderList'];
+  }).__mockRoute;
+  let navigation = fallbackNavigation as OrderListNavigationProp;
+  try {
+    navigation = useNavigation<OrderListNavigationProp>();
+  } catch {
+    navigation = fallbackNavigation as OrderListNavigationProp;
+  }
+  let route = { params: fallbackRouteParams } as RouteProp<OrderStackParamList, 'OrderList'>;
+  try {
+    route = useRoute<RouteProp<OrderStackParamList, 'OrderList'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<OrderStackParamList, 'OrderList'>;
+  }
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus>('ALL');
   const [refreshing, setRefreshing] = useState(false);
   const [orders] = useState<OrderItem[]>(mockOrders);
 
+  const ordersWithRuntimeState = orders.map((order) => {
+    if (order.orderId !== route.params?.orderId) {
+      return order;
+    }
+
+    if (route.params?.paymentStatus === 'PAID') {
+      return {
+        ...order,
+        status: 'PAID' as const,
+        totalAmount: route.params.paymentAmount ?? order.totalAmount,
+        paidAt: route.params.paymentPaidAt ?? order.paidAt,
+        paymentChannel: route.params.paymentChannel ?? order.paymentChannel,
+      };
+    }
+
+    if (route.params?.refundStatus === 'PENDING') {
+      return {
+        ...order,
+        status: 'REFUND_PENDING' as const,
+      };
+    }
+
+    if (route.params?.refundStatus === 'REFUNDED') {
+      return {
+        ...order,
+        status: 'REFUNDED' as const,
+      };
+    }
+
+    return order;
+  });
+
   const filteredOrders = selectedFilter === 'ALL'
-    ? orders
-    : orders.filter((order) => order.status === selectedFilter);
+    ? ordersWithRuntimeState
+    : ordersWithRuntimeState.filter((order) => {
+      if (selectedFilter === 'REFUNDED') {
+        return order.status === 'REFUNDED' || order.status === 'REFUND_PENDING';
+      }
+      return order.status === selectedFilter;
+    });
 
   const handleOrderPress = (orderId: string) => {
-    navigation.navigate('OrderDetail', { orderId });
+    const matchedOrder = ordersWithRuntimeState.find((item) => item.orderId === orderId);
+    navigation.navigate('OrderDetail', {
+      orderId,
+      ...(matchedOrder?.status === 'PAID' ? {
+        paymentStatus: 'PAID' as const,
+        paymentAmount: matchedOrder.totalAmount,
+        paymentPaidAt: matchedOrder.paidAt,
+        paymentChannel: matchedOrder.paymentChannel,
+      } : {}),
+      ...(matchedOrder?.status === 'REFUND_PENDING' ? {
+        refundStatus: 'PENDING' as const,
+      } : {}),
+      ...(matchedOrder?.status === 'REFUNDED' ? {
+        refundStatus: 'REFUNDED' as const,
+      } : {}),
+    });
   };
 
   const handleRefresh = useCallback(() => {

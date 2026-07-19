@@ -47,8 +47,13 @@ COPY packages/config-typescript/package.json packages/config-typescript/
 # API 特有的 prisma schema (用于 generate)
 COPY apps/api/prisma                apps/api/prisma
 
+# 构建阶段需要 devDependencies (eslint 等编译工具链)
+ENV NODE_ENV=development
+
 RUN pnpm config set registry https://registry.npmmirror.com
-RUN pnpm config set node-linker hoisted
+
+# 使用默认 linker（非 hoisted），每个包有自己的 node_modules
+# hoisted 模式会导致 next build 找不到 next/bin
 
 # Prisma engines default to upstream binaries; pin to the mirror in CI/Kaniko
 # to avoid intermittent engine download resets in mainland regions.
@@ -86,13 +91,8 @@ COPY apps/admin-web/               apps/admin-web/
 COPY apps/storefront-web/          apps/storefront-web/
 COPY apps/tob-web/                 apps/tob-web/
 
-# 构建 API 及其依赖
+# 构建 API 及其依赖（三个前端各自由 apps/*/Dockerfile 构建）
 RUN pnpm turbo build --filter=@m5/api...
-
-# 分别构建三个前端，产出 Next standalone 目录供运行时镜像直接拷贝
-RUN pnpm --filter @m5/admin-web build
-RUN pnpm --filter @m5/storefront-web build
-RUN pnpm --filter @m5/tob-web build
 
 # ──────────────────────────────────────────────────────────
 # 🎯 目标: api-prod

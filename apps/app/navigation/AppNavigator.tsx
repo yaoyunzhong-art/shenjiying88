@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -56,10 +55,37 @@ export type RootTabParamList = {
 // Work stack types
 export type WorkStackParamList = {
   WorkHome: undefined;
-  Payment: { orderId?: string };
+  Payment: {
+    orderId?: string;
+    orderNo?: string;
+    amount?: number;
+    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+  } | undefined;
   Refund: { orderId?: string; orderNo?: string; amount?: number; reason?: string };
-  Orders: undefined;
-  OrderDetail: { orderId: string };
+  Orders: {
+    orderId?: string;
+    paymentStatus?: 'PAID';
+    paymentAmount?: number;
+    paymentPaidAt?: string;
+    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+    refundStatus?: 'PENDING' | 'REFUNDED';
+    refundRequestedAmount?: number;
+    refundReason?: string;
+    refundRequestedAt?: string;
+    refundCompletedAt?: string;
+  } | undefined;
+  OrderDetail: {
+    orderId: string;
+    paymentStatus?: 'PAID';
+    paymentAmount?: number;
+    paymentPaidAt?: string;
+    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+    refundStatus?: 'PENDING' | 'REFUNDED';
+    refundRequestedAmount?: number;
+    refundReason?: string;
+    refundRequestedAt?: string;
+    refundCompletedAt?: string;
+  };
   Inventory: undefined;
   InventoryScan: undefined;
   Scan: undefined;

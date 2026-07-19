@@ -1,0 +1,29 @@
+# DNS Recheck
+
+- window_id: `formal-window-20260720-010301`
+- checked_at: `2026-07-20 01:03:01`
+
+## api.sportsant.net
+```text
+120.26.66.40
+121.41.69.154
+```
+
+## admin.sportsant.net
+```text
+120.26.66.40
+121.41.69.154
+```
+
+## store.sportsant.net
+```text
+120.26.66.40
+121.41.69.154
+```
+
+## tob.sportsant.net
+```text
+120.26.66.40
+121.41.69.154
+```
+

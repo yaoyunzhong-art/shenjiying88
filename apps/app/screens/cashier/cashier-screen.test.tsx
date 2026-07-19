@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
-import { create } from 'react-test-renderer';
+import { act, create } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
 
 /* ------------------------------------------------------------------ */
@@ -113,6 +113,12 @@ function findAllTouchables(root: ReturnType<typeof create>['root']) {
   return root.findAllByType(TouchableOpacity);
 }
 
+function findTouchableByText(root: ReturnType<typeof create>['root'], text: string) {
+  return findAllTouchables(root).find((touchable) =>
+    touchable.findAllByType(Text).some((txt) => collectTextContent(txt.props.children).join('') === text),
+  );
+}
+
 function findAllModals(root: ReturnType<typeof create>['root']) {
   return root.findAllByType(Modal);
 }
@@ -121,9 +127,10 @@ function findAllTextInputs(root: ReturnType<typeof create>['root']) {
   return root.findAllByType(TextInput);
 }
 
-function createPaymentComponent() {
+function createPaymentComponent(params?: Record<string, unknown>) {
   mockNavigateCalls.length = 0;
   alertCalls.length = 0;
+  globalThis.__mockRoute = params as never;
   return create(<PaymentScreen />);
 }
 
@@ -182,6 +189,19 @@ test('PaymentScreen: renders confirm button', () => {
   const root = createPaymentComponent();
   const confirmBtn = findByText(root.root, '确认收款');
   assert.ok(confirmBtn, '应显示确认收款按钮');
+});
+
+test('PaymentScreen: renders linked order info when opened from pending order', () => {
+  const root = createPaymentComponent({
+    orderId: 'order-002',
+    orderNo: 'ORD20260612002',
+    amount: 89.5,
+    paymentChannel: 'WECHAT_PAY',
+  });
+
+  assert.ok(findByText(root.root, '待支付订单'), '从订单详情进入时应显示待支付订单卡片');
+  assert.ok(findByText(root.root, 'ORD20260612002'), '应显示待支付订单号');
+  assert.ok(findByText(root.root, '¥89.50'), '应显示待支付金额');
 });
 
 test('PaymentScreen: default selected channel is WeChat Pay', () => {
@@ -432,6 +452,57 @@ test('PaymentScreen: entering valid amount and tapping confirm opens modal', () 
   assert.ok(alertCalls.length >= 0, '有效金额时不应直接触发alert，而是打开modal');
 });
 
+test('PaymentScreen: successful payment returns paid status to order detail', async () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = ((handler: TimerHandler) => {
+    if (typeof handler === 'function') {
+      handler();
+    }
+    return 0 as never;
+  }) as typeof setTimeout;
+
+  try {
+    const root = createPaymentComponent({
+      orderId: 'order-002',
+      orderNo: 'ORD20260612002',
+      amount: 89.5,
+      paymentChannel: 'WECHAT_PAY',
+    });
+    const confirmBtn = findTouchableByText(root.root, '确认收款');
+    assert.ok(confirmBtn, '确认收款按钮应在');
+
+    act(() => {
+      confirmBtn!.props.onPress();
+    });
+
+    const modalConfirmBtn = findAllTouchables(root.root).find((touchable) =>
+      touchable.findAllByType(Text).some((txt) => txt.props.children === '确认'),
+    );
+    assert.ok(modalConfirmBtn, '确认弹窗中的确认按钮应在');
+
+    await act(async () => {
+      await modalConfirmBtn!.props.onPress();
+    });
+
+    const successAlert = alertCalls.find((item) => item.message === '收款成功，订单状态已更新');
+    assert.ok(successAlert, '成功收款后应提示订单状态已更新');
+
+    const successButton = successAlert?.buttons?.find((button) => button.text === '确定');
+    assert.ok(successButton?.onPress, '成功提示应包含确定按钮');
+    successButton!.onPress!();
+
+    const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
+    assert.ok(navigateCall, '成功收款后应回到订单详情');
+    assert.equal(navigateCall?.params?.orderId, 'order-002');
+    assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navigateCall?.params?.paymentAmount, 89.5);
+    assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
+    assert.ok(typeof navigateCall?.params?.paymentPaidAt === 'string');
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+  }
+});
+
 test('PaymentScreen: modal shows confirm and cancel buttons', () => {
   const root = createPaymentComponent();
   const touchables = findAllTouchables(root.root);
@@ -475,7 +546,7 @@ test('RefundScreen: renders refund notice section', () => {
 
   const noticeItems = [
     '退款金额不能超过原订单金额',
-    '部分退款后订单状态变更为已退款',
+    '金额最多支持 2 位小数，最小退款金额为 0.01',
     '退款将按原支付渠道返回',
     '如有疑问请联系客服',
   ];
@@ -497,17 +568,9 @@ test('RefundScreen: renders order info with N/A when no params', () => {
 
 test('RefundScreen: tapping confirm refund with empty amount shows alert', () => {
   const root = createRefundComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const refundBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '确认退款'),
-  );
-
+  const refundBtn = findTouchableByText(root.root, '确认退款');
   assert.ok(refundBtn, '确认退款按钮应在');
-  refundBtn!.props.onPress();
-
-  const alert = alertCalls.find((a) => a.title === '提示');
-  assert.ok(alert, '空金额时点击确认退款应弹出提示');
+  assert.equal(refundBtn?.props.disabled, true, '空金额时确认退款按钮应禁用');
 });
 
 /* ---- 边界: loading / 空状态 ---- */
@@ -516,10 +579,10 @@ test('PaymentScreen: initial amount is 0.00 and submit button disabled', () => {
   const root = createPaymentComponent();
   const zeroAmount = findByText(root.root, '0.00');
   assert.ok(zeroAmount, '初始金额为 0.00');
-  // The submit button exists
-  const submitBtn = findByText(root.root, '确认收款');
+
+  const submitBtn = findTouchableByText(root.root, '确认收款');
   assert.ok(submitBtn, '确认收款按钮存在');
-  // disabled when no amount — checked by press behavior
+  assert.equal(submitBtn?.props.disabled, true, '初始空金额时确认按钮应禁用');
 });
 
 test('PaymentScreen: entering currency symbol input updates display', () => {
@@ -556,6 +619,77 @@ test('PaymentScreen: entering decimal-only amount works', () => {
   assert.ok(amount, '输入0.50后金额显示正确');
 });
 
+test('PaymentScreen: starting with decimal point normalizes to 0. and requires fractional digits', () => {
+  const root = createPaymentComponent();
+  const dot = findTouchableByText(root.root, '.');
+  const key5 = findTouchableByText(root.root, '5');
+
+  assert.ok(dot && key5, '数字键盘应包含 . 和 5');
+
+  act(() => {
+    dot!.props.onPress();
+  });
+
+  const amount0dot = findByText(root.root, '0.');
+  assert.ok(amount0dot, '首位输入小数点时应自动补成 0.');
+
+  const submitBtnBeforeFraction = findTouchableByText(root.root, '确认收款');
+  assert.equal(submitBtnBeforeFraction?.props.disabled, true, '仅输入 0. 时确认按钮仍应禁用');
+
+  act(() => {
+    key5!.props.onPress();
+  });
+
+  const amount05 = findByText(root.root, '0.5');
+  assert.ok(amount05, '补齐小数位后金额应显示 0.5');
+
+  const submitBtn = findTouchableByText(root.root, '确认收款');
+  assert.equal(submitBtn?.props.disabled, false, '输入有效小数金额后确认按钮应可用');
+});
+
+test('PaymentScreen: zero amount keeps submit button disabled', () => {
+  const root = createPaymentComponent();
+  const key0 = findTouchableByText(root.root, '0');
+  assert.ok(key0, '数字 0 按钮应在');
+
+  act(() => {
+    key0!.props.onPress();
+  });
+
+  const zeroAmount = findByText(root.root, '0');
+  assert.ok(zeroAmount, '输入 0 后金额应显示 0');
+
+  const submitBtn = findTouchableByText(root.root, '确认收款');
+  assert.equal(submitBtn?.props.disabled, true, '零金额时确认按钮应保持禁用');
+});
+
+test('PaymentScreen: leading zeros collapse before non-zero digit', () => {
+  const root = createPaymentComponent();
+  const key0 = findTouchableByText(root.root, '0');
+  const key5 = findTouchableByText(root.root, '5');
+  const submitBtn = findTouchableByText(root.root, '确认收款');
+
+  assert.ok(key0 && key5 && submitBtn, '应能找到金额键与确认按钮');
+
+  act(() => {
+    key0!.props.onPress();
+    key0!.props.onPress();
+    key5!.props.onPress();
+  });
+
+  assert.ok(findByText(root.root, '5'), '前导零后输入非零数字应收敛为有效金额');
+
+  const enabledSubmitBtn = findTouchableByText(root.root, '确认收款');
+  assert.equal(enabledSubmitBtn?.props.disabled, false, '有效金额 5 时确认按钮应可用');
+
+  act(() => {
+    enabledSubmitBtn!.props.onPress();
+  });
+
+  const modalAmount = findByText(root.root, '¥5.00');
+  assert.ok(modalAmount, '确认弹窗中的金额应按 5.00 展示，而不是保留前导零');
+});
+
 test('PaymentScreen: pressing confirm after entering amount does not crash', () => {
   const root = createPaymentComponent();
   const touchables = findAllTouchables(root.root);
@@ -584,18 +718,164 @@ test('RefundScreen: tapping refund button without reason shows alert', () => {
   };
 
   const root = createRefundComponent({ amount: 100 });
-  const touchables = findAllTouchables(root.root);
-
-  const refundBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '确认退款'),
-  );
-
+  const refundBtn = findTouchableByText(root.root, '确认退款');
   assert.ok(refundBtn);
-  refundBtn!.props.onPress();
+  assert.equal(refundBtn?.props.disabled, true, '无退款原因时确认退款按钮应禁用');
+});
 
-  // Should show confirm dialog first, then due to empty reason show alert
-  // This is in the second Alert.alert call (the confirmation)
-  assert.ok(alertCalls.length >= 0, '退款按钮点击后不应直接崩溃');
+test('RefundScreen: confirm refund submits real api request and shows success alert', async () => {
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    fetchCalls.push({ url: String(url), init });
+    return {
+      ok: true,
+      json: async () => ({
+        data: {
+          order: { orderId: 'order-001' },
+          refunds: [{ refundId: 'refund-001', status: 'PENDING' }],
+        },
+      }),
+    } as Response;
+  }) as typeof fetch;
+
+  try {
+    const root = createRefundComponent({
+      orderId: 'order-001',
+      orderNo: 'SJY-001',
+      amount: 88.5,
+      reason: '顾客取消',
+    });
+    const touchables = findAllTouchables(root.root);
+    const refundBtn = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '确认退款'),
+    );
+
+    assert.ok(refundBtn, '确认退款按钮应在');
+    refundBtn!.props.onPress();
+
+    const confirmAlert = alertCalls.at(-1);
+    const confirmButton = confirmAlert?.buttons?.find((button) => button.text === '确认');
+    assert.ok(confirmButton?.onPress, '应弹出确认退款对话框');
+
+    await act(async () => {
+      await confirmButton!.onPress!();
+    });
+
+    assert.equal(fetchCalls.length, 1, '应发起一次退款请求');
+    assert.ok(fetchCalls[0]!.url.includes('/transactions/orders/order-001/refunds'));
+    assert.equal(fetchCalls[0]!.init?.method, 'POST');
+    assert.match(String(fetchCalls[0]!.init?.body), /"refundAmount":88\.5/);
+    assert.match(String(fetchCalls[0]!.init?.body), /"reason":"顾客取消"/);
+
+    const successAlert = alertCalls.find((item) => item.message === '退款申请已提交，请等待审核处理');
+    assert.ok(successAlert, '成功后应提示退款申请已提交');
+
+    const successButton = successAlert?.buttons?.find((button) => button.text === '确定');
+    assert.ok(successButton?.onPress, '成功提示应包含确定按钮');
+    successButton!.onPress!();
+
+    const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
+    assert.ok(navigateCall, '成功后应把退款状态回带到订单详情');
+    assert.equal(navigateCall?.params?.orderId, 'order-001');
+    assert.equal(navigateCall?.params?.refundStatus, 'PENDING');
+    assert.equal(navigateCall?.params?.refundRequestedAmount, 88.5);
+    assert.equal(navigateCall?.params?.refundReason, '顾客取消');
+    assert.ok(typeof navigateCall?.params?.refundRequestedAt === 'string');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('RefundScreen: completed refund response returns refunded status to order detail', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => ({
+    ok: true,
+    json: async () => ({
+      data: {
+        order: { orderId: 'order-001' },
+        refunds: [{
+          refundId: 'refund-002',
+          status: 'COMPLETED',
+          refundAmount: 156,
+          reason: '整单退款',
+          requestedAt: '2026-07-20T03:00:00.000Z',
+          completedAt: '2026-07-20T03:05:00.000Z',
+        }],
+      },
+    }),
+  }) as Response) as typeof fetch;
+
+  try {
+    const root = createRefundComponent({
+      orderId: 'order-001',
+      orderNo: 'SJY-001',
+      amount: 156,
+      reason: '整单退款',
+    });
+    const refundBtn = findTouchableByText(root.root, '确认退款');
+    assert.ok(refundBtn, '确认退款按钮应在');
+
+    refundBtn!.props.onPress();
+    const confirmAlert = alertCalls.at(-1);
+    const confirmButton = confirmAlert?.buttons?.find((button) => button.text === '确认');
+    assert.ok(confirmButton?.onPress, '应弹出确认退款对话框');
+
+    await act(async () => {
+      await confirmButton!.onPress!();
+    });
+
+    const successAlert = alertCalls.find((item) => item.message === '退款已完成，订单状态已更新');
+    assert.ok(successAlert, '完成态应提示退款已完成');
+
+    const successButton = successAlert?.buttons?.find((button) => button.text === '确定');
+    assert.ok(successButton?.onPress, '完成提示应包含确定按钮');
+    successButton!.onPress!();
+
+    const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
+    assert.ok(navigateCall, '完成态后应回带到订单详情');
+    assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
+    assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T03:05:00.000Z');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('RefundScreen: api failure shows error alert instead of fake success', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    throw new Error('refund api unavailable');
+  }) as typeof fetch;
+
+  try {
+    const root = createRefundComponent({
+      orderId: 'order-002',
+      orderNo: 'SJY-002',
+      amount: 66,
+      reason: '支付异常',
+    });
+    const touchables = findAllTouchables(root.root);
+    const refundBtn = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '确认退款'),
+    );
+
+    assert.ok(refundBtn, '确认退款按钮应在');
+    refundBtn!.props.onPress();
+
+    const confirmAlert = alertCalls.at(-1);
+    const confirmButton = confirmAlert?.buttons?.find((button) => button.text === '确认');
+    assert.ok(confirmButton?.onPress, '应弹出确认退款对话框');
+
+    await act(async () => {
+      await confirmButton!.onPress!();
+    });
+
+    const errorAlert = alertCalls.find((item) => item.title === '错误' && item.message === 'refund api unavailable');
+    assert.ok(errorAlert, '接口失败时应显示错误提示');
+    assert.ok(!alertCalls.some((item) => item.message === '退款申请已提交，请等待审核处理'), '失败时不应提示假成功');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('PaymentScreen: multiple decimal points are prevented', () => {
@@ -618,9 +898,76 @@ test('PaymentScreen: multiple decimal points are prevented', () => {
   assert.ok(amount1dot, '金额应只包含一个小数点');
 });
 
+test('RefundScreen: amount with more than 2 decimals keeps submit disabled', () => {
+  const root = createRefundComponent({
+    orderId: 'order-003',
+    orderNo: 'SJY-003',
+    amount: 100,
+    reason: '金额异常',
+  });
+  const inputs = findAllTextInputs(root.root);
+  const amountInput = inputs[0];
+  assert.ok(amountInput, '退款金额输入框应在');
+
+  act(() => {
+    amountInput!.props.onChangeText('10.123');
+  });
+
+  const refundBtn = findTouchableByText(root.root, '确认退款');
+  assert.equal(refundBtn?.props.disabled, true, '超过两位小数时确认退款按钮应禁用');
+});
+
 test('RefundScreen: renders original amount as 0.00 when no params', () => {
   const root = createRefundComponent();
 
   const zeroAmount = findByText(root.root, '¥0.00');
   assert.ok(zeroAmount, '无金额参数时显示 ¥0.00');
+});
+
+test('PaymentScreen: member card requires valid phone before submit', () => {
+  const root = createPaymentComponent();
+  const memberCardBtn = findTouchableByText(root.root, '会员卡');
+  const key1 = findTouchableByText(root.root, '1');
+  const key0 = findTouchableByText(root.root, '0');
+  assert.ok(memberCardBtn && key1 && key0, '应找到会员卡与金额键');
+
+  act(() => {
+    memberCardBtn!.props.onPress();
+    key1!.props.onPress();
+    key0!.props.onPress();
+  });
+
+  const phoneInput = findAllTextInputs(root.root).find((input) => input.props.placeholder === '请输入会员手机号');
+  assert.ok(phoneInput, '会员卡支付应显示手机号输入框');
+
+  act(() => {
+    phoneInput!.props.onChangeText('123');
+  });
+
+  const disabledSubmitBtn = findTouchableByText(root.root, '确认收款');
+  assert.equal(disabledSubmitBtn?.props.disabled, true, '手机号无效时确认收款按钮应禁用');
+
+  act(() => {
+    phoneInput!.props.onChangeText('13800138000');
+  });
+
+  const enabledSubmitBtn = findTouchableByText(root.root, '确认收款');
+  assert.equal(enabledSubmitBtn?.props.disabled, false, '手机号有效时确认收款按钮应可用');
+});
+
+test('PaymentScreen: amount above upper limit keeps submit disabled', () => {
+  const root = createPaymentComponent();
+  const sequence = ['1', '0', '0', '0', '0', '0', '0'];
+
+  act(() => {
+    sequence.forEach((key) => {
+      findTouchableByText(root.root, key)?.props.onPress();
+    });
+  });
+
+  const amount = findByText(root.root, '1000000');
+  assert.ok(amount, '应能显示超大金额输入');
+
+  const submitBtn = findTouchableByText(root.root, '确认收款');
+  assert.equal(submitBtn?.props.disabled, true, '超过金额上限时确认收款按钮应禁用');
 });

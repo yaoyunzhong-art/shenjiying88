@@ -10,6 +10,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { submitNativeAppOrderRefund } from '../../market-bootstrap';
 
 type RefundParams = {
   Refund: {
@@ -21,22 +22,66 @@ type RefundParams = {
 };
 
 export function RefundScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<RouteProp<RefundParams, 'Refund'>>();
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: {
+      goBack: () => void;
+      navigate?: (route: string, params?: Record<string, unknown>) => void;
+    };
+  }).__mockNavigation ?? { goBack: () => {}, navigate: () => {} };
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: RefundParams['Refund'];
+  }).__mockRoute ?? {};
+
+  let navigation = fallbackNavigation;
+  try {
+    navigation = useNavigation();
+  } catch {
+    navigation = fallbackNavigation;
+  }
+
+  let route = { params: fallbackRouteParams } as RouteProp<RefundParams, 'Refund'>;
+  try {
+    route = useRoute<RouteProp<RefundParams, 'Refund'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<RefundParams, 'Refund'>;
+  }
+
   const { orderId, orderNo, amount: initialAmount, reason: initialReason } = route.params ?? {};
 
   const [refundAmount, setRefundAmount] = useState(initialAmount?.toString() ?? '');
   const [refundReason, setRefundReason] = useState(initialReason ?? '');
   const [loading, setLoading] = useState(false);
+  const trimmedRefundAmount = refundAmount.trim();
+  const trimmedRefundReason = refundReason.trim();
+  const numAmount = Number(trimmedRefundAmount);
+  const hasValidAmountFormat = /^\d+(\.\d{1,2})?$/.test(trimmedRefundAmount);
+  const canSubmitRefund =
+    hasValidAmountFormat &&
+    Number.isFinite(numAmount) &&
+    numAmount > 0 &&
+    (typeof initialAmount !== 'number' || numAmount <= initialAmount) &&
+    trimmedRefundReason.length > 0;
+  const isFullRefund = typeof initialAmount === 'number' && Math.abs(numAmount - initialAmount) < 0.00001;
 
   const handleRefund = async () => {
-    const numAmount = parseFloat(refundAmount);
-    if (isNaN(numAmount) || numAmount <= 0) {
+    if (!hasValidAmountFormat || !Number.isFinite(numAmount) || numAmount <= 0) {
       Alert.alert('提示', '请输入有效的退款金额');
       return;
     }
-    if (!refundReason.trim()) {
+    if (!trimmedRefundReason) {
       Alert.alert('提示', '请输入退款原因');
+      return;
+    }
+    if (!orderId) {
+      Alert.alert('提示', '缺少订单信息，无法提交退款');
+      return;
+    }
+    if (typeof initialAmount === 'number' && numAmount > initialAmount) {
+      Alert.alert('提示', '退款金额不能超过原订单金额');
+      return;
+    }
+    if (!canSubmitRefund) {
+      Alert.alert('提示', '请补全退款信息后再提交');
       return;
     }
 
@@ -51,15 +96,39 @@ export function RefundScreen() {
           onPress: async () => {
             setLoading(true);
             try {
-              await new Promise((resolve) => setTimeout(resolve, 1500));
-              Alert.alert('提示', '退款成功', [
+              const aggregate = await submitNativeAppOrderRefund(orderId, {
+                refundAmount: numAmount,
+                reason: trimmedRefundReason,
+                operator: 'app-cashier',
+              });
+              const latestRefund = [...aggregate.refunds].sort((left, right) =>
+                new Date(right.requestedAt).getTime() - new Date(left.requestedAt).getTime(),
+              )[0];
+              const completedStatuses = new Set(['REFUNDED', 'COMPLETED', 'SUCCEEDED']);
+              const refundStatus = completedStatuses.has(latestRefund?.status ?? '') ? 'REFUNDED' : 'PENDING';
+              const refundRequestedAt = latestRefund?.requestedAt ?? new Date().toISOString();
+              const refundCompletedAt = latestRefund?.completedAt;
+              const successMessage = refundStatus === 'REFUNDED'
+                ? '退款已完成，订单状态已更新'
+                : '退款申请已提交，请等待审核处理';
+              Alert.alert('提示', successMessage, [
                 {
                   text: '确定',
-                  onPress: () => navigation.goBack(),
+                  onPress: () => navigation.navigate?.('OrderDetail', {
+                    orderId,
+                    refundStatus,
+                    refundRequestedAmount: numAmount,
+                    refundReason: trimmedRefundReason,
+                    refundRequestedAt,
+                    refundCompletedAt,
+                  }),
                 },
               ]);
-            } catch {
-              Alert.alert('错误', '退款失败，请重试');
+            } catch (error) {
+              const message = error instanceof Error && error.message
+                ? error.message
+                : '退款失败，请重试';
+              Alert.alert('错误', message);
             } finally {
               setLoading(false);
             }
@@ -112,7 +181,8 @@ export function RefundScreen() {
         <View style={styles.notice}>
           <Text style={styles.noticeTitle}>退款须知</Text>
           <Text style={styles.noticeText}>• 退款金额不能超过原订单金额</Text>
-          <Text style={styles.noticeText}>• 部分退款后订单状态变更为已退款</Text>
+          <Text style={styles.noticeText}>• 金额最多支持 2 位小数，最小退款金额为 0.01</Text>
+          <Text style={styles.noticeText}>• {isFullRefund ? '当前为全额退款' : '当前为部分退款'}，状态以接口返回结果为准</Text>
           <Text style={styles.noticeText}>• 退款将按原支付渠道返回</Text>
           <Text style={styles.noticeText}>• 如有疑问请联系客服</Text>
         </View>
@@ -124,6 +194,7 @@ export function RefundScreen() {
           onPress={handleRefund}
           loading={loading}
           style={styles.submitButton}
+          disabled={!canSubmitRefund}
         />
       </View>
     </View>

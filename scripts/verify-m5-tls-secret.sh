@@ -131,9 +131,43 @@ fi
 
 if [[ "${#EXPECTED_HOSTS[@]}" -gt 0 ]]; then
   echo "==> SAN coverage check"
+  san_entries=()
+  while IFS= read -r san_entry; do
+    san_entry="${san_entry#DNS:}"
+    san_entry="${san_entry%,}"
+    if [[ -n "$san_entry" ]]; then
+      san_entries+=("$san_entry")
+    fi
+  done < <(grep -o 'DNS:[^,[:space:]]*' <<<"$san_output" || true)
+
+  host_matches_san() {
+    local host="$1"
+    local san_entry="$2"
+    if [[ "$host" == "$san_entry" ]]; then
+      return 0
+    fi
+    if [[ "$san_entry" == \*.* ]]; then
+      local suffix="${san_entry#*.}"
+      if [[ "$host" == *."$suffix" && "$host" != "$suffix" ]]; then
+        local prefix="${host%.$suffix}"
+        if [[ -n "$prefix" && "$prefix" != *.* ]]; then
+          return 0
+        fi
+      fi
+    fi
+    return 1
+  }
+
   missing_hosts=()
   for host in "${EXPECTED_HOSTS[@]}"; do
-    if grep -Fq "DNS:${host}" <<<"$san_output"; then
+    covered="false"
+    for san_entry in "${san_entries[@]}"; do
+      if host_matches_san "$host" "$san_entry"; then
+        covered="true"
+        break
+      fi
+    done
+    if [[ "$covered" == "true" ]]; then
       echo "OK   $host"
     else
       echo "MISS $host"

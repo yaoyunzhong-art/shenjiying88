@@ -9,6 +9,7 @@ Usage:
     [--release-env-file <path>] \
     [--cert-file <path> --key-file <path>] \
     [--tls-manifest <path>] \
+    [--refresh-acr-regcred] \
     [--namespace m5] \
     [--window-id <id>] \
     [--log-root infra/k8s/cutover-logs] \
@@ -17,7 +18,8 @@ Usage:
 
 Behavior:
   1. If cert/key are provided, render infra/k8s/rendered-public/m5-tls.yaml
-  2. Run formal DNS/TLS readiness gate
+  2. Optionally refresh acr-regcred before the formal gate
+  3. Run formal DNS/TLS readiness gate
   3. If --execute-apply is set, enter the formal cutover window
 
 Notes:
@@ -38,9 +40,11 @@ WINDOW_ID="formal-window-$(date +%Y%m%d-%H%M%S)"
 LOG_ROOT="$ROOT_DIR/infra/k8s/cutover-logs"
 EXECUTE_APPLY="false"
 EXECUTE_ROLLBACK="false"
+REFRESH_ACR_REGCRED="false"
 LOG_DIR=""
 READINESS_LOG=""
 BLOCKER_REPORT=""
+ACR_REFRESH_LOG=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -63,6 +67,10 @@ while [[ $# -gt 0 ]]; do
     --tls-manifest)
       TLS_MANIFEST="${2:-}"
       shift 2
+      ;;
+    --refresh-acr-regcred)
+      REFRESH_ACR_REGCRED="true"
+      shift
       ;;
     --namespace)
       NAMESPACE="${2:-}"
@@ -119,6 +127,7 @@ fi
 LOG_DIR="$LOG_ROOT/$WINDOW_ID"
 READINESS_LOG="$LOG_DIR/00-formal-ready.log"
 BLOCKER_REPORT="$LOG_DIR/READINESS-BLOCKERS.md"
+ACR_REFRESH_LOG="$LOG_DIR/00-acr-refresh.log"
 mkdir -p "$LOG_DIR"
 
 if [[ -n "$CERT_FILE" && -n "$KEY_FILE" ]]; then
@@ -131,6 +140,36 @@ if [[ -n "$CERT_FILE" && -n "$KEY_FILE" ]]; then
     --output-file "$TLS_MANIFEST"
 elif [[ -z "$TLS_MANIFEST" && -f "$ROOT_DIR/infra/k8s/rendered-public/m5-tls.yaml" ]]; then
   TLS_MANIFEST="$ROOT_DIR/infra/k8s/rendered-public/m5-tls.yaml"
+fi
+
+if [[ "$REFRESH_ACR_REGCRED" == "true" ]]; then
+  echo "==> Refreshing acr-regcred before formal readiness gate"
+  if bash "$ROOT_DIR/scripts/refresh-acr-regcred.sh" 2>&1 | tee "$ACR_REFRESH_LOG"; then
+    :
+  else
+    {
+      echo "# G8 Formal Readiness Blockers"
+      echo
+      echo "- window_id: \`$WINDOW_ID\`"
+      echo "- env_file: \`$ENV_FILE\`"
+      echo "- namespace: \`$NAMESPACE\`"
+      echo "- acr_refresh_log: \`$ACR_REFRESH_LOG\`"
+      echo
+      echo "## Blockers"
+      echo
+      echo "- acr-regcred refresh failed before the formal readiness gate."
+      echo
+      echo "## Next Action"
+      echo
+      echo "- Fix the acr-regcred refresh failure recorded in \`$ACR_REFRESH_LOG\`."
+      echo "- Rerun \`scripts/run-g8-formal-window-ready.sh\` after acr-regcred can refresh successfully."
+    } > "$BLOCKER_REPORT"
+    echo
+    echo "==> Formal readiness blocked"
+    echo "acr_refresh_log=$ACR_REFRESH_LOG"
+    echo "blocker_report=$BLOCKER_REPORT"
+    exit 1
+  fi
 fi
 
 echo "==> Running formal readiness gate"

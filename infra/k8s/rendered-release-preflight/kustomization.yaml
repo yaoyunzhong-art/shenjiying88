@@ -22,6 +22,7 @@ resources:
   - pod-disruption-budget.yaml
   - resource-quota.yaml
 
-commonLabels:
-  app.kubernetes.io/managed-by: kustomize
-  app.kubernetes.io/part-of: shenjiying
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/part-of: shenjiying

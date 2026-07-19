@@ -1,23 +1,23 @@
-export interface PaginationInput {
+interface PaginationInput {
     page: number;
     pageSize: number;
 }
-export interface PaginationMeta {
+interface PaginationMeta {
     page: number;
     pageSize: number;
     total: number;
 }
-export interface ApiResult<T> {
+interface ApiResult<T> {
     success: boolean;
     message: string;
     data: T;
     timestamp: string;
 }
-export type FoundationClientApp = 'admin-web' | 'tob-web' | 'storefront-web' | 'miniapp' | 'app';
-export type BootstrapDeliveryChannel = 'API_BOOTSTRAP' | 'RUNTIME_CHALLENGE';
-export type BootstrapCacheLayer = 'NONE' | 'MEMORY' | 'SESSION' | 'LOCAL_PERSISTED';
-export type BootstrapFallbackStrategy = 'FAIL_CLOSED' | 'READONLY_LAST_KNOWN' | 'PUBLIC_LAST_KNOWN';
-export interface BootstrapCapabilityRule {
+type FoundationClientApp = 'admin-web' | 'tob-web' | 'storefront-web' | 'miniapp' | 'app';
+type BootstrapDeliveryChannel = 'API_BOOTSTRAP' | 'RUNTIME_CHALLENGE';
+type BootstrapCacheLayer = 'NONE' | 'MEMORY' | 'SESSION' | 'LOCAL_PERSISTED';
+type BootstrapFallbackStrategy = 'FAIL_CLOSED' | 'READONLY_LAST_KNOWN' | 'PUBLIC_LAST_KNOWN';
+interface BootstrapCapabilityRule {
     capability: string;
     source: BootstrapDeliveryChannel;
     requiredApps: FoundationClientApp[];
@@ -25,32 +25,32 @@ export interface BootstrapCapabilityRule {
     ttlSeconds?: number;
     notes: string[];
 }
-export interface TenantScopeBootstrapPolicy {
+interface TenantScopeBootstrapPolicy {
     resolver: string;
     bootstrapRequired: boolean;
     cacheLayer: BootstrapCacheLayer;
     revalidateOn: string[];
     mismatchStrategy: BootstrapFallbackStrategy;
 }
-export interface DesensitizationBootstrapPolicy {
+interface DesensitizationBootstrapPolicy {
     source: 'API_BOOTSTRAP';
     defaultMode: 'MASKED' | 'HIDDEN_UNTIL_APPROVED' | 'PUBLIC_ONLY';
     notes: string[];
 }
-export interface FeatureFlagBootstrapPolicy {
+interface FeatureFlagBootstrapPolicy {
     source: 'API_BOOTSTRAP';
     cacheLayer: BootstrapCacheLayer;
     ttlSeconds?: number;
     fallbackStrategy: BootstrapFallbackStrategy;
     notes: string[];
 }
-export interface RiskChallengeBootstrapPolicy {
+interface RiskChallengeBootstrapPolicy {
     triggerSource: 'API_BOOTSTRAP';
     cacheLayer: 'NONE' | 'MEMORY';
     enforcement: 'STEP_UP' | 'BLOCKING';
     notes: string[];
 }
-export interface AppBootstrapWiring {
+interface AppBootstrapWiring {
     app: FoundationClientApp;
     audience: 'OPERATIONS' | 'MERCHANT' | 'CONSUMER';
     bootstrapFile: string;
@@ -62,18 +62,18 @@ export interface AppBootstrapWiring {
     featureFlags: FeatureFlagBootstrapPolicy;
     riskChallenge: RiskChallengeBootstrapPolicy;
 }
-export interface UnifiedFoundationBootstrapContract {
+interface UnifiedFoundationBootstrapContract {
     version: string;
     bootstrapEndpoint: string;
     deliveredCapabilities: BootstrapCapabilityRule[];
     appProfiles: Record<FoundationClientApp, AppBootstrapWiring>;
 }
-export type FoundationModuleKey = 'identity-access' | 'configuration-governance' | 'integration-orchestration' | 'trust-governance' | 'resilience-operations' | 'runtime-governance';
-export type FoundationConsumerKey = 'market' | 'portal' | 'workbench' | 'lyt-adapter';
-export type FoundationAlertCode = 'approvals-pending' | 'approval-execution-failures' | 'high-risk-audits' | 'blocked-rate-limit-ledgers' | 'secret-rotation-attention' | 'observability-degradation' | 'recovery-drill-attention' | 'runtime-governance-backlog' | 'runtime-callback-stalled' | 'lyt-connection-governance-risk';
-export type FoundationAlertSeverity = 'high' | 'medium' | 'low';
-export type FoundationAlertAcknowledgementStatus = 'ACKED' | 'MUTED';
-export interface FoundationAlertAcknowledgement {
+type FoundationModuleKey = 'identity-access' | 'configuration-governance' | 'integration-orchestration' | 'trust-governance' | 'resilience-operations' | 'runtime-governance';
+type FoundationConsumerKey = 'market' | 'portal' | 'workbench' | 'lyt-adapter';
+type FoundationAlertCode = 'approvals-pending' | 'approval-execution-failures' | 'high-risk-audits' | 'blocked-rate-limit-ledgers' | 'secret-rotation-attention' | 'observability-degradation' | 'recovery-drill-attention' | 'runtime-governance-backlog' | 'runtime-callback-stalled' | 'lyt-connection-governance-risk';
+type FoundationAlertSeverity = 'high' | 'medium' | 'low';
+type FoundationAlertAcknowledgementStatus = 'ACKED' | 'MUTED';
+interface FoundationAlertAcknowledgement {
     status: FoundationAlertAcknowledgementStatus;
     note: string | null;
     actorId: string | null;
@@ -81,7 +81,7 @@ export interface FoundationAlertAcknowledgement {
     mutedUntil: string | null;
     updatedAt: string;
 }
-export interface FoundationAlertCatalogItem {
+interface FoundationAlertCatalogItem {
     code: FoundationAlertCode;
     defaultSummary: string;
     severityPolicy: string;
@@ -99,16 +99,16 @@ export interface FoundationAlertCatalogItem {
     triageState?: FoundationOperationsAlertTriageState;
     triageSummary?: string;
 }
-export interface FoundationAlertCatalogResponse {
+interface FoundationAlertCatalogResponse {
     generatedAt: string;
     alerts: FoundationAlertCatalogItem[];
 }
-export type FoundationAlertOperation = 'DRILLDOWN' | 'ACK' | 'MUTE' | 'UNMUTE';
-export type FoundationAlertMutationKind = 'ACK' | 'MUTE' | 'UNMUTE';
-export type FoundationAlertTimelineFilter = 'ALL' | FoundationAlertMutationKind;
-export type FoundationAlertOwnerFilter = 'ALL' | string;
-export type FoundationAlertTimelineSourceFilter = 'ALL' | string;
-export interface FoundationAlertTimelineEntry {
+type FoundationAlertOperation = 'DRILLDOWN' | 'ACK' | 'MUTE' | 'UNMUTE';
+type FoundationAlertMutationKind = 'ACK' | 'MUTE' | 'UNMUTE';
+type FoundationAlertTimelineFilter = 'ALL' | FoundationAlertMutationKind;
+type FoundationAlertOwnerFilter = 'ALL' | string;
+type FoundationAlertTimelineSourceFilter = 'ALL' | string;
+interface FoundationAlertTimelineEntry {
     action: FoundationAlertMutationKind;
     note: string | null;
     actorId: string | null;
@@ -117,29 +117,29 @@ export interface FoundationAlertTimelineEntry {
     createdAt: string;
     source: string | null;
 }
-export interface FoundationAlertOwnerSummary {
+interface FoundationAlertOwnerSummary {
     actorId: string;
     count: number;
     lastAction: FoundationAlertMutationKind;
     lastSeenAt: string;
 }
-export interface FoundationAlertTimelineMetrics {
+interface FoundationAlertTimelineMetrics {
     total: number;
     visibleInOverview: number;
     hiddenFromOverview: number;
     latestMatchedAt: string | null;
 }
-export interface FoundationAlertTimelineSourceSummary {
+interface FoundationAlertTimelineSourceSummary {
     source: string;
     count: number;
     latestAt: string | null;
 }
-export interface FoundationAlertTimelineActionSummary {
+interface FoundationAlertTimelineActionSummary {
     action: FoundationAlertMutationKind;
     count: number;
     latestAt: string | null;
 }
-export interface FoundationAlertTimelineDigest {
+interface FoundationAlertTimelineDigest {
     actions: FoundationAlertTimelineActionSummary[];
     uniqueOwnerCount: number;
     latestActorId: string | null;
@@ -151,82 +151,82 @@ export interface FoundationAlertTimelineDigest {
     latestVisibleSource: string | null;
     latestHiddenSource: string | null;
 }
-export interface FoundationAlertTimelineFilterState {
+interface FoundationAlertTimelineFilterState {
     action: FoundationAlertTimelineFilter;
     source: FoundationAlertTimelineSourceFilter;
     owner: FoundationAlertOwnerFilter;
 }
-export interface FoundationAlertTimelineActiveFilterChip {
+interface FoundationAlertTimelineActiveFilterChip {
     kind: 'action' | 'source' | 'owner';
     label: string;
     value: string;
 }
-export interface FoundationAlertTimelineShortcutPreset {
+interface FoundationAlertTimelineShortcutPreset {
     key: 'latest-owner' | 'latest-source' | 'dominant-action' | 'recent-hidden-flow' | 'recent-visible-flow';
     label: string;
     helper: string;
     filters: FoundationAlertTimelineFilterState;
 }
-export interface FoundationAlertTimelineFilterQueryKeys {
+interface FoundationAlertTimelineFilterQueryKeys {
     action: string;
     source: string;
     owner: string;
 }
-export interface FoundationAlertLinkedFocusQueryKeys {
+interface FoundationAlertLinkedFocusQueryKeys {
     focus: string;
     timeline: FoundationAlertTimelineFilterQueryKeys;
 }
-export interface FoundationAlertRuntimeCallbackStalledEscalationSummary {
+interface FoundationAlertRuntimeCallbackStalledEscalationSummary {
     waitCallback: number;
     scheduleReplay: number;
     openManualReview: number;
 }
-export declare function buildFoundationAlertRecentOperationFilterState(entry: FoundationAlertTimelineEntry | null | undefined): FoundationAlertTimelineFilterState;
-export declare function buildFoundationAlertTimelineFilterStateFromQuery(query: {
+declare function buildFoundationAlertRecentOperationFilterState(entry: FoundationAlertTimelineEntry | null | undefined): FoundationAlertTimelineFilterState;
+declare function buildFoundationAlertTimelineFilterStateFromQuery(query: {
     action?: string | null;
     source?: string | null;
     owner?: string | null;
 }): FoundationAlertTimelineFilterState;
-export declare function normalizeFoundationAlertTimelineFilterState(filters: FoundationAlertTimelineFilterState, options: {
+declare function normalizeFoundationAlertTimelineFilterState(filters: FoundationAlertTimelineFilterState, options: {
     availableOwners?: Array<string | null | undefined>;
     availableSources?: Array<string | null | undefined>;
 }): FoundationAlertTimelineFilterState;
-export declare function buildFoundationAlertTimelineFilterSearchParams(options: {
+declare function buildFoundationAlertTimelineFilterSearchParams(options: {
     search?: string | URLSearchParams;
     queryKeys: FoundationAlertTimelineFilterQueryKeys;
     filters: FoundationAlertTimelineFilterState;
 }): URLSearchParams;
-export declare function buildFoundationAlertTimelineFilterQueryPreview(queryKeys: FoundationAlertTimelineFilterQueryKeys, filters: FoundationAlertTimelineFilterState): string;
-export declare function resolveFoundationAlertFocusCode(queryFocusCode: string | null | undefined, candidateGroups: Array<Array<{
+declare function buildFoundationAlertTimelineFilterQueryPreview(queryKeys: FoundationAlertTimelineFilterQueryKeys, filters: FoundationAlertTimelineFilterState): string;
+declare function resolveFoundationAlertFocusCode(queryFocusCode: string | null | undefined, candidateGroups: Array<Array<{
     code: string;
 }> | null | undefined>): string | null;
-export declare function buildFoundationAlertLinkedFocusContext(context: string, filters?: FoundationAlertTimelineFilterState | null): string;
-export declare function buildFoundationAlertLinkedFocusSearchParams(options: {
+declare function buildFoundationAlertLinkedFocusContext(context: string, filters?: FoundationAlertTimelineFilterState | null): string;
+declare function buildFoundationAlertLinkedFocusSearchParams(options: {
     search?: string | URLSearchParams;
     queryKeys: FoundationAlertLinkedFocusQueryKeys;
     focusCode?: string | null;
     filters?: FoundationAlertTimelineFilterState | null;
 }): URLSearchParams;
-export declare function filterFoundationAlertTimeline(history: FoundationAlertTimelineEntry[] | null | undefined, filter?: FoundationAlertTimelineFilter): FoundationAlertTimelineEntry[];
-export declare function summarizeFoundationAlertOwners(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertOwnerSummary[];
-export declare function filterFoundationAlertTimelineByOwner(history: FoundationAlertTimelineEntry[] | null | undefined, ownerFilter?: FoundationAlertOwnerFilter): FoundationAlertTimelineEntry[];
-export declare function filterFoundationAlertTimelineBySource(history: FoundationAlertTimelineEntry[] | null | undefined, sourceFilter?: FoundationAlertTimelineSourceFilter): FoundationAlertTimelineEntry[];
-export declare function summarizeFoundationAlertTimelineSources(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineSourceSummary[];
-export declare function findLatestFoundationAlertTimelineEntry(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineEntry | null;
-export declare function summarizeFoundationAlertTimelineMetrics(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineMetrics;
-export declare function summarizeFoundationAlertTimelineDigest(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineDigest;
-export declare function listFoundationAlertTimelineActiveFilters(filters: FoundationAlertTimelineFilterState): FoundationAlertTimelineActiveFilterChip[];
-export declare function summarizeFoundationAlertTimelineFilters(filters: FoundationAlertTimelineFilterState): string;
-export declare function isFoundationAlertTimelineFilterStateEqual(left: FoundationAlertTimelineFilterState, right: FoundationAlertTimelineFilterState): boolean;
-export declare function buildFoundationAlertTimelineEmptyState(filters: FoundationAlertTimelineFilterState): string;
-export declare function buildFoundationAlertTimelineShortcutPresets(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineShortcutPreset[];
-export interface FoundationAlertRuntimeCallbackStalledDetail {
+declare function filterFoundationAlertTimeline(history: FoundationAlertTimelineEntry[] | null | undefined, filter?: FoundationAlertTimelineFilter): FoundationAlertTimelineEntry[];
+declare function summarizeFoundationAlertOwners(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertOwnerSummary[];
+declare function filterFoundationAlertTimelineByOwner(history: FoundationAlertTimelineEntry[] | null | undefined, ownerFilter?: FoundationAlertOwnerFilter): FoundationAlertTimelineEntry[];
+declare function filterFoundationAlertTimelineBySource(history: FoundationAlertTimelineEntry[] | null | undefined, sourceFilter?: FoundationAlertTimelineSourceFilter): FoundationAlertTimelineEntry[];
+declare function summarizeFoundationAlertTimelineSources(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineSourceSummary[];
+declare function findLatestFoundationAlertTimelineEntry(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineEntry | null;
+declare function summarizeFoundationAlertTimelineMetrics(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineMetrics;
+declare function summarizeFoundationAlertTimelineDigest(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineDigest;
+declare function listFoundationAlertTimelineActiveFilters(filters: FoundationAlertTimelineFilterState): FoundationAlertTimelineActiveFilterChip[];
+declare function summarizeFoundationAlertTimelineFilters(filters: FoundationAlertTimelineFilterState): string;
+declare function isFoundationAlertTimelineFilterStateEqual(left: FoundationAlertTimelineFilterState, right: FoundationAlertTimelineFilterState): boolean;
+declare function buildFoundationAlertTimelineEmptyState(filters: FoundationAlertTimelineFilterState): string;
+declare function buildFoundationAlertTimelineShortcutPresets(history: FoundationAlertTimelineEntry[] | null | undefined): FoundationAlertTimelineShortcutPreset[];
+interface FoundationAlertRuntimeCallbackStalledDetail {
     total: number;
     timeoutThresholds: Record<RuntimeGovernanceRiskLevel, number>;
     escalationSummary: FoundationAlertRuntimeCallbackStalledEscalationSummary;
     receipts: RuntimeGovernanceCallbackStallDetail[];
 }
-export interface FoundationAlertLytGovernanceAlertGroup {
+interface FoundationAlertLytGovernanceAlertGroup {
     severity: 'high' | 'medium' | 'low';
     code: string;
     count: number;
@@ -235,7 +235,7 @@ export interface FoundationAlertLytGovernanceAlertGroup {
     affectedCapabilities: string[];
     recommendedNextActions: string[];
 }
-export interface FoundationAlertLytConnectionGovernanceRiskDetail {
+interface FoundationAlertLytConnectionGovernanceRiskDetail {
     total: number;
     scope: {
         tenantId?: string;
@@ -247,18 +247,18 @@ export interface FoundationAlertLytConnectionGovernanceRiskDetail {
     affectedCapabilities: string[];
     recommendedNextActions: string[];
 }
-export type FoundationAlertDrilldownDetail = Record<string, unknown> | FoundationAlertRuntimeCallbackStalledDetail | FoundationAlertLytConnectionGovernanceRiskDetail;
-export declare function isFoundationAlertRuntimeCallbackStalledDetail(code: FoundationAlertCode | string, detail: FoundationAlertDrilldownDetail | null | undefined): detail is FoundationAlertRuntimeCallbackStalledDetail;
-export declare function getFoundationAlertRuntimeCallbackStalledDetail(drilldown: Pick<FoundationAlertDrilldownResponse, 'code' | 'detail'> | null | undefined, code?: FoundationAlertCode | string | null): FoundationAlertRuntimeCallbackStalledDetail | null;
-export declare function isFoundationAlertLytConnectionGovernanceRiskDetail(code: FoundationAlertCode | string, detail: FoundationAlertDrilldownDetail | null | undefined): detail is FoundationAlertLytConnectionGovernanceRiskDetail;
-export declare function getFoundationAlertLytConnectionGovernanceRiskDetail(drilldown: Pick<FoundationAlertDrilldownResponse, 'code' | 'detail'> | null | undefined, code?: FoundationAlertCode | string | null): FoundationAlertLytConnectionGovernanceRiskDetail | null;
-export interface LytStoreCapabilityAccessItem {
+type FoundationAlertDrilldownDetail = Record<string, unknown> | FoundationAlertRuntimeCallbackStalledDetail | FoundationAlertLytConnectionGovernanceRiskDetail;
+declare function isFoundationAlertRuntimeCallbackStalledDetail(code: FoundationAlertCode | string, detail: FoundationAlertDrilldownDetail | null | undefined): detail is FoundationAlertRuntimeCallbackStalledDetail;
+declare function getFoundationAlertRuntimeCallbackStalledDetail(drilldown: Pick<FoundationAlertDrilldownResponse, 'code' | 'detail'> | null | undefined, code?: FoundationAlertCode | string | null): FoundationAlertRuntimeCallbackStalledDetail | null;
+declare function isFoundationAlertLytConnectionGovernanceRiskDetail(code: FoundationAlertCode | string, detail: FoundationAlertDrilldownDetail | null | undefined): detail is FoundationAlertLytConnectionGovernanceRiskDetail;
+declare function getFoundationAlertLytConnectionGovernanceRiskDetail(drilldown: Pick<FoundationAlertDrilldownResponse, 'code' | 'detail'> | null | undefined, code?: FoundationAlertCode | string | null): FoundationAlertLytConnectionGovernanceRiskDetail | null;
+interface LytStoreCapabilityAccessItem {
     capability: string;
     readiness: 'ready' | 'inherited-ready' | 'stale' | 'pending-configuration' | 'not-enabled';
     access: 'enabled' | 'degraded' | 'blocked' | 'hidden';
     reason: string;
 }
-export interface LytStoreCapabilityAccessViewResponse {
+interface LytStoreCapabilityAccessViewResponse {
     storeId: string;
     storeCode?: string;
     storeName?: string;
@@ -268,13 +268,13 @@ export interface LytStoreCapabilityAccessViewResponse {
     accessByCapability: LytStoreCapabilityAccessItem[];
     recommendedNextActions: string[];
 }
-export interface FoundationAlertPanelReadState {
+interface FoundationAlertPanelReadState {
     activeMutation: FoundationAlertMutationResponse | null;
     recentTimeline: FoundationAlertTimelineEntry[];
     currentOwner: string;
     currentNote: string;
 }
-export interface FoundationAlertPanelDerivedState extends FoundationAlertPanelReadState {
+interface FoundationAlertPanelDerivedState extends FoundationAlertPanelReadState {
     selectedAlert: FoundationAlertCatalogItem | null;
     actionFilteredTimeline: FoundationAlertTimelineEntry[];
     runtimeCallbackDrilldown: FoundationAlertRuntimeCallbackStalledDetail | null;
@@ -286,7 +286,7 @@ export interface FoundationAlertPanelDerivedState extends FoundationAlertPanelRe
     timelineMetrics: FoundationAlertTimelineMetrics;
     timelineDigest: FoundationAlertTimelineDigest;
 }
-export interface FoundationAlertTimelineFilterReadState {
+interface FoundationAlertTimelineFilterReadState {
     filterState: FoundationAlertTimelineFilterState;
     activeFilterChips: FoundationAlertTimelineActiveFilterChip[];
     filterSummary: string;
@@ -294,52 +294,52 @@ export interface FoundationAlertTimelineFilterReadState {
     shortcutPresets: FoundationAlertTimelineShortcutPreset[];
     hasActiveFilters: boolean;
 }
-export type FoundationAlertOptimisticOverviewVisibility = 'hidden (optimistic)' | 'visible (optimistic)' | 'hidden' | 'visible';
-export interface FoundationAlertOptimisticFeedback {
+type FoundationAlertOptimisticOverviewVisibility = 'hidden (optimistic)' | 'visible (optimistic)' | 'hidden' | 'visible';
+interface FoundationAlertOptimisticFeedback {
     title: string;
     description: string;
 }
-export interface FoundationAlertOptimisticReadState {
+interface FoundationAlertOptimisticReadState {
     overviewVisibility: FoundationAlertOptimisticOverviewVisibility;
     feedback: FoundationAlertOptimisticFeedback | null;
 }
-export interface FoundationAlertQuickSwitchItem {
+interface FoundationAlertQuickSwitchItem {
     code: string;
 }
-export declare function resolveFoundationAlertSelectedCode<TAlert extends {
+declare function resolveFoundationAlertSelectedCode<TAlert extends {
     code: string;
 }>(alerts: readonly TAlert[], options?: {
     preferredCode?: string | null;
     currentCode?: string | null;
 }): string;
-export declare function buildFoundationAlertPanelReadState(options: {
+declare function buildFoundationAlertPanelReadState(options: {
     selectedAlert?: Pick<FoundationOperationsAlert, 'code' | 'recentOperation' | 'acknowledgement'> | null;
     drilldown?: Pick<FoundationAlertDrilldownResponse, 'history' | 'acknowledgement'> | null;
     mutation?: FoundationAlertMutationResponse | null;
 }): FoundationAlertPanelReadState;
-export declare function buildFoundationAlertPanelDerivedState(options: {
+declare function buildFoundationAlertPanelDerivedState(options: {
     alerts: FoundationAlertCatalogItem[];
     selectedAlertCode?: string | null;
     drilldown?: FoundationAlertDrilldownResponse | null;
     mutation?: FoundationAlertMutationResponse | null;
     filters: FoundationAlertTimelineFilterState;
 }): FoundationAlertPanelDerivedState;
-export declare function buildFoundationAlertTimelineFilterReadState(options: {
+declare function buildFoundationAlertTimelineFilterReadState(options: {
     action: FoundationAlertTimelineFilter;
     source: FoundationAlertTimelineSourceFilter;
     owner: FoundationAlertOwnerFilter;
     history?: FoundationAlertTimelineEntry[] | null;
 }): FoundationAlertTimelineFilterReadState;
-export declare function buildFoundationAlertQuickSwitchItems(topRisks: Array<{
+declare function buildFoundationAlertQuickSwitchItems(topRisks: Array<{
     code: string;
 }>, alerts: Array<{
     code: string;
 }>, limit?: number): FoundationAlertQuickSwitchItem[];
-export declare function buildFoundationAlertOptimisticReadState(options: {
+declare function buildFoundationAlertOptimisticReadState(options: {
     pendingMutationAction?: FoundationAlertMutationKind | null;
     visibleInOverview?: boolean | null;
 }): FoundationAlertOptimisticReadState;
-export interface FoundationAlertDrilldownResponse {
+interface FoundationAlertDrilldownResponse {
     generatedAt: string;
     code: FoundationAlertCode | string;
     catalog?: FoundationAlertCatalogItem | null;
@@ -351,7 +351,7 @@ export interface FoundationAlertDrilldownResponse {
     detail?: FoundationAlertDrilldownDetail;
     availableAlertCodes?: FoundationAlertCode[];
 }
-export interface FoundationAlertMutationResponse {
+interface FoundationAlertMutationResponse {
     generatedAt: string;
     code: FoundationAlertCode | string;
     catalog?: FoundationAlertCatalogItem | null;
@@ -361,37 +361,37 @@ export interface FoundationAlertMutationResponse {
     history?: FoundationAlertTimelineEntry[];
     availableAlertCodes?: FoundationAlertCode[];
 }
-export declare const runtimeGovernanceClientApps: readonly ["admin-web", "tob-web", "storefront-web", "miniapp", "app", "lyt"];
-export type RuntimeGovernanceClientApp = (typeof runtimeGovernanceClientApps)[number];
-export declare const runtimeGovernanceActionKeys: readonly ["approval-execution", "market-profile-resolve", "regional-override-preview", "secret-rotation", "runtime-replay", "webhook-callback", "edge-replay", "member-login", "coupon-claim", "booking-submit", "device-bind", "payment-submit"];
-export type RuntimeGovernanceActionKey = (typeof runtimeGovernanceActionKeys)[number];
-export declare const runtimeGovernanceApiActionKeys: readonly ["approval-execution", "secret-rotation", "runtime-replay", "member-login", "coupon-claim", "booking-submit", "device-bind", "payment-submit"];
-export type RuntimeGovernanceApiActionKey = (typeof runtimeGovernanceApiActionKeys)[number];
-export declare const adminRuntimeActionKeys: readonly ["approval-execution", "secret-rotation", "runtime-replay"];
-export type AdminRuntimeActionKey = (typeof adminRuntimeActionKeys)[number];
-export declare const runtimeGovernanceNextSteps: readonly ["PROCEED", "LOGIN", "CHALLENGE", "REFRESH"];
-export type RuntimeGovernanceNextStep = (typeof runtimeGovernanceNextSteps)[number];
-export type RuntimeGovernanceActionState = 'blocked' | 'challenge-issued' | 'submitted' | 'callback-recorded' | 'replay-scheduled';
-export declare const runtimeGovernanceRiskLevels: readonly ["low", "medium", "high"];
-export type RuntimeGovernanceRiskLevel = (typeof runtimeGovernanceRiskLevels)[number];
-export declare const runtimeGovernanceRecommendedActions: readonly ["REFRESH_BOOTSTRAP", "COMPLETE_LOGIN", "COMPLETE_CHALLENGE", "FOLLOW_SUBMIT_CALLBACK"];
-export type RuntimeGovernanceRecommendedAction = (typeof runtimeGovernanceRecommendedActions)[number];
-export declare const runtimeGovernanceCallbackStatuses: readonly ["callback-blocked", "callback-recorded"];
-export type RuntimeGovernanceCallbackStatus = (typeof runtimeGovernanceCallbackStatuses)[number];
-export declare const runtimeGovernanceCallbackReceiptStatuses: readonly ["callback-blocked", "awaiting-callback", "callback-recorded"];
-export type RuntimeGovernanceCallbackReceiptStatus = (typeof runtimeGovernanceCallbackReceiptStatuses)[number];
-export declare const runtimeGovernanceCallbackEvents: readonly ["PREREQUISITE_PENDING", "CHALLENGE_PENDING", "HANDLER_ACCEPTED", "HANDLER_COMPLETED"];
-export type RuntimeGovernanceCallbackEvent = (typeof runtimeGovernanceCallbackEvents)[number];
-export declare const runtimeGovernanceCallbackTimeoutThresholds: {
+declare const runtimeGovernanceClientApps: readonly ["admin-web", "tob-web", "storefront-web", "miniapp", "app", "lyt"];
+type RuntimeGovernanceClientApp = (typeof runtimeGovernanceClientApps)[number];
+declare const runtimeGovernanceActionKeys: readonly ["approval-execution", "market-profile-resolve", "regional-override-preview", "secret-rotation", "runtime-replay", "webhook-callback", "edge-replay", "member-login", "coupon-claim", "booking-submit", "device-bind", "payment-submit"];
+type RuntimeGovernanceActionKey = (typeof runtimeGovernanceActionKeys)[number];
+declare const runtimeGovernanceApiActionKeys: readonly ["approval-execution", "secret-rotation", "runtime-replay", "member-login", "coupon-claim", "booking-submit", "device-bind", "payment-submit"];
+type RuntimeGovernanceApiActionKey = (typeof runtimeGovernanceApiActionKeys)[number];
+declare const adminRuntimeActionKeys: readonly ["approval-execution", "secret-rotation", "runtime-replay"];
+type AdminRuntimeActionKey = (typeof adminRuntimeActionKeys)[number];
+declare const runtimeGovernanceNextSteps: readonly ["PROCEED", "LOGIN", "CHALLENGE", "REFRESH"];
+type RuntimeGovernanceNextStep = (typeof runtimeGovernanceNextSteps)[number];
+type RuntimeGovernanceActionState = 'blocked' | 'challenge-issued' | 'submitted' | 'callback-recorded' | 'replay-scheduled';
+declare const runtimeGovernanceRiskLevels: readonly ["low", "medium", "high"];
+type RuntimeGovernanceRiskLevel = (typeof runtimeGovernanceRiskLevels)[number];
+declare const runtimeGovernanceRecommendedActions: readonly ["REFRESH_BOOTSTRAP", "COMPLETE_LOGIN", "COMPLETE_CHALLENGE", "FOLLOW_SUBMIT_CALLBACK"];
+type RuntimeGovernanceRecommendedAction = (typeof runtimeGovernanceRecommendedActions)[number];
+declare const runtimeGovernanceCallbackStatuses: readonly ["callback-blocked", "callback-recorded"];
+type RuntimeGovernanceCallbackStatus = (typeof runtimeGovernanceCallbackStatuses)[number];
+declare const runtimeGovernanceCallbackReceiptStatuses: readonly ["callback-blocked", "awaiting-callback", "callback-recorded"];
+type RuntimeGovernanceCallbackReceiptStatus = (typeof runtimeGovernanceCallbackReceiptStatuses)[number];
+declare const runtimeGovernanceCallbackEvents: readonly ["PREREQUISITE_PENDING", "CHALLENGE_PENDING", "HANDLER_ACCEPTED", "HANDLER_COMPLETED"];
+type RuntimeGovernanceCallbackEvent = (typeof runtimeGovernanceCallbackEvents)[number];
+declare const runtimeGovernanceCallbackTimeoutThresholds: {
     readonly low: number;
     readonly medium: number;
     readonly high: number;
 };
-export declare const runtimeGovernanceCallbackStallEscalationActions: readonly ["WAIT_CALLBACK", "SCHEDULE_REPLAY", "OPEN_MANUAL_REVIEW"];
-export type RuntimeGovernanceCallbackStallEscalationAction = (typeof runtimeGovernanceCallbackStallEscalationActions)[number];
-export declare const runtimeGovernanceReplaySources: readonly ["ADMIN_WEB_RUNTIME", "TOB_WEB_RUNTIME", "STOREFRONT_WEB_RUNTIME", "MINIAPP_RUNTIME", "APP_RUNTIME"];
-export type RuntimeGovernanceReplaySource = (typeof runtimeGovernanceReplaySources)[number];
-export interface AdminRuntimeActionPresetContract {
+declare const runtimeGovernanceCallbackStallEscalationActions: readonly ["WAIT_CALLBACK", "SCHEDULE_REPLAY", "OPEN_MANUAL_REVIEW"];
+type RuntimeGovernanceCallbackStallEscalationAction = (typeof runtimeGovernanceCallbackStallEscalationActions)[number];
+declare const runtimeGovernanceReplaySources: readonly ["ADMIN_WEB_RUNTIME", "TOB_WEB_RUNTIME", "STOREFRONT_WEB_RUNTIME", "MINIAPP_RUNTIME", "APP_RUNTIME"];
+type RuntimeGovernanceReplaySource = (typeof runtimeGovernanceReplaySources)[number];
+interface AdminRuntimeActionPresetContract {
     action: AdminRuntimeActionKey;
     label: string;
     scenario: string;
@@ -403,7 +403,7 @@ export interface AdminRuntimeActionPresetContract {
     replaySource: Extract<RuntimeGovernanceReplaySource, 'ADMIN_WEB_RUNTIME'>;
     payload: Record<string, unknown>;
 }
-export declare const adminRuntimeActionPresetContracts: readonly [{
+declare const adminRuntimeActionPresetContracts: readonly [{
     readonly action: "runtime-replay";
     readonly label: "Runtime Replay";
     readonly scenario: "运营台从 runtime backlog 发起统一 replay，并立即拿到可查询的真实 receipt。";
@@ -447,10 +447,10 @@ export declare const adminRuntimeActionPresetContracts: readonly [{
         readonly rotationReason: "manual-governance-rotation";
     };
 }];
-export declare const adminRuntimeActionPresetContractMap: Record<"approval-execution" | "secret-rotation" | "runtime-replay", AdminRuntimeActionPresetContract>;
-export declare const runtimeGovernanceReplayEscalationActions: readonly ["REFRESH_TICKET", "WAIT_CALLBACK", "OPEN_MANUAL_REVIEW"];
-export type RuntimeGovernanceReplayEscalationAction = (typeof runtimeGovernanceReplayEscalationActions)[number];
-export interface RuntimeGovernanceSubmitRequest {
+declare const adminRuntimeActionPresetContractMap: Record<"approval-execution" | "secret-rotation" | "runtime-replay", AdminRuntimeActionPresetContract>;
+declare const runtimeGovernanceReplayEscalationActions: readonly ["REFRESH_TICKET", "WAIT_CALLBACK", "OPEN_MANUAL_REVIEW"];
+type RuntimeGovernanceReplayEscalationAction = (typeof runtimeGovernanceReplayEscalationActions)[number];
+interface RuntimeGovernanceSubmitRequest {
     app: RuntimeGovernanceClientApp;
     action: RuntimeGovernanceActionKey;
     nextStep: RuntimeGovernanceNextStep;
@@ -467,14 +467,14 @@ export interface RuntimeGovernanceSubmitRequest {
     storeId?: string;
     marketCode?: string;
 }
-export interface RuntimeGovernanceSyncRequest {
+interface RuntimeGovernanceSyncRequest {
     handlerName: string;
     ticketCode: string;
     idempotencyKey: string;
     actorId?: string;
     tenantId?: string;
 }
-export interface RuntimeGovernanceCallbackRequest {
+interface RuntimeGovernanceCallbackRequest {
     callbackStatus: RuntimeGovernanceCallbackStatus;
     ackToken: string;
     lastEvent: RuntimeGovernanceCallbackEvent;
@@ -483,7 +483,7 @@ export interface RuntimeGovernanceCallbackRequest {
     actorId?: string;
     tenantId?: string;
 }
-export interface RuntimeGovernanceReplayRequest {
+interface RuntimeGovernanceReplayRequest {
     ledgerKey: string;
     requestedFrom: RuntimeGovernanceReplaySource;
     ticketCode: string;
@@ -491,13 +491,13 @@ export interface RuntimeGovernanceReplayRequest {
     actorId?: string;
     tenantId?: string;
 }
-export interface RuntimeGovernanceBatchReplayItem extends RuntimeGovernanceReplayRequest {
+interface RuntimeGovernanceBatchReplayItem extends RuntimeGovernanceReplayRequest {
     receiptCode: string;
 }
-export interface RuntimeGovernanceBatchReplayRequest {
+interface RuntimeGovernanceBatchReplayRequest {
     items: RuntimeGovernanceBatchReplayItem[];
 }
-export interface RuntimeGovernanceBatchReplayResponse {
+interface RuntimeGovernanceBatchReplayResponse {
     generatedAt: string;
     total: number;
     items: Array<{
@@ -505,7 +505,7 @@ export interface RuntimeGovernanceBatchReplayResponse {
         receipt: RuntimeGovernanceReceipt;
     }>;
 }
-export interface RuntimeGovernanceOverviewFilter {
+interface RuntimeGovernanceOverviewFilter {
     focus?: 'all' | 'batch-replay' | 'governance-audit';
     state?: RuntimeGovernanceActionState;
     callbackStatus?: RuntimeGovernanceCallbackReceipt['callbackStatus'];
@@ -513,13 +513,13 @@ export interface RuntimeGovernanceOverviewFilter {
     replayable?: boolean;
     stalledOnly?: boolean;
 }
-export interface RuntimeGovernanceTicket {
+interface RuntimeGovernanceTicket {
     ticketCode: string;
     ticketType: 'BLOCK_GUARD' | 'CHALLENGE_GATE' | 'HANDLER_CALLBACK';
     status: 'waiting-prerequisite' | 'pending-challenge' | 'ready-for-handler';
     summary: string;
 }
-export interface RuntimeGovernanceSyncContract {
+interface RuntimeGovernanceSyncContract {
     handlerName: string;
     syncMode: 'deferred' | 'challenge-gated' | 'callback-followup';
     syncEndpoint: string;
@@ -528,19 +528,19 @@ export interface RuntimeGovernanceSyncContract {
     ready: boolean;
     summary: string;
 }
-export interface RuntimeGovernanceCallbackReceipt {
+interface RuntimeGovernanceCallbackReceipt {
     callbackStatus: RuntimeGovernanceCallbackReceiptStatus;
     ackToken: string;
     lastEvent: RuntimeGovernanceCallbackEvent;
     summary: string;
 }
-export interface RuntimeGovernanceLedgerRecord {
+interface RuntimeGovernanceLedgerRecord {
     ledgerKey: string;
     replayEndpoint: string;
     replayable: boolean;
     summary: string;
 }
-export interface RuntimeGovernanceReplayPolicy {
+interface RuntimeGovernanceReplayPolicy {
     replayEndpoint: string;
     retryable: boolean;
     maxAttempts: number;
@@ -549,7 +549,7 @@ export interface RuntimeGovernanceReplayPolicy {
     escalationAction: RuntimeGovernanceReplayEscalationAction;
     summary: string;
 }
-export interface RuntimeGovernanceCallbackStallStatus {
+interface RuntimeGovernanceCallbackStallStatus {
     stalled: boolean;
     timeoutMs: number;
     elapsedMs: number;
@@ -557,7 +557,7 @@ export interface RuntimeGovernanceCallbackStallStatus {
     escalationAction: RuntimeGovernanceCallbackStallEscalationAction;
     summary: string;
 }
-export interface RuntimeGovernanceCallbackStallDetail extends RuntimeGovernanceCallbackStallStatus {
+interface RuntimeGovernanceCallbackStallDetail extends RuntimeGovernanceCallbackStallStatus {
     receiptCode: string;
     app: RuntimeGovernanceClientApp;
     action: RuntimeGovernanceActionKey;
@@ -568,44 +568,44 @@ export interface RuntimeGovernanceCallbackStallDetail extends RuntimeGovernanceC
     scopeKey: string;
     latestEventType: string | null;
 }
-export declare function buildRuntimeGovernanceReplayEndpoint(receiptCode: string): string;
-export declare function createRuntimeGovernanceReplayPolicy(receiptCode: string, state: RuntimeGovernanceActionState): RuntimeGovernanceReplayPolicy;
-export declare function advanceRuntimeGovernanceReplayPolicy(policy: Pick<RuntimeGovernanceReplayPolicy, 'currentAttempt' | 'maxAttempts' | 'nextBackoffMs'>): {
+declare function buildRuntimeGovernanceReplayEndpoint(receiptCode: string): string;
+declare function createRuntimeGovernanceReplayPolicy(receiptCode: string, state: RuntimeGovernanceActionState): RuntimeGovernanceReplayPolicy;
+declare function advanceRuntimeGovernanceReplayPolicy(policy: Pick<RuntimeGovernanceReplayPolicy, 'currentAttempt' | 'maxAttempts' | 'nextBackoffMs'>): {
     currentAttempt: number;
     retryable: boolean;
     nextBackoffMs: number;
     escalationAction: "WAIT_CALLBACK" | "OPEN_MANUAL_REVIEW";
 };
-export declare function evaluateRuntimeGovernanceCallbackStall(receipt: Pick<RuntimeGovernanceReceipt, 'riskLevel' | 'callback' | 'retry' | 'events'>, options?: {
+declare function evaluateRuntimeGovernanceCallbackStall(receipt: Pick<RuntimeGovernanceReceipt, 'riskLevel' | 'callback' | 'retry' | 'events'>, options?: {
     now?: string | Date;
     startedAt?: string | Date;
 }): RuntimeGovernanceCallbackStallStatus;
-export declare function buildRuntimeGovernanceCallbackStallDetail(receipt: Pick<RuntimeGovernanceReceipt, 'receiptCode' | 'app' | 'action' | 'riskLevel' | 'sync' | 'callback' | 'ledger' | 'rateLimit' | 'retry' | 'events'>, options?: {
+declare function buildRuntimeGovernanceCallbackStallDetail(receipt: Pick<RuntimeGovernanceReceipt, 'receiptCode' | 'app' | 'action' | 'riskLevel' | 'sync' | 'callback' | 'ledger' | 'rateLimit' | 'retry' | 'events'>, options?: {
     now?: string | Date;
     startedAt?: string | Date;
 }): RuntimeGovernanceCallbackStallDetail;
-export interface RuntimeGovernanceRateLimitDecision {
+interface RuntimeGovernanceRateLimitDecision {
     allowed: boolean;
     limit: number;
     remaining: number;
     retryAfterSeconds: number;
     scopeKey: string;
 }
-export interface RuntimeGovernanceEventRecord {
+interface RuntimeGovernanceEventRecord {
     eventType: string;
     status: 'accepted' | 'duplicate';
     idempotencyKey: string;
     occurredAt: string;
     summary: string;
 }
-export type RuntimeGovernanceApprovalStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'SUPERSEDED';
-export interface RuntimeGovernanceApprovalExecutionFailure {
+type RuntimeGovernanceApprovalStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'SUPERSEDED';
+interface RuntimeGovernanceApprovalExecutionFailure {
     failureStatus: string | null;
     failureReason: string | null;
     failedAt: string | null;
     failedBy: string | null;
 }
-export interface RuntimeGovernanceApprovalExecution {
+interface RuntimeGovernanceApprovalExecution {
     attempts: number;
     executed: boolean;
     executionStatus: string | null;
@@ -613,7 +613,7 @@ export interface RuntimeGovernanceApprovalExecution {
     executedBy: string | null;
     lastFailure: RuntimeGovernanceApprovalExecutionFailure | null;
 }
-export interface RuntimeGovernanceApproval {
+interface RuntimeGovernanceApproval {
     required: boolean;
     ticket: string | null;
     status: RuntimeGovernanceApprovalStatus;
@@ -624,7 +624,7 @@ export interface RuntimeGovernanceApproval {
     execution?: RuntimeGovernanceApprovalExecution;
     summary?: Record<string, unknown> | null;
 }
-export interface RuntimeGovernanceReceipt {
+interface RuntimeGovernanceReceipt {
     receiptCode: string;
     app: RuntimeGovernanceClientApp;
     action: RuntimeGovernanceActionKey;
@@ -644,13 +644,13 @@ export interface RuntimeGovernanceReceipt {
     events: RuntimeGovernanceEventRecord[];
     generatedAt: string;
 }
-export interface RuntimeGovernanceOperationsOverviewSummary {
+interface RuntimeGovernanceOperationsOverviewSummary {
     backlog: number;
     stalledCallbacks: number;
     highRiskBacklog: number;
     blockedActions: number;
 }
-export interface RuntimeGovernanceOperationsBatchSummary {
+interface RuntimeGovernanceOperationsBatchSummary {
     filteredReceipts: number;
     replayableReceipts: number;
     governanceAuditReceipts: number;
@@ -658,7 +658,7 @@ export interface RuntimeGovernanceOperationsBatchSummary {
     blockedReceipts: number;
     highRiskReceipts: number;
 }
-export interface RuntimeGovernanceOperationsOverview {
+interface RuntimeGovernanceOperationsOverview {
     generatedAt: string;
     appliedFilter: RuntimeGovernanceOverviewFilter;
     summary: RuntimeGovernanceOperationsOverviewSummary;
@@ -667,7 +667,7 @@ export interface RuntimeGovernanceOperationsOverview {
     stalledReceipts: RuntimeGovernanceCallbackStallDetail[];
     batchSummary: RuntimeGovernanceOperationsBatchSummary;
 }
-export interface FoundationOperationsAlert {
+interface FoundationOperationsAlert {
     severity: FoundationAlertSeverity;
     code: FoundationAlertCode;
     count: number;
@@ -679,7 +679,7 @@ export interface FoundationOperationsAlert {
     triageState?: FoundationOperationsAlertTriageState;
     triageSummary?: string;
 }
-export interface FoundationOperationsOverviewSummary {
+interface FoundationOperationsOverviewSummary {
     approvalsPending: number;
     approvalsWithFailures: number;
     highRiskAudits: number;
@@ -696,7 +696,7 @@ export interface FoundationOperationsOverviewSummary {
     highRiskRuntimeBacklog: number;
     runtimeBlockedActions: number;
 }
-export interface FoundationOperationsOverviewResponse {
+interface FoundationOperationsOverviewResponse {
     generatedAt: string;
     summary: FoundationOperationsOverviewSummary;
     alerts: FoundationOperationsAlert[];
@@ -706,7 +706,7 @@ export interface FoundationOperationsOverviewResponse {
         [key: string]: unknown;
     };
 }
-export interface FoundationCapabilityDescriptor {
+interface FoundationCapabilityDescriptor {
     key: string;
     name: string;
     responsibilities: string[];
@@ -714,7 +714,7 @@ export interface FoundationCapabilityDescriptor {
     consumers: FoundationConsumerKey[];
     status: 'planned' | 'skeleton' | 'active';
 }
-export interface FoundationModuleDescriptor {
+interface FoundationModuleDescriptor {
     key: FoundationModuleKey;
     name: string;
     purpose: string;
@@ -722,7 +722,7 @@ export interface FoundationModuleDescriptor {
     outboundContracts: string[];
     capabilities: FoundationCapabilityDescriptor[];
 }
-export interface FoundationConsumerDescriptor {
+interface FoundationConsumerDescriptor {
     consumer: FoundationConsumerKey;
     modulePath: string;
     dependsOn: FoundationModuleKey[];
@@ -736,7 +736,7 @@ export interface FoundationConsumerDescriptor {
     runtimeReceiptExamples: FoundationConsumerRuntimeReceiptExample[];
     governanceAlertLifecycleExamples: FoundationConsumerGovernanceAlertLifecycleExample[];
 }
-export interface FoundationConsumerActionGovernanceExample {
+interface FoundationConsumerActionGovernanceExample {
     surface: RuntimeGovernanceClientApp;
     action: RuntimeGovernanceActionKey;
     scenario: string;
@@ -746,7 +746,7 @@ export interface FoundationConsumerActionGovernanceExample {
     submitState: RuntimeGovernanceActionState;
     requestEndpoint: string;
 }
-export interface FoundationConsumerRuntimeHandoffExample {
+interface FoundationConsumerRuntimeHandoffExample {
     surface: RuntimeGovernanceClientApp;
     action: RuntimeGovernanceActionKey;
     scenario: string;
@@ -761,7 +761,7 @@ export interface FoundationConsumerRuntimeHandoffExample {
     replayEndpoint: string;
     retryEscalationAction: RuntimeGovernanceReplayPolicy['escalationAction'];
 }
-export interface FoundationConsumerRuntimeReceiptExample {
+interface FoundationConsumerRuntimeReceiptExample {
     surface: RuntimeGovernanceClientApp;
     action: RuntimeGovernanceActionKey;
     scenario: string;
@@ -775,7 +775,7 @@ export interface FoundationConsumerRuntimeReceiptExample {
     rateLimitScopeKey: string;
     latestEventType: string;
 }
-export interface FoundationConsumerGovernanceAlertLifecycleExample {
+interface FoundationConsumerGovernanceAlertLifecycleExample {
     surface: RuntimeGovernanceClientApp;
     alertCode: FoundationAlertCode;
     stage: 'drilldown' | 'ack' | 'mute' | 'unmute';
@@ -786,8 +786,8 @@ export interface FoundationConsumerGovernanceAlertLifecycleExample {
     visibleInOverview: boolean;
     availableActions: FoundationAlertOperation[];
 }
-export declare const adminWorkbenchConsumerDescriptor: FoundationConsumerDescriptor;
-export interface FoundationGovernanceBaseline {
+declare const adminWorkbenchConsumerDescriptor: FoundationConsumerDescriptor;
+interface FoundationGovernanceBaseline {
     key: string;
     name: string;
     ownerModule: FoundationModuleKey;
@@ -795,7 +795,7 @@ export interface FoundationGovernanceBaseline {
     controls: string[];
     evidence: string[];
 }
-export interface FoundationBlueprint {
+interface FoundationBlueprint {
     generatedAt: string;
     docs: string[];
     guardrails: string[];
@@ -804,12 +804,12 @@ export interface FoundationBlueprint {
     consumers: FoundationConsumerDescriptor[];
     governanceBaselines: FoundationGovernanceBaseline[];
 }
-export type FoundationOperationsAlertTriageState = 'needs-triage' | 'acknowledged' | 'muted' | 'expired-mute';
-export type FoundationFrontendBootstrapState = 'bootstrapping' | 'ready' | 'readonly-fallback' | 'challenge-required' | 'scope-mismatch';
-export type FoundationSupportedClient = 'PC' | 'PAD' | 'H5' | 'MINIAPP' | 'APP';
-export declare const foundationSupportedClients: readonly ["PC", "PAD", "H5", "MINIAPP", "APP"];
-export declare const foundationAlertCatalogFallback: FoundationAlertCatalogItem[];
-export interface MarketProfileContract {
+type FoundationOperationsAlertTriageState = 'needs-triage' | 'acknowledged' | 'muted' | 'expired-mute';
+type FoundationFrontendBootstrapState = 'bootstrapping' | 'ready' | 'readonly-fallback' | 'challenge-required' | 'scope-mismatch';
+type FoundationSupportedClient = 'PC' | 'PAD' | 'H5' | 'MINIAPP' | 'APP';
+declare const foundationSupportedClients: readonly ["PC", "PAD", "H5", "MINIAPP", "APP"];
+declare const foundationAlertCatalogFallback: FoundationAlertCatalogItem[];
+interface MarketProfileContract {
     marketCode: string;
     marketName: string;
     countryCode: string;
@@ -846,7 +846,7 @@ export interface MarketProfileContract {
         supportPlatforms: string[];
     };
 }
-export interface RegionalConfigOverrideContract {
+interface RegionalConfigOverrideContract {
     scopeType: string;
     scopeCode: string;
     inheritanceMode: string;
@@ -884,21 +884,21 @@ export interface RegionalConfigOverrideContract {
         supportPlatforms?: string[];
     };
 }
-export interface MarketBootstrapResponse extends BootstrapFoundationMetadataContract {
+interface MarketBootstrapResponse extends BootstrapFoundationMetadataContract {
     defaultDomesticMarketCode: string;
     defaultInternationalMarketCode: string;
     supportedMarkets: MarketProfileContract[];
 }
-export interface BootstrapFoundationMetadataContract {
+interface BootstrapFoundationMetadataContract {
     foundationDependencies: FoundationModuleKey[];
     foundationContracts: string[];
 }
-export interface PortalLoginEntryContract {
+interface PortalLoginEntryContract {
     label: string;
     loginPath: string;
     ssoEnabled: boolean;
 }
-export interface TobPortalContract {
+interface TobPortalContract {
     audience: string;
     scopeType: string;
     scopeCode: string;
@@ -915,7 +915,7 @@ export interface TobPortalContract {
     solutionTags: string[];
     loginEntry: PortalLoginEntryContract;
 }
-export interface StorePortalContract {
+interface StorePortalContract {
     audience: string;
     scopeType: string;
     scopeCode: string;
@@ -931,14 +931,14 @@ export interface StorePortalContract {
     supportedLanguages: string[];
     supportedSurfaces: string[];
 }
-export interface PortalBootstrapResponse extends BootstrapFoundationMetadataContract {
+interface PortalBootstrapResponse extends BootstrapFoundationMetadataContract {
     tenantPortal: TobPortalContract;
     brandPortal: TobPortalContract;
     storePortal: StorePortalContract;
     marketProfile: MarketProfileContract;
     regionalOverrides: RegionalConfigOverrideContract[];
 }
-export interface PortalDomainGovernanceScopeSummaryContract {
+interface PortalDomainGovernanceScopeSummaryContract {
     scopeType: string;
     tenantId: string;
     brandId?: string;
@@ -949,7 +949,7 @@ export interface PortalDomainGovernanceScopeSummaryContract {
     recommendedDomain?: string | null;
     recommendationReason?: string;
 }
-export interface PortalDomainGovernanceSummaryContract {
+interface PortalDomainGovernanceSummaryContract {
     totalMissingPrimaryScopes: number;
     totalActiveWithoutPrimaryDomains: number;
     recommendedReadyScopes: number;
@@ -960,20 +960,20 @@ export interface PortalDomainGovernanceSummaryContract {
     lastEvaluatedAt: string;
     currentScopes: PortalDomainGovernanceScopeSummaryContract[];
 }
-export interface DomainGovernanceWorkspaceQuery {
+interface DomainGovernanceWorkspaceQuery {
     tenantId?: string;
     brandId?: string;
     storeId?: string;
     marketCode?: string;
     scopeType?: string;
 }
-export declare function selectDomainGovernanceFocusScope(summary: PortalDomainGovernanceSummaryContract): PortalDomainGovernanceScopeSummaryContract | undefined;
-export declare function buildDomainGovernanceHref(query?: DomainGovernanceWorkspaceQuery): string;
-export declare function buildDomainGovernanceWorkspaceHref(summary: PortalDomainGovernanceSummaryContract, marketCode: string): string;
-export declare function getDomainGovernanceAttentionLabel(summary: PortalDomainGovernanceSummaryContract): '待治理' | '已对齐';
-export declare function formatDomainGovernanceCountsSummary(summary: PortalDomainGovernanceSummaryContract): string;
-export declare function formatDomainGovernanceSourceSummary(domainSource: string, summary: PortalDomainGovernanceSummaryContract): string;
-export interface DomainGovernanceDisplayModel {
+declare function selectDomainGovernanceFocusScope(summary: PortalDomainGovernanceSummaryContract): PortalDomainGovernanceScopeSummaryContract | undefined;
+declare function buildDomainGovernanceHref(query?: DomainGovernanceWorkspaceQuery): string;
+declare function buildDomainGovernanceWorkspaceHref(summary: PortalDomainGovernanceSummaryContract, marketCode: string): string;
+declare function getDomainGovernanceAttentionLabel(summary: PortalDomainGovernanceSummaryContract): '待治理' | '已对齐';
+declare function formatDomainGovernanceCountsSummary(summary: PortalDomainGovernanceSummaryContract): string;
+declare function formatDomainGovernanceSourceSummary(domainSource: string, summary: PortalDomainGovernanceSummaryContract): string;
+interface DomainGovernanceDisplayModel {
     eyebrow: string;
     subtitle: string;
     title: string;
@@ -985,7 +985,7 @@ export interface DomainGovernanceDisplayModel {
     ctaLabel: string;
     requiresAttention: boolean;
 }
-export declare const domainGovernanceDisplayCopy: {
+declare const domainGovernanceDisplayCopy: {
     readonly eyebrow: "域名治理工作台";
     readonly subtitle: "统一域名缺口、推荐补选和治理入口展示";
     readonly detailSectionTitle: "治理明细";
@@ -1007,18 +1007,18 @@ export declare const domainGovernanceDisplayCopy: {
         readonly lastEvaluated: "最近评估";
     };
 };
-export type DomainGovernanceRenderItemTone = 'primary' | 'summary' | 'accent';
-export interface DomainGovernanceRenderItem {
+type DomainGovernanceRenderItemTone = 'primary' | 'summary' | 'accent';
+interface DomainGovernanceRenderItem {
     label: string;
     value: string;
     tone: DomainGovernanceRenderItemTone;
 }
-export interface DomainGovernanceRenderSection {
+interface DomainGovernanceRenderSection {
     title: string;
     items: DomainGovernanceRenderItem[];
 }
-export type DomainGovernanceDisplayPresetKey = 'STOREFRONT_H5' | 'STOREFRONT_PC' | 'TOB_TENANT' | 'TOB_BRAND' | 'APP_NATIVE' | 'MINIAPP_HOME' | 'MINIAPP_MEMBER';
-export interface DomainGovernanceDisplayPresetContract {
+type DomainGovernanceDisplayPresetKey = 'STOREFRONT_H5' | 'STOREFRONT_PC' | 'TOB_TENANT' | 'TOB_BRAND' | 'APP_NATIVE' | 'MINIAPP_HOME' | 'MINIAPP_MEMBER';
+interface DomainGovernanceDisplayPresetContract {
     key: DomainGovernanceDisplayPresetKey;
     accentColor: string;
     titleColor: string;
@@ -1035,7 +1035,7 @@ export interface DomainGovernanceDisplayPresetContract {
     statusAttentionColor: string;
     statusAttentionBackground: string;
 }
-export interface DomainGovernanceDisplayPreset {
+interface DomainGovernanceDisplayPreset {
     key: DomainGovernanceDisplayPresetKey;
     accentColor: string;
     titleColor: string;
@@ -1049,22 +1049,22 @@ export interface DomainGovernanceDisplayPreset {
     statusColor: string;
     statusBackground: string;
 }
-export declare function resolveDomainGovernanceRenderItemColor(preset: DomainGovernanceDisplayPreset, tone: DomainGovernanceRenderItemTone): string;
-export declare const domainGovernanceDisplayPresetContractMap: Record<DomainGovernanceDisplayPresetKey, DomainGovernanceDisplayPresetContract>;
-export declare function resolveDomainGovernanceDisplayPreset(key: DomainGovernanceDisplayPresetKey, requiresAttention: boolean): DomainGovernanceDisplayPreset;
-export declare function formatDomainGovernanceFocusScopeLabel(scope?: PortalDomainGovernanceScopeSummaryContract): string;
-export declare function formatDomainGovernanceFocusScopeSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
-export declare function formatDomainGovernanceRecommendationSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
-export declare function formatDomainGovernanceStatusSummary(summary: PortalDomainGovernanceSummaryContract, statusLabel?: "待治理" | "已对齐"): string;
-export declare function formatDomainGovernanceLastEvaluatedSummary(summary: PortalDomainGovernanceSummaryContract): string;
-export declare function buildDomainGovernanceDisplayModel(domainSource: string, summary: PortalDomainGovernanceSummaryContract, workspaceHref: string): DomainGovernanceDisplayModel;
-export interface WorkbenchNavItemContract {
+declare function resolveDomainGovernanceRenderItemColor(preset: DomainGovernanceDisplayPreset, tone: DomainGovernanceRenderItemTone): string;
+declare const domainGovernanceDisplayPresetContractMap: Record<DomainGovernanceDisplayPresetKey, DomainGovernanceDisplayPresetContract>;
+declare function resolveDomainGovernanceDisplayPreset(key: DomainGovernanceDisplayPresetKey, requiresAttention: boolean): DomainGovernanceDisplayPreset;
+declare function formatDomainGovernanceFocusScopeLabel(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+declare function formatDomainGovernanceFocusScopeSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+declare function formatDomainGovernanceRecommendationSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+declare function formatDomainGovernanceStatusSummary(summary: PortalDomainGovernanceSummaryContract, statusLabel?: "待治理" | "已对齐"): string;
+declare function formatDomainGovernanceLastEvaluatedSummary(summary: PortalDomainGovernanceSummaryContract): string;
+declare function buildDomainGovernanceDisplayModel(domainSource: string, summary: PortalDomainGovernanceSummaryContract, workspaceHref: string): DomainGovernanceDisplayModel;
+interface WorkbenchNavItemContract {
     key: string;
     label: string;
     href: string;
     description: string;
 }
-export interface RoleWorkbenchContract {
+interface RoleWorkbenchContract {
     role: string;
     channel: string;
     title: string;
@@ -1072,8 +1072,8 @@ export interface RoleWorkbenchContract {
     marketCodes: string[];
     navItems: WorkbenchNavItemContract[];
 }
-export declare const defaultRoleWorkbenchContracts: RoleWorkbenchContract[];
-export declare const defaultRoleWorkbenchContractMap: Record<string, RoleWorkbenchContract>;
+declare const defaultRoleWorkbenchContracts: RoleWorkbenchContract[];
+declare const defaultRoleWorkbenchContractMap: Record<string, RoleWorkbenchContract>;
 /**
  * 前端 Workbench 角色 (大写下划线) → 后端 tenant-config 角色 (蛇形)
  *
@@ -1083,52 +1083,52 @@ export declare const defaultRoleWorkbenchContractMap: Record<string, RoleWorkben
  *   SUPER_ADMIN / BRAND_MANAGER / TENANT_ADMIN / STORE_MANAGER / OPERATIONS / VIEWER / AUDITOR
  * (GUIDE / CASHIER / WAREHOUSE / FINANCE / COACH 等暂未在 tenant-config 中使用)
  */
-export declare const FRONTEND_TO_BACKEND_ROLE: Record<string, string>;
+declare const FRONTEND_TO_BACKEND_ROLE: Record<string, string>;
 /** 后端角色枚举 (与后端 ROLE_LEVEL_ACCESS key 对齐) */
-export type BackendTenantRole = 'super_admin' | 'brand_admin' | 'tenant_admin' | 'store_admin' | 'operator' | 'viewer' | 'auditor';
+type BackendTenantRole = 'super_admin' | 'brand_admin' | 'tenant_admin' | 'store_admin' | 'operator' | 'viewer' | 'auditor';
 /** 前端 Workbench 角色 (与 defaultRoleWorkbenchContracts 对齐) */
-export type FrontendWorkbenchRole = 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'BRAND_MANAGER' | 'STORE_MANAGER' | 'GUIDE' | 'CASHIER' | 'OPERATIONS' | 'FINANCE' | 'WAREHOUSE' | 'COACH';
+type FrontendWorkbenchRole = 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'BRAND_MANAGER' | 'STORE_MANAGER' | 'GUIDE' | 'CASHIER' | 'OPERATIONS' | 'FINANCE' | 'WAREHOUSE' | 'COACH';
 /** 角色映射工具: 把前端 Workbench role 转成后端 tenant-config role */
-export declare function mapToBackendRole(frontendRole: string): BackendTenantRole | undefined;
-export interface TenantContextContract {
+declare function mapToBackendRole(frontendRole: string): BackendTenantRole | undefined;
+interface TenantContextContract {
     tenantId: string;
     brandId?: string;
     storeId?: string;
     marketCode?: string;
 }
-export declare const memberLevelContracts: readonly ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"];
-export type MemberLevelContract = (typeof memberLevelContracts)[number];
-export declare const memberStatusContracts: readonly ["ACTIVE", "FROZEN", "EXPIRED", "BLACKLISTED"];
-export type MemberStatusContract = (typeof memberStatusContracts)[number];
-export declare const memberLifecycleStageContracts: readonly ["prospect", "newly-paid", "repeat-paid", "vip-active"];
-export type MemberLifecycleStageContract = (typeof memberLifecycleStageContracts)[number];
-export declare const memberDataSourceContracts: readonly ["memory", "prisma"];
-export type MemberDataSourceContract = (typeof memberDataSourceContracts)[number];
-export declare const memberOperationsActionCodeContracts: readonly ["complete-member-onboarding", "send-post-payment-welcome", "issue-bounce-back-coupon", "recommend-repeat-purchase-bundle", "invite-loyalty-challenge", "assign-vip-concierge", "push-new-arrival-preview", "deliver-channel-follow-up"];
-export type MemberOperationsActionCodeContract = (typeof memberOperationsActionCodeContracts)[number];
-export declare const memberOperationsActionChannelContracts: readonly ["coupon", "crm-task", "wechat", "app-push"];
-export type MemberOperationsActionChannelContract = (typeof memberOperationsActionChannelContracts)[number];
-export declare const memberOperationsPriorityContracts: readonly ["high", "medium", "low"];
-export type MemberOperationsPriorityContract = (typeof memberOperationsPriorityContracts)[number];
-export declare const memberAutomationTriggerCodeContracts: readonly ["payment-success-journey", "newly-paid-bounce-back", "repeat-paid-retention", "vip-service-upgrade", "channel-retouch"];
-export type MemberAutomationTriggerCodeContract = (typeof memberAutomationTriggerCodeContracts)[number];
-export declare const memberAutomationTriggerStatusContracts: readonly ["ready", "watch"];
-export type MemberAutomationTriggerStatusContract = (typeof memberAutomationTriggerStatusContracts)[number];
-export declare const memberAutomationTriggerSourceContracts: readonly ["payment-success", "lifecycle", "tag"];
-export type MemberAutomationTriggerSourceContract = (typeof memberAutomationTriggerSourceContracts)[number];
-export declare const memberOperationsTaskStatusContracts: readonly ["queued", "dispatched", "completed"];
-export type MemberOperationsTaskStatusContract = (typeof memberOperationsTaskStatusContracts)[number];
-export declare const memberOperationsExecutionLaneContracts: readonly ["campaign-execution", "member-crm", "promo-conversion"];
-export type MemberOperationsExecutionLaneContract = (typeof memberOperationsExecutionLaneContracts)[number];
-export declare const memberOperationsTaskSourceContracts: readonly ["payment-success", "manual-refresh"];
-export type MemberOperationsTaskSourceContract = (typeof memberOperationsTaskSourceContracts)[number];
-export declare const memberOperationsReceiptTargetTypeContracts: readonly ["coupon-offer", "crm-follow-up"];
-export type MemberOperationsReceiptTargetTypeContract = (typeof memberOperationsReceiptTargetTypeContracts)[number];
-export declare const memberOperationsReceiptStatusContracts: readonly ["completed"];
-export type MemberOperationsReceiptStatusContract = (typeof memberOperationsReceiptStatusContracts)[number];
-export declare const memberOperationsRuntimeStateContracts: readonly ["blocked", "challenge-issued", "submitted", "callback-recorded", "replay-scheduled"];
-export type MemberOperationsRuntimeStateContract = (typeof memberOperationsRuntimeStateContracts)[number];
-export interface MemberProfileContract {
+declare const memberLevelContracts: readonly ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"];
+type MemberLevelContract = (typeof memberLevelContracts)[number];
+declare const memberStatusContracts: readonly ["ACTIVE", "FROZEN", "EXPIRED", "BLACKLISTED"];
+type MemberStatusContract = (typeof memberStatusContracts)[number];
+declare const memberLifecycleStageContracts: readonly ["prospect", "newly-paid", "repeat-paid", "vip-active"];
+type MemberLifecycleStageContract = (typeof memberLifecycleStageContracts)[number];
+declare const memberDataSourceContracts: readonly ["memory", "prisma"];
+type MemberDataSourceContract = (typeof memberDataSourceContracts)[number];
+declare const memberOperationsActionCodeContracts: readonly ["complete-member-onboarding", "send-post-payment-welcome", "issue-bounce-back-coupon", "recommend-repeat-purchase-bundle", "invite-loyalty-challenge", "assign-vip-concierge", "push-new-arrival-preview", "deliver-channel-follow-up"];
+type MemberOperationsActionCodeContract = (typeof memberOperationsActionCodeContracts)[number];
+declare const memberOperationsActionChannelContracts: readonly ["coupon", "crm-task", "wechat", "app-push"];
+type MemberOperationsActionChannelContract = (typeof memberOperationsActionChannelContracts)[number];
+declare const memberOperationsPriorityContracts: readonly ["high", "medium", "low"];
+type MemberOperationsPriorityContract = (typeof memberOperationsPriorityContracts)[number];
+declare const memberAutomationTriggerCodeContracts: readonly ["payment-success-journey", "newly-paid-bounce-back", "repeat-paid-retention", "vip-service-upgrade", "channel-retouch"];
+type MemberAutomationTriggerCodeContract = (typeof memberAutomationTriggerCodeContracts)[number];
+declare const memberAutomationTriggerStatusContracts: readonly ["ready", "watch"];
+type MemberAutomationTriggerStatusContract = (typeof memberAutomationTriggerStatusContracts)[number];
+declare const memberAutomationTriggerSourceContracts: readonly ["payment-success", "lifecycle", "tag"];
+type MemberAutomationTriggerSourceContract = (typeof memberAutomationTriggerSourceContracts)[number];
+declare const memberOperationsTaskStatusContracts: readonly ["queued", "dispatched", "completed"];
+type MemberOperationsTaskStatusContract = (typeof memberOperationsTaskStatusContracts)[number];
+declare const memberOperationsExecutionLaneContracts: readonly ["campaign-execution", "member-crm", "promo-conversion"];
+type MemberOperationsExecutionLaneContract = (typeof memberOperationsExecutionLaneContracts)[number];
+declare const memberOperationsTaskSourceContracts: readonly ["payment-success", "manual-refresh"];
+type MemberOperationsTaskSourceContract = (typeof memberOperationsTaskSourceContracts)[number];
+declare const memberOperationsReceiptTargetTypeContracts: readonly ["coupon-offer", "crm-follow-up"];
+type MemberOperationsReceiptTargetTypeContract = (typeof memberOperationsReceiptTargetTypeContracts)[number];
+declare const memberOperationsReceiptStatusContracts: readonly ["completed"];
+type MemberOperationsReceiptStatusContract = (typeof memberOperationsReceiptStatusContracts)[number];
+declare const memberOperationsRuntimeStateContracts: readonly ["blocked", "challenge-issued", "submitted", "callback-recorded", "replay-scheduled"];
+type MemberOperationsRuntimeStateContract = (typeof memberOperationsRuntimeStateContracts)[number];
+interface MemberProfileContract {
     memberId: string;
     userId?: string;
     tenantContext: TenantContextContract;
@@ -1153,7 +1153,7 @@ export interface MemberProfileContract {
     source?: MemberDataSourceContract;
     persisted?: boolean;
 }
-export interface LytMemberSnapshotContract {
+interface LytMemberSnapshotContract {
     snapshotId: string;
     tenantContext: TenantContextContract;
     memberProfileId?: string;
@@ -1170,20 +1170,20 @@ export interface LytMemberSnapshotContract {
     rawPayload?: Record<string, unknown>;
     source?: MemberDataSourceContract;
 }
-export interface MemberOperationsActionContract {
+interface MemberOperationsActionContract {
     code: MemberOperationsActionCodeContract;
     label: string;
     reason: string;
     channel: MemberOperationsActionChannelContract;
     priority: MemberOperationsPriorityContract;
 }
-export interface MemberAutomationTriggerContract {
+interface MemberAutomationTriggerContract {
     code: MemberAutomationTriggerCodeContract;
     status: MemberAutomationTriggerStatusContract;
     source: MemberAutomationTriggerSourceContract;
     reason: string;
 }
-export interface MemberOperationsProfileContract {
+interface MemberOperationsProfileContract {
     memberId: string;
     tenantContext: TenantContextContract;
     level: MemberLevelContract;
@@ -1198,7 +1198,7 @@ export interface MemberOperationsProfileContract {
     tags: string[];
     source?: MemberDataSourceContract;
 }
-export interface MemberOperationsTaskContract {
+interface MemberOperationsTaskContract {
     taskId: string;
     tenantContext: TenantContextContract;
     memberId: string;
@@ -1219,7 +1219,7 @@ export interface MemberOperationsTaskContract {
     createdAt: string;
     scheduledAt: string;
 }
-export interface MemberOperationsExecutionReceiptContract {
+interface MemberOperationsExecutionReceiptContract {
     executionId: string;
     tenantContext: TenantContextContract;
     memberId: string;
@@ -1235,14 +1235,14 @@ export interface MemberOperationsExecutionReceiptContract {
     runtimeReplayable?: boolean;
     executedAt: string;
 }
-export interface FoundationBootstrapResponse extends FoundationBlueprint {
+interface FoundationBootstrapResponse extends FoundationBlueprint {
     tenantContext: TenantContextContract;
 }
-export interface RegionalLoginPolicyContract {
+interface RegionalLoginPolicyContract {
     defaultLoginPath: string;
     ssoEnabled: boolean;
 }
-export interface WorkbenchBootstrapResponse extends BootstrapFoundationMetadataContract {
+interface WorkbenchBootstrapResponse extends BootstrapFoundationMetadataContract {
     tenantContext: TenantContextContract;
     workbenches: RoleWorkbenchContract[];
     storePortals: StorePortalContract[];
@@ -1253,12 +1253,12 @@ export interface WorkbenchBootstrapResponse extends BootstrapFoundationMetadataC
     supportedLocales: string[];
     supportedClients: FoundationSupportedClient[];
 }
-export declare const foundationBootstrapCapabilityRules: BootstrapCapabilityRule[];
-export declare const foundationAppBootstrapProfiles: Record<FoundationClientApp, AppBootstrapWiring>;
-export declare const foundationBootstrapContract: UnifiedFoundationBootstrapContract;
-export declare function getFoundationAppBootstrapWiring(app: FoundationClientApp): AppBootstrapWiring;
-export type AuditRiskLevel = 'low' | 'medium' | 'high';
-export interface AuditRecordContract {
+declare const foundationBootstrapCapabilityRules: BootstrapCapabilityRule[];
+declare const foundationAppBootstrapProfiles: Record<FoundationClientApp, AppBootstrapWiring>;
+declare const foundationBootstrapContract: UnifiedFoundationBootstrapContract;
+declare function getFoundationAppBootstrapWiring(app: FoundationClientApp): AppBootstrapWiring;
+type AuditRiskLevel = 'low' | 'medium' | 'high';
+interface AuditRecordContract {
     auditId: string;
     eventType: string;
     tenantId?: string;
@@ -1268,7 +1268,7 @@ export interface AuditRecordContract {
     occurredAt: string;
     details: Record<string, unknown>;
 }
-export interface AuditTrailQuery {
+interface AuditTrailQuery {
     tenantId?: string;
     action?: string;
     source?: string;
@@ -1283,35 +1283,35 @@ export interface AuditTrailQuery {
     to?: string;
     limit?: number;
 }
-export interface AuditTrailResponse {
+interface AuditTrailResponse {
     records: AuditRecordContract[];
     total: number;
     query: AuditTrailQuery;
 }
-export interface AuditTrailSummary {
+interface AuditTrailSummary {
     total: number;
     byAction: Record<string, number>;
     bySource: Record<string, number>;
     byRiskLevel: Record<AuditRiskLevel, number>;
 }
-export declare function buildAuditTrailHref(query?: AuditTrailQuery): string;
-export declare function buildAuditTrailRecordDetailHref(auditId: string): string;
-export declare function readAuditTrailRecordDetailParam(raw: unknown): string | null;
-export type ConfigurationScopeType = 'PLATFORM' | 'TENANT' | 'BRAND' | 'STORE';
-export interface ConfigurationScope {
+declare function buildAuditTrailHref(query?: AuditTrailQuery): string;
+declare function buildAuditTrailRecordDetailHref(auditId: string): string;
+declare function readAuditTrailRecordDetailParam(raw: unknown): string | null;
+type ConfigurationScopeType = 'PLATFORM' | 'TENANT' | 'BRAND' | 'STORE';
+interface ConfigurationScope {
     scopeType: ConfigurationScopeType;
     tenantId?: string;
     brandId?: string;
     storeId?: string;
     marketCode?: string;
 }
-export interface ConfigurationConfigEntryRevision {
+interface ConfigurationConfigEntryRevision {
     version: number;
     changedBy?: string;
     changeReason?: string;
     createdAt: string;
 }
-export interface ConfigurationConfigEntry {
+interface ConfigurationConfigEntry {
     id: string;
     namespace?: string;
     key: string;
@@ -1331,7 +1331,7 @@ export interface ConfigurationConfigEntry {
     latestRevision?: ConfigurationConfigEntryRevision | null;
     updatedAt: string;
 }
-export interface ConfigurationFeatureFlag {
+interface ConfigurationFeatureFlag {
     key: string;
     name?: string;
     description?: string;
@@ -1342,9 +1342,9 @@ export interface ConfigurationFeatureFlag {
     subjectKey?: string;
     source?: 'in-memory' | 'persisted' | string;
 }
-export type ConfigurationSecretStatus = 'rotation-due' | 'expired' | 'active' | string;
-export type ConfigurationCertificateStatus = 'active' | 'expiring-soon' | 'expired' | string;
-export interface ConfigurationSecretMetadata {
+type ConfigurationSecretStatus = 'rotation-due' | 'expired' | 'active' | string;
+type ConfigurationCertificateStatus = 'active' | 'expiring-soon' | 'expired' | string;
+interface ConfigurationSecretMetadata {
     name: string;
     status?: ConfigurationSecretStatus;
     expiresAt?: string | null;
@@ -1355,7 +1355,7 @@ export interface ConfigurationSecretMetadata {
     rotatedBy?: string | null;
     rotatedAt?: string | null;
 }
-export interface ConfigurationCertificateMetadata {
+interface ConfigurationCertificateMetadata {
     name: string;
     status: ConfigurationCertificateStatus;
     expiresAt: string;
@@ -1364,7 +1364,7 @@ export interface ConfigurationCertificateMetadata {
     fingerprint?: string;
     daysToExpire?: number;
 }
-export interface ConfigurationSnapshot {
+interface ConfigurationSnapshot {
     snapshotId: string;
     generatedAt: string;
     scopeChain: ConfigurationScope[];
@@ -1374,13 +1374,13 @@ export interface ConfigurationSnapshot {
     secrets: ConfigurationSecretMetadata[];
     checksum: string;
 }
-export interface ConfigurationPostureAttention {
+interface ConfigurationPostureAttention {
     type: 'secret' | 'certificate';
     key: string;
     status: string;
     expiresAt?: string | null;
 }
-export interface ConfigurationPosture {
+interface ConfigurationPosture {
     generatedAt: string;
     secrets: {
         total: number;
@@ -1399,7 +1399,7 @@ export interface ConfigurationPosture {
         certificates: ConfigurationPostureAttention[];
     };
 }
-export interface ConfigurationGovernanceMetadataEntry {
+interface ConfigurationGovernanceMetadataEntry {
     operation: string;
     rbac: {
         resource: string;
@@ -1428,8 +1428,8 @@ export interface ConfigurationGovernanceMetadataEntry {
         };
     };
 }
-export type ConfigurationGovernanceMetadataStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'SUPERSEDED' | string;
-export interface ConfigurationOverview {
+type ConfigurationGovernanceMetadataStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'SUPERSEDED' | string;
+interface ConfigurationOverview {
     generatedAt: string;
     approvals?: Record<string, Record<string, number>>;
     audits?: Record<string, Record<string, number>>;
@@ -1466,30 +1466,30 @@ export interface ConfigurationOverview {
     posture: ConfigurationPosture;
     scopeChain?: ConfigurationScope[];
 }
-export interface ConfigurationOverviewQuery {
+interface ConfigurationOverviewQuery {
     tenantId?: string;
     brandId?: string;
     storeId?: string;
     marketCode?: string;
 }
-export declare function buildConfigurationHref(query?: ConfigurationOverviewQuery): string;
-export declare function buildConfigurationOperationDetailHref(operation: string): string;
-export declare function readConfigurationOperationDetailParam(raw: unknown): string | null;
-export declare function buildConfigurationSecretDetailHref(name: string): string;
-export declare function readConfigurationSecretDetailParam(raw: unknown): string | null;
-export declare function buildConfigurationCertificateDetailHref(name: string): string;
-export declare function readConfigurationCertificateDetailParam(raw: unknown): string | null;
-export declare function buildConfigurationFeatureFlagDetailHref(key: string): string;
-export declare function readConfigurationFeatureFlagDetailParam(raw: unknown): string | null;
-export declare function buildConfigurationConfigEntryDetailHref(id: string): string;
-export declare function readConfigurationConfigEntryDetailParam(raw: unknown): string | null;
-export declare function buildIntegrationOrchestrationSourceDetailHref(source: string): string;
-export declare function readIntegrationOrchestrationSourceDetailParam(raw: unknown): string | null;
-export declare function buildIntegrationOrchestrationEventDetailHref(envelopeId: string): string;
-export declare function readIntegrationOrchestrationEventDetailParam(raw: unknown): string | null;
-export declare function buildIntegrationOrchestrationIdempotencyDetailHref(key: string): string;
-export declare function readIntegrationOrchestrationIdempotencyDetailParam(raw: unknown): string | null;
-export interface IntegrationOrchestrationEventDetail {
+declare function buildConfigurationHref(query?: ConfigurationOverviewQuery): string;
+declare function buildConfigurationOperationDetailHref(operation: string): string;
+declare function readConfigurationOperationDetailParam(raw: unknown): string | null;
+declare function buildConfigurationSecretDetailHref(name: string): string;
+declare function readConfigurationSecretDetailParam(raw: unknown): string | null;
+declare function buildConfigurationCertificateDetailHref(name: string): string;
+declare function readConfigurationCertificateDetailParam(raw: unknown): string | null;
+declare function buildConfigurationFeatureFlagDetailHref(key: string): string;
+declare function readConfigurationFeatureFlagDetailParam(raw: unknown): string | null;
+declare function buildConfigurationConfigEntryDetailHref(id: string): string;
+declare function readConfigurationConfigEntryDetailParam(raw: unknown): string | null;
+declare function buildIntegrationOrchestrationSourceDetailHref(source: string): string;
+declare function readIntegrationOrchestrationSourceDetailParam(raw: unknown): string | null;
+declare function buildIntegrationOrchestrationEventDetailHref(envelopeId: string): string;
+declare function readIntegrationOrchestrationEventDetailParam(raw: unknown): string | null;
+declare function buildIntegrationOrchestrationIdempotencyDetailHref(key: string): string;
+declare function readIntegrationOrchestrationIdempotencyDetailParam(raw: unknown): string | null;
+interface IntegrationOrchestrationEventDetail {
     deliveryMode: 'api' | 'fallback';
     generatedAt: string;
     envelopeId: string;
@@ -1500,7 +1500,7 @@ export interface IntegrationOrchestrationEventDetail {
     foundationHref: string;
     auditHref: string;
 }
-export interface IntegrationOrchestrationIdempotencyDetail {
+interface IntegrationOrchestrationIdempotencyDetail {
     deliveryMode: 'api' | 'fallback';
     generatedAt: string;
     key: string;
@@ -1511,10 +1511,10 @@ export interface IntegrationOrchestrationIdempotencyDetail {
     foundationHref: string;
     auditHref: string;
 }
-export type ObservabilitySignalType = 'metrics' | 'logs' | 'traces';
-export type ObservabilityStatus = 'healthy' | 'warning' | 'critical';
-export type RecoveryPlanStatus = 'ready' | 'attention';
-export interface ObservabilitySignalContract {
+type ObservabilitySignalType = 'metrics' | 'logs' | 'traces';
+type ObservabilityStatus = 'healthy' | 'warning' | 'critical';
+type RecoveryPlanStatus = 'ready' | 'attention';
+interface ObservabilitySignalContract {
     signal: ObservabilitySignalType;
     status: ObservabilityStatus;
     coverage: number;
@@ -1524,7 +1524,7 @@ export interface ObservabilitySignalContract {
     alertRoutes: string[];
     evidence: string[];
 }
-export interface RetryPolicyContract {
+interface RetryPolicyContract {
     key: string;
     capability: string;
     trigger: string;
@@ -1533,7 +1533,7 @@ export interface RetryPolicyContract {
     recoveryAction: string;
     escalationTarget: string;
 }
-export interface RecoveryPlanContract {
+interface RecoveryPlanContract {
     resource: string;
     status: RecoveryPlanStatus;
     rtoMinutes: number;
@@ -1543,7 +1543,7 @@ export interface RecoveryPlanContract {
     dependencies: string[];
     runbook: string;
 }
-export interface ResilienceOverview {
+interface ResilienceOverview {
     generatedAt: string;
     observability: {
         totalSignals: number;
@@ -1566,11 +1566,11 @@ export interface ResilienceOverview {
         plans: RecoveryPlanContract[];
     };
 }
-export interface EdgeReplayStageRequest {
+interface EdgeReplayStageRequest {
     storeId: string;
     operationCount: number;
 }
-export interface EdgeReplayStageContract {
+interface EdgeReplayStageContract {
     status: 'staged';
     storeId: string;
     operationCount: number;
@@ -1579,23 +1579,23 @@ export interface EdgeReplayStageContract {
     observabilityHooks: string[];
     recoveryPlan?: RecoveryPlanContract | null;
 }
-export interface ResilienceQuery {
+interface ResilienceQuery {
     capability?: string;
     status?: string;
     resource?: string;
 }
-export declare function buildResilienceHref(query?: ResilienceQuery): string;
-export declare function buildResilienceSignalDetailHref(signal: string): string;
-export declare function readResilienceSignalDetailParam(raw: unknown): string | null;
-export declare function buildResilienceRetryPolicyDetailHref(key: string): string;
-export declare function readResilienceRetryPolicyDetailParam(raw: unknown): string | null;
-export declare function buildResilienceRecoveryPlanDetailHref(resource: string): string;
-export declare function readResilienceRecoveryPlanDetailParam(raw: unknown): string | null;
-export type RateLimitScopeType = 'PLATFORM' | 'TENANT' | 'BRAND' | 'STORE' | 'INTEGRATION';
-export type RateLimitPeriod = 'MINUTE' | 'HOUR' | 'DAY' | 'WEEK' | 'MONTH';
-export type RateLimitAlgorithm = 'FIXED_WINDOW' | 'SLIDING_WINDOW' | 'TOKEN_BUCKET' | string;
-export type QuotaLedgerStatus = 'healthy' | 'warning' | 'blocked';
-export interface RateLimitPolicyRecord {
+declare function buildResilienceHref(query?: ResilienceQuery): string;
+declare function buildResilienceSignalDetailHref(signal: string): string;
+declare function readResilienceSignalDetailParam(raw: unknown): string | null;
+declare function buildResilienceRetryPolicyDetailHref(key: string): string;
+declare function readResilienceRetryPolicyDetailParam(raw: unknown): string | null;
+declare function buildResilienceRecoveryPlanDetailHref(resource: string): string;
+declare function readResilienceRecoveryPlanDetailParam(raw: unknown): string | null;
+type RateLimitScopeType = 'PLATFORM' | 'TENANT' | 'BRAND' | 'STORE' | 'INTEGRATION';
+type RateLimitPeriod = 'MINUTE' | 'HOUR' | 'DAY' | 'WEEK' | 'MONTH';
+type RateLimitAlgorithm = 'FIXED_WINDOW' | 'SLIDING_WINDOW' | 'TOKEN_BUCKET' | string;
+type QuotaLedgerStatus = 'healthy' | 'warning' | 'blocked';
+interface RateLimitPolicyRecord {
     id: string;
     code: string;
     scopeType: RateLimitScopeType | string;
@@ -1611,7 +1611,7 @@ export interface RateLimitPolicyRecord {
     metadata?: Record<string, unknown>;
     updatedAt: string;
 }
-export interface QuotaLedgerRecord {
+interface QuotaLedgerRecord {
     id: string;
     subjectKey: string;
     period: RateLimitPeriod | string;
@@ -1627,7 +1627,7 @@ export interface QuotaLedgerRecord {
         period: RateLimitPeriod | string;
     };
 }
-export interface RateLimitWorkspace {
+interface RateLimitWorkspace {
     generatedAt: string;
     totals: {
         policies: number;
@@ -1641,18 +1641,18 @@ export interface RateLimitWorkspace {
     byPeriod: Record<string, number>;
     byScope: Record<string, number>;
 }
-export interface RateLimitWorkspaceQuery {
+interface RateLimitWorkspaceQuery {
     tenantId?: string;
     policyCode?: string;
     subjectKey?: string;
     status?: QuotaLedgerStatus | 'ALL';
 }
-export declare function buildRateLimitsHref(query?: RateLimitWorkspaceQuery): string;
-export declare function buildRateLimitsPolicyDetailHref(policyId: string): string;
-export declare function readRateLimitsPolicyDetailParam(raw: unknown): string | null;
-export declare function buildRateLimitsLedgerDetailHref(ledgerId: string): string;
-export declare function readRateLimitsLedgerDetailParam(raw: unknown): string | null;
-export interface IdentityAccessActorContext {
+declare function buildRateLimitsHref(query?: RateLimitWorkspaceQuery): string;
+declare function buildRateLimitsPolicyDetailHref(policyId: string): string;
+declare function readRateLimitsPolicyDetailParam(raw: unknown): string | null;
+declare function buildRateLimitsLedgerDetailHref(ledgerId: string): string;
+declare function readRateLimitsLedgerDetailParam(raw: unknown): string | null;
+interface IdentityAccessActorContext {
     actorId: string;
     actorType?: string;
     actorName?: string;
@@ -1664,13 +1664,13 @@ export interface IdentityAccessActorContext {
     authenticated: boolean;
     source?: string;
 }
-export interface IdentityAccessTenantContext {
+interface IdentityAccessTenantContext {
     tenantId: string;
     brandId?: string;
     storeId?: string;
     marketCode?: string;
 }
-export interface IdentityAccessResolvedContext {
+interface IdentityAccessResolvedContext {
     authenticated: boolean;
     actor: IdentityAccessActorContext | null;
     tenantContext: IdentityAccessTenantContext;
@@ -1681,7 +1681,7 @@ export interface IdentityAccessResolvedContext {
     roles: string[];
     permissions: string[];
 }
-export interface IdentityAccessAuthorizationDecision {
+interface IdentityAccessAuthorizationDecision {
     status: 'allowed' | 'denied';
     action: string;
     resourceScope: Record<string, string | undefined>;
@@ -1690,48 +1690,48 @@ export interface IdentityAccessAuthorizationDecision {
     tenantScopeMatched: boolean;
     enforcedBy: string[];
 }
-export interface IdentityAccessValidationResult {
+interface IdentityAccessValidationResult {
     status: 'allowed' | 'denied';
     check: 'role' | 'permission' | 'tenant-scope';
     resolved?: IdentityAccessResolvedContext;
     authorization?: IdentityAccessAuthorizationDecision;
     targetTenantId?: string;
 }
-export interface IdentityAccessWorkspaceQuery {
+interface IdentityAccessWorkspaceQuery {
     tenantId?: string;
     brandId?: string;
     storeId?: string;
     marketCode?: string;
 }
-export interface IdentityAccessWorkspace {
+interface IdentityAccessWorkspace {
     generatedAt: string;
     context: IdentityAccessResolvedContext;
     roleValidation: IdentityAccessValidationResult | null;
     permissionValidation: IdentityAccessValidationResult | null;
     tenantScopeValidation: IdentityAccessValidationResult | null;
 }
-export declare function buildIdentityAccessHref(query?: IdentityAccessWorkspaceQuery): string;
-export declare function buildIdentityAccessRoleDetailHref(role: string): string;
-export declare function readIdentityAccessRoleDetailParam(raw: unknown): string | null;
-export declare function buildIdentityAccessPermissionDetailHref(permission: string): string;
-export declare function readIdentityAccessPermissionDetailParam(raw: unknown): string | null;
-export declare function buildIdentityAccessSessionDetailHref(session: string): string;
-export declare function readIdentityAccessSessionDetailParam(raw: unknown): string | null;
-export interface FoundationWorkspaceQuery {
+declare function buildIdentityAccessHref(query?: IdentityAccessWorkspaceQuery): string;
+declare function buildIdentityAccessRoleDetailHref(role: string): string;
+declare function readIdentityAccessRoleDetailParam(raw: unknown): string | null;
+declare function buildIdentityAccessPermissionDetailHref(permission: string): string;
+declare function readIdentityAccessPermissionDetailParam(raw: unknown): string | null;
+declare function buildIdentityAccessSessionDetailHref(session: string): string;
+declare function readIdentityAccessSessionDetailParam(raw: unknown): string | null;
+interface FoundationWorkspaceQuery {
     moduleKey?: string;
     consumer?: string;
 }
-export declare function buildFoundationWorkspaceHref(query?: FoundationWorkspaceQuery): string;
-export declare function buildFoundationModuleDetailHref(moduleKey: string): string;
-export declare function readFoundationModuleDetailParam(raw: unknown): string | null;
-export interface IntegrationWebhookSourceContract {
+declare function buildFoundationWorkspaceHref(query?: FoundationWorkspaceQuery): string;
+declare function buildFoundationModuleDetailHref(moduleKey: string): string;
+declare function readFoundationModuleDetailParam(raw: unknown): string | null;
+interface IntegrationWebhookSourceContract {
     source: string;
     algorithm: 'hmac-sha256' | string;
     toleranceSeconds: number;
     description: string;
     secretRef: string;
 }
-export interface IntegrationEventEnvelopeContract {
+interface IntegrationEventEnvelopeContract {
     envelopeId: string;
     eventName: string;
     source: string;
@@ -1742,7 +1742,7 @@ export interface IntegrationEventEnvelopeContract {
     payload: Record<string, unknown>;
     headers: Record<string, string>;
 }
-export interface IntegrationIdempotencyRecordContract {
+interface IntegrationIdempotencyRecordContract {
     key: string;
     source: string;
     eventId: string;
@@ -1752,20 +1752,20 @@ export interface IntegrationIdempotencyRecordContract {
     status: 'accepted' | string;
     payloadChecksum: string;
 }
-export interface IntegrationPublishEventRequest {
+interface IntegrationPublishEventRequest {
     eventName: string;
     source?: string;
     aggregateId?: string;
     idempotencyKey?: string;
     payload: Record<string, unknown>;
 }
-export interface IntegrationPublishEventResponse {
+interface IntegrationPublishEventResponse {
     status: 'accepted' | 'duplicate';
     envelope: IntegrationEventEnvelopeContract;
     persistedEventId: string;
     guarantees: string[];
 }
-export interface IntegrationWebhookIngestRequest {
+interface IntegrationWebhookIngestRequest {
     eventId?: string;
     eventType?: string;
     signature: string;
@@ -1773,7 +1773,7 @@ export interface IntegrationWebhookIngestRequest {
     rawBody?: string;
     payload: Record<string, unknown>;
 }
-export interface IntegrationWebhookIngestResponse {
+interface IntegrationWebhookIngestResponse {
     status: 'accepted' | 'duplicate';
     source: string;
     signatureVerified: boolean;
@@ -1781,10 +1781,10 @@ export interface IntegrationWebhookIngestResponse {
     envelope?: IntegrationEventEnvelopeContract;
     pipeline: string[];
 }
-export interface IntegrationOrchestrationWorkspaceQuery {
+interface IntegrationOrchestrationWorkspaceQuery {
     source?: string;
 }
-export interface IntegrationOrchestrationWorkspace {
+interface IntegrationOrchestrationWorkspace {
     generatedAt: string;
     sources: IntegrationWebhookSourceContract[];
     events: IntegrationEventEnvelopeContract[];
@@ -1797,17 +1797,17 @@ export interface IntegrationOrchestrationWorkspace {
         duplicateSensitiveRecords: number;
     };
 }
-export declare function buildIntegrationOrchestrationHref(query?: IntegrationOrchestrationWorkspaceQuery): string;
+declare function buildIntegrationOrchestrationHref(query?: IntegrationOrchestrationWorkspaceQuery): string;
 /** Agent 会话状态 */
-export type AgentSessionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+type AgentSessionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 /** Agent 执行状态 */
-export type AgentExecutionStatus = 'RUNNING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT';
+type AgentExecutionStatus = 'RUNNING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT';
 /** Agent 工具调用状态 */
-export type AgentToolCallStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+type AgentToolCallStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
 /** Agent 消息角色 */
-export type AgentMessageRole = 'system' | 'user' | 'assistant' | 'tool';
+type AgentMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 /** Agent 运行时配置 */
-export interface AgentConfig {
+interface AgentConfig {
     id: string;
     name: string;
     systemPrompt: string;
@@ -1822,7 +1822,7 @@ export interface AgentConfig {
     tenantId: string;
 }
 /** Agent 消息 */
-export interface AgentMessage {
+interface AgentMessage {
     id: string;
     sessionId: string;
     role: AgentMessageRole;
@@ -1832,7 +1832,7 @@ export interface AgentMessage {
     timestamp: string;
 }
 /** Agent 工具调用 */
-export interface AgentToolCall {
+interface AgentToolCall {
     id: string;
     name: string;
     input: unknown;
@@ -1842,7 +1842,7 @@ export interface AgentToolCall {
     error?: string;
 }
 /** Agent 运行会话 */
-export interface AgentSession {
+interface AgentSession {
     id: string;
     configId: string;
     status: AgentSessionStatus;
@@ -1860,7 +1860,7 @@ export interface AgentSession {
     tenantId: string;
 }
 /** Agent 执行记录 */
-export interface AgentExecution {
+interface AgentExecution {
     id: string;
     sessionId: string;
     configId: string;
@@ -1875,7 +1875,7 @@ export interface AgentExecution {
     tenantId: string;
 }
 /** 质量评估结果 */
-export interface QualityEvaluation {
+interface QualityEvaluation {
     id: string;
     sessionId: string;
     userInput: string;
@@ -1893,7 +1893,7 @@ export interface QualityEvaluation {
     tenantId: string;
 }
 /** 创建 Agent 会话请求 */
-export interface CreateSessionRequest {
+interface CreateSessionRequest {
     configId: string;
     userInput: string;
     maxSteps?: number;
@@ -1902,14 +1902,14 @@ export interface CreateSessionRequest {
     tenantId: string;
 }
 /** Agent 会话执行响应 */
-export interface SessionExecutionResult {
+interface SessionExecutionResult {
     session: AgentSession;
     execution: AgentExecution;
     evaluation?: QualityEvaluation;
     timestamp: string;
 }
 /** 批量 Agent 请求 */
-export interface BatchAgentRequest {
+interface BatchAgentRequest {
     items: Array<{
         configId: string;
         userInput: string;
@@ -1920,7 +1920,7 @@ export interface BatchAgentRequest {
     tenantId: string;
 }
 /** 批量 Agent 响应 */
-export interface BatchAgentResponse {
+interface BatchAgentResponse {
     total: number;
     succeeded: number;
     failed: number;
@@ -1932,7 +1932,7 @@ export interface BatchAgentResponse {
     timestamp: string;
 }
 /** Agent 统计 */
-export interface AgentStats {
+interface AgentStats {
     totalSessions: number;
     completedSessions: number;
     failedSessions: number;
@@ -1944,8 +1944,8 @@ export interface AgentStats {
     tenantId: string;
     timestamp: string;
 }
-export type ToolRiskLevel = 'low' | 'medium' | 'high';
-export interface ToolDefinition {
+type ToolRiskLevel = 'low' | 'medium' | 'high';
+interface ToolDefinition {
     name: string;
     description: string;
     category: string;
@@ -1957,7 +1957,7 @@ export interface ToolDefinition {
     };
 }
 /** Agent 会话流事件 — discriminated union */
-export type AgentSessionEvent = {
+type AgentSessionEvent = {
     type: 'session_started';
     session: AgentSession;
     timestamp: string;
@@ -1994,17 +1994,17 @@ export type AgentSessionEvent = {
     timestamp: string;
 };
 /** 事件类型联合 (用于 SDK filter / switch) */
-export type AgentSessionEventType = AgentSessionEvent['type'];
+type AgentSessionEventType = AgentSessionEvent['type'];
 /** 订单状态 (8 个, 状态机见 apps/api/src/modules/cashier/order-state-machine.ts) */
-export type OrderStatus = 'DRAFT' | 'PENDING' | 'PAID' | 'FULFILLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'CANCELED' | 'TIMEOUT';
+type OrderStatus = 'DRAFT' | 'PENDING' | 'PAID' | 'FULFILLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'CANCELED' | 'TIMEOUT';
 /** 支付方式 (4 种) */
-export type PaymentMethod = 'CASH' | 'WECHAT' | 'ALIPAY' | 'CARD';
+type PaymentMethod = 'CASH' | 'WECHAT' | 'ALIPAY' | 'CARD';
 /** 支付状态 (4 个) */
-export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 /** 退款状态 (3 个) */
-export type RefundStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+type RefundStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
 /** 订单行 (商品明细) */
-export interface OrderItem {
+interface OrderItem {
     id: string;
     orderId: string;
     tenantId: string;
@@ -2017,7 +2017,7 @@ export interface OrderItem {
     createdAt: string;
 }
 /** 订单主单 */
-export interface Order {
+interface Order {
     id: string;
     tenantId: string;
     memberId: string | null;
@@ -2040,7 +2040,7 @@ export interface Order {
     closedAt: string | null;
 }
 /** 支付记录 */
-export interface Payment {
+interface Payment {
     id: string;
     tenantId: string;
     orderId: string;
@@ -2055,7 +2055,7 @@ export interface Payment {
     updatedAt: string;
 }
 /** 退款记录 */
-export interface Refund {
+interface Refund {
     id: string;
     tenantId: string;
     orderId: string;
@@ -2073,7 +2073,7 @@ export interface Refund {
     updatedAt: string;
 }
 /** 订单事件 (SSE 推送, 8 类型 discriminated union) */
-export type OrderEvent = {
+type OrderEvent = {
     type: 'order_created';
     order: Order;
     timestamp: string;
@@ -2111,9 +2111,9 @@ export type OrderEvent = {
     timestamp: string;
 };
 /** OrderEvent 类型联合 */
-export type OrderEventType = OrderEvent['type'];
+type OrderEventType = OrderEvent['type'];
 /** 创建订单输入 */
-export interface CreateOrderInput {
+interface CreateOrderInput {
     clientOrderId: string;
     memberId?: string;
     items: Array<{
@@ -2127,28 +2127,28 @@ export interface CreateOrderInput {
     metadata?: Record<string, unknown>;
 }
 /** 创建支付输入 */
-export interface CreatePaymentInput {
+interface CreatePaymentInput {
     orderId: string;
     method: PaymentMethod;
     amountCents: number;
 }
 /** 创建退款输入 */
-export interface CreateRefundInput {
+interface CreateRefundInput {
     orderId: string;
     paymentId: string;
     amountCents: number;
     reason: string;
 }
 /** 订单事件 (带 id, 用于 SSE Last-Event-ID 续传) */
-export type OrderEventWithId = OrderEvent & {
+type OrderEventWithId = OrderEvent & {
     id: number;
 };
 /** LLM 服务提供商 */
-export type LLMProvider = 'openai' | 'anthropic' | 'deepseek' | 'qwen' | 'moonshot' | 'minimax' | 'custom';
+type LLMProvider = 'openai' | 'anthropic' | 'deepseek' | 'qwen' | 'moonshot' | 'minimax' | 'custom';
 /** LLM 配置状态 */
-export type LLMConfigStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+type LLMConfigStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 /** 站点LLM配置 */
-export interface TenantLLMConfig {
+interface TenantLLMConfig {
     id: string;
     tenantId: string;
     siteId?: string;
@@ -2171,7 +2171,7 @@ export interface TenantLLMConfig {
     approvedBy?: string;
 }
 /** 创建LLM配置请求 */
-export interface CreateLLMConfigRequest {
+interface CreateLLMConfigRequest {
     name: string;
     provider: LLMProvider;
     modelName: string;
@@ -2186,7 +2186,7 @@ export interface CreateLLMConfigRequest {
     storeId?: string;
 }
 /** 更新LLM配置请求 */
-export interface UpdateLLMConfigRequest {
+interface UpdateLLMConfigRequest {
     name?: string;
     provider?: LLMProvider;
     modelName?: string;
@@ -2200,7 +2200,7 @@ export interface UpdateLLMConfigRequest {
     enabled?: boolean;
 }
 /** LLM调用统计 */
-export interface LLMStats {
+interface LLMStats {
     totalCalls: number;
     successCalls: number;
     failedCalls: number;
@@ -2213,7 +2213,7 @@ export interface LLMStats {
     periodEnd: string;
 }
 /** LLM调用日志 */
-export interface LLMCallLog {
+interface LLMCallLog {
     id: string;
     configId: string;
     tenantId: string;
@@ -2229,14 +2229,14 @@ export interface LLMCallLog {
     createdAt: string;
 }
 /** 接入申请请求 */
-export interface ApplyLLMConfigRequest {
+interface ApplyLLMConfigRequest {
     configId: string;
     useCase: string;
     expectedVolume: number;
     businessJustification?: string;
 }
 /** 全球化地域上下文 */
-export interface GeoContext {
+interface GeoContext {
     country: string;
     province?: string;
     city?: string;
@@ -2246,7 +2246,8 @@ export interface GeoContext {
     regionCode: string;
 }
 /** 支持的语言 */
-export type SupportedLanguage = 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'zh-TW' | 'es-ES' | 'fr-FR' | 'de-DE';
+type SupportedLanguage = 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'zh-TW' | 'es-ES' | 'fr-FR' | 'de-DE';
 /** 支持的货币 */
-export type SupportedCurrency = 'USD' | 'CNY' | 'JPY' | 'KRW' | 'EUR' | 'GBP' | 'HKD' | 'SGD';
-//# sourceMappingURL=index.d.ts.map
+type SupportedCurrency = 'USD' | 'CNY' | 'JPY' | 'KRW' | 'EUR' | 'GBP' | 'HKD' | 'SGD';
+
+export { type AdminRuntimeActionKey, type AdminRuntimeActionPresetContract, type AgentConfig, type AgentExecution, type AgentExecutionStatus, type AgentMessage, type AgentMessageRole, type AgentSession, type AgentSessionEvent, type AgentSessionEventType, type AgentSessionStatus, type AgentStats, type AgentToolCall, type AgentToolCallStatus, type ApiResult, type AppBootstrapWiring, type ApplyLLMConfigRequest, type AuditRecordContract, type AuditRiskLevel, type AuditTrailQuery, type AuditTrailResponse, type AuditTrailSummary, type BackendTenantRole, type BatchAgentRequest, type BatchAgentResponse, type BootstrapCacheLayer, type BootstrapCapabilityRule, type BootstrapDeliveryChannel, type BootstrapFallbackStrategy, type BootstrapFoundationMetadataContract, type ConfigurationCertificateMetadata, type ConfigurationCertificateStatus, type ConfigurationConfigEntry, type ConfigurationConfigEntryRevision, type ConfigurationFeatureFlag, type ConfigurationGovernanceMetadataEntry, type ConfigurationGovernanceMetadataStatus, type ConfigurationOverview, type ConfigurationOverviewQuery, type ConfigurationPosture, type ConfigurationPostureAttention, type ConfigurationScope, type ConfigurationScopeType, type ConfigurationSecretMetadata, type ConfigurationSecretStatus, type ConfigurationSnapshot, type CreateLLMConfigRequest, type CreateOrderInput, type CreatePaymentInput, type CreateRefundInput, type CreateSessionRequest, type DesensitizationBootstrapPolicy, type DomainGovernanceDisplayModel, type DomainGovernanceDisplayPreset, type DomainGovernanceDisplayPresetContract, type DomainGovernanceDisplayPresetKey, type DomainGovernanceRenderItem, type DomainGovernanceRenderItemTone, type DomainGovernanceRenderSection, type DomainGovernanceWorkspaceQuery, type EdgeReplayStageContract, type EdgeReplayStageRequest, FRONTEND_TO_BACKEND_ROLE, type FeatureFlagBootstrapPolicy, type FoundationAlertAcknowledgement, type FoundationAlertAcknowledgementStatus, type FoundationAlertCatalogItem, type FoundationAlertCatalogResponse, type FoundationAlertCode, type FoundationAlertDrilldownDetail, type FoundationAlertDrilldownResponse, type FoundationAlertLinkedFocusQueryKeys, type FoundationAlertLytConnectionGovernanceRiskDetail, type FoundationAlertLytGovernanceAlertGroup, type FoundationAlertMutationKind, type FoundationAlertMutationResponse, type FoundationAlertOperation, type FoundationAlertOptimisticFeedback, type FoundationAlertOptimisticOverviewVisibility, type FoundationAlertOptimisticReadState, type FoundationAlertOwnerFilter, type FoundationAlertOwnerSummary, type FoundationAlertPanelDerivedState, type FoundationAlertPanelReadState, type FoundationAlertQuickSwitchItem, type FoundationAlertRuntimeCallbackStalledDetail, type FoundationAlertRuntimeCallbackStalledEscalationSummary, type FoundationAlertSeverity, type FoundationAlertTimelineActionSummary, type FoundationAlertTimelineActiveFilterChip, type FoundationAlertTimelineDigest, type FoundationAlertTimelineEntry, type FoundationAlertTimelineFilter, type FoundationAlertTimelineFilterQueryKeys, type FoundationAlertTimelineFilterReadState, type FoundationAlertTimelineFilterState, type FoundationAlertTimelineMetrics, type FoundationAlertTimelineShortcutPreset, type FoundationAlertTimelineSourceFilter, type FoundationAlertTimelineSourceSummary, type FoundationBlueprint, type FoundationBootstrapResponse, type FoundationCapabilityDescriptor, type FoundationClientApp, type FoundationConsumerActionGovernanceExample, type FoundationConsumerDescriptor, type FoundationConsumerGovernanceAlertLifecycleExample, type FoundationConsumerKey, type FoundationConsumerRuntimeHandoffExample, type FoundationConsumerRuntimeReceiptExample, type FoundationFrontendBootstrapState, type FoundationGovernanceBaseline, type FoundationModuleDescriptor, type FoundationModuleKey, type FoundationOperationsAlert, type FoundationOperationsAlertTriageState, type FoundationOperationsOverviewResponse, type FoundationOperationsOverviewSummary, type FoundationSupportedClient, type FoundationWorkspaceQuery, type FrontendWorkbenchRole, type GeoContext, type IdentityAccessActorContext, type IdentityAccessAuthorizationDecision, type IdentityAccessResolvedContext, type IdentityAccessTenantContext, type IdentityAccessValidationResult, type IdentityAccessWorkspace, type IdentityAccessWorkspaceQuery, type IntegrationEventEnvelopeContract, type IntegrationIdempotencyRecordContract, type IntegrationOrchestrationEventDetail, type IntegrationOrchestrationIdempotencyDetail, type IntegrationOrchestrationWorkspace, type IntegrationOrchestrationWorkspaceQuery, type IntegrationPublishEventRequest, type IntegrationPublishEventResponse, type IntegrationWebhookIngestRequest, type IntegrationWebhookIngestResponse, type IntegrationWebhookSourceContract, type LLMCallLog, type LLMConfigStatus, type LLMProvider, type LLMStats, type LytMemberSnapshotContract, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type MarketBootstrapResponse, type MarketProfileContract, type MemberAutomationTriggerCodeContract, type MemberAutomationTriggerContract, type MemberAutomationTriggerSourceContract, type MemberAutomationTriggerStatusContract, type MemberDataSourceContract, type MemberLevelContract, type MemberLifecycleStageContract, type MemberOperationsActionChannelContract, type MemberOperationsActionCodeContract, type MemberOperationsActionContract, type MemberOperationsExecutionLaneContract, type MemberOperationsExecutionReceiptContract, type MemberOperationsPriorityContract, type MemberOperationsProfileContract, type MemberOperationsReceiptStatusContract, type MemberOperationsReceiptTargetTypeContract, type MemberOperationsRuntimeStateContract, type MemberOperationsTaskContract, type MemberOperationsTaskSourceContract, type MemberOperationsTaskStatusContract, type MemberProfileContract, type MemberStatusContract, type ObservabilitySignalContract, type ObservabilitySignalType, type ObservabilityStatus, type Order, type OrderEvent, type OrderEventType, type OrderEventWithId, type OrderItem, type OrderStatus, type PaginationInput, type PaginationMeta, type Payment, type PaymentMethod, type PaymentStatus, type PortalBootstrapResponse, type PortalDomainGovernanceScopeSummaryContract, type PortalDomainGovernanceSummaryContract, type PortalLoginEntryContract, type QualityEvaluation, type QuotaLedgerRecord, type QuotaLedgerStatus, type RateLimitAlgorithm, type RateLimitPeriod, type RateLimitPolicyRecord, type RateLimitScopeType, type RateLimitWorkspace, type RateLimitWorkspaceQuery, type RecoveryPlanContract, type RecoveryPlanStatus, type Refund, type RefundStatus, type RegionalConfigOverrideContract, type RegionalLoginPolicyContract, type ResilienceOverview, type ResilienceQuery, type RetryPolicyContract, type RiskChallengeBootstrapPolicy, type RoleWorkbenchContract, type RuntimeGovernanceActionKey, type RuntimeGovernanceActionState, type RuntimeGovernanceApiActionKey, type RuntimeGovernanceApproval, type RuntimeGovernanceApprovalExecution, type RuntimeGovernanceApprovalExecutionFailure, type RuntimeGovernanceApprovalStatus, type RuntimeGovernanceBatchReplayItem, type RuntimeGovernanceBatchReplayRequest, type RuntimeGovernanceBatchReplayResponse, type RuntimeGovernanceCallbackEvent, type RuntimeGovernanceCallbackReceipt, type RuntimeGovernanceCallbackReceiptStatus, type RuntimeGovernanceCallbackRequest, type RuntimeGovernanceCallbackStallDetail, type RuntimeGovernanceCallbackStallEscalationAction, type RuntimeGovernanceCallbackStallStatus, type RuntimeGovernanceCallbackStatus, type RuntimeGovernanceClientApp, type RuntimeGovernanceEventRecord, type RuntimeGovernanceLedgerRecord, type RuntimeGovernanceNextStep, type RuntimeGovernanceOperationsBatchSummary, type RuntimeGovernanceOperationsOverview, type RuntimeGovernanceOperationsOverviewSummary, type RuntimeGovernanceOverviewFilter, type RuntimeGovernanceRateLimitDecision, type RuntimeGovernanceReceipt, type RuntimeGovernanceRecommendedAction, type RuntimeGovernanceReplayEscalationAction, type RuntimeGovernanceReplayPolicy, type RuntimeGovernanceReplayRequest, type RuntimeGovernanceReplaySource, type RuntimeGovernanceRiskLevel, type RuntimeGovernanceSubmitRequest, type RuntimeGovernanceSyncContract, type RuntimeGovernanceSyncRequest, type RuntimeGovernanceTicket, type SessionExecutionResult, type StorePortalContract, type SupportedCurrency, type SupportedLanguage, type TenantContextContract, type TenantLLMConfig, type TenantScopeBootstrapPolicy, type TobPortalContract, type ToolDefinition, type ToolRiskLevel, type UnifiedFoundationBootstrapContract, type UpdateLLMConfigRequest, type WorkbenchBootstrapResponse, type WorkbenchNavItemContract, adminRuntimeActionKeys, adminRuntimeActionPresetContractMap, adminRuntimeActionPresetContracts, adminWorkbenchConsumerDescriptor, advanceRuntimeGovernanceReplayPolicy, buildAuditTrailHref, buildAuditTrailRecordDetailHref, buildConfigurationCertificateDetailHref, buildConfigurationConfigEntryDetailHref, buildConfigurationFeatureFlagDetailHref, buildConfigurationHref, buildConfigurationOperationDetailHref, buildConfigurationSecretDetailHref, buildDomainGovernanceDisplayModel, buildDomainGovernanceHref, buildDomainGovernanceWorkspaceHref, buildFoundationAlertLinkedFocusContext, buildFoundationAlertLinkedFocusSearchParams, buildFoundationAlertOptimisticReadState, buildFoundationAlertPanelDerivedState, buildFoundationAlertPanelReadState, buildFoundationAlertQuickSwitchItems, buildFoundationAlertRecentOperationFilterState, buildFoundationAlertTimelineEmptyState, buildFoundationAlertTimelineFilterQueryPreview, buildFoundationAlertTimelineFilterReadState, buildFoundationAlertTimelineFilterSearchParams, buildFoundationAlertTimelineFilterStateFromQuery, buildFoundationAlertTimelineShortcutPresets, buildFoundationModuleDetailHref, buildFoundationWorkspaceHref, buildIdentityAccessHref, buildIdentityAccessPermissionDetailHref, buildIdentityAccessRoleDetailHref, buildIdentityAccessSessionDetailHref, buildIntegrationOrchestrationEventDetailHref, buildIntegrationOrchestrationHref, buildIntegrationOrchestrationIdempotencyDetailHref, buildIntegrationOrchestrationSourceDetailHref, buildRateLimitsHref, buildRateLimitsLedgerDetailHref, buildRateLimitsPolicyDetailHref, buildResilienceHref, buildResilienceRecoveryPlanDetailHref, buildResilienceRetryPolicyDetailHref, buildResilienceSignalDetailHref, buildRuntimeGovernanceCallbackStallDetail, buildRuntimeGovernanceReplayEndpoint, createRuntimeGovernanceReplayPolicy, defaultRoleWorkbenchContractMap, defaultRoleWorkbenchContracts, domainGovernanceDisplayCopy, domainGovernanceDisplayPresetContractMap, evaluateRuntimeGovernanceCallbackStall, filterFoundationAlertTimeline, filterFoundationAlertTimelineByOwner, filterFoundationAlertTimelineBySource, findLatestFoundationAlertTimelineEntry, formatDomainGovernanceCountsSummary, formatDomainGovernanceFocusScopeLabel, formatDomainGovernanceFocusScopeSummary, formatDomainGovernanceLastEvaluatedSummary, formatDomainGovernanceRecommendationSummary, formatDomainGovernanceSourceSummary, formatDomainGovernanceStatusSummary, foundationAlertCatalogFallback, foundationAppBootstrapProfiles, foundationBootstrapCapabilityRules, foundationBootstrapContract, foundationSupportedClients, getDomainGovernanceAttentionLabel, getFoundationAlertLytConnectionGovernanceRiskDetail, getFoundationAlertRuntimeCallbackStalledDetail, getFoundationAppBootstrapWiring, isFoundationAlertLytConnectionGovernanceRiskDetail, isFoundationAlertRuntimeCallbackStalledDetail, isFoundationAlertTimelineFilterStateEqual, listFoundationAlertTimelineActiveFilters, mapToBackendRole, memberAutomationTriggerCodeContracts, memberAutomationTriggerSourceContracts, memberAutomationTriggerStatusContracts, memberDataSourceContracts, memberLevelContracts, memberLifecycleStageContracts, memberOperationsActionChannelContracts, memberOperationsActionCodeContracts, memberOperationsExecutionLaneContracts, memberOperationsPriorityContracts, memberOperationsReceiptStatusContracts, memberOperationsReceiptTargetTypeContracts, memberOperationsRuntimeStateContracts, memberOperationsTaskSourceContracts, memberOperationsTaskStatusContracts, memberStatusContracts, normalizeFoundationAlertTimelineFilterState, readAuditTrailRecordDetailParam, readConfigurationCertificateDetailParam, readConfigurationConfigEntryDetailParam, readConfigurationFeatureFlagDetailParam, readConfigurationOperationDetailParam, readConfigurationSecretDetailParam, readFoundationModuleDetailParam, readIdentityAccessPermissionDetailParam, readIdentityAccessRoleDetailParam, readIdentityAccessSessionDetailParam, readIntegrationOrchestrationEventDetailParam, readIntegrationOrchestrationIdempotencyDetailParam, readIntegrationOrchestrationSourceDetailParam, readRateLimitsLedgerDetailParam, readRateLimitsPolicyDetailParam, readResilienceRecoveryPlanDetailParam, readResilienceRetryPolicyDetailParam, readResilienceSignalDetailParam, resolveDomainGovernanceDisplayPreset, resolveDomainGovernanceRenderItemColor, resolveFoundationAlertFocusCode, resolveFoundationAlertSelectedCode, runtimeGovernanceActionKeys, runtimeGovernanceApiActionKeys, runtimeGovernanceCallbackEvents, runtimeGovernanceCallbackReceiptStatuses, runtimeGovernanceCallbackStallEscalationActions, runtimeGovernanceCallbackStatuses, runtimeGovernanceCallbackTimeoutThresholds, runtimeGovernanceClientApps, runtimeGovernanceNextSteps, runtimeGovernanceRecommendedActions, runtimeGovernanceReplayEscalationActions, runtimeGovernanceReplaySources, runtimeGovernanceRiskLevels, selectDomainGovernanceFocusScope, summarizeFoundationAlertOwners, summarizeFoundationAlertTimelineDigest, summarizeFoundationAlertTimelineFilters, summarizeFoundationAlertTimelineMetrics, summarizeFoundationAlertTimelineSources };

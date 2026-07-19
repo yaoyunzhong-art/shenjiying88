@@ -3,7 +3,8 @@
   "compilerOptions": {
     "downlevelIteration": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "types": []
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]

@@ -1,7 +1,0 @@
-host,type,value_1,value_2,ttl,comment
-api.m5-platform.com,A,121.41.69.154,120.26.66.40,600,production-api
-admin.m5-platform.com,A,121.41.69.154,120.26.66.40,600,production-admin
-store.m5-platform.com,A,121.41.69.154,120.26.66.40,600,production-storefront
-tob.m5-platform.com,A,121.41.69.154,120.26.66.40,600,production-tob
-m5-platform.com,A,121.41.69.154,120.26.66.40,600,production-root
-www.m5-platform.com,A,121.41.69.154,120.26.66.40,600,production-www

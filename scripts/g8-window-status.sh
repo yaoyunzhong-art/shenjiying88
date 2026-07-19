@@ -135,13 +135,13 @@ fi
   echo "## Next Action"
   echo
   if [[ "$overall_status" == "blocked" ]]; then
-    echo "- Window is still blocked. Resolve blockers first, then rerun \`pnpm g8:recheck\`."
+    echo "- Window is still blocked. Resolve blockers first, then rerun \`pnpm g8:gate\` or at least \`pnpm g8:recheck\`."
   elif [[ "$overall_status" == "ready_for_formal" ]]; then
     echo "- Readiness is green. Move to [G8-SUCCESS-CHECKLIST.md](file://$latest_dir/G8-SUCCESS-CHECKLIST.md) and run \`pnpm g8:formal\`."
   elif [[ "$overall_status" == "formal_executed" ]]; then
     echo "- Formal window evidence exists. Review apply/verify/rollback logs and complete closeout."
   elif [[ "$overall_status" == "evidence_only" ]]; then
-    echo "- Only non-mutating evidence exists. Use \`pnpm g8:formal\` during the real window."
+    echo "- Only non-mutating evidence exists. Use \`pnpm g8:formal\` during the real window, or rerun \`pnpm g8:gate\` if you want a fresh full check."
   else
     echo "- State is incomplete. Inspect this window directory manually."
   fi

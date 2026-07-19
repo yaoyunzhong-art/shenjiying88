@@ -12,31 +12,114 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 
 type OrderDetailParams = {
-  OrderDetail: { orderId: string };
+  OrderDetail: {
+    orderId: string;
+    paymentStatus?: 'PAID';
+    paymentAmount?: number;
+    paymentPaidAt?: string;
+    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+    refundStatus?: 'PENDING' | 'REFUNDED';
+    refundRequestedAmount?: number;
+    refundReason?: string;
+    refundRequestedAt?: string;
+    refundCompletedAt?: string;
+  };
 };
 
-const mockOrderDetail = {
-  orderId: 'order-001',
-  orderNo: 'ORD20260612001',
-  status: 'PAID',
-  createdAt: '2026-06-12T10:30:00.000Z',
-  paidAt: '2026-06-12T10:35:00.000Z',
-  totalAmount: 156.00,
-  currency: 'CNY',
-  paymentChannel: 'WECHAT_PAY',
-  memberId: 'member-001',
-  memberNickname: '张三',
-  items: [
-    { skuId: 'SKU001', title: '拿铁咖啡', quantity: 2, price: 32.00 },
-    { skuId: 'SKU002', title: '提拉米苏', quantity: 1, price: 48.00 },
-    { skuId: 'SKU003', title: '鲜榨橙汁', quantity: 1, price: 44.00 },
-  ],
-  pointsEarned: 156,
+type OrderStatus = 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
+
+type MockOrderDetail = {
+  orderId: string;
+  orderNo: string;
+  status: OrderStatus;
+  createdAt: string;
+  paidAt?: string;
+  totalAmount: number;
+  currency: string;
+  paymentChannel: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+  memberId: string;
+  memberNickname: string;
+  items: Array<{ skuId: string; title: string; quantity: number; price: number }>;
+  pointsEarned: number;
 };
+
+const mockOrderDetails: Record<string, MockOrderDetail> = {
+  'order-001': {
+    orderId: 'order-001',
+    orderNo: 'ORD20260612001',
+    status: 'PAID',
+    createdAt: '2026-06-12T10:30:00.000Z',
+    paidAt: '2026-06-12T10:35:00.000Z',
+    totalAmount: 156.00,
+    currency: 'CNY',
+    paymentChannel: 'WECHAT_PAY',
+    memberId: 'member-001',
+    memberNickname: '张三',
+    items: [
+      { skuId: 'SKU001', title: '拿铁咖啡', quantity: 2, price: 32.00 },
+      { skuId: 'SKU002', title: '提拉米苏', quantity: 1, price: 48.00 },
+      { skuId: 'SKU003', title: '鲜榨橙汁', quantity: 1, price: 44.00 },
+    ],
+    pointsEarned: 156,
+  },
+  'order-002': {
+    orderId: 'order-002',
+    orderNo: 'ORD20260612002',
+    status: 'PENDING',
+    createdAt: '2026-06-12T11:15:00.000Z',
+    totalAmount: 89.50,
+    currency: 'CNY',
+    paymentChannel: 'WECHAT_PAY',
+    memberId: 'member-002',
+    memberNickname: '李四',
+    items: [
+      { skuId: 'SKU101', title: '美式咖啡', quantity: 1, price: 26.00 },
+      { skuId: 'SKU102', title: '牛角包', quantity: 2, price: 31.75 },
+    ],
+    pointsEarned: 0,
+  },
+  'order-003': {
+    orderId: 'order-003',
+    orderNo: 'ORD20260611001',
+    status: 'REFUNDED',
+    createdAt: '2026-06-11T14:20:00.000Z',
+    paidAt: '2026-06-11T14:25:00.000Z',
+    totalAmount: 320.00,
+    currency: 'CNY',
+    paymentChannel: 'ALIPAY',
+    memberId: 'member-003',
+    memberNickname: '王五',
+    items: [
+      { skuId: 'SKU201', title: '蛋白棒', quantity: 4, price: 35.00 },
+      { skuId: 'SKU202', title: '运动饮料', quantity: 3, price: 60.00 },
+    ],
+    pointsEarned: 320,
+  },
+  'order-004': {
+    orderId: 'order-004',
+    orderNo: 'ORD20260610001',
+    status: 'PAID',
+    createdAt: '2026-06-10T09:45:00.000Z',
+    paidAt: '2026-06-10T09:47:00.000Z',
+    totalAmount: 68.00,
+    currency: 'CNY',
+    paymentChannel: 'CASH',
+    memberId: 'member-004',
+    memberNickname: '赵六',
+    items: [
+      { skuId: 'SKU301', title: '矿泉水', quantity: 1, price: 8.00 },
+      { skuId: 'SKU302', title: '能量胶', quantity: 2, price: 30.00 },
+    ],
+    pointsEarned: 68,
+  },
+};
+
+const defaultMockOrderDetail = mockOrderDetails['order-001'];
 
 const statusLabels: Record<string, string> = {
   PENDING: '待支付',
   PAID: '已完成',
+  REFUND_PENDING: '退款审核中',
   REFUNDED: '已退款',
   CANCELLED: '已取消',
 };
@@ -49,10 +132,56 @@ const channelLabels: Record<string, string> = {
 };
 
 export function OrderDetailScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<RouteProp<OrderDetailParams, 'OrderDetail'>>();
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: {
+      goBack: () => void;
+      navigate?: (route: string, params?: Record<string, unknown>) => void;
+    };
+  }).__mockNavigation ?? { goBack: () => {}, navigate: () => {} };
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: OrderDetailParams['OrderDetail'];
+  }).__mockRoute ?? { orderId: defaultMockOrderDetail.orderId };
 
-  const order = mockOrderDetail;
+  let navigation = fallbackNavigation;
+  try {
+    navigation = useNavigation();
+  } catch {
+    navigation = fallbackNavigation;
+  }
+
+  let route = { params: fallbackRouteParams } as RouteProp<OrderDetailParams, 'OrderDetail'>;
+  try {
+    route = useRoute<RouteProp<OrderDetailParams, 'OrderDetail'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<OrderDetailParams, 'OrderDetail'>;
+  }
+  const baseOrder = mockOrderDetails[route.params?.orderId ?? defaultMockOrderDetail.orderId] ?? defaultMockOrderDetail;
+  const hasSuccessfulPayment =
+    route.params?.paymentStatus === 'PAID' &&
+    typeof route.params?.paymentAmount === 'number';
+  const hasCompletedRefund =
+    route.params?.refundStatus === 'REFUNDED' &&
+    typeof route.params?.refundRequestedAmount === 'number';
+  const hasPendingRefund =
+    route.params?.refundStatus === 'PENDING' &&
+    typeof route.params?.refundRequestedAmount === 'number';
+  const order = {
+    ...baseOrder,
+    orderId: route.params?.orderId ?? baseOrder.orderId,
+    totalAmount: route.params?.paymentAmount ?? baseOrder.totalAmount,
+    paymentChannel: route.params?.paymentChannel ?? baseOrder.paymentChannel,
+    paidAt: route.params?.paymentPaidAt ?? baseOrder.paidAt,
+    pointsEarned: route.params?.paymentAmount
+      ? Math.round(route.params.paymentAmount)
+      : baseOrder.pointsEarned,
+    status: hasCompletedRefund
+      ? 'REFUNDED'
+      : hasPendingRefund
+        ? 'REFUND_PENDING'
+        : hasSuccessfulPayment
+          ? 'PAID'
+          : baseOrder.status,
+  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('zh-CN', {
@@ -65,26 +194,46 @@ export function OrderDetailScreen() {
   };
 
   const handleRefund = () => {
-    Alert.alert(
-      '申请退款',
-      `确定要退款订单 ${order.orderNo} 吗？`,
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确定',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('提示', '退款申请已提交', [
-              { text: '确定', onPress: () => navigation.goBack() },
-            ]);
-          },
-        },
-      ]
-    );
+    navigation.navigate('Refund' as never, {
+      orderId: order.orderId,
+      orderNo: order.orderNo,
+      amount: order.totalAmount,
+      reason: route.params?.refundReason,
+    } as never);
   };
 
   const handleConfirmPayment = () => {
-    Alert.alert('提示', '支付成功');
+    navigation.navigate('Payment' as never, {
+      orderId: order.orderId,
+      orderNo: order.orderNo,
+      amount: order.totalAmount,
+      paymentChannel: order.paymentChannel,
+    } as never);
+  };
+
+  const handleBackToOrders = () => {
+    if (route.params?.refundStatus) {
+      navigation.navigate('Orders' as never, {
+        orderId: order.orderId,
+        refundStatus: route.params.refundStatus,
+        refundRequestedAmount: route.params.refundRequestedAmount,
+        refundReason: route.params.refundReason,
+        refundRequestedAt: route.params.refundRequestedAt,
+        refundCompletedAt: route.params.refundCompletedAt,
+      } as never);
+      return;
+    }
+    if (route.params?.paymentStatus === 'PAID') {
+      navigation.navigate('Orders' as never, {
+        orderId: order.orderId,
+        paymentStatus: 'PAID',
+        paymentAmount: route.params.paymentAmount,
+        paymentPaidAt: route.params.paymentPaidAt,
+        paymentChannel: route.params.paymentChannel,
+      } as never);
+      return;
+    }
+    navigation.goBack();
   };
 
   return (
@@ -98,7 +247,7 @@ export function OrderDetailScreen() {
                 styles.statusBadge,
                 order.status === 'PAID' && styles.statusBadgeSuccess,
                 order.status === 'PENDING' && styles.statusBadgeWarning,
-                order.status === 'REFUNDED' && styles.statusBadgeInfo,
+                (order.status === 'REFUNDED' || order.status === 'REFUND_PENDING') && styles.statusBadgeInfo,
               ]}
             >
               <Text
@@ -106,7 +255,7 @@ export function OrderDetailScreen() {
                   styles.statusText,
                   order.status === 'PAID' && styles.statusTextSuccess,
                   order.status === 'PENDING' && styles.statusTextWarning,
-                  order.status === 'REFUNDED' && styles.statusTextInfo,
+                  (order.status === 'REFUNDED' || order.status === 'REFUND_PENDING') && styles.statusTextInfo,
                 ]}
               >
                 {statusLabels[order.status]}
@@ -128,6 +277,40 @@ export function OrderDetailScreen() {
             </View>
           )}
         </Card>
+
+        {(hasPendingRefund || hasCompletedRefund) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{hasCompletedRefund ? '退款结果' : '退款进度'}</Text>
+            <Card style={styles.refundCard}>
+              <View style={styles.statusRow}>
+                <Text style={styles.statusKey}>退款状态</Text>
+                <Text style={hasCompletedRefund ? styles.refundCompletedValue : styles.refundPendingValue}>
+                  {hasCompletedRefund ? '已退款' : '退款审核中'}
+                </Text>
+              </View>
+              <View style={styles.statusRow}>
+                <Text style={styles.statusKey}>{hasCompletedRefund ? '退款金额' : '申请金额'}</Text>
+                <Text style={styles.statusValue}>¥{route.params.refundRequestedAmount!.toFixed(2)}</Text>
+              </View>
+              <View style={styles.statusRow}>
+                <Text style={styles.statusKey}>退款原因</Text>
+                <Text style={styles.statusValue}>{route.params?.refundReason ?? '未填写'}</Text>
+              </View>
+              {route.params?.refundRequestedAt ? (
+                <View style={styles.statusRow}>
+                  <Text style={styles.statusKey}>{hasCompletedRefund ? '申请时间' : '申请时间'}</Text>
+                  <Text style={styles.statusValue}>{formatDate(route.params.refundRequestedAt)}</Text>
+                </View>
+              ) : null}
+              {hasCompletedRefund && route.params?.refundCompletedAt ? (
+                <View style={styles.statusRow}>
+                  <Text style={styles.statusKey}>完成时间</Text>
+                  <Text style={styles.statusValue}>{formatDate(route.params.refundCompletedAt)}</Text>
+                </View>
+              ) : null}
+            </Card>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>商品明细</Text>
@@ -193,10 +376,18 @@ export function OrderDetailScreen() {
 
       <View style={styles.footer}>
         {order.status === 'PENDING' && (
-          <>
+          <Button
+            title="去收款"
+            onPress={handleConfirmPayment}
+            style={styles.fullWidthButton}
+          />
+        )}
+        {order.status === 'PAID' && (
+          <View style={styles.footerActions}>
             <Button
-              title="确认收款"
-              onPress={handleConfirmPayment}
+              title="返回"
+              onPress={handleBackToOrders}
+              variant="outline"
               style={styles.footerButton}
             />
             <Button
@@ -205,20 +396,12 @@ export function OrderDetailScreen() {
               variant="outline"
               style={styles.footerButton}
             />
-          </>
+          </View>
         )}
-        {order.status === 'PAID' && (
-          <Button
-            title="申请退款"
-            onPress={handleRefund}
-            variant="outline"
-            style={styles.fullWidthButton}
-          />
-        )}
-        {(order.status === 'REFUNDED' || order.status === 'CANCELLED') && (
+        {(order.status === 'REFUNDED' || order.status === 'CANCELLED' || order.status === 'REFUND_PENDING') && (
           <Button
             title="返回"
-            onPress={() => navigation.goBack()}
+            onPress={handleBackToOrders}
             variant="outline"
             style={styles.fullWidthButton}
           />
@@ -341,6 +524,9 @@ const styles = StyleSheet.create({
   paymentCard: {
     paddingVertical: 8,
   },
+  refundCard: {
+    paddingVertical: 8,
+  },
   paymentRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -358,6 +544,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FF9500',
+  },
+  refundPendingValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5856D6',
+  },
+  refundCompletedValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#34C759',
   },
   memberCard: {
     paddingVertical: 8,
@@ -386,6 +582,11 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
+  },
+  footerActions: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
   },
   fullWidthButton: {
     flex: 1,

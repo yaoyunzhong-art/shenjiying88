@@ -895,14 +895,13 @@ export async function requestNativeAppRefundToApi(
     return runtime
   }
 
-  const client = createNativeAppBootstrapClient(context)
   const refundPayload = createNativeAppRefundPayload(runtime.aggregate)
 
   try {
-    const refundedAggregate = await client.postData<NativeAppTransactionAggregate>(
-      `/transactions/orders/${runtime.aggregate.order.orderId}/refunds`,
+    const refundedAggregate = await submitNativeAppOrderRefund(
+      runtime.aggregate.order.orderId,
       refundPayload,
-      { cache: 'no-store' }
+      context,
     )
 
     return {
@@ -938,6 +937,19 @@ export async function requestNativeAppRefundToApi(
       note: '真实退款接口当前不可达，App 端回退为本地待审退款演示。'
     }
   }
+}
+
+export async function submitNativeAppOrderRefund(
+  orderId: string,
+  refundPayload: NativeAppRefundPayload,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppTransactionAggregate> {
+  const client = createNativeAppBootstrapClient(context)
+  return client.postData<NativeAppTransactionAggregate>(
+    `/transactions/orders/${orderId}/refunds`,
+    refundPayload,
+    { cache: 'no-store' },
+  )
 }
 
 export function resolveNativeAppBootstrapState(

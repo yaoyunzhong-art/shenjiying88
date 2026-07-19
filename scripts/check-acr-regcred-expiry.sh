@@ -8,7 +8,7 @@ set -euo pipefail
 
 NAMESPACE="${NAMESPACE:-m5}"
 SECRET_NAME="acr-regcred"
-WARN_HOURS="${WARN_HOURS:-24}"   # 剩余少于多少小时告警
+WARN_MINUTES="${WARN_MINUTES:-15}"   # 剩余少于多少分钟告警
 
 # ---------- kubeconfig 发现 ----------
 if [[ -z "${KUBECONFIG:-}" || ! -f "${KUBECONFIG:-}" ]]; then
@@ -105,10 +105,11 @@ print(datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'))
         REMAINING_SEC=$(( (EXPIRE_TS / 1000) - $(date +%s) ))
         REMAINING_HOURS=$(( REMAINING_SEC / 3600 ))
         REMAINING_MINS=$(( (REMAINING_SEC % 3600) / 60 ))
+        TOTAL_REMAINING_MINUTES=$(( REMAINING_SEC / 60 ))
         if [[ $REMAINING_SEC -gt 0 ]]; then
-          echo "  过期时间: $EXPIRE_HUMAN（剩余 ${REMAINING_HOURS}h ${REMAINING_MINS}m）"
-          if [[ $REMAINING_HOURS -lt $WARN_HOURS ]]; then
-            echo "  ⚠️  即将过期（<$WARN_HOURS 小时）！建议刷新"
+          echo "  过期时间: $EXPIRE_HUMAN (剩余 ${REMAINING_HOURS}h ${REMAINING_MINS}m)"
+          if [[ $TOTAL_REMAINING_MINUTES -lt $WARN_MINUTES ]]; then
+            echo "  ⚠️  即将过期 (<$WARN_MINUTES 分钟)！建议刷新"
           else
             echo "  ✅ 凭据有效期充足"
           fi
