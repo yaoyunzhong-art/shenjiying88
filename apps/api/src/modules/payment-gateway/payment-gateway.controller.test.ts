@@ -60,12 +60,15 @@ describe('PaymentGatewayController (Integration)', () => {
   // ── 创建支付 ─────────────────────────────────────────
   describe('POST /payment-gateway/pay', () => {
     it('should create PayPal payment and return pending status', async () => {
-      const result = await controller.pay({
-        orderId: 'order-pay-001',
-        amount: 1000,
-        currency: 'USD',
-        provider: 'paypal',
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-pay-001',
+          amount: 1000,
+          currency: 'USD',
+          provider: 'paypal',
+        },
+      )
 
       assert.ok(result.transactionId, 'should have transactionId')
       assert.equal(result.status, 'pending')
@@ -75,62 +78,77 @@ describe('PaymentGatewayController (Integration)', () => {
     })
 
     it('should create Stripe payment with optional fields', async () => {
-      const result = await controller.pay({
-        orderId: 'order-pay-002',
-        amount: 2500,
-        currency: 'USD',
-        provider: 'stripe',
-        locale: 'zh-CN',
-        returnUrl: 'https://example.com/success',
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-pay-002',
+          amount: 2500,
+          currency: 'USD',
+          provider: 'stripe',
+          locale: 'zh-CN',
+          returnUrl: 'https://example.com/success',
+        },
+      )
 
       assert.equal(result.provider, 'stripe')
       assert.ok(result.transactionId)
     })
 
     it('should create Alipay CNY payment', async () => {
-      const result = await controller.pay({
-        orderId: 'order-pay-003',
-        amount: 100,
-        currency: 'CNY',
-        provider: 'alipay',
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-pay-003',
+          amount: 100,
+          currency: 'CNY',
+          provider: 'alipay',
+        },
+      )
 
       assert.equal(result.provider, 'alipay')
       assert.equal(result.currency, 'CNY')
     })
 
     it('should create WeChat pay payment', async () => {
-      const result = await controller.pay({
-        orderId: 'order-pay-004',
-        amount: 50,
-        currency: 'CNY',
-        provider: 'wechat_pay',
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-pay-004',
+          amount: 50,
+          currency: 'CNY',
+          provider: 'wechat_pay',
+        },
+      )
 
       assert.equal(result.provider, 'wechat_pay')
     })
 
     it('should create PayPay JPY payment', async () => {
-      const result = await controller.pay({
-        orderId: 'order-pay-005',
-        amount: 3000,
-        currency: 'JPY',
-        provider: 'paypay',
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-pay-005',
+          amount: 3000,
+          currency: 'JPY',
+          provider: 'paypay',
+        },
+      )
 
       assert.equal(result.provider, 'paypay')
       assert.equal(result.currency, 'JPY')
     })
 
     it('should return failed status for local_wallet with insufficient balance', async () => {
-      const result = await controller.pay({
-        orderId: 'order-pay-006',
-        amount: 99999,
-        currency: 'CNY',
-        provider: 'local_wallet',
-        metadata: { userId: 'test-user' },
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-pay-006',
+          amount: 99999,
+          currency: 'CNY',
+          provider: 'local_wallet',
+          metadata: { userId: 'test-user' },
+        },
+      )
 
       assert.equal(result.status, 'failed')
       assert.equal(result.provider, 'local_wallet')
@@ -139,56 +157,71 @@ describe('PaymentGatewayController (Integration)', () => {
     // ── 反例 ──
     it('should reject zero amount', async () => {
       await expect(
-        controller.pay({
-          orderId: 'order-bad',
-          amount: 0,
-          currency: 'USD',
-          provider: 'paypal',
-        }),
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-bad',
+            amount: 0,
+            currency: 'USD',
+            provider: 'paypal',
+          },
+        ),
       ).rejects.toThrow(HttpException)
     })
 
     it('should reject negative amount', async () => {
       await expect(
-        controller.pay({
-          orderId: 'order-bad',
-          amount: -100,
-          currency: 'USD',
-          provider: 'paypal',
-        }),
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-bad',
+            amount: -100,
+            currency: 'USD',
+            provider: 'paypal',
+          },
+        ),
       ).rejects.toThrow(HttpException)
     })
 
     it('should reject unknown provider', async () => {
       await expect(
-        controller.pay({
-          orderId: 'order-bad',
-          amount: 100,
-          currency: 'USD',
-          provider: 'unknown' as any,
-        }),
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-bad',
+            amount: 100,
+            currency: 'USD',
+            provider: 'unknown' as any,
+          },
+        ),
       ).rejects.toThrow(HttpException)
     })
 
     it('should reject unsupported currency for provider (PayPay does not support USD)', async () => {
       await expect(
-        controller.pay({
-          orderId: 'order-bad',
-          amount: 100,
-          currency: 'USD',
-          provider: 'paypay',
-        }),
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-bad',
+            amount: 100,
+            currency: 'USD',
+            provider: 'paypay',
+          },
+        ),
       ).rejects.toThrow(HttpException)
     })
 
     it('should handle empty orderId (accepted as valid by provider)', async () => {
       // Service allows empty orderId and generates a transaction
-      const result = await controller.pay({
-        orderId: '',
-        amount: 100,
-        currency: 'USD',
-        provider: 'paypal',
-      })
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: '',
+          amount: 100,
+          currency: 'USD',
+          provider: 'paypal',
+        },
+      )
       assert.ok(result.transactionId, 'still creates transaction')
       assert.equal(result.status, 'pending')
     })
@@ -197,21 +230,24 @@ describe('PaymentGatewayController (Integration)', () => {
   // ── 支付查询 ─────────────────────────────────────────
   describe('GET /payment-gateway/pay/:id', () => {
     it('should query existing payment by transaction id', async () => {
-      const created = await controller.pay({
-        orderId: 'order-query-001',
-        amount: 1000,
-        currency: 'USD',
-        provider: 'stripe',
-      })
+      const created = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-query-001',
+          amount: 1000,
+          currency: 'USD',
+          provider: 'stripe',
+        },
+      )
 
-      const result = await controller.queryPayment(created.transactionId)
+      const result = await controller.queryPayment('tenant-test', created.transactionId)
       assert.equal(result.transactionId, created.transactionId)
       assert.equal(result.provider, 'stripe')
     })
 
     it('should return 404 for non-existent transaction', async () => {
       try {
-        await controller.queryPayment('txn-nonexistent')
+        await controller.queryPayment('tenant-test', 'txn-nonexistent')
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
@@ -221,7 +257,7 @@ describe('PaymentGatewayController (Integration)', () => {
 
     it('should return 404 for empty id', async () => {
       try {
-        await controller.queryPayment('')
+        await controller.queryPayment('tenant-test', '')
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
@@ -232,45 +268,57 @@ describe('PaymentGatewayController (Integration)', () => {
   // ── 退款 ─────────────────────────────────────────────
   describe('POST /payment-gateway/refund', () => {
     it('should refund completed PayPal payment with webhookUrl', async () => {
-      const payment = await controller.pay({
-        orderId: 'order-refund-001',
-        amount: 1000,
-        currency: 'USD',
-        provider: 'paypal',
-        webhookUrl: 'https://example.com/webhook',
-      })
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-refund-001',
+          amount: 1000,
+          currency: 'USD',
+          provider: 'paypal',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
 
       // Wait for simulated webhook completion
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      const queryResult = await controller.queryPayment(payment.transactionId)
+      const queryResult = await controller.queryPayment('tenant-test', payment.transactionId)
       assert.equal(queryResult.status, 'completed')
 
-      const refundResult = await controller.refund({
-        transactionId: payment.transactionId,
-        reason: '客户要求退款',
-      })
+      const refundResult = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+          reason: '客户要求退款',
+        },
+      )
 
       assert.equal(refundResult.status, 'refunded')
       assert.ok(refundResult.transactionId)
     })
 
     it('should do partial refund', async () => {
-      const payment = await controller.pay({
-        orderId: 'order-refund-002',
-        amount: 1000,
-        currency: 'USD',
-        provider: 'paypal',
-        webhookUrl: 'https://example.com/webhook',
-      })
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-refund-002',
+          amount: 1000,
+          currency: 'USD',
+          provider: 'paypal',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
 
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      const refundResult = await controller.refund({
-        transactionId: payment.transactionId,
-        amount: 500,
-        reason: '部分退款',
-      })
+      const refundResult = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+          amount: 500,
+          reason: '部分退款',
+        },
+      )
 
       assert.equal(refundResult.status, 'refunded')
     })
@@ -278,7 +326,7 @@ describe('PaymentGatewayController (Integration)', () => {
     // ── 反例 ──
     it('should reject refund for non-existent transaction', async () => {
       try {
-        await controller.refund({ transactionId: 'txn-nonexistent' })
+        await controller.refund('tenant-test', { transactionId: 'txn-nonexistent' })
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
@@ -287,36 +335,45 @@ describe('PaymentGatewayController (Integration)', () => {
     })
 
     it('should reject refund for pending (non-completed) payment', async () => {
-      const payment = await controller.pay({
-        orderId: 'order-refund-pending',
-        amount: 500,
-        currency: 'USD',
-        provider: 'paypal',
-      })
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-refund-pending',
+          amount: 500,
+          currency: 'USD',
+          provider: 'paypal',
+        },
+      )
 
       assert.equal(payment.status, 'pending')
 
       await expect(
-        controller.refund({ transactionId: payment.transactionId }),
+        controller.refund('tenant-test', { transactionId: payment.transactionId }),
       ).rejects.toThrow(HttpException)
     })
 
     it('should reject refund amount exceeding original', async () => {
-      const payment = await controller.pay({
-        orderId: 'order-refund-over',
-        amount: 100,
-        currency: 'USD',
-        provider: 'paypal',
-        webhookUrl: 'https://example.com/webhook',
-      })
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-refund-over',
+          amount: 100,
+          currency: 'USD',
+          provider: 'paypal',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
 
       await new Promise(resolve => setTimeout(resolve, 200))
 
       await expect(
-        controller.refund({
-          transactionId: payment.transactionId,
-          amount: 99999,
-        }),
+        controller.refund(
+          'tenant-test',
+          {
+            transactionId: payment.transactionId,
+            amount: 99999,
+          },
+        ),
       ).rejects.toThrow(HttpException)
     })
   })
@@ -324,28 +381,34 @@ describe('PaymentGatewayController (Integration)', () => {
   // ── 退款查询 ─────────────────────────────────────────
   describe('GET /payment-gateway/refund/:id', () => {
     it('should query existing refund by id', async () => {
-      const payment = await controller.pay({
-        orderId: 'order-qrefund-001',
-        amount: 1000,
-        currency: 'USD',
-        provider: 'paypal',
-        webhookUrl: 'https://example.com/webhook',
-      })
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-qrefund-001',
+          amount: 1000,
+          currency: 'USD',
+          provider: 'paypal',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
 
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      const refund = await controller.refund({
-        transactionId: payment.transactionId,
-      })
+      const refund = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+        },
+      )
 
-      const result = await controller.queryRefund(refund.transactionId)
+      const result = await controller.queryRefund('tenant-test', refund.transactionId)
       assert.equal(result.transactionId, refund.transactionId)
       assert.equal(result.status, 'refunded')
     })
 
     it('should return 404 for non-existent refund', async () => {
       try {
-        await controller.queryRefund('refund-nonexistent')
+        await controller.queryRefund('tenant-test', 'refund-nonexistent')
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
@@ -355,7 +418,7 @@ describe('PaymentGatewayController (Integration)', () => {
 
     it('should return 404 for empty refund id', async () => {
       try {
-        await controller.queryRefund('')
+        await controller.queryRefund('tenant-test', '')
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
@@ -371,12 +434,15 @@ describe('PaymentGatewayController (Integration)', () => {
       service.pay = vi.fn().mockRejectedValue(new Error('unexpected error'))
 
       await expect(
-        controller.pay({
-          orderId: 'order-err',
-          amount: 100,
-          currency: 'USD',
-          provider: 'paypal',
-        }),
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-err',
+            amount: 100,
+            currency: 'USD',
+            provider: 'paypal',
+          },
+        ),
       ).rejects.toThrow('unexpected error')
     })
 
@@ -385,12 +451,15 @@ describe('PaymentGatewayController (Integration)', () => {
       service.pay = vi.fn().mockRejectedValue(paymentError)
 
       try {
-        await controller.pay({
-          orderId: 'order-err',
-          amount: -1,
-          currency: 'USD',
-          provider: 'paypal',
-        })
+        await controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-err',
+            amount: -1,
+            currency: 'USD',
+            provider: 'paypal',
+          },
+        )
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
