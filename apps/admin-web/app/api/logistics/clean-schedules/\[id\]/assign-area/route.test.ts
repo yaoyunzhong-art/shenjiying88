@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 
 const SRC = readFileSync(resolve(import.meta.dirname, 'route.ts'), 'utf-8');
 
-describe.skip('clean-schedules/[id]/assign-area — 正例', () => {
+describe('clean-schedules/[id]/assign-area — 正例', () => {
   it('应导出 POST 方法', () => {
     assert.ok(SRC.includes('export async function POST'), '缺少 POST 导出');
   });
@@ -34,7 +34,7 @@ describe.skip('clean-schedules/[id]/assign-area — 正例', () => {
   });
 });
 
-describe.skip('clean-schedules/[id]/assign-area — 防御', () => {
+describe('clean-schedules/[id]/assign-area — 防御', () => {
   it('上游失败时应返回对应错误状态', () => {
     assert.ok(SRC.includes('!res.ok'), '应检查上游响应状态');
     assert.ok(SRC.includes('assign area failed'), '应有错误消息');

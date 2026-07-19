@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 
 const SRC = readFileSync(resolve(import.meta.dirname, 'route.ts'), 'utf-8');
 
-describe.skip('inspections/[id]/remind — 正例', () => {
+describe('inspections/[id]/remind — 正例', () => {
   it('应导出 POST 方法发送提醒', () => {
     assert.ok(SRC.includes('export async function POST'), '缺少 POST 导出');
   });
@@ -34,7 +34,7 @@ describe.skip('inspections/[id]/remind — 正例', () => {
   });
 });
 
-describe.skip('inspections/[id]/remind — 防御', () => {
+describe('inspections/[id]/remind — 防御', () => {
   it('上游失败时应返回错误状态', () => {
     assert.ok(SRC.includes('!res.ok'), '应检查上游响应');
     assert.ok(SRC.includes('remind failed'), '应有错误消息');
@@ -42,6 +42,7 @@ describe.skip('inspections/[id]/remind — 防御', () => {
 
   it('应使用 POST 方法转发请求', () => {
     assert.ok(SRC.includes("method: 'POST'"), '应使用 POST');
+    assert.ok(SRC.includes('application/json'), 'Content-Type');
   });
 
   it('无危险 HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
