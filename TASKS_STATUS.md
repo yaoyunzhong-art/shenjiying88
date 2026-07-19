@@ -59,7 +59,7 @@
 - `G4`: 🟢 `P-49` 验收写实与 `Phase/PRD/Runbook` 自动回写试点均已完成
 - `G5`: 🟢 `POS/Pad` 与 `税务/发票` 两项已全部落地
 - `G6`: 🟡 待补联动验收链
-- `G7`: 🟡 miniapp 采购/退货高频链已打通真实读链与 fallback，待下一刀补动作写接口与正式验收文档
+- `G7`: 🟡 miniapp 采购/退货高频链已具备真实读写链与正式验收文档，待补浏览器级或真机级验收截图/录屏证据
 - `G8`: 🟡 离线 `render / preflight / dry-run / verify` 证据已补齐，待正式窗口 `server dry-run / apply / rollback` 日志
 - `G9`: 🟢 红黄绿状态板已建立
 
@@ -72,7 +72,7 @@
 1. 基于 [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md) 固化 `G1 / G8` 结论并继续收 `G6 / G7`
 2. 补正式窗口 `server dry-run / apply / rollback` 运行日志
 3. 补 `活动 / 营销 / 会员 / 门店` 联动验收链
-4. 补 `miniapp` 供应链动作写接口与正式验收文档
+4. 补 `miniapp` 供应链高频链浏览器级或真机级验收截图/录屏证据
 
 ### 本状态页更新规则
 
@@ -105,6 +105,9 @@
 - `G7` miniapp 供应链读模型: [supplychain-runtime.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/supplychain-runtime.ts)
 - `G7` miniapp 采购/退货详情接线: [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/purchase-orders/detail/index.tsx) / [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/return-orders/detail/index.tsx)
 - `G7` miniapp 供应链读链测试: [supplychain-runtime.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/supplychain-runtime.test.ts)
+- `G7` miniapp 供应链写链接线: [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/purchase-orders/detail/index.tsx) / [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/return-orders/detail/index.tsx)
+- `G7` miniapp 供应链正式验收: [2026-07-19-g7-miniapp-supplychain-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g7-miniapp-supplychain-acceptance.md)
+- `G7` miniapp 浏览器验收记录: [2026-07-19-g7-miniapp-browser-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g7-miniapp-browser-acceptance.md)
 - `G1` 唯一交付口径复签确认: [2026-07-19-g1-release-bundle-confirmation.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g1-release-bundle-confirmation.md)
 - `G8` 切流演练证据: [2026-07-19-g8-cutover-drill-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g8-cutover-drill-acceptance.md)
 - `G1~G9` 复签总包: [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md)
