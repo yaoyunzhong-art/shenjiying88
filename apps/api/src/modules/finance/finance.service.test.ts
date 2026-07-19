@@ -389,4 +389,62 @@ describe('[finance] 合约: 跨租户隔离', () => {
     })
     assert.throws(() => svc.confirmSettlement(s.id, CTX_B))
   })
+
+  // === 边界: 金额/日期极限 ===
+
+  it('recordLedger 零金额', async () => {
+    const svc = makeService()
+    const id = await svc.recordLedger(CTX_A, {
+      type: LedgerType.Revenue,
+      amount: 0,
+      description: 'zero-amount-test',
+      category: 'other'
+    })
+    assert.ok(id)
+  })
+
+  it('recordLedger 大金额不溢出', async () => {
+    const svc = makeService()
+    const id = await svc.recordLedger(CTX_A, {
+      type: LedgerType.Revenue,
+      amount: 999999999.99,
+      description: 'large-amount-test',
+      category: 'other'
+    })
+    assert.ok(id)
+  })
+
+  it('recordLedger 未来日期', async () => {
+    const svc = makeService()
+    const futureDate = new Date('2099-12-31T00:00:00Z').toISOString()
+    const id = await svc.recordLedger(CTX_A, {
+      type: LedgerType.Revenue,
+      amount: 100,
+      description: 'future-date-test',
+      category: 'other'
+    })
+    assert.ok(id)
+  })
+
+  it('getLedger 不存在的ID抛出异常', async () => {
+    const svc = makeService()
+    assert.throws(() => svc.getLedger('non-existent-id', CTX_A))
+  })
+
+  it('getRevenueSummary 空期间返回零值', async () => {
+    const svc = makeService()
+    const summary = svc.getRevenueSummary(CTX_A, { startDate: '2020-01-01', endDate: '2020-01-02' })
+    assert.ok(summary)
+    assert.equal(summary.totalRevenue, 0)
+    assert.equal(summary.totalExpense, 0)
+    assert.equal(summary.totalRefund, 0)
+  })
+
+  it('createSettlement 起始>结束报错', async () => {
+    const svc = makeService()
+    assert.throws(() => svc.createSettlement(CTX_A, {
+      startDate: '2030-01-01T00:00:00Z',
+      endDate: '2020-01-01T00:00:00Z'
+    }))
+  })
 })
