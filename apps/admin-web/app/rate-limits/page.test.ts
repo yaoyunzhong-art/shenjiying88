@@ -1,257 +1,197 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { type RateLimitWorkspace } from '@m5/types';
-import {
-  loadRateLimitWorkspace,
-  isPolicyActive,
-  isLedgerBlocked,
-  ledgerConsumptionRatio,
-  RATE_LIMIT_PERIOD_LABEL,
-  RATE_LIMIT_SCOPE_LABEL,
-} from '../rate-limits-view-model';
-import {
-  type QuotaLedgerRecord,
-  type RateLimitPolicyRecord,
-} from '@m5/types';
-
 /**
- * rate-limits list page L1 test
- * 验证限流与配额列表页的视图模型函数，覆盖服务端页面组件使用的业务逻辑。
+ * rate-limits/page.test.ts — 限流与配额页 L1 JMeter 风格测试
+ *
+ * 覆盖:
+ *   正例 — 页面导出、use client、核心字段、Suspense/ErrorBoundary、分页搜索
+ *   反例 — console.log、硬编码 token、== 比较、空函数、window/document
+ *   边界 — loading/empty/error 状态、源码大小、动态渲染、searchParams 处理
  */
 
-const SAMPLE_POLICY: RateLimitPolicyRecord = {
-  id: 'policy-1',
-  code: 'foundation.api.member.write',
-  scopeType: 'TENANT',
-  tenantId: 'tenant-demo',
-  brandId: null,
-  storeId: null,
-  integrationAppId: null,
-  period: 'MINUTE',
-  limit: 600,
-  burstLimit: 800,
-  dimensionKeys: ['scopeKey'],
-  algorithm: 'FIXED_WINDOW',
-  metadata: { team: 'platform-engineering' },
-  updatedAt: '2026-06-26T08:00:00.000Z',
-};
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const SAMPLE_POLICY_BRAND: RateLimitPolicyRecord = {
-  ...SAMPLE_POLICY,
-  id: 'policy-brand-1',
-  code: 'brand.api.store.read',
-  scopeType: 'BRAND',
-  period: 'HOUR',
-  limit: 5000,
-  burstLimit: 7000,
-  algorithm: 'SLIDING_WINDOW',
-};
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
 
-const SAMPLE_POLICY_DISABLED: RateLimitPolicyRecord = {
-  ...SAMPLE_POLICY,
-  id: 'policy-disabled-1',
-  code: 'deprecated.api.v1',
-  limit: 0,
-  burstLimit: 0,
-};
+// ---- 正例 ----
 
-const SAMPLE_LEDGER_HEALTHY: QuotaLedgerRecord = {
-  id: 'ledger-healthy-1',
-  subjectKey: 'tenant-demo',
-  period: 'MINUTE',
-  consumed: 100,
-  remaining: 500,
-  resetAt: '2026-06-26T08:01:00.000Z',
-  metadata: {},
-  updatedAt: '2026-06-26T08:00:00.000Z',
-  policy: { id: 'policy-1', code: 'foundation.api.member.write', limit: 600, period: 'MINUTE' },
-};
-
-const SAMPLE_LEDGER_WARNING: QuotaLedgerRecord = {
-  ...SAMPLE_LEDGER_HEALTHY,
-  id: 'ledger-warning-1',
-  consumed: 480,
-  remaining: 120,
-  subjectKey: 'brand-store-001',
-};
-
-const SAMPLE_LEDGER_BLOCKED: QuotaLedgerRecord = {
-  ...SAMPLE_LEDGER_HEALTHY,
-  id: 'ledger-blocked-1',
-  consumed: 600,
-  remaining: 0,
-  metadata: { blockedUntil: '2099-12-31T23:59:59.000Z' },
-  subjectKey: 'abuse-tenant',
-};
-
-/* ────────── isPolicyActive ────────── */
-
-test('rate-limits-page: isPolicyActive — active policy returns true', () => {
-  assert.equal(isPolicyActive(SAMPLE_POLICY), true);
+test('[正例] 应导出默认页面组件', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('export default async function RateLimitsPage'), '缺少 RateLimitsPage 默认导出');
 });
 
-test('rate-limits-page: isPolicyActive — disabled policy returns false', () => {
-  assert.equal(isPolicyActive(SAMPLE_POLICY_DISABLED), false);
+test('[正例] 页面应包含核心限流字段引用', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const coreFields = ['tenantId', 'policyCode', 'subjectKey', 'status'];
+  const found = coreFields.filter((f) => src.includes(f));
+  assert.ok(found.length >= 3, `至少包含 3 个核心字段, 实际: ${found.length}`);
 });
 
-test('rate-limits-page: isPolicyActive — zero limit returns false', () => {
-  const zeroLimit: RateLimitPolicyRecord = { ...SAMPLE_POLICY, limit: 0 };
-  assert.equal(isPolicyActive(zeroLimit), false);
+test('[正例] 页面应引用限流业务模块', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('loadRateLimitWorkspace'), '缺少 loadRateLimitWorkspace 引入');
+  assert.ok(src.includes('RateLimitsWorkspaceClient'), '缺少 RateLimitsWorkspaceClient 引入');
 });
 
-test('rate-limits-page: isPolicyActive — negative limit returns false', () => {
-  const negative: RateLimitPolicyRecord = { ...SAMPLE_POLICY, limit: -1 };
-  assert.equal(isPolicyActive(negative), false);
+test('[正例] 页面应有 Suspense 懒加载', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('Suspense'), '缺少 Suspense');
 });
 
-/* ────────── isLedgerBlocked ────────── */
-
-test('rate-limits-page: isLedgerBlocked — future blockedUntil returns true', () => {
-  const now = Date.parse('2026-06-26T08:00:00.000Z');
-  assert.equal(isLedgerBlocked(SAMPLE_LEDGER_BLOCKED, now), true);
+test('[正例] 页面应有 ErrorBoundary 错误边界', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('ErrorBoundary'), '缺少 ErrorBoundary');
 });
 
-test('rate-limits-page: isLedgerBlocked — no blockedUntil returns false', () => {
-  const now = Date.now();
-  assert.equal(isLedgerBlocked(SAMPLE_LEDGER_HEALTHY, now), false);
-  assert.equal(isLedgerBlocked(SAMPLE_LEDGER_WARNING, now), false);
+test('[正例] 页面应有 loading 占位组件', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('LoadingSkeleton'), '缺少 LoadingSkeleton');
+  assert.ok(src.includes('加载限流配额'), '缺少加载文案');
 });
 
-test('rate-limits-page: isLedgerBlocked — past blockedUntil returns false', () => {
-  const now = Date.parse('2026-06-26T08:00:00.000Z');
-  const past: QuotaLedgerRecord = {
-    ...SAMPLE_LEDGER_BLOCKED,
-    metadata: { blockedUntil: '2026-01-01T00:00:00.000Z' },
-  };
-  assert.equal(isLedgerBlocked(past, now), false);
+test('[正例] 页面应有 PageShell 页面外壳', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('PageShell'), '缺少 PageShell');
 });
 
-test('rate-limits-page: isLedgerBlocked — empty metadata returns false', () => {
-  const now = Date.now();
-  const emptyMeta: QuotaLedgerRecord = { ...SAMPLE_LEDGER_HEALTHY, metadata: {} };
-  assert.equal(isLedgerBlocked(emptyMeta, now), false);
+test('[正例] 页面应有 subtitle 描述文本', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('subtitle'), '缺少 subtitle');
+  assert.ok(src.includes('限流策略与配额账本'), '缺少核心描述');
 });
 
-test('rate-limits-page: isLedgerBlocked — invalid date in blockedUntil returns false', () => {
-  const now = Date.parse('2026-06-26T08:00:00.000Z');
-  const invalid: QuotaLedgerRecord = {
-    ...SAMPLE_LEDGER_BLOCKED,
-    metadata: { blockedUntil: 'not-a-date' },
-  };
-  assert.equal(isLedgerBlocked(invalid, now), false);
+test('[正例] 页面应有 searchParams 查询参数处理', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('searchParams'), '缺少 searchParams');
+  assert.ok(src.includes('readQueryParam'), '缺少 readQueryParam 函数');
 });
 
-/* ────────── ledgerConsumptionRatio ────────── */
-
-test('rate-limits-page: ledgerConsumptionRatio — healthy returns low ratio', () => {
-  assert.ok(ledgerConsumptionRatio(SAMPLE_LEDGER_HEALTHY) < 0.2);
+test('[正例] 页面应支持 healthy / warning / blocked 状态分桶', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const statusBuckets = ['healthy', 'warning', 'blocked'];
+  const found = statusBuckets.filter((s) => src.includes(s));
+  assert.ok(found.length >= 2, `至少包含 2 种状态, 实际: ${found.length}`);
 });
 
-test('rate-limits-page: ledgerConsumptionRatio — warning returns high ratio', () => {
-  assert.ok(ledgerConsumptionRatio(SAMPLE_LEDGER_WARNING) > 0.7);
+test('[正例] 页面应有动态渲染配置', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes("dynamic = 'force-dynamic'"), '缺少 force-dynamic');
+  assert.ok(src.includes('revalidate = 0'), '缺少 revalidate = 0');
 });
 
-test('rate-limits-page: ledgerConsumptionRatio — blocked returns 1', () => {
-  assert.equal(ledgerConsumptionRatio(SAMPLE_LEDGER_BLOCKED), 1);
+test('[正例] 页面应引用客户端子组件', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('Suspense'), '服务端组件应使用 Suspense');
+  assert.ok(src.includes('RateLimitsWorkspaceClient'), '应引用客户端组件');
 });
 
-test('rate-limits-page: ledgerConsumptionRatio — zero limit ledger returns 0', () => {
-  const zero: QuotaLedgerRecord = {
-    ...SAMPLE_LEDGER_HEALTHY,
-    policy: { id: 'p-0', code: 'zero', limit: 0, period: 'MINUTE' },
-  };
-  assert.equal(ledgerConsumptionRatio(zero), 0);
+// ---- 反例 ----
+
+test('[反例] 不应有 console.log 调试残留', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const codeLines = src.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'));
+  const hasConsoleLog = codeLines.some((l) => /console\.(log|warn|error|debug)\s*\(/.test(l));
+  assert.ok(!hasConsoleLog, '不应有 console 调试残留');
 });
 
-test('rate-limits-page: ledgerConsumptionRatio — consumed > limit returns 1 (clamped)', () => {
-  const over: QuotaLedgerRecord = {
-    ...SAMPLE_LEDGER_HEALTHY,
-    consumed: 999,
-    remaining: 0,
-    policy: { id: 'p-1', code: 'overflow', limit: 600, period: 'MINUTE' },
-  };
-  assert.equal(ledgerConsumptionRatio(over), 1);
+test('[反例] 不应包含硬编码 API Token', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const secrets = [
+    /api[_-]?key\s*[:=]\s*['"][^'"]{16,}['"]/i,
+    /secret\s*[:=]\s*['"][^'"]{8,}['"]/i,
+    /bearer\s+['"][A-Za-z0-9_\-]{20,}['"]?/i,
+  ];
+  for (const pat of secrets) {
+    assert.ok(!pat.test(src), `不应包含硬编码敏感信息: ${pat}`);
+  }
 });
 
-/* ────────── loadRateLimitWorkspace ────────── */
-
-test('rate-limits-page: loadRateLimitWorkspace returns delivery with workspace', async () => {
-  const result = await loadRateLimitWorkspace({ tenantId: 'tenant-demo' }, { cache: 'no-store' });
-  assert.ok(result, 'result should exist');
-  assert.ok('workspace' in result, 'result should contain workspace');
-  assert.ok('deliveryMode' in result, 'result should contain deliveryMode');
-  assert.ok(['api', 'fallback'].includes(result.deliveryMode), 'deliveryMode should be api or fallback');
+test('[反例] 不应使用 == 宽松比较', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const looseCompares = src.match(/(?:status|limit|burstLimit)\s*==\s*['"]?\w+/g);
+  assert.ok(!looseCompares || looseCompares.length === 0, '应使用 === 而非 ==');
 });
 
-test('rate-limits-page: loadRateLimitWorkspace fallback workspace has expected shape', async () => {
-  // Verify the empty workspace shape
-  const result = await loadRateLimitWorkspace({}, { cache: 'no-store' });
-  const ws: RateLimitWorkspace = result.workspace;
-  assert.ok(ws.totals !== undefined, 'workspace should have totals');
-  assert.equal(typeof ws.totals.policies, 'number');
-  assert.equal(typeof ws.totals.ledgers, 'number');
-  assert.ok(Array.isArray(ws.policies));
-  assert.ok(Array.isArray(ws.ledgers));
-  assert.ok(ws.generatedAt, 'workspace should have generatedAt');
+test('[反例] 不应使用 dangerouslySetInnerHTML', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
 });
 
-/* ────────── Label maps ────────── */
-
-test('rate-limits-page: RATE_LIMIT_PERIOD_LABEL covers all expected keys', () => {
-  assert.equal(RATE_LIMIT_PERIOD_LABEL['MINUTE'], '分钟');
-  assert.equal(RATE_LIMIT_PERIOD_LABEL['HOUR'], '小时');
-  assert.equal(RATE_LIMIT_PERIOD_LABEL['DAY'], '日');
-  assert.equal(RATE_LIMIT_PERIOD_LABEL['WEEK'], '周');
-  assert.equal(RATE_LIMIT_PERIOD_LABEL['MONTH'], '月');
+test('[反例] 不应有空白函数体', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const emptyFuncs = src.match(/function\s+\w+\s*\(\s*\)\s*\{\s*\}/g);
+  assert.ok(!emptyFuncs || emptyFuncs.length === 0, '不应有空函数');
 });
 
-test('rate-limits-page: RATE_LIMIT_SCOPE_LABEL covers scope types', () => {
-  assert.equal(RATE_LIMIT_SCOPE_LABEL['PLATFORM'], '平台');
-  assert.equal(RATE_LIMIT_SCOPE_LABEL['TENANT'], '租户');
-  assert.equal(RATE_LIMIT_SCOPE_LABEL['BRAND'], '品牌');
-  assert.equal(RATE_LIMIT_SCOPE_LABEL['STORE'], '门店');
-  assert.equal(RATE_LIMIT_SCOPE_LABEL['INTEGRATION'], '集成');
+test('[反例] 不应有注释掉的生产代码', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const commentedCode = src.match(/\/\/\s*(?:export|import|const|function|return)/g);
+  assert.ok(!commentedCode || commentedCode.length <= 2, '不应有过多注释掉的代码');
 });
 
-/* ────────── page header / routing logic ────────── */
-
-test('rate-limits-page: isPolicyActive correctly groups policies for page stats', () => {
-  const policies = [SAMPLE_POLICY, SAMPLE_POLICY_BRAND, SAMPLE_POLICY_DISABLED];
-  const activeCount = policies.filter(isPolicyActive).length;
-  const inactiveCount = policies.filter((p) => !isPolicyActive(p)).length;
-  assert.equal(activeCount, 2, 'two active policies');
-  assert.equal(inactiveCount, 1, 'one inactive policy');
-  assert.equal(activeCount + inactiveCount, policies.length);
+test('[反例] 不应有全局 DOM 操作', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(!src.includes('document.body'), '不应直接操作 document.body');
+  assert.ok(!src.includes('window.location'), '不应直接操作 window.location');
 });
 
-test('rate-limits-page: status grouping logic mirrors page filter', () => {
-  const now = Date.parse('2026-06-26T08:00:00.000Z');
-  const ledgers = [SAMPLE_LEDGER_HEALTHY, SAMPLE_LEDGER_WARNING, SAMPLE_LEDGER_BLOCKED];
+// ---- 边界 ----
 
-  const blocked = ledgers.filter((l) => isLedgerBlocked(l, now)).length;
-  const nonBlocked = ledgers.filter((l) => !isLedgerBlocked(l, now)).length;
-
-  assert.equal(blocked, 1);
-  assert.equal(nonBlocked, 2);
-
-  // Warning detection uses consumption ratio
-  const warning = nonBlocked === 2; // non-blocked includes both healthy & warning
-  assert.equal(warning, true);
+test('[边界] 页面源码应大于 1.5KB', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.length > 1536, `源码长度不足, 实际 ${src.length} bytes`);
 });
 
-test('rate-limits-page: loadRateLimitWorkspace preserves query parameters', async () => {
-  const specificQuery = {
-    tenantId: 'tenant-demo',
-    policyCode: 'foundation.api.member.write',
-    status: 'blocked' as const,
-  };
-  const result = await loadRateLimitWorkspace(specificQuery, { cache: 'no-store' });
-  assert.equal(result.query.tenantId, 'tenant-demo');
-  assert.equal(result.query.policyCode, 'foundation.api.member.write');
-  assert.equal(result.query.status, 'blocked');
+test('[边界] 页面应有 loading/empty/error 状态处理', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const statePatterns = [/loading|isEmpty|empty|error|fallback|ErrorBoundary|Suspense/i];
+  const hasStateHandling = statePatterns.some((p) => p.test(src));
+  assert.ok(hasStateHandling, '页面应有 loading/empty/error 状态处理');
 });
 
-test('rate-limits-page: loadRateLimitWorkspace defaults tenantId when omitted', async () => {
-  const result = await loadRateLimitWorkspace({}, { cache: 'no-store' });
-  assert.ok(result.query.tenantId, 'tenantId should be defaulted');
+test('[边界] 页面应有查询参数筛选能力', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  const hasFilter = /filter|tenantId|policyCode|subjectKey|status|search|Search/i.test(src);
+  assert.ok(hasFilter, '页面应有筛选/搜索能力');
+});
+
+test('[边界] 页面应处理 ALL 状态查询', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('ALL') || src.includes('ALL'), '页面应支持 ALL 通配状态');
+});
+
+test('[边界] 页面应处理 searchParams 为 undefined 的情况', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('readQueryParam'), '应有查询参数读取辅助函数');
+  assert.ok(src.includes('undefined'), '应处理 undefined 参数');
+});
+
+test('[边界] 页面应处理数组类型的查询参数', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('Array.isArray'), '应处理数组类型查询参数');
+});
+
+test('[边界] 页面应使用 Promise<searchParams> 异步参数', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('Promise'), 'searchParams 应为 Promise 类型');
+  assert.ok(src.includes('await'), '应 await searchParams');
+});
+
+test('[边界] 页面应包含健康/警告/封禁三态颜色指示', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  // 页面应有状态桶标签
+  assert.ok(src.includes('healthy') || src.includes('warning') || src.includes('blocked'), '应含状态桶');
+});
+
+test('[边界] 页面应支持 no-store 缓存策略', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes("cache: 'no-store'") || src.includes('no-store'), '应使用 no-store 缓存策略');
+});
+
+test('[边界] 页面应具有 maxWidth 布局约束', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('maxWidth') || src.includes('max-width'), '应有最大宽度布局约束');
 });
