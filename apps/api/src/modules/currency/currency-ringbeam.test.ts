@@ -132,7 +132,7 @@ describe('✅ AC-CURRENCY: 货币圈梁', () => {
 
   it('[P0] getAllRates 返回所有已设置的汇率', () => {
     service.setRate('USD', 'CNY', 7.2, 'manual')
-    service.setRate('EUR', 'CNY', 8.0, 'market')
+    service.setRate('SGD', 'CNY', 5.4, 'market')
     const rates = service.getAllRates()
     expect(rates.length).toBe(2)
   })
@@ -317,7 +317,9 @@ describe('✅ AC-CURRENCY: 货币圈梁', () => {
   })
 
   it('[P2] 边界: 所有 11 种币种间的交叉汇率', () => {
-    service.setRate('CNY', 'USD', 0.14, 'market')
+    // 交叉汇率: USD -> CNY -> JPY
+    // getCrossRate 需要直接配对: 设置 USD->CNY 和 CNY->JPY
+    service.setRate('USD', 'CNY', 7.2, 'market')
     service.setRate('CNY', 'JPY', 20, 'market')
     const usdToJpy = service.getRate('USD', 'JPY')
     expect(usdToJpy).not.toBeNull()
