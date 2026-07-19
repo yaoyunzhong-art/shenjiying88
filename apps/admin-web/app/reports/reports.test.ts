@@ -302,4 +302,66 @@ describe('admin-reports: 边界', () => {
     assert.ok(MOCK_REVENUE.totals);
     assert.equal(MOCK_REVENUE.totals!.revenue, 76800);
   });
+
+  it('revenue 空 rows 时 totals 仍可用', () => {
+    const empty: ReportResult = { ...MOCK_REVENUE, rows: [], totals: { revenue: 0 } };
+    assert.ok(empty.totals);
+    assert.equal(empty.totals!.revenue, 0);
+  });
+
+  it('product-ranking columns 包含 dimension 和 metric 两种类型', () => {
+    const dimCols = MOCK_RANKING.columns.filter(c => c.type === 'dimension');
+    const metCols = MOCK_RANKING.columns.filter(c => c.type === 'metric');
+    assert.equal(dimCols.length, 1);
+    assert.equal(metCols.length, 1);
+  });
+
+  it('period from < to 确保时间范围有效', () => {
+    assert.ok(MOCK_REVENUE.period.from < MOCK_REVENUE.period.to);
+  });
+
+  it('generatedAt 为有效 ISO 日期', () => {
+    const d = new Date(MOCK_REVENUE.generatedAt);
+    assert.ok(!Number.isNaN(d.getTime()));
+  });
+
+  it('buildChartOption payment-mix r.method 字段映射', () => {
+    const mix: ReportResult = {
+      ...MOCK_REVENUE, type: 'payment-mix',
+      columns: [
+        { field: 'method', alias: '方式', type: 'dimension' },
+        { field: 'amount', alias: '金额', type: 'metric' },
+      ],
+      rows: [
+        { method: '微信支付', amount: 65000 },
+        { method: '支付宝', amount: 35000 },
+      ],
+    };
+    const opt = buildChartOption('payment-mix', mix);
+    assert.equal(opt.series[0].data[0].value, 65000);
+    assert.equal(opt.series[0].data[1].name, '支付宝');
+  });
+
+  it('buildChartOption order 空行返回空漏斗', () => {
+    const empty: ReportResult = {
+      ...MOCK_REVENUE, type: 'order',
+      columns: [
+        { field: 'stage', alias: '阶段', type: 'dimension' },
+        { field: 'count', alias: '数量', type: 'metric' },
+      ],
+      rows: [],
+    };
+    const opt = buildChartOption('order', empty);
+    assert.equal(opt.series[0].data.length, 0);
+  });
+
+  it('findColumn 大小写敏感', () => {
+    assert.equal(findColumn(MOCK_REVENUE, 'Revenue'), undefined);
+    assert.equal(findColumn(MOCK_REVENUE, 'revenue')?.alias, '营收');
+  });
+
+  it('filterRowsByMetric 恰好等于阈值的行被包含', () => {
+    const result = filterRowsByMetric(MOCK_REVENUE, 'revenue', 12500);
+    assert.ok(result.some(r => r.revenue === 12500));
+  });
 });
