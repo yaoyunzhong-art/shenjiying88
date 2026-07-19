@@ -1,5 +1,30 @@
 # Heartbeat Checks
 
+## 2026-07-20 00:17 · 龙虾哥测试·第一段 全量回归
+
+### 测试矩阵 (2026-07-20 00:17)
+| Package | Tests | Pass | Fail | Cancel | Status |
+|:--------|:-----:|:----:|:----:|:------:|:------:|
+| @m5/sdk | 20 | 20 | 0 | 0 | ✅ |
+| @m5/domain | 95 | 95 | 0 | 0 | ✅ |
+| @m5/types | 47 | 47 | 0 | 0 | ✅ |
+| @m5/app | 222 | 222 | 0 | 0 | ✅ |
+| @m5/storefront-web | 566 | 294 | 0 | 272 | 🟡 |
+| @m5/miniapp | 627 | 626 | **1** | 0 | ❌ |
+| @m5/ui | 499 | 179 | 0 | 320 | ❌ |
+| @m5/admin-web | 11 | 0 | 0 | 11 | ⚠️ |
+| @m5/config-typescript | 0 | — | — | — | ⏭️ |
+| **合计** | **2,087** | **1,483** | **1** | **604** | ❌ |
+
+### 失败项
+1. **@m5/miniapp**: `page-navigation.test.ts:495` — 路由深度断言: `pages/purchase-orders/detail/index` 为4段, 测试期望3段
+2. **@m5/ui**: 320 cancelled — Vitest Promise悬挂超时
+3. **@m5/admin-web**: 11 cancelled — 同上
+
+> 报告: `reports/test-health-20260720.md`
+
+---
+
 ## 2026-07-19 23:52 · V21 Day1 收关 · V22 规划完成
 
 ### V21 Day1 积分卡
