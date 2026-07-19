@@ -215,7 +215,7 @@ describe('ForecastInsightService', () => {
 
   it('detectAnomalies 应检测异常数据点', () => {
     const anomalies = service.detectAnomalies('营收')
-    expect(anomalies.length).toBeGreaterThan(0)
+    expect(anomalies.anomalies.length).toBeGreaterThan(0)
   })
 
   it('decomposeTimeSeries 应分解时间序列', () => {
@@ -259,8 +259,8 @@ describe('AdvancedModelConfigService', () => {
 
   it('runBenchmark 应返回性能指标', () => {
     const bench = service.runBenchmark('gpt-4', '2.1.0')
-    expect(bench.metrics.accuracy).toBeGreaterThan(0)
-    expect(bench.metrics.latencyP50).toBeGreaterThan(0)
+    expect(bench.accuracy).toBeGreaterThan(0)
+    expect(bench.latencyP50).toBeGreaterThan(0)
   })
 
   it('analyzeCost 应包含成本明细', () => {
@@ -298,7 +298,7 @@ describe('AdvancedModelConfigService', () => {
   it('getHealthStatus 应返回健康状态', () => {
     const health = service.getHealthStatus('gpt-4')
     expect(['healthy', 'degraded', 'unhealthy']).toContain(health.overall)
-    expect(health.metrics.uptime).toBeGreaterThan(0)
+    expect(health.uptime).toBeGreaterThan(0)
   })
 })
 
