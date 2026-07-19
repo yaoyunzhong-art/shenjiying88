@@ -210,30 +210,32 @@
 | 11:08 | currency.module增强 | 5→15 tests 三件套
 | 11:12 | 竞品知识库周日更新 | competitive-intelligence.md 活跃层更新
 
-### 当前状态 (11:12)
+### 当前状态 (11:58)
 | 指标 | 值 |
 |:-----|:--:|
-| **今日commits** | **104** ✅ (目标50, 208%) |
-| **总commits** | **~2,070** |
+| **今日commits** | **123** ✅ (目标50, 246%) |
+| **总commits** | **2,091** |
 | **TSC全系统** | **0** ✅ (admin/storefront/api 全绿) |
 | **连续稳态** | **32🏆** |
-| **工作区** | 6个doc文件unstaged |
-| **SSH阿里云** | 🟢 TCP22连接成功 |
+| **知识数据库** | **148条** empower_card表 (PostgreSQL) |
+| **SSH阿里云** | 🟢 PostgreSQL已启动(brew postgresql@16) |
 
 ### 今日亮点
 1. ✅ V21 L4 周日批处理首次运行 (07-13→07-19周均值93/🟢A)
-2. ✅ ADR-045: 科学知识体系V2 (五环闭环+12种科学玩法)
-3. ✅ P-37 inventory增强 (controller+entity+service)
-4. ✅ P-38 finance E2E 28→44 tests (+57%)
-5. ✅ storefront 3薄页拉升 (ai-decisions/booking/sales-forecast)
-6. ✅ currency.module 5→15 tests
-7. ✅ miniapp供应链G7验收文档
-8. ✅ 竞品知识库周日更新
+2. ✅ **ADR-045+046: 科学知识体系V2 数据库落地** — 148条知识全入库
+3. ✅ EmpowerCard NestJS 完整模块 (7个API端点) + PostgreSQL migration
+4. ✅ 5个薄页拉升: rate-limits 33/orders 35/refunds 33/returns 43/help-center 45
+5. ✅ P-37 inventory增强 (controller+entity+service)
+6. ✅ P-38 finance E2E 28→44 tests (+57%)
+7. ✅ storefront 全量 7,571/0 fail
+8. ✅ currency.module 5→15 tests
+9. ✅ 圈梁第五道箍升级: markdown→数据库自动检索 (+MEMORY.md更新)
+10. ✅ MEMORY.md 派单模板V3: 通过API自动匹配top-3
 
 ### 下午待办 (12:00-22:00)
-- ⏰ 12:00 午间派单 — 后端E2E链
-- ⏰ 14:00 午间验收+知识库
-- ⏰ 16:00 下午派单 — API增强
+- 🐜 P-38 4个service测试补全 (cost-cash-flow/dashboard/reconciliation/report)
+- ⏰ 14:00 午间验收+知识库 (首轮API知识审计)
+- ⏰ 16:00 下午派单
 - ⏰ 18:00 晚间验收+圈梁更新
-- ⏰ 20:00 晚会汇总+6门签署
-- ⏰ 22:00 V21 L3日评分+evolution-log
+- ⏰ 20:00 晚会汇总
+- ⏰ 22:00 退化曲线首跑 (POST /api/empower-cards/decay)
