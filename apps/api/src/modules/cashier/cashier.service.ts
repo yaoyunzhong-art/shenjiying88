@@ -5,6 +5,7 @@ import { IntegrationOrchestrationService } from '../foundation/integration-orche
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import { seedMembers } from './cashier.seed'
 import type { CashierPaymentCallbackDto, CreateCashierOrderDto, CreateCashierPaymentDto } from './cashier.dto'
 import {
   CashierOrderCloseReason,
@@ -28,7 +29,9 @@ export class CashierService {
     private readonly integrationOrchestrationService?: IntegrationOrchestrationService,
     @Optional() @Inject(CACHE_SERVICE)
     private readonly cache?: CacheService
-  ) {}
+  ) {
+    this.seedIfNeeded()
+  }
 
     // ── 持久化私有工具 ──────────────────────────────────────────────────
 
@@ -91,6 +94,35 @@ export class CashierService {
       // Redis 错误静默降级
     }
     return undefined
+  }
+
+  /**
+   * 开发模式种子数据
+   * 在非生产环境自动填充测试会员到 MemberService
+   */
+  private seedIfNeeded() {
+    const isDev = process.env.NODE_ENV !== 'production'
+    if (!isDev) return
+
+    const tenantContext: RequestTenantContext = { tenantId: 'default' }
+
+    for (const s of seedMembers) {
+      try {
+        const profile = this.memberService.register({
+          memberId: s.id,
+          tenantContext,
+          nickname: s.name,
+        })
+        // 直接修改内存中的 profile 引用以补全字段
+        profile.mobile = s.phone
+        profile.points = s.points
+        profile.level = s.tier as any
+      } catch {
+        // 已存在则跳过
+      }
+    }
+
+    console.log(`[CashierSeed] Loaded ${seedMembers.length} members (NODE_ENV=${process.env.NODE_ENV ?? 'undefined'})`)
   }
 
   private async ensureMemberExists(memberId: string, tenantContext: RequestTenantContext) {
@@ -446,6 +478,39 @@ export class CashierService {
     })
 
     return { order, payment }
+  }
+
+  /**
+   * 支付渠道统计：按支付渠道聚合今日/当月金额
+   * 从 orderStore 和 paymentStore 中读取真实数据，无数据时返回空数组
+   */
+  async getChannelStats(tenantId: string): Promise<{ channel: string; today: number; month: number }[]> {
+    const today = new Date().toISOString().slice(0, 10)
+    const monthPrefix = today.slice(0, 7)
+    const stats = new Map<string, { today: number; month: number }>()
+
+    for (const order of orderStore.values()) {
+      if (order.tenantContext.tenantId !== tenantId) continue
+
+      const payment = order.latestPaymentId ? paymentStore.get(order.latestPaymentId) : undefined
+      const channel = payment?.channel ?? 'CASH'
+
+      if (!stats.has(channel)) stats.set(channel, { today: 0, month: 0 })
+      const entry = stats.get(channel)!
+
+      if (order.createdAt.startsWith(today)) {
+        entry.today += order.totalAmount
+      }
+      if (order.createdAt.startsWith(monthPrefix)) {
+        entry.month += order.totalAmount
+      }
+    }
+
+    return Array.from(stats.entries()).map(([channel, amounts]) => ({
+      channel,
+      today: Math.round(amounts.today * 100) / 100,
+      month: Math.round(amounts.month * 100) / 100
+    }))
   }
 
   resetCashierStoresForTests(): void {
