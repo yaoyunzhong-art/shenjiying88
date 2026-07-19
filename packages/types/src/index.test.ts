@@ -51,10 +51,12 @@ import {
   buildDomainGovernanceDisplayModel,
   buildDomainGovernanceHref,
   buildDomainGovernanceWorkspaceHref,
+  domainGovernanceDisplayCopy,
   domainGovernanceDisplayPresetContractMap,
   formatDomainGovernanceFocusScopeLabel,
   formatDomainGovernanceLastEvaluatedSummary,
   formatDomainGovernanceRecommendationSummary,
+  formatDomainGovernanceStatusSummary,
   formatDomainGovernanceCountsSummary,
   formatDomainGovernanceFocusScopeSummary,
   formatDomainGovernanceSourceSummary,
@@ -1833,6 +1835,7 @@ test('types: domain governance display model exposes richer section contract', (
     formatDomainGovernanceRecommendationSummary(summary.currentScopes[0]),
     '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
   );
+  assert.equal(formatDomainGovernanceStatusSummary(summary), '治理状态：待治理 / 可直接补选 1');
   assert.equal(
     formatDomainGovernanceLastEvaluatedSummary(summary),
     '最近评估 2026-07-18T00:00:00.000Z',
@@ -1842,32 +1845,32 @@ test('types: domain governance display model exposes richer section contract', (
     '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE';
   const renderSections = [
     {
-      title: '治理概览',
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
       items: [
         {
-          label: '域名来源',
+          label: domainGovernanceDisplayCopy.itemLabels.source,
           value: '域名来源 custom / 可直接补选 1',
           tone: 'primary',
         },
         {
-          label: '治理状态',
+          label: domainGovernanceDisplayCopy.itemLabels.status,
           value: '待治理',
           tone: 'accent',
         },
         {
-          label: '治理概览',
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
           value: '缺主 scope 2 / 活跃未设主域名 3',
           tone: 'summary',
         },
         {
-          label: '状态摘要',
-          value: '治理状态：待治理 / 可直接补选 1',
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary(summary),
           tone: 'summary',
         },
       ],
     },
     {
-      title: '焦点 scope',
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
       items: [
         {
           label: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
@@ -1877,30 +1880,30 @@ test('types: domain governance display model exposes richer section contract', (
       ],
     },
     {
-      title: '推荐补选',
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
       items: [
         {
-          label: '推荐主域名',
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
           value: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
           tone: 'summary',
         },
       ],
     },
     {
-      title: '评估时间',
+      title: domainGovernanceDisplayCopy.sectionTitles.timeline,
       items: [
         {
-          label: '最近评估',
+          label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
           value: '最近评估 2026-07-18T00:00:00.000Z',
           tone: 'summary',
         },
       ],
     },
     {
-      title: '治理入口',
+      title: domainGovernanceDisplayCopy.sectionTitles.workspace,
       items: [
         {
-          label: '治理入口',
+          label: domainGovernanceDisplayCopy.workspaceLabel,
           value: workspaceHref,
           tone: 'accent',
         },
@@ -1910,15 +1913,15 @@ test('types: domain governance display model exposes richer section contract', (
   const model = buildDomainGovernanceDisplayModel('custom', summary, workspaceHref);
 
   assert.deepEqual(model, {
-    eyebrow: '域名治理工作台',
-    subtitle: '统一域名缺口、推荐补选和治理入口展示',
+    eyebrow: domainGovernanceDisplayCopy.eyebrow,
+    subtitle: domainGovernanceDisplayCopy.subtitle,
     title: '域名来源 custom / 可直接补选 1',
     statusLabel: '待治理',
     summaryText: '缺主 scope 2 / 活跃未设主域名 3',
     renderSections,
-    workspaceLabel: '治理入口',
+    workspaceLabel: domainGovernanceDisplayCopy.workspaceLabel,
     workspaceHref,
-    ctaLabel: '打开域名治理工作台',
+    ctaLabel: domainGovernanceDisplayCopy.ctaLabel,
     requiresAttention: true,
   });
   assert.deepEqual(model.renderSections, renderSections);

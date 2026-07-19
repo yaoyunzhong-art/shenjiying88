@@ -8,6 +8,7 @@ import test from 'node:test';
 import React from 'react';
 import { create } from 'react-test-renderer';
 import { Text, Switch, View, TouchableOpacity, Alert } from 'react-native';
+import { domainGovernanceDisplayCopy } from '@m5/types';
 
 /* ------------------------------------------------------------------ */
 /*  Mocks                                                              */
@@ -236,7 +237,7 @@ test('SettingsScreen: renders biometric and notification navigation items', () =
   const languageTitle = findByText('语言');
   assert.ok(languageTitle, '应显示语言设置项');
 
-  const governanceTitle = findByText('域名治理工作台');
+  const governanceTitle = findByText(domainGovernanceDisplayCopy.eyebrow);
   assert.ok(governanceTitle, '应显示域名治理工作台');
 });
 
@@ -375,7 +376,7 @@ test('SettingsScreen: renders domain governance summary item', () => {
     });
   };
 
-  assert.ok(findByText('域名治理工作台'), '应显示域名治理工作台');
+  assert.ok(findByText(domainGovernanceDisplayCopy.eyebrow), '应显示域名治理工作台');
   assert.ok(findByText('缺主 scope 2'), '应显示缺主 scope 数');
   assert.ok(findByText('域名来源 custom'), '应显示域名来源');
 });
@@ -388,13 +389,15 @@ test('SettingsScreen: tapping domain governance item opens workspace alert', () 
   const root = create(<SettingsScreen />);
   const touchables = root.root.findAllByType(TouchableOpacity);
   const governanceItem = touchables.find((item) =>
-    item.findAllByType(Text).some((t) => typeof t.props.children === 'string' && t.props.children.includes('域名治理工作台'))
+    item
+      .findAllByType(Text)
+      .some((t) => typeof t.props.children === 'string' && t.props.children.includes(domainGovernanceDisplayCopy.eyebrow))
   );
 
   assert.ok(governanceItem, '应找到域名治理工作台设置项');
   governanceItem?.props.onPress();
   assert.deepEqual(alertCalls[0], {
-    title: '域名治理工作台',
+    title: domainGovernanceDisplayCopy.eyebrow,
     message:
       '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
     buttons: undefined,

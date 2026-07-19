@@ -97,6 +97,8 @@ set -a
 source "$ENV_FILE"
 set +a
 
+CERT_MANAGER_ENABLED="${CERT_MANAGER_ENABLED:-false}"
+
 required_vars=(
   TLS_SECRET_NAME
   API_HOST
@@ -115,12 +117,30 @@ for var_name in "${required_vars[@]}"; do
   fi
 done
 
+if [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+  cert_manager_required_vars=(
+    CERT_MANAGER_CLUSTER_ISSUER
+    CERT_MANAGER_CERTIFICATE_NAME
+    ACME_EMAIL
+    ACME_SERVER_URL
+    ACME_PRIVATE_KEY_SECRET_NAME
+  )
+
+  for var_name in "${cert_manager_required_vars[@]}"; do
+    if [[ -z "${!var_name:-}" ]]; then
+      echo "Missing required cert-manager env var: $var_name" >&2
+      exit 1
+    fi
+  done
+fi
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ==> prod public preflight start"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] env_file=$ENV_FILE"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] namespace=$NAMESPACE"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] rendered_dir=$RENDERED_DIR"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] offline=$OFFLINE"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] allow_missing_tls=$ALLOW_MISSING_TLS"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] cert_manager_enabled=$CERT_MANAGER_ENABLED"
 
 warnings=()
 
@@ -211,13 +231,30 @@ echo "==> Rendering manifests to $RENDERED_DIR"
 CONFIG_MANIFEST="$RENDERED_DIR/m5-config-public.yaml"
 INGRESS_MANIFEST="$RENDERED_DIR/m5-ingress-public.yaml"
 TLS_MANIFEST="$RENDERED_DIR/m5-tls.yaml"
+CLUSTER_ISSUER_MANIFEST="$RENDERED_DIR/m5-cert-manager-clusterissuer.yaml"
+CERTIFICATE_MANIFEST="$RENDERED_DIR/m5-cert-manager-certificate.yaml"
+
+if [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+  echo "==> cert-manager target"
+  echo "CERT_MANAGER_CLUSTER_ISSUER=$CERT_MANAGER_CLUSTER_ISSUER"
+  echo "CERT_MANAGER_CERTIFICATE_NAME=$CERT_MANAGER_CERTIFICATE_NAME"
+  echo
+fi
 
 if [[ "$OFFLINE" != "true" ]]; then
   echo "==> Running kubectl server dry-run"
+  if [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+    kubectl apply --dry-run=server -f "$CLUSTER_ISSUER_MANIFEST" >/dev/null
+    kubectl apply --dry-run=server -f "$CERTIFICATE_MANIFEST" >/dev/null
+  fi
   kubectl apply --dry-run=server -f "$CONFIG_MANIFEST" >/dev/null
   kubectl apply --dry-run=server -f "$INGRESS_MANIFEST" >/dev/null
 else
   echo "==> Running offline manifest sanity checks"
+  if [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+    check_rendered_manifest "$CLUSTER_ISSUER_MANIFEST"
+    check_rendered_manifest "$CERTIFICATE_MANIFEST"
+  fi
   check_rendered_manifest "$CONFIG_MANIFEST"
   check_rendered_manifest "$INGRESS_MANIFEST"
 fi
@@ -228,6 +265,8 @@ if [[ -f "$TLS_MANIFEST" ]]; then
   else
     check_rendered_manifest "$TLS_MANIFEST"
   fi
+elif [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+  echo "==> Using cert-manager managed TLS; rendered PEM secret manifest is not required"
 elif [[ "$ALLOW_MISSING_TLS" == "true" ]]; then
   warn "Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover"
 else

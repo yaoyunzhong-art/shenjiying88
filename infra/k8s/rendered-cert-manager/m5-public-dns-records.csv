@@ -1,0 +1,7 @@
+host,type,value_1,value_2,ttl,comment
+api.sportsant.net,A,121.41.69.154,120.26.66.40,600,production-api
+admin.sportsant.net,A,121.41.69.154,120.26.66.40,600,production-admin
+store.sportsant.net,A,121.41.69.154,120.26.66.40,600,production-storefront
+tob.sportsant.net,A,121.41.69.154,120.26.66.40,600,production-tob
+sportsant.net,A,121.41.69.154,120.26.66.40,600,production-root
+www.sportsant.net,A,121.41.69.154,120.26.66.40,600,production-www

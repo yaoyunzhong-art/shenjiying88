@@ -2,7 +2,7 @@
 
 > 目标: 为 `G8` 补齐 `render / preflight / dry-run / verify / rollback ready` 的运行证据
 > 范围: `K8s release preflight`、`public cutover preflight`、`client dry-run`、`verify --use-resolve`
-> 验收方式: 安全离线演练 + 真实网络探测 + 脚本入口固化
+> 验收方式: 安全离线演练 + 真实网络探测 + 脚本入口固化 + 正式窗口门禁全量扫描
 > 结论: `🟡 已完成离线演练、预跑日志与正式窗口门禁；当前被 DNS/TLS 外部硬阻塞卡住，仍待真实 apply / rollback 日志`
 
 ---
@@ -84,7 +84,7 @@ apply-prod-public-cutover.sh --kubectl-dry-run client --offline --skip-tls-check
 pnpm cutover:drill -> exit 0
 preflight-prod-formal-window.sh -> exit 1
   - DNS has no A record for api/admin/store/tob.m5-platform.com
-  - secrets "m5-tls" not found
+  - Live TLS secret is missing: m5-tls
 preflight-prod-formal-window.sh --tls-manifest infra/k8s/rendered-public/m5-tls.yaml -> exit 1
   - DNS has no A record for api/admin/store/tob.m5-platform.com
   - TLS manifest does not exist: infra/k8s/rendered-public/m5-tls.yaml
@@ -118,6 +118,9 @@ curl https://api.m5-platform.com -> SSL_ERROR_SYSCALL
 - 演练脚本: [run-cutover-drill.sh](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/run-cutover-drill.sh)
 - 正式窗口门禁脚本: [preflight-prod-formal-window.sh](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/preflight-prod-formal-window.sh)
 - 正式窗口就绪入口: [run-g8-formal-window-ready.sh](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/run-g8-formal-window-ready.sh)
+- 正式窗口执行包: [2026-07-19-g8-formal-window-execution-package.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g8-formal-window-execution-package.md)
+- 正式窗口阻塞报告: `infra/k8s/cutover-logs/<window-id>/READINESS-BLOCKERS.md`
+- 最新 readiness 实跑: [00-formal-ready.log](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/cutover-logs/formal-window-20260719-154427/00-formal-ready.log) / [READINESS-BLOCKERS.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/cutover-logs/formal-window-20260719-154427/READINESS-BLOCKERS.md)
 - `G1/G8` 外部硬阻塞板: [EXTERNAL-BLOCKERS-OWNER-BOARD.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/EXTERNAL-BLOCKERS-OWNER-BOARD.md)
 
 ---
@@ -132,6 +135,8 @@ curl https://api.m5-platform.com -> SSL_ERROR_SYSCALL
 | verify 命令已探测 | ✅ | 已拿到 fake cert 与 SSL 现状证据 |
 | rollback ready | ✅ | rollback 命令入口已固化到 runbook 和脚本 |
 | 正式窗口门禁 | ✅ | 已将 `DNS -> TLS -> m5-tls Secret/manifest` 做成显式阻断 |
+| 正式窗口门禁全量扫描 | ✅ | 单次执行可汇总输出 `4 个 DNS + TLS` 全部阻塞项，不再首错即停 |
+| readiness 阻塞报告自动落盘 | ✅ | 失败时自动生成 `00-formal-ready.log` 与 `READINESS-BLOCKERS.md` |
 | `DNS + TLS` 外部硬阻塞已责任化 | ✅ | 已同步到 `G1/G8` 口径与责任板 |
 | server dry-run / 正式窗口日志 | ⬜ | 外部硬阻塞未解除前禁止真实集群窗口执行 |
 
@@ -140,4 +145,5 @@ curl https://api.m5-platform.com -> SSL_ERROR_SYSCALL
 ## 结论
 
 - `G8` 已不再是“没有运行证据”，而是“已有离线演练证据、正式窗口门禁与失败证据，待 DNS/TLS 落地后补最后一圈”
+- `G8` 的执行入口、日志命名、外部材料清单现已固化到正式窗口执行包，真实窗口时不需要再临场拼接命令
 - 当前 `G8` 保持 `🟡` 合理，且在外部硬阻塞解除前不得误报为 `🟢` 或强行执行真实 `apply`

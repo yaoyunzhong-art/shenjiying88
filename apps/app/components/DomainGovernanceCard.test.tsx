@@ -3,6 +3,7 @@ import test from 'node:test';
 import React from 'react';
 import { create } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity } from 'react-native';
+import { domainGovernanceDisplayCopy, formatDomainGovernanceStatusSummary } from '@m5/types';
 import { DomainGovernanceCard } from './DomainGovernanceCard';
 
 const alertCalls: Array<{ title: string; message: string }> = [];
@@ -11,39 +12,48 @@ Alert.alert = ((title: string, message?: string) => {
 }) as typeof Alert.alert;
 
 const model = {
-  eyebrow: '域名治理工作台',
-  subtitle: '统一域名缺口、推荐补选和治理入口展示',
+  eyebrow: domainGovernanceDisplayCopy.eyebrow,
+  subtitle: domainGovernanceDisplayCopy.subtitle,
   title: '域名来源 custom / 可直接补选 1',
   statusLabel: '待治理',
   summaryText: '缺主 scope 2 / 活跃未设主域名 3',
   renderSections: [
     {
-      title: '治理概览',
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
       items: [
         {
-          label: '域名来源',
+          label: domainGovernanceDisplayCopy.itemLabels.source,
           value: '域名来源 custom / 可直接补选 1',
           tone: 'primary' as const,
         },
         {
-          label: '治理状态',
+          label: domainGovernanceDisplayCopy.itemLabels.status,
           value: '待治理',
           tone: 'accent' as const,
         },
         {
-          label: '治理概览',
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
           value: '缺主 scope 2 / 活跃未设主域名 3',
           tone: 'summary' as const,
         },
         {
-          label: '状态摘要',
-          value: '治理状态：待治理 / 可直接补选 1',
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary({
+            requiresAttention: true,
+            totalMissingPrimaryScopes: 2,
+            totalActiveWithoutPrimaryDomains: 3,
+            recommendedReadyScopes: 1,
+            lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+            currentScopes: [],
+            missingPrimaryScopes: [],
+            activeWithoutPrimaryDomains: [],
+          }),
           tone: 'summary' as const,
         },
       ],
     },
     {
-      title: '焦点 scope',
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
       items: [
         {
           label: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
@@ -53,20 +63,20 @@ const model = {
       ],
     },
     {
-      title: '推荐补选',
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
       items: [
         {
-          label: '推荐主域名',
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
           value: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
           tone: 'summary' as const,
         },
       ],
     },
   ],
-  workspaceLabel: '治理入口',
+  workspaceLabel: domainGovernanceDisplayCopy.workspaceLabel,
   workspaceHref:
     '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
-  ctaLabel: '打开域名治理工作台',
+  ctaLabel: domainGovernanceDisplayCopy.ctaLabel,
   requiresAttention: true,
 };
 
@@ -99,8 +109,8 @@ test('DomainGovernanceCard renders shared render sections contract', () => {
 
   assert.ok(findByText(root.root, model.eyebrow), '应渲染 header eyebrow');
   assert.ok(findByText(root.root, model.title), '应渲染 header title slot');
-  assert.ok(findByText(root.root, '治理概览'), '应渲染 shared header section title');
-  assert.ok(findByText(root.root, '治理明细'), '应渲染 detail section title');
+  assert.ok(findByText(root.root, domainGovernanceDisplayCopy.sectionTitles.summary), '应渲染 shared header section title');
+  assert.ok(findByText(root.root, domainGovernanceDisplayCopy.detailSectionTitle), '应渲染 detail section title');
   assert.ok(findByText(root.root, model.renderSections[1].title), '应渲染 detail group label');
   assert.ok(findByText(root.root, model.workspaceLabel), '应渲染 footer workspace label');
   assert.ok(findByText(root.root, model.ctaLabel), '应渲染 footer CTA');

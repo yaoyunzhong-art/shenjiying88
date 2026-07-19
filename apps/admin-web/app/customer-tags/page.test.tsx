@@ -225,6 +225,92 @@ describe('customer-tags — 页面结构', () => {
   it('45. 包含停用标签提醒', () => assert.ok(readSource().includes('停用标签提醒')))
   it('46. 包含删除确认弹窗', () => assert.ok(readSource().includes('确认删除')))
   it('47. 不包含 console.log', () => assert.ok(!readSource().includes('console.log')))
+  it('48. 包含 TagBadge 组件', () => assert.ok(readSource().includes('TagBadge')))
+  it('49. 包含 SubmitState 类型', () => assert.ok(readSource().includes('SubmitState')))
+  it('50. 包含统计卡片布局', () => assert.ok(readSource().includes('标签总数') && readSource().includes('已启用')))
+})
+
+describe('customer-tags — 分类/来源/颜色分布计算', () => {
+  it('51. 分类分布覆盖所有5种分类', () => {
+    const cats = new Set(MOCK_TAGS.map((t) => t.category))
+    assert.equal(cats.size, 5)
+    assert.ok(cats.has('demographics') && cats.has('behavior') && cats.has('consumption'))
+    assert.ok(cats.has('lifestyle') && cats.has('engagement'))
+  })
+
+  it('52. 来源分布: manual 2, rule-engine 2, ai-prediction 3', () => {
+    const counts: Record<string, number> = {}
+    for (const t of MOCK_TAGS) counts[t.source] = (counts[t.source] || 0) + 1
+    assert.equal(counts['manual'], 2)
+    assert.equal(counts['rule-engine'], 2)
+    assert.equal(counts['ai-prediction'], 3)
+    assert.equal(Object.keys(counts).length, 3)
+  })
+
+  it('53. 颜色分布: 7种颜色每种1个', () => {
+    const counts: Record<string, number> = {}
+    for (const t of MOCK_TAGS) counts[t.color] = (counts[t.color] || 0) + 1
+    assert.equal(Object.keys(counts).length, 7)
+    for (const v of Object.values(counts)) assert.equal(v, 1)
+  })
+
+  it('54. 停用标签覆盖896人', () => {
+    const disabledCoverage = MOCK_TAGS.filter((t) => !t.enabled).reduce((s, t) => s + t.memberCount, 0)
+    assert.equal(disabledCoverage, 896)
+  })
+
+  it('55. 启用标签占比 > 80%', () => {
+    const ratio = MOCK_TAGS.filter((t) => t.enabled).length / MOCK_TAGS.length
+    assert.ok(ratio > 0.8, `启用占比 ${ratio} 应 > 0.8`)
+  })
+
+  it('56. 空标签列表的分类分布应为空', () => {
+    const emptyCounts: Record<string, number> = {}
+    const pcts = Object.keys(emptyCounts).length
+    assert.equal(pcts, 0)
+  })
+})
+
+describe('customer-tags — 表单边界', () => {
+  it('57. 全部必填缺失返回4个错误', () => {
+    const e = validateForm({ name: '', category: '', color: '', source: '', description: '', enabled: true })
+    assert.equal(Object.keys(e).length, 4)
+  })
+
+  it('58. 所有分类中文标签正确', () => {
+    for (const c of TAG_CATEGORIES) assert.equal(getCategoryLabel(c.value), c.label)
+  })
+
+  it('59. 所有来源中文标签正确', () => {
+    for (const s of TAG_SOURCES) assert.equal(getSourceLabel(s.value), s.label)
+  })
+
+  it('60. 所有颜色 hex 格式正确', () => {
+    for (const c of TAG_COLORS) assert.match(c.hex, /^#[0-9a-f]{6}$/i)
+  })
+
+  it('61. addTag 零人数标签可正常创建', () => {
+    const r = addTag(MOCK_TAGS, { name: '零人数', category: 'behavior', color: 'blue', source: 'manual', description: '', enabled: true })
+    assert.equal(r[0]?.memberCount, 0)
+    assert.equal(r[0]?.name, '零人数')
+  })
+
+  it('62. 编辑不存在的 ID 返回原数组', () => {
+    const r = editTag(MOCK_TAGS, 'non-existent', { name: '不存在', category: 'behavior', color: 'blue', source: 'manual', description: '', enabled: true })
+    assert.equal(r.length, MOCK_TAGS.length)
+  })
+
+  it('63. toggleEnabled 不存在的 ID 返回原数组', () => {
+    const r = toggleEnabled(MOCK_TAGS, 'non-existent')
+    assert.equal(r.length, MOCK_TAGS.length)
+    for (const t of r) assert.ok(t.id !== 'non-existent')
+  })
+
+  it('64. deleteTag 删空所有标签返回空数组', () => {
+    let allDeleted: Tag[] = [...MOCK_TAGS]
+    for (const t of MOCK_TAGS) allDeleted = deleteTag(allDeleted, t.id)
+    assert.equal(allDeleted.length, 0)
+  })
 })
 
 const SOURCE_CONTENT = readSource();

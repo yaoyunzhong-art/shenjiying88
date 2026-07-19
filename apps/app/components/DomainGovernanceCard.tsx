@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { DomainGovernanceDisplayModel, DomainGovernanceDisplayPreset } from '@m5/types';
 import {
+  domainGovernanceDisplayCopy,
   resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset,
 } from '@m5/types';
@@ -15,7 +16,7 @@ export function DomainGovernanceCard({
   model,
   preset = resolveDomainGovernanceDisplayPreset('APP_NATIVE', model.requiresAttention),
 }: DomainGovernanceCardProps) {
-  const detailSectionTitle = '治理明细';
+  const detailSectionTitle = domainGovernanceDisplayCopy.detailSectionTitle;
   const renderSections = model.renderSections;
 
   return (

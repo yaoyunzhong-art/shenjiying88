@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: __CERT_MANAGER_CERTIFICATE_NAME__
+  namespace: m5
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: cert-manager
+spec:
+  secretName: __TLS_SECRET_NAME__
+  issuerRef:
+    name: __CERT_MANAGER_CLUSTER_ISSUER__
+    kind: ClusterIssuer
+  dnsNames:
+    - __API_HOST__
+    - __ADMIN_HOST__
+    - __STOREFRONT_HOST__
+    - __TOB_HOST__

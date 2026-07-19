@@ -38,6 +38,9 @@ WINDOW_ID="formal-window-$(date +%Y%m%d-%H%M%S)"
 LOG_ROOT="$ROOT_DIR/infra/k8s/cutover-logs"
 EXECUTE_APPLY="false"
 EXECUTE_ROLLBACK="false"
+LOG_DIR=""
+READINESS_LOG=""
+BLOCKER_REPORT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -113,6 +116,11 @@ if [[ "$EXECUTE_ROLLBACK" == "true" && "$EXECUTE_APPLY" != "true" ]]; then
   exit 1
 fi
 
+LOG_DIR="$LOG_ROOT/$WINDOW_ID"
+READINESS_LOG="$LOG_DIR/00-formal-ready.log"
+BLOCKER_REPORT="$LOG_DIR/READINESS-BLOCKERS.md"
+mkdir -p "$LOG_DIR"
+
 if [[ -n "$CERT_FILE" && -n "$KEY_FILE" ]]; then
   TLS_MANIFEST="${TLS_MANIFEST:-$ROOT_DIR/infra/k8s/rendered-public/m5-tls.yaml}"
   echo "==> Rendering formal TLS manifest"
@@ -133,13 +141,45 @@ gate_args=(
 if [[ -n "$TLS_MANIFEST" ]]; then
   gate_args+=(--tls-manifest "$TLS_MANIFEST")
 fi
-bash "$ROOT_DIR/scripts/preflight-prod-formal-window.sh" "${gate_args[@]}"
+if bash "$ROOT_DIR/scripts/preflight-prod-formal-window.sh" "${gate_args[@]}" 2>&1 | tee "$READINESS_LOG"; then
+  :
+else
+  {
+    echo "# G8 Formal Readiness Blockers"
+    echo
+    echo "- window_id: \`$WINDOW_ID\`"
+    echo "- env_file: \`$ENV_FILE\`"
+    echo "- namespace: \`$NAMESPACE\`"
+    echo "- tls_manifest: \`${TLS_MANIFEST:-live-secret}\`"
+    echo "- readiness_log: \`$READINESS_LOG\`"
+    echo
+    echo "## Blockers"
+    echo
+    if grep -q '^ - ' "$READINESS_LOG"; then
+      grep '^ - ' "$READINESS_LOG"
+    else
+      echo "- Formal readiness gate failed before a structured blocker list was emitted."
+    fi
+    echo
+    echo "## Next Action"
+    echo
+    echo "- Resolve all blockers above, then rerun \`scripts/run-g8-formal-window-ready.sh\` with the same \`--window-id\` or a new one."
+    echo "- Do not run \`--execute-apply\` until this readiness gate passes."
+  } > "$BLOCKER_REPORT"
+
+  echo
+  echo "==> Formal readiness blocked"
+  echo "readiness_log=$READINESS_LOG"
+  echo "blocker_report=$BLOCKER_REPORT"
+  exit 1
+fi
 
 if [[ "$EXECUTE_APPLY" != "true" ]]; then
   echo
   echo "==> Formal readiness passed"
   echo "window_id=$WINDOW_ID"
   echo "tls_manifest=${TLS_MANIFEST:-live-secret}"
+  echo "readiness_log=$READINESS_LOG"
   echo "next_command=bash scripts/run-prod-cutover-window.sh --env-file $ENV_FILE${RELEASE_ENV_FILE:+ --release-env-file $RELEASE_ENV_FILE} --window-id $WINDOW_ID --log-root $LOG_ROOT${TLS_MANIFEST:+ --tls-manifest $TLS_MANIFEST} --execute-apply"
   exit 0
 fi

@@ -8,43 +8,56 @@ const { renderToStaticMarkup } = require(
   PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js'
 );
 const { PortalDomainGovernanceCard } = require('./PortalDomainGovernanceCard');
-const { resolveDomainGovernanceDisplayPreset } = require('@m5/types');
+const {
+  domainGovernanceDisplayCopy,
+  formatDomainGovernanceStatusSummary,
+  resolveDomainGovernanceDisplayPreset,
+} = require('@m5/types');
 
 describe('PortalDomainGovernanceCard', () => {
   const model = {
-    eyebrow: '域名治理工作台',
-    subtitle: '统一域名缺口、推荐补选和治理入口展示',
+    eyebrow: domainGovernanceDisplayCopy.eyebrow,
+    subtitle: domainGovernanceDisplayCopy.subtitle,
     title: '域名来源 custom / 可直接补选 1',
     statusLabel: '待治理',
     summaryText: '缺主 scope 2 / 活跃未设主域名 3',
     renderSections: [
       {
-        title: '治理概览',
+        title: domainGovernanceDisplayCopy.sectionTitles.summary,
         items: [
           {
-            label: '域名来源',
+            label: domainGovernanceDisplayCopy.itemLabels.source,
             value: '域名来源 custom / 可直接补选 1',
             tone: 'primary',
           },
           {
-            label: '治理状态',
+            label: domainGovernanceDisplayCopy.itemLabels.status,
             value: '待治理',
             tone: 'accent',
           },
           {
-            label: '治理概览',
+            label: domainGovernanceDisplayCopy.itemLabels.summary,
             value: '缺主 scope 2 / 活跃未设主域名 3',
             tone: 'summary',
           },
           {
-            label: '状态摘要',
-            value: '治理状态：待治理 / 可直接补选 1',
+            label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+            value: formatDomainGovernanceStatusSummary({
+              requiresAttention: true,
+              totalMissingPrimaryScopes: 2,
+              totalActiveWithoutPrimaryDomains: 3,
+              recommendedReadyScopes: 1,
+              lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+              currentScopes: [],
+              missingPrimaryScopes: [],
+              activeWithoutPrimaryDomains: [],
+            }),
             tone: 'summary',
           },
         ],
       },
       {
-        title: '焦点 scope',
+        title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
         items: [
           {
             label: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
@@ -54,30 +67,30 @@ describe('PortalDomainGovernanceCard', () => {
         ],
       },
       {
-        title: '推荐补选',
+        title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
         items: [
           {
-            label: '推荐主域名',
+            label: domainGovernanceDisplayCopy.itemLabels.recommendation,
             value: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
             tone: 'summary',
           },
         ],
       },
       {
-        title: '评估时间',
+        title: domainGovernanceDisplayCopy.sectionTitles.timeline,
         items: [
           {
-            label: '最近评估',
+            label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
             value: '最近评估 2026-07-18T00:00:00.000Z',
             tone: 'summary',
           },
         ],
       },
     ],
-    workspaceLabel: '治理入口',
+    workspaceLabel: domainGovernanceDisplayCopy.workspaceLabel,
     workspaceHref:
       '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
-    ctaLabel: '打开域名治理工作台',
+    ctaLabel: domainGovernanceDisplayCopy.ctaLabel,
     requiresAttention: true,
   };
 
@@ -87,7 +100,7 @@ describe('PortalDomainGovernanceCard', () => {
     assert.ok(html.includes(model.eyebrow), 'should render header eyebrow');
     assert.ok(html.includes(model.title), 'should render header title slot');
     assert.ok(html.includes(model.statusLabel), 'should render status badge');
-    assert.ok(html.includes('治理概览'), 'should render summary section title');
+    assert.ok(html.includes(domainGovernanceDisplayCopy.sectionTitles.summary), 'should render summary section title');
     assert.ok(html.includes(model.renderSections[1].title), 'should render focus scope title');
     assert.ok(html.includes(model.renderSections[1].items[0].value), 'should render focus scope value');
     assert.ok(html.includes(model.renderSections[2].items[0].value), 'should render recommendation value');

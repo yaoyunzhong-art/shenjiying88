@@ -32,11 +32,11 @@
 
 | 项目 | 状态 | 当前事实 | 下一步 |
 |------|:----:|----------|--------|
-| DNS 托管归属 | 🔴 | 当前账号未发现 `m5-platform.com` 托管，正式 DNS 记录无从下发 | 确认真实 DNS 提供方 |
-| 正式域名拍板 | 🔴 | `storefront/tob` 正式 host 未最终定版，当前只有占位口径 | 战略拍板并回填 env |
+| DNS 托管归属 | 🟢 | 当前阿里云账号已确认托管 `sportsant.net` | 维持企业部署域名口径不回退 |
+| 正式域名拍板 | 🟢 | 企业级部署正式域名已确认 `sportsant.net`，host 固定为 `api/admin/store/tob.sportsant.net` | 按最终 host 继续证书 SAN 与发布验证 |
 | TLS 证书 | 🔴 | live 仍是假证书，且未拿到真实 PEM 物料 | 获取真实证书并验证 SAN |
 | `m5-tls` Secret | 🔴 | 集群中不存在，门禁已实证 `NotFound` | 生成 `m5-tls.yaml` 并挂载 |
-| 正式 DNS 记录 | 🔴 | `api/admin/store/tob` 四个正式域名均无 A 记录 | 指向生产 NLB 双 IP |
+| 正式 DNS 记录 | 🟡 | 阿里云控制台已配置 `api/admin/store/tob.sportsant.net` 四个主机共 8 条 A 记录 | 以新版 readiness 复检外部解析生效 |
 
 ---
 
@@ -51,7 +51,7 @@
 | `PLAN-REV-C1` checkout L3 | 🟢 | 已完成金额链浏览器验收，`2` 条 Playwright 用例通过 | 转入 `VRT` 原型与更多金额边界扩展 |
 | `PLAN-REV-C2` VRT 原型 | 🟢 | 已完成 `cashier / checkout` 双页、双设备基线与 diff 报告 | 继续扩到会员/财务页面 |
 | `PLAN-REV-C3` P-49 指标/签收标准 | 🟢 | 已形成签收标准文档，并实跑 `82` 个圈梁测试通过 | 继续下沉到自动回写试点 |
-| `G8` 切流演练 | 🟡 | 已完成离线演练、预跑日志与正式窗口门禁，但被 `DNS + TLS` 外部硬阻塞卡住 | 先解阻，再补正式窗口 `server dry-run / apply / rollback` 日志 |
+| `G8` 切流演练 | 🟡 | 已完成离线演练、预跑日志、正式窗口门禁、执行包与复签入口页；现已切换到 `sportsant.net` 企业口径，剩余主阻塞收敛为 `TLS + m5-tls + 新版 readiness 复检` | 先补 TLS，再按 [ONE-PAGE-INDEX.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/cutover-logs/formal-window-20260719-154427/ONE-PAGE-INDEX.md) 重跑新版正式窗口链 |
 | `PLAN-REV-D1` 红黄绿状态板 | 🟢 | 本文件已建立 | 纳入周会/复签输入 |
 
 ---
@@ -67,7 +67,7 @@
 | G5 | 🟢 | `POS/Pad` 与 `税务/发票` 两项均已落地到任务卡/证据层 |
 | G6 | 🟢 | miniapp 活动/营销/会员/门店联动入口、导航烟测与浏览器 PNG 证据已闭环 |
 | G7 | 🟢 | miniapp 采购/退货高频链真实读写链、正式验收文档与浏览器 PNG 证据已闭环 |
-| G8 | 🟡 | 离线演练、预跑日志与正式窗口门禁已补齐；当前被 `DNS 无 A 记录 + m5-tls 缺失 + m5-tls.yaml 未就位` 阻断 |
+| G8 | 🟡 | 离线演练、预跑日志、正式窗口门禁与复签入口页已补齐；`sportsant.net` 企业域名与阿里云解析已确认，当前主阻塞为 `m5-tls 缺失 + 新版 readiness 未复绿`，统一入口见 [ONE-PAGE-INDEX.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/cutover-logs/formal-window-20260719-154427/ONE-PAGE-INDEX.md) |
 | G9 | 🟢 | 状态板已建立，可进入管理层视图 |
 
 ### 复签总体
@@ -77,7 +77,7 @@
 - 最快可推进路径:
   - 先以 `2026-07-19-v72-resign-bundle.md` 作为复签单入口
   - 先解 `DNS/TLS/正式域名` 外部硬阻塞
-  - 再补 G8 真实窗口运行记录
+  - 再按 `ONE-PAGE-INDEX.md` 补 G8 真实窗口运行记录
 
 ---
 

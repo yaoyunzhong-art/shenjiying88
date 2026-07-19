@@ -154,6 +154,7 @@ import { EmployeePerformanceReviewModule } from './modules/employee-performance-
 import { CustomerSatisfactionModule } from './modules/customer-satisfaction/customer-satisfaction.module';
 import { ProcurementOrderModule } from './modules/procurement-order/procurement-order.module';
 import { SeoModule } from './modules/seo/seo.module';
+import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 
 @Module({
   imports: [
@@ -319,6 +320,7 @@ import { SeoModule } from './modules/seo/seo.module';
     CustomerSatisfactionModule,
     ProcurementOrderModule,
     SeoModule,
+    IntelligenceModule,
     ModulesModule,
   ],
   providers: [

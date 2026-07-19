@@ -8,6 +8,7 @@ import test from 'node:test';
 import React from 'react';
 import { create } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity } from 'react-native';
+import { domainGovernanceDisplayCopy } from '@m5/types';
 
 // Mock react-navigation before importing HomeScreen
 const mockNavigateCalls: Array<{ route: string }> = [];
@@ -162,9 +163,9 @@ test('HomeScreen: renders domain governance card with shared top-level fields', 
   alertCalls.length = 0;
   const root = createHomeComponent();
 
-  assert.ok(findByText(root.root, '域名治理工作台'), '应显示域名治理眉标');
+  assert.ok(findByText(root.root, domainGovernanceDisplayCopy.eyebrow), '应显示域名治理眉标');
   assert.ok(findByText(root.root, '域名来源 custom / 可直接补选 1'), '应显示共享 title');
-  assert.ok(findByText(root.root, '打开域名治理工作台'), '应显示治理 CTA');
+  assert.ok(findByText(root.root, domainGovernanceDisplayCopy.ctaLabel), '应显示治理 CTA');
 });
 
 test('HomeScreen: renders revenue value formatted as currency', () => {
@@ -363,7 +364,7 @@ test('HomeScreen: tapping governance button opens alert with workspace href', ()
   assert.ok(governanceButton, '应找到治理入口按钮');
   governanceButton?.props.onPress();
   assert.deepEqual(alertCalls[0], {
-    title: '域名治理工作台',
+    title: domainGovernanceDisplayCopy.eyebrow,
     message:
       '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE',
   });

@@ -72,6 +72,7 @@ __export(index_exports, {
   createRuntimeGovernanceReplayPolicy: () => createRuntimeGovernanceReplayPolicy,
   defaultRoleWorkbenchContractMap: () => defaultRoleWorkbenchContractMap,
   defaultRoleWorkbenchContracts: () => defaultRoleWorkbenchContracts,
+  domainGovernanceDisplayCopy: () => domainGovernanceDisplayCopy,
   domainGovernanceDisplayPresetContractMap: () => domainGovernanceDisplayPresetContractMap,
   evaluateRuntimeGovernanceCallbackStall: () => evaluateRuntimeGovernanceCallbackStall,
   filterFoundationAlertTimeline: () => filterFoundationAlertTimeline,
@@ -84,6 +85,7 @@ __export(index_exports, {
   formatDomainGovernanceLastEvaluatedSummary: () => formatDomainGovernanceLastEvaluatedSummary,
   formatDomainGovernanceRecommendationSummary: () => formatDomainGovernanceRecommendationSummary,
   formatDomainGovernanceSourceSummary: () => formatDomainGovernanceSourceSummary,
+  formatDomainGovernanceStatusSummary: () => formatDomainGovernanceStatusSummary,
   foundationAlertCatalogFallback: () => foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles: () => foundationAppBootstrapProfiles,
   foundationBootstrapCapabilityRules: () => foundationBootstrapCapabilityRules,
@@ -133,8 +135,8 @@ __export(index_exports, {
   readResilienceRecoveryPlanDetailParam: () => readResilienceRecoveryPlanDetailParam,
   readResilienceRetryPolicyDetailParam: () => readResilienceRetryPolicyDetailParam,
   readResilienceSignalDetailParam: () => readResilienceSignalDetailParam,
-  resolveDomainGovernanceRenderItemColor: () => resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset: () => resolveDomainGovernanceDisplayPreset,
+  resolveDomainGovernanceRenderItemColor: () => resolveDomainGovernanceRenderItemColor,
   resolveFoundationAlertFocusCode: () => resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode: () => resolveFoundationAlertSelectedCode,
   runtimeGovernanceActionKeys: () => runtimeGovernanceActionKeys,
@@ -1219,6 +1221,28 @@ function formatDomainGovernanceCountsSummary(summary) {
 function formatDomainGovernanceSourceSummary(domainSource, summary) {
   return `\u57DF\u540D\u6765\u6E90 ${domainSource} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
 }
+var domainGovernanceDisplayCopy = {
+  eyebrow: "\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
+  subtitle: "\u7EDF\u4E00\u57DF\u540D\u7F3A\u53E3\u3001\u63A8\u8350\u8865\u9009\u548C\u6CBB\u7406\u5165\u53E3\u5C55\u793A",
+  detailSectionTitle: "\u6CBB\u7406\u660E\u7EC6",
+  workspaceLabel: "\u6CBB\u7406\u5165\u53E3",
+  ctaLabel: "\u6253\u5F00\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
+  sectionTitles: {
+    summary: "\u6CBB\u7406\u6982\u89C8",
+    focusScope: "\u7126\u70B9 scope",
+    recommendation: "\u63A8\u8350\u8865\u9009",
+    timeline: "\u8BC4\u4F30\u65F6\u95F4",
+    workspace: "\u6CBB\u7406\u5165\u53E3"
+  },
+  itemLabels: {
+    source: "\u57DF\u540D\u6765\u6E90",
+    status: "\u6CBB\u7406\u72B6\u6001",
+    summary: "\u6CBB\u7406\u6982\u89C8",
+    statusSummary: "\u72B6\u6001\u6458\u8981",
+    recommendation: "\u63A8\u8350\u4E3B\u57DF\u540D",
+    lastEvaluated: "\u6700\u8FD1\u8BC4\u4F30"
+  }
+};
 function resolveDomainGovernanceRenderItemColor(preset, tone) {
   if (tone === "primary") {
     return preset.titleColor;
@@ -1395,46 +1419,49 @@ function formatDomainGovernanceRecommendationSummary(scope) {
   const reason = scope.recommendationReason ? ` / \u539F\u56E0 ${scope.recommendationReason}` : "";
   return `\u63A8\u8350\u4E3B\u57DF\u540D\uFF1A${scope.recommendedDomain}${reason}`;
 }
+function formatDomainGovernanceStatusSummary(summary, statusLabel = getDomainGovernanceAttentionLabel(summary)) {
+  return `\u6CBB\u7406\u72B6\u6001\uFF1A${statusLabel} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
+}
 function formatDomainGovernanceLastEvaluatedSummary(summary) {
   return `\u6700\u8FD1\u8BC4\u4F30 ${summary.lastEvaluatedAt}`;
 }
 function buildDomainGovernanceDisplayModel(domainSource, summary, workspaceHref) {
   const statusLabel = getDomainGovernanceAttentionLabel(summary);
   const focusScope = selectDomainGovernanceFocusScope(summary);
-  const eyebrow = "\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0";
-  const subtitle = "\u7EDF\u4E00\u57DF\u540D\u7F3A\u53E3\u3001\u63A8\u8350\u8865\u9009\u548C\u6CBB\u7406\u5165\u53E3\u5C55\u793A";
+  const eyebrow = domainGovernanceDisplayCopy.eyebrow;
+  const subtitle = domainGovernanceDisplayCopy.subtitle;
   const title = formatDomainGovernanceSourceSummary(domainSource, summary);
   const summaryText = formatDomainGovernanceCountsSummary(summary);
-  const workspaceLabel = "\u6CBB\u7406\u5165\u53E3";
-  const ctaLabel = "\u6253\u5F00\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0";
+  const workspaceLabel = domainGovernanceDisplayCopy.workspaceLabel;
+  const ctaLabel = domainGovernanceDisplayCopy.ctaLabel;
   const renderSections = [
     {
-      title: "\u6CBB\u7406\u6982\u89C8",
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
       items: [
         {
-          label: "\u57DF\u540D\u6765\u6E90",
+          label: domainGovernanceDisplayCopy.itemLabels.source,
           value: title,
           tone: "primary"
         },
         {
-          label: "\u6CBB\u7406\u72B6\u6001",
+          label: domainGovernanceDisplayCopy.itemLabels.status,
           value: statusLabel,
           tone: "accent"
         },
         {
-          label: "\u6CBB\u7406\u6982\u89C8",
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
           value: summaryText,
           tone: "summary"
         },
         {
-          label: "\u72B6\u6001\u6458\u8981",
-          value: `\u6CBB\u7406\u72B6\u6001\uFF1A${statusLabel} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`,
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary(summary, statusLabel),
           tone: "summary"
         }
       ]
     },
     {
-      title: "\u7126\u70B9 scope",
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
       items: [
         {
           label: formatDomainGovernanceFocusScopeLabel(focusScope),
@@ -1444,27 +1471,27 @@ function buildDomainGovernanceDisplayModel(domainSource, summary, workspaceHref)
       ]
     },
     {
-      title: "\u63A8\u8350\u8865\u9009",
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
       items: [
         {
-          label: "\u63A8\u8350\u4E3B\u57DF\u540D",
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
           value: formatDomainGovernanceRecommendationSummary(focusScope),
           tone: "summary"
         }
       ]
     },
     {
-      title: "\u8BC4\u4F30\u65F6\u95F4",
+      title: domainGovernanceDisplayCopy.sectionTitles.timeline,
       items: [
         {
-          label: "\u6700\u8FD1\u8BC4\u4F30",
+          label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
           value: formatDomainGovernanceLastEvaluatedSummary(summary),
           tone: "summary"
         }
       ]
     },
     {
-      title: workspaceLabel,
+      title: domainGovernanceDisplayCopy.sectionTitles.workspace,
       items: [
         {
           label: workspaceLabel,
@@ -2292,6 +2319,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   createRuntimeGovernanceReplayPolicy,
   defaultRoleWorkbenchContractMap,
   defaultRoleWorkbenchContracts,
+  domainGovernanceDisplayCopy,
   domainGovernanceDisplayPresetContractMap,
   evaluateRuntimeGovernanceCallbackStall,
   filterFoundationAlertTimeline,
@@ -2304,6 +2332,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   formatDomainGovernanceLastEvaluatedSummary,
   formatDomainGovernanceRecommendationSummary,
   formatDomainGovernanceSourceSummary,
+  formatDomainGovernanceStatusSummary,
   foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles,
   foundationBootstrapCapabilityRules,
@@ -2353,8 +2382,8 @@ function buildIntegrationOrchestrationHref(query = {}) {
   readResilienceRecoveryPlanDetailParam,
   readResilienceRetryPolicyDetailParam,
   readResilienceSignalDetailParam,
-  resolveDomainGovernanceRenderItemColor,
   resolveDomainGovernanceDisplayPreset,
+  resolveDomainGovernanceRenderItemColor,
   resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode,
   runtimeGovernanceActionKeys,

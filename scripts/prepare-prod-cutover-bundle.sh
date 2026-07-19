@@ -108,18 +108,43 @@ bash "$ROOT_DIR/scripts/preflight-prod-public-cutover.sh" \
 cat > "$OUTPUT_DIR/CUTOVER-COMMANDS.md" <<EOF
 # Cutover Commands
 
-## 0. Single Window Entry
+## 0. G8 Readiness Only
 
 \`\`\`bash
-bash scripts/run-prod-cutover-window.sh \\
+bash scripts/run-g8-formal-window-ready.sh \\
+  --env-file $OUTPUT_DIR/public-endpoints.env${RELEASE_ENV_FILE:+ \\}
+${RELEASE_ENV_FILE:+  --release-env-file $OUTPUT_DIR/release-images.env \\}
+  --window-id formal-window-\$(date +%Y%m%d-%H%M%S) \\
+  --log-root infra/k8s/cutover-logs
+\`\`\`
+
+## 1. G8 Formal Window Execute
+
+\`\`\`bash
+bash scripts/run-g8-formal-window-ready.sh \\
   --env-file $OUTPUT_DIR/public-endpoints.env${RELEASE_ENV_FILE:+ \\}
 ${RELEASE_ENV_FILE:+  --release-env-file $OUTPUT_DIR/release-images.env \\}
   --window-id formal-window-\$(date +%Y%m%d-%H%M%S) \\
   --log-root infra/k8s/cutover-logs \\
-  --execute-apply
+  --execute-apply \\
+  --execute-rollback
 \`\`\`
 
-## 1. K8s Release Preflight
+## 2. With PEM Material
+
+\`\`\`bash
+bash scripts/run-g8-formal-window-ready.sh \\
+  --env-file $OUTPUT_DIR/public-endpoints.env${RELEASE_ENV_FILE:+ \\}
+${RELEASE_ENV_FILE:+  --release-env-file $OUTPUT_DIR/release-images.env \\}
+  --cert-file /secure/path/fullchain.pem \\
+  --key-file /secure/path/privkey.pem \\
+  --window-id formal-window-\$(date +%Y%m%d-%H%M%S) \\
+  --log-root infra/k8s/cutover-logs \\
+  --execute-apply \\
+  --execute-rollback
+\`\`\`
+
+## 3. K8s Release Preflight
 
 \`\`\`bash
 bash scripts/preflight-k8s-release.sh \\
@@ -128,21 +153,21 @@ bash scripts/preflight-k8s-release.sh \\
 ${RELEASE_ENV_FILE:+  --release-env-file $OUTPUT_DIR/release-images.env}
 \`\`\`
 
-## 2. TLS Verify
+## 4. TLS Verify
 
 \`\`\`bash
 bash scripts/verify-m5-tls-secret.sh \\
   --env-file $OUTPUT_DIR/public-endpoints.env
 \`\`\`
 
-## 3. Public Cutover Preflight
+## 5. Public Cutover Preflight
 
 \`\`\`bash
 bash scripts/preflight-prod-public-cutover.sh \\
   --env-file $OUTPUT_DIR/public-endpoints.env
 \`\`\`
 
-## 4. Public Cutover Dry Run
+## 6. Public Cutover Dry Run
 
 \`\`\`bash
 bash scripts/apply-prod-public-cutover.sh \\
@@ -151,7 +176,7 @@ bash scripts/apply-prod-public-cutover.sh \\
 ${TLS_CERT_FILE:+  --tls-manifest $OUTPUT_DIR/rendered-public/m5-tls.yaml}
 \`\`\`
 
-## 5. Public Cutover Apply
+## 7. Public Cutover Apply
 
 \`\`\`bash
 bash scripts/apply-prod-public-cutover.sh \\
@@ -159,7 +184,7 @@ bash scripts/apply-prod-public-cutover.sh \\
 ${TLS_CERT_FILE:+  --tls-manifest $OUTPUT_DIR/rendered-public/m5-tls.yaml}
 \`\`\`
 
-## 6. Verify and Rollback Ready
+## 8. Verify and Rollback Ready
 
 \`\`\`bash
 bash scripts/verify-prod-public-endpoints.sh \\
@@ -190,6 +215,39 @@ infra/k8s/cutover-logs/<window-id>/
 - `04-verify.log`: DNS / TLS / health 校验
 - `05-rollback.log`: 正式回滚日志
 - `SUMMARY.md`: 窗口摘要与日志入口
+
+## Evidence Rule
+
+- 仅运行 readiness 时，至少归档 \`01-preflight.log\`、\`02-server-dry-run.log\`、\`04-verify.log\`
+- 进入正式窗口时，必须归档完整 \`00~05\` 日志并保留 \`SUMMARY.md\`
+- 若 \`00-formal-ready.log\` 不存在，说明并未真正通过正式窗口门禁，不得将该次运行计为 G8 完成
+- 若 \`05-rollback.log\` 不存在，说明 rollback 证据未完成，G8 仍只能记为待补证据
+EOF
+
+cat > "$OUTPUT_DIR/FORMAL-WINDOW-CHECKLIST.md" <<EOF
+# Formal Window Checklist
+
+## External Materials
+
+- [ ] DNS provider access for \`m5-platform.com\`
+- [ ] Final production hosts confirmed for \`api / admin / storefront / tob\`
+- [ ] PEM material ready: \`fullchain.pem\` and \`privkey.pem\`, or an equivalent live \`m5-tls\` secret source
+- [ ] \`m5-tls\` manifest rendered or live cluster secret verified
+- [ ] Four public A records point to the production NLB IPs
+
+## Run Order
+
+1. Run \`run-g8-formal-window-ready.sh\` without \`--execute-apply\` to confirm readiness.
+2. During the formal window, run the same entry with \`--execute-apply --execute-rollback\`.
+3. Archive \`infra/k8s/cutover-logs/<window-id>/\` as the single evidence directory.
+4. Update the G8 acceptance record, resign checklist, and weekly RYG board with the final log directory.
+
+## Done Standard
+
+- \`00-formal-ready.log\` exists and ends with a passed readiness gate
+- \`02-server-dry-run.log\`, \`03-apply.log\`, \`04-verify.log\`, and \`05-rollback.log\` all exist
+- \`SUMMARY.md\` points to the exact log set used during the formal window
+- The acceptance record explicitly links the final log directory
 EOF
 
 echo "Prepared cutover bundle:"
@@ -202,3 +260,4 @@ if [[ -n "$RELEASE_ENV_FILE" ]]; then
 fi
 echo "  $OUTPUT_DIR/CUTOVER-COMMANDS.md"
 echo "  $OUTPUT_DIR/CUTOVER-LOG-PLAN.md"
+echo "  $OUTPUT_DIR/FORMAL-WINDOW-CHECKLIST.md"

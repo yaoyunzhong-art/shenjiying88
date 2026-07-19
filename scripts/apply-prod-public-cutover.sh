@@ -129,9 +129,47 @@ set -a
 source "$ENV_FILE"
 set +a
 
+CERT_MANAGER_ENABLED="${CERT_MANAGER_ENABLED:-false}"
+CERT_MANAGER_SOLVER_MODE="${CERT_MANAGER_SOLVER_MODE:-http01}"
+CERT_MANAGER_WAIT_TIMEOUT="${CERT_MANAGER_WAIT_TIMEOUT:-1200s}"
+
 if [[ -z "${TLS_SECRET_NAME:-}" ]]; then
   echo "TLS_SECRET_NAME is required in the env file" >&2
   exit 1
+fi
+
+if [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+  cert_manager_required_vars=(
+    CERT_MANAGER_CLUSTER_ISSUER
+    CERT_MANAGER_CERTIFICATE_NAME
+    ACME_EMAIL
+    ACME_SERVER_URL
+    ACME_PRIVATE_KEY_SECRET_NAME
+  )
+
+  for var_name in "${cert_manager_required_vars[@]}"; do
+    if [[ -z "${!var_name:-}" ]]; then
+      echo "Missing required cert-manager env var: $var_name" >&2
+      exit 1
+    fi
+  done
+
+  if [[ "$CERT_MANAGER_SOLVER_MODE" == "dns01" ]]; then
+    dns01_required_vars=(
+      CERT_MANAGER_WEBHOOK_GROUP_NAME
+      ALIDNS_REGION
+      ALIDNS_SECRET_NAME
+      ALIDNS_ACCESS_KEY_ID_KEY
+      ALIDNS_ACCESS_KEY_SECRET_KEY
+    )
+
+    for var_name in "${dns01_required_vars[@]}"; do
+      if [[ -z "${!var_name:-}" ]]; then
+        echo "Missing required DNS-01 env var: $var_name" >&2
+        exit 1
+      fi
+    done
+  fi
 fi
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ==> public cutover apply start"
@@ -145,6 +183,8 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] offline=$OFFLINE"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] skip_tls_check=$SKIP_TLS_CHECK"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] skip_restart=$SKIP_RESTART"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] skip_rollout_wait=$SKIP_ROLLOUT_WAIT"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] cert_manager_enabled=$CERT_MANAGER_ENABLED"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] cert_manager_solver_mode=$CERT_MANAGER_SOLVER_MODE"
 
 echo "==> Rendering public cutover manifests"
 "$ROOT_DIR/scripts/render-prod-public-cutover.sh" \
@@ -154,6 +194,8 @@ echo "==> Rendering public cutover manifests"
 INGRESS_MANIFEST="$RENDERED_DIR/m5-ingress-public.yaml"
 CONFIG_MANIFEST="$RENDERED_DIR/m5-config-public.yaml"
 RENDERED_TLS_MANIFEST="$RENDERED_DIR/m5-tls.yaml"
+CLUSTER_ISSUER_MANIFEST="$RENDERED_DIR/m5-cert-manager-clusterissuer.yaml"
+CERTIFICATE_MANIFEST="$RENDERED_DIR/m5-cert-manager-certificate.yaml"
 
 for manifest in "$INGRESS_MANIFEST" "$CONFIG_MANIFEST"; do
   if [[ ! -f "$manifest" ]]; then
@@ -185,6 +227,63 @@ if [[ -n "$KUBECTL_DRY_RUN" ]]; then
   SKIP_RESTART="true"
 fi
 
+kubectl_apply_manifest() {
+  local manifest_path="$1"
+  if [[ "${#dry_run_args[@]}" -gt 0 ]]; then
+    kubectl apply "${dry_run_args[@]}" -f "$manifest_path"
+  else
+    kubectl apply -f "$manifest_path"
+  fi
+}
+
+check_dns01_prereqs() {
+  if ! kubectl -n cert-manager get secret "$ALIDNS_SECRET_NAME" >/dev/null 2>&1; then
+    echo "AliDNS credential secret is missing: cert-manager/$ALIDNS_SECRET_NAME" >&2
+    echo "Create it first via scripts/create-alidns-secret.sh" >&2
+    exit 1
+  fi
+
+  if ! kubectl -n cert-manager get deployment/alidns-webhook >/dev/null 2>&1; then
+    echo "AliDNS webhook deployment is missing: cert-manager/alidns-webhook" >&2
+    echo "Install it first via scripts/install-alidns-webhook.sh" >&2
+    exit 1
+  fi
+}
+
+if [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+  for manifest in "$CLUSTER_ISSUER_MANIFEST" "$CERTIFICATE_MANIFEST"; do
+    if [[ ! -f "$manifest" ]]; then
+      echo "Rendered cert-manager manifest is missing: $manifest" >&2
+      exit 1
+    fi
+  done
+
+  echo "==> Applying cert-manager issuer and certificate"
+  if [[ "$OFFLINE" == "true" ]]; then
+    echo "Offline mode does not apply cert-manager manifests"
+  else
+    if [[ "$CERT_MANAGER_SOLVER_MODE" == "dns01" ]]; then
+      echo "==> Checking DNS-01 webhook prerequisites"
+      check_dns01_prereqs
+    fi
+    kubectl_apply_manifest "$CLUSTER_ISSUER_MANIFEST"
+    kubectl_apply_manifest "$CERTIFICATE_MANIFEST"
+  fi
+
+  if [[ "$OFFLINE" != "true" && -z "$KUBECTL_DRY_RUN" ]]; then
+    echo "==> Waiting for certificate readiness"
+    kubectl -n "$NAMESPACE" wait \
+      --for=condition=Ready \
+      "certificate/$CERT_MANAGER_CERTIFICATE_NAME" \
+      --timeout="$CERT_MANAGER_WAIT_TIMEOUT"
+    kubectl -n "$NAMESPACE" get secret "$TLS_SECRET_NAME" >/dev/null
+    bash "$ROOT_DIR/scripts/verify-m5-tls-secret.sh" \
+      --namespace "$NAMESPACE" \
+      --secret-name "$TLS_SECRET_NAME" \
+      --env-file "$ENV_FILE"
+  fi
+fi
+
 if [[ "$SKIP_TLS_CHECK" == "true" ]]; then
   echo "==> Skipping TLS secret existence check"
 elif [[ -n "$TLS_MANIFEST" ]]; then
@@ -196,7 +295,14 @@ elif [[ -n "$TLS_MANIFEST" ]]; then
   if [[ "$OFFLINE" == "true" ]]; then
     echo "Offline mode does not apply TLS manifest"
   else
-    kubectl apply "${dry_run_args[@]}" -f "$TLS_MANIFEST"
+    kubectl_apply_manifest "$TLS_MANIFEST"
+  fi
+elif [[ "$CERT_MANAGER_ENABLED" == "true" ]]; then
+  echo "==> Using cert-manager managed TLS secret: $TLS_SECRET_NAME"
+  if [[ "$OFFLINE" == "true" || -n "$KUBECTL_DRY_RUN" ]]; then
+    echo "Live TLS secret verification is deferred in offline/dry-run mode"
+  else
+    kubectl -n "$NAMESPACE" get secret "$TLS_SECRET_NAME" >/dev/null
   fi
 else
   echo "==> Checking existing TLS secret: $TLS_SECRET_NAME"
@@ -209,8 +315,8 @@ echo "==> Applying ConfigMap and Ingress"
 if [[ "$OFFLINE" == "true" ]]; then
   echo "Offline mode enabled; manifest rendering only"
 else
-  kubectl apply "${dry_run_args[@]}" -f "$CONFIG_MANIFEST"
-  kubectl apply "${dry_run_args[@]}" -f "$INGRESS_MANIFEST"
+  kubectl_apply_manifest "$CONFIG_MANIFEST"
+  kubectl_apply_manifest "$INGRESS_MANIFEST"
 fi
 
 deployments=(

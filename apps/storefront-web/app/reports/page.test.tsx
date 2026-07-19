@@ -191,9 +191,9 @@ function renderPageWith(reports: Array<{ id: string; title: string; type: string
   const generated = reports.filter((r) => r.status === 'generated').length;
   const generating = reports.filter((r) => r.status === 'generating').length;
   const totals = { daily: 0, weekly: 0, monthly: 0 };
-  for (const r of reports) { if (r.type in totals) (totals as any)[r.type]++; }
+  for (const r of reports) { if (r.type in totals) (totals as Record<string, number>)[r.type]++; }
 
-  const tabs = Object.keys(totals).filter(t => (totals as any)[t] > 0);
+  const tabs = Object.keys(totals).filter(t => (totals as Record<string, number>)[t] > 0);
   const tabHtml = tabs.map(t => `<div role="tablist">${t === 'daily' ? '日活' : t === 'weekly' ? '周报' : '月报'}</div>`).join('\n');
 
   return `

@@ -985,6 +985,28 @@ export interface DomainGovernanceDisplayModel {
     ctaLabel: string;
     requiresAttention: boolean;
 }
+export declare const domainGovernanceDisplayCopy: {
+    readonly eyebrow: "域名治理工作台";
+    readonly subtitle: "统一域名缺口、推荐补选和治理入口展示";
+    readonly detailSectionTitle: "治理明细";
+    readonly workspaceLabel: "治理入口";
+    readonly ctaLabel: "打开域名治理工作台";
+    readonly sectionTitles: {
+        readonly summary: "治理概览";
+        readonly focusScope: "焦点 scope";
+        readonly recommendation: "推荐补选";
+        readonly timeline: "评估时间";
+        readonly workspace: "治理入口";
+    };
+    readonly itemLabels: {
+        readonly source: "域名来源";
+        readonly status: "治理状态";
+        readonly summary: "治理概览";
+        readonly statusSummary: "状态摘要";
+        readonly recommendation: "推荐主域名";
+        readonly lastEvaluated: "最近评估";
+    };
+};
 export type DomainGovernanceRenderItemTone = 'primary' | 'summary' | 'accent';
 export interface DomainGovernanceRenderItem {
     label: string;
@@ -1033,6 +1055,7 @@ export declare function resolveDomainGovernanceDisplayPreset(key: DomainGovernan
 export declare function formatDomainGovernanceFocusScopeLabel(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceFocusScopeSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
 export declare function formatDomainGovernanceRecommendationSummary(scope?: PortalDomainGovernanceScopeSummaryContract): string;
+export declare function formatDomainGovernanceStatusSummary(summary: PortalDomainGovernanceSummaryContract, statusLabel?: "待治理" | "已对齐"): string;
 export declare function formatDomainGovernanceLastEvaluatedSummary(summary: PortalDomainGovernanceSummaryContract): string;
 export declare function buildDomainGovernanceDisplayModel(domainSource: string, summary: PortalDomainGovernanceSummaryContract, workspaceHref: string): DomainGovernanceDisplayModel;
 export interface WorkbenchNavItemContract {

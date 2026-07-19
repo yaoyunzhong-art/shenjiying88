@@ -2339,6 +2339,29 @@ export interface DomainGovernanceDisplayModel {
   requiresAttention: boolean;
 }
 
+export const domainGovernanceDisplayCopy = {
+  eyebrow: '域名治理工作台',
+  subtitle: '统一域名缺口、推荐补选和治理入口展示',
+  detailSectionTitle: '治理明细',
+  workspaceLabel: '治理入口',
+  ctaLabel: '打开域名治理工作台',
+  sectionTitles: {
+    summary: '治理概览',
+    focusScope: '焦点 scope',
+    recommendation: '推荐补选',
+    timeline: '评估时间',
+    workspace: '治理入口',
+  },
+  itemLabels: {
+    source: '域名来源',
+    status: '治理状态',
+    summary: '治理概览',
+    statusSummary: '状态摘要',
+    recommendation: '推荐主域名',
+    lastEvaluated: '最近评估',
+  },
+} as const;
+
 export type DomainGovernanceRenderItemTone = 'primary' | 'summary' | 'accent';
 
 export interface DomainGovernanceRenderItem {
@@ -2600,6 +2623,13 @@ export function formatDomainGovernanceRecommendationSummary(
   return `推荐主域名：${scope.recommendedDomain}${reason}`;
 }
 
+export function formatDomainGovernanceStatusSummary(
+  summary: PortalDomainGovernanceSummaryContract,
+  statusLabel = getDomainGovernanceAttentionLabel(summary),
+): string {
+  return `治理状态：${statusLabel} / 可直接补选 ${summary.recommendedReadyScopes}`;
+}
+
 export function formatDomainGovernanceLastEvaluatedSummary(
   summary: PortalDomainGovernanceSummaryContract,
 ): string {
@@ -2613,40 +2643,40 @@ export function buildDomainGovernanceDisplayModel(
 ): DomainGovernanceDisplayModel {
   const statusLabel = getDomainGovernanceAttentionLabel(summary);
   const focusScope = selectDomainGovernanceFocusScope(summary);
-  const eyebrow = '域名治理工作台';
-  const subtitle = '统一域名缺口、推荐补选和治理入口展示';
+  const eyebrow = domainGovernanceDisplayCopy.eyebrow;
+  const subtitle = domainGovernanceDisplayCopy.subtitle;
   const title = formatDomainGovernanceSourceSummary(domainSource, summary);
   const summaryText = formatDomainGovernanceCountsSummary(summary);
-  const workspaceLabel = '治理入口';
-  const ctaLabel = '打开域名治理工作台';
+  const workspaceLabel = domainGovernanceDisplayCopy.workspaceLabel;
+  const ctaLabel = domainGovernanceDisplayCopy.ctaLabel;
   const renderSections: DomainGovernanceRenderSection[] = [
     {
-      title: '治理概览',
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
       items: [
         {
-          label: '域名来源',
+          label: domainGovernanceDisplayCopy.itemLabels.source,
           value: title,
           tone: 'primary' as const,
         },
         {
-          label: '治理状态',
+          label: domainGovernanceDisplayCopy.itemLabels.status,
           value: statusLabel,
           tone: 'accent' as const,
         },
         {
-          label: '治理概览',
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
           value: summaryText,
           tone: 'summary' as const,
         },
         {
-          label: '状态摘要',
-          value: `治理状态：${statusLabel} / 可直接补选 ${summary.recommendedReadyScopes}`,
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary(summary, statusLabel),
           tone: 'summary' as const,
         },
       ],
     },
     {
-      title: '焦点 scope',
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
       items: [
         {
           label: formatDomainGovernanceFocusScopeLabel(focusScope),
@@ -2656,27 +2686,27 @@ export function buildDomainGovernanceDisplayModel(
       ],
     },
     {
-      title: '推荐补选',
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
       items: [
         {
-          label: '推荐主域名',
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
           value: formatDomainGovernanceRecommendationSummary(focusScope),
           tone: 'summary' as const,
         },
       ],
     },
     {
-      title: '评估时间',
+      title: domainGovernanceDisplayCopy.sectionTitles.timeline,
       items: [
         {
-          label: '最近评估',
+          label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
           value: formatDomainGovernanceLastEvaluatedSummary(summary),
           tone: 'summary' as const,
         },
       ],
     },
     {
-      title: workspaceLabel,
+      title: domainGovernanceDisplayCopy.sectionTitles.workspace,
       items: [
         {
           label: workspaceLabel,

@@ -1,0 +1,12 @@
+      - dns01:
+          webhook:
+            groupName: __CERT_MANAGER_WEBHOOK_GROUP_NAME__
+            solverName: alidns
+            config:
+              region: __ALIDNS_REGION__
+              accessKeyIdRef:
+                name: __ALIDNS_SECRET_NAME__
+                key: __ALIDNS_ACCESS_KEY_ID_KEY__
+              accessKeySecretRef:
+                name: __ALIDNS_SECRET_NAME__
+                key: __ALIDNS_ACCESS_KEY_SECRET_KEY__

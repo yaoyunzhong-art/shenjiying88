@@ -1,0 +1,9 @@
+【G8阻塞催办｜TLS / m5-tls】
+最新正式窗口 readiness 已在 formal-window-20260719-154427 失败。
+TLS 实测阻塞如下：
+- Live TLS secret is missing: m5-tls
+请在 24h 内二选一完成：
+1. 提供正式证书 fullchain.pem + privkey.pem
+2. 直接在 m5 namespace 下发 live m5-tls secret
+完成标准：kubectl -n m5 get secret m5-tls 成功，之后重跑 G8 readiness。
+在 m5-tls 未到位前，禁止发起 G8 真实 apply。
