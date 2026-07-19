@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 
@@ -18,10 +18,19 @@ const outputFiles = {
   ),
 } as const;
 
+const selectorMap = {
+  entry: '#entry-evidence',
+  purchase: '#purchase-evidence',
+  return: '#return-evidence',
+} as const;
+
 async function main() {
   for (const filePath of Object.values(outputFiles)) {
     mkdirSync(dirname(filePath), { recursive: true });
   }
+
+  const html = readFileSync(htmlPath, 'utf8');
+  console.log(`[g7-browser-capture] loaded html: ${htmlPath}`);
 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({
@@ -29,24 +38,35 @@ async function main() {
     deviceScaleFactor: 1.5,
   });
 
-  await page.goto(`file://${htmlPath}`);
-  await page.waitForLoadState('load');
+  try {
+    await page.setContent(html, { waitUntil: 'load' });
+    console.log('[g7-browser-capture] rendered html into isolated page');
 
-  await page.locator('#entry-evidence').screenshot({
-    path: outputFiles.entry,
-  });
-  await page.locator('#purchase-evidence').screenshot({
-    path: outputFiles.purchase,
-  });
-  await page.locator('#return-evidence').screenshot({
-    path: outputFiles.return,
-  });
+    for (const [key, selector] of Object.entries(selectorMap)) {
+      const locator = page.locator(selector);
+      await locator.waitFor({ state: 'visible', timeout: 10_000 });
+      const count = await locator.count();
+      console.log(`[g7-browser-capture] selector ready: ${selector} (count=${count})`);
 
-  await browser.close();
+      await locator.screenshot({
+        path: outputFiles[key as keyof typeof outputFiles],
+      });
+      console.log(
+        `[g7-browser-capture] screenshot written: ${outputFiles[key as keyof typeof outputFiles]}`,
+      );
+    }
+  } finally {
+    await browser.close();
+    console.log('[g7-browser-capture] browser closed');
+  }
 
   for (const [key, filePath] of Object.entries(outputFiles)) {
     console.log(`${key}: ${filePath}`);
   }
 }
 
-void main();
+void main().catch((error: unknown) => {
+  console.error('[g7-browser-capture] failed');
+  console.error(error);
+  process.exitCode = 1;
+});

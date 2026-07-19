@@ -174,6 +174,18 @@ export interface ApiClientOptions {
   headers?: Record<string, string>;
 }
 
+export interface ActorHeaderOptions {
+  actorId: string;
+  actorType?: string;
+  actorName?: string;
+  tenantId?: string;
+  brandId?: string;
+  storeId?: string;
+  roles?: readonly string[];
+  permissions?: readonly string[];
+  authenticated?: boolean;
+}
+
 export interface FoundationGovernanceReadModel {
   deliveryMode: 'api' | 'fallback';
   generatedAt: string;
@@ -620,6 +632,37 @@ function buildHeaders(options: ApiClientOptions, headers?: HeadersInit) {
     ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
     ...(options.headers ?? {}),
     ...(headers ?? {})
+  };
+}
+
+export function buildActorHeaders(options: ActorHeaderOptions): Record<string, string> {
+  const roles = Array.from(new Set((options.roles ?? []).map((item) => item.trim()).filter(Boolean)));
+  const permissions = Array.from(
+    new Set((options.permissions ?? []).map((item) => item.trim()).filter(Boolean)),
+  );
+
+  return {
+    'x-actor-id': options.actorId,
+    ...(options.actorType ? { 'x-actor-type': options.actorType } : {}),
+    ...(options.actorName ? { 'x-actor-name': options.actorName } : {}),
+    ...(options.tenantId ? { 'x-actor-tenant-id': options.tenantId } : {}),
+    ...(options.brandId ? { 'x-actor-brand-id': options.brandId } : {}),
+    ...(options.storeId ? { 'x-actor-store-id': options.storeId } : {}),
+    ...(roles.length > 0
+      ? {
+          'x-actor-roles': roles.join(','),
+          'x-roles': roles.join(','),
+        }
+      : {}),
+    ...(permissions.length > 0
+      ? {
+          'x-actor-permissions': permissions.join(','),
+          'x-permissions': permissions.join(','),
+        }
+      : {}),
+    ...(options.authenticated !== undefined
+      ? { 'x-actor-authenticated': String(options.authenticated) }
+      : {}),
   };
 }
 

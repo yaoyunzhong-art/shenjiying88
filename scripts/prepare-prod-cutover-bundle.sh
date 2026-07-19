@@ -108,13 +108,24 @@ bash "$ROOT_DIR/scripts/preflight-prod-public-cutover.sh" \
 cat > "$OUTPUT_DIR/CUTOVER-COMMANDS.md" <<EOF
 # Cutover Commands
 
+## 0. Single Window Entry
+
+\`\`\`bash
+bash scripts/run-prod-cutover-window.sh \\
+  --env-file $OUTPUT_DIR/public-endpoints.env${RELEASE_ENV_FILE:+ \\}
+${RELEASE_ENV_FILE:+  --release-env-file $OUTPUT_DIR/release-images.env \\}
+  --window-id formal-window-\$(date +%Y%m%d-%H%M%S) \\
+  --log-root infra/k8s/cutover-logs \\
+  --execute-apply
+\`\`\`
+
 ## 1. K8s Release Preflight
 
 \`\`\`bash
 bash scripts/preflight-k8s-release.sh \\
   --k8s-dir infra/k8s \\
   --public-env-file $ENV_FILE${RELEASE_ENV_FILE:+ \\}
-${RELEASE_ENV_FILE:+  --release-env-file $RELEASE_ENV_FILE}
+${RELEASE_ENV_FILE:+  --release-env-file $OUTPUT_DIR/release-images.env}
 \`\`\`
 
 ## 2. TLS Verify
@@ -158,6 +169,29 @@ bash scripts/rollback-prod-public-cutover.sh
 \`\`\`
 EOF
 
+cat > "$OUTPUT_DIR/CUTOVER-LOG-PLAN.md" <<EOF
+# Cutover Log Plan
+
+\`\`\`text
+infra/k8s/cutover-logs/<window-id>/
+  00-formal-ready.log
+  01-preflight.log
+  02-server-dry-run.log
+  03-apply.log
+  04-verify.log
+  05-rollback.log
+  SUMMARY.md
+\`\`\`
+
+- `00-formal-ready.log`: 只在正式窗口 `--execute-apply` 时生成
+- `01-preflight.log`: 集群预检与渲染 dry-run
+- `02-server-dry-run.log`: Ingress / ConfigMap server dry-run
+- `03-apply.log`: 正式 apply 窗口日志
+- `04-verify.log`: DNS / TLS / health 校验
+- `05-rollback.log`: 正式回滚日志
+- `SUMMARY.md`: 窗口摘要与日志入口
+EOF
+
 echo "Prepared cutover bundle:"
 echo "  $OUTPUT_DIR"
 echo "Bundle files:"
@@ -167,3 +201,4 @@ if [[ -n "$RELEASE_ENV_FILE" ]]; then
   echo "  $OUTPUT_DIR/rendered-release"
 fi
 echo "  $OUTPUT_DIR/CUTOVER-COMMANDS.md"
+echo "  $OUTPUT_DIR/CUTOVER-LOG-PLAN.md"

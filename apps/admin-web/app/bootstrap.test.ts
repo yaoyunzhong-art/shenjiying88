@@ -4,10 +4,14 @@ import { getAdminWorkbenchConsumerSnapshot, getRoleWorkbench, loadAdminGovernanc
 import { adminRuntimeOperationsRoute } from './operations-data';
 
 test('admin web bootstrap: loads governance read model when only overview endpoint is available', async () => {
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
 
     if (url.endsWith('/foundation/overview')) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.equal(headers?.['x-actor-id'], 'admin-workbench-bootstrap');
+      assert.equal(headers?.['x-actor-roles'], 'OPERATIONS,TENANT_ADMIN');
+      assert.equal(headers?.['x-actor-permissions'], 'workbench.read,foundation.governance.read');
       return new Response(
         JSON.stringify({
           success: true,

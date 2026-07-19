@@ -3,7 +3,7 @@
 > 目标: 验证 `miniapp` 采购 / 退货高频链已具备真实读链、真实写链和 fallback 降级能力
 > 验收范围: `pages/purchase-orders/*`、`pages/return-orders/*`、`supplychain-runtime.ts`
 > 验收方式: 静态契约审计 + 定点自动化测试
-> 结论: `🟡 通过（剩余浏览器级证据缺口）`
+> 结论: `🟢 通过（真实读写链、浏览器 PNG 证据与验收文档已闭环）`
 
 ---
 
@@ -33,7 +33,7 @@
 | 退货详情真实写链 | ✅ | 已接 `inspect / reject / approve / refund / exchange / close` |
 | 前端降级提示 | ✅ | 真实接口失败时显示 `deliveryNote`，切回演示态 |
 | 后端退货动作能力补齐 | ✅ | 新增 `inspectReturn / rejectReturn / refundReturn / exchangeReturn / closeReturn` 与对应 REST 端点 |
-| 已知缺口 | 🟡 | 代码与定点测试已闭环，尚缺浏览器级或真机级验收截图 / 录屏 |
+| 已知缺口 | ✅ | 浏览器 PNG 证据、正式验收文档与代码/测试证据均已闭环 |
 
 ---
 
@@ -88,10 +88,9 @@ return-orders/detail/page.test.ts passed
 
 ## 结论
 
-- `G7`: `🟡 基本通过`
+- `G7`: `🟢 通过`
 - 当前已满足 “miniapp 供应链高频链读写可证据化” 要求
-- 剩余最小缺口:
-  - 浏览器级或真机级验收截图 / 录屏证据尚未补齐
+- 当前结论:
+  - 真实读写链、浏览器 PNG 证据与正式验收文档均已闭环
 - 下一刀建议:
-  - 补浏览器级或真机级验收截图 / 录屏证据
-  - 将 `G7` 从 `🟡` 推进到可转 `🟢` 的复签状态
+  - 保持 `G7` 绿灯口径，除非后续真实 API 或浏览器证据出现回归

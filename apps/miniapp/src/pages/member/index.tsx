@@ -38,6 +38,11 @@ const MEMBER_OPERATION_SHORTCUTS = [
   { label: '退货售后', route: '/pages/return-orders/index' },
 ] as const;
 
+const MEMBER_LINKAGE_SHORTCUTS = [
+  { label: '积分兑换', route: '/pages/redeem-center/index' },
+  { label: '客服工作台', route: '/pages/customer-service/index' },
+] as const;
+
 // 会员等级体系
 const MEMBER_TIERS = [
   { key: 'bronze', level: '铜牌会员', label: '铜牌会员', minPoints: 0, color: '#cd7f32' },
@@ -107,7 +112,12 @@ export default function MemberPage() {
     };
   }, []);
 
-  const openOperationalPage = (route: string) => {
+  const openOperationalPage = (route: string, label: string) => {
+    if (!session.authenticated) {
+      Taro.showToast({ title: `请先登录后进入${label}`, icon: 'none' });
+      return;
+    }
+
     void Taro.navigateTo({ url: route });
   };
 
@@ -168,7 +178,27 @@ export default function MemberPage() {
         <Text>供应链高频操作</Text>
         <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
           {MEMBER_OPERATION_SHORTCUTS.map((item) => (
-            <Button key={item.route} onClick={() => openOperationalPage(item.route)}>
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(30, 41, 59, 0.55)',
+        }}
+      >
+        <Text>会员权益联动</Text>
+        <View style={{ marginTop: '8px' }}>
+          <Text>从会员中心直达积分兑换与客服工作台，补齐营销、会员与门店服务的一跳链路。</Text>
+        </View>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {MEMBER_LINKAGE_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
               {item.label}
             </Button>
           ))}

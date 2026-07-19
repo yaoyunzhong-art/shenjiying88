@@ -1,4 +1,4 @@
-import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { ApiClient, buildActorHeaders, getDefaultApiBaseUrl } from '@m5/sdk';
 
 const defaultMiniappContext = {
   tenantId: 'tenant-demo',
@@ -186,6 +186,17 @@ function createMiniappSupplychainClient() {
     brandId: defaultMiniappContext.brandId,
     storeId: defaultMiniappContext.storeId,
     marketCode: defaultMiniappContext.marketCode,
+    headers: buildActorHeaders({
+      actorId: miniappSupplychainActor.id,
+      actorType: miniappSupplychainActor.type,
+      actorName: miniappSupplychainActor.name,
+      tenantId: defaultMiniappContext.tenantId,
+      brandId: defaultMiniappContext.brandId,
+      storeId: defaultMiniappContext.storeId,
+      roles: miniappSupplychainActor.roles,
+      permissions: miniappSupplychainActor.permissions,
+      authenticated: true,
+    }),
   });
 }
 
@@ -361,6 +372,9 @@ interface MiniappActionRequest {
 const miniappSupplychainActor = {
   id: 'miniapp-supplychain-operator',
   name: '小程序供应链操作员',
+  type: 'employee-user',
+  roles: ['STORE_MANAGER', 'OPERATIONS'],
+  permissions: ['inventory.purchase.read', 'inventory.purchase.write'],
 } as const;
 
 export function buildMiniappPurchaseOrderActionRequest(
@@ -648,9 +662,9 @@ export async function executeMiniappPurchaseOrderAction(
   } catch {
     return {
       deliveryMode: 'fallback',
-      success: true,
+      success: false,
       nextStatus,
-      note: '当前无法提交真实采购单状态动作，已回退到小程序演示态切换。',
+      note: '当前无法提交真实采购单状态动作，请稍后重试或联系管理员。',
     };
   }
 }
@@ -669,9 +683,9 @@ export async function deleteMiniappPurchaseOrder(
   } catch {
     return {
       deliveryMode: 'fallback',
-      success: true,
+      success: false,
       nextStatus: 'deleted',
-      note: '当前无法提交真实采购单删除动作，已回退到小程序演示态删除。',
+      note: '当前无法提交真实采购单删除动作，请稍后重试或联系管理员。',
     };
   }
 }
@@ -686,9 +700,9 @@ export async function executeMiniappPurchaseReturnAction(
   if (!execution.supported || !execution.request) {
     return {
       deliveryMode: 'fallback',
-      success: true,
+      success: false,
       nextStatus: execution.apiNextStatus,
-      note: execution.note,
+      note: '当前后端尚未提供该退货流转动作，已阻断本地演示态自动切换。',
     };
   }
 
@@ -706,9 +720,9 @@ export async function executeMiniappPurchaseReturnAction(
   } catch {
     return {
       deliveryMode: 'fallback',
-      success: true,
+      success: false,
       nextStatus: execution.apiNextStatus,
-      note: '当前无法提交真实退货流转动作，已回退到小程序演示态切换。',
+      note: '当前无法提交真实退货流转动作，请稍后重试或联系管理员。',
     };
   }
 }

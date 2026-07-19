@@ -6,7 +6,7 @@
 5. ✅ **mobile端 屏幕测试** 0→101+ (订单37/促销31/库存33)
 6. ✅ **Pad端 屏幕测试** 48 (BranchManager/BranchSelector/MemberDetail)
 7. ✅ **tob-web 8薄页拉升** alerts 49/coupons 47/ops 32/member 46/ai-marketing 38/team-building 38/members 39/notifications 40 (**+447 tests**)
-8. ✅ **P-38 controller.spec增强** report 6→30/reconciliation 17→44 (+51)
+8. ✅ **P-38 controller.spec增强** report 6→30/reconciliation 17→44/payment 22→38 (+51+16)
 9. ✅ **知识体系V2 API集成**: `scripts/dispatch-knowledge.ts` CLI 3模式自动切换
 10. ✅ **V21 L3日评分脚本**: `v21-daily-score.ts` 预写, 98/100 🟢S验证
 11. ✅ **V21 L4周日批处理**: 周均值93/🟢A

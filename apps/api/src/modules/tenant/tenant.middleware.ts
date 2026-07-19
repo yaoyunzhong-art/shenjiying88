@@ -78,8 +78,15 @@ export class TenantMiddleware {
     const directType = readHeader(req, 'x-actor-type')
     const directName = readHeader(req, 'x-actor-name')
     const directTenantId = readHeader(req, 'x-actor-tenant-id')
-    const rolesCsv = readHeader(req, 'x-roles') ?? readHeader(req, 'x-role')
-    const permsCsv = readHeader(req, 'x-permissions') ?? readHeader(req, 'x-permission')
+    const directBrandId = readHeader(req, 'x-actor-brand-id')
+    const directStoreId = readHeader(req, 'x-actor-store-id')
+    const directAuthenticated = readHeader(req, 'x-actor-authenticated')
+    const rolesCsv =
+      readHeader(req, 'x-actor-roles') ?? readHeader(req, 'x-roles') ?? readHeader(req, 'x-role')
+    const permsCsv =
+      readHeader(req, 'x-actor-permissions') ??
+      readHeader(req, 'x-permissions') ??
+      readHeader(req, 'x-permission')
 
     let jsonActor: Record<string, any> | null = null
     let plainActorId: string | null = null
@@ -97,6 +104,9 @@ export class TenantMiddleware {
       directType !== undefined ||
       directName !== undefined ||
       directTenantId !== undefined ||
+      directBrandId !== undefined ||
+      directStoreId !== undefined ||
+      directAuthenticated !== undefined ||
       headerActor !== undefined ||
       rolesCsv !== undefined ||
       permsCsv !== undefined
@@ -110,14 +120,21 @@ export class TenantMiddleware {
     const jsonActorTenantId = jsonActor?.tenantId
     const jsonActorBrandId = jsonActor?.brandId
     const jsonActorStoreId = jsonActor?.storeId
+    const jsonAuthenticated = jsonActor?.authenticated
 
     // 优先级: x-actor-id (direct header) > x-actor JSON actorId > x-actor plain id > x-actor JSON id
     const actorId = directId ?? jsonActorId ?? plainActorId
     const actorType = directType ?? jsonActorType ?? (plainActorId ? 'tenant-user' : undefined)
     const actorName = directName ?? jsonActorName
     const tenantId = directTenantId ?? jsonActorTenantId
-    const brandId = jsonActorBrandId
-    const storeId = jsonActorStoreId
+    const brandId = directBrandId ?? jsonActorBrandId
+    const storeId = directStoreId ?? jsonActorStoreId
+    const authenticated =
+      directAuthenticated !== undefined
+        ? directAuthenticated.toLowerCase() === 'true'
+        : jsonAuthenticated !== undefined
+          ? Boolean(jsonAuthenticated)
+          : true
 
     const roles = rolesCsv ? Array.from(new Set(rolesCsv.split(',').map(s => s.trim()).filter(Boolean))) : []
     const permissions = permsCsv ? Array.from(new Set(permsCsv.split(',').map(s => s.trim()).filter(Boolean))) : []
@@ -131,7 +148,7 @@ export class TenantMiddleware {
       storeId,
       roles,
       permissions,
-      authenticated: true,
+      authenticated,
       source: 'headers',
     }
   }

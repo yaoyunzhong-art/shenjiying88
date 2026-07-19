@@ -90,8 +90,11 @@ mkdir -p "$OUTPUT_DIR"
 if command -v rsync >/dev/null 2>&1; then
   rsync -a \
     --exclude 'backups' \
+    --exclude 'cutover-logs' \
     --exclude 'templates' \
     --exclude 'rendered-public' \
+    --exclude 'rendered-public-apply-drill' \
+    --exclude 'rendered-public-preflight-drill' \
     --exclude 'rendered-public-preflight' \
     --exclude 'rendered-release' \
     --exclude 'rendered-release-preflight' \
@@ -101,8 +104,11 @@ if command -v rsync >/dev/null 2>&1; then
 else
   find "$SOURCE_DIR" -mindepth 1 -maxdepth 1 \
     ! -name 'backups' \
+    ! -name 'cutover-logs' \
     ! -name 'templates' \
     ! -name 'rendered-public' \
+    ! -name 'rendered-public-apply-drill' \
+    ! -name 'rendered-public-preflight-drill' \
     ! -name 'rendered-public-preflight' \
     ! -name 'rendered-release' \
     ! -name 'rendered-release-preflight' \

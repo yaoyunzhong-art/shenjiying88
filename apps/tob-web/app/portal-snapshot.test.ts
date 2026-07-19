@@ -12,7 +12,7 @@ import { getTenantPortalConsumerSnapshot, getBrandPortalConsumerSnapshot, getTob
 // ---- 正例 ----
 
 test('tob portal: tenant portal snapshot - api delivery', async () => {
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
 
     if (url.endsWith('/portals/bootstrap')) {
@@ -128,6 +128,10 @@ test('tob portal: tenant portal snapshot - api delivery', async () => {
     }
 
     if (url.endsWith('/portals/domain-governance')) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.equal(headers?.['x-actor-id'], 'portal-bootstrap-operator');
+      assert.equal(headers?.['x-actor-roles'], 'TENANT_ADMIN,OPERATIONS');
+      assert.equal(headers?.['x-actor-permissions'], 'foundation.governance.read');
       return new Response(
         JSON.stringify({
           success: true,

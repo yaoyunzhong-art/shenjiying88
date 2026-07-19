@@ -1,4 +1,4 @@
-import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { ApiClient, buildActorHeaders, getDefaultApiBaseUrl } from '@m5/sdk';
 import type {
   IntegrationEventEnvelopeContract,
   IntegrationIdempotencyRecordContract,
@@ -11,6 +11,14 @@ const FALLBACK_TENANT_ID = 'tenant-demo';
 const FALLBACK_BRAND_ID = 'brand-demo';
 const FALLBACK_STORE_ID = 'store-001';
 const FALLBACK_MARKET_CODE = 'cn-mainland';
+const INTEGRATION_ORCHESTRATION_ACTOR = {
+  actorId: 'admin-integration-orchestration',
+  actorType: 'employee-user',
+  actorName: 'Admin Integration Orchestration',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['foundation.governance.read'],
+  authenticated: true
+} as const;
 
 export interface IntegrationOrchestrationSnapshot {
   deliveryMode: 'api' | 'fallback';
@@ -25,7 +33,13 @@ function createClient() {
     tenantId: FALLBACK_TENANT_ID,
     brandId: FALLBACK_BRAND_ID,
     storeId: FALLBACK_STORE_ID,
-    marketCode: FALLBACK_MARKET_CODE
+    marketCode: FALLBACK_MARKET_CODE,
+    headers: buildActorHeaders({
+      ...INTEGRATION_ORCHESTRATION_ACTOR,
+      tenantId: FALLBACK_TENANT_ID,
+      brandId: FALLBACK_BRAND_ID,
+      storeId: FALLBACK_STORE_ID
+    })
   });
 }
 

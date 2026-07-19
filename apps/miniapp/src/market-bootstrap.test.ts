@@ -312,6 +312,10 @@ test('miniapp bootstrap: loads real member runtime snapshot when member api is a
     }
 
     if (url.endsWith('/portals/domain-governance')) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.equal(headers?.['x-actor-id'], 'miniapp-bootstrap-operator');
+      assert.equal(headers?.['x-actor-roles'], 'OPERATIONS');
+      assert.equal(headers?.['x-actor-permissions'], 'foundation.governance.read,foundation.runtime-governance.read,foundation.runtime-governance.write');
       return new Response(
         JSON.stringify({
           success: true,

@@ -212,7 +212,7 @@ test('native app bootstrap: falls back when portal bootstrap request fails', asy
 });
 
 test('native app bootstrap: loads runtime consumer contract from api and governance catalog', async () => {
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
 
     if (url.endsWith('/portals/bootstrap')) {
@@ -228,6 +228,10 @@ test('native app bootstrap: loads runtime consumer contract from api and governa
     }
 
     if (url.endsWith('/portals/domain-governance')) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.equal(headers?.['x-actor-id'], 'native-app-bootstrap-operator');
+      assert.equal(headers?.['x-actor-roles'], 'OPERATIONS');
+      assert.equal(headers?.['x-actor-permissions'], 'foundation.governance.read,foundation.runtime-governance.read,foundation.runtime-governance.write');
       return new Response(
         JSON.stringify({
           success: true,

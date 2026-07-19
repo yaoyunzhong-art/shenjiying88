@@ -99,6 +99,8 @@ const SAMPLE_OVERVIEW: FoundationOperationsOverviewResponse = {
 };
 
 describe('foundation-view-model', () => {
+  // ── 正例: buildFoundationWorkspaceHref ──
+
   test('buildFoundationWorkspaceHref omits empty query', () => {
     assert.equal(buildFoundationWorkspaceHref(), '/foundation');
   });
@@ -110,25 +112,35 @@ describe('foundation-view-model', () => {
     );
   });
 
+  test('buildFoundationWorkspaceHref includes only moduleKey', () => {
+    assert.equal(
+      buildFoundationWorkspaceHref({ moduleKey: 'audit' }),
+      '/foundation?moduleKey=audit'
+    );
+  });
+
+  // ── 正例: summarize helpers ──
+
   test('summarize helpers keep module, consumer and baseline context', () => {
     assert.equal(summarizeFoundationModule(SAMPLE_BOOTSTRAP.modules[0]!), 'trust-governance · capabilities 1');
     assert.equal(summarizeFoundationConsumer(SAMPLE_BOOTSTRAP.consumers[0]!), 'workbench · dependsOn 1 modules');
     assert.equal(summarizeGovernanceBaseline(SAMPLE_BOOTSTRAP.governanceBaselines[0]!), 'trust-governance · controls 2');
-    assert.equal(formatFoundationHealthLabel('critical'), '高风险');
   });
 
-  test('loadFoundationWorkspace falls back when request fails', async () => {
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => new Response('boom', { status: 500 })) as typeof fetch;
-    try {
-      const snapshot = await loadFoundationWorkspace({ moduleKey: 'trust-governance', consumer: 'workbench' });
-      assert.equal(snapshot.deliveryMode, 'fallback');
-      assert.equal(snapshot.workspace.summary.modules > 0, true);
-      assert.equal(snapshot.workspace.selectedConsumer?.consumer, 'workbench');
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
+  // ── 正例: formatFoundationHealthLabel ──
+
+  test('formatFoundationHealthLabel covers all statuses', () => {
+    assert.equal(formatFoundationHealthLabel('healthy'), '健康');
+    assert.equal(formatFoundationHealthLabel('warning'), '告警');
+    assert.equal(formatFoundationHealthLabel('critical'), '高风险');
+    assert.equal(formatFoundationHealthLabel('unknown'), '未知');
   });
+
+  test('formatFoundationHealthLabel handles undefined gracefully', () => {
+    assert.equal(formatFoundationHealthLabel(undefined), '未知');
+  });
+
+  // ── 正例: loadFoundationWorkspace ──
 
   test('loadFoundationWorkspace returns api snapshot', async () => {
     const originalFetch = globalThis.fetch;
@@ -187,5 +199,135 @@ describe('foundation-view-model', () => {
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+
+  test('loadFoundationWorkspace without moduleKey still returns api snapshot', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/foundation/bootstrap')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_BOOTSTRAP }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      if (url.includes('/foundation/overview')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_OVERVIEW }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      return new Response('not-found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      const snapshot = await loadFoundationWorkspace({});
+      assert.equal(snapshot.deliveryMode, 'api');
+      assert.equal(snapshot.workspace.summary.modules, 1);
+      assert.equal(snapshot.workspace.selectedModule, undefined);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  // ── 反例: loadFoundationWorkspace ──
+
+  test('loadFoundationWorkspace falls back when request fails', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response('boom', { status: 500 })) as typeof fetch;
+    try {
+      const snapshot = await loadFoundationWorkspace({ moduleKey: 'trust-governance', consumer: 'workbench' });
+      assert.equal(snapshot.deliveryMode, 'fallback');
+      assert.equal(snapshot.workspace.summary.modules > 0, true);
+      assert.equal(snapshot.workspace.selectedConsumer?.consumer, 'workbench');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('loadFoundationWorkspace falls back when bootstrap fails but overview succeeds partially', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response('Not Found', { status: 404 })) as typeof fetch;
+    try {
+      const snapshot = await loadFoundationWorkspace({ moduleKey: 'trust-governance' });
+      assert.equal(snapshot.deliveryMode, 'fallback');
+      assert.ok(snapshot.workspace.summary.modules >= 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  // ── 边界 ──
+
+  test('summarizeFoundationModule handles module with no capabilities', () => {
+    const emptyModule = {
+      key: 'empty-module',
+      name: 'Empty',
+      purpose: 'no capabilities',
+      inboundContracts: [],
+      outboundContracts: [],
+      capabilities: []
+    };
+    assert.equal(summarizeFoundationModule(emptyModule as never), 'empty-module · capabilities 0');
+  });
+
+  test('summarizeGovernanceBaseline handles baseline with no controls', () => {
+    const noControlBaseline = {
+      key: 'no-control',
+      name: 'No Control',
+      ownerModule: 'test-module',
+      summary: 'no controls',
+      controls: [],
+      evidence: []
+    };
+    assert.equal(summarizeGovernanceBaseline(noControlBaseline as never), 'test-module · controls 0');
+  });
+
+  test('summarizeGovernanceBaseline handles baseline with many controls', () => {
+    const manyControls = {
+      key: 'multi-control',
+      name: 'Multi Control',
+      ownerModule: 'security',
+      summary: 'many controls',
+      controls: ['approval', 'audit', 'encryption', 'logging'],
+      evidence: ['log', 'cert']
+    };
+    assert.equal(summarizeGovernanceBaseline(manyControls as never), 'security · controls 4');
+  });
+
+  test('summarizeFoundationConsumer handles consumer with multiple dependencies', () => {
+    const multiDepConsumer = {
+      consumer: 'gateway',
+      modulePath: 'src/modules/gateway',
+      dependsOn: ['trust-governance', 'identity', 'configuration'],
+      responsibility: 'API gateway',
+      handoffContracts: [],
+      recommendedSequence: [],
+      governanceTouchpoints: [],
+      highRiskEntrypoints: [],
+      actionGovernanceExamples: [],
+      runtimeHandoffExamples: [],
+      runtimeReceiptExamples: [],
+      governanceAlertLifecycleExamples: []
+    };
+    assert.equal(summarizeFoundationConsumer(multiDepConsumer as never), 'gateway · dependsOn 3 modules');
+  });
+
+  test('summarizeFoundationConsumer handles consumer with no dependencies', () => {
+    const noDepConsumer = {
+      consumer: 'standalone',
+      modulePath: 'src/modules/standalone',
+      dependsOn: [],
+      responsibility: 'standalone module',
+      handoffContracts: [],
+      recommendedSequence: [],
+      governanceTouchpoints: [],
+      highRiskEntrypoints: [],
+      actionGovernanceExamples: [],
+      runtimeHandoffExamples: [],
+      runtimeReceiptExamples: [],
+      governanceAlertLifecycleExamples: []
+    };
+    assert.equal(summarizeFoundationConsumer(noDepConsumer as never), 'standalone · dependsOn 0 modules');
   });
 });

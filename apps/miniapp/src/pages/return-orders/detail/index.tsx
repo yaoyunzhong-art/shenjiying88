@@ -275,11 +275,19 @@ export default function ReturnOrderDetailPage() {
       success: (res) => {
         if (res.confirm) {
           void executeMiniappPurchaseReturnAction(returnId, action, remark).then((result) => {
-            setLocalStatus(result.nextStatus);
             setDeliveryNote(result.note);
+            if (result.success) {
+              setLocalStatus(result.nextStatus);
+              Taro.showToast({
+                title: `${actionLabel}已同步`,
+                icon: 'success',
+              });
+              return;
+            }
+
             Taro.showToast({
-              title: result.deliveryMode === 'api' ? `${actionLabel}已同步` : `${actionLabel}演示态`,
-              icon: 'success',
+              title: `${actionLabel}失败`,
+              icon: 'none',
             });
           });
         }
@@ -293,8 +301,7 @@ export default function ReturnOrderDetailPage() {
       content: '确定要删除该退货单？此操作不可撤销。',
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '删除成功', icon: 'success' });
-          setTimeout(() => Taro.navigateBack(), 1500);
+          Taro.showToast({ title: '暂未开放删除', icon: 'none' });
         }
       },
     });

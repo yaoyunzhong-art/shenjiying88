@@ -1,4 +1,9 @@
-import { ApiClient, getDefaultApiBaseUrl, loadFoundationGovernanceReadModel } from '@m5/sdk';
+import {
+  ApiClient,
+  buildActorHeaders,
+  getDefaultApiBaseUrl,
+  loadFoundationGovernanceReadModel,
+} from '@m5/sdk';
 import {
   advanceRuntimeGovernanceReplayPolicy,
   buildDomainGovernanceWorkspaceHref,
@@ -343,6 +348,19 @@ const defaultNativeAppContext: Required<NativeAppBootstrapContext> = {
   marketCode: 'us-default'
 };
 
+const nativeAppBootstrapActor = {
+  actorId: 'native-app-bootstrap-operator',
+  actorType: 'employee-user',
+  actorName: 'Native App Bootstrap Operator',
+  roles: ['OPERATIONS'],
+  permissions: [
+    'foundation.governance.read',
+    'foundation.runtime-governance.read',
+    'foundation.runtime-governance.write',
+  ],
+  authenticated: true,
+} as const;
+
 const emptyGovernanceOverviewSummary: FoundationOperationsOverviewSummary = {
   approvalsPending: 0,
   approvalsWithFailures: 0,
@@ -443,7 +461,13 @@ function createNativeAppBootstrapClient(context: NativeAppBootstrapContext = def
     tenantId: resolvedContext.tenantId,
     brandId: resolvedContext.brandId,
     storeId: resolvedContext.storeId,
-    marketCode: resolvedContext.marketCode
+    marketCode: resolvedContext.marketCode,
+    headers: buildActorHeaders({
+      ...nativeAppBootstrapActor,
+      tenantId: resolvedContext.tenantId,
+      brandId: resolvedContext.brandId,
+      storeId: resolvedContext.storeId,
+    })
   });
 }
 

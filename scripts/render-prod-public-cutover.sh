@@ -121,7 +121,7 @@ if [[ -n "${TLS_CERT_B64:-}" && -n "${TLS_KEY_B64:-}" ]]; then
     -e "s|__TLS_SECRET_NAME__|$(escape_sed "$TLS_SECRET_NAME")|g" \
     -e "s|__TLS_CERT_B64__|$(escape_sed "$TLS_CERT_B64")|g" \
     -e "s|__TLS_KEY_B64__|$(escape_sed "$TLS_KEY_B64")|g" \
-    "$TEMPLATE_DIR/m5-tls-secret.template.yaml" > "$OUTPUT_DIR/m5-tls-secret.yaml"
+    "$TEMPLATE_DIR/m5-tls-secret.template.yaml" > "$OUTPUT_DIR/m5-tls.yaml"
 else
   cp "$TEMPLATE_DIR/m5-tls-secret.template.yaml" "$OUTPUT_DIR/m5-tls-secret.template.yaml"
 fi
@@ -133,8 +133,8 @@ Rendered files:
   $OUTPUT_DIR/m5-public-dns-records.csv
 EOF
 
-if [[ -f "$OUTPUT_DIR/m5-tls-secret.yaml" ]]; then
-  echo "  $OUTPUT_DIR/m5-tls-secret.yaml"
+if [[ -f "$OUTPUT_DIR/m5-tls.yaml" ]]; then
+  echo "  $OUTPUT_DIR/m5-tls.yaml"
 else
   echo "  $OUTPUT_DIR/m5-tls-secret.template.yaml"
 fi

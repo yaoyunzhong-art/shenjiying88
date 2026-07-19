@@ -333,3 +333,38 @@ it('TenantMiddleware use() supports x-role and x-permission as singular aliases'
   assert.deepStrictEqual(req.actorContext?.roles, ['admin'])
   assert.deepStrictEqual(req.actorContext?.permissions, ['tenant:*'])
 })
+
+it('TenantMiddleware use() supports x-actor-roles/x-actor-permissions aliases and direct actor scope headers', () => {
+  const middleware = new TenantMiddleware()
+  const req = makeReq({
+    'x-actor-id': 'actor-alias',
+    'x-actor-brand-id': 'brand-alias',
+    'x-actor-store-id': 'store-alias',
+    'x-actor-roles': 'OPERATIONS,TENANT_ADMIN',
+    'x-actor-permissions': 'foundation.governance.read,foundation.runtime-governance.read'
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.actorContext?.brandId, 'brand-alias')
+  assert.equal(req.actorContext?.storeId, 'store-alias')
+  assert.deepStrictEqual(req.actorContext?.roles, ['OPERATIONS', 'TENANT_ADMIN'])
+  assert.deepStrictEqual(req.actorContext?.permissions, [
+    'foundation.governance.read',
+    'foundation.runtime-governance.read'
+  ])
+})
+
+it('TenantMiddleware use() honors x-actor-authenticated=false', () => {
+  const middleware = new TenantMiddleware()
+  const req = makeReq({
+    'x-actor-id': 'actor-auth-flag',
+    'x-actor-authenticated': 'false'
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.actorContext?.authenticated, false)
+})

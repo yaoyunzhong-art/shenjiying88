@@ -25,7 +25,6 @@
     "docker:down:ops": "docker compose -f infra/docker/docker-compose.dev.yml -f infra/docker/docker-compose.ops.yml down",
     "docker:ps": "docker compose -f infra/docker/docker-compose.dev.yml ps",
     "docker:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f --tail=100",
-
     "docker:build": "docker compose build --parallel",
     "docker:build:api": "docker build --target=api-prod -t m5-api:latest .",
     "docker:build:admin": "docker build --target=admin-prod -t m5-admin:latest .",
@@ -50,6 +49,7 @@
     "@next/eslint-plugin-next": "^15.5.19",
     "@playwright/test": "^1.61.0",
     "@types/node": "^22.16.5",
+    "@types/pg": "^8.20.0",
     "eslint": "^9.30.1",
     "eslint-config-next": "^15.5.19",
     "globals": "^15.15.0",

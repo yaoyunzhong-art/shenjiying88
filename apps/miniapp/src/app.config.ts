@@ -3,6 +3,7 @@ export default defineAppConfig({
     'pages/index/index',
     'pages/member/index',
     'pages/sales-tools/index',
+    'pages/redeem-center/index',
     'pages/customer-service/index',
     'pages/purchase-orders/index',
     'pages/purchase-orders/detail/index',

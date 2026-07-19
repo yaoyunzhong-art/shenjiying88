@@ -133,8 +133,14 @@ describe('coupons — 正例: 数据层', () => {
 
   it('MOCK_COUPONS 至少包含 15 条记录', () => {
     const src = readData();
-    const matches = [...src.matchAll(/name:\s*'/g)];
-    assert.ok(matches.length >= 15, `预期至少 15 条，实际 ${matches.length}`);
+    const matches = [...src.matchAll(/names\s*=\s*\[/g)];
+    assert.ok(matches.length >= 1, 'names 数组未定义');
+    // 验证 names 列表长度
+    const namesSection = src.match(/names\s*=\s*\[([^\]]+)\]/);
+    if (namesSection) {
+      const nameCount = namesSection[1].split(',').filter(s => s.trim().length > 0).length;
+      assert.ok(nameCount >= 15, `预期至少 15 条，实际 ${nameCount}`);
+    }
   });
 
   it('createMockCoupons 函数存在于数据文件中', () => {

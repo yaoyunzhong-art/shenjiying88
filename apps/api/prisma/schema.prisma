@@ -1372,3 +1372,40 @@ model InspectionTask {
   @@index([tenantId, scheduledAt])
   @@map("inspection_task")
 }
+
+// ── ADR-045 科学知识体系V2: 赋能卡片 ──
+
+model EmpowerCard {
+  id              String   @id @default(uuid())
+  tag             String   // 标签: 竞品|技术|市场|用户|合规|设备|会员|运营|选址
+  summary         String   // 摘要 (≤140字)
+  source          String   // 来源: ZVZO2026|内部成熟模式|国家标准|...
+  freshnessScore  Int      @default(100) // 新鲜度 0-100
+  moduleMapping   String?  // 模块映射: P-38/会员系统/RBAC/...
+  quoteCount      Int      @default(0)   // 引用次数
+  lastQuotedAt    DateTime? // 最后引用时间
+  confidence      Int      @default(50)  // 可信度 0-100 (sourceTrust×0.3+vetted×0.4+fresh×0.3)
+  expertVetted    Boolean  @default(false) // 是否经专家校审
+  detailUrl       String?  // 详细内容链接 (docs/knowledge/xxx)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tag])
+  @@index([freshnessScore])
+  @@index([quoteCount])
+  @@map("empower_card")
+}
+
+model EmpowerCardQuoteLog {
+  id          String   @id @default(uuid())
+  card        EmpowerCard @relation(fields: [cardId], references: [id])
+  cardId      String
+  quotedBy    String   // sessionKey/taskName
+  quotedAt    DateTime @default(now())
+  taskName    String   // 派单任务名
+  moduleName  String   // 引用模块
+
+  @@index([cardId])
+  @@index([quotedAt])
+  @@map("empower_card_quote_log")
+}

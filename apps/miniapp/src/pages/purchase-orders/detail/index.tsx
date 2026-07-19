@@ -107,11 +107,19 @@ const PurchaseOrderDetailPage = () => {
       success: (res) => {
         if (res.confirm) {
           void executeMiniappPurchaseOrderAction(orderId, newStatus, detail).then((result) => {
-            setLocalStatus(result.nextStatus);
             setDeliveryNote(result.note);
+            if (result.success) {
+              setLocalStatus(result.nextStatus);
+              Taro.showToast({
+                title: '状态已同步',
+                icon: 'success',
+              });
+              return;
+            }
+
             Taro.showToast({
-              title: result.deliveryMode === 'api' ? '状态已同步' : '已切演示态',
-              icon: 'success',
+              title: '同步失败',
+              icon: 'none',
             });
           });
         }
@@ -131,8 +139,13 @@ const PurchaseOrderDetailPage = () => {
         if (res.confirm) {
           void deleteMiniappPurchaseOrder(orderId).then((result) => {
             setDeliveryNote(result.note);
-            Taro.showToast({ title: '删除成功', icon: 'success' });
-            Taro.navigateBack();
+            if (result.success) {
+              Taro.showToast({ title: '删除成功', icon: 'success' });
+              Taro.navigateBack();
+              return;
+            }
+
+            Taro.showToast({ title: '删除失败', icon: 'none' });
           });
         }
       },

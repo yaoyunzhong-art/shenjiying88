@@ -1,6 +1,6 @@
 # 📋 V7.2 执行态任务状态
 
-> 更新时间: 2026-07-19 04:05
+> 更新时间: 2026-07-19（已人工同步至当前口径）
 > 对齐文件: `DEVELOP-PLAN-v7.md` / `V7.2-RESIGN-CHECKLIST.md` / `WEEKLY-RYG-STATUS-BOARD.md`
 
 ---
@@ -22,17 +22,16 @@
 
 ## 本周 P0
 
-1. `G1` 最终复签确认与 `DNS / TLS / 正式域名` 外部资产落地
-2. `G8` 正式窗口 `server dry-run / apply / rollback` 日志补齐
-3. `G6` 活动 / 营销 / 会员 / 门店联动验收链
+1. `DNS / TLS / 正式域名` 外部硬阻塞解除
+2. `G8` 在 `DNS + TLS` 解阻后补正式窗口 `server dry-run / apply / rollback` 日志
+3. `G1/G8` 外部阻塞责任板与正式窗口门禁口径持续对齐
 
 ## 本周 P1
 
-1. `G7` miniapp 高频链聚焦到供应链 / 会员并补证据
-2. `finance` 发票持久化与管理页承接
-3. `members / products / events` 真实接口承接
-4. `VRT` 从 `cashier / checkout` 扩到更多核心页面
-5. `Phase/PRD/Runbook` 自动回写从试点扩到更多 Phase
+1. `finance` 发票持久化与管理页承接
+2. `members / products / events` 真实接口承接
+3. `VRT` 从 `cashier / checkout` 扩到更多核心页面
+4. `Phase/PRD/Runbook` 自动回写从试点扩到更多 Phase
 
 ## 本周 P2
 
@@ -53,14 +52,14 @@
 
 ### 当前判断
 
-- `G1`: 🟡 唯一交付口径、主计划与复签总包已统一，待外部资产真实落地与最终复签确认
+- `G1`: 🟡 唯一交付口径、主计划与复签总包已统一；`DNS + TLS` 已升格为外部硬阻塞，未解除前禁止正式发起
 - `G2`: 🟢 外部阻塞责任化与敏感配置整改证据均已完成
 - `G3`: 🟢 核心退回组已满足，`B1 + C1 + C2` 已完成，当前已满足 `3 项中的 3 项`
 - `G4`: 🟢 `P-49` 验收写实与 `Phase/PRD/Runbook` 自动回写试点均已完成
 - `G5`: 🟢 `POS/Pad` 与 `税务/发票` 两项已全部落地
-- `G6`: 🟡 待补联动验收链
-- `G7`: 🟡 miniapp 采购/退货高频链已具备真实读写链与正式验收文档，待补浏览器级或真机级验收截图/录屏证据
-- `G8`: 🟡 离线 `render / preflight / dry-run / verify` 证据已补齐，待正式窗口 `server dry-run / apply / rollback` 日志
+- `G6`: 🟢 活动 / 营销 / 会员 / 门店联动入口、导航烟测、浏览器 PNG 证据已闭环
+- `G7`: 🟢 miniapp 采购/退货高频链真实读写链、正式验收文档与浏览器 PNG 证据已闭环
+- `G8`: 🟡 离线演练、预跑日志与正式窗口门禁已补齐；当前被 `DNS 无 A 记录 + m5-tls 缺失 + m5-tls.yaml 未就位` 阻断，待解阻后补真实窗口日志
 - `G9`: 🟢 红黄绿状态板已建立
 
 ---
@@ -69,10 +68,9 @@
 
 ### 未来 48 小时优先级
 
-1. 基于 [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md) 固化 `G1 / G8` 结论并继续收 `G6 / G7`
-2. 补正式窗口 `server dry-run / apply / rollback` 运行日志
-3. 补 `活动 / 营销 / 会员 / 门店` 联动验收链
-4. 补 `miniapp` 供应链高频链浏览器级或真机级验收截图/录屏证据
+1. 基于 [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md) 固化 `G1 / G8` 外部硬阻塞结论
+2. 先解 `DNS / TLS / 正式域名` 外部资产，再补正式窗口 `server dry-run / apply / rollback` 运行日志
+3. 复签前保持 `G1/G8` 与外部阻塞责任板口径完全一致
 
 ### 本状态页更新规则
 
@@ -99,6 +97,8 @@
 - `G2` 敏感配置整改: [2026-07-19-g2-sensitive-config-remediation.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g2-sensitive-config-remediation.md)
 - `G4` 自动回写试点: [2026-07-19-g4-writeback-pilot-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g4-writeback-pilot-acceptance.md)
 - `G4` 自动回写生成结果: [2026-07-19-g4-writeback-pilot-generated.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g4-writeback-pilot-generated.md)
+- `G6` miniapp 联动正式验收: [2026-07-19-g6-miniapp-linkage-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g6-miniapp-linkage-acceptance.md)
+- `G6` miniapp 浏览器壳页与截图: [2026-07-19-g6-miniapp-browser-evidence.html](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g6-miniapp-browser-evidence.html) / [g6-browser-capture.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/g6-browser-capture.ts)
 - `G7` miniapp 供应链路由注册: [app.config.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/app.config.ts)
 - `G7` miniapp 采购入口与跳转: [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/purchase-orders/index.tsx) / [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/member/index.tsx)
 - `G7` miniapp 导航测试: [page-navigation.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/page-navigation.test.ts)
@@ -106,8 +106,16 @@
 - `G7` miniapp 采购/退货详情接线: [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/purchase-orders/detail/index.tsx) / [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/return-orders/detail/index.tsx)
 - `G7` miniapp 供应链读链测试: [supplychain-runtime.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/supplychain-runtime.test.ts)
 - `G7` miniapp 供应链写链接线: [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/purchase-orders/detail/index.tsx) / [index.tsx](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/return-orders/detail/index.tsx)
+- `G7` miniapp 写链失败态收口: [supplychain-runtime.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/supplychain-runtime.ts) / [page.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/purchase-orders/detail/page.test.ts) / [page.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/pages/return-orders/detail/page.test.ts)
+- 跨端 actor header 统一 helper: [index.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/packages/sdk/src/index.ts) / [index.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/packages/sdk/src/index.test.ts)
+- 跨端 bootstrap 身份透传加固: [market-bootstrap.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/market-bootstrap.ts) / [market-bootstrap.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/app/market-bootstrap.ts) / [bootstrap.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/tob-web/app/bootstrap.ts) / [bootstrap.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/bootstrap.ts)
+- actor header 跨端断言测试: [market-bootstrap.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/miniapp/src/market-bootstrap.test.ts) / [market-bootstrap.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/app/market-bootstrap.test.ts) / [portal-snapshot.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/tob-web/app/portal-snapshot.test.ts) / [bootstrap.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/bootstrap.test.ts)
+- `API` actor header 别名兼容: [tenant.middleware.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/api/src/modules/tenant/tenant.middleware.ts) / [tenant.middleware.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/api/src/modules/tenant/tenant.middleware.test.ts)
 - `G7` miniapp 供应链正式验收: [2026-07-19-g7-miniapp-supplychain-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g7-miniapp-supplychain-acceptance.md)
 - `G7` miniapp 浏览器验收记录: [2026-07-19-g7-miniapp-browser-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g7-miniapp-browser-acceptance.md)
+- 域名治理访问边界加固: [custom-domain.controller.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/api/src/modules/saas-advanced/custom-domain.controller.ts) / [custom-domain.controller.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/api/src/modules/saas-advanced/custom-domain.controller.test.ts)
+- 采购操作者绑定加固: [inventory-purchase.controller.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/api/src/modules/inventory/inventory-purchase.controller.ts) / [inventory-purchase.controller.test.ts](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/api/src/modules/inventory/inventory-purchase.controller.test.ts)
 - `G1` 唯一交付口径复签确认: [2026-07-19-g1-release-bundle-confirmation.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g1-release-bundle-confirmation.md)
 - `G8` 切流演练证据: [2026-07-19-g8-cutover-drill-acceptance.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-g8-cutover-drill-acceptance.md)
+- `G8` 正式窗口就绪入口: [run-g8-formal-window-ready.sh](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/run-g8-formal-window-ready.sh)
 - `G1~G9` 复签总包: [2026-07-19-v72-resign-bundle.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-19-v72-resign-bundle.md)

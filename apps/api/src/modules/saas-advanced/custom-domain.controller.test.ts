@@ -15,7 +15,13 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 覆盖: 正例 13 + 反例/边界 8 = 21 个测试用例
  */
 
+import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import {
+  PERMISSIONS_METADATA_KEY,
+  ROLES_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
 import { CustomDomainController } from './custom-domain.controller'
 import { CustomDomainService } from './custom-domain.service'
 import { buildVerificationValue } from './custom-domain.entity'
@@ -75,6 +81,73 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
   beforeAll(() => {
     service = new CustomDomainService()
     controller = new CustomDomainController(service)
+  })
+
+  describe('access metadata', () => {
+    const readRoles = [
+      'SUPER_ADMIN',
+      'TENANT_ADMIN',
+      'BRAND_MANAGER',
+      'STORE_MANAGER',
+      'OPERATIONS',
+      'SECURITY_ADMIN',
+    ]
+    const writeRoles = [
+      'SUPER_ADMIN',
+      'TENANT_ADMIN',
+      'BRAND_MANAGER',
+      'STORE_MANAGER',
+      'OPERATIONS',
+    ]
+
+    it('治理读端点要求 tenant scope + foundation.governance.read', () => {
+      const handlers = [
+        CustomDomainController.prototype.list,
+        CustomDomainController.prototype.getCurrentPrimary,
+        CustomDomainController.prototype.getCurrentPrimaryBatch,
+        CustomDomainController.prototype.listActiveWithoutPrimary,
+        CustomDomainController.prototype.getGovernanceSummary,
+        CustomDomainController.prototype.getById,
+      ]
+
+      handlers.forEach((handler) => {
+        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
+        assert.deepEqual(Reflect.getMetadata(ROLES_METADATA_KEY, handler), readRoles)
+        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['foundation.governance.read'])
+      })
+    })
+
+    it('治理写端点要求 tenant scope + foundation.governance.write', () => {
+      const handlers = [
+        CustomDomainController.prototype.addDomain,
+        CustomDomainController.prototype.recommendPrimary,
+        CustomDomainController.prototype.recommendPrimaryByQuery,
+        CustomDomainController.prototype.recommendPrimaryBatch,
+        CustomDomainController.prototype.remove,
+        CustomDomainController.prototype.verify,
+        CustomDomainController.prototype.requestSsl,
+        CustomDomainController.prototype.setPrimary,
+      ]
+
+      handlers.forEach((handler) => {
+        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
+        assert.deepEqual(Reflect.getMetadata(ROLES_METADATA_KEY, handler), writeRoles)
+        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['foundation.governance.write'])
+      })
+    })
+
+    it('公开端点保持无显式访问元数据', () => {
+      const publicHandlers = [
+        CustomDomainController.prototype.resolveHost,
+        CustomDomainController.prototype.validateDomain,
+      ]
+
+      publicHandlers.forEach((handler) => {
+        assert.equal(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), undefined)
+        assert.equal(Reflect.getMetadata(ROLES_METADATA_KEY, handler), undefined)
+        assert.equal(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), undefined)
+      })
+    })
   })
 
   // ============ 1. POST /saas/domain — 添加域名 ============

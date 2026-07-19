@@ -11,6 +11,7 @@ import type {
 } from '@m5/types';
 import {
   ApiClient,
+  buildActorHeaders,
   buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest,
   createFoundationBootstrapWiringMeta,
@@ -68,6 +69,35 @@ test('sdk: builds bootstrap headers from tenant context options', async () => {
     'x-market-code': 'cn-mainland',
     Authorization: 'Bearer secret-token'
   });
+});
+
+test('sdk: builds actor headers with compatibility aliases', () => {
+  assert.deepEqual(
+    buildActorHeaders({
+      actorId: 'actor-001',
+      actorType: 'employee-user',
+      actorName: 'Actor 001',
+      tenantId: 'tenant-demo',
+      brandId: 'brand-demo',
+      storeId: 'store-001',
+      roles: ['OPERATIONS', 'OPERATIONS'],
+      permissions: ['foundation.governance.read', 'foundation.governance.read'],
+      authenticated: true,
+    }),
+    {
+      'x-actor-id': 'actor-001',
+      'x-actor-type': 'employee-user',
+      'x-actor-name': 'Actor 001',
+      'x-actor-tenant-id': 'tenant-demo',
+      'x-actor-brand-id': 'brand-demo',
+      'x-actor-store-id': 'store-001',
+      'x-actor-roles': 'OPERATIONS',
+      'x-roles': 'OPERATIONS',
+      'x-actor-permissions': 'foundation.governance.read',
+      'x-permissions': 'foundation.governance.read',
+      'x-actor-authenticated': 'true',
+    },
+  );
 });
 
 test('sdk: exposes typed bootstrap shortcuts', async () => {

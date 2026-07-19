@@ -9,7 +9,8 @@ Usage:
     [--namespace m5] \
     [--rendered-dir <path>] \
     [--offline] \
-    [--allow-missing-tls]
+    [--allow-missing-tls] \
+    [--log-file <path>]
 
 Behavior:
   1. Check kubectl connectivity and namespace/resource presence
@@ -32,6 +33,7 @@ NAMESPACE="m5"
 RENDERED_DIR="$ROOT_DIR/infra/k8s/rendered-public-preflight"
 OFFLINE="false"
 ALLOW_MISSING_TLS="false"
+LOG_FILE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -55,6 +57,10 @@ while [[ $# -gt 0 ]]; do
       ALLOW_MISSING_TLS="true"
       shift
       ;;
+    --log-file)
+      LOG_FILE="${2:-}"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -66,6 +72,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$LOG_FILE" ]]; then
+  mkdir -p "$(dirname "$LOG_FILE")"
+  exec > >(tee "$LOG_FILE") 2>&1
+fi
 
 if [[ -z "$ENV_FILE" || ! -f "$ENV_FILE" ]]; then
   echo "Missing --env-file or file does not exist" >&2
@@ -103,6 +114,13 @@ for var_name in "${required_vars[@]}"; do
     exit 1
   fi
 done
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] ==> prod public preflight start"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] env_file=$ENV_FILE"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] namespace=$NAMESPACE"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] rendered_dir=$RENDERED_DIR"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] offline=$OFFLINE"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] allow_missing_tls=$ALLOW_MISSING_TLS"
 
 warnings=()
 
@@ -192,7 +210,7 @@ echo "==> Rendering manifests to $RENDERED_DIR"
 
 CONFIG_MANIFEST="$RENDERED_DIR/m5-config-public.yaml"
 INGRESS_MANIFEST="$RENDERED_DIR/m5-ingress-public.yaml"
-TLS_MANIFEST="$RENDERED_DIR/m5-tls-secret.yaml"
+TLS_MANIFEST="$RENDERED_DIR/m5-tls.yaml"
 
 if [[ "$OFFLINE" != "true" ]]; then
   echo "==> Running kubectl server dry-run"
@@ -227,3 +245,6 @@ if [[ "${#warnings[@]}" -gt 0 ]]; then
     echo "  - $warning"
   done
 fi
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] ==> prod public preflight done"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] warning_count=${#warnings[@]}"

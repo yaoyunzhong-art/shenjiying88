@@ -1,5 +1,6 @@
 import {
   ApiClient,
+  buildActorHeaders,
   createFoundationPortalConsumerSnapshotBase,
   createFoundationGovernanceReadModelLoader,
   getDefaultApiBaseUrl,
@@ -19,6 +20,15 @@ import {
 } from '@m5/types';
 
 export const tobWebBootstrap = getFoundationAppBootstrapWiring('tob-web');
+
+const portalBootstrapActor = {
+  actorId: 'portal-bootstrap-operator',
+  actorType: 'employee-user',
+  actorName: 'Portal Bootstrap Operator',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['foundation.governance.read'],
+  authenticated: true,
+} as const;
 
 export interface TobPortalConsumerSnapshot {
   deliveryMode: 'api' | 'fallback';
@@ -320,7 +330,12 @@ function createPortalClient(marketCode: string, tenantCode: string, brandCode?: 
     baseUrl: getDefaultApiBaseUrl(),
     tenantId: tenantCode,
     brandId: brandCode,
-    marketCode
+    marketCode,
+    headers: buildActorHeaders({
+      ...portalBootstrapActor,
+      tenantId: tenantCode,
+      brandId: brandCode,
+    })
   });
 }
 

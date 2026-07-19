@@ -4,21 +4,16 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/verify-prod-public-endpoints.sh --env-file <path> [--use-resolve]
-
-Required env vars:
-  API_HOST
-  ADMIN_HOST
-  STOREFRONT_HOST
-  TOB_HOST
-
-Required when --use-resolve is set:
-  NLB_IP_1
+  scripts/verify-prod-public-endpoints.sh \
+    --env-file <path> \
+    [--use-resolve] \
+    [--log-file <path>]
 EOF
 }
 
 ENV_FILE=""
 USE_RESOLVE="false"
+LOG_FILE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -29,6 +24,10 @@ while [[ $# -gt 0 ]]; do
     --use-resolve)
       USE_RESOLVE="true"
       shift
+      ;;
+    --log-file)
+      LOG_FILE="${2:-}"
+      shift 2
       ;;
     -h|--help)
       usage
@@ -41,6 +40,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$LOG_FILE" ]]; then
+  mkdir -p "$(dirname "$LOG_FILE")"
+  exec > >(tee "$LOG_FILE") 2>&1
+fi
 
 if [[ -z "$ENV_FILE" || ! -f "$ENV_FILE" ]]; then
   echo "Missing --env-file or file does not exist" >&2
@@ -66,6 +70,10 @@ if [[ "$USE_RESOLVE" == "true" && -z "${NLB_IP_1:-}" ]]; then
   exit 1
 fi
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] ==> public endpoint verify start"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] env_file=$ENV_FILE"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] use_resolve=$USE_RESOLVE"
+
 if [[ "$USE_RESOLVE" == "true" ]]; then
   cat <<EOF
 Note:
@@ -83,6 +91,10 @@ resolve_args() {
   fi
 }
 
+warn() {
+  echo "WARN: $1"
+}
+
 check_dns() {
   local host="$1"
   echo "=== DNS $host ==="
@@ -97,16 +109,26 @@ check_dns() {
 check_https_headers() {
   local host="$1"
   echo "=== HTTPS $host ==="
-  # shellcheck disable=SC2086
-  curl -k -sS -o /dev/null -D - $(resolve_args "$host") "https://$host/" | sed -n '1,12p'
+  if ! output="$(curl -k -sS -o /dev/null -D - $(resolve_args "$host") "https://$host/" 2>&1)"; then
+    echo "$output"
+    warn "HTTPS probe failed for $host"
+    echo
+    return 0
+  fi
+  printf '%s\n' "$output" | sed -n '1,12p'
   echo
 }
 
 check_api_health() {
   local host="$1"
   echo "=== API health $host ==="
-  # shellcheck disable=SC2086
-  curl -k -sS $(resolve_args "$host") "https://$host/api/v1/health/ping" | sed -n '1,20p'
+  if ! output="$(curl -k -sS $(resolve_args "$host") "https://$host/api/v1/health/ping" 2>&1)"; then
+    echo "$output"
+    warn "API health probe failed for $host"
+    echo
+    return 0
+  fi
+  printf '%s\n' "$output" | sed -n '1,20p'
   echo
 }
 
@@ -117,7 +139,13 @@ check_cert() {
   if [[ "$USE_RESOLVE" == "true" ]]; then
     target_host="$NLB_IP_1"
   fi
-  echo | openssl s_client -servername "$host" -connect "${target_host}:443" 2>/dev/null | openssl x509 -noout -subject -issuer -dates
+  if ! output="$(echo | openssl s_client -servername "$host" -connect "${target_host}:443" 2>/dev/null | openssl x509 -noout -subject -issuer -dates 2>&1)"; then
+    echo "$output"
+    warn "Certificate probe failed for $host"
+    echo
+    return 0
+  fi
+  printf '%s\n' "$output"
   echo
 }
 
@@ -129,7 +157,8 @@ check_dns "$TOB_HOST"
 check_cert "$API_HOST"
 check_https_headers "$API_HOST"
 check_api_health "$API_HOST"
-
 check_https_headers "$ADMIN_HOST"
 check_https_headers "$STOREFRONT_HOST"
 check_https_headers "$TOB_HOST"
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] ==> public endpoint verify done"

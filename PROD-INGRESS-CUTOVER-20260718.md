@@ -55,6 +55,10 @@ These defaults are only render-time placeholders until product/business confirms
 - DNS records for `*.m5-platform.com` are not present yet.
 - `storefront` and `tob` do not have final production hostnames.
 - No real TLS secret is mounted to the production ingress.
+- `scripts/preflight-prod-formal-window.sh` has already failed on:
+  - no A records for `api/admin/store/tob.m5-platform.com`
+  - missing live secret `m5-tls`
+  - absent `infra/k8s/rendered-public/m5-tls.yaml`
 
 ## Required DNS Records
 
@@ -227,7 +231,7 @@ scripts/apply-prod-public-cutover.sh \
   --env-file infra/k8s/templates/m5-public-endpoints.env.example
 ```
 
-If the rendered directory does not contain `m5-tls-secret.yaml`, the apply script requires an existing `m5-tls` secret in namespace `m5`, or an explicit TLS manifest:
+If the rendered directory does not contain `m5-tls.yaml`, the apply script requires an existing `m5-tls` secret in namespace `m5`, or an explicit TLS manifest:
 
 ```bash
 scripts/apply-prod-public-cutover.sh \
@@ -329,34 +333,52 @@ The only remaining hard blocker observed in the same verification window is:
 
 - `m5-tls` secret still does not exist in namespace `m5`
 - rendered TLS manifest is still absent until certificate material is provided
+- `api/admin/store/tob.m5-platform.com` still do not resolve to the production NLB IPs
+
+Latest formal window gate result:
+
+```text
+preflight-prod-formal-window.sh -> exit 1
+  - DNS has no A record for api.m5-platform.com
+  - DNS has no A record for admin.m5-platform.com
+  - DNS has no A record for store.m5-platform.com
+  - DNS has no A record for tob.m5-platform.com
+  - secrets "m5-tls" not found
+```
 
 ## Certificate Hand-Off
 
 When certificate material is provided later, use this exact shortest path:
 
 ```bash
-scripts/build-m5-tls-secret.sh \
-  --cert-file /path/to/fullchain.pem \
-  --key-file /path/to/privkey.pem \
-  --secret-name m5-tls \
-  --namespace m5 \
-  --output-file infra/k8s/rendered-public/m5-tls.yaml
-
-kubectl apply -f infra/k8s/rendered-public/m5-tls.yaml
-
-scripts/verify-m5-tls-secret.sh \
-  --env-file infra/k8s/templates/m5-public-endpoints.env.example
-
-scripts/apply-prod-public-cutover.sh \
+bash scripts/run-g8-formal-window-ready.sh \
   --env-file infra/k8s/templates/m5-public-endpoints.env.example \
-  --kubectl-dry-run server
+  --release-env-file infra/k8s/templates/m5-release-images.env.example \
+  --cert-file /path/to/fullchain.pem \
+  --key-file /path/to/privkey.pem
 ```
 
-Only after the four steps above are green, execute the real apply:
+If the readiness gate is green, execute the real formal window:
 
 ```bash
-scripts/apply-prod-public-cutover.sh \
-  --env-file infra/k8s/templates/m5-public-endpoints.env.example
+bash scripts/run-g8-formal-window-ready.sh \
+  --env-file infra/k8s/templates/m5-public-endpoints.env.example \
+  --release-env-file infra/k8s/templates/m5-release-images.env.example \
+  --cert-file /path/to/fullchain.pem \
+  --key-file /path/to/privkey.pem \
+  --execute-apply
+```
+
+If rollback evidence is also required in the same formal window:
+
+```bash
+bash scripts/run-g8-formal-window-ready.sh \
+  --env-file infra/k8s/templates/m5-public-endpoints.env.example \
+  --release-env-file infra/k8s/templates/m5-release-images.env.example \
+  --cert-file /path/to/fullchain.pem \
+  --key-file /path/to/privkey.pem \
+  --execute-apply \
+  --execute-rollback
 ```
 
 ## Rollback Command
@@ -380,6 +402,7 @@ The rollback script will:
 - DNS still does not resolve to the NLB
 - HTTPS still serves fake ingress certificate
 - `m5-tls` secret is missing
+- `infra/k8s/rendered-public/m5-tls.yaml` is still absent when a live secret is not yet mounted
 - storefront/tob formal hosts are still undecided
 - rollback script is not prepared in the change window terminal
 - preflight or server dry-run has not been executed after the latest manifest change
@@ -388,6 +411,7 @@ The rollback script will:
 
 - Do not patch production ingress hosts yet.
 - First complete DNS plus real certificate plus storefront/tob hostname decisions.
+- Treat `DNS + TLS` as a hard blocker for both `G1` final resign and `G8` real cutover apply.
 - While DNS is deferred, keep advancing with `preflight -> server dry-run -> final apply` instead of waiting idly.
 - Once those three prerequisites are in place, the repo and cluster cutover can be executed as a single aligned slice.
 - Use the prepared template set plus `scripts/apply-prod-public-cutover.sh` instead of editing scattered values by hand.

@@ -50,12 +50,9 @@
 - 已新增标准前端 Kaniko 构建清单：
   - `infra/k8s/kaniko-build-frontends.yaml`
 - 已补齐正式公网切换执行资产：
-  - `scripts/lib-m5-kubeconfig.sh`
   - `scripts/render-prod-public-cutover.sh`
   - `scripts/verify-prod-public-endpoints.sh`
   - `scripts/build-m5-tls-secret.sh`
-  - `scripts/verify-m5-tls-secret.sh`
-  - `scripts/preflight-prod-public-cutover.sh`
   - `scripts/apply-prod-public-cutover.sh`
   - `scripts/rollback-prod-public-cutover.sh`
   - `infra/k8s/templates/m5-public-endpoints.env.example`
@@ -105,11 +102,6 @@
   - 正式 TLS 证书尚未签发/下发
   - `storefront/tob` 的正式域名命名方案尚未最终确定
 - 仓库当前已具备“一键切换 + 一键回滚”脚本，但仍不能跳过上述外部前置条件。
-- 仓库当前已补上“预检 + server dry-run”路径，即使域名后绑，也可继续推进集群兼容性校验。
-- 当前公网切换脚本已支持自动发现生产 kubeconfig：
-  - `KUBECONFIG`
-  - `~/.kube/m5-prod-config`
-  - `./.tmp/ack-kubeconfig.yaml`
 - 阿里云资产审计补充结论：
   - 当前账号的 `alidns` 中不存在 `m5-platform.com`
   - 当前集群未安装 `cert-manager`
@@ -163,24 +155,6 @@
   - `store.m5-platform.com`
   - `tob.m5-platform.com`
   - 仅作为渲染占位，不视为最终业务定版
-- 在域名后绑阶段，推荐先执行：
-  - `scripts/preflight-prod-public-cutover.sh --env-file infra/k8s/templates/m5-public-endpoints.env.example --allow-missing-tls`
-  - `scripts/apply-prod-public-cutover.sh --env-file infra/k8s/templates/m5-public-endpoints.env.example --kubectl-dry-run server --skip-tls-check`
-- 若当前终端未挂载 ACK kubeconfig，则先走离线路径：
-  - `scripts/preflight-prod-public-cutover.sh --env-file infra/k8s/templates/m5-public-endpoints.env.example --offline --allow-missing-tls`
-  - `scripts/apply-prod-public-cutover.sh --env-file infra/k8s/templates/m5-public-endpoints.env.example --kubectl-dry-run client --offline --skip-tls-check`
-- 当前 ACK 实证结果已补齐：
-  - live `Ingress` hosts 仍为 `.local`
-  - live `NEXT_PUBLIC_API_URL/NEXT_PUBLIC_WS_URL/CORS_ORIGIN` 仍为 `.local`
-  - `m5-api=1/1`, `m5-admin-web=2/2`, `m5-storefront-web=2/2`, `m5-tob-web=1/1`
-  - `preflight --allow-missing-tls` 已通过
-  - `apply --kubectl-dry-run server --skip-tls-check` 已通过
-  - 当前唯一硬阻塞继续收口到 `m5-tls` 缺失
-- 证书后补阶段的最短路径也已预置：
-  - `build-m5-tls-secret.sh`
-  - `kubectl apply -f m5-tls.yaml`
-  - `verify-m5-tls-secret.sh`
-  - `apply-prod-public-cutover.sh --kubectl-dry-run server`
 
 ### 5.3 后端待命条件
 

@@ -53,6 +53,9 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
 const APP_ROUTES: string[] = [
   'pages/index/index',
   'pages/member/index',
+  'pages/sales-tools/index',
+  'pages/redeem-center/index',
+  'pages/customer-service/index',
   'pages/purchase-orders/index',
   'pages/purchase-orders/detail/index',
   'pages/return-orders/index',
@@ -61,6 +64,9 @@ const APP_ROUTES: string[] = [
 
 const AUTH_REQUIRED_ROUTES = new Set<string>([
   'pages/member/index',
+  'pages/sales-tools/index',
+  'pages/redeem-center/index',
+  'pages/customer-service/index',
   'pages/purchase-orders/index',
   'pages/purchase-orders/detail/index',
   'pages/return-orders/index',
@@ -193,6 +199,12 @@ test('miniapp navigation: purchase orders routes are registered', () => {
   assert.equal(isRouteRegistered('pages/purchase-orders/detail/index'), true);
 });
 
+test('miniapp navigation: G6 linkage routes are registered', () => {
+  assert.equal(isRouteRegistered('pages/sales-tools/index'), true);
+  assert.equal(isRouteRegistered('pages/redeem-center/index'), true);
+  assert.equal(isRouteRegistered('pages/customer-service/index'), true);
+});
+
 test('miniapp navigation: return orders routes are registered', () => {
   assert.equal(isRouteRegistered('pages/return-orders/index'), true);
   assert.equal(isRouteRegistered('pages/return-orders/detail/index'), true);
@@ -215,6 +227,22 @@ test('miniapp navigation: authenticated operator can navigate to purchase orders
   assert.equal(decision.reason, 'NAVIGATE');
 });
 
+test('miniapp navigation: authenticated operator can navigate to sales tools', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/sales-tools/index', true, 'MEMBER');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/sales-tools/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
+test('miniapp navigation: authenticated operator can navigate to redeem center from member page', () => {
+  const decision = resolveNavigation('pages/member/index', 'pages/redeem-center/index', true, 'MEMBER');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/redeem-center/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
 test('miniapp navigation: authenticated operator can navigate to return orders detail', () => {
   const decision = resolveNavigation('pages/return-orders/index', 'pages/return-orders/detail/index', true, 'SVIP');
 
@@ -234,6 +262,15 @@ test('miniapp navigation: guest navigates from index to member requires login', 
 
 test('miniapp navigation: guest cannot navigate to purchase orders list', () => {
   const decision = resolveNavigation('pages/index/index', 'pages/purchase-orders/index', false, 'GUEST');
+
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.redirectTo, 'pages/index/index');
+  assert.equal(decision.reason, 'AUTH_REQUIRED');
+  assert.equal(decision.requiresAuth, true);
+});
+
+test('miniapp navigation: guest cannot navigate to customer service', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/customer-service/index', false, 'GUEST');
 
   assert.equal(decision.allowed, false);
   assert.equal(decision.redirectTo, 'pages/index/index');
@@ -488,11 +525,14 @@ test('miniapp navigation: SVIP member still blocked from member page when unauth
   assert.equal(decision.reason, 'AUTH_REQUIRED');
 });
 
-test('miniapp navigation: app config pages list has exactly 6 routes', () => {
-  assert.equal(APP_ROUTES.length, 6);
+test('miniapp navigation: app config pages list has exactly 9 routes', () => {
+  assert.equal(APP_ROUTES.length, 9);
   assert.deepEqual(APP_ROUTES, [
     'pages/index/index',
     'pages/member/index',
+    'pages/sales-tools/index',
+    'pages/redeem-center/index',
+    'pages/customer-service/index',
     'pages/purchase-orders/index',
     'pages/purchase-orders/detail/index',
     'pages/return-orders/index',

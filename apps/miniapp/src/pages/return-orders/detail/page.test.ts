@@ -226,15 +226,15 @@ describe('退货单详情页代码完整性', () => {
     assert.match(SOURCE, /deliveryNote/);
   });
 
-  it('应通过 runtime 提交退货动作，并对缺失后端动作保留演示态提示', () => {
+  it('应通过 runtime 提交退货动作，并对失败场景给出阻断提示', () => {
     assert.match(SOURCE, /executeMiniappPurchaseReturnAction/);
     assert.match(SOURCE, /remark/);
-    assert.match(SOURCE, /result\.deliveryMode === 'api'/);
+    assert.match(SOURCE, /if \(result\.success\)/);
     assert.match(SOURCE, /setDeliveryNote\(result\.note\)/);
   });
 
-  it('应包含 navigateBack 返回', () => {
-    assert.match(SOURCE, /navigateBack/);
+  it('删除入口应提示暂未开放删除，而不是伪造成功返回', () => {
+    assert.match(SOURCE, /暂未开放删除/);
   });
 
   it('应使用 ScrollView 作为根容器', () => {

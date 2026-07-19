@@ -3,6 +3,9 @@ import { describe, it } from 'node:test';
 
 import {
   buildMiniappPurchaseOrderActionRequest,
+  deleteMiniappPurchaseOrder,
+  executeMiniappPurchaseOrderAction,
+  executeMiniappPurchaseReturnAction,
   flattenPurchaseReturns,
   mapPurchaseOrderToDetail,
   mapPurchaseOrderToListItem,
@@ -105,6 +108,8 @@ const apiOrder = {
     },
   ],
 };
+
+const originalFetch = globalThis.fetch;
 
 describe('supplychain-runtime 映射', () => {
   it('采购列表映射应归一化状态和日期', () => {
@@ -247,5 +252,58 @@ describe('supplychain-runtime 映射', () => {
 
     assert.equal(execution.supported, false);
     assert.equal(execution.apiNextStatus, 'pending');
+  });
+
+  it('采购单动作失败时应返回失败态并透传 actor headers', async () => {
+    const requests: Array<{ headers: Record<string, string> | undefined }> = [];
+    globalThis.fetch = (async (_input, init) => {
+      requests.push({ headers: init?.headers as Record<string, string> | undefined });
+      return new Response(JSON.stringify({ message: 'forbidden' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as typeof fetch;
+
+    try {
+      const result = await executeMiniappPurchaseOrderAction('order-1', 'submitted', fallbackPurchaseDetail);
+
+      assert.equal(result.success, false);
+      assert.equal(result.deliveryMode, 'fallback');
+      assert.match(result.note, /请稍后重试或联系管理员/);
+      assert.equal(requests[0]?.headers?.['x-actor-id'], 'miniapp-supplychain-operator');
+      assert.equal(requests[0]?.headers?.['x-roles'], 'STORE_MANAGER,OPERATIONS');
+      assert.equal(
+        requests[0]?.headers?.['x-permissions'],
+        'inventory.purchase.read,inventory.purchase.write',
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('采购单删除失败时不再伪造成功', async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ message: 'delete failed' }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      })) as typeof fetch;
+
+    try {
+      const result = await deleteMiniappPurchaseOrder('order-1');
+
+      assert.equal(result.success, false);
+      assert.equal(result.nextStatus, 'deleted');
+      assert.match(result.note, /请稍后重试或联系管理员/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('退货动作不支持时应返回失败态而不是演示态成功', async () => {
+    const result = await executeMiniappPurchaseReturnAction('return-1', 'pending');
+
+    assert.equal(result.success, false);
+    assert.equal(result.deliveryMode, 'fallback');
+    assert.match(result.note, /已阻断本地演示态自动切换/);
   });
 });

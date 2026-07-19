@@ -24,10 +24,22 @@ import {
   Query,
   Logger
 } from '@nestjs/common'
+import {
+  CurrentActor,
+  type CurrentActorValue
+} from '../foundation/identity-access/identity-access.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { InventoryPurchaseService } from './inventory-purchase.service'
 import { PurchaseOrderService } from './purchase-order.service'
+
+function resolveActorId(actorContext: CurrentActorValue, fallback?: string) {
+  return actorContext?.actorId ?? fallback
+}
+
+function resolveActorName(actorContext: CurrentActorValue, fallback?: string) {
+  return actorContext?.actorName ?? actorContext?.actorId ?? fallback
+}
 
 @Controller('inventory/purchase')
 export class InventoryPurchaseController {
@@ -49,6 +61,7 @@ export class InventoryPurchaseController {
   @Post('orders')
   createPurchaseOrder(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       supplierId?: string
       supplierName?: string
@@ -67,7 +80,10 @@ export class InventoryPurchaseController {
       createdBy?: string
     }
   ) {
-    return this.orderService.createWithHistory(tenantContext, body)
+    return this.orderService.createWithHistory(tenantContext, {
+      ...body,
+      createdBy: resolveActorName(actorContext, body.createdBy)
+    })
   }
 
   /**
@@ -156,9 +172,14 @@ export class InventoryPurchaseController {
   submitForApproval(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { submittedBy?: string } = {}
   ) {
-    return this.orderService.submitWithHistory(orderId, tenantContext, body.submittedBy)
+    return this.orderService.submitWithHistory(
+      orderId,
+      tenantContext,
+      resolveActorName(actorContext, body.submittedBy)
+    )
   }
 
   /**
@@ -169,9 +190,14 @@ export class InventoryPurchaseController {
   approveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { approverId: string; approverName: string; comment?: string }
   ) {
-    return this.orderService.approveWithHistory(orderId, tenantContext, body)
+    return this.orderService.approveWithHistory(orderId, tenantContext, {
+      ...body,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? ''
+    })
   }
 
   /**
@@ -182,9 +208,14 @@ export class InventoryPurchaseController {
   rejectOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { approverId: string; approverName: string; comment: string }
   ) {
-    return this.orderService.rejectWithHistory(orderId, tenantContext, body)
+    return this.orderService.rejectWithHistory(orderId, tenantContext, {
+      ...body,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? ''
+    })
   }
 
   /**
@@ -195,9 +226,14 @@ export class InventoryPurchaseController {
   placeOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { placedBy?: string } = {}
   ) {
-    return this.orderService.placeWithHistory(orderId, tenantContext, body.placedBy)
+    return this.orderService.placeWithHistory(
+      orderId,
+      tenantContext,
+      resolveActorName(actorContext, body.placedBy)
+    )
   }
 
   /**
@@ -208,9 +244,13 @@ export class InventoryPurchaseController {
   cancelOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { cancelledBy?: string; reason?: string } = {}
   ) {
-    return this.orderService.cancelWithHistory(orderId, tenantContext, body)
+    return this.orderService.cancelWithHistory(orderId, tenantContext, {
+      ...body,
+      cancelledBy: resolveActorName(actorContext, body.cancelledBy)
+    })
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -225,13 +265,18 @@ export class InventoryPurchaseController {
   receiveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       items: Array<{ productId: string; receivedQuantity: number; damagedQuantity: number }>
       warehouseNote?: string
       operatorId?: string
     }
   ) {
-    const receiveInput = { purchaseOrderId: orderId, ...body } as any
+    const receiveInput = {
+      purchaseOrderId: orderId,
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId)
+    } as any
     return this.orderService.receiveWithHistory(orderId, tenantContext, receiveInput)
   }
 
@@ -246,6 +291,7 @@ export class InventoryPurchaseController {
   @Post('payments')
   recordPayment(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       purchaseOrderId: string
       amount: number
@@ -255,7 +301,10 @@ export class InventoryPurchaseController {
       operatorId?: string
     }
   ) {
-    return this.purchaseService.recordPayment(tenantContext, body)
+    return this.purchaseService.recordPayment(tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId)
+    })
   }
 
   /**
@@ -282,9 +331,14 @@ export class InventoryPurchaseController {
   addNote(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { content: string; authorId?: string; authorName?: string }
   ) {
-    return this.purchaseService.addNote(orderId, tenantContext, body)
+    return this.purchaseService.addNote(orderId, tenantContext, {
+      ...body,
+      authorId: resolveActorId(actorContext, body.authorId),
+      authorName: resolveActorName(actorContext, body.authorName)
+    })
   }
 
   /**
@@ -310,6 +364,7 @@ export class InventoryPurchaseController {
   @Post('returns')
   createReturn(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       purchaseOrderId: string
       items: Array<{
@@ -322,7 +377,10 @@ export class InventoryPurchaseController {
       appliedBy?: string
     }
   ) {
-    return this.purchaseService.createReturn(tenantContext, body as any)
+    return this.purchaseService.createReturn(tenantContext, {
+      ...body,
+      appliedBy: resolveActorName(actorContext, body.appliedBy)
+    } as any)
   }
 
   /**
@@ -333,9 +391,14 @@ export class InventoryPurchaseController {
   approveReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { approverId: string; approverName: string }
   ) {
-    return this.purchaseService.approveReturn(returnId, tenantContext, body)
+    return this.purchaseService.approveReturn(returnId, tenantContext, {
+      ...body,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? ''
+    })
   }
 
   /**
@@ -346,9 +409,14 @@ export class InventoryPurchaseController {
   inspectReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { inspectorId: string; inspectorName: string; comment?: string }
   ) {
-    return this.purchaseService.inspectReturn(returnId, tenantContext, body)
+    return this.purchaseService.inspectReturn(returnId, tenantContext, {
+      ...body,
+      inspectorId: resolveActorId(actorContext, body.inspectorId) ?? '',
+      inspectorName: resolveActorName(actorContext, body.inspectorName) ?? ''
+    })
   }
 
   /**
@@ -359,9 +427,14 @@ export class InventoryPurchaseController {
   rejectReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { reviewerId: string; reviewerName: string; comment?: string }
   ) {
-    return this.purchaseService.rejectReturn(returnId, tenantContext, body)
+    return this.purchaseService.rejectReturn(returnId, tenantContext, {
+      ...body,
+      reviewerId: resolveActorId(actorContext, body.reviewerId) ?? '',
+      reviewerName: resolveActorName(actorContext, body.reviewerName) ?? ''
+    })
   }
 
   /**
@@ -372,9 +445,14 @@ export class InventoryPurchaseController {
   refundReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
   ) {
-    return this.purchaseService.refundReturn(returnId, tenantContext, body)
+    return this.purchaseService.refundReturn(returnId, tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId),
+      operatorName: resolveActorName(actorContext, body.operatorName)
+    })
   }
 
   /**
@@ -385,9 +463,14 @@ export class InventoryPurchaseController {
   exchangeReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
   ) {
-    return this.purchaseService.exchangeReturn(returnId, tenantContext, body)
+    return this.purchaseService.exchangeReturn(returnId, tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId),
+      operatorName: resolveActorName(actorContext, body.operatorName)
+    })
   }
 
   /**
@@ -398,9 +481,14 @@ export class InventoryPurchaseController {
   closeReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
   ) {
-    return this.purchaseService.closeReturn(returnId, tenantContext, body)
+    return this.purchaseService.closeReturn(returnId, tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId),
+      operatorName: resolveActorName(actorContext, body.operatorName)
+    })
   }
 
   /**
@@ -571,6 +659,7 @@ export class InventoryPurchaseController {
   @Post('orders/batch-approve')
   batchApprove(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       orderIds: string[]
       approverId: string
@@ -579,9 +668,9 @@ export class InventoryPurchaseController {
     }
   ) {
     return this.orderService.batchApprove(body.orderIds, tenantContext, {
-      approverId: body.approverId,
-      approverName: body.approverName,
-      comment: body.comment,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? '',
+      comment: body.comment
     })
   }
 }

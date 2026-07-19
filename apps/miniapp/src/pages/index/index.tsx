@@ -53,6 +53,11 @@ const OPERATION_SHORTCUTS = [
   { label: '退货售后', route: '/pages/return-orders/index' },
 ] as const;
 
+const G6_LINKAGE_SHORTCUTS = [
+  { label: '导购工具', route: '/pages/sales-tools/index' },
+  { label: '客服工作台', route: '/pages/customer-service/index' },
+] as const;
+
 export default function IndexPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
     createMiniappRuntimeConsumerContract(miniappMarketBootstrap)
@@ -184,6 +189,26 @@ export default function IndexPage() {
         <Text>经营高频入口</Text>
         <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
           {OPERATION_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(30, 41, 59, 0.55)',
+        }}
+      >
+        <Text>G6 联动入口</Text>
+        <View style={{ marginTop: '8px' }}>
+          <Text>从首页直接进入导购工具与客服工作台，补齐活动/营销/会员/门店联动验收链。</Text>
+        </View>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {G6_LINKAGE_SHORTCUTS.map((item) => (
             <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
               {item.label}
             </Button>

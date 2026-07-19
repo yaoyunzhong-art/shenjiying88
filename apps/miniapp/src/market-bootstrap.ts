@@ -1,4 +1,9 @@
-import { ApiClient, getDefaultApiBaseUrl, loadFoundationGovernanceReadModel } from '@m5/sdk';
+import {
+  ApiClient,
+  buildActorHeaders,
+  getDefaultApiBaseUrl,
+  loadFoundationGovernanceReadModel,
+} from '@m5/sdk';
 import {
   advanceRuntimeGovernanceReplayPolicy,
   buildDomainGovernanceWorkspaceHref,
@@ -296,6 +301,19 @@ const defaultMiniappContext: Required<MiniappBootstrapContext> = {
   marketCode: 'cn-mainland',
 };
 
+const miniappBootstrapActor = {
+  actorId: 'miniapp-bootstrap-operator',
+  actorType: 'employee-user',
+  actorName: 'Miniapp Bootstrap Operator',
+  roles: ['OPERATIONS'],
+  permissions: [
+    'foundation.governance.read',
+    'foundation.runtime-governance.read',
+    'foundation.runtime-governance.write',
+  ],
+  authenticated: true,
+} as const;
+
 const emptyGovernanceOverviewSummary: FoundationOperationsOverviewSummary = {
   approvalsPending: 0,
   approvalsWithFailures: 0,
@@ -424,6 +442,12 @@ function createMiniappBootstrapClient(context: MiniappBootstrapContext = default
     brandId: resolvedContext.brandId,
     storeId: resolvedContext.storeId,
     marketCode: resolvedContext.marketCode,
+    headers: buildActorHeaders({
+      ...miniappBootstrapActor,
+      tenantId: resolvedContext.tenantId,
+      brandId: resolvedContext.brandId,
+      storeId: resolvedContext.storeId,
+    }),
   });
 }
 
