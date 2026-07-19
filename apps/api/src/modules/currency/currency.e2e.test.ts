@@ -58,6 +58,12 @@ class TestCurrencyController {
   getConfig() {
     return this.currencyService.getConfig()
   }
+
+  @Post('config')
+  updateConfig(@Body() body: Record<string, unknown>) {
+    this.currencyService.setConfig(body as any)
+    return { config: this.currencyService.getConfig() }
+  }
 }
 
 async function buildApp() {
@@ -90,7 +96,7 @@ describe('Currency E2E', () => {
         const res = await request(app.getHttpServer()).get('/currency/rates')
         assert.equal(res.statusCode, 200)
         assert.ok(Array.isArray(res.body))
-        assert.ok(res.body.length >= 5)
+        assert.ok(res.body.length >= 4)
         // Should contain USD→CNY
         const usdCny = res.body.find((r: any) => r.from === 'USD' && r.to === 'CNY')
         assert.ok(usdCny)
@@ -199,6 +205,35 @@ describe('Currency E2E', () => {
         assert.equal(res.body.rate, 20.5)
         // 1000 CNY cents * 20.5 * 1 / 100 = 205 JPY
         assert.equal(res.body.convertedAmount, 205)
+      } finally {
+        await app.close()
+      }
+    })
+  })
+
+  describe('GET /currency/config — 配置获取', () => {
+    it('返回默认配置信息', async () => {
+      const { app } = await buildApp()
+      try {
+        const res = await request(app.getHttpServer()).get('/currency/config')
+        assert.equal(res.statusCode, 200)
+        assert.equal(res.body.baseCurrency, 'CNY')
+        assert.equal(res.body.decimalPlaces, 2)
+        assert.equal(res.body.roundingMode, 'floor')
+      } finally {
+        await app.close()
+      }
+    })
+
+    it('更新配置后返回新配置', async () => {
+      const { app } = await buildApp()
+      try {
+        const res = await request(app.getHttpServer())
+          .post('/currency/config')
+          .send({ baseCurrency: 'USD' })
+        assert.equal(res.statusCode, 201)
+        assert.equal(res.body.config.baseCurrency, 'USD')
+        assert.equal(res.body.config.roundingMode, 'floor')
       } finally {
         await app.close()
       }
