@@ -615,3 +615,110 @@ describe('NewStockTransferPage - 数据完整性', () => {
     assert.ok(src.includes('fromOptions'), 'missing fromOptions');
   });
 });
+
+// === 新增：错误状态测试（圈梁五道箍 — 错误态覆盖） ===
+
+describe('NewStockTransferPage - 错误状态 Error State', () => {
+  it('submitting 状态时按钮被 disabled', () => {
+    const src = readSource();
+    assert.ok(src.includes('submitting'), 'missing submitting state');
+    const disabledMatch = src.match(/disabled=\{form\.submitting\}/);
+    assert.ok(disabledMatch, 'submit button should be disabled when submitting');
+  });
+
+  it('提交失败时 toast.error 调用', () => {
+    const src = readSource();
+    assert.ok(src.includes('toast.error'), 'missing toast.error call for validation failure');
+  });
+
+  it('handleSubmit 中先 validate 后提交', () => {
+    const src = readSource();
+    const submitMatch = src.match(/validate\(\)/g);
+    assert.ok(submitMatch, 'handleSubmit should call validate()');
+    assert.ok(submitMatch.length >= 1, 'validate() called at least once in handleSubmit');
+  });
+
+  it('表单校验失败时返回相应错误信息', () => {
+    const errors1 = validateForm({
+      fromLocation: '',
+      toLocation: '',
+      reason: '',
+      items: [],
+    });
+    // 验证所有错误信息同时返回
+    const errorKeys = Object.keys(errors1);
+    assert.ok(errorKeys.includes('fromLocation'));
+    assert.ok(errorKeys.includes('toLocation'));
+    assert.ok(errorKeys.includes('reason'));
+    assert.ok(errorKeys.includes('items'));
+  });
+
+  it('提交后错误不遗留到下一次提交', () => {
+    const errors1 = validateForm({
+      fromLocation: '',
+      toLocation: '',
+      reason: '',
+      items: [],
+    });
+    assert.equal(Object.keys(errors1).length, 4);
+    // 修正后应无错误
+    const errors2 = validateForm({
+      fromLocation: '仓库A',
+      toLocation: '门店B',
+      reason: '补货',
+      items: [{ sku: 'CL-001', name: '洁面', quantity: 5, unit: '支' }],
+    });
+    assert.equal(Object.keys(errors2).length, 0);
+  });
+
+  it('网络异常/加载超时应展示加载状态', () => {
+    const src = readSource();
+    // 页面中有 submitting 状态控制加载行为
+    assert.ok(src.includes('submitting'), 'submitting field exists for loading state');
+    // 检查 loading prop 出现在 Button 上
+    assert.ok(src.includes('loading={form.submitting}'), 'Button loading prop tied to submitting');
+  });
+
+  it('调拨类型切换后清除错误', () => {
+    const src = readSource();
+    // type 切换时 errors 被重置
+    assert.ok(src.includes('errors: {}'), 'should reset errors on type change');
+  });
+
+  it('选择商品后清除 items 错误', () => {
+    const src = readSource();
+    // toggleItem 和 updateItemQty 都会清除 items 错误
+    assert.ok(src.includes('errors: { ...prev.errors, items: \'\' }'), 'should clear items error on selection');
+  });
+
+  it('模拟网络延迟提交 (setTimeout 800ms)', () => {
+    const src = readSource();
+    assert.ok(src.includes('setTimeout'), 'handleSubmit should use setTimeout for simulated submission');
+    assert.ok(src.includes('800'), 'setTimeout should be 800ms for simulated delay');
+  });
+
+  it('submitting 状态下文案变为"提交中…"', () => {
+    const src = readSource();
+    assert.ok(src.includes('提交中…'), 'submitting label present');
+    // 提交中… 的显示与 submitting 关联
+    assert.ok(src.includes('submitting ? \'提交中…\' : \'提交调拨单\''), 'conditional label based on submitting');
+  });
+
+  it('调拨地选择不能相同（业务错误场景）', () => {
+    const sameError = validateForm({
+      fromLocation: '旗舰店(天河城)',
+      toLocation: '旗舰店(天河城)',
+      reason: '测试',
+      items: [{ sku: 'CL-001', name: '洁面', quantity: 1, unit: '支' }],
+    });
+    assert.equal(sameError.toLocation, '调出地和调入地不能相同');
+  });
+
+  it('页面包含 data-testid 用于 E2E 错误捕获', () => {
+    const src = readSource();
+    assert.ok(src.includes('data-testid="transfer-new-error-from"'), 'from location error testid');
+    assert.ok(src.includes('data-testid="transfer-new-error-to"'), 'to location error testid');
+    assert.ok(src.includes('data-testid="transfer-new-error-reason"'), 'reason error testid');
+    assert.ok(src.includes('data-testid="transfer-new-error-items"'), 'items error testid');
+  });
+});

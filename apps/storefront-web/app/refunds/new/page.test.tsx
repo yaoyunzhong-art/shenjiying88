@@ -402,3 +402,124 @@ describe('NewRefundRequestPage - 数据完整性', () => {
     assert.ok(src.includes('handleReset'), 'missing handleReset');
   });
 });
+
+// === 新增：错误状态测试（圈梁五道箍 — 错误态覆盖） ===
+
+describe('NewRefundRequestPage - 错误状态 Error State', () => {
+  it('submitting 时提交按钮被 disabled', () => {
+    const src = readSource();
+    assert.ok(src.includes('disabled={state.submitting}'), 'submit button should be disabled when submitting');
+  });
+
+  it('handleSubmit 先 validate 后提交', () => {
+    const src = readSource();
+    assert.ok(src.includes('validate(formValues)'), 'handleSubmit calls validate');
+    // 校验失败则阻止提交
+    const submitGuard = src.match(/Object\.keys\(errors\)\.length > 0/);
+    assert.ok(submitGuard, 'should check validation errors before submitting');
+  });
+
+  it('表单校验失败时 error 信息汇总', () => {
+    const src = readSource();
+    // submit 时校验失败将错误合并为一条信息
+    assert.ok(src.includes('Object.values(errors).join(\'；\')'), 'errors should be joined for user feedback');
+  });
+
+  it('validateForm 金额传入非数字报错', () => {
+    const errors = validateForm({
+      orderId: 'ORD-001',
+      type: 'refund',
+      reasonCategory: 'defective',
+      reasonDetail: '商品破损',
+      amount: 'abc',
+      productName: '洁面乳',
+    });
+    assert.equal(errors.amount, '请输入有效金额');
+  });
+
+  it('validateForm 金额传入空字符串报错', () => {
+    const errors = validateForm({
+      orderId: 'ORD-001',
+      type: 'refund',
+      reasonCategory: 'defective',
+      reasonDetail: '描述',
+      amount: '',
+      productName: '商品',
+    });
+    assert.equal(errors.amount, '请输入有效金额');
+  });
+
+  it('validateForm 金额传入空格不通过', () => {
+    const errors = validateForm({
+      orderId: 'ORD-001',
+      type: 'refund',
+      reasonCategory: 'defective',
+      reasonDetail: '描述',
+      amount: '   ',
+      productName: '商品',
+    });
+    assert.equal(errors.amount, '请输入有效金额');
+  });
+
+  it('validateForm 全空字段校验错误数量', () => {
+    const errors = validateForm(INITIAL_VALUES);
+    assert.equal(Object.keys(errors).length, 5);
+    assert.ok(errors.orderId);
+    assert.ok(errors.reasonCategory);
+    assert.ok(errors.reasonDetail);
+    assert.ok(errors.amount);
+    assert.ok(errors.productName);
+  });
+
+  it('validateForm 多个字段缺失时返回多个错误', () => {
+    const errors = validateForm({
+      orderId: '',
+      type: 'refund',
+      reasonCategory: '',
+      reasonDetail: '',
+      amount: '100',
+      productName: '',
+    });
+    assert.equal(Object.keys(errors).length, 4);
+    assert.ok(errors.orderId);
+    assert.ok(errors.reasonCategory);
+    assert.ok(errors.reasonDetail);
+    assert.ok(errors.productName);
+  });
+
+  it('提交成功后清理 error 状态', () => {
+    const src = readSource();
+    assert.ok(src.includes('error: undefined'), 'should clear error on dismiss');
+    assert.ok(src.includes('onDismissError'), 'should have error dismiss handler');
+  });
+
+  it('提交成功后显示 success 反馈', () => {
+    const src = readSource();
+    assert.ok(src.includes('onDismissSuccess'), 'should have success dismiss handler');
+    assert.ok(src.includes('success ?'), 'success state conditional exists');
+  });
+
+  it('page.tsx 使用 FormSubmitFeedback 组件处理错误展示', () => {
+    const src = readSource();
+    assert.ok(src.includes('FormSubmitFeedback'), 'uses FormSubmitFeedback for error/success display');
+    assert.ok(src.includes('submitting={state.submitting}'), 'passes submitting state');
+    assert.ok(src.includes('error={state.error}'), 'passes error state');
+    assert.ok(src.includes('success={state.success'), 'passes success state');
+  });
+
+  it('重置按钮 (handleReset) 将表单恢复初始值', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleReset'), 'handleReset exists');
+    assert.ok(src.includes('setFormValues(INITIAL_VALUES)'), 'reset restores initial values');
+  });
+
+  it('提交中文案为"提交中…"', () => {
+    const src = readSource();
+    assert.ok(src.includes('state.submitting ? \'提交中…\' : \'提交申请\''), 'conditional button label for submitting');
+  });
+
+  it('网络模拟提交有 800ms 延迟', () => {
+    const src = readSource();
+    assert.ok(src.includes('setTimeout(r, 800)'), 'simulated submission has 800ms timeout');
+  });
+});

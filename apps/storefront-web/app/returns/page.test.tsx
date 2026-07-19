@@ -12,6 +12,11 @@
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ---- 与组件保持一致的类型/常量 ---- //
 
@@ -540,5 +545,100 @@ describe('ReturnsListPage 时间排序', () => {
     const sorted = [...allReturns].sort(compareDates);
     assert.equal(sorted[0].returnNo, 'RTN-20260610-001');
     assert.equal(sorted[0].customerName, '王美丽');
+  });
+});
+
+// === 新增：加载状态测试（圈梁五道箍 — 加载态覆盖） ===
+
+describe('ReturnsListPage - 加载状态 Loading State', () => {
+  it('page.tsx 有 isLoading 状态标识', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('isLoading'), 'missing isLoading state');
+    assert.ok(src.includes('setIsLoading'), 'missing setIsLoading setter');
+  });
+
+  it('page.tsx 加载态 UI 包含占位提示和 emoji', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('⏳'), 'loading state should show hourglass emoji');
+    assert.ok(src.includes('正在加载退换货数据'), 'loading state should show loading text');
+  });
+
+  it('page.tsx 加载态有完整的三态容器结构', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    // isLoading ? 加载态 : paginated.length === 0 ? 空态 : 列表
+    assert.ok(src.includes('isLoading ? ('), 'loading conditional JSX exists');
+    assert.ok(src.includes('paginated.length === 0 ? ('), 'empty state conditional exists');
+  });
+
+  it('page.tsx 空数据状态有独立提示文案', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('暂无退换货记录'), 'empty state message present');
+    assert.ok(src.includes('还没有提交过退换货申请'), 'empty state detail present');
+  });
+
+  it('page.tsx 空数据状态有对应 emoji', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('📦'), 'empty state should display package emoji');
+  });
+
+  it('page.tsx 错误态提示也完整', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('数据加载异常'), 'error state heading present');
+    assert.ok(src.includes('请检查网络后重试'), 'error state retry message');
+  });
+
+  it('paginate 空数组返回空', () => {
+    const result = paginate([], 1, 5);
+    assert.equal(result.length, 0);
+  });
+
+  it('分页第3页每页4条返回剩余2条', () => {
+    const result = paginate(allReturns, 3, 4);
+    assert.equal(result.length, 2);
+    assert.equal(result[0].id, '9');
+    assert.equal(result[1].id, '10');
+  });
+
+  it('searchItems 空结果对应空状态', () => {
+    const result = searchItems(allReturns, 'ZZZ_NOT_EXISTS');
+    assert.equal(result.length, 0, 'search with no match should return empty array');
+  });
+
+  it('filterByStatus + filterByReason 组合筛选空结果', () => {
+    const r1 = filterByReason(allReturns, '发错商品');
+    const r2 = filterByStatus(r1, 'rejected');
+    assert.equal(r2.length, 0, '发错商品 + rejected should have 0 results');
+  });
+
+  it('filterByReason 不存在原因返回空', () => {
+    const result = filterByReason(allReturns, '不存在的退款原因');
+    assert.equal(result.length, 0);
+  });
+
+  it('filterByStatus 空字符串返回全部（不报错）', () => {
+    const result = filterByStatus(allReturns, '' as ReturnStatus);
+    assert.equal(result.length, allReturns.length, 'empty status returns all');
+  });
+
+  it('分页第2页每页20条，不足20条只返回剩余', () => {
+    const result = paginate(allReturns, 2, 20);
+    assert.equal(result.length, 0, '10 total, page 2 with 20 per page should be empty');
+  });
+
+  it('page.tsx 模拟加载按钮存在', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('模拟加载'), 'mock loading button label exists');
+  });
+
+  it('page.tsx 模拟错误按钮存在', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('模拟错误'), 'mock error button label exists');
+    assert.ok(src.includes('恢复数据'), 'recover data button exists');
+  });
+
+  it('page.tsx 加载态 1200ms 后自动恢复', () => {
+    const src = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('1200'), 'loading timeout should be 1200ms');
+    assert.ok(src.includes('setIsLoading(false)'), 'loading should auto reset');
   });
 });
