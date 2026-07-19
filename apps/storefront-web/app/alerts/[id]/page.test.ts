@@ -107,6 +107,37 @@ function findAlertById(details: AlertDetail[], id: string): AlertDetail | undefi
   return details.find((d) => d.id === id);
 }
 
+function getAlertsBySeverity(details: AlertDetail[], severity: AlertSeverity): AlertDetail[] {
+  return details.filter((d) => d.severity === severity);
+}
+
+function getAlertsByCategory(details: AlertDetail[], category: AlertCategory): AlertDetail[] {
+  return details.filter((d) => d.category === category);
+}
+
+function getAlertsByStatus(details: AlertDetail[], status: AlertStatus): AlertDetail[] {
+  return details.filter((d) => d.status === status);
+}
+
+function formatAlertTime(occurredAt: string): string {
+  try {
+    const d = new Date(occurredAt);
+    if (isNaN(d.getTime())) return 'Invalid date';
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const hours = String(d.getUTCHours()).padStart(2, '0');
+    const mins = String(d.getUTCMinutes()).padStart(2, '0');
+    return `${month}-${day} ${hours}:${mins}`;
+  } catch {
+    return 'Invalid date';
+  }
+}
+
+function getSeverityPriority(severity: AlertSeverity): number {
+  const map: Record<string, number> = { critical: 5, high: 4, medium: 3, low: 2, info: 1 };
+  return map[severity] ?? 0;
+}
+
 function validateAlertDetail(alert: AlertDetail): string[] {
   const errors: string[] = [];
   if (!alert.id) errors.push('id 必填');
@@ -284,12 +315,9 @@ test('数据完整性: occurredAt 均为有效 ISO 8601', () => {
   }
 });
 
-
-
 // ── 边缘情况 ──
 
 test('边缘: getActionButtons 空数组 (不可能的状态)', () => {
-  // 如果传了无效状态, 返回空
   const btns = getActionButtons('unknown' as AlertStatus, false);
   assert.equal(btns.length, 0);
 });
@@ -306,4 +334,120 @@ test('边缘: acknowledgedAt 应 >= occurredAt', () => {
       assert.ok(new Date(d.acknowledgedAt) >= new Date(d.occurredAt));
     }
   }
+});
+
+// ── 新增: 按严重程度过滤 ──
+
+test('getAlertsBySeverity: 查找 critical 级别告警 (2条)', () => {
+  const crit = getAlertsBySeverity(MOCK_DETAILS, 'critical');
+  assert.equal(crit.length, 2);
+  assert.ok(crit.every((a) => a.severity === 'critical'));
+});
+
+test('getAlertsBySeverity: 查找 medium 级别告警 (0条)', () => {
+  const med = getAlertsBySeverity(MOCK_DETAILS, 'medium');
+  assert.equal(med.length, 0);
+});
+
+test('getAlertsBySeverity: 查找 low 级别告警 (1条)', () => {
+  const low = getAlertsBySeverity(MOCK_DETAILS, 'low');
+  assert.equal(low.length, 1);
+  assert.equal(low[0]!.id, 'alt-06');
+});
+
+test('getAlertsBySeverity: 查找 info 级别告警 (0条)', () => {
+  const info = getAlertsBySeverity(MOCK_DETAILS, 'info');
+  assert.equal(info.length, 0);
+});
+
+// ── 新增: 按分类过滤 ──
+
+test('getAlertsByCategory: 查找 device 分类 (1条)', () => {
+  const device = getAlertsByCategory(MOCK_DETAILS, 'device');
+  assert.equal(device.length, 1);
+  assert.equal(device[0]!.id, 'alt-01');
+});
+
+test('getAlertsByCategory: 查找 system 分类 (2条)', () => {
+  const sys = getAlertsByCategory(MOCK_DETAILS, 'system');
+  assert.equal(sys.length, 2);
+});
+
+test('getAlertsByCategory: 查找 security 分类 (0条)', () => {
+  const sec = getAlertsByCategory(MOCK_DETAILS, 'security');
+  assert.equal(sec.length, 0);
+});
+
+// ── 新增: 按状态过滤 ──
+
+test('getAlertsByStatus: open 状态 (2条)', () => {
+  const open = getAlertsByStatus(MOCK_DETAILS, 'open');
+  assert.equal(open.length, 2);
+});
+
+test('getAlertsByStatus: acknowledged 状态 (2条)', () => {
+  const ack = getAlertsByStatus(MOCK_DETAILS, 'acknowledged');
+  assert.equal(ack.length, 2);
+});
+
+test('getAlertsByStatus: resolved 状态 (1条)', () => {
+  const res = getAlertsByStatus(MOCK_DETAILS, 'resolved');
+  assert.equal(res.length, 1);
+});
+
+test('getAlertsByStatus: suppressed 状态 (0条)', () => {
+  const sup = getAlertsByStatus(MOCK_DETAILS, 'suppressed');
+  assert.equal(sup.length, 0);
+});
+
+// ── 新增: formatAlertTime ──
+
+test('formatAlertTime: 格式化时间正确', () => {
+  const formatted = formatAlertTime('2026-06-24T14:23:00Z');
+  assert.equal(formatted, '06-24 14:23');
+});
+
+test('formatAlertTime: 无效输入返回 Invalid date', () => {
+  assert.equal(formatAlertTime(''), 'Invalid date');
+  assert.equal(formatAlertTime('not-a-date'), 'Invalid date');
+});
+
+// ── 新增: getSeverityPriority ──
+
+test('getSeverityPriority: critical 优先级最高 (5)', () => {
+  assert.equal(getSeverityPriority('critical'), 5);
+});
+
+test('getSeverityPriority: info 优先级最低 (1)', () => {
+  assert.equal(getSeverityPriority('info'), 1);
+});
+
+test('getSeverityPriority: 未知级别返回 0', () => {
+  assert.equal(getSeverityPriority('unknown' as AlertSeverity), 0);
+});
+
+test('getSeverityPriority: 高到低排序正确', () => {
+  const sorted: AlertSeverity[] = ['critical', 'high', 'medium', 'low', 'info'];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    assert.ok(
+      getSeverityPriority(sorted[i]!) > getSeverityPriority(sorted[i + 1]!),
+      `${sorted[i]} should be higher than ${sorted[i + 1]}`
+    );
+  }
+});
+
+// ── 新增: getAlertsBySeverity + getAlertsByStatus 组合测试 ──
+
+test('组合: critical + acknowledged = 1条 (alt-13)', () => {
+  const crit = getAlertsBySeverity(MOCK_DETAILS, 'critical');
+  const critAck = getAlertsByStatus(crit, 'acknowledged');
+  assert.equal(critAck.length, 1);
+  assert.equal(critAck[0]!.id, 'alt-13');
+});
+
+test('组合: high + open = 1条 (alt-03)', () => {
+  const high = getAlertsBySeverity(MOCK_DETAILS, 'high');
+  const highOpen = getAlertsByStatus(high, 'open');
+  assert.equal(highOpen.length, 1);
+  assert.equal(highOpen[0]!.id, 'alt-03');
 });
