@@ -11,12 +11,28 @@ interface FeasibilityReport {
   marketTrend: string; estimatedMonthlyRevenue: number; estimatedPaybackMonths: number
 }
 
+interface FinancePanorama {
+  budget: number; area: number
+  initialInvestment: { equipmentCost: number; renovationCost: number; softwareSystemCost: number; deposit: number; total: number }
+  monthlyFixedCost: { rent: number; labor: number; equipmentMaintenance: number; systemSubscription: number; total: number }
+  monthlyVariableCost: { electricity: number; consumables: number; marketing: number; total: number }
+  monthlyTotalCost: number
+  revenueEstimate: { avgTicketPrice: number; estimatedDailyTraffic: number; estimatedMonthlyRevenue: number; estimatedMonthlyProfit: number }
+  monthlyDepreciation: number; monthlyAmortization: number
+  paybackMonths: number; paybackWithDepreciation: number
+  cityAvgComparison: { initialInvestment: number; monthlyFixedCost: number; monthlyRevenue: number; paybackMonths: number }
+}
+
 export default function FeasibilityPage() {
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
   const [budget, setBudget] = useState(300)
+  const [area, setArea] = useState(400)
+  const [tier, setTier] = useState<'luxury' | 'standard' | 'economy'>('standard')
   const [report, setReport] = useState<FeasibilityReport | null>(null)
+  const [finance, setFinance] = useState<FinancePanorama | null>(null)
   const [loading, setLoading] = useState(false)
+  const [financeLoading, setFinanceLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedEq, setExpandedEq] = useState<string | null>(null)
 
@@ -49,6 +65,20 @@ export default function FeasibilityPage() {
       setReport(data)
     } catch { setReport(await simulateReport(city, district, budget)) }
     setLoading(false)
+  }
+
+  const handleFinancePanorama = async () => {
+    if (!city || !district) { setError('请选择城市和区域'); return }
+    setFinanceLoading(true)
+    try {
+      const res = await fetch('/api/intelligence/finance-panorama', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ budget, area, tier, city, district }),
+      })
+      const data = res.ok ? await res.json() : await simulateFinance(city, district, budget, area, tier)
+      setFinance(data)
+    } catch { setFinance(await simulateFinance(city, district, budget, area, tier)) }
+    setFinanceLoading(false)
   }
 
   const levelColor = report?.scoreLevel === 'high' ? 'bg-green-100 text-green-800' :
@@ -169,9 +199,191 @@ export default function FeasibilityPage() {
           </div>
 
           {/* 市场趋势 */}
-          <div className="bg-blue-50 border border-blue-200 rounded p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
             <h3 className="font-bold text-blue-800 mb-1">📈 市场趋势</h3>
             <p className="text-sm text-blue-700">{report.marketTrend}</p>
+          </div>
+
+          {/* 财务全景表 */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-lg font-bold mb-4">💰 财务全景表 (P-50 V2)</h2>
+
+            {/* 参数输入 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 bg-gray-50 p-3 rounded">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">面积:</span>
+                <input type="number" min={50} max={5000} step={50} value={area}
+                  onChange={e => setArea(Number(e.target.value))}
+                  className="border rounded px-2 py-1 w-24 text-sm" />
+                <span className="text-xs text-gray-400">㎡</span>
+              </div>
+              <div>
+                <select value={tier} onChange={e => setTier(e.target.value as any)}
+                  className="border rounded px-2 py-1 text-sm w-full">
+                  <option value="economy">经济 (600元/㎡)</option>
+                  <option value="standard">标准 (1200元/㎡)</option>
+                  <option value="luxury">豪华 (3500元/㎡)</option>
+                </select>
+              </div>
+              <button onClick={handleFinancePanorama} disabled={!city || !district || financeLoading}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-sm">
+                {financeLoading ? '计算中...' : '计算财务全景'}
+              </button>
+            </div>
+
+            {finance && (
+              <>
+                {/* 首期投入 */}
+                <h3 className="font-bold text-gray-700 mb-2">📋 首期投入</h3>
+                <table className="w-full text-sm mb-4 border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-2 border">项目</th>
+                      <th className="text-right p-2 border">金额(元)</th>
+                      <th className="text-right p-2 border">占比</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: '设备成本', value: finance.initialInvestment.equipmentCost },
+                      { label: '装修成本', value: finance.initialInvestment.renovationCost },
+                      { label: '系统软件', value: finance.initialInvestment.softwareSystemCost },
+                      { label: '押金(3月)', value: finance.initialInvestment.deposit },
+                    ].map(item => (
+                      <tr key={item.label} className="border-b">
+                        <td className="p-2 border">{item.label}</td>
+                        <td className="text-right p-2 border font-mono">¥{item.value.toLocaleString()}</td>
+                        <td className="text-right p-2 border">{(item.value / finance.initialInvestment.total * 100).toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-green-50 font-bold">
+                      <td className="p-2 border">合计</td>
+                      <td className="text-right p-2 border font-mono">¥{finance.initialInvestment.total.toLocaleString()}</td>
+                      <td className="text-right p-2 border">100%</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* 月成本 */}
+                <h3 className="font-bold text-gray-700 mb-2 mt-4">📋 月成本（元）</h3>
+                <table className="w-full text-sm mb-4 border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-2 border">项目</th>
+                      <th className="text-right p-2 border">金额(元)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: '租金', value: finance.monthlyFixedCost.rent, fixed: true },
+                      { label: '人力', value: finance.monthlyFixedCost.labor, fixed: true },
+                      { label: '设备维护', value: finance.monthlyFixedCost.equipmentMaintenance, fixed: true },
+                      { label: '系统订阅', value: finance.monthlyFixedCost.systemSubscription, fixed: true },
+                      { label: '小计(固定)', value: finance.monthlyFixedCost.total, fixed: true },
+                      { label: '电费', value: finance.monthlyVariableCost.electricity, fixed: false },
+                      { label: '耗材', value: finance.monthlyVariableCost.consumables, fixed: false },
+                      { label: '营销推广', value: finance.monthlyVariableCost.marketing, fixed: false },
+                      { label: '小计(变动)', value: finance.monthlyVariableCost.total, fixed: false },
+                    ].map((item, idx) => (
+                      <tr key={idx} className={`border-b ${item.label.startsWith('小计') ? 'bg-gray-50 font-bold' : ''}`}>
+                        <td className="p-2 border">{item.label}</td>
+                        <td className="text-right p-2 border font-mono">¥{item.value.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-red-50 font-bold">
+                      <td className="p-2 border">月总成本</td>
+                      <td className="text-right p-2 border font-mono">¥{finance.monthlyTotalCost.toLocaleString()}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* 营收与回收 */}
+                <h3 className="font-bold text-gray-700 mb-2 mt-4">📋 营收预估</h3>
+                <table className="w-full text-sm mb-4 border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-2 border">项目</th>
+                      <th className="text-right p-2 border">数值</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-2 border">预估客单价</td>
+                      <td className="text-right p-2 border font-mono">¥{finance.revenueEstimate.avgTicketPrice}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 border">预估日客流</td>
+                      <td className="text-right p-2 border font-mono">{finance.revenueEstimate.estimatedDailyTraffic}人</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 border">预估月营收</td>
+                      <td className="text-right p-2 border font-mono">¥{finance.revenueEstimate.estimatedMonthlyRevenue.toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 border">预估月利润</td>
+                      <td className={`text-right p-2 border font-mono ${finance.revenueEstimate.estimatedMonthlyProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ¥{finance.revenueEstimate.estimatedMonthlyProfit.toLocaleString()}
+                      </td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 border">月折旧(设备3年)</td>
+                      <td className="text-right p-2 border font-mono">¥{finance.monthlyDepreciation.toLocaleString()}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2 border">月摊销(装修5年)</td>
+                      <td className="text-right p-2 border font-mono">¥{finance.monthlyAmortization.toLocaleString()}</td>
+                    </tr>
+                    <tr className="bg-green-50 font-bold">
+                      <td className="p-2 border">简单回收期</td>
+                      <td className="text-right p-2 border font-mono">
+                        {finance.paybackMonths >= 999 ? '∞' : `${finance.paybackMonths}个月 (约${(finance.paybackMonths / 12).toFixed(1)}年)`}
+                      </td>
+                    </tr>
+                    <tr className="bg-yellow-50">
+                      <td className="p-2 border">含折旧回收期</td>
+                      <td className="text-right p-2 border font-mono">
+                        {finance.paybackWithDepreciation >= 999 ? '∞' : `${finance.paybackWithDepreciation}个月 (约${(finance.paybackWithDepreciation / 12).toFixed(1)}年)`}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* 同城对比 */}
+                <h3 className="font-bold text-gray-700 mb-2 mt-4">📊 同城平均值对比</h3>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-2 border">指标</th>
+                      <th className="text-right p-2 border">本项目</th>
+                      <th className="text-right p-2 border">同城平均</th>
+                      <th className="text-right p-2 border">差异</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: '首期投入', ours: finance.initialInvestment.total, avg: finance.cityAvgComparison.initialInvestment, higher: false },
+                      { label: '月固定成本', ours: finance.monthlyFixedCost.total, avg: finance.cityAvgComparison.monthlyFixedCost, higher: false },
+                      { label: '月营收', ours: finance.revenueEstimate.estimatedMonthlyRevenue, avg: finance.cityAvgComparison.monthlyRevenue, higher: true },
+                      { label: '回收期(月)', ours: finance.paybackMonths, avg: finance.cityAvgComparison.paybackMonths, higher: true },
+                    ].map(item => {
+                      const diff = item.ours - item.avg
+                      const pct = item.avg > 0 ? ((diff / item.avg) * 100).toFixed(1) : '0.0'
+                      const isBetter = item.higher ? diff >= 0 : diff <= 0
+                      return (
+                        <tr key={item.label} className="border-b">
+                          <td className="p-2 border">{item.label}</td>
+                          <td className="text-right p-2 border font-mono">¥{item.ours.toLocaleString()}</td>
+                          <td className="text-right p-2 border font-mono text-gray-500">¥{item.avg.toLocaleString()}</td>
+                          <td className={`text-right p-2 border font-mono ${isBetter ? 'text-green-600' : 'text-red-600'}`}>
+                            {diff > 0 ? '+' : ''}{diff.toLocaleString()} ({pct}%)
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         </>
       )}
@@ -212,5 +424,72 @@ async function simulateReport(city: string, district: string, budget: number): P
     marketTrend: `${city}娱乐市场年增长率约15-20%`,
     estimatedMonthlyRevenue: Math.round((dd.price * 1500 + budget * 80000) / 10),
     estimatedPaybackMonths: Math.round(budget * 10000 / Math.round((dd.price * 1500 + budget * 80000) / 10)),
+  }
+}
+
+// 模拟财务全景
+async function simulateFinance(city: string, district: string, budget: number, area: number, tier: string): Promise<FinancePanorama> {
+  const densities: Record<string, { price: number }> = {
+    '上海': { price: 135 }, '北京': { price: 125 },
+    '广州': { price: 88 }, '深圳': { price: 105 },
+    '成都': { price: 78 }, '杭州': { price: 92 },
+    '南京': { price: 75 }, default: { price: 60 },
+  }
+  const d = densities[city] ?? densities.default!
+  const tierPrices: Record<string, number> = { economy: 600, standard: 1200, luxury: 3500 }
+  const tierPrice = tierPrices[tier] ?? 1200
+  const cityRents: Record<string, { rent: number; salary: number }> = {
+    '上海': { rent: 280, salary: 12000 }, '北京': { rent: 250, salary: 12000 },
+    '深圳': { rent: 220, salary: 11000 }, '广州': { rent: 200, salary: 10000 },
+    '成都': { rent: 150, salary: 8000 }, default: { rent: 100, salary: 6000 },
+  }
+  const cd = cityRents[city] ?? cityRents.default!
+
+  const renovationCost = tierPrice * area
+  const equipmentCost = Math.round(budget * 10000 * 0.45)
+  const softwareSystemCost = Math.round(Math.min(Math.max(80000 + area * 60, 80000), 200000))
+  const monthlyRent = Math.round(cd.rent * area)
+  const deposit = monthlyRent * 3
+
+  const staffCount = area <= 200 ? 6 : area <= 500 ? 8 : area <= 800 ? 10 : 12
+  const labor = staffCount * cd.salary
+  const equipmentMaintenance = Math.round(equipmentCost * 0.1 / 12)
+  const systemSubscription = Math.round(Math.min(Math.max(3000 + area * 3, 3000), 8000))
+
+  const avgTicketPrice = d.price
+  const estimatedDailyTraffic = Math.round(area / 2.5 * 1.2)
+  const estimatedMonthlyRevenue = Math.round(avgTicketPrice * estimatedDailyTraffic * 30)
+
+  const electricity = Math.round(area * 20)
+  const consumables = Math.round(estimatedMonthlyRevenue * 0.025)
+  const marketing = Math.round(estimatedMonthlyRevenue * 0.05)
+
+  const monthlyFixedTotal = monthlyRent + labor + equipmentMaintenance + systemSubscription
+  const monthlyVariableTotal = electricity + consumables + marketing
+  const monthlyTotalCost = monthlyFixedTotal + monthlyVariableTotal
+  const estimatedMonthlyProfit = estimatedMonthlyRevenue - monthlyTotalCost
+  const monthlyDepreciation = Math.round(equipmentCost / 36)
+  const monthlyAmortization = Math.round(renovationCost / 60)
+
+  const initialTotal = equipmentCost + renovationCost + softwareSystemCost + deposit
+  const paybackMonths = estimatedMonthlyProfit > 0 ? Math.ceil(initialTotal / estimatedMonthlyProfit) : 999
+  const monthlyDeduct = estimatedMonthlyProfit - monthlyDepreciation - monthlyAmortization
+  const paybackWithDepreciation = monthlyDeduct > 0 ? Math.ceil(initialTotal / monthlyDeduct) : 999
+
+  return {
+    budget, area,
+    initialInvestment: { equipmentCost, renovationCost, softwareSystemCost, deposit, total: initialTotal },
+    monthlyFixedCost: { rent: monthlyRent, labor, equipmentMaintenance, systemSubscription, total: monthlyFixedTotal },
+    monthlyVariableCost: { electricity, consumables, marketing, total: monthlyVariableTotal },
+    monthlyTotalCost,
+    revenueEstimate: { avgTicketPrice, estimatedDailyTraffic, estimatedMonthlyRevenue, estimatedMonthlyProfit },
+    monthlyDepreciation, monthlyAmortization,
+    paybackMonths, paybackWithDepreciation,
+    cityAvgComparison: {
+      initialInvestment: Math.round(initialTotal * 0.9),
+      monthlyFixedCost: Math.round(monthlyFixedTotal * 0.95),
+      monthlyRevenue: Math.round(estimatedMonthlyRevenue * 1.1),
+      paybackMonths: Math.max(1, Math.round(paybackMonths * 1.15)),
+    },
   }
 }

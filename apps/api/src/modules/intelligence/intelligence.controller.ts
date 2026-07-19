@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Post, Body, Query, NotFoundException } from '@nestjs/common'
+import { Controller, Get, Param, Post, Body, Query, NotFoundException, BadRequestException } from '@nestjs/common'
 import { IntelligenceService } from './intelligence.service'
+import type { RenovationTier } from './intelligence.entity'
 
 @Controller('intelligence')
 export class IntelligenceController {
@@ -11,13 +12,49 @@ export class IntelligenceController {
     return this.svc.generateFeasibilityReport(body.city.trim(), body.district.trim(), body.budget || 300)
   }
 
+  @Post('finance-panorama')
+  financePanorama(@Body() body: { budget: number; area: number; tier: RenovationTier; city: string; district: string }) {
+    if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
+    if (!body.district?.trim()) throw new BadRequestException('区域不能为空')
+    if (!body.area || body.area <= 0) throw new BadRequestException('面积必须大于0')
+    if (!body.budget || body.budget <= 0) throw new BadRequestException('预算必须大于0')
+    const validTiers: RenovationTier[] = ['luxury', 'standard', 'economy']
+    if (!body.tier || !validTiers.includes(body.tier)) throw new BadRequestException('装修档次无效')
+    return this.svc.calculateFinancePanorama(
+      body.budget,
+      body.area,
+      body.tier,
+      body.city.trim(),
+      body.district.trim(),
+    )
+  }
+
   @Get('operations/:storeId')
   operations(@Param('storeId') storeId: string, @Query('category') category?: string) {
     return this.svc.generateOperationAdvice(storeId, category)
   }
 
   @Get('monitor/:storeId')
-  monitor(@Param('storeId') storeId: string, @Query('city') city?: string) {
-    return this.svc.monitorCompetitor(storeId, city)
+  async monitor(
+    @Param('storeId') _storeId: string,
+    @Query('city') city?: string,
+    @Query('mode') mode?: string,
+  ) {
+    return this.svc.monitorCompetitor(city, (mode as 'incremental' | 'full') ?? 'incremental')
+  }
+
+  @Get('monitor/summary')
+  async monitorSummary(@Query('city') city?: string) {
+    return this.svc.getLatestScanResult()
+  }
+
+  @Post('monitor/scan/incremental')
+  async triggerIncremental(@Query('city') city?: string) {
+    return this.svc.triggerIncrementalScan(city)
+  }
+
+  @Post('monitor/scan/full')
+  async triggerFull(@Query('city') city?: string) {
+    return this.svc.triggerFullScan(city)
   }
 }
