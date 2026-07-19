@@ -91,7 +91,11 @@ export class EmpowerCardService {
 
   async getById(id: string): Promise<EmpowerCardEntity> {
     await this.ensureTable()
-    if (!this.pool) throw new NotFoundException(`PostgreSQL 不可用`)
+    if (!this.pool) {
+      const fallback = this.fallbackStore.get(id)
+      if (!fallback) throw new NotFoundException(`EmpowerCard ${id} not found`)
+      return fallback
+    }
 
     const result = await this.pool.query(
       'SELECT * FROM empower_card WHERE id = $1', [id]
@@ -102,7 +106,11 @@ export class EmpowerCardService {
 
   async list(minFreshness = 0): Promise<EmpowerCardEntity[]> {
     await this.ensureTable()
-    if (!this.pool) return []
+    if (!this.pool) {
+      return Array.from(this.fallbackStore.values())
+        .filter(c => c.freshnessScore >= minFreshness)
+        .sort((a, b) => b.freshnessScore - a.freshnessScore)
+    }
 
     const result = await this.pool.query(
       'SELECT * FROM empower_card WHERE freshness_score >= $1 ORDER BY freshness_score DESC',
@@ -115,10 +123,29 @@ export class EmpowerCardService {
 
   async search(query: EmpowerCardSearchQuery): Promise<EmpowerCardSearchResult> {
     await this.ensureTable()
-    if (!this.pool) return { cards: [], total: 0 }
-
     const limit = query.limit ?? 3
     const minFresh = query.minFreshness ?? 50
+
+    // 降级: 走 fallback store 匹配
+    if (!this.pool) {
+      let cards = Array.from(this.fallbackStore.values())
+        .filter(c => c.freshnessScore >= minFresh)
+      
+      if (query.tag) cards = cards.filter(c => c.tag === query.tag)
+      if (query.module) { const m: string = query.module; cards = cards.filter(c => c.moduleMapping?.includes(m)) }
+      if (query.q) {
+        const q: string = query.q.toLowerCase()
+        cards = cards.filter(c => 
+          c.summary.toLowerCase().includes(q) ||
+          c.tag.toLowerCase().includes(q) ||
+          (c.moduleMapping?.toLowerCase().includes(q) ?? false)
+        )
+      }
+
+      cards.sort((a, b) => b.freshnessScore - a.freshnessScore || b.confidence - a.confidence || a.quoteCount - b.quoteCount)
+      const limited = cards.slice(0, limit)
+      return { cards: limited, total: limited.length }
+    }
     const conditions: string[] = ['freshness_score >= $1']
     const params: any[] = [minFresh]
     let paramIdx = 2
@@ -149,6 +176,17 @@ export class EmpowerCardService {
   async autoMatchForDispatch(moduleName: string, keywords: string[] = []): Promise<EmpowerCardEntity[]> {
     const result = await this.search({ module: moduleName, limit: 3, minFreshness: 50 })
     
+    // 降级: 从 fallback 补充
+    if (result.cards.length < 3) {
+      const usedIds = new Set(result.cards.map(c => c.id))
+      for (const [id, card] of this.fallbackStore) {
+        if (usedIds.has(id)) continue
+        result.cards.push(card)
+        usedIds.add(id)
+        if (result.cards.length >= 3) break
+      }
+    }
+
     if (result.cards.length < 3 && this.pool) {
       const usedIds = result.cards.map(c => `'${c.id}'`).join(',')
       const extras = await this.pool.query(
@@ -169,7 +207,15 @@ export class EmpowerCardService {
 
   async recordQuote(cardId: string, taskName: string, moduleName: string, quotedBy: string): Promise<void> {
     await this.ensureTable()
-    if (!this.pool) return
+    if (!this.pool) {
+      // 降级: 更新 fallback store
+      const card = this.fallbackStore.get(cardId)
+      if (card) {
+        card.quoteCount++
+        card.lastQuotedAt = new Date().toISOString()
+      }
+      return
+    }
 
     await this.pool.query(
       `UPDATE empower_card SET quote_count = quote_count + 1, last_quoted_at = NOW() WHERE id = $1`,
