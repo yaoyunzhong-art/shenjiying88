@@ -43,6 +43,8 @@ enum ReceiveStatus {
 
 enum ReturnStatus {
   Pending = 'PENDING',
+  Shipped = 'SHIPPED',
+  Rejected = 'REJECTED',
   Approved = 'APPROVED',
   Completed = 'COMPLETED'
 }
@@ -459,8 +461,36 @@ function approveReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
   const o = poStore.get(ret.purchaseOrderId)
   if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO ${ret.purchaseOrderId} not found`)
 
-  if (ret.status !== ReturnStatus.Pending) throw new Error(`Not pending (${ret.status})`)
+  if (ret.status !== ReturnStatus.Pending && ret.status !== ReturnStatus.Shipped) {
+    throw new Error(`Not actionable for approval (${ret.status})`)
+  }
   ret.status = ReturnStatus.Approved
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function inspectReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO ${ret.purchaseOrderId} not found`)
+
+  if (ret.status !== ReturnStatus.Pending) throw new Error(`Not pending (${ret.status})`)
+  ret.status = ReturnStatus.Shipped
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function rejectReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO ${ret.purchaseOrderId} not found`)
+
+  if (ret.status !== ReturnStatus.Pending && ret.status !== ReturnStatus.Shipped) {
+    throw new Error(`Not rejectable (${ret.status})`)
+  }
+  ret.status = ReturnStatus.Rejected
   returnStore.set(returnId, ret)
   return ret
 }
@@ -471,7 +501,9 @@ function completeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
   const o = poStore.get(ret.purchaseOrderId)
   if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
 
-  if (ret.status !== ReturnStatus.Approved) throw new Error(`Not approved (${ret.status})`)
+  if (ret.status !== ReturnStatus.Approved && ret.status !== ReturnStatus.Rejected) {
+    throw new Error(`Not completable (${ret.status})`)
+  }
   ret.status = ReturnStatus.Completed
   ret.completedAt = now()
   returnStore.set(returnId, ret)
@@ -710,6 +742,40 @@ describe('InventoryPurchaseService', () => {
       const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
       approveReturn(ret.id, tenant)
       const completed = completeReturn(ret.id, tenant)
+      expect(completed.status).toBe(ReturnStatus.Completed)
+    })
+
+    it('should inspect then approve return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const inspected = inspectReturn(ret.id, tenant)
+      const approved = approveReturn(ret.id, tenant)
+      expect(inspected.status).toBe(ReturnStatus.Shipped)
+      expect(approved.status).toBe(ReturnStatus.Approved)
+    })
+
+    it('should reject then close return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const rejected = rejectReturn(ret.id, tenant)
+      const completed = completeReturn(ret.id, tenant)
+      expect(rejected.status).toBe(ReturnStatus.Rejected)
       expect(completed.status).toBe(ReturnStatus.Completed)
     })
 

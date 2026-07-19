@@ -42,6 +42,7 @@ export enum PurchaseReturnStatus {
   Pending = 'PENDING',
   Approved = 'APPROVED',
   Shipped = 'SHIPPED',
+  Rejected = 'REJECTED',
   Completed = 'COMPLETED'
 }
 

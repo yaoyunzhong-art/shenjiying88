@@ -6,7 +6,7 @@
  *   - 审批流 (提审 / 审批 / 驳回)
  *   - 收货处理 (部分收货 / 完全收货 / 损坏登记)
  *   - 付款管理 (分期 / 全额 / 逾期预警)
- *   - 退货管理 (退货申请 / 审批 / 完成)
+ *   - 退货管理 (退货申请 / 质检 / 审批 / 驳回 / 完成)
  *   - 采购统计
  *   - 供应商评价
  */
@@ -719,8 +719,11 @@ export class InventoryPurchaseService {
       throw new Error(`Purchase order ${returnOrder.purchaseOrderId} not found`)
     }
 
-    if (returnOrder.status !== PurchaseReturnStatus.Pending) {
-      throw new Error(`Return order ${returnId} is not pending (status: ${returnOrder.status})`)
+    if (
+      returnOrder.status !== PurchaseReturnStatus.Pending &&
+      returnOrder.status !== PurchaseReturnStatus.Shipped
+    ) {
+      throw new Error(`Return order ${returnId} is not actionable for approval (status: ${returnOrder.status})`)
     }
 
     returnOrder.status = PurchaseReturnStatus.Approved
@@ -729,6 +732,77 @@ export class InventoryPurchaseService {
     returnOrder.updatedAt = new Date().toISOString()
     returnStore.set(returnId, returnOrder)
 
+    return returnOrder
+  }
+
+  /**
+   * 退货质检
+   */
+  inspectReturn(
+    returnId: string,
+    tenantContext: RequestTenantContext,
+    inspectorInfo: { inspectorId: string; inspectorName: string; comment?: string }
+  ): PurchaseReturn {
+    const returnOrder = returnStore.get(returnId)
+    if (!returnOrder) {
+      throw new Error(`Return order ${returnId} not found`)
+    }
+
+    const order = purchaseOrderStore.get(returnOrder.purchaseOrderId)
+    if (!order || order.tenantId !== tenantContext.tenantId) {
+      throw new Error(`Purchase order ${returnOrder.purchaseOrderId} not found`)
+    }
+
+    if (returnOrder.status !== PurchaseReturnStatus.Pending) {
+      throw new Error(`Return order ${returnId} must be pending for inspection (status: ${returnOrder.status})`)
+    }
+
+    const now = new Date().toISOString()
+    returnOrder.status = PurchaseReturnStatus.Shipped
+    returnOrder.approvedBy = inspectorInfo.inspectorId
+    returnOrder.approvedAt = now
+    returnOrder.reasonDetail = inspectorInfo.comment ?? returnOrder.reasonDetail
+    returnOrder.updatedAt = now
+    returnStore.set(returnId, returnOrder)
+
+    this.logger.log(`Return inspected: ${returnOrder.returnOrderNo} by ${inspectorInfo.inspectorName}`)
+    return returnOrder
+  }
+
+  /**
+   * 驳回退货
+   */
+  rejectReturn(
+    returnId: string,
+    tenantContext: RequestTenantContext,
+    reviewerInfo: { reviewerId: string; reviewerName: string; comment?: string }
+  ): PurchaseReturn {
+    const returnOrder = returnStore.get(returnId)
+    if (!returnOrder) {
+      throw new Error(`Return order ${returnId} not found`)
+    }
+
+    const order = purchaseOrderStore.get(returnOrder.purchaseOrderId)
+    if (!order || order.tenantId !== tenantContext.tenantId) {
+      throw new Error(`Purchase order ${returnOrder.purchaseOrderId} not found`)
+    }
+
+    if (
+      returnOrder.status !== PurchaseReturnStatus.Pending &&
+      returnOrder.status !== PurchaseReturnStatus.Shipped
+    ) {
+      throw new Error(`Return order ${returnId} cannot be rejected (status: ${returnOrder.status})`)
+    }
+
+    const now = new Date().toISOString()
+    returnOrder.status = PurchaseReturnStatus.Rejected
+    returnOrder.approvedBy = reviewerInfo.reviewerId
+    returnOrder.approvedAt = now
+    returnOrder.reasonDetail = reviewerInfo.comment ?? returnOrder.reasonDetail
+    returnOrder.updatedAt = now
+    returnStore.set(returnId, returnOrder)
+
+    this.logger.log(`Return rejected: ${returnOrder.returnOrderNo} by ${reviewerInfo.reviewerName}`)
     return returnOrder
   }
 
@@ -749,8 +823,11 @@ export class InventoryPurchaseService {
       throw new Error(`Purchase order ${returnOrder.purchaseOrderId} not found`)
     }
 
-    if (returnOrder.status !== PurchaseReturnStatus.Approved) {
-      throw new Error(`Return order ${returnId} must be approved before completion (status: ${returnOrder.status})`)
+    if (
+      returnOrder.status !== PurchaseReturnStatus.Approved &&
+      returnOrder.status !== PurchaseReturnStatus.Rejected
+    ) {
+      throw new Error(`Return order ${returnId} must be approved or rejected before completion (status: ${returnOrder.status})`)
     }
 
     const now = new Date().toISOString()

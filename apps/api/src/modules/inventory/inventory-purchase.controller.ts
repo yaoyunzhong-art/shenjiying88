@@ -339,6 +339,32 @@ export class InventoryPurchaseController {
   }
 
   /**
+   * POST /api/inventory/purchase/returns/:returnId/inspect
+   * 退货质检
+   */
+  @Post('returns/:returnId/inspect')
+  inspectReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { inspectorId: string; inspectorName: string; comment?: string }
+  ) {
+    return this.purchaseService.inspectReturn(returnId, tenantContext, body)
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/reject
+   * 驳回退货
+   */
+  @Post('returns/:returnId/reject')
+  rejectReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { reviewerId: string; reviewerName: string; comment?: string }
+  ) {
+    return this.purchaseService.rejectReturn(returnId, tenantContext, body)
+  }
+
+  /**
    * POST /api/inventory/purchase/returns/:returnId/complete
    * 完成退货
    */
