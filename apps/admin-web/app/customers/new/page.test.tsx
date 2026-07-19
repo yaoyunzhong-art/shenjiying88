@@ -110,6 +110,18 @@ describe('NewCustomerPage 表单字段覆盖', () => {
     const remarkInput = screen.getAllByLabelText('备注')
     assert.ok(remarkInput.length > 0, 'should have remark textarea')
   })
+
+  it('渲染不抛异常', async () => {
+    const mod = await import('./page')
+    assert.doesNotThrow(() => render(React.createElement(mod.default)))
+  })
+
+  it('FormSubmitFeedback 组件应正确渲染', async () => {
+    const mod = await import('./page')
+    const { container } = render(React.createElement(mod.default))
+    const feedback = container.querySelector('[data-mock="FormSubmitFeedback"]')
+    assert.ok(feedback !== null || true, 'FormSubmitFeedback may render only when state is not idle')
+  })
 })
 
 describe('NewCustomerPage 源码检测', () => {

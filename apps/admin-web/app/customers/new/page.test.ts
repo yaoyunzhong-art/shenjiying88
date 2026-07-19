@@ -314,3 +314,69 @@ describe('默认表单数据', () => {
     }
   })
 })
+
+describe('表单提交验证', () => {
+  it('所有必填字段填写后不应有验证错误', () => {
+    const data = getDefaultFormData()
+    data.name = '张三'
+    data.phone = '13800138000'
+    data.source = 'walkin'
+    data.memberLevel = 'gold'
+    const errors = validateFormFields(FIELDS, data as Record<string, unknown>)
+    assert.equal(Object.keys(errors).length, 0, 'all required fields filled should pass validation')
+  })
+
+  it('name 字段 placeholder 应正确', () => {
+    const field = FIELDS.find((f) => f.key === 'name')
+    assert.equal(field?.placeholder, '请输入客户姓名')
+  })
+
+  it('phone 字段 placeholder 应正确', () => {
+    const field = FIELDS.find((f) => f.key === 'phone')
+    assert.equal(field?.placeholder, '请输入11位手机号')
+  })
+
+  it('birthDate 字段应有两个规则验证空字符串', () => {
+    const field = FIELDS.find((f) => f.key === 'birthDate')
+    // It's optional, so empty string should pass rules
+    const msg = field?.rules?.[0].validate('')
+    assert.equal(msg, null, 'empty birthDate should pass')
+  })
+
+  it('SOURCE_OPTIONS 标签不应为空', () => {
+    for (const opt of SOURCE_OPTIONS) {
+      assert.ok(opt.label.length > 0, `source ${opt.value} has empty label`)
+    }
+  })
+
+  it('LEVEL_OPTIONS 标签不应为空', () => {
+    for (const opt of LEVEL_OPTIONS) {
+      assert.ok(opt.label.length > 0, `level ${opt.value} has empty label`)
+    }
+  })
+
+  it('默认 gender 应为 unknown', () => {
+    const data = getDefaultFormData()
+    assert.equal(data.gender, 'unknown')
+  })
+
+  it('gender 字段不应为必填', () => {
+    const field = FIELDS.find((f) => f.key === 'gender')
+    assert.equal(field?.required, false)
+  })
+
+  it('remark 字段应为 textarea 类型', () => {
+    const field = FIELDS.find((f) => f.key === 'remark')
+    assert.equal(field?.type, 'textarea')
+  })
+
+  it('birthDate 字段应为 text 类型', () => {
+    const field = FIELDS.find((f) => f.key === 'birthDate')
+    assert.equal(field?.type, 'text')
+  })
+
+  it('city 字段应为 text 类型', () => {
+    const field = FIELDS.find((f) => f.key === 'city')
+    assert.equal(field?.type, 'text')
+  })
+})

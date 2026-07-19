@@ -141,6 +141,26 @@ describe('映射覆盖完整性', () => {
       assert.ok(GENDER_LABEL[g].length > 0, `gender ${g}: empty label`)
     }
   })
+
+  it('MEMBER_LEVEL_MAP 所有 variant 值对 Badge 组件有效', () => {
+    const validVariants = ['neutral', 'default', 'success', 'info'] as const
+    for (const [key, entry] of Object.entries(MEMBER_LEVEL_MAP)) {
+      assert.ok(
+        validVariants.includes(entry.variant as typeof validVariants[number]),
+        `memberLevel ${key} has invalid variant '${entry.variant}' — all member level variants must be valid BadgeVariant values`,
+      )
+    }
+  })
+
+  it('CUSTOMER_STATUS_MAP 所有 variant 值对 StatusBadge 有效', () => {
+    const validVariants = ['success', 'warning', 'danger', 'neutral'] as const
+    for (const [key, entry] of Object.entries(CUSTOMER_STATUS_MAP)) {
+      assert.ok(
+        validVariants.includes(entry.variant as typeof validVariants[number]),
+        `status ${key} has invalid variant '${entry.variant}'`,
+      )
+    }
+  })
 })
 
 describe('formatCurrency 格式化', () => {
@@ -204,5 +224,23 @@ describe('filterCustomers 筛选逻辑', () => {
   it('搜索不区分大小写', () => {
     const resultByName = filterCustomers(MOCK_CUSTOMERS, '张明', 'all', 'all')
     assert.equal(resultByName.length, 1)
+  })
+
+  it('等级筛选 bronze 应正确返回', () => {
+    const result = filterCustomers(MOCK_CUSTOMERS, '', 'all', 'bronze')
+    assert.ok(result.length > 0)
+    assert.ok(result.every((c) => c.memberLevel === 'bronze'))
+  })
+
+  it('等级筛选 gold 应正确返回', () => {
+    const result = filterCustomers(MOCK_CUSTOMERS, '', 'all', 'gold')
+    assert.ok(result.length >= 2)
+    assert.ok(result.every((c) => c.memberLevel === 'gold'))
+  })
+
+  it('过滤函数不应修改原始数组', () => {
+    const original = [...MOCK_CUSTOMERS]
+    filterCustomers(MOCK_CUSTOMERS, '张明', 'all', 'diamond')
+    assert.equal(original.length, MOCK_CUSTOMERS.length)
   })
 })

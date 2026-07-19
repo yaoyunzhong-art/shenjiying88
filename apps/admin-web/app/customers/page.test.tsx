@@ -130,6 +130,10 @@ describe('CustomersPage 筛选验证', () => {
 })
 
 describe('CustomersPage 组件渲染', () => {
+  it('页面不应抛出渲染异常', async () => {
+    const mod = await import('./page')
+    assert.doesNotThrow(() => render(React.createElement(mod.default)))
+  })
   beforeEach(() => {
     // The mock will handle the module load; just set up
   })
@@ -164,6 +168,62 @@ describe('CustomersPage 组件渲染', () => {
     const { container } = render(React.createElement(mod.default))
     const statCards = container.querySelectorAll('[data-mock="StatCard"]')
     assert.equal(statCards.length, 4, 'should render 4 stat cards')
+  })
+
+  it('统计卡片应包含正确的标签', async () => {
+    const mod = await import('./page')
+    const { container } = render(React.createElement(mod.default))
+    const statLabels = container.querySelectorAll('[data-testid="stat-label"]')
+    const labels = Array.from(statLabels).map(el => el.textContent)
+    assert.ok(labels.includes('总客户'), `missing 总客户, got: ${labels.join(', ')}`)
+    assert.ok(labels.includes('活跃客户'), `missing 活跃客户, got: ${labels.join(', ')}`)
+    assert.ok(labels.includes('累计消费'), `missing 累计消费, got: ${labels.join(', ')}`)
+    assert.ok(labels.includes('钻石会员'), `missing 钻石会员, got: ${labels.join(', ')}`)
+  })
+
+  it('应渲染 DataTable 组件', async () => {
+    const mod = await import('./page')
+    const { container } = render(React.createElement(mod.default))
+    const dataTable = container.querySelector('[data-mock="DataTable"]')
+    assert.ok(dataTable, 'should render DataTable')
+  })
+
+  it('应渲染筛选输入框', async () => {
+    const mod = await import('./page')
+    const { container } = render(React.createElement(mod.default))
+    const searchInput = container.querySelector('[data-mock="SearchFilterInput"]')
+    assert.ok(searchInput, 'should render SearchFilterInput')
+  })
+
+  it('应渲染状态筛选下拉框', async () => {
+    const mod = await import('./page')
+    render(React.createElement(mod.default))
+    const statusSelect = screen.getAllByLabelText('状态筛选')
+    assert.ok(statusSelect.length > 0, 'should render status filter select')
+  })
+
+  it('应渲染会员等级筛选下拉框', async () => {
+    const mod = await import('./page')
+    render(React.createElement(mod.default))
+    const levelSelect = screen.getAllByLabelText('会员等级筛选')
+    assert.ok(levelSelect.length > 0, 'should render member level filter select')
+  })
+
+  it('应渲染分页按钮', async () => {
+    const mod = await import('./page')
+    const { container } = render(React.createElement(mod.default))
+    // 12 customers / 10 per page = 2 pages
+    const pageButtons = Array.from(container.querySelectorAll('button'))
+    const paginationButtons = pageButtons.filter(b => /^[12]$/.test(b.textContent || ''))
+    assert.ok(paginationButtons.length >= 1, 'should render at least one pagination button')
+  })
+
+  it('应显示记录总数', async () => {
+    const mod = await import('./page')
+    const { container } = render(React.createElement(mod.default))
+    const totalText = Array.from(container.querySelectorAll('span'))
+    const found = totalText.some(el => /共.*12.*条/.test(el.textContent || ''))
+    assert.ok(found, 'should show total record count')
   })
 })
 

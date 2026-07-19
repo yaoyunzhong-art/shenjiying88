@@ -28,7 +28,10 @@ export interface CustomerRecord {
   remark: string
 }
 
-export const CUSTOMER_STATUS_MAP: Record<CustomerStatus, { label: string; variant: string }> = {
+export type StatusBadgeVariant = 'success' | 'warning' | 'danger' | 'neutral'
+export type MemberLevelBadgeVariant = 'neutral' | 'default' | 'success' | 'info'
+
+export const CUSTOMER_STATUS_MAP: Record<CustomerStatus, { label: string; variant: StatusBadgeVariant }> = {
   active: { label: '活跃', variant: 'success' },
   inactive: { label: '沉默', variant: 'warning' },
   blocked: { label: '冻结', variant: 'danger' },
@@ -43,10 +46,10 @@ export const CUSTOMER_SOURCE_MAP: Record<CustomerSource, string> = {
   partner: '异业合作',
 }
 
-export const MEMBER_LEVEL_MAP: Record<MemberLevel, { label: string; variant: string }> = {
+export const MEMBER_LEVEL_MAP: Record<MemberLevel, { label: string; variant: MemberLevelBadgeVariant }> = {
   none: { label: '非会员', variant: 'neutral' },
   bronze: { label: '青铜会员', variant: 'default' },
-  silver: { label: '白银会员', variant: 'secondary' },
+  silver: { label: '白银会员', variant: 'neutral' },
   gold: { label: '黄金会员', variant: 'success' },
   diamond: { label: '钻石会员', variant: 'info' },
 }

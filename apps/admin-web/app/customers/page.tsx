@@ -14,7 +14,6 @@ import {
   SearchFilterInput,
   StatCard,
   type DataTableColumn,
-  type BadgeVariant,
 } from '@m5/ui'
 
 import {
@@ -105,7 +104,7 @@ export default function CustomersPage() {
       header: '会员等级',
       render: (item) => {
         const info = MEMBER_LEVEL_MAP[item.memberLevel]
-        return <Badge variant={info.variant as BadgeVariant}>{info.label}</Badge>
+        return <Badge variant={info.variant}>{info.label}</Badge>
       },
     },
     { key: 'phone', header: '手机号' },
@@ -124,7 +123,7 @@ export default function CustomersPage() {
       header: '状态',
       render: (item) => {
         const info = CUSTOMER_STATUS_MAP[item.status]
-        return <StatusBadge label={info.label} variant={info.variant as 'success' | 'warning' | 'danger' | 'neutral'} />
+        return <StatusBadge label={info.label} variant={info.variant} />
       },
     },
     {
