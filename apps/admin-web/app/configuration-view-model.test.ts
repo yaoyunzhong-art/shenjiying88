@@ -142,6 +142,8 @@ const SAMPLE_MANAGEMENT_METADATA: ConfigurationGovernanceMetadataEntry[] = [
 ]
 
 describe('configuration-view-model', () => {
+  // ── 正例: buildConfigurationHref ──
+
   test('buildConfigurationHref omits empty query', () => {
     assert.equal(buildConfigurationHref(), '/configuration')
   })
@@ -153,6 +155,15 @@ describe('configuration-view-model', () => {
     )
   })
 
+  test('buildConfigurationHref includes partial params', () => {
+    assert.equal(
+      buildConfigurationHref({ tenantId: 't1' }),
+      '/configuration?tenantId=t1'
+    )
+  })
+
+  // ── 正例/反例: featureFlagStatusLabel ──
+
   test('featureFlagStatusLabel flips with enabled', () => {
     const enabled = featureFlagStatusLabel({ key: 'a', enabled: true } as ConfigurationFeatureFlag)
     const disabled = featureFlagStatusLabel({ key: 'a', enabled: false } as ConfigurationFeatureFlag)
@@ -160,7 +171,14 @@ describe('configuration-view-model', () => {
     assert.equal(disabled, '关闭')
   })
 
-  test('summarize helpers cover primitive/string/object cases', () => {
+  test('featureFlagStatusLabel handles null/undefined', () => {
+    assert.equal(featureFlagStatusLabel(null), '—')
+    assert.equal(featureFlagStatusLabel(undefined), '—')
+  })
+
+  // ── 正例/反例: summarizeConfigEntry ──
+
+  test('summarizeConfigEntry handles primitive/string/object/null cases', () => {
     const objEntry = {
       id: 'cfg-2',
       key: 'foo.bar',
@@ -177,16 +195,80 @@ describe('configuration-view-model', () => {
     } as ConfigurationConfigEntry
     assert.equal(summarizeConfigEntry(objEntry), JSON.stringify({ nested: true }))
     assert.equal(summarizeConfigEntry(nullEntry), '—')
+  })
+
+  test('summarizeConfigEntry handles string and numeric values', () => {
+    const strEntry = {
+      id: 'cfg-s',
+      key: 'app.name',
+      value: 'my-app',
+      scopeType: 'PLATFORM',
+      updatedAt: '2026-06-14T07:00:00.000Z'
+    } as ConfigurationConfigEntry
+    const numEntry = {
+      id: 'cfg-n',
+      key: 'app.timeout',
+      value: 30000,
+      scopeType: 'PLATFORM',
+      updatedAt: '2026-06-14T07:00:00.000Z'
+    } as ConfigurationConfigEntry
+    assert.equal(summarizeConfigEntry(strEntry), 'my-app')
+    assert.equal(summarizeConfigEntry(numEntry), '30000')
+  })
+
+  test('summarizeConfigEntry handles array values', () => {
+    const arrEntry = {
+      id: 'cfg-a',
+      key: 'app.allowed-origins',
+      value: ['http://localhost', 'https://app.example.com'],
+      scopeType: 'PLATFORM',
+      updatedAt: '2026-06-14T07:00:00.000Z'
+    } as ConfigurationConfigEntry
+    assert.equal(summarizeConfigEntry(arrEntry), JSON.stringify(['http://localhost', 'https://app.example.com']))
+  })
+
+  // ── 正例: summarizeSecret ──
+
+  test('summarizeSecret includes name and consumers', () => {
     assert.equal(summarizeSecret({ name: 's', consumers: ['a', 'b'] } as ConfigurationSecretMetadata), 's · 消费者 a, b')
+    assert.equal(summarizeSecret({ name: 'no-consumer', consumers: [] } as ConfigurationSecretMetadata), 'no-consumer · 消费者 ')
+  })
+
+  test('summarizeSecret handles single consumer', () => {
+    assert.equal(summarizeSecret({ name: 'single', consumers: ['app'] } as ConfigurationSecretMetadata), 'single · 消费者 app')
+  })
+
+  // ── 正例: summarizeCertificate ──
+
+  test('summarizeCertificate includes name and issuer', () => {
     assert.equal(summarizeCertificate({ name: 'c', issuer: 'm5-internal', status: 'active', expiresAt: 'x' } as ConfigurationCertificateMetadata), 'c · m5-internal')
   })
 
-  test('status label/variant maps cover common keys', () => {
-    assert.equal(SECRET_STATUS_LABEL['rotation-due'], '待轮换')
-    assert.equal(SECRET_STATUS_VARIANT['expired'], 'danger')
-    assert.equal(CERTIFICATE_STATUS_LABEL['expiring-soon'], '即将到期')
-    assert.equal(CERTIFICATE_STATUS_VARIANT['active'], 'success')
+  test('summarizeCertificate handles alternative issuer', () => {
+    assert.equal(summarizeCertificate({ name: 'external-cert', issuer: 'lets-encrypt', status: 'active', expiresAt: '2027-01-01' } as ConfigurationCertificateMetadata), 'external-cert · lets-encrypt')
   })
+
+  // ── 正例/反例: label/variant maps ──
+
+  test('SECRET status label/variant maps cover all keys', () => {
+    assert.equal(SECRET_STATUS_LABEL['rotation-due'], '待轮换')
+    assert.equal(SECRET_STATUS_LABEL['active'], '正常')
+    assert.equal(SECRET_STATUS_LABEL['expired'], '已过期')
+    assert.equal(SECRET_STATUS_VARIANT['expired'], 'danger')
+    assert.equal(SECRET_STATUS_VARIANT['rotation-due'], 'warning')
+    assert.equal(SECRET_STATUS_VARIANT['active'], 'success')
+  })
+
+  test('CERTIFICATE status label/variant maps cover all keys', () => {
+    assert.equal(CERTIFICATE_STATUS_LABEL['expiring-soon'], '即将到期')
+    assert.equal(CERTIFICATE_STATUS_LABEL['active'], '正常')
+    assert.equal(CERTIFICATE_STATUS_LABEL['expired'], '已过期')
+    assert.equal(CERTIFICATE_STATUS_VARIANT['active'], 'success')
+    assert.equal(CERTIFICATE_STATUS_VARIANT['expiring-soon'], 'warning')
+    assert.equal(CERTIFICATE_STATUS_VARIANT['expired'], 'danger')
+  })
+
+  // ── 正例/反例: loadConfigurationGovernanceSnapshot ──
 
   test('loadConfigurationGovernanceSnapshot returns fallback when fetch fails', async () => {
     const originalFetch = globalThis.fetch
@@ -224,6 +306,39 @@ describe('configuration-view-model', () => {
       assert.equal(snapshot.overview.configuration.featureFlags.items[0]?.key, 'checkout.experimental')
       assert.equal(snapshot.overview.posture.secrets.sharedConsumers, 1)
       assert.equal(snapshot.managementMetadata[0]?.operation, 'secret.rotate')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  test('loadConfigurationGovernanceSnapshot returns fallback when management-metadata fails but overview succeeds', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+      if (url.includes('/management-metadata')) {
+        return new Response('Not Found', { status: 404 })
+      }
+      return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_OVERVIEW }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as typeof fetch
+    try {
+      const snapshot = await loadConfigurationGovernanceSnapshot({ tenantId: 'tenant-demo' })
+      assert.equal(snapshot.deliveryMode, 'fallback')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  // ── 边界 ──
+
+  test('loadConfigurationGovernanceSnapshot works with empty scope', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async () => new Response('boom', { status: 500 })) as typeof fetch
+    try {
+      const snapshot = await loadConfigurationGovernanceSnapshot({})
+      assert.equal(snapshot.deliveryMode, 'fallback')
     } finally {
       globalThis.fetch = originalFetch
     }

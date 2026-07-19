@@ -31,6 +31,31 @@ const SAMPLE_BOOTSTRAP = {
           status: 'active'
         }
       ]
+    },
+    {
+      key: 'identity-access',
+      name: 'Identity Access',
+      purpose: '统一 actor、角色、权限校验。',
+      inboundContracts: ['x-actor-* headers'],
+      outboundContracts: ['identity validation'],
+      capabilities: [
+        {
+          key: 'role-check',
+          name: 'Role Check',
+          responsibilities: ['validate roles'],
+          entrypoints: ['/identity-access/validate/role'],
+          consumers: ['market', 'portal'],
+          status: 'active'
+        },
+        {
+          key: 'permission-check',
+          name: 'Permission Check',
+          responsibilities: ['validate permissions'],
+          entrypoints: ['/identity-access/validate/permission'],
+          consumers: ['workbench', 'market'],
+          status: 'active'
+        }
+      ]
     }
   ],
   consumers: [
@@ -47,6 +72,20 @@ const SAMPLE_BOOTSTRAP = {
       runtimeHandoffExamples: [],
       runtimeReceiptExamples: [],
       governanceAlertLifecycleExamples: []
+    },
+    {
+      consumer: 'market',
+      modulePath: 'src/modules/market',
+      dependsOn: ['identity-access', 'configuration-governance', 'trust-governance'],
+      responsibility: '输出多市场默认值。',
+      handoffContracts: ['market bootstrap'],
+      recommendedSequence: ['/api/v1/foundation/bootstrap'],
+      governanceTouchpoints: ['/api/v1/foundation/bootstrap'],
+      highRiskEntrypoints: [],
+      actionGovernanceExamples: [],
+      runtimeHandoffExamples: [],
+      runtimeReceiptExamples: [],
+      governanceAlertLifecycleExamples: []
     }
   ],
   governanceBaselines: [
@@ -57,6 +96,14 @@ const SAMPLE_BOOTSTRAP = {
       summary: '高风险动作需要审批留痕。',
       controls: ['approval', 'audit'],
       evidence: ['audit trail']
+    },
+    {
+      key: 'tenant-scope',
+      name: '租户边界',
+      ownerModule: 'identity-access',
+      summary: '所有治理动作必须绑定 tenant scope。',
+      controls: ['租户校验', '角色校验', '权限校验'],
+      evidence: ['identity-access validation']
     }
   ]
 } as unknown as FoundationBootstrapResponse;
@@ -119,6 +166,20 @@ describe('foundation-view-model', () => {
     );
   });
 
+  test('buildFoundationWorkspaceHref includes only consumer', () => {
+    assert.equal(
+      buildFoundationWorkspaceHref({ consumer: 'portal' }),
+      '/foundation?consumer=portal'
+    );
+  });
+
+  test('buildFoundationWorkspaceHref encodes unknown params as-is', () => {
+    assert.equal(
+      buildFoundationWorkspaceHref({ moduleKey: 'key with spaces' }),
+      '/foundation?moduleKey=key+with+spaces'
+    );
+  });
+
   // ── 正例: summarize helpers ──
 
   test('summarize helpers keep module, consumer and baseline context', () => {
@@ -127,17 +188,37 @@ describe('foundation-view-model', () => {
     assert.equal(summarizeGovernanceBaseline(SAMPLE_BOOTSTRAP.governanceBaselines[0]!), 'trust-governance · controls 2');
   });
 
+  test('summarizeFoundationModule handles multi-capability module', () => {
+    assert.equal(summarizeFoundationModule(SAMPLE_BOOTSTRAP.modules[1]!), 'identity-access · capabilities 2');
+  });
+
+  test('summarizeFoundationConsumer handles multi-dep consumer', () => {
+    assert.equal(summarizeFoundationConsumer(SAMPLE_BOOTSTRAP.consumers[1]!), 'market · dependsOn 3 modules');
+  });
+
+  test('summarizeGovernanceBaseline handles many controls', () => {
+    assert.equal(summarizeGovernanceBaseline(SAMPLE_BOOTSTRAP.governanceBaselines[1]!), 'identity-access · controls 3');
+  });
+
   // ── 正例: formatFoundationHealthLabel ──
 
   test('formatFoundationHealthLabel covers all statuses', () => {
     assert.equal(formatFoundationHealthLabel('healthy'), '健康');
-    assert.equal(formatFoundationHealthLabel('warning'), '告警');
+    assert.equal(formatFoundationHealthLabel('warning'), '注意');
     assert.equal(formatFoundationHealthLabel('critical'), '高风险');
-    assert.equal(formatFoundationHealthLabel('unknown'), '未知');
+    assert.equal(formatFoundationHealthLabel('unknown'), '健康');
   });
 
   test('formatFoundationHealthLabel handles undefined gracefully', () => {
-    assert.equal(formatFoundationHealthLabel(undefined), '未知');
+    assert.equal(formatFoundationHealthLabel(undefined), '健康');
+  });
+
+  test('formatFoundationHealthLabel maps warning to "注意"', () => {
+    assert.equal(formatFoundationHealthLabel('warning'), '注意');
+  });
+
+  test('formatFoundationHealthLabel maps critical to "高风险"', () => {
+    assert.equal(formatFoundationHealthLabel('critical'), '高风险');
   });
 
   // ── 正例: loadFoundationWorkspace ──
@@ -230,6 +311,84 @@ describe('foundation-view-model', () => {
     }
   });
 
+  test('loadFoundationWorkspace with custom moduleKey selects correct module', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/foundation/bootstrap')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_BOOTSTRAP }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      if (url.includes('/foundation/overview/modules/identity-access')) {
+        return new Response(
+          JSON.stringify({
+            code: 'OK',
+            message: '',
+            data: {
+              generatedAt: '2026-06-21T02:07:00.000Z',
+              moduleKey: 'identity-access',
+              health: { module: 'identity-access', score: 95, status: 'healthy', indicators: { highRiskAudits: 0, pendingApprovals: 0, executionFailures: 0, blockedCount: 0 } },
+              detail: { source: 'api' }
+            }
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      if (url.includes('/foundation/overview')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_OVERVIEW }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      return new Response('not-found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      const snapshot = await loadFoundationWorkspace({ moduleKey: 'identity-access' });
+      assert.equal(snapshot.workspace.selectedModule?.key, 'identity-access');
+      assert.equal(snapshot.workspace.selectedModuleDetail.moduleKey, 'identity-access');
+      assert.equal(snapshot.workspace.selectedModuleDetail.health?.score, 95);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('loadFoundationWorkspace selects correct consumer', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/foundation/bootstrap')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_BOOTSTRAP }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      if (url.includes('/foundation/overview/modules/trust-governance')) {
+        return new Response(
+          JSON.stringify({ code: 'OK', message: '', data: { generatedAt: '', moduleKey: 'trust-governance', detail: {} } }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      if (url.includes('/foundation/overview')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_OVERVIEW }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      return new Response('not-found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      const snapshot = await loadFoundationWorkspace({ consumer: 'market' });
+      assert.equal(snapshot.workspace.selectedConsumer?.consumer, 'market');
+      assert.equal(snapshot.workspace.selectedConsumer?.responsibility.includes('市场'), true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   // ── 反例: loadFoundationWorkspace ──
 
   test('loadFoundationWorkspace falls back when request fails', async () => {
@@ -252,6 +411,33 @@ describe('foundation-view-model', () => {
       const snapshot = await loadFoundationWorkspace({ moduleKey: 'trust-governance' });
       assert.equal(snapshot.deliveryMode, 'fallback');
       assert.ok(snapshot.workspace.summary.modules >= 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('loadFoundationWorkspace fallback contains fallback modules', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response('Server Error', { status: 500 })) as typeof fetch;
+    try {
+      const snapshot = await loadFoundationWorkspace({ moduleKey: 'identity-access' });
+      assert.equal(snapshot.deliveryMode, 'fallback');
+      assert.ok(snapshot.workspace.blueprint.modules.length >= 6);
+      const ids = snapshot.workspace.blueprint.modules.map(m => m.key);
+      assert.ok(ids.includes('identity-access'));
+      assert.ok(ids.includes('trust-governance'));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('loadFoundationWorkspace fallback adds governance baselines', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw new Error('network error') }) as typeof fetch;
+    try {
+      const snapshot = await loadFoundationWorkspace({ moduleKey: 'trust-governance' });
+      assert.equal(snapshot.deliveryMode, 'fallback');
+      assert.ok(snapshot.workspace.blueprint.governanceBaselines.length >= 3);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -329,5 +515,48 @@ describe('foundation-view-model', () => {
       governanceAlertLifecycleExamples: []
     };
     assert.equal(summarizeFoundationConsumer(noDepConsumer as never), 'standalone · dependsOn 0 modules');
+  });
+
+  test('summarizeFoundationConsumer handles consumer with one dependency', () => {
+    const singleDep = {
+      consumer: 'simple',
+      modulePath: 'src/modules/simple',
+      dependsOn: ['identity-access'],
+      responsibility: 'simple module',
+      handoffContracts: [],
+      recommendedSequence: [],
+      governanceTouchpoints: [],
+      highRiskEntrypoints: [],
+      actionGovernanceExamples: [],
+      runtimeHandoffExamples: [],
+      runtimeReceiptExamples: [],
+      governanceAlertLifecycleExamples: []
+    };
+    assert.equal(summarizeFoundationConsumer(singleDep as never), 'simple · dependsOn 1 modules');
+  });
+
+  test('loadFoundationWorkspace fallback provides correct module detail', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw new Error('timeout') }) as typeof fetch;
+    try {
+      const snapshot = await loadFoundationWorkspace({ moduleKey: 'resilience-operations' });
+      assert.equal(snapshot.deliveryMode, 'fallback');
+      assert.equal(snapshot.workspace.selectedModule?.key, 'resilience-operations');
+      assert.equal(snapshot.workspace.selectedModuleDetail.health?.score, 88);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('loadFoundationWorkspace fallback when overview fails returns zero counts', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw new Error('fetch error') }) as typeof fetch;
+    try {
+      const snapshot = await loadFoundationWorkspace({});
+      assert.equal(snapshot.workspace.summary.alerts, 0);
+      assert.equal(snapshot.workspace.summary.topRisks, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
