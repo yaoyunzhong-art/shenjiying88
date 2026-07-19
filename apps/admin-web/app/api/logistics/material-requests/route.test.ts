@@ -162,7 +162,12 @@ describe('logistics material requests route', () => {
 
     const response = await GET(
       new Request('http://admin.local/api/logistics/material-requests?status=pending_approval', {
-        headers: { 'x-tenant-id': 'tenant-p30' }
+        headers: {
+          'x-tenant-id': 'tenant-p30',
+          'x-actor-id': 'admin-store-inventory',
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS',
+          'x-actor-permissions': 'logistics.inventory.read,logistics.inventory.write'
+        }
       })
     )
 
@@ -171,11 +176,17 @@ describe('logistics material requests route', () => {
       'http://localhost:3001/api/v1/logistics/material-requests?status=pending_approval'
     )
     assert.equal(new Headers(capturedHeaders).get('x-tenant-id'), 'tenant-p30')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
+    assert.equal(
+      new Headers(capturedHeaders).get('x-actor-permissions'),
+      'logistics.inventory.read,logistics.inventory.write'
+    )
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), [{ id: 'material-001', status: 'pending_approval' }])
   })
 
-  test('GET forwards content-type header', async () => {
+  test('GET forwards x-brand-id and x-market-code headers when present', async () => {
     let capturedHeaders: HeadersInit | undefined
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
@@ -189,11 +200,12 @@ describe('logistics material requests route', () => {
 
     await GET(
       new Request('http://admin.local/api/logistics/material-requests', {
-        headers: { 'x-tenant-id': 'tenant-p30' }
+        headers: { 'x-tenant-id': 'tenant-p30', 'x-brand-id': 'brand-001', 'x-market-code': 'cn-mainland' }
       })
     )
 
-    assert.equal(new Headers(capturedHeaders).get('content-type'), 'application/json')
+    assert.equal(new Headers(capturedHeaders).get('x-brand-id'), 'brand-001')
+    assert.equal(new Headers(capturedHeaders).get('x-market-code'), 'cn-mainland')
   })
 
   test('GET forwards x-brand-id header', async () => {
@@ -476,10 +488,12 @@ describe('logistics material requests route', () => {
 
   test('approve POST proxies to approve endpoint', async () => {
     let capturedUrl = ''
+    let capturedHeaders: HeadersInit | undefined
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input) => {
+    globalThis.fetch = (async (input, init) => {
       capturedUrl = String(input)
+      capturedHeaders = init?.headers
       return new Response(JSON.stringify({ id: 'material-003', status: 'approved' }), {
         status: 200,
         headers: { 'content-type': 'application/json' }
@@ -491,7 +505,9 @@ describe('logistics material requests route', () => {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-tenant-id': 'tenant-p30'
+          'x-tenant-id': 'tenant-p30',
+          'x-actor-id': 'admin-store-inventory',
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS'
         },
         body: JSON.stringify({ approverName: '后勤主管', note: '通过' })
       }),
@@ -502,6 +518,8 @@ describe('logistics material requests route', () => {
       capturedUrl,
       'http://localhost:3001/api/v1/logistics/material-requests/material-003/approve'
     )
+    assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { id: 'material-003', status: 'approved' })
   })
@@ -578,10 +596,12 @@ describe('logistics material requests route', () => {
 
   test('outbound POST proxies to outbound endpoint', async () => {
     let capturedUrl = ''
+    let capturedHeaders: HeadersInit | undefined
 
     process.env.M5_API_BASE_URL = 'http://localhost:3001/api/v1'
-    globalThis.fetch = (async (input) => {
+    globalThis.fetch = (async (input, init) => {
       capturedUrl = String(input)
+      capturedHeaders = init?.headers
       return new Response(JSON.stringify({ id: 'material-003', status: 'outbound' }), {
         status: 200,
         headers: { 'content-type': 'application/json' }
@@ -593,7 +613,9 @@ describe('logistics material requests route', () => {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-tenant-id': 'tenant-p30'
+          'x-tenant-id': 'tenant-p30',
+          'x-actor-id': 'admin-store-inventory',
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS'
         },
         body: JSON.stringify({ operatorName: '仓管员', note: '已出库' })
       }),
@@ -604,6 +626,8 @@ describe('logistics material requests route', () => {
       capturedUrl,
       'http://localhost:3001/api/v1/logistics/material-requests/material-003/outbound'
     )
+    assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-inventory')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { id: 'material-003', status: 'outbound' })
   })

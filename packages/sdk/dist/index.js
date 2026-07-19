@@ -22,6 +22,7 @@ var index_exports = {};
 __export(index_exports, {
   ApiClient: () => ApiClient,
   ApiError: () => ApiError,
+  buildActorHeaders: () => buildActorHeaders,
   buildRuntimeGovernanceReplayRequest: () => buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest: () => buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay: () => computeBackoffDelay,
@@ -355,6 +356,27 @@ function buildHeaders(options, headers) {
     ...options.token ? { Authorization: `Bearer ${options.token}` } : {},
     ...options.headers ?? {},
     ...headers ?? {}
+  };
+}
+function buildActorHeaders(options) {
+  const roles = Array.from(new Set((options.roles ?? []).map((item) => item.trim()).filter(Boolean)));
+  const permissions = Array.from(new Set((options.permissions ?? []).map((item) => item.trim()).filter(Boolean)));
+  return {
+    "x-actor-id": options.actorId,
+    ...options.actorType ? { "x-actor-type": options.actorType } : {},
+    ...options.actorName ? { "x-actor-name": options.actorName } : {},
+    ...options.tenantId ? { "x-actor-tenant-id": options.tenantId } : {},
+    ...options.brandId ? { "x-actor-brand-id": options.brandId } : {},
+    ...options.storeId ? { "x-actor-store-id": options.storeId } : {},
+    ...roles.length > 0 ? {
+      "x-actor-roles": roles.join(","),
+      "x-roles": roles.join(",")
+    } : {},
+    ...permissions.length > 0 ? {
+      "x-actor-permissions": permissions.join(","),
+      "x-permissions": permissions.join(",")
+    } : {},
+    ...options.authenticated !== void 0 ? { "x-actor-authenticated": String(options.authenticated) } : {}
   };
 }
 function getDefaultApiBaseUrl() {

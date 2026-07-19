@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/run-g8-formal-window-ready.sh \
+    --env-file <path> \
+    [--release-env-file <path>] \
+    [--cert-file <path> --key-file <path>] \
+    [--tls-manifest <path>] \
+    [--namespace m5] \
+    [--window-id <id>] \
+    [--log-root infra/k8s/cutover-logs] \
+    [--execute-apply] \
+    [--execute-rollback]
+
+Behavior:
+  1. If cert/key are provided, render infra/k8s/rendered-public/m5-tls.yaml
+  2. Run formal DNS/TLS readiness gate
+  3. If --execute-apply is set, enter the formal cutover window
+
+Notes:
+  - Without --execute-apply, this script only prepares TLS material and validates readiness.
+  - --execute-rollback only works together with --execute-apply.
+EOF
+}
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+ENV_FILE=""
+RELEASE_ENV_FILE=""
+CERT_FILE=""
+KEY_FILE=""
+TLS_MANIFEST=""
+NAMESPACE="m5"
+WINDOW_ID="formal-window-$(date +%Y%m%d-%H%M%S)"
+LOG_ROOT="$ROOT_DIR/infra/k8s/cutover-logs"
+EXECUTE_APPLY="false"
+EXECUTE_ROLLBACK="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env-file)
+      ENV_FILE="${2:-}"
+      shift 2
+      ;;
+    --release-env-file)
+      RELEASE_ENV_FILE="${2:-}"
+      shift 2
+      ;;
+    --cert-file)
+      CERT_FILE="${2:-}"
+      shift 2
+      ;;
+    --key-file)
+      KEY_FILE="${2:-}"
+      shift 2
+      ;;
+    --tls-manifest)
+      TLS_MANIFEST="${2:-}"
+      shift 2
+      ;;
+    --namespace)
+      NAMESPACE="${2:-}"
+      shift 2
+      ;;
+    --window-id)
+      WINDOW_ID="${2:-}"
+      shift 2
+      ;;
+    --log-root)
+      LOG_ROOT="${2:-}"
+      shift 2
+      ;;
+    --execute-apply)
+      EXECUTE_APPLY="true"
+      shift
+      ;;
+    --execute-rollback)
+      EXECUTE_ROLLBACK="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$ENV_FILE" || ! -f "$ENV_FILE" ]]; then
+  echo "Missing --env-file or file does not exist" >&2
+  exit 1
+fi
+
+if [[ -n "$RELEASE_ENV_FILE" && ! -f "$RELEASE_ENV_FILE" ]]; then
+  echo "release env file does not exist: $RELEASE_ENV_FILE" >&2
+  exit 1
+fi
+
+if [[ ( -n "$CERT_FILE" && -z "$KEY_FILE" ) || ( -z "$CERT_FILE" && -n "$KEY_FILE" ) ]]; then
+  echo "--cert-file and --key-file must be provided together" >&2
+  exit 1
+fi
+
+if [[ "$EXECUTE_ROLLBACK" == "true" && "$EXECUTE_APPLY" != "true" ]]; then
+  echo "--execute-rollback requires --execute-apply" >&2
+  exit 1
+fi
+
+if [[ -n "$CERT_FILE" && -n "$KEY_FILE" ]]; then
+  TLS_MANIFEST="${TLS_MANIFEST:-$ROOT_DIR/infra/k8s/rendered-public/m5-tls.yaml}"
+  echo "==> Rendering formal TLS manifest"
+  bash "$ROOT_DIR/scripts/build-m5-tls-secret.sh" \
+    --cert-file "$CERT_FILE" \
+    --key-file "$KEY_FILE" \
+    --namespace "$NAMESPACE" \
+    --output-file "$TLS_MANIFEST"
+elif [[ -z "$TLS_MANIFEST" && -f "$ROOT_DIR/infra/k8s/rendered-public/m5-tls.yaml" ]]; then
+  TLS_MANIFEST="$ROOT_DIR/infra/k8s/rendered-public/m5-tls.yaml"
+fi
+
+echo "==> Running formal readiness gate"
+gate_args=(
+  --env-file "$ENV_FILE"
+  --namespace "$NAMESPACE"
+)
+if [[ -n "$TLS_MANIFEST" ]]; then
+  gate_args+=(--tls-manifest "$TLS_MANIFEST")
+fi
+bash "$ROOT_DIR/scripts/preflight-prod-formal-window.sh" "${gate_args[@]}"
+
+if [[ "$EXECUTE_APPLY" != "true" ]]; then
+  echo
+  echo "==> Formal readiness passed"
+  echo "window_id=$WINDOW_ID"
+  echo "tls_manifest=${TLS_MANIFEST:-live-secret}"
+  echo "next_command=bash scripts/run-prod-cutover-window.sh --env-file $ENV_FILE${RELEASE_ENV_FILE:+ --release-env-file $RELEASE_ENV_FILE} --window-id $WINDOW_ID --log-root $LOG_ROOT${TLS_MANIFEST:+ --tls-manifest $TLS_MANIFEST} --execute-apply"
+  exit 0
+fi
+
+echo "==> Entering formal cutover window"
+window_args=(
+  --env-file "$ENV_FILE"
+  --window-id "$WINDOW_ID"
+  --log-root "$LOG_ROOT"
+  --namespace "$NAMESPACE"
+  --execute-apply
+)
+if [[ -n "$RELEASE_ENV_FILE" ]]; then
+  window_args+=(--release-env-file "$RELEASE_ENV_FILE")
+fi
+if [[ -n "$TLS_MANIFEST" ]]; then
+  window_args+=(--tls-manifest "$TLS_MANIFEST")
+fi
+if [[ "$EXECUTE_ROLLBACK" == "true" ]]; then
+  window_args+=(--execute-rollback)
+fi
+
+bash "$ROOT_DIR/scripts/run-prod-cutover-window.sh" "${window_args[@]}"

@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CouponV2 } from './coupon.entity';
 import { CouponRedemptionLog } from './coupon-redemption-log.entity';
 import { CouponService } from './coupon.service';
+import { CouponCleanupService } from './coupon-cleanup.service';
 import { CouponController } from './coupon.controller';
 
 @Module({
@@ -14,7 +15,7 @@ import { CouponController } from './coupon.controller';
     TypeOrmModule.forFeature([CouponV2, CouponRedemptionLog]),
   ],
   controllers: [CouponController],
-  providers: [CouponService],
-  exports: [CouponService],
+  providers: [CouponService, CouponCleanupService],
+  exports: [CouponService, CouponCleanupService],
 })
 export class CouponModule {}

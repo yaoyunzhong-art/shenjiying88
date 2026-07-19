@@ -2,10 +2,14 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { afterAll, beforeAll, describe, it } from 'vitest'
 import { ValidationPipe } from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
 import { runWithTenant } from '../../common/context/tenant-context'
+import { IdentityAccessGuard } from '../foundation/identity-access/identity-access.guard'
+import { IdentityAccessService } from '../foundation/identity-access/identity-access.service'
+import { TenantMiddleware } from '../tenant/tenant.middleware'
 import { CustomDomainController } from './custom-domain.controller'
 import { CustomDomainService } from './custom-domain.service'
 import { buildVerificationValue } from './custom-domain.entity'
@@ -43,6 +47,37 @@ describe('CustomDomain HTTP E2E', () => {
     await app.close()
   })
 
+  async function buildAuthorizedApp() {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [CustomDomainController],
+      providers: [CustomDomainService, Reflector, IdentityAccessService, TenantMiddleware],
+    }).compile()
+
+    const authorizedApp = moduleRef.createNestApplication()
+    const tenantMiddleware = moduleRef.get(TenantMiddleware)
+    authorizedApp.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
+    authorizedApp.useGlobalInterceptors(new ResponseInterceptor())
+    authorizedApp.use((req: any, res: any, next: any) => {
+      tenantMiddleware.use(req, res, () => {
+        runWithTenant(
+          {
+            tenantId: req.tenantContext?.tenantId ?? 'tenant-http',
+            brandId: req.tenantContext?.brandId,
+            storeId: req.tenantContext?.storeId,
+            userId: req.header('x-user-id') ?? req.header('x-actor-id') ?? 'user-http',
+            role: (req.header('x-role') as any) ?? 'tenant_admin',
+          },
+          () => next(),
+        )
+      })
+    })
+    authorizedApp.useGlobalGuards(
+      new IdentityAccessGuard(authorizedApp.get(Reflector), authorizedApp.get(IdentityAccessService)),
+    )
+    await authorizedApp.init()
+    return authorizedApp
+  }
+
   it('POST /saas/domain 创建域名', async () => {
     const res = await request(app.getHttpServer())
       .post('/saas/domain')
@@ -64,6 +99,82 @@ describe('CustomDomain HTTP E2E', () => {
 
     assert.ok(Array.isArray(res.body.message))
     assert.ok(res.body.message.some((message: string) => message.includes('domain')))
+  })
+
+  it('AUTH POST /saas/domain 缺少 actor headers 返回 401', async () => {
+    const authorizedApp = await buildAuthorizedApp()
+    try {
+      const res = await request(authorizedApp.getHttpServer())
+        .post('/saas/domain')
+        .set('x-tenant-id', 'tenant-http-auth')
+        .send({ domain: 'auth-unauthorized.example.io' })
+
+      assert.equal(res.statusCode, 401)
+    } finally {
+      await authorizedApp.close()
+    }
+  })
+
+  it('AUTH POST /saas/domain 只带读权限返回 403', async () => {
+    const authorizedApp = await buildAuthorizedApp()
+    try {
+      const res = await request(authorizedApp.getHttpServer())
+        .post('/saas/domain')
+        .set('x-tenant-id', 'tenant-http-auth')
+        .set('x-actor-id', 'auth-reader')
+        .set('x-actor-type', 'employee-user')
+        .set('x-actor-name', 'Auth Reader')
+        .set('x-actor-roles', 'TENANT_ADMIN')
+        .set('x-actor-permissions', 'foundation.governance.read')
+        .send({ domain: 'auth-forbidden.example.io' })
+
+      assert.equal(res.statusCode, 403)
+    } finally {
+      await authorizedApp.close()
+    }
+  })
+
+  it('AUTH GET /saas/domain/resolve/host 保持公开可访问', async () => {
+    const authorizedApp = await buildAuthorizedApp()
+    try {
+      const create = await request(authorizedApp.getHttpServer())
+        .post('/saas/domain')
+        .set('x-tenant-id', 'tenant-http-auth-public')
+        .set('x-actor-id', 'auth-writer')
+        .set('x-actor-type', 'employee-user')
+        .set('x-actor-name', 'Auth Writer')
+        .set('x-actor-roles', 'TENANT_ADMIN')
+        .set('x-actor-permissions', 'foundation.governance.write')
+        .send({ domain: 'auth-public.example.io' })
+
+      assert.equal(create.statusCode, 201)
+
+      const authorizedDomainService = authorizedApp.get(CustomDomainService)
+      authorizedDomainService.setDnsTxtOverride(create.body.data.verificationHost, [
+        buildVerificationValue(create.body.data.verificationToken),
+      ])
+
+      const verify = await request(authorizedApp.getHttpServer())
+        .post(`/saas/domain/${create.body.data.id}/verify`)
+        .set('x-tenant-id', 'tenant-http-auth-public')
+        .set('x-actor-id', 'auth-writer')
+        .set('x-actor-type', 'employee-user')
+        .set('x-actor-name', 'Auth Writer')
+        .set('x-actor-roles', 'TENANT_ADMIN')
+        .set('x-actor-permissions', 'foundation.governance.write')
+
+      assert.equal(verify.statusCode, 200)
+
+      const res = await request(authorizedApp.getHttpServer())
+        .get('/saas/domain/resolve/host')
+        .query({ host: 'auth-public.example.io' })
+
+      assert.equal(res.statusCode, 200)
+      assert.equal(res.body.data.host, 'auth-public.example.io')
+      assert.equal(res.body.data.resolved, true)
+    } finally {
+      await authorizedApp.close()
+    }
   })
 
   it('GET /saas/domain 返回当前租户可见域名', async () => {

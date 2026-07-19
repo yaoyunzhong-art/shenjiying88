@@ -1,0 +1,129 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — MinIO (S3-compatible) Deployment & Service
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: m5-minio
+  namespace: m5
+  labels:
+    app: m5-minio
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/name: minio
+spec:
+  ports:
+    - name: s3-api
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: console
+      port: 9001
+      targetPort: 9001
+      protocol: TCP
+  selector:
+    app: m5-minio
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: m5-minio
+  namespace: m5
+  labels:
+    app: m5-minio
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/name: minio
+spec:
+  serviceName: m5-minio
+  replicas: 1
+  selector:
+    matchLabels:
+      app: m5-minio
+  template:
+    metadata:
+      labels:
+        app: m5-minio
+        app.kubernetes.io/part-of: shenjiying
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          ports:
+            - containerPort: 9000
+              name: s3-api
+            - containerPort: 9001
+              name: console
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: MINIO_ROOT_PASSWORD
+            - name: MINIO_DOMAIN
+              value: "minio"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: m5-minio-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: minio-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: m5-minio-pvc
+  namespace: m5
+  labels:
+    app: m5-minio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi

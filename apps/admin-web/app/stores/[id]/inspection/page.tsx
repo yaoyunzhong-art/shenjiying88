@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { buildActorHeaders } from '@m5/sdk';
 import {
   Button,
   Card,
@@ -59,6 +60,15 @@ const RESULT_MAP: Record<string, { label: string; color: 'default' | 'primary' |
   fault: { label: '故障', color: 'error' },
 };
 
+const INSPECTION_PAGE_ACTOR = {
+  actorId: 'admin-store-inspection',
+  actorType: 'employee-user',
+  actorName: 'Admin Store Inspection',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['logistics.inspection.read', 'logistics.inspection.write'],
+  authenticated: true,
+} as const;
+
 export default function InspectionPage() {
   const { toasts, success, error, dismiss } = useToast();
   const [items, setItems] = useState<InspectionItem[]>([]);
@@ -71,13 +81,21 @@ export default function InspectionPage() {
 
   const tenantId = 'tenant-p30';
 
+  const buildInspectionHeaders = (contentType?: string) => ({
+    ...buildActorHeaders({
+      ...INSPECTION_PAGE_ACTOR,
+      tenantId,
+    }),
+    ...(contentType ? { 'Content-Type': contentType } : {}),
+  });
+
   const fetchItems = async () => {
     setLoading(true);
     try {
       const qs = new URLSearchParams();
       if (statusFilter !== 'all') qs.set('status', statusFilter);
       const res = await fetch(`/api/logistics/inspections?${qs.toString()}`, {
-        headers: { 'x-tenant-id': tenantId },
+        headers: buildInspectionHeaders(),
       });
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json();
@@ -98,7 +116,7 @@ export default function InspectionPage() {
     try {
       const res = await fetch('/api/logistics/inspections', {
         method: 'POST',
-        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        headers: buildInspectionHeaders('application/json'),
         body: JSON.stringify({
           equipmentName: newItem.equipmentName,
           assigneeName: newItem.assigneeName,
@@ -119,7 +137,7 @@ export default function InspectionPage() {
     try {
       const res = await fetch(`/api/logistics/inspections/${id}/remind`, {
         method: 'POST',
-        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        headers: buildInspectionHeaders('application/json'),
         body: JSON.stringify({ now: new Date().toISOString() }),
       });
       if (!res.ok) throw new Error('remind failed');
@@ -134,7 +152,7 @@ export default function InspectionPage() {
     try {
       const res = await fetch(`/api/logistics/inspections/${id}/result`, {
         method: 'POST',
-        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        headers: buildInspectionHeaders('application/json'),
         body: JSON.stringify({
           result,
           note: '',

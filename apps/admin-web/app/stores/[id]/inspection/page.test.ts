@@ -28,4 +28,9 @@ describe('inspection — 边界', () => {
   it('应包含 use client', () => assert.ok(SRC.includes("'use client'")));
   it('应包含类别图标映射', () => assert.ok(SRC.includes('TYPE_CFG') || SRC.includes('🔧')));
   it('源码长度应大于500', () => assert.ok(SRC.length > 500));
+  it('请求应通过 buildActorHeaders 统一注入 actor 身份', () => {
+    assert.ok(SRC.includes('buildActorHeaders'), '缺少统一 actor header helper');
+    assert.ok(SRC.includes('admin-store-inspection'), '缺少巡检页面 actor 标识');
+    assert.ok(SRC.includes('x-actor-id') || SRC.includes('buildInspectionHeaders'), '缺少 actor 请求头构造');
+  });
 });

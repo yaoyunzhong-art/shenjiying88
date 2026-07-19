@@ -1,0 +1,13 @@
+# V21 晚间收盘自动化
+# 每日 22:00 执行: 退化曲线 + L3日评分 + 引用归档
+# 部署: crontab -e 或 gateway cron create
+# POSTGRES_URL 需在环境变量中配置（或 ~/.pg_service.conf）
+
+# ── 模式 full ──
+0 22 * * * cd /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88 && /usr/local/bin/tsx scripts/v21-evening-close.ts full >> docs/knowledge/evolution-log.md 2>> logs/v21-evening-error.log
+
+# ── 模式 score-only（备选，可单独执行） ──
+# 0 22 * * * cd /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88 && /usr/local/bin/tsx scripts/v21-evening-close.ts score-only 2>&1 | tail -n +2 >> docs/knowledge/evolution-log.md
+
+# ── 模式 decay-only（备选） ──
+# 0 22 * * * cd /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88 && /usr/local/bin/tsx scripts/v21-evening-close.ts decay-only 2>&1

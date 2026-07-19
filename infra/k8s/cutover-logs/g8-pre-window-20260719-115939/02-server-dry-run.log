@@ -1,0 +1,42 @@
+[2026-07-19 11:59:43] ==> public cutover apply start
+[2026-07-19 11:59:43] env_file=infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-19 11:59:43] rendered_dir=infra/k8s/cutover-logs/g8-pre-window-20260719-115939/rendered-server-dry-run
+[2026-07-19 11:59:43] namespace=m5
+[2026-07-19 11:59:43] tls_manifest=auto
+[2026-07-19 11:59:43] backup_dir=auto
+[2026-07-19 11:59:43] kubectl_dry_run=server
+[2026-07-19 11:59:43] offline=false
+[2026-07-19 11:59:43] skip_tls_check=true
+[2026-07-19 11:59:43] skip_restart=false
+[2026-07-19 11:59:43] skip_rollout_wait=false
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Rendering public cutover manifests
+Rendered files:
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115939/rendered-server-dry-run/m5-ingress-public.yaml
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115939/rendered-server-dry-run/m5-config-public.yaml
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115939/rendered-server-dry-run/m5-public-dns-records.csv
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115939/rendered-server-dry-run/m5-tls-secret.template.yaml
+==> Backing up live resources to /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/backups/public-cutover/20260719-115943
+==> Skipping TLS secret existence check
+==> Applying ConfigMap and Ingress
+configmap/m5-config configured (server dry run)
+ingress.networking.k8s.io/m5-ingress configured (server dry run)
+==> Skipping production workload restart
+==> Public cutover apply finished
+Backup dir:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/backups/public-cutover/20260719-115943
+
+Suggested verification:
+  scripts/verify-prod-public-endpoints.sh --env-file infra/k8s/templates/m5-public-endpoints.env.example
+
+Quick cluster checks:
+  kubectl -n m5 get ingress m5-ingress
+  kubectl -n m5 get secret m5-tls
+
+Execution mode:
+  kubectl dry-run = server
+  offline         = false
+  skip tls check = true
+  skip restart   = true
+[2026-07-19 11:59:44] ==> public cutover apply done
+[2026-07-19 11:59:44] final_backup_dir=/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/backups/public-cutover/20260719-115943

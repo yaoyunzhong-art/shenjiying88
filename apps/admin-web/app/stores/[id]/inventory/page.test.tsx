@@ -133,7 +133,9 @@ describe('inventory — 防御', () => {
 
   it('请求应携带 x-tenant-id 头', () => {
     const src = readSource();
-    assert.ok(src.includes("'x-tenant-id'"), '缺少租户隔离请求头');
+    assert.ok(src.includes('buildActorHeaders'), '缺少统一 actor header helper');
+    assert.ok(src.includes('admin-store-inventory'), '缺少库存页面 actor 标识');
+    assert.ok(src.includes('buildInventoryHeaders'), '缺少库存页面 header 构造');
   });
 });
 

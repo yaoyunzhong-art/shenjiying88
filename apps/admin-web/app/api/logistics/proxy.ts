@@ -9,7 +9,18 @@ const CONTEXT_HEADERS = [
   'x-tenant-id',
   'x-brand-id',
   'x-store-id',
-  'x-market-code'
+  'x-market-code',
+  'x-actor-id',
+  'x-actor-type',
+  'x-actor-name',
+  'x-actor-tenant-id',
+  'x-actor-brand-id',
+  'x-actor-store-id',
+  'x-actor-roles',
+  'x-actor-permissions',
+  'x-actor-authenticated',
+  'x-roles',
+  'x-permissions'
 ] as const
 
 function ensureTrailingSlash(value: string): string {
@@ -60,6 +71,21 @@ function copyContextHeaders(request: Request): Headers {
     }
   }
 
+  return headers
+}
+
+export function buildLogisticsForwardHeaders(
+  request: Request,
+  options: {
+    tenantId: string
+    contentType?: string
+  }
+): Headers {
+  const headers = copyContextHeaders(request)
+  headers.set('x-tenant-id', options.tenantId)
+  if (options.contentType) {
+    headers.set('content-type', options.contentType)
+  }
   return headers
 }
 

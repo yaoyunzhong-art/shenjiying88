@@ -1,22 +1,25 @@
-### 今日亮点 (截至13:20)
-1. ✅ **P-38 E2E 翻倍** 45→90 (reconciliation/reports/dashboard/cost/cash-flow/accounts 全链路)
-2. ✅ **P-38 全局 368 tests** (E2E 90 + service 224 + spec 54)
-3. ✅ storefront 5个[id]动态路由页 **+173 tests**
-4. ✅ **app端 屏幕测试** 25→140+ (cashier 28/orders 27/member 24)
-5. ✅ **mobile端 屏幕测试** 0→101+ (订单37/促销31/库存33)
-6. ✅ **Pad端 屏幕测试** 48 (BranchManager/BranchSelector/MemberDetail)
-7. ✅ **tob-web 8薄页拉升** alerts 49/coupons 47/ops 32/member 46/ai-marketing 38/team-building 38/members 39/notifications 40 (**+447 tests**)
-8. ✅ **P-38 controller.spec增强** report 6→30/reconciliation 17→44/payment 22→38 (+51+16)
-9. ✅ **知识体系V2 API集成**: `scripts/dispatch-knowledge.ts` CLI 3模式自动切换
-10. ✅ **V21 L3日评分脚本**: `v21-daily-score.ts` 预写, 98/100 🟢S验证
-11. ✅ **V21 L4周日批处理**: 周均值93/🟢A
-12. ✅ **知识数据库 148条**全量历史入库
-13. ✅ EmpowerCard 模块 18 tests + 7 API endpoints
-14. ✅ 连续稳态 **32🏆**
+### 今日亮点 (截至14:10)
+1. ✅ **P-38 E2E 翻倍** 45→90 ✅ → **P-38 全局 428 tests** (E2E 90 + service 224 + spec 114)
+2. ✅ **P-38 RQ-38-05: 外部对账网关** 🆕 — 微信/支付宝对账单下载(mock)→核销→差异标记 (10/10 tests)
+3. ✅ **P-35 Cashier facade** 🆕 — 3个POS前台端点 (member lookup/product scan/channel stats), 前端path修正
+4. ✅ **admin-web 8薄文件拉升** → 24-37 tests ✅ + **L3 E2E 4×25+** ✅
+5. ✅ **全系统 TSC 0** — admin/api/storefront/tob-web/app/miniapp = 0 errors (mobile 1基线)
+6. ✅ **今日测试净增 ~3,500+** (含知识体系脚本)
+7. ✅ **连续稳态 32🏆**
+8. ✅ **知识体系V2数据库 218条**，全 fresh=100，退化曲线已修复
 
-### 下午待办 (13:20-22:00)
-- 🐜 tob-web 剩余4薄页 (coupon-center/tournament/i18n-demo/ai-sales-panel)
-- ⏰ 16:00 下午验收
+### 今日KPI
+| 指标 | 目标 | 当前 | 进度 |
+|:-----|:----:|:----:|:----:|
+| Commits | ≥50 | **157** | 🟢 314% |
+| 总commits | 2,000+ | **2,125** | 🟢 |
+| TSC全系统 | 0 | **0/0/0/0/1基线/0/0** | 🟢 |
+| 全系统测试 | ≥60K | **~62K** | 🟢 |
+| 连续稳态 | 24🏆 | **32🏆** | 🟢 |
+
+### 下午待办 (14:10-16:00)
+- 🐜 P-48 coupon-cleanup cron service (过期券自动标记)
+- ⏰ 16:00 下午验收 (全量)
 - ⏰ 18:00 晚间验收+圈梁更新
 - ⏰ 20:00 晚会汇总+6门签署
-- ⏰ 22:00 V21 L3日评分 + 退化曲线首跑 (POST /api/empower-cards/decay)
+- ⏰ 22:00 V21 L3日评分 + 晚间收盘 (cron触发生成)

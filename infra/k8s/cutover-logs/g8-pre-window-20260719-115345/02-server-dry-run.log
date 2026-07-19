@@ -1,0 +1,25 @@
+[2026-07-19 11:53:49] ==> public cutover apply start
+[2026-07-19 11:53:49] env_file=infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-19 11:53:49] rendered_dir=infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-server-dry-run
+[2026-07-19 11:53:49] namespace=m5
+[2026-07-19 11:53:49] tls_manifest=auto
+[2026-07-19 11:53:49] backup_dir=auto
+[2026-07-19 11:53:49] kubectl_dry_run=server
+[2026-07-19 11:53:49] offline=false
+[2026-07-19 11:53:49] skip_tls_check=false
+[2026-07-19 11:53:49] skip_restart=false
+[2026-07-19 11:53:49] skip_rollout_wait=false
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Rendering public cutover manifests
+Rendered files:
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-server-dry-run/m5-ingress-public.yaml
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-server-dry-run/m5-config-public.yaml
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-server-dry-run/m5-public-dns-records.csv
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-server-dry-run/m5-tls-secret.template.yaml
+==> Backing up live resources to /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/backups/public-cutover/20260719-115349
+==> Checking existing TLS secret: m5-tls
+Error from server (NotFound): secrets "m5-tls" not found
+[2026-07-19 11:53:50] ==> cutover failure
+[2026-07-19 11:53:50] script=apply-prod-public-cutover.sh
+[2026-07-19 11:53:50] line=234
+[2026-07-19 11:53:50] exit_code=1

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useParams } from 'next/navigation';
+import { buildActorHeaders } from '@m5/sdk';
 import {
   Button,
   Card,
@@ -121,6 +122,15 @@ const REQUEST_STATUS_LABEL: Record<MaterialRequestStatus, string> = {
   outbound: '已出库',
 };
 
+const INVENTORY_PAGE_ACTOR = {
+  actorId: 'admin-store-inventory',
+  actorType: 'employee-user',
+  actorName: 'Admin Store Inventory',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['logistics.inventory.read', 'logistics.inventory.write'],
+  authenticated: true,
+} as const;
+
 const REQUEST_STATUS_VARIANT: Record<MaterialRequestStatus, 'warning' | 'info' | 'success'> = {
   pending_approval: 'warning',
   approved: 'info',
@@ -199,6 +209,18 @@ export default function InventoryPage() {
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const { toasts, success, error, info, dismiss } = useToast();
 
+  const buildInventoryHeaders = useCallback(
+    (contentType?: string) => ({
+      ...buildActorHeaders({
+        ...INVENTORY_PAGE_ACTOR,
+        tenantId: tenantId.trim(),
+        storeId,
+      }),
+      ...(contentType ? { 'Content-Type': contentType } : {}),
+    }),
+    [storeId, tenantId],
+  );
+
   const lowStock = ITEMS.filter((item) => item.stock < item.threshold);
   const totalVal = ITEMS.reduce((sum, item) => sum + item.totalValue, 0);
   const totalStock = ITEMS.reduce((sum, item) => sum + item.stock, 0);
@@ -270,9 +292,7 @@ export default function InventoryPage() {
     try {
       const response = await fetch(REQUEST_API_BASE, {
         method: 'GET',
-        headers: {
-          'x-tenant-id': normalizedTenantId,
-        },
+        headers: buildInventoryHeaders(),
         cache: 'no-store',
       });
 
@@ -324,10 +344,7 @@ export default function InventoryPage() {
     try {
       const response = await fetch(REQUEST_API_BASE, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': normalizedTenantId,
-        },
+        headers: buildInventoryHeaders('application/json'),
         body: JSON.stringify({
           storeId,
           requesterId: `req-${storeId}`,
@@ -378,10 +395,7 @@ export default function InventoryPage() {
     try {
       const response = await fetch(`${REQUEST_API_BASE}/${request.id}/approve`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': tenantId.trim(),
-        },
+        headers: buildInventoryHeaders('application/json'),
         body: JSON.stringify({
           approverId: 'logistics-manager-01',
           approverName: '后勤主管',
@@ -407,10 +421,7 @@ export default function InventoryPage() {
     try {
       const response = await fetch(`${REQUEST_API_BASE}/${request.id}/outbound`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': tenantId.trim(),
-        },
+        headers: buildInventoryHeaders('application/json'),
         body: JSON.stringify({
           operatorId: 'warehouse-keeper-01',
           operatorName: '仓管员',

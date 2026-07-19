@@ -33,13 +33,24 @@ describe('clean-schedules route', () => {
 
     const response = await GET(
       new Request('http://admin.local/api/logistics/clean-schedules?status=pending', {
-        headers: { 'x-tenant-id': 'tenant-p30' }
+        headers: {
+          'x-tenant-id': 'tenant-p30',
+          'x-actor-id': 'admin-store-scheduling',
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS',
+          'x-actor-permissions': 'logistics.schedule.read,logistics.schedule.write'
+        }
       })
     )
 
     assert.ok(capturedUrl.includes('status=pending'))
     assert.ok(capturedUrl.includes('/logistics/clean-schedules'))
     assert.equal(new Headers(capturedHeaders).get('x-tenant-id'), 'tenant-p30')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-scheduling')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
+    assert.equal(
+      new Headers(capturedHeaders).get('x-actor-permissions'),
+      'logistics.schedule.read,logistics.schedule.write'
+    )
     assert.equal(response.status, 200)
     const data = await response.json()
     assert.deepEqual(data, [{ id: 'cs-1', status: 'pending', area: 'A区' }])
@@ -180,7 +191,9 @@ describe('clean-schedules route', () => {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-tenant-id': 'tenant-p30'
+          'x-tenant-id': 'tenant-p30',
+          'x-actor-id': 'admin-store-scheduling',
+          'x-actor-roles': 'TENANT_ADMIN,OPERATIONS'
         },
         body: JSON.stringify({ area: 'A区', assigneeId: 'user-01', scheduledDate: '2026-07-20' })
       })
@@ -188,6 +201,8 @@ describe('clean-schedules route', () => {
 
     assert.equal(capturedUrl, 'http://localhost:3001/logistics/clean-schedules')
     assert.equal(new Headers(capturedHeaders).get('x-tenant-id'), 'tenant-p30')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-id'), 'admin-store-scheduling')
+    assert.equal(new Headers(capturedHeaders).get('x-actor-roles'), 'TENANT_ADMIN,OPERATIONS')
     assert.match(capturedBody, /A区/)
     assert.match(capturedBody, /user-01/)
     assert.equal(response.status, 200)
@@ -260,6 +275,24 @@ describe('clean-schedules route', () => {
     assert.deepEqual(await response.json(), { error: 'create failed' })
   })
 
+  test('POST returns error when upstream responds with non-json error', async () => {
+    process.env.LOGISTICS_API_BASE = 'http://localhost:3001'
+    globalThis.fetch = (async () => {
+      return new Response('Service Unavailable', { status: 503 })
+    }) as typeof fetch
+
+    const response = await POST(
+      new Request('http://admin.local/api/logistics/clean-schedules', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-tenant-id': 'tenant-p30' },
+        body: JSON.stringify({ area: 'A区' })
+      })
+    )
+
+    assert.equal(response.status, 503)
+    assert.deepEqual(await response.json(), { error: 'create failed' })
+  })
+
   // ── 边界: env ──
 
   test('uses default API_BASE when env not set', async () => {
@@ -281,5 +314,46 @@ describe('clean-schedules route', () => {
     )
 
     assert.ok(capturedUrl.startsWith('http://localhost:3001'))
+  })
+
+  test('GET with both status and assigneeId simultaneously', async () => {
+    let capturedUrl = ''
+
+    process.env.LOGISTICS_API_BASE = 'http://localhost:3001'
+    globalThis.fetch = (async (input) => {
+      capturedUrl = String(input)
+      return new Response(JSON.stringify([{ id: 'cs-3' }]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as typeof fetch
+
+    await GET(
+      new Request('http://admin.local/api/logistics/clean-schedules?status=completed&assigneeId=user-03', {
+        headers: { 'x-tenant-id': 'tenant-p30' }
+      })
+    )
+
+    assert.ok(capturedUrl.includes('status=completed'))
+    assert.ok(capturedUrl.includes('assigneeId=user-03'))
+  })
+
+  test('GET returns empty list when upstream returns null json', async () => {
+    process.env.LOGISTICS_API_BASE = 'http://localhost:3001'
+    globalThis.fetch = (async () => {
+      return new Response('null', {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }) as typeof fetch
+
+    const response = await GET(
+      new Request('http://admin.local/api/logistics/clean-schedules', {
+        headers: { 'x-tenant-id': 'tenant-p30' }
+      })
+    )
+
+    assert.equal(response.status, 200)
+    assert.equal(await response.json(), null)
   })
 })

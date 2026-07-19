@@ -1,6 +1,7 @@
 // 👥 排班管理 · 员工排班/班次/考勤 · P-30 真联调版
 'use client';
 import { useState, useMemo, useEffect } from 'react';
+import { buildActorHeaders } from '@m5/sdk';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Progress, Empty, Spin } from '@m5/ui';
 
 // P-30 真联调: 清洁排班数据接口 (对齐后端 clean-schedules API)
@@ -39,6 +40,15 @@ const STATUS_CFG: Record<string, [string, string]> = {
 const SHIFT_COLORS: Record<string, string> = { 早班: '#6366f1', 中班: '#f59e0b', 晚班: '#8b5cf6' };
 const ROLE_COLORS: Record<string, string> = { 店长: '#6366f1', 收银员: '#10b981', 导玩员: '#f59e0b', 保洁: '#6b7280', 设备维护: '#8b5cf6', 清洁员: '#6b7280' };
 
+const SCHEDULING_PAGE_ACTOR = {
+  actorId: 'admin-store-scheduling',
+  actorType: 'employee-user',
+  actorName: 'Admin Store Scheduling',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['logistics.schedule.read', 'logistics.schedule.write'],
+  authenticated: true,
+} as const;
+
 export default function SchedulingPage() {
   // ============ 数据状态 ============
   const [schedules, setSchedules] = useState<CleanSchedule[]>([]);
@@ -57,6 +67,14 @@ export default function SchedulingPage() {
   // ============ 常量 ============
   const tenantId = 'tenant-p30';
 
+  const buildSchedulingHeaders = (contentType?: string) => ({
+    ...buildActorHeaders({
+      ...SCHEDULING_PAGE_ACTOR,
+      tenantId,
+    }),
+    ...(contentType ? { 'Content-Type': contentType } : {}),
+  });
+
   // ============ 数据获取 ============
   const fetchSchedules = async () => {
     setLoading(true);
@@ -67,7 +85,7 @@ export default function SchedulingPage() {
       if (shiftFilter !== 'all') qs.set('shift', shiftFilter);
       
       const res = await fetch(`/api/logistics/clean-schedules?${qs.toString()}`, {
-        headers: { 'x-tenant-id': tenantId },
+        headers: buildSchedulingHeaders(),
       });
       
       if (!res.ok) throw new Error(`获取排班失败: ${res.status}`);
@@ -87,7 +105,7 @@ export default function SchedulingPage() {
     try {
       const res = await fetch('/api/logistics/clean-schedules', {
         method: 'POST',
-        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        headers: buildSchedulingHeaders('application/json'),
         body: JSON.stringify({
           ...values,
           tenantId,
@@ -110,7 +128,7 @@ export default function SchedulingPage() {
     try {
       const res = await fetch(`/api/logistics/clean-schedules/${id}/check-in`, {
         method: 'POST',
-        headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+        headers: buildSchedulingHeaders('application/json'),
         body: JSON.stringify({ checkInAt: new Date().toISOString() }),
       });
       if (!res.ok) throw new Error('签到失败');
