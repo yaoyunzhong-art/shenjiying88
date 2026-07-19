@@ -1387,6 +1387,7 @@ model EmpowerCard {
   confidence      Int      @default(50)  // 可信度 0-100 (sourceTrust×0.3+vetted×0.4+fresh×0.3)
   expertVetted    Boolean  @default(false) // 是否经专家校审
   detailUrl       String?  // 详细内容链接 (docs/knowledge/xxx)
+  quoteLogs       EmpowerCardQuoteLog[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -1394,6 +1395,32 @@ model EmpowerCard {
   @@index([freshnessScore])
   @@index([quoteCount])
   @@map("empower_card")
+}
+
+// ============ B2-5 Invoice Prisma 持久化 ============
+model InvoiceV2 {
+  id             String    @id @default(cuid())
+  tenantId       String
+  invoiceNo      String    @unique
+  orderId        String?
+  type           String    // ELECTRONIC / PAPER / SPECIAL
+  amountCents    Int
+  taxAmountCents Int       @default(0)
+  taxRate        Float     @default(0.13)
+  status         String    @default("DRAFT") // DRAFT / ISSUED / CANCELLED / RED_FLUSH / ARCHIVED
+  buyerName      String?
+  buyerTaxId     String?
+  buyerEmail     String?
+  remark         String?
+  issuedAt       DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([status])
+  @@map("invoice_v2")
 }
 
 model EmpowerCardQuoteLog {

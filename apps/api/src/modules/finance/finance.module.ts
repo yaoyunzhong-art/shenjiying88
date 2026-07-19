@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { PrismaModule } from '../../prisma/prisma.module'
 import { FinanceController } from './finance.controller'
 import { FinanceService } from './finance.service'
+import { FinanceInvoiceService } from './finance-invoice.service'
 import {
   ReconciliationService as ReconService,
   ReconciliationCron,
@@ -47,6 +48,7 @@ import type { ReconciliationServiceDeps } from './reconciliation'
   ],
   providers: [
     FinanceService,
+    FinanceInvoiceService,
     StorePAndLService,
     BrandPAndLService,
     CostAnalysisService,
@@ -102,6 +104,7 @@ import type { ReconciliationServiceDeps } from './reconciliation'
   ],
   exports: [
     FinanceService,
+    FinanceInvoiceService,
     ReconService,
     ReconciliationService,
     ReconciliationCron,
