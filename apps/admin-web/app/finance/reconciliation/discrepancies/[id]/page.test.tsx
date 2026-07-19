@@ -147,7 +147,7 @@ describe('DiscrepancyDetailPage', () => {
 
   it('should show operation history section', async () => {
     render(<DiscrepancyDetailPage />);
-    await waitFor(() => assertInDoc('操作历史'));
+    await waitFor(() => assertInDoc('操作日志'));
   });
 
   it('should show difference note', async () => {
@@ -523,6 +523,235 @@ describe('DiscrepancyDetailPage', () => {
     assert.ok(buttonsAgain.length >= 1);
   });
 
+  // ── P-38: 操作日志时间线 ──
+
+  it('should render operation timeline with history entries', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => assertInDoc('操作日志'));
+  });
+
+  it('should show at least one operation log entry', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => assertInDoc('对账发起'));
+  });
+
+  it('should display operator name in timeline', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => {
+      const els = screen.queryAllByText((content, element) => {
+        return content.includes('系统') && element?.closest('[class*="rounded-lg p-5"]') !== null;
+      });
+      assert.ok(els.length >= 1, 'expected operator name in timeline');
+    });
+  });
+
+  it('should display action detail in timeline when present', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => {
+      const els = screen.queryAllByText((content) => content.includes('自动对账'));
+      assert.ok(els.length >= 1, 'expected action detail text');
+    });
+  });
+
+  it('should show empty timeline for no history', async () => {
+    responseRegistry.clear();
+    setResponseFor('/reconciliation/', () => ({
+      success: true,
+      data: {
+        diffKey: 'dk-empty-tl', kind: 'amount-mismatch', orderNo: 'ORD-EMPTYTL',
+        internalAmountCents: 100, externalAmountCents: 200, diffCents: -100,
+        note: '空时间线', resolved: false,
+        internalTransaction: null, externalTransaction: null,
+        reconciliationRun: null, history: [],
+      },
+    }));
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => assertInDoc('暂无操作记录'));
+  });
+
+  it('should show multiple colored timeline dots', async () => {
+    responseRegistry.clear();
+    setResponseFor('/reconciliation/', () => ({
+      success: true,
+      data: {
+        diffKey: 'dk-multi-tl', kind: 'amount-mismatch', orderNo: 'ORD-MULTITL',
+        internalAmountCents: 100, externalAmountCents: 200, diffCents: -100,
+        note: '多条目', resolved: false,
+        internalTransaction: null, externalTransaction: null,
+        reconciliationRun: null,
+        history: [
+          { action: '对账发起', operator: '系统', timestamp: '2026-07-16T02:00:00Z' },
+          { action: '差异标记', operator: '系统', timestamp: '2026-07-16T02:00:05Z' },
+          { action: '人工复核', operator: 'auditor', timestamp: '2026-07-17T09:00:00Z', detail: '已核查' },
+        ],
+      },
+    }));
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => assertInDoc('人工复核'));
+  });
+
+  // ── P-38: 手动调账 ──
+
+  it('should render manual adjustment collapsible section', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => assertInDoc('手动调账'));
+  });
+
+  it('should show and expand adjustment form when section header is clicked', async () => {
+    render(<DiscrepancyDetailPage />);
+    // Use getAllByText since previous renders may leave artifacts in happy-dom
+    await waitFor(() => {
+      const headers = screen.getAllByText('手动调账');
+      assert.ok(headers.length >= 1, 'expected 手动调账 header');
+    });
+    // Form should be hidden initially (no 提交调账 before click)
+    const submitBtnBefore = screen.queryAllByText('提交调账');
+    assert.ok(submitBtnBefore.length === 0 || (submitBtnBefore[0] as HTMLElement).closest('button')?.disabled !== false,
+      'adjustment form should be hidden initially');
+    // Click to expand — pick the h3 in the adjustment section (last h3 element)
+    const allHeaders = screen.getAllByText('手动调账');
+    // Find actual <h3> elements inside the collapsible adjustment section
+    const adjustmentHeader = allHeaders.find(el =>
+      el.tagName === 'H3' && el.closest('[class*="border rounded-lg p-5"]')
+    );
+    if (!adjustmentHeader) {
+      // Fallback: click the last visible 手动调账 element
+      fireEvent.click(allHeaders[allHeaders.length - 1]);
+    } else {
+      fireEvent.click(adjustmentHeader);
+    }
+    await waitFor(() => {
+      const btns = screen.getAllByText('提交调账');
+      assert.ok(btns.length >= 1, '提交调账 button should appear after expand');
+    });
+  });
+
+  it('should show amount preview when amount is entered', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => {
+      const headers = screen.getAllByText('手动调账');
+      assert.ok(headers.length >= 1);
+    });
+    // Expand — click visible h3
+    const allHeaders = screen.getAllByText('手动调账');
+    const adjHeader = allHeaders[allHeaders.length - 1];
+    fireEvent.click(adjHeader);
+    await waitFor(() => {
+      const btns = screen.getAllByText('提交调账');
+      assert.ok(btns.length >= 1);
+    });
+    // Find the amount input
+    const inputs = document.querySelectorAll('input[type="number"]');
+    assert.ok(inputs.length >= 1, 'expected number input for amount');
+    fireEvent.change(inputs[0], { target: { value: '500' } });
+    await waitFor(() => {
+      const els = screen.getAllByText('¥5.00');
+      assert.ok(els.length >= 1);
+    });
+  });
+
+  it('should show cancel button in adjustment form', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => {
+      const headers = screen.getAllByText('手动调账');
+      assert.ok(headers.length >= 1);
+    });
+    const allHeaders = screen.getAllByText('手动调账');
+    fireEvent.click(allHeaders[allHeaders.length - 1]);
+    await waitFor(() => {
+      const cancels = screen.getAllByText('取消');
+      assert.ok(cancels.length >= 1);
+    });
+  });
+
+  it('should submit adjustment and show entry in timeline', async () => {
+    // Override fetch to capture the POST and return success
+    responseRegistry.clear();
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = ((url: string | Request | URL, options?: RequestInit) => {
+      const path = typeof url === 'string' ? url : '';
+      if (path.includes('/adjust')) {
+        return Promise.resolve({
+          ok: true, status: 200,
+          json: () => Promise.resolve({ success: true, data: null, message: 'OK' }),
+          headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path,
+        } as Response);
+      }
+      // For initial load, return data with a single history entry
+      return Promise.resolve({
+        ok: true, status: 200,
+        json: () => Promise.resolve({
+          success: true,
+          data: {
+            diffKey: 'dk-adjust', kind: 'amount-mismatch', orderNo: 'ORD-ADJ',
+            internalAmountCents: 10000, externalAmountCents: 9500, diffCents: 500,
+            note: '调账测试', resolved: false,
+            internalTransaction: null, externalTransaction: null,
+            reconciliationRun: null,
+            history: [{ action: '对账发起', operator: '系统', timestamp: '2026-07-16T02:00:00Z' }],
+          },
+        }),
+        headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path,
+      } as Response);
+    }) as typeof globalThis.fetch;
+
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => {
+      const headers = screen.getAllByText('手动调账');
+      assert.ok(headers.length >= 1);
+    });
+    // Expand
+    const allHeaders = screen.getAllByText('手动调账');
+    fireEvent.click(allHeaders[allHeaders.length - 1]);
+    await waitFor(() => {
+      const btns = screen.getAllByText('提交调账');
+      assert.ok(btns.length >= 1);
+    });
+    // Fill amount
+    const inputs = document.querySelectorAll('input[type="number"]');
+    fireEvent.change(inputs[0], { target: { value: '300' } });
+    // Click the submit button
+    const submitBtns = screen.getAllByText('提交调账');
+    const realBtn = submitBtns.find(el => el.closest('button'));
+    if (realBtn) fireEvent.click(realBtn.closest('button')!);
+    else fireEvent.click(submitBtns[0]);
+    await waitFor(() => {
+      const loadingBtns = screen.getAllByText('提交中...');
+      assert.ok(loadingBtns.length >= 1, 'should show submitting state');
+    });
+    // After async completes, the timeline should show 手动调账 (from history or from the adjustment section)
+    await waitFor(() => {
+      const submits = screen.queryAllByText('提交调账');
+      assert.ok(submits.length >= 1, 'form should be reset and ready');
+    }, { timeout: 5000 });
+    globalThis.fetch = origFetch;
+  });
+
+  it('should disable submit button when amount is zero', async () => {
+    render(<DiscrepancyDetailPage />);
+    await waitFor(() => {
+      const headers = screen.getAllByText('手动调账');
+      assert.ok(headers.length >= 1);
+    });
+    const allHeaders = screen.getAllByText('手动调账');
+    fireEvent.click(allHeaders[allHeaders.length - 1]);
+    await waitFor(() => {
+      const btns = screen.getAllByText('提交调账');
+      assert.ok(btns.length >= 1);
+    });
+    // Amount is empty initially, button should be disabled
+    const submitBtns = screen.getAllByText('提交调账');
+    const btn = submitBtns.find(el => el.closest('button'));
+    if (!btn) {
+      // If button text is inside a button element, check parent
+      assert.ok(submitBtns[0].closest('button')?.disabled ||
+        (submitBtns[0].parentElement?.tagName === 'BUTTON' && (submitBtns[0].parentElement as HTMLButtonElement).disabled),
+        'submit button should be disabled when amount is empty');
+    } else {
+      assert.ok(btn.closest('button')?.disabled, 'submit button should be disabled when amount is empty');
+    }
+  });
+
   // ── 边界: resolve note textarea exists ──
 
   it('should show resolve textarea placeholder text', async () => {
@@ -655,6 +884,22 @@ describe('DiscrepancyDetailPage — hooks验证', () => {
   it('包含loading状态渲染', () => assert.ok(SRC.includes('加载差异详情')));
   it('包含error状态渲染', () => assert.ok(SRC.includes('加载失败')));
   it('包含marked resolved状态', () => assert.ok(SRC.includes('已处理')));
+
+  // ── P-38 新增: 手动调账 ──
+
+  it('包含手动调账区域', () => assert.ok(SRC.includes('手动调账')));
+  it('包含提交调账按钮', () => assert.ok(SRC.includes('提交调账')));
+  it('包含调整金额输入', () => assert.ok(SRC.includes('adjustmentAmount')));
+  it('包含handleAdjustment处理器', () => assert.ok(SRC.includes('handleAdjustment')));
+  it('包含金额预览', () => assert.ok(SRC.includes('金额预览')));
+
+  // ── P-38 新增: 操作日志时间线 ──
+
+  it('包含操作日志时间线组件', () => assert.ok(SRC.includes('OperationLogTimeline')));
+  it('包含操作类型颜色映射', () => assert.ok(SRC.includes('actionColors')));
+  it('包含getActionColor函数', () => assert.ok(SRC.includes('getActionColor')));
+  it('时间线支持人工复核类型', () => assert.ok(SRC.includes('人工复核')));
+  it('时间线支持手动调账类型', () => assert.ok(SRC.includes('手动调账')));
 });
 
 

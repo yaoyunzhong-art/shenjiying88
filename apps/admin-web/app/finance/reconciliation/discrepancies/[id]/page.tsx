@@ -139,6 +139,65 @@ function defaultDetail(id: string): DiscrepancyDetail {
   }
 }
 
+// ── 操作类型颜色映射 ──
+
+const actionColors: Record<string, { dot: string; line: string; label: string }> = {
+  '对账发起':      { dot: 'bg-blue-500', line: 'bg-blue-200',  label: 'text-blue-700' },
+  '差异标记':      { dot: 'bg-yellow-500', line: 'bg-yellow-200', label: 'text-yellow-700' },
+  '查看':          { dot: 'bg-gray-400', line: 'bg-gray-200',  label: 'text-gray-600' },
+  '人工复核':      { dot: 'bg-indigo-500', line: 'bg-indigo-200', label: 'text-indigo-700' },
+  '手动调账':      { dot: 'bg-purple-500', line: 'bg-purple-200', label: 'text-purple-700' },
+  '标记已处理':    { dot: 'bg-green-500', line: 'bg-green-200',  label: 'text-green-700' },
+}
+
+const defaultActionColor = { dot: 'bg-gray-400', line: 'bg-gray-200', label: 'text-gray-600' }
+
+function getActionColor(action: string) {
+  return actionColors[action] ?? defaultActionColor
+}
+
+// ── 对账日志时间线组件 ──
+
+function OperationLogTimeline({ history }: { history: DiscrepancyDetail['history'] }) {
+  return (
+    <div className="bg-white border rounded-lg p-5">
+      <h3 className="text-sm font-medium text-gray-700 mb-4">操作日志</h3>
+      {history.length === 0 ? (
+        <p className="text-sm text-gray-400 py-4 text-center">暂无操作记录</p>
+      ) : (
+        <div className="relative">
+          {history.map((h, i) => {
+            const colors = getActionColor(h.action)
+            return (
+              <div key={h.timestamp + i} className="flex items-stretch gap-3 pb-5 relative">
+                {/* 左侧时间线 */}
+                <div className="flex flex-col items-center min-w-[1.25rem]">
+                  <div className={`w-3 h-3 rounded-full ${colors.dot} ring-2 ring-white z-10`} />
+                  {i < history.length - 1 && (
+                    <div className={`w-0.5 flex-1 ${colors.line} -mt-0.5`} />
+                  )}
+                </div>
+                {/* 右侧内容 */}
+                <div className="flex-1 min-w-0 -mt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-sm font-semibold ${colors.label}`}>{h.action}</span>
+                    <span className="text-xs text-gray-400">
+                      {h.operator} · {new Date(h.timestamp).toLocaleString('zh-CN')}
+                    </span>
+                  </div>
+                  {h.detail && (
+                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{h.detail}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── 主组件 ──
 
 export default function DiscrepancyDetailPage() {
@@ -151,6 +210,12 @@ export default function DiscrepancyDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [resolveNote, setResolveNote] = useState('')
   const [resolving, setResolving] = useState(false)
+
+  // 手动调账
+  const [showAdjustment, setShowAdjustment] = useState(false)
+  const [adjustmentAmount, setAdjustmentAmount] = useState<number | ''>('')
+  const [adjustmentNote, setAdjustmentNote] = useState('')
+  const [adjusting, setAdjusting] = useState(false)
 
   const loadDetail = useCallback(async () => {
     setLoading(true)
@@ -167,6 +232,32 @@ export default function DiscrepancyDetailPage() {
   }, [diffKey])
 
   useEffect(() => { loadDetail() }, [loadDetail])
+
+  const handleAdjustment = async () => {
+    if (!detail || adjustmentAmount === '' || Number(adjustmentAmount) === 0) return
+    setAdjusting(true)
+    try {
+      const cents = Number(adjustmentAmount)
+      await apiFetch(`/api/finance/reconciliation/${encodeURIComponent(diffKey)}/adjust`, {
+        method: 'POST',
+        body: JSON.stringify({ amountCents: cents, note: adjustmentNote }),
+      })
+      const newEntry = {
+        action: '手动调账',
+        operator: 'admin',
+        timestamp: new Date().toISOString(),
+        detail: `调账 ${fmtCents(cents)}${adjustmentNote ? ` · ${adjustmentNote}` : ''}`,
+      }
+      setDetail({ ...detail, history: [...detail.history, newEntry] })
+      setAdjustmentAmount('')
+      setAdjustmentNote('')
+      setShowAdjustment(false)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setAdjusting(false)
+    }
+  }
 
   const handleResolve = async () => {
     if (!detail) return
@@ -362,32 +453,72 @@ export default function DiscrepancyDetailPage() {
         </div>
       )}
 
-      {/* 操作日志 */}
+      {/* 对账日志时间线 */}
+      <OperationLogTimeline history={detail.history} />
+
+      {/* 手动调账（可折叠） */}
       <div className="bg-white border rounded-lg p-5">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">操作历史</h3>
-        <div className="space-y-3">
-          {detail.history.length === 0 ? (
-            <p className="text-sm text-gray-400">暂无操作记录</p>
-          ) : (
-            detail.history.map((h, i) => (
-              <div key={h.timestamp + i} className="flex items-start gap-3">
-                <div className="flex flex-col items-center min-w-[1rem]">
-                  <div className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
-                  {i < detail.history.length - 1 && <div className="w-0.5 flex-1 bg-gray-100 mt-1" />}
-                </div>
-                <div className="pb-3 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{h.action}</span>
-                    <span className="text-xs text-gray-400">
-                      {h.operator} · {new Date(h.timestamp).toLocaleString('zh-CN')}
-                    </span>
-                  </div>
-                  {h.detail && <p className="text-xs text-gray-500 mt-0.5">{h.detail}</p>}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <button
+          onClick={() => setShowAdjustment(!showAdjustment)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <h3 className="text-sm font-medium text-gray-700">手动调账</h3>
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform ${showAdjustment ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showAdjustment && (
+          <div className="mt-4 space-y-3 border-t pt-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">调整金额（分）</label>
+              <input
+                type="number"
+                value={adjustmentAmount}
+                onChange={(e) => setAdjustmentAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="输入金额（单位：分）"
+                className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
+              />
+              {adjustmentAmount !== '' && (
+                <p className="text-xs text-gray-400 mt-1">
+                  金额预览: {fmtCents(Number(adjustmentAmount))}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">备注</label>
+              <textarea
+                value={adjustmentNote}
+                onChange={(e) => setAdjustmentNote(e.target.value)}
+                placeholder="输入调账备注（可选）"
+                className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
+                rows={2}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleAdjustment}
+                disabled={adjusting || adjustmentAmount === '' || Number(adjustmentAmount) === 0}
+                className="px-4 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+              >
+                {adjusting ? '提交中...' : '提交调账'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowAdjustment(false)
+                  setAdjustmentAmount('')
+                  setAdjustmentNote('')
+                }}
+                className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 备注与处理 */}
