@@ -220,7 +220,7 @@ export default function FeasibilityPage() {
                 <span className="text-xs text-gray-400">㎡</span>
               </div>
               <div>
-                <select value={tier} onChange={e => setTier(e.target.value as any)}
+                <select value={tier} onChange={e => setTier(e.target.value as "economy"|"standard"|"premium")}
                   className="border rounded px-2 py-1 text-sm w-full">
                   <option value="economy">经济 (600元/㎡)</option>
                   <option value="standard">标准 (1200元/㎡)</option>
