@@ -12,6 +12,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { submitNativeAppOrderPayment } from '../../market-bootstrap';
 
 type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
 
@@ -130,9 +131,17 @@ export function PaymentScreen() {
   const handleConfirmPayment = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setShowConfirmModal(false);
       const paymentPaidAt = new Date().toISOString();
+      const aggregate = route.params?.orderId
+        ? await submitNativeAppOrderPayment(route.params.orderId, {
+            amount: numericAmount,
+            paymentChannel: selectedChannel,
+            externalPaymentId: `app-pos-${route.params.orderId}`,
+            paidAt: paymentPaidAt,
+            source: 'app-cashier',
+          })
+        : undefined;
+      setShowConfirmModal(false);
       Alert.alert('提示', '收款成功，订单状态已更新', [
         {
           text: '确定',
@@ -141,9 +150,9 @@ export function PaymentScreen() {
               navigation.navigate?.('OrderDetail', {
                 orderId: route.params.orderId,
                 paymentStatus: 'PAID',
-                paymentAmount: numericAmount,
-                paymentPaidAt,
-                paymentChannel: selectedChannel,
+                paymentAmount: aggregate?.payment?.amount ?? numericAmount,
+                paymentPaidAt: aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? paymentPaidAt,
+                paymentChannel: (aggregate?.payment?.channel as PaymentChannel | undefined) ?? selectedChannel,
               });
               return;
             }

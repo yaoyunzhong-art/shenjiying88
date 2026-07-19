@@ -452,14 +452,70 @@ test('PaymentScreen: entering valid amount and tapping confirm opens modal', () 
   assert.ok(alertCalls.length >= 0, '有效金额时不应直接触发alert，而是打开modal');
 });
 
-test('PaymentScreen: successful payment returns paid status to order detail', async () => {
-  const originalSetTimeout = globalThis.setTimeout;
-  globalThis.setTimeout = ((handler: TimerHandler) => {
-    if (typeof handler === 'function') {
-      handler();
+test('PaymentScreen: successful payment submits real api flow and returns paid status to order detail', async () => {
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+
+    if (url.endsWith('/transactions/orders/order-002') && (!init?.method || init.method === 'GET')) {
+      const paidAt = fetchCalls.length > 1 ? '2026-07-20T03:20:00.000Z' : undefined;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            order: {
+              orderId: 'order-002',
+              memberId: 'member-002',
+              currency: 'CNY',
+              totalAmount: 89.5,
+              status: paidAt ? 'PAID' : 'PENDING_PAYMENT',
+              latestPaymentId: 'payment-order-002',
+              createdAt: '2026-06-12T11:15:00.000Z',
+              updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
+              paidAt,
+            },
+            payment: {
+              paymentId: 'payment-order-002',
+              orderId: 'order-002',
+              channel: 'WECHAT_PAY',
+              amount: 89.5,
+              status: paidAt ? 'SUCCEEDED' : 'PENDING',
+              externalPaymentId: 'app-pos-order-002',
+              createdAt: '2026-06-12T11:15:00.000Z',
+              updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
+              completedAt: paidAt,
+            },
+            settlement: {
+              settlementId: 'settlement-order-002',
+              pointsEarned: 90,
+              pointsBalance: 90,
+            },
+            pointsLedger: [],
+            couponRedemptions: [],
+            blindboxFulfillments: [],
+            refunds: [],
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
     }
-    return 0 as never;
-  }) as typeof setTimeout;
+
+    if (url.endsWith('/transactions/payments/standardized-callback') && init?.method === 'POST') {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: { acknowledged: true },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+
+    throw new Error(`unexpected request: ${url}`);
+  }) as typeof fetch;
 
   try {
     const root = createPaymentComponent({
@@ -484,6 +540,15 @@ test('PaymentScreen: successful payment returns paid status to order detail', as
       await modalConfirmBtn!.props.onPress();
     });
 
+    assert.equal(fetchCalls.length, 3, '应依次查询订单、提交支付回调并刷新订单');
+    assert.ok(fetchCalls[0]!.url.includes('/transactions/orders/order-002'));
+    assert.ok(fetchCalls[1]!.url.includes('/transactions/payments/standardized-callback'));
+    assert.equal(fetchCalls[1]!.init?.method, 'POST');
+    assert.match(String(fetchCalls[1]!.init?.body), /"orderId":"order-002"/);
+    assert.match(String(fetchCalls[1]!.init?.body), /"paymentId":"payment-order-002"/);
+    assert.match(String(fetchCalls[1]!.init?.body), /"status":"SUCCEEDED"/);
+    assert.ok(fetchCalls[2]!.url.includes('/transactions/orders/order-002'));
+
     const successAlert = alertCalls.find((item) => item.message === '收款成功，订单状态已更新');
     assert.ok(successAlert, '成功收款后应提示订单状态已更新');
 
@@ -497,9 +562,9 @@ test('PaymentScreen: successful payment returns paid status to order detail', as
     assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
     assert.equal(navigateCall?.params?.paymentAmount, 89.5);
     assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
-    assert.ok(typeof navigateCall?.params?.paymentPaidAt === 'string');
+    assert.equal(navigateCall?.params?.paymentPaidAt, '2026-07-20T03:20:00.000Z');
   } finally {
-    globalThis.setTimeout = originalSetTimeout;
+    globalThis.fetch = originalFetch;
   }
 });
 

@@ -10,11 +10,13 @@
  *   GET  /payment-gateway/refund/:id   - 查询退款状态
  */
 
-import { Controller, Get, Post, Param, Body, HttpException, HttpStatus } from '@nestjs/common'
+import { Controller, Get, Post, Param, Body, Headers, HttpException, HttpStatus, UseGuards } from '@nestjs/common'
+import { TenantGuard } from '../agent/tenant.guard'
 import { PaymentGatewayService, PaymentError } from './payment-gateway.service'
 import { PayRequestDto, PayResultDto, RefundRequestDto } from './payment-gateway.dto'
 
 @Controller('payment-gateway')
+@UseGuards(TenantGuard)
 export class PaymentGatewayController {
   constructor(private readonly paymentGatewayService: PaymentGatewayService) {}
 
@@ -23,7 +25,7 @@ export class PaymentGatewayController {
    * POST /payment-gateway/pay
    */
   @Post('pay')
-  async pay(@Body() dto: PayRequestDto): Promise<PayResultDto> {
+  async pay(@Headers('x-tenant-id') tenantId: string, @Body() dto: PayRequestDto): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.pay({
         orderId: dto.orderId,
@@ -51,7 +53,7 @@ export class PaymentGatewayController {
    * GET /payment-gateway/pay/:id
    */
   @Get('pay/:id')
-  async queryPayment(@Param('id') id: string): Promise<PayResultDto> {
+  async queryPayment(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.query(id)
     } catch (error) {
@@ -74,7 +76,7 @@ export class PaymentGatewayController {
    * POST /payment-gateway/refund
    */
   @Post('refund')
-  async refund(@Body() dto: RefundRequestDto): Promise<PayResultDto> {
+  async refund(@Headers('x-tenant-id') tenantId: string, @Body() dto: RefundRequestDto): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.refund({
         transactionId: dto.transactionId,
@@ -101,7 +103,7 @@ export class PaymentGatewayController {
    * GET /payment-gateway/refund/:id
    */
   @Get('refund/:id')
-  async queryRefund(@Param('id') id: string): Promise<PayResultDto> {
+  async queryRefund(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.queryRefund(id)
     } catch (error) {

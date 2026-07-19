@@ -403,7 +403,7 @@ describe('PaymentGatewayController (Integration)', () => {
       service.query = vi.fn().mockRejectedValue(notFoundError)
 
       try {
-        await controller.queryPayment('txn-missing')
+        await controller.queryPayment('tenant-test', 'txn-missing')
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)
@@ -416,7 +416,7 @@ describe('PaymentGatewayController (Integration)', () => {
       service.queryRefund = vi.fn().mockRejectedValue(notFoundError)
 
       try {
-        await controller.queryRefund('refund-missing')
+        await controller.queryRefund('tenant-test', 'refund-missing')
         assert.fail('should have thrown')
       } catch (error) {
         assert.ok(error instanceof HttpException)

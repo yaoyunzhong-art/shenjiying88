@@ -72,11 +72,14 @@ export interface NativeAppPaymentCallbackPayload {
   standardizedEventName: 'cashier.payment-succeeded' | 'cashier.payment-failed';
   aggregateId: string;
   orderId: string;
+  paymentId?: string;
   tenantId: string;
   externalPaymentId?: string;
   transactionNo?: string;
   channel?: string;
   amount?: number;
+  status?: string;
+  paidAt?: string;
   payload?: Record<string, unknown>;
 }
 
@@ -84,6 +87,14 @@ export interface NativeAppRefundPayload {
   refundAmount?: number;
   reason: string;
   operator?: string;
+}
+
+export interface NativeAppOrderPaymentSubmitPayload {
+  amount: number;
+  paymentChannel: string;
+  externalPaymentId?: string;
+  paidAt?: string;
+  source?: string;
 }
 
 export interface NativeAppTransactionOrder {
@@ -936,6 +947,100 @@ export async function requestNativeAppRefundToApi(
       refundPayload,
       note: '真实退款接口当前不可达，App 端回退为本地待审退款演示。'
     }
+  }
+}
+
+function createNativeAppOrderPaymentFallbackAggregate(
+  orderId: string,
+  paymentPayload: NativeAppOrderPaymentSubmitPayload,
+  existingAggregate?: NativeAppTransactionAggregate,
+): NativeAppTransactionAggregate {
+  const paidAt = paymentPayload.paidAt ?? new Date().toISOString()
+  const paymentId = existingAggregate?.payment?.paymentId ?? `fallback-payment-${orderId}`
+
+  return {
+    order: {
+      orderId,
+      memberId: existingAggregate?.order.memberId ?? `fallback-member-${orderId}`,
+      currency: existingAggregate?.order.currency ?? 'CNY',
+      totalAmount: paymentPayload.amount,
+      status: 'PAID',
+      latestPaymentId: paymentId,
+      createdAt: existingAggregate?.order.createdAt ?? paidAt,
+      updatedAt: paidAt,
+      paidAt,
+    },
+    payment: {
+      paymentId,
+      orderId,
+      externalPaymentId: paymentPayload.externalPaymentId ?? existingAggregate?.payment?.externalPaymentId,
+      channel: paymentPayload.paymentChannel,
+      amount: paymentPayload.amount,
+      status: 'SUCCEEDED',
+      transactionNo: existingAggregate?.payment?.transactionNo ?? `fallback-${paymentId}`,
+      createdAt: existingAggregate?.payment?.createdAt ?? paidAt,
+      updatedAt: paidAt,
+      completedAt: paidAt,
+    },
+    settlement: existingAggregate?.settlement ?? {
+      settlementId: `fallback-settlement-${orderId}`,
+      pointsEarned: Math.round(paymentPayload.amount),
+      pointsBalance: Math.round(paymentPayload.amount),
+    },
+    pointsLedger: existingAggregate?.pointsLedger ?? [],
+    couponRedemptions: existingAggregate?.couponRedemptions ?? [],
+    blindboxFulfillments: existingAggregate?.blindboxFulfillments ?? [],
+    refunds: existingAggregate?.refunds ?? [],
+  }
+}
+
+export async function submitNativeAppOrderPayment(
+  orderId: string,
+  paymentPayload: NativeAppOrderPaymentSubmitPayload,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppTransactionAggregate> {
+  const client = createNativeAppBootstrapClient(context)
+
+  try {
+    const existingAggregate = await client.getData<NativeAppTransactionAggregate>(
+      `/transactions/orders/${orderId}`,
+      { cache: 'no-store' },
+    )
+
+    if (!existingAggregate.payment?.paymentId) {
+      return createNativeAppOrderPaymentFallbackAggregate(orderId, paymentPayload, existingAggregate)
+    }
+
+    const paidAt = paymentPayload.paidAt ?? new Date().toISOString()
+    const paymentCallback: NativeAppPaymentCallbackPayload = {
+      standardizedEventName: 'cashier.payment-succeeded',
+      aggregateId: existingAggregate.payment.paymentId,
+      paymentId: existingAggregate.payment.paymentId,
+      orderId,
+      tenantId: context.tenantId ?? defaultNativeAppContext.tenantId,
+      externalPaymentId: paymentPayload.externalPaymentId ?? existingAggregate.payment.externalPaymentId,
+      transactionNo: existingAggregate.payment.transactionNo ?? `native-txn-${existingAggregate.payment.paymentId}`,
+      channel: paymentPayload.paymentChannel,
+      amount: paymentPayload.amount,
+      status: 'SUCCEEDED',
+      paidAt,
+      payload: {
+        source: paymentPayload.source ?? 'app-cashier',
+      },
+    }
+
+    await client.postData<NativeAppTransactionAggregate>(
+      '/transactions/payments/standardized-callback',
+      paymentCallback,
+      { cache: 'no-store' },
+    )
+
+    return client.getData<NativeAppTransactionAggregate>(
+      `/transactions/orders/${orderId}`,
+      { cache: 'no-store' },
+    )
+  } catch {
+    return createNativeAppOrderPaymentFallbackAggregate(orderId, paymentPayload)
   }
 }
 
