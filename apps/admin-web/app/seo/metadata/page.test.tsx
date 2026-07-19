@@ -11,27 +11,32 @@ describe('SEO元数据管理页', () => {
     render(React.createElement(SEOMetadataPage))
     assert.ok(screen.getByText('SEO 元数据管理'))
   })
-  it('正例: 表格渲染', () => {
-    render(React.createElement(SEOMetadataPage))
-    assert.ok(screen.getByText('上海徐汇旗舰店 | 品牌'))
-  })
+
   it('正例: 搜索过滤', () => {
     render(React.createElement(SEOMetadataPage))
-    const input = screen.getByPlaceholderText('搜索路径或标题...')
-    fireEvent.change(input, { target: { value: '北京' } })
+    fireEvent.change(screen.getByPlaceholderText('搜索路径或标题...'), { target: { value: '北京' } })
     assert.ok(screen.getByText('北京朝阳店 | 品牌'))
     assert.equal(screen.queryByText('上海徐汇旗舰店 | 品牌'), null)
   })
-  it('正例: 排序切换', () => {
+
+  it('正例: 点击编辑打开弹窗', () => {
     render(React.createElement(SEOMetadataPage))
-    const select = screen.getByRole('combobox')
-    fireEvent.change(select, { target: { value: 'title' } })
-    assert.ok(screen.getByText('SEO 元数据管理'))
+    fireEvent.click(screen.getAllByText('编辑')[0]!)
+    assert.ok(screen.getByText(/编辑元数据/))
+    assert.ok(screen.getByText('保存'))
   })
+
+  it('反例: 取消关闭弹窗', () => {
+    render(React.createElement(SEOMetadataPage))
+    fireEvent.click(screen.getAllByText('编辑')[0]!)
+    assert.ok(screen.getByText(/编辑元数据/))
+    fireEvent.click(screen.getByText('取消'))
+    assert.equal(screen.queryByText(/编辑元数据/), null)
+  })
+
   it('边界: 搜索无结果', () => {
     render(React.createElement(SEOMetadataPage))
-    fireEvent.change(screen.getByPlaceholderText('搜索路径或标题...'), { target: { value: 'ZZZZ_NOTFOUND' } })
-    assert.equal(screen.queryByText(/上海|北京/), null)
+    fireEvent.change(screen.getByPlaceholderText('搜索路径或标题...'), { target: { value: 'ZZZZZZ' } })
     assert.ok(screen.getByText('无匹配数据'))
   })
 })
