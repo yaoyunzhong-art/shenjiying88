@@ -227,7 +227,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3002,http://localhost:3003,http://localhost:3011}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3002,http://localhost:3003,http://localhost:3004}
       RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
       RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
       RABBITMQ_USER: ${RABBITMQ_USER:-m5}
@@ -270,8 +270,8 @@ services:
   admin-web:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: admin-prod
+      dockerfile: apps/admin-web/Dockerfile
+      target: runtime
       cache_from:
         - m5-admin:latest
         - m5-admin:cache
@@ -310,8 +310,8 @@ services:
   storefront-web:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: storefront-prod
+      dockerfile: apps/storefront-web/Dockerfile
+      target: runtime
       cache_from:
         - m5-storefront:latest
         - m5-storefront:cache
@@ -350,28 +350,27 @@ services:
   tob-web:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: tob-prod
+      dockerfile: apps/tob-web/Dockerfile
+      target: runtime
       cache_from:
         - m5-tob:latest
         - m5-tob:cache
     image: ${TOB_WEB_IMAGE:-m5-tob}:${BUILD_TAG:-latest}
     container_name: m5-tob-web
     restart: unless-stopped
-    profiles: ["full"]
     networks:
       - m5-network
     ports:
-      - "127.0.0.1:3011:3011"
+      - "127.0.0.1:3004:3004"
     environment:
       NODE_ENV: production
-      PORT: 3011
+      PORT: 3004
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.m5.local/api/v1}
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3001}
     depends_on:
       - api
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3011/"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3004/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -385,7 +384,10 @@ services:
 
   # ─── Nginx (Reverse Proxy) ──────────────────────────────
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: ${NGINX_IMAGE:-m5-nginx}:${BUILD_TAG:-latest}
     container_name: m5-nginx
     restart: unless-stopped
     networks:
@@ -394,14 +396,13 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_logs:/var/log/nginx
     depends_on:
       - api
       - admin-web
       - storefront-web
+      - tob-web
     logging: *default-logging
     deploy:
       resources:
