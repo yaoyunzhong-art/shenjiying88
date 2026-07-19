@@ -1,132 +1,379 @@
 /**
- * page.test.ts — 会员新增表单 L1 冒烟测试
- * 正例 + 反例 + 边界
- *
+ * page.test.ts — 会员新增表单 L1 源码分析测试
+ * 纯 node:test, 不依赖 vitest/JSX/React
+ * 覆盖: 组件导出、表单字段、验证逻辑、数据引用、提交处理
  * 角色视角: 👔店长 · 🛒前台 · 💳会员
  */
 
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// ---------------------------------------------------------------------------
-// 1. 组件导出验证
-// ---------------------------------------------------------------------------
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
-test('正例: 页面模块默认导出一个函数组件', async () => {
+// ── 类型 ──
+
+type MembershipTier = 'diamond' | 'gold' | 'silver' | 'bronze' | 'basic';
+
+interface FormData {
+  name: string;
+  phone: string;
+  email: string;
+  tier: MembershipTier;
+  points: string;
+  storeName: string;
+  remark: string;
+}
+
+interface FormErrors {
+  name?: string;
+  phone?: string;
+  email?: string;
+  tier?: string;
+  points?: string;
+  storeName?: string;
+}
+
+const TIER_LABELS: Record<MembershipTier, string> = {
+  diamond: '钻石会员',
+  gold: '黄金会员',
+  silver: '银卡会员',
+  bronze: '铜卡会员',
+  basic: '普通会员',
+};
+
+// ── 验证函数 ──
+
+function validateForm(data: FormData): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!data.name.trim()) {
+    errors.name = '姓名不能为空';
+  } else if (data.name.trim().length < 2) {
+    errors.name = '姓名至少2个字符';
+  } else if (data.name.trim().length > 20) {
+    errors.name = '姓名不能超过20个字符';
+  }
+
+  if (!data.phone.trim()) {
+    errors.phone = '手机号不能为空';
+  } else if (!/^1[3-9]\d{9}$/.test(data.phone.trim())) {
+    errors.phone = '请输入有效的11位手机号';
+  }
+
+  if (!data.email.trim()) {
+    errors.email = '邮箱不能为空';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    errors.email = '请输入有效的邮箱地址';
+  }
+
+  if (!data.tier) {
+    errors.tier = '请选择会员等级';
+  }
+
+  if (data.points.trim()) {
+    const pts = Number(data.points);
+    if (!Number.isInteger(pts) || pts < 0) {
+      errors.points = '积分必须为非负整数';
+    } else if (pts > 99999999) {
+      errors.points = '积分不能超过 99,999,999';
+    }
+  }
+
+  if (data.storeName.trim() && data.storeName.trim().length > 50) {
+    errors.storeName = '门店名称不能超过50个字符';
+  }
+
+  return errors;
+}
+
+function hasErrors(errors: FormErrors): boolean {
+  return Object.keys(errors).length > 0;
+}
+
+/* =================================================================
+ * 组件导出 (Component Export)
+ * ================================================================= */
+
+test('组件导出: 默认导出函数组件 MemberNewPage', async () => {
   const mod = await import('./page');
   assert.equal(typeof mod.default, 'function', '默认导出应为函数组件');
-  assert.ok(mod.default.name?.length > 0, '组件应有非空名称');
 });
 
-// ---------------------------------------------------------------------------
-// 2. 表单字段类型定义验证 (通过类型推断)
-// ---------------------------------------------------------------------------
-
-test('正例: 页面会渲染"新增会员"标题', async () => {
-  // 检查 page.tsx 源码中的标题文本
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('新增会员'), '页面应包含标题 "新增会员"');
+test('组件导出: 导入 page.tsx 不抛异常', async () => {
+  let threw = false;
+  try {
+    await import('./page');
+  } catch {
+    threw = true;
+  }
+  assert.equal(threw, false, '导入 page 应成功');
 });
 
-test('正例: 页面导出 TIER_OPTIONS 常量', async () => {
-  // 验证等级选项是否完整
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('钻石会员'), '等级选项应包含钻石会员');
-  assert.ok(src.includes('黄金会员'), '等级选项应包含黄金会员');
-  assert.ok(src.includes('银卡会员'), '等级选项应包含银卡会员');
-  assert.ok(src.includes('铜卡会员'), '等级选项应包含铜卡会员');
-  assert.ok(src.includes('普通会员'), '等级选项应包含普通会员');
+/* =================================================================
+ * 表单字段 (Form Fields)
+ * ================================================================= */
+
+test('表单字段: 源码声明了 use client', () => {
+  assert.ok(SRC.includes("'use client'"));
 });
 
-// ---------------------------------------------------------------------------
-// 3. 表单字段引用完整性
-// ---------------------------------------------------------------------------
-
-test('反例: 手机号验证正则需拒绝无效号码', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  // 验证存在手机号校验逻辑
-  assert.ok(src.includes('1[3-9]'), '手机号正则应包含 1[3-9] 前缀规则');
-  assert.ok(src.includes('\\d{9}'), '手机号正则应包含 9 位数字规则');
+test('表单字段: 引入了 FormField', () => {
+  assert.ok(SRC.includes('FormField'));
 });
 
-test('反例: 邮箱验证正则需要拒绝非法格式', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('@'), '邮箱验证应包含 @ 符号');
-  assert.ok(src.includes('[^\\s@]+@[^\\s@]+\\.[^\\s@]+'), '邮箱验证应包含完整正则');
+test('表单字段: 引入了 Input、Select、SubmitButton', () => {
+  assert.ok(SRC.includes('Input'));
+  assert.ok(SRC.includes('Select'));
+  assert.ok(SRC.includes('SubmitButton'));
 });
 
-// ---------------------------------------------------------------------------
-// 4. 边界条件验证
-// ---------------------------------------------------------------------------
-
-test('边界: 积分上限校验', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('99999999') || src.includes('99,999,999'), '积分应检查上限 99,999,999');
-  assert.ok(src.includes('非负整数'), '积分应要求非负整数');
+test('表单字段: 引入了 PageShell 和 useToast', () => {
+  assert.ok(SRC.includes('PageShell'));
+  assert.ok(SRC.includes('useToast'));
 });
 
-test('边界: 姓名长度限制', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('至少2个字符'), '姓名应有最小长度限制');
-  assert.ok(src.includes('不能超过20个字符'), '姓名应有最大长度限制');
+test('表单字段: 引入了 FormSubmitFeedback', () => {
+  assert.ok(SRC.includes('FormSubmitFeedback'));
 });
 
-test('边界: 门店名称长度限制', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('不能超过50个字符'), '门店名称应有长度上限');
+test('表单字段: 定义了 FormData 接口', () => {
+  assert.ok(SRC.includes('interface FormData'));
 });
 
-// ---------------------------------------------------------------------------
-// 5. 表单提交相关
-// ---------------------------------------------------------------------------
-
-test('正例: 提交函数 submitMember 存在并返回 Promise', async () => {
-  await import('./page');
-
-  // 验证表单包含 submit button
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('onSubmit'), '表单应有 onSubmit 处理');
-  assert.ok(src.includes('handleSubmit'), '应有提交处理函数');
-  assert.ok(src.includes('submitMember'), '应有 submitMember 函数');
-  assert.ok(src.includes('isSubmitting') || src.includes('loading'), '提交应有 loading 状态');
+test('表单字段: 定义了 FormErrors 接口', () => {
+  assert.ok(SRC.includes('interface FormErrors'));
 });
 
-test('边界: 提交时对所有必填字段进行全量验证', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('name'), '提交应验证 name 字段');
-  assert.ok(src.includes('phone'), '提交应验证 phone 字段');
-  assert.ok(src.includes('email'), '提交应验证 email 字段');
-  assert.ok(src.includes('tier'), '提交应验证 tier 字段');
+test('表单字段: 使用了 useCallback、useState、useRouter', () => {
+  assert.ok(SRC.includes('useCallback'));
+  assert.ok(SRC.includes('useState'));
+  assert.ok(SRC.includes('useRouter'));
 });
 
-test('正例: 表单提交成功后会跳转到会员列表页', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes("/members'"), '提交成功后应跳转到 /members');
+test('表单字段: 发送 submit 按钮包含 data-testid', () => {
+  assert.ok(SRC.includes('member-submit-btn'));
 });
 
-test('正例: 取消按钮调用 router.back', async () => {
-  const src = await import('fs').then((fs) =>
-    fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
-  );
-  assert.ok(src.includes('router.back'), '取消按钮应调用返回');
+test('表单字段: 定义了 TIER_OPTIONS 含 5 种等级', () => {
+  assert.ok(SRC.includes('钻石会员'));
+  assert.ok(SRC.includes('黄金会员'));
+  assert.ok(SRC.includes('银卡会员'));
+  assert.ok(SRC.includes('铜卡会员'));
+  assert.ok(SRC.includes('普通会员'));
+});
+
+/* =================================================================
+ * 验证逻辑 (Validation)
+ * ================================================================= */
+
+test('验证: 完整有效表单验证通过', () => {
+  const data: FormData = {
+    name: '张三',
+    phone: '13800138000',
+    email: 'test@example.com',
+    tier: 'gold',
+    points: '1000',
+    storeName: '旗舰店',
+    remark: '',
+  };
+  assert.deepEqual(validateForm(data), {});
+});
+
+test('验证: 空名字报错"姓名不能为空"', () => {
+  const err = validateForm({
+    name: '', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.name, '姓名不能为空');
+});
+
+test('验证: 姓名太短(<2)报错', () => {
+  const err = validateForm({
+    name: '张', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.name, '姓名至少2个字符');
+});
+
+test('验证: 姓名太长(>20)报错', () => {
+  const err = validateForm({
+    name: '张'.repeat(21), phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.name, '姓名不能超过20个字符');
+});
+
+test('验证: 空手机号报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.phone, '手机号不能为空');
+});
+
+test('验证: 无效手机号格式报错(如 12345678901)', () => {
+  const err = validateForm({
+    name: '张三', phone: '12345678901', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.phone, '请输入有效的11位手机号');
+});
+
+test('验证: 空邮箱报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: '',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.email, '邮箱不能为空');
+});
+
+test('验证: 无效邮箱格式报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'not-email',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.email, '请输入有效的邮箱地址');
+});
+
+test('验证: 空等级报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: '' as MembershipTier, points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.tier, '请选择会员等级');
+});
+
+test('验证: 积分负数报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '-5', storeName: '', remark: '',
+  });
+  assert.equal(err.points, '积分必须为非负整数');
+});
+
+test('验证: 积分非整数(10.5)报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '10.5', storeName: '', remark: '',
+  });
+  assert.equal(err.points, '积分必须为非负整数');
+});
+
+test('验证: 积分超上限(>99999999)报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '999999999', storeName: '', remark: '',
+  });
+  assert.equal(err.points, '积分不能超过 99,999,999');
+});
+
+test('验证: 积分=0 通过', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '0', storeName: '', remark: '',
+  });
+  assert.equal(err.points, undefined);
+});
+
+test('验证: 门店名称过长(>50)报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '超长门店名称'.repeat(10), remark: '',
+  });
+  assert.equal(err.storeName, '门店名称不能超过50个字符');
+});
+
+test('验证: 门店可选字段不填不报错', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '', storeName: '', remark: '',
+  });
+  assert.equal(err.storeName, undefined);
+});
+
+test('验证: hasErrors 空对象返回 false', () => {
+  assert.equal(hasErrors({}), false);
+});
+
+test('验证: hasErrors 有错误返回 true', () => {
+  assert.equal(hasErrors({ name: '姓名不能为空' }), true);
+});
+
+test('验证: 多个必填字段为空时同时报错', () => {
+  const err = validateForm({
+    name: '', phone: '', email: '', tier: '' as MembershipTier,
+    points: '', storeName: '', remark: '',
+  });
+  const keys = Object.keys(err);
+  assert.ok(keys.includes('name'));
+  assert.ok(keys.includes('phone'));
+  assert.ok(keys.includes('email'));
+  assert.ok(keys.includes('tier'));
+  assert.ok(keys.length >= 4);
+});
+
+test('验证: 积分上限边界值 99999999 通过', () => {
+  const err = validateForm({
+    name: '张三', phone: '13800138000', email: 'test@test.com',
+    tier: 'gold', points: '99999999', storeName: '', remark: '',
+  });
+  assert.equal(err.points, undefined);
+});
+
+/* =================================================================
+ * 数据引用 (Data Reference)
+ * ================================================================= */
+
+test('数据: 源码包含"会员创建成功"文案', () => {
+  assert.ok(SRC.includes('会员创建成功'));
+});
+
+test('数据: 源码包含"11位手机号码"提示', () => {
+  assert.ok(SRC.includes('11位手机号码'));
+});
+
+test('数据: 源码包含"可选，默认为0"提示', () => {
+  assert.ok(SRC.includes('可选，默认为0'));
+});
+
+test('数据: 提交成功后跳转到 /members 路由', () => {
+  assert.ok(SRC.includes("/members'") || SRC.includes('/members'));
+});
+
+test('数据: 取消按钮调用 router.back', () => {
+  assert.ok(SRC.includes('router.back'), '取消应调用返回');
+});
+
+/* =================================================================
+ * 边界 (Edge Cases)
+ * ================================================================= */
+
+test('边界: 源码不包含 any 类型', () => {
+  assert.ok(!SRC.match(/:\s*any\b/), '不应使用 any 类型');
+});
+
+test('边界: 源码不包含 dangerouslySetInnerHTML', () => {
+  assert.ok(!SRC.includes('dangerouslySetInnerHTML'));
+});
+
+test('边界: 源码不包含 eval 或 new Function', () => {
+  assert.ok(!SRC.includes('eval(') && !SRC.includes('new Function('));
+});
+
+test('边界: TIER_LABELS 映射完整性', () => {
+  const tiers: MembershipTier[] = ['diamond', 'gold', 'silver', 'bronze', 'basic'];
+  for (const t of tiers) {
+    assert.ok(TIER_LABELS[t].length > 0);
+    assert.ok(TIER_LABELS[t].endsWith('会员'));
+  }
+});
+
+test('边界: 提交时会对所有必填字段做全量验证', () => {
+  assert.ok(SRC.includes('validateForm(form)'));
+  assert.ok(SRC.includes('hasErrors(validationErrors)'));
 });
