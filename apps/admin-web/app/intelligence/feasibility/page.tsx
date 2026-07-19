@@ -28,7 +28,7 @@ export default function FeasibilityPage() {
   const [district, setDistrict] = useState('')
   const [budget, setBudget] = useState(300)
   const [area, setArea] = useState(400)
-  const [tier, setTier] = useState<'luxury' | 'standard' | 'economy'>('standard')
+  const [tier, setTier] = useState<'luxury' | 'standard' | 'economy' | 'premium'>('standard')
   const [report, setReport] = useState<FeasibilityReport | null>(null)
   const [finance, setFinance] = useState<FinancePanorama | null>(null)
   const [loading, setLoading] = useState(false)
@@ -220,7 +220,7 @@ export default function FeasibilityPage() {
                 <span className="text-xs text-gray-400">㎡</span>
               </div>
               <div>
-                <select value={tier} onChange={e => setTier(e.target.value as "economy"|"standard"|"premium")}
+                <select value={tier} onChange={e => setTier(e.target.value as "economy"|"standard"|"luxury"|"premium")}
                   className="border rounded px-2 py-1 text-sm w-full">
                   <option value="economy">经济 (600元/㎡)</option>
                   <option value="standard">标准 (1200元/㎡)</option>
