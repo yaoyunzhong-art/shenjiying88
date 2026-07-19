@@ -157,6 +157,7 @@ import { SeoModule } from './modules/seo/seo.module';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { TeamBuildingModule } from './modules/team-building/team-building.module';
+import { HrModule } from './modules/hr/hr.module';
 
 @Module({
   imports: [
@@ -326,6 +327,7 @@ import { TeamBuildingModule } from './modules/team-building/team-building.module
     ModulesModule,
     CategoriesModule,
     TeamBuildingModule,
+    HrModule,
   ],
   providers: [
     RequestGovernanceService,
