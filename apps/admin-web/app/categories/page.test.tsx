@@ -1,201 +1,347 @@
 /**
- * categories/page.test.tsx — 分类列表页 L1 冒烟测试
- * 覆盖: 正例·边界·防御·反例·集成·AI安全审计
- * V17#圈梁对齐
+ * categories/page.test.tsx — 分类管理列表页 L1 源码分析测试
+ *
+ * 覆盖: 页面结构 / 组件引用 / 数据流 / 过滤排序 / 统计面板 / 边界条件
+ * 圈梁: TSC通过 → 测试存在 → 圈梁表更新 → PRD标记
+ *
+ * 测试策略: 纯静态源码分析（node:test + readFileSync），不执行 JSX/Render
  */
-import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { readFileSync, existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+const PAGE = resolve(import.meta.dirname, 'page.tsx');
+const SRC = readFileSync(PAGE, 'utf-8');
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
+// ── 辅助断言 ──
+function assertIncludes(actual: string, expected: string, msg?: string): void {
+  assert.ok(actual.includes(expected), msg ?? `expected source to include "${expected}"`);
 }
 
-describe('categories/page — 正例', () => {
-  it('应导出默认组件 CategoriesListPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function CategoriesListPage'), '缺少默认导出');
+function assertExcludes(actual: string, forbidden: string, msg?: string): void {
+  assert.ok(!actual.includes(forbidden), msg ?? `expected source NOT to include "${forbidden}"`);
+}
+
+// ── 正向：页面结构与导出 ──
+describe('categories/page — 页面结构与导出', () => {
+  it('页面文件应存在', () => {
+    assert.ok(existsSync(PAGE), 'page.tsx 文件缺失');
   });
 
-  it('应包含 DataTable / SearchFilterInput / Pagination', () => {
-    const src = readSource();
-    assert.ok(src.includes('DataTable'), '缺少 DataTable');
-    assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
-    assert.ok(src.includes('Pagination'), '缺少 Pagination');
+  it('应包含 use client 指令', () => {
+    assertIncludes(SRC, "'use client'");
   });
 
-  it('应包含 Tabs 和 statusFilter', () => {
-    const src = readSource();
-    assert.ok(src.includes('Tabs'), '缺少 Tabs');
-    assert.ok(src.includes('statusFilter'), '缺少 statusFilter');
+  it('应默认导出 CategoriesListPage', () => {
+    assertIncludes(SRC, 'export default function CategoriesListPage');
   });
 
-  it('应使用 useSearchFilter / useSortedItems', () => {
-    const src = readSource();
-    assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
-    assert.ok(src.includes('useSortedItems'), '缺少 useSortedItems');
+  it('导出应唯一（仅一个 export default）', () => {
+    const matches = SRC.match(/export default /g);
+    assert.equal(matches?.length, 1, `期望 1 个 export default，实际 ${matches?.length}`);
   });
 
-  it('应包含 summaryCards', () => {
-    const src = readSource();
-    // 页面使用 stats 数据驱动卡片
-    assert.ok(src.includes('stats.total'), '使用 stats 数据');
-    assert.ok(src.includes('stats.total'), '缺少 stats.total');
-    assert.ok(src.includes('stats.rootCount'), '缺少 stats.rootCount');
-  });
-
-  it('应包含 "新建分类" 操作按钮', () => {
-    const src = readSource();
-    assert.ok(src.includes('新建分类'), '缺少新建分类按钮文字');
-  });
-
-  it('应包含分类状态枚举', () => {
-    const src = readSource();
-    assert.ok(src.includes('active') || src.includes('inactive') || src.includes('draft'), '包含分类状态');
-  });
-
-  it('应包含树状层级 parentName', () => {
-    const src = readSource();
-    assert.ok(src.includes('parentName'), '包含上级分类信息');
+  it('TSC 兼容：无 as any', () => {
+    assertExcludes(SRC, 'as any');
   });
 });
 
-describe('categories/page — 边界', () => {
-  it('搜索应覆盖 name, code, parentName', () => {
-    const src = readSource();
-    assert.ok(src.includes("'name'") || src.includes('"name"'), '搜索应包含 name');
-    assert.ok(src.includes("'code'") || src.includes('"code"'), '搜索应包含 code');
-    assert.ok(src.includes("'parentName'") || src.includes('"parentName"'), '搜索应包含 parentName');
+// ── 正向：UI 组件依赖 ──
+describe('categories/page — UI 组件引用', () => {
+  it('应引用 DataTable', () => {
+    assertIncludes(SRC, 'DataTable');
   });
 
-  it('分页 pageSize 应为 10', () => {
-    const src = readSource();
-    assert.ok(src.includes('pageSize = 10'), 'pageSize 应为 10');
+  it('应引用 Pagination', () => {
+    assertIncludes(SRC, 'Pagination');
+  });
+
+  it('应引用 SearchFilterInput', () => {
+    assertIncludes(SRC, 'SearchFilterInput');
+  });
+
+  it('应引用 StatusBadge', () => {
+    assertIncludes(SRC, 'StatusBadge');
+  });
+
+  it('应引用 Tabs', () => {
+    assertIncludes(SRC, 'Tabs');
+  });
+
+  it('应引用 PageShell', () => {
+    assertIncludes(SRC, 'PageShell');
+  });
+
+  it('应引用 DetailActionBar', () => {
+    assertIncludes(SRC, 'DetailActionBar');
+  });
+});
+
+// ── 正向：Hooks 与状态管理 ──
+describe('categories/page — Hooks 与性能优化', () => {
+  it('应使用 useState 管理状态', () => {
+    assertIncludes(SRC, 'useState');
+    // 至少两个 useState（data, sortConfig, statusFilter, page）
+    const useStateCalls = SRC.match(/useState\(/g);
+    const useStateGenericCalls = SRC.match(/useState</g);
+    const totalUseState = (useStateCalls?.length ?? 0) + (useStateGenericCalls?.length ?? 0);
+    assert.ok(totalUseState >= 3, `useState 总调用次数 ${totalUseState} < 3`);
+  });
+
+  it('应使用 useMemo 缓存计算结果', () => {
+    assertIncludes(SRC, 'useMemo');
+  });
+
+  it('应使用 useCallback 优化回调函数', () => {
+    assertIncludes(SRC, 'useCallback');
+  });
+
+  it('应使用 useSearchFilter 实现搜索', () => {
+    assertIncludes(SRC, 'useSearchFilter');
+  });
+
+  it('应使用 useSortedItems 实现排序', () => {
+    assertIncludes(SRC, 'useSortedItems');
+  });
+
+  it('应使用 useRouter 进行路由跳转', () => {
+    assertIncludes(SRC, 'useRouter');
+  });
+});
+
+// ── 正向：数据流与过滤逻辑 ──
+describe('categories/page — 数据流与过滤逻辑', () => {
+  it('应引用 MOCK_CATEGORIES 作为初始化数据', () => {
+    assertIncludes(SRC, 'MOCK_CATEGORIES');
+  });
+
+  it('应引用 CATEGORY_STATUS_MAP 用于状态映射', () => {
+    assertIncludes(SRC, 'CATEGORY_STATUS_MAP');
+  });
+
+  it('应引用 computeCategoryStats 计算统计', () => {
+    assertIncludes(SRC, 'computeCategoryStats');
+  });
+
+  it('搜索字段应覆盖 name, code, parentName', () => {
+    assertIncludes(SRC, "'name', 'code', 'parentName'", '搜索字段应包含 name, code, parentName');
+  });
+
+  it('Tabs 过滤应支持 all, root, leaf 三种模式', () => {
+    assertIncludes(SRC, "'all'");
+    assertIncludes(SRC, "'root'");
+    assertIncludes(SRC, "'leaf'");
+  });
+
+  it('root 过滤应筛选无 parentName 的分类', () => {
+    assertIncludes(SRC, "!i.parentName");
+  });
+
+  it('leaf 过滤应筛选有 parentName 的子分类', () => {
+    assertIncludes(SRC, "i.parentName");
+  });
+});
+
+// ── 正向：列定义与渲染 ──
+describe('categories/page — 表格列定义', () => {
+  it('应包含分类名称列（name）', () => {
+    assertIncludes(SRC, "key: 'name'");
+  });
+
+  it('应包含编码列（code）', () => {
+    assertIncludes(SRC, "key: 'code'");
+  });
+
+  it('应包含上级分类列（parentName）', () => {
+    assertIncludes(SRC, "key: 'parentName'");
+  });
+
+  it('应包含商品数列（productCount）', () => {
+    assertIncludes(SRC, "key: 'productCount'");
+  });
+
+  it('应包含状态列（status）', () => {
+    assertIncludes(SRC, "key: 'status'");
+  });
+
+  it('应包含排序列（sortOrder）', () => {
+    assertIncludes(SRC, "key: 'sortOrder'");
+  });
+
+  it('应包含创建时间列（createdAt）', () => {
+    assertIncludes(SRC, "key: 'createdAt'");
+  });
+
+  it('所有列应可排序（sortable: true）', () => {
+    const sortableCounts = SRC.match(/sortable: true/g);
+    assert.ok(sortableCounts && sortableCounts.length >= 5, `sortable 列不足: ${sortableCounts?.length}`);
+  });
+
+  it('名称列应包含点击跳转的 onClick 处理', () => {
+    assertIncludes(SRC, 'onRowClick(item)');
+  });
+});
+
+// ── 边界：分页与空状态 ──
+describe('categories/page — 分页与空状态边界', () => {
+  it('pageSize 应配置为 10', () => {
+    assertIncludes(SRC, 'pageSize = 10');
+  });
+
+  it('应实现切片分页逻辑', () => {
+    assertIncludes(SRC, '.slice(');
   });
 
   it('空数据时应显示 emptyText', () => {
-    const src = readSource();
-    assert.ok(src.includes('emptyText'), '缺少 emptyText');
-    assert.ok(src.includes('暂无分类数据'), '缺少暂无数据文案');
+    assertIncludes(SRC, 'emptyText');
   });
 
-  it('搜索空结果应显示提示', () => {
-    const src = readSource();
-    assert.ok(src.includes('noData') || src.includes('empty'), '空结果提示');
+  it('空状态文案应为 "暂无分类数据"', () => {
+    assertIncludes(SRC, '暂无分类数据');
   });
 
-  it('sort 排序应支持升降序切换', () => {
-    const src = readSource();
-    assert.ok(src.includes('asc') || src.includes('desc') || src.includes('sort'), '排序切换');
-  });
-});
-
-describe('categories/page — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'") || src.includes('"use client"'), '缺少 use client');
-  });
-
-  it('应包含 useMemo / useCallback 性能优化', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo'), '缺少 useMemo');
-    assert.ok(src.includes('useCallback'), '缺少 useCallback');
-  });
-
-  it('handleAction 应处理 add 路由跳转', () => {
-    const src = readSource();
-    assert.ok(src.includes("action === 'add'"), '缺少 add action 处理');
-  });
-
-  it('handleAction 应处理 edit 路由跳转', () => {
-    const src = readSource();
-    assert.ok(src.includes('action') || src.includes('edit') || src.includes('router.push'), '编辑路由');
-  });
-
-  it('数据变化时分类计数应重新计算', () => {
-    const src = readSource();
-    assert.ok(src.includes('stats') || src.includes('useMemo'), 'stats 应依赖 useMemo');
+  it('应包含 Pagination 组件且传入 page / total / onPageChange', () => {
+    assertIncludes(SRC, '<Pagination');
+    assertIncludes(SRC, 'page={page}');
+    assertIncludes(SRC, 'total={total}');
+    assertIncludes(SRC, 'onPageChange={setPage}');
   });
 });
 
-describe('categories/page — 反例', () => {
-  it('源文件应存在', () => {
-    assert.ok(existsSync(SOURCE), 'page.tsx 应存在');
+// ── 边界：状态切换与动作 ──
+describe('categories/page — 状态切换与动作处理', () => {
+  it('statusFilter 应支持切换后重置分页到第 1 页', () => {
+    assertIncludes(SRC, 'setPage(1)');
   });
 
-  it('应避免使用不安全的 innerHTML', () => {
-    const src = readSource();
-    assert.ok(!src.includes('innerHTML') || src.includes('document'), '慎用 innerHTML');
+  it('新建分类操作应跳转到 /new 路径', () => {
+    assertIncludes(SRC, "'add'");
+    assertIncludes(SRC, '/new', '应包含 /new 路径');
+    assertIncludes(SRC, '新建分类');
   });
 
-  it('不应硬编码分类数据', () => {
-    const src = readSource();
-    assert.ok(!src.includes('return [') || src.includes('MOCK'), '数据应通过 props/state 注入');
-  });
-
-  it('不应使用已废弃的 componentWillMount', () => {
-    const src = readSource();
-    assert.ok(!src.includes('componentWillMount'), '不使用过时生命周期');
+  it('行点击应跳转到分类详情页', () => {
+    assertIncludes(SRC, 'router.push');
+    assertIncludes(SRC, 'detailHrefBase');
   });
 });
 
-describe('categories/page — 集成', () => {
-  it('搜索和分页应协同工作', () => {
-    const src = readSource();
-    // 页面使用 useSearchFilter + page/pageSize
-    assert.ok(src.includes('searchFilter') || src.includes('filteredItems'), '使用搜索过滤');
-    assert.ok(src.includes('pageSize') || src.includes('Pagination'), '使用分页');
+// ── 正向：统计面板 ──
+describe('categories/page — 统计面板', () => {
+  it('应导出 CategoryStatsPanel 组件', () => {
+    assertIncludes(SRC, 'CategoryStatsPanel');
   });
 
-  it('Tabs 切换应联动数据过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes('statusFilter') || src.includes('tab'), 'Tabs 联动');
+  it('统计面板应显示总分类数', () => {
+    assertIncludes(SRC, 'stats.total');
   });
 
-  it('应包含 NewCategoryButton 新建入口', () => {
-    const src = readSource();
-    assert.ok(src.includes('新建分类') || src.includes('NewCategory'), '新建入口');
+  it('统计面板应显示一级分类数（rootCount）', () => {
+    assertIncludes(SRC, 'stats.rootCount');
   });
 
-  it('分类编辑路由应链接到 /categories/edit', () => {
-    const src = readSource();
-    assert.ok(src.includes('categories') || src.includes('edit') || src.includes('NewCategory'), '编辑路由');
+  it('统计面板应显示关联商品总数', () => {
+    assertIncludes(SRC, 'stats.totalProducts');
   });
 
-  it.skip('应包含分类删除确认 (在categories/new/page.tsx)', () => {
-    const src = readSource();
-    assert.ok(src.includes('确认') || src.includes('confirm') || src.includes('Modal'), '删除确认');
-  });
-});
-
-describe('categories/page — AI 安全审计', () => {
-  it('不应直接拼接用户输入到 URL', () => {
-    const src = readSource();
-    assert.ok(!src.includes('template literal') || src.includes('encodeURI'), 'URL 编码');
+  it('统计面板应显示启用/停用数据', () => {
+    assertIncludes(SRC, '.filter(i => i.status === \'active\')');
+    assertIncludes(SRC, '.filter(i => i.status === \'inactive\')');
   });
 
-  it.skip('交互按钮不应缺失确认 (在categories/new/page.tsx)', () => {
-    const src = readSource();
-    assert.ok(src.includes('确认') || src.includes('Modal'), '敏感操作确认');
+  it('统计面板应包含启用/停用分布可视化条', () => {
+    assertIncludes(SRC, 'gridColumn: \'1 / -1\'', '分布可视化应在最后一行');
+    assertIncludes(SRC, '启用', '分布可视化应标出启用');
+    assertIncludes(SRC, '停用', '分布可视化应标出停用');
+  });
+
+  it('stats 计算应依赖 useMemo', () => {
+    // 在组件内部 computeCategoryStats 应包裹 useMemo
+    const lines = SRC.split('\n');
+    const memoLines = lines.filter(l => l.includes('useMemo') && l.includes('computeCategoryStats'));
+    assert.ok(memoLines.length >= 1, 'computeCategoryStats 应包裹在 useMemo 中');
   });
 });
 
-const SRC = readFileSync(require.resolve('./page'), 'utf-8');
+// ── 防御：安全与代码质量 ──
+describe('categories/page — 安全与代码质量', () => {
+  it('不应使用 dangerouslySetInnerHTML', () => {
+    assertExcludes(SRC, 'dangerouslySetInnerHTML');
+  });
 
-describe('Categories — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表过滤', () => assert.ok(SRC.includes('.filter(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('不应使用 console.log 调试', () => {
+    // 允许 console 出现在注释中
+    const codeLines = SRC.split('\n').filter(l => !l.trim().startsWith('//') && !l.trim().startsWith('*'));
+    const consoleLogLines = codeLines.filter(l => l.includes('console.log'));
+    assert.equal(consoleLogLines.length, 0, '不应在运行时代码中使用 console.log');
+  });
+
+  it('不应使用已废弃的生命周期方法', () => {
+    assertExcludes(SRC, 'componentWillMount');
+    assertExcludes(SRC, 'componentWillReceiveProps');
+    assertExcludes(SRC, 'componentWillUpdate');
+  });
+});
+
+// ── 集成：组件间交互 ──
+describe('categories/page — 组件交互集成', () => {
+  it('搜索和分页应协同工作（通过 filteredItems 串联）', () => {
+    assertIncludes(SRC, 'filteredItems');
+    assertIncludes(SRC, 'displayData');
+  });
+
+  it('排序配置变化应通过 onSortChange 传递', () => {
+    assertIncludes(SRC, 'onSortChange=');
+    assertIncludes(SRC, 'setSortConfig');
+  });
+
+  it('DataTable 应接收 rowKey / sort / onRowClick', () => {
+    assertIncludes(SRC, 'rowKey=');
+    assertIncludes(SRC, 'sort={sortConfig}');
+    assertIncludes(SRC, 'onRowClick=');
+  });
+
+  it('Tabs 应接收 activeKey / onChange', () => {
+    assertIncludes(SRC, 'activeKey={statusFilter');
+    assertIncludes(SRC, 'onChange={handleStatusFilter}');
+  });
+
+  it('PageShell 应接收 title / subtitle / actions', () => {
+    assertIncludes(SRC, 'title=');
+    assertIncludes(SRC, 'subtitle=');
+    assertIncludes(SRC, 'actions=');
+  });
+
+  it('emptyText 应通过 DT prop 传入', () => {
+    // emptyText 在同一 JSX 块中被引用为 DataTable 的属性
+    assertIncludes(SRC, 'emptyText="暂无分类数据"');
+  });
+});
+
+// ── 边界：分类数据依赖 ──
+describe('categories/page — 数据依赖契约', () => {
+  it('应从 categories-data 导入 CategoryItem 类型', () => {
+    assertIncludes(SRC, 'CategoryItem');
+  });
+
+  it('应从 categories-data 导入 adminCategoryRoute', () => {
+    assertIncludes(SRC, 'adminCategoryRoute');
+  });
+
+  it('应从 categories-data 导入 MOCK_CATEGORIES', () => {
+    assertIncludes(SRC, 'MOCK_CATEGORIES');
+  });
+
+  it('应从 categories-data 导入 CATEGORY_STATUS_MAP', () => {
+    assertIncludes(SRC, 'CATEGORY_STATUS_MAP');
+  });
+
+  it('import 来自 "../categories-data"', () => {
+    assertIncludes(SRC, '../categories-data');
+  });
+
+  it('buildColumns 函数应返回 DataTableColumn<CategoryItem>[] 类型', () => {
+    assertIncludes(SRC, 'DataTableColumn<CategoryItem>[]');
+  });
 });

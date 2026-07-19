@@ -61,7 +61,7 @@ class TestCurrencyController {
 
   @Post('config')
   updateConfig(@Body() body: Record<string, unknown>) {
-    this.currencyService.setConfig(body as any)
+    this.currencyService.setConfig(body as Partial<import('./currency.service').CurrencyConfig>)
     return { config: this.currencyService.getConfig() }
   }
 }
