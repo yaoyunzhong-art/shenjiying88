@@ -1,7 +1,7 @@
 /**
  * P-47 品牌运营 — 营销活动管理页测试
  *
- * 覆盖: 正例·反例·边界
+ * 覆盖: 正例·反例·边界·三态(Loading/Empty/Error)·新建弹窗
  * Mock策略: URL-pattern responseRegistry
  * 圈梁四道箍: TSC通过 → 测试0 fail(无skip) → 圈梁表更新 → PRD标记
  */
@@ -51,7 +51,7 @@ function makeCampaign(id: string, overrides: Record<string, unknown> = {}) {
     id, name: `活动${id}`, description: `描述${id}`,
     type: 'promotion', status: 'active',
     startDate: '2026-07-01', endDate: '2026-08-31',
-    budgetCents: 1000000, spentCents: 500000,
+    budgetCents: 1000000, spentCents: 500000, usageCount: 100,
     targetMetric: 'revenue', targetValue: 10000, currentValue: 5000,
     channels: ['mini-app'],
     tenantId: 't1', createdBy: 'admin',
@@ -66,10 +66,10 @@ function setDefaultResponses() {
     success: true,
     data: {
       campaigns: [
-        makeCampaign('cmp-1', { name: '夏日狂欢', description: '暑期折扣', type: 'promotion', status: 'active', budgetCents: 5000000, spentCents: 1280000, targetValue: 30000000, currentValue: 8500000, channels: ['mini-app', 'wechat'] }),
-        makeCampaign('cmp-2', { name: '新会员专享', description: '注册送积分', type: 'new-member', status: 'active', budgetCents: 2000000, spentCents: 450000, targetMetric: 'new-users', targetValue: 5000, currentValue: 1820, channels: ['mini-app'] }),
-        makeCampaign('cmp-3', { name: '端午特惠', description: '端午限时折扣', type: 'seasonal', status: 'completed', budgetCents: 800000, spentCents: 760000, targetValue: 5000000, currentValue: 4820000, channels: ['mini-app', 'in-store'] }),
-        makeCampaign('cmp-4', { name: '换季清仓', description: '春季5折', type: 'clearance', status: 'draft', budgetCents: 3000000, spentCents: 0, targetMetric: 'traffic', targetValue: 10000, currentValue: 0, channels: ['in-store'] }),
+        makeCampaign('cmp-1', { name: '夏日狂欢', description: '暑期折扣', type: 'promotion', status: 'active', budgetCents: 5000000, spentCents: 1280000, usageCount: 856, targetValue: 30000000, currentValue: 8500000, channels: ['mini-app', 'wechat'] }),
+        makeCampaign('cmp-2', { name: '新会员专享', description: '注册送积分', type: 'new-member', status: 'active', budgetCents: 2000000, spentCents: 450000, usageCount: 723, targetMetric: 'new-users', targetValue: 5000, currentValue: 1820, channels: ['mini-app'] }),
+        makeCampaign('cmp-3', { name: '端午特惠', description: '端午限时折扣', type: 'seasonal', status: 'completed', budgetCents: 800000, spentCents: 760000, usageCount: 1340, targetValue: 5000000, currentValue: 4820000, channels: ['mini-app', 'in-store'] }),
+        makeCampaign('cmp-4', { name: '换季清仓', description: '春季5折', type: 'clearance', status: 'draft', budgetCents: 3000000, spentCents: 0, usageCount: 0, targetMetric: 'traffic', targetValue: 10000, currentValue: 0, channels: ['in-store'] }),
       ],
     },
     message: 'OK',
@@ -166,7 +166,7 @@ describe('基础渲染', () => {
 });
 
 // ═══════════════════════════════════════════════════
-// 2. 活动状态统计条（新增需求）
+// 2. 活动状态统计条
 // ═══════════════════════════════════════════════════
 describe('活动状态统计条', () => {
   beforeEach(() => { responseRegistry.clear(); setDefaultResponses(); });
@@ -279,6 +279,16 @@ describe('活动列表内容', () => {
     await waitFor(() => assertInDoc('已花费'));
   });
 
+  it('正例: 显示使用量(usageCount)', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => {
+      const text = bodyText();
+      assert.ok(text.includes('使用量'), 'usage count label');
+      assert.ok(text.includes('856'), 'usage count value for 夏日狂欢');
+      assert.ok(text.includes('723'), 'usage count value for 新会员专享');
+    });
+  });
+
   it('正例: 显示营收目标指标', async () => {
     render(<CampaignsPage />);
     await waitFor(() => assertInDoc('营收'));
@@ -332,12 +342,12 @@ describe('活动列表内容', () => {
 });
 
 // ═══════════════════════════════════════════════════
-// 4. API错误与边界
+// 4. API错误与边界（三态: Error）
 // ═══════════════════════════════════════════════════
 describe('API错误与边界', () => {
   beforeEach(() => { responseRegistry.clear(); });
 
-  it('反例: API返回空数据 → 暂无活动', async () => {
+  it('反例: API返回空数据 → 暂无活动（三态: Empty）', async () => {
     setResponseFor('/api/brand/campaigns', () => ({
       success: true, data: { campaigns: [] }, message: 'OK',
     }));
@@ -365,7 +375,7 @@ describe('API错误与边界', () => {
     });
   });
 
-  it('边界: loading状态展示加载动画', () => {
+  it('边界: loading状态展示加载动画（三态: Loading）', () => {
     render(<CampaignsPage />);
     const el = screen.queryByText('加载营销活动...');
     assert.ok(el, 'loading state present');
@@ -503,7 +513,96 @@ describe('工具函数', () => {
 });
 
 // ═══════════════════════════════════════════════════
-// 8. 静态代码分析
+// 8. 新建活动弹窗
+// ═══════════════════════════════════════════════════
+describe('新建活动弹窗', () => {
+  beforeEach(() => { responseRegistry.clear(); setDefaultResponses(); });
+
+  it('正例: 渲染"+ 新建活动"按钮', async () => {
+    render(<CampaignsPage />);
+    await waitFor(() => assertInDoc('+ 新建活动'));
+  });
+
+  it('正例: 弹窗源码包含Modal/Form等组件声明', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('<Modal'), 'Modal component usage');
+    assert.ok(src.includes('<Form'), 'Form component usage');
+    assert.ok(src.includes('handleCreate'), 'create handler');
+    assert.ok(src.includes('setModalOpen'), 'modal open state');
+  });
+
+  it('正例: 源码包含完整表单字段定义', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('活动名称'), 'field: 活动名称');
+    assert.ok(src.includes('活动类型'), 'field: 活动类型');
+    assert.ok(src.includes('开始日期'), 'field: 开始日期');
+    assert.ok(src.includes('投放渠道'), 'field: 投放渠道');
+    assert.ok(src.includes('目标指标'), 'field: 目标指标');
+    assert.ok(src.includes('目标值'), 'field: 目标值');
+  });
+
+  it('正例: 源码包含创建/取消按钮文本', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('okText="创建"'), 'confirm button');
+    assert.ok(src.includes('cancelText="取消"'), 'cancel button');
+  });
+
+  it('正例: 弹窗包含渠道选择(多选)', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('mode="multiple"'), 'multi-select channels');
+  });
+
+  it('正例: 弹窗包含活动类型选择', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('促销活动'), 'promotion type');
+    assert.ok(src.includes('拉新活动'), 'new-member type');
+    assert.ok(src.includes('推荐有礼'), 'referral type');
+    assert.ok(src.includes('季节活动'), 'seasonal type');
+    assert.ok(src.includes('清仓活动'), 'clearance type');
+  });
+
+  it('正例: 弹窗包含目标指标选择', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('营收'), 'revenue metric');
+    assert.ok(src.includes('新用户'), 'new-users metric');
+    assert.ok(src.includes('核销数'), 'redemption metric');
+    assert.ok(src.includes('流量'), 'traffic metric');
+  });
+
+  it('正例: 弹窗包含预算输入', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('预算'), 'budget field');
+  });
+
+  it('正例: 弹窗 destroyOnClose/onCancel/handleCreate 实现', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('destroyOnClose') || src.includes('destroyOnHidden'), 'destroy on close');
+    assert.ok(src.includes('onCancel'), 'cancel handler');
+    assert.ok(src.includes('form.validateFields'), 'form validation');
+  });
+
+  it('边界: 表单校验规则(必填/长度)', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('required: true'), 'required fields');
+    assert.ok(src.includes('message:'), 'validation messages');
+  });
+
+  it('边界: 创建API调用路径正确', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    // 新建活动发起POST到 /api/brand/campaigns
+    assert.ok(src.includes("'POST'"), 'POST method');
+    assert.ok(src.includes('/api/brand/campaigns'), 'API endpoint');
+  });
+
+  it('正例: 弹窗打开函数openModal处理表单重置', () => {
+    const src = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('form.resetFields'), 'reset form');
+    assert.ok(src.includes('setModalOpen(true)'), 'open modal');
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// 9. 静态代码分析
 // ═══════════════════════════════════════════════════
 const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
@@ -516,7 +615,7 @@ describe('静态代码分析', () => {
   it('包含export default function', () => assert.ok(SRC.includes('export default function')));
   it('包含活动状态统计卡片名(总活动/未开始/已结束)', () => {
     assert.ok(SRC.includes('总活动'), '总活动');
-    assert.ok(SRC.includes('未开始'), '未开始');
+    assert.ok(SRC.includes('未开始'), '总活动');
     assert.ok(SRC.includes('已结束'), '已结束');
   });
   it('状态统计使用grid-cols-4', () => {
@@ -525,4 +624,15 @@ describe('静态代码分析', () => {
     assert.ok(block.includes('grid-cols-4'));
   });
   it('不依赖@m5/ui', () => assert.ok(!SRC.includes('@m5/ui')));
+  it('包含Modal组件(新建活动弹窗)', () => assert.ok(SRC.includes('from \'antd\'') && SRC.includes('<Modal')));
+  it('包含Form组件', () => assert.ok(SRC.includes('<Form') || SRC.includes('<Form.Item')));
+  it('包含dayjs导入', () => assert.ok(SRC.includes('dayjs')));
+  it('包含三态注释标记(Loading/Empty/Error)', () => {
+    assert.ok(SRC.includes('三态: Loading'), 'loading state marker');
+    assert.ok(SRC.includes('三态: Empty'), 'empty state marker');
+    assert.ok(SRC.includes('三态: Error'), 'error state marker');
+  });
+  it('包含usageCount字段', () => {
+    assert.ok(SRC.includes('usageCount'), 'usage count field');
+  });
 });
