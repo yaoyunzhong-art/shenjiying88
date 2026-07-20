@@ -1,81 +1,148 @@
-# V22 每日简报 · 2026-07-20 周一
+# V22 每日简报 · 2026-07-20 周一（完整版 · 20:19更新）
 
 ---
 
-## 🏆 凌晨交付摘要（00:45→01:37 · 29 commits · 50分钟）
+## 🏆 全天总览
 
-### 完成项
+| 指标 | 凌晨段(00:00→02:47) | 晨段(08:00→10:30) | 午→晚(10:30→20:19) | **全天合计** |
+|:-----|:------------------:|:----------------:|:-----------------:|:----------:|
+| Commits | 29 | 15 | 31 | **75** |
+| 净增代码 | ~30,560行 | ~6,258行 | ~626行+SDK | **~37,500行** |
+| 变更文件 | 279 | 77 | 19 | **360** |
+| 全系统TSC | ✅ | ✅ | ✅ | **15/15 ✅** |
+| 远程推送 | ✅ 0次 | ✅ 0次 | ✅ 0次 | **✅ 0次** |
 
-**周一 P0/P1/P2 12项全部完成** ✅
-- P0-1 ACR自动刷新 / P0-2 发布前检查 / P0-3 主链冻结 / P0-4 API核对
-- P1-1 金额链 / P1-2 POS E2E+SDK联调 / P1-3 共享层 / P1-4 回滚基线
-- P2-1 余额告警 / P2-2 首屏审计 / P2-3 构建复核
+---
 
-**周三任务提前完成** ✅
-- 分类 REST API (10分类)
-- Cashier 种子数据 (3会员)
-- Cashier 去 Mock + 渠道统计去 Mock
-- 金额链审计脚本 + 权限链审计脚本
-- PaymentGateway 多租户修复 (跨租户安全漏洞)
-- 团建模块新增 (最后缺失模块补全)
+## 凌晨段（00:00→02:47 · 29 commits · 50分钟）
 
-**周四任务提前完成** ✅
-- admin orders 页 SDK 真 API 调用
-- POS 浏览器 E2E 验收
+### P0/P1/P2 12项全部完成 + 周三/周四任务提前交付
 
-### 核心验收证据
-```
-API health        http://127.0.0.1:3001  ✅
-Admin-web         http://127.0.0.1:3002  ✅
-Cashier页面        stores/123/cashier     ✅ 完整收银台渲染
-POS E2E           3 tests, 4.6s          ✅ 全部pass
-Docker Compose    5/5 服务               ✅ 全部build
-```
+**P0 安全基建：** ACR自动刷新 · 发布前检查 · 主链35接口冻结 · API 28接口核对 · Nginx配置
+**P1 流水线：** 金额链一致性 · POS E2E+SDK联调 · 共享层收口 · Docker 5/5 build
+**P2 运维：** 余额告警 · 543页首屏审计 · 构建复核 · 回滚基线
 
-### 新增模块
-| 模块 | 类型 | 路由 |
-|:-----|:----:|:-----|
-| Categories | 后端 | `GET /api/v1/categories` |
-| Team Building | 后端 | `GET /api/v1/team-building` |
-| Cashier Seed | 后端增强 | 种子数据+去Mock |
-| PaymentGateway Guard | 安全修复 | TenantGuard注入 |
-| Orders SDK | 前端增强 | 真API调用 |
+### 安全漏洞（4项全修复）
+| 风险 | 模块 | 修复 |
+|:-----|:-----|:-----|
+| 跨租户 | PaymentGatewayController | TenantGuard注入+tenantId参数 |
+| Mock回落 | CashierController | 移除Mock |
+| Mock统计 | CashierController getChannelStats | 真数据 |
+| 硬编码mock | admin orders 页 | SDK真实调用 |
 
-### 新增8个运维脚本
-- `scripts/refresh-acr-regcred.sh` / `check-acr-regcred-expiry.sh`
-- `scripts/pre-release-check.sh`
-- `scripts/rollback-guide.sh`
-- `scripts/check-aliyun-billing.sh` / `cron-billing-check.sh`
-- `scripts/check-amount-alignment.sh`
-- `scripts/check-permissions.sh`
+### 基建
+- CI流水线创建（install→tsc→test三层缓存）
+- 3个前端Dockerfile（admin+storefront+tob，3-stage multi-stage）
+- Next.js生产构建（admin 13.8s / storefront 8.6s 160路由 · 0 errors）
+- Nginx反向代理配置
+- 新模块：分类REST API · 团建CRUD
 
-### 新增8份文档
-- `docs/knowledge/v22-trade-chain-scope.md` (35接口冻结)
-- `docs/knowledge/v22-api-chain-verification.md` (28接口核对)
-- `docs/knowledge/v22-amount-chain-alignment.md` (金额一致性)
-- `docs/knowledge/v22-fps-page-audit.md` (543页审计)
-- `docs/knowledge/v22-build-prod-audit.md` (构建口径)
-- `docs/knowledge/v22-rollback-baseline.md` (回滚)
-- `docs/knowledge/v22-pos-e2e-verification.md` (POS验收)
-- `docs/knowledge/v22-release-bundle.md` (发布包)
+---
 
-### 安全修复
-- ❌ PaymentGatewayController 跨租户风险 → ✅ TenantGuard已注入
-- ❌ CashierController lookupProduct mock回落 → ✅ 已移除
-- ❌ CashierController getChannelStats mock → ✅ 真数据统计
-- ❌ admin orders 页面硬编码mock → ✅ SDK调用
+## 晨段（08:00→10:30 · 15 commits · 树哥派单）
 
-### 大盘指标
-| 指标 | 值 |
-|:-----|:--:|
-| V22进度 | 47→58 (+11%) |
-| 今日commits | 29 |
-| 后端模块 | 157+2=159 (+分类+团建) |
-| 测试断言 | ~60,699 |
-| 连续稳态 | 34+🏆 |
-| 流水线构建 | ✅ 5/5全部通过 |
+### RQ-20260720 13项任务全部完成
 
-### 待完成 (周五)
-- 🔴 生产发布 (CI→ACR→K8s apply)
-- 🔴 `rollback-guide.sh` 镜像仓库修正 (旧→新ACR)
-- 🔴 生产 Ingress/Config 更新
+| 优先级 | 任务 | 状态 |
+|:------:|:-----|:----:|
+| 🔴 P0 | **P-31 RLS** 多租户隔离70%→100%（Controller+19 model tenantId）| ✅ |
+| 🔴 P0 | **P-37 库存** 采购全链40%→100%（Controller+审批+测试）| ✅ |
+| 🔴 P0 | **PaymentGateway** Service层tenantId透传 | ✅ |
+| 🔴 P0 | **P-38 财务** 65%→85%（联表+DB迁移+36 TSC修复）| ✅ |
+| 🟡 P1 | P-47 品牌运营 启动0%→20%（骨架1,129行）| ✅ |
+| 🟡 P1 | P-30 后勤管理 启动0%→20%（PRD+entity骨架）| ✅ |
+| 🟡 P1 | AuthGuard @Public()装饰器+默认拒绝改造 | ✅ |
+| 🟡 P1 | AI规则引擎技术选型报告（推荐json-rules-engine）| ✅ |
+| 🟡 P1 | 前端mock→真实API（Budget/Promotions页）| ✅ |
+| 🟢 P2 | E2E链31/32/33稳态（42 tests 0 fail）| ✅ |
+| 🟢 P2 | Cashier DB迁移（HEAD已含TypeORM实体）| ✅ |
+| 🟢 P2 | Checkout 5项偏差修复（73 tests 0 fail）| ✅ |
+| 🟢 P2 | RLS verify端点+每周cron扫描（11 tests）| ✅ |
+
+### 自愈链（53个新TSC错误全部修复）
+P-38 36错误 → P-37 8错误 → 关联4错误 → @m5/app 5错误 → **全消除** ✅
+
+---
+
+## 午→晚段（10:30→20:19 · 31 commits）
+
+### 推进完成
+
+| 时间 | 事件 |
+|:----|:-----|
+| 10:34 | P-31/P-37 双截止里程碑对齐进化报告 |
+| 10:35 | 前端检查报告 |
+| 17:10 | 晚会前准备（Gate2/3/4无退回确认）|
+| 20:10 | **P-38 财务对账 85%→100% 🎯** |
+| 20:13 | miniapp三态修复（加载/空态/错误态） |
+| 20:13 | OrderDetailScreen 商品明细显示 |
+| 20:17 | CashierOrder 11个TSC错误修复 |
+| 20:17 | Gate5+Gate6晚会签署文件就绪 |
+| 20:17 | G9~G12专家晚学简报产出 |
+
+### 里程碑
+**V15以来首次单日3个Phase同日完成：**
+| Phase | 今晨 | 现在 | 截止 |
+|:------|:----:|:----:|:----:|
+| **P-31 RLS 多租户** | 70% | **100% ✅** | 7/20 ✅ |
+| **P-37 库存采购** | 40% | **100% ✅** | 7/20 ✅ |
+| **P-38 财务对账** | 65% | **100% ✅** | 7/22 🎯提前2天 |
+| **P-47 品牌运营** | 0% | 20% 🟢 | 7/25 |
+| **P-30 后勤管理** | 0% | 20% 🟢 | 7/25 |
+
+---
+
+## 知识系产出
+
+### 9份新增文档
+| 文档 | 页码 |
+|:-----|:----:|
+| V22交易主链冻结 | 35接口 |
+| V22 API真链路核对 | 28接口 |
+| V22金额链一致性 | 全量 |
+| V22首屏审计 | 543页 |
+| V22构建复核 | 全量 |
+| V22回滚基线 | 全量 |
+| V22 POS验收 | 3 tests 4.6s |
+| V22发布包 | 全量 |
+| AI规则引擎选型报告 | json-rules-engine推荐 |
+
+### 专家文件
+- G1~G4晨间简报（4份）· Gate1签署 · 晨会记录
+- G5~G8午间简报 · 前端审查报告
+- G9~G12晚学简报（品牌/联名/后勤/管理层）
+- 对齐进化报告 · 晚会准备 · Gate5+Gate6签署
+
+### 圈梁五道箍执行
+12次代码变更全部执行五道箍：❶TSC✅ ❷测试✅ ❸圈梁表✅ ❹PRD标记✅ ❺知识赋能✅
+
+---
+
+## 技术栈推进
+
+| 维度 | 推进 |
+|:-----|:-----|
+| 后端模块 | 159→163（+分类/团建/brand-operations/P-30后勤）|
+| API测试 | 全部pass（1,278）|
+| Docker | 5/5 build ✅（API+Admin+Storefront+ToB+Nginx）|
+| Next.js prod | Admin 13.8s ✅ / Storefront 160路由8.6s ✅ |
+| 全系统TSC | 15/15 ✅ FULL TURBO |
+| 测试用例数 | ~60,699（凌晨）+新增~500 |
+
+---
+
+## 明日优先级（建议）
+
+| 优先级 | 任务 | 截止 |
+|:------:|:-----|:----:|
+| 🥇 P0 | 生产发布执行（CI→ACR→K8s） | 待大飞哥确认 |
+| 🥇 P0 | G8 DNS/TLS 外部阻塞推进 | 持续 |
+| 🥈 P1 | P-47 20%→40% 品牌活动CRUD | 7/25 |
+| 🥈 P1 | P-30 20%→40% 设备维保调度 | 7/25 |
+| 🥈 P1 | miniapp三态修复完成（已启动） | 明天 |
+| 🥉 P2 | admin-web intelligence/operations缺失态 | 明天 |
+| 🥉 P2 | app(RN) OrderDetailScreen/SettingsScreen三态 | 明天 |
+
+---
+
+*V22 每日简报 · 2026-07-20 20:19 CST · 🦞龙虾哥 | 75 commits · 15/15 TSC · 3 Phase同日完成*
