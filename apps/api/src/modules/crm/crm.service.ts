@@ -9,7 +9,8 @@
  *   - 客户备注
  *   - 工单管理
  */
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, ConflictException, Optional } from '@nestjs/common'
+import { AuditService } from '../audit/audit.service'
 import { randomUUID as uuid } from 'crypto'
 
 export type CrmCustomerStatus = 'active' | 'inactive' | 'churned' | 'lead'
@@ -89,7 +90,9 @@ export class CrmService {
   private customers: Map<string, CustomerProfile> = new Map()
   private nextNum = 1
 
-  constructor() {
+  constructor(
+    @Optional() private readonly auditService?: AuditService,
+  ) {
     this.initializeDefaults()
   }
 
@@ -158,12 +161,23 @@ export class CrmService {
     )
     this.customers.set(customer.id, customer)
     this.logger.log(`客户创建: ${customer.id} — ${customer.name}`)
+    // 审计日志: 客户创建
+    this.auditService?.log({
+      eventType: 'user.profile_update',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'crm_customer',
+      resourceId: customer.id,
+      riskLevel: 'low',
+      metadata: { customerName: customer.name, email: customer.email, status: customer.status },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return customer
   }
 
   /** 更新客户信息 */
   update(id: string, data: UpdateCustomerDto): CustomerProfile {
     const c = this.getById(id)
+    const before = { name: c.name, email: c.email, phone: c.phone, status: c.status, tags: [...c.tags] }
     if (data.name !== undefined) c.name = data.name.trim()
     if (data.email !== undefined) c.email = data.email.trim()
     if (data.phone !== undefined) c.phone = data.phone.trim()
@@ -174,6 +188,16 @@ export class CrmService {
     if (data.tags !== undefined) c.tags = [...data.tags]
     c.updatedAt = new Date().toISOString()
     this.logger.log(`客户更新: ${c.id}`)
+    // 审计日志: 客户更新
+    this.auditService?.log({
+      eventType: 'user.profile_update',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'crm_customer',
+      resourceId: id,
+      riskLevel: 'low',
+      metadata: { before, after: { name: c.name, email: c.email, phone: c.phone, status: c.status, tags: c.tags } },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return c
   }
 
@@ -182,6 +206,16 @@ export class CrmService {
     const c = this.getById(id)
     this.customers.delete(id)
     this.logger.log(`客户删除: ${c.id} — ${c.name}`)
+    // 审计日志: 客户删除
+    this.auditService?.log({
+      eventType: 'user.data_delete',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'crm_customer',
+      resourceId: id,
+      riskLevel: 'high',
+      metadata: { customerName: c.name },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
   }
 
   // ────────── 评分管理 ──────────
@@ -228,10 +262,21 @@ export class CrmService {
   /** 标记客户状态（含说明） */
   markCustomer(id: string, status: CrmCustomerStatus): CustomerProfile {
     const c = this.getById(id)
+    const previousStatus = c.status
     c.status = status
     if (status === 'churned') c.engagementScore = Math.min(c.engagementScore, 20)
     c.updatedAt = new Date().toISOString()
     this.logger.log(`客户标记: ${id} → ${status}`)
+    // 审计日志: 客户状态标记
+    this.auditService?.log({
+      eventType: 'user.profile_update',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'crm_customer_status',
+      resourceId: id,
+      riskLevel: status === 'churned' ? 'medium' : 'low',
+      metadata: { previousStatus, newStatus: status, customerName: c.name },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return c
   }
 
@@ -248,6 +293,16 @@ export class CrmService {
     }
     c.notes.push(note)
     c.updatedAt = new Date().toISOString()
+    // 审计日志: 客户备注添加
+    this.auditService?.log({
+      eventType: 'admin.config_change',
+      actorId: createdBy,
+      actorType: 'admin',
+      resourceType: 'crm_note',
+      resourceId: note.id,
+      riskLevel: 'low',
+      metadata: { customerId, notePreview: content.substring(0, 100) },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return note
   }
 

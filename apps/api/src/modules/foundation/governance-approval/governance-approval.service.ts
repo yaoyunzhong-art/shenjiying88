@@ -1,4 +1,5 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common'
+import { Injectable, OnModuleDestroy, Logger, Optional } from '@nestjs/common'
+import { AuditService } from '../../audit/audit.service'
 import { PrismaService } from '../../../prisma/prisma.service'
 import {
   cancelGovernanceApproval,
@@ -40,7 +41,12 @@ export type GovernanceApprovalOutcomeHook = (
 
 @Injectable()
 export class GovernanceApprovalService implements OnModuleDestroy {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(GovernanceApprovalService.name)
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly auditService?: AuditService,
+  ) {}
 
   async listApprovals(query: GovernanceApprovalQueryInput): Promise<GovernanceApprovalSnapshot[]> {
     return listGovernanceApprovals(this.prisma, query)
@@ -55,7 +61,22 @@ export class GovernanceApprovalService implements OnModuleDestroy {
   }
 
   async materializeApproval(input: MaterializeGovernanceApprovalInput): Promise<GovernanceApprovalSnapshot> {
-    return materializeGovernanceApproval(this.prisma, input)
+    const result = await materializeGovernanceApproval(this.prisma, input)
+    // 审计日志: 新建审批
+    this.auditService?.log({
+      eventType: 'admin.role_create',
+      actorId: input.createdBy ?? 'system',
+      actorType: 'admin',
+      resourceType: 'governance_approval',
+      resourceId: result.ticket,
+      riskLevel: 'low',
+      metadata: {
+        resourceType: input.resourceType,
+        resourceKey: input.resourceKey,
+        approvalType: input.approvalType ?? input.approvalType,
+      },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+    return result
   }
 
   // 从原始数据库记录获取层级上下文
@@ -93,6 +114,23 @@ export class GovernanceApprovalService implements OnModuleDestroy {
       decisionNote: input.decisionNote ?? null,
       approval: result
     })
+    // 审计日志: 审批决策
+    this.auditService?.log({
+      eventType: 'settlement.approved',
+      actorId: input.decidedBy ?? 'system',
+      actorType: 'admin',
+      resourceType: 'governance_approval',
+      resourceId: input.approvalTicket,
+      riskLevel: input.status === 'REJECTED' ? 'high' : 'medium',
+      metadata: {
+        approvalTicket: input.approvalTicket,
+        decision: input.status,
+        previousStatus: before.status,
+        decisionNote: input.decisionNote,
+        resourceType: before.resourceType,
+        resourceKey: before.resourceKey,
+      },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return result
   }
 
@@ -109,6 +147,22 @@ export class GovernanceApprovalService implements OnModuleDestroy {
       decisionNote: input.cancelReason ?? null,
       approval: result
     })
+    // 审计日志: 审批取消
+    this.auditService?.log({
+      eventType: 'settlement.rejected',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'governance_approval',
+      resourceId: input.approvalTicket,
+      riskLevel: 'medium',
+      metadata: {
+        approvalTicket: input.approvalTicket,
+        previousStatus: before.status,
+        cancelReason: input.cancelReason,
+        resourceType: before.resourceType,
+        resourceKey: before.resourceKey,
+      },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return result
   }
 
@@ -145,6 +199,20 @@ export class GovernanceApprovalService implements OnModuleDestroy {
       previousStatus: before.status,
       approval: result
     })
+    // 审计日志: 审批执行
+    this.auditService?.log({
+      eventType: 'settlement.paid',
+      actorId: 'system',
+      actorType: 'system',
+      resourceType: 'governance_approval',
+      resourceId: input.approvalTicket,
+      riskLevel: 'medium',
+      metadata: {
+        approvalTicket: input.approvalTicket,
+        resourceType: before.resourceType,
+        resourceKey: before.resourceKey,
+      },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return result
   }
 

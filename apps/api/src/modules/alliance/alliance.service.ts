@@ -12,7 +12,8 @@
  * 对外暴露简洁接口，内部委托给对应的子服务。
  */
 
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
+import { AuditService } from '../audit/audit.service'
 import { AlliancePartner, PartnerGradingService, HealthScoreService } from './alliance-grade.service'
 import {
   CrossMerchantSettlementService,
@@ -102,6 +103,7 @@ export class AllianceService {
     private readonly settlementService: CrossMerchantSettlementService,
     private readonly orderDetector: UnlinkedOrderDetector,
     private readonly anomalyService: AnomalyDetectionService,
+    @Optional() private readonly auditService?: AuditService,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════
@@ -112,6 +114,16 @@ export class AllianceService {
   registerPartner(req: RegisterRequest): AllianceResult<AlliancePartnerType> {
     try {
       const partner = this.partnerService.register(req)
+      // 审计日志: 伙伴注册
+      this.auditService?.log({
+        eventType: 'admin.role_create',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partner.id,
+        riskLevel: 'low',
+        metadata: { partnerName: partner.name, businessType: partner.businessType },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
       return { success: true, data: partner }
     } catch (err: any) {
       this.logger.error(`registerPartner failed: ${err.message}`, err.stack)
@@ -123,6 +135,16 @@ export class AllianceService {
   updatePartner(partnerId: string, req: UpdateRequest): AllianceResult<AlliancePartnerType> {
     try {
       const partner = this.partnerService.updatePartner(partnerId, req)
+      // 审计日志: 伙伴信息更新
+      this.auditService?.log({
+        eventType: 'admin.config_change',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partnerId,
+        riskLevel: 'low',
+        metadata: { updates: req },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
       return { success: true, data: partner }
     } catch (err: any) {
       this.logger.error(`updatePartner failed: ${err.message}`, err.stack)
@@ -167,6 +189,16 @@ export class AllianceService {
   /** 手动指定等级 */
   assignGrade(partnerId: string, grade: Grade): AllianceResult<void> {
     this.gradingService.assignGrade(partnerId, grade)
+    // 审计日志: 手动调整等级
+    this.auditService?.log({
+      eventType: 'admin.config_change',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'alliance_grade',
+      resourceId: partnerId,
+      riskLevel: 'medium',
+      metadata: { grade },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return { success: true, message: `Grade ${grade} assigned to ${partnerId}` }
   }
 
@@ -234,6 +266,18 @@ export class AllianceService {
           fixedAmount: p.fixedAmount,
         })),
       )
+      // 审计日志: 分账创建
+      this.auditService?.log({
+        eventType: 'settlement.created',
+        actorId: 'system',
+        actorType: 'system',
+        resourceType: 'settlement',
+        resourceId: settlement.settlementId,
+        riskLevel: 'low',
+        settlementId: settlement.settlementId,
+        settlementAmount: req.totalAmount,
+        metadata: { orderId: req.orderId, type: req.type, participantCount: req.participants.length },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
       return { success: true, data: settlement }
     } catch (err: any) {
       this.logger.error(`createSettlement failed: ${err.message}`, err.stack)
@@ -245,6 +289,18 @@ export class AllianceService {
   approveSettlement(settlementId: string): AllianceResult<any> {
     try {
       const settlement = this.settlementService.approveSettlement(settlementId)
+      // 审计日志: 分账审批
+      this.auditService?.log({
+        eventType: 'settlement.approved',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        settlementAmount: settlement.totalAmount,
+        metadata: { settlementId, orderId: settlement.orderId },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
       return { success: true, data: settlement }
     } catch (err: any) {
       this.logger.error(`approveSettlement failed: ${err.message}`, err.stack)
@@ -256,6 +312,18 @@ export class AllianceService {
   executeSettlement(settlementId: string): AllianceResult<any> {
     try {
       const settlement = this.settlementService.executeSettlement(settlementId)
+      // 审计日志: 分账执行
+      this.auditService?.log({
+        eventType: 'settlement.paid',
+        actorId: 'system',
+        actorType: 'system',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        settlementAmount: settlement.totalAmount,
+        metadata: { settlementId, orderId: settlement.orderId, participantCount: settlement.participants?.length },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
       return { success: true, data: settlement }
     } catch (err: any) {
       this.logger.error(`executeSettlement failed: ${err.message}`, err.stack)
