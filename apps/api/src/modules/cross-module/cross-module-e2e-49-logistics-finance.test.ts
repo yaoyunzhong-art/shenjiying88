@@ -73,8 +73,7 @@ describe('E2E-49: 后勤+财务全链', () => {
       id: 'repair-49-002',
       status: REPAIR.IN_PROGRESS,
     }
-    const canGenerateExpense = ongoingRepair.status === REPAIR.COMpleted
-    assert.equal(canGenerateExpense, false)
+    assert.notEqual(ongoingRepair.status, REPAIR.COMPLETED)
   })
 
   it('反例: 成本分摊比例之和必须为 100%', () => {

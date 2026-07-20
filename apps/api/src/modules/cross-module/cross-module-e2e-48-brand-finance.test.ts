@@ -76,8 +76,7 @@ describe('E2E-48: 品牌+财务全链', () => {
       id: 'campaign-48-002',
       status: CAMPAIGN.ACTIVE,
     }
-    const canSettle = activeCampaign.status === CAMPAIGN.ENDED
-    assert.equal(canSettle, false, '只有已结束活动可结算')
+    assert.notEqual(activeCampaign.status, CAMPAIGN.ENDED, '只有已结束活动可结算')
   })
 
   it('反例: 对账差异超过阈值需人工介入', () => {

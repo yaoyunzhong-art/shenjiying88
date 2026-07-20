@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { randomUUID, randomInt } from 'node:crypto'
 import { Injectable, Logger } from '@nestjs/common'
 import type {
   BrandAsset,
@@ -39,6 +39,29 @@ import {
   createAssetCategoryId,
   createAssetTagId,
 } from './brand-operations.phase-p47-80.entity'
+import type {
+  ExportFormat,
+  ExportScope,
+  ExportStatus,
+  ExportRecord,
+  ContractStatus,
+  CollaborationContract,
+  ABTestStatus,
+  CampaignABTest,
+  CampaignVariant,
+  CalendarEventType,
+  CalendarEvent,
+  CalendarTimeline,
+  RecycleBinEntityType,
+  RecycleBinItem,
+} from './brand-operations.phase-p47-100.entity'
+import {
+  createExportRecordId,
+  createCollaborationContractId,
+  createABTestId,
+  createCampaignVariantId,
+  createRecycleBinItemId,
+} from './brand-operations.phase-p47-100.entity'
 
 // ── In-memory stores (Phase-47 骨架阶段,后续替换为 Prisma) ──
 
@@ -54,6 +77,12 @@ const revenueShareStore = new Map<string, RevenueShareRecord>()
 const assetCategoryStore = new Map<string, AssetCategory>()
 const assetTagStore = new Map<string, AssetTag>()
 
+// ── P-47 Phase 100% new stores ──
+const exportRecordStore = new Map<string, ExportRecord>()
+const collaborationContractStore = new Map<string, CollaborationContract>()
+const campaignABTestStore = new Map<string, CampaignABTest>()
+const recycleBinStore = new Map<string, RecycleBinItem>()
+
 // ── 导入/导出给测试重置 ──
 export function resetBrandOpsStoresForTests(): void {
   assetStore.clear()
@@ -65,9 +94,13 @@ export function resetBrandOpsStoresForTests(): void {
   revenueShareStore.clear()
   assetCategoryStore.clear()
   assetTagStore.clear()
+  exportRecordStore.clear()
+  collaborationContractStore.clear()
+  campaignABTestStore.clear()
+  recycleBinStore.clear()
 }
 
-export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore, campaignScheduleStore, revenueShareStore, assetCategoryStore, assetTagStore }
+export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore, campaignScheduleStore, revenueShareStore, assetCategoryStore, assetTagStore, exportRecordStore, collaborationContractStore, campaignABTestStore, recycleBinStore }
 
 // ── 创建/更新本地方法 ──
 
@@ -270,6 +303,7 @@ export class BrandOperationsService {
         id: `sync-${randomUUID()}`,
         campaignId,
         storeId,
+        tenantId,
         status: 'synced',
         syncedAt: now,
         createdAt: now,
@@ -1039,6 +1073,669 @@ export class BrandOperationsService {
     if (!tag || tag.tenantId !== tenantId) return false
     assetTagStore.delete(id)
     return true
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Brand Campaign Data Export (品牌活动数据导出)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /** 请求导出任务 */
+  requestExport(input: {
+    tenantId: string
+    format: ExportFormat
+    scope: ExportScope
+    filters?: Record<string, string>
+    requestedBy: string
+  }): ExportRecord {
+    const now = new Date().toISOString()
+    const record: ExportRecord = {
+      id: createExportRecordId(),
+      tenantId: input.tenantId,
+      format: input.format,
+      scope: input.scope,
+      filters: input.filters,
+      status: 'pending',
+      requestedBy: input.requestedBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    exportRecordStore.set(record.id, record)
+
+    // 模拟异步生成
+    this.generateExportData(record.id, input.tenantId, input.scope, input.format)
+
+    this.logger.log(`Export requested: ${record.id} scope=${input.scope} format=${input.format}`)
+    return { ...record }
+  }
+
+  private generateExportData(
+    id: string,
+    tenantId: string,
+    scope: ExportScope,
+    _format: ExportFormat,
+  ): void {
+    const record = exportRecordStore.get(id)
+    if (!record) return
+
+    try {
+      let data: string[] = []
+
+      if (scope === 'campaigns') {
+        const campaigns = this.listCampaigns(tenantId)
+        data = campaigns.map((c) => JSON.stringify(c))
+      } else if (scope === 'assets') {
+        const assets = this.listAssets(tenantId)
+        data = assets.map((a) => JSON.stringify(a))
+      } else if (scope === 'collaborations') {
+        const collabs = this.listCollaborations(tenantId)
+        data = collabs.map((c) => JSON.stringify(c))
+      } else if (scope === 'templates') {
+        const templates = this.listTemplates(tenantId)
+        data = templates.map((t) => JSON.stringify(t))
+      } else if (scope === 'synced_stores') {
+        const syncs = Array.from(syncStore.values()).filter((s) => s.tenantId === tenantId)
+        data = syncs.map((s) => JSON.stringify(s))
+      }
+
+      record.status = 'completed'
+      record.recordCount = data.length
+      record.filePath = `/exports/${tenantId}/${scope}/${id}.${_format}`
+      record.completedAt = new Date().toISOString()
+      exportRecordStore.set(id, record)
+    } catch (error: any) {
+      record.status = 'failed'
+      record.errorMessage = error.message
+      exportRecordStore.set(id, record)
+    }
+  }
+
+  /** 获取导出记录 */
+  getExportRecord(id: string, tenantId: string): ExportRecord | undefined {
+    const r = exportRecordStore.get(id)
+    if (!r || r.tenantId !== tenantId) return undefined
+    return { ...r }
+  }
+
+  /** 获取导出记录列表 */
+  listExportRecords(
+    tenantId: string,
+    filter?: { scope?: ExportScope; format?: ExportFormat },
+  ): ExportRecord[] {
+    return Array.from(exportRecordStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .filter((r) => (filter?.scope ? r.scope === filter.scope : true))
+      .filter((r) => (filter?.format ? r.format === filter.format : true))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((r) => ({ ...r }))
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Collaboration Contract Management (联名合作合同管理)
+  // ═══════════════════════════════════════════════════════════════════
+
+  createCollaborationContract(input: {
+    tenantId: string
+    collaborationId: string
+    contractNumber: string
+    title: string
+    filePath?: string
+    signedAt?: string
+    effectiveDate: string
+    expiryDate: string
+    amount: number
+    status?: ContractStatus
+    parties?: Array<{ name: string; role: string }>
+    termsSummary?: string
+    autoRenew?: boolean
+    createdBy: string
+  }): CollaborationContract {
+    // 验证联名合作存在
+    const collab = this.getCollaboration(input.collaborationId, input.tenantId)
+    if (!collab) throw new Error(`Collaboration not found: ${input.collaborationId}`)
+
+    if (new Date(input.effectiveDate) >= new Date(input.expiryDate)) {
+      throw new Error('Effective date must be before expiry date')
+    }
+
+    const now = new Date().toISOString()
+    const contract: CollaborationContract = {
+      id: createCollaborationContractId(),
+      tenantId: input.tenantId,
+      collaborationId: input.collaborationId,
+      contractNumber: input.contractNumber,
+      title: input.title,
+      filePath: input.filePath,
+      signedAt: input.signedAt,
+      effectiveDate: input.effectiveDate,
+      expiryDate: input.expiryDate,
+      status: input.status ?? 'draft',
+      amount: input.amount,
+      parties: input.parties ?? [],
+      termsSummary: input.termsSummary,
+      autoRenew: input.autoRenew ?? false,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    collaborationContractStore.set(contract.id, contract)
+    this.logger.log(`Created collaboration contract ${contract.id}: ${contract.contractNumber}`)
+    return { ...contract, parties: [...contract.parties] }
+  }
+
+  getCollaborationContract(id: string, tenantId: string): CollaborationContract | undefined {
+    const c = collaborationContractStore.get(id)
+    if (!c || c.tenantId !== tenantId) return undefined
+    return { ...c, parties: [...c.parties] }
+  }
+
+  listCollaborationContracts(
+    tenantId: string,
+    filter?: { collaborationId?: string; status?: ContractStatus },
+  ): CollaborationContract[] {
+    return Array.from(collaborationContractStore.values())
+      .filter((c) => c.tenantId === tenantId)
+      .filter((c) => (filter?.collaborationId ? c.collaborationId === filter.collaborationId : true))
+      .filter((c) => (filter?.status ? c.status === filter.status : true))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((c) => ({ ...c, parties: [...c.parties] }))
+  }
+
+  updateCollaborationContract(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<CollaborationContract, 'filePath' | 'signedAt' | 'effectiveDate' | 'expiryDate' | 'status' | 'amount' | 'parties' | 'termsSummary' | 'autoRenew'>>,
+  ): CollaborationContract {
+    const c = collaborationContractStore.get(id)
+    if (!c || c.tenantId !== tenantId) throw new Error(`CollaborationContract not found: ${id}`)
+
+    const updated: CollaborationContract = {
+      ...c,
+      ...patch,
+      parties: patch.parties ?? c.parties,
+      updatedAt: new Date().toISOString(),
+    }
+    collaborationContractStore.set(id, updated)
+    return { ...updated, parties: [...updated.parties] }
+  }
+
+  deleteCollaborationContract(id: string, tenantId: string): boolean {
+    const c = collaborationContractStore.get(id)
+    if (!c || c.tenantId !== tenantId) return false
+    collaborationContractStore.delete(id)
+    return true
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Brand Campaign A/B Testing (品牌活动A/B测试)
+  // ═══════════════════════════════════════════════════════════════════
+
+  createCampaignABTest(input: {
+    tenantId: string
+    campaignId: string
+    name: string
+    description: string
+    variants: Array<{
+      name: string
+      description: string
+      variantTitle?: string
+      variantDescription?: string
+      variantAssets?: string[]
+      variantCoverImageUrl?: string
+      storeIds: string[]
+    }>
+    createdBy: string
+  }): CampaignABTest {
+    // 验证活动存在
+    const camp = this.getCampaign(input.campaignId, input.tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${input.campaignId}`)
+    if (input.variants.length < 2) {
+      throw new Error('A/B test requires at least 2 variants')
+    }
+
+    const now = new Date().toISOString()
+    const abTestId = createABTestId()
+
+    const variants: CampaignVariant[] = input.variants.map((v) => ({
+      id: createCampaignVariantId(),
+      abTestId,
+      name: v.name,
+      description: v.description,
+      variantTitle: v.variantTitle,
+      variantDescription: v.variantDescription,
+      variantAssets: v.variantAssets,
+      variantCoverImageUrl: v.variantCoverImageUrl,
+      storeIds: v.storeIds,
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      ctr: 0,
+      conversionRate: 0,
+      createdAt: now,
+    }))
+
+    const abTest: CampaignABTest = {
+      id: abTestId,
+      tenantId: input.tenantId,
+      campaignId: input.campaignId,
+      name: input.name,
+      description: input.description,
+      status: 'draft',
+      variants,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    campaignABTestStore.set(abTest.id, abTest)
+    this.logger.log(`Created A/B test ${abTest.id}: ${abTest.name} with ${abTest.variants.length} variants`)
+    return this.cloneABTest(abTest)
+  }
+
+  getCampaignABTest(id: string, tenantId: string): CampaignABTest | undefined {
+    const t = campaignABTestStore.get(id)
+    if (!t || t.tenantId !== tenantId) return undefined
+    return this.cloneABTest(t)
+  }
+
+  listCampaignABTests(tenantId: string, campaignId?: string): CampaignABTest[] {
+    return Array.from(campaignABTestStore.values())
+      .filter((t) => t.tenantId === tenantId)
+      .filter((t) => (campaignId ? t.campaignId === campaignId : true))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map((t) => this.cloneABTest(t))
+  }
+
+  /** 启动A/B测试: draft → running */
+  startCampaignABTest(id: string, tenantId: string): CampaignABTest {
+    const t = this.assertABTestOwned(id, tenantId)
+    if (t.status !== 'draft') {
+      throw new Error(`Cannot start A/B test with status ${t.status}`)
+    }
+    t.status = 'running'
+    t.startedAt = new Date().toISOString()
+    t.updatedAt = new Date().toISOString()
+    campaignABTestStore.set(id, t)
+    return this.cloneABTest(t)
+  }
+
+  /** 暂停A/B测试: running → paused */
+  pauseCampaignABTest(id: string, tenantId: string): CampaignABTest {
+    const t = this.assertABTestOwned(id, tenantId)
+    if (t.status !== 'running') {
+      throw new Error(`Cannot pause A/B test with status ${t.status}`)
+    }
+    t.status = 'paused'
+    t.updatedAt = new Date().toISOString()
+    campaignABTestStore.set(id, t)
+    return this.cloneABTest(t)
+  }
+
+  /** 恢复A/B测试: paused → running */
+  resumeCampaignABTest(id: string, tenantId: string): CampaignABTest {
+    const t = this.assertABTestOwned(id, tenantId)
+    if (t.status !== 'paused') {
+      throw new Error(`Cannot resume A/B test with status ${t.status}`)
+    }
+    t.status = 'running'
+    t.updatedAt = new Date().toISOString()
+    campaignABTestStore.set(id, t)
+    return this.cloneABTest(t)
+  }
+
+  /** 记录变体指标 */
+  recordVariantMetrics(
+    abTestId: string,
+    variantId: string,
+    tenantId: string,
+    input: { impressions: number; clicks: number; conversions: number },
+  ): CampaignABTest {
+    const t = this.assertABTestOwned(abTestId, tenantId)
+    const variant = t.variants.find((v) => v.id === variantId)
+    if (!variant) throw new Error(`Variant not found: ${variantId}`)
+
+    variant.impressions += input.impressions
+    variant.clicks += input.clicks
+    variant.conversions += input.conversions
+    variant.ctr = variant.impressions > 0 ? Math.round((variant.clicks / variant.impressions) * 10000) / 10000 : 0
+    variant.conversionRate = variant.impressions > 0 ? Math.round((variant.conversions / variant.impressions) * 10000) / 10000 : 0
+
+    t.updatedAt = new Date().toISOString()
+    campaignABTestStore.set(abTestId, t)
+    return this.cloneABTest(t)
+  }
+
+  /** 选择获胜变体并结束测试 */
+  decideABTestWinner(
+    abTestId: string,
+    variantId: string,
+    tenantId: string,
+  ): CampaignABTest {
+    const t = this.assertABTestOwned(abTestId, tenantId)
+    if (t.status === 'completed' || t.status === 'cancelled') {
+      throw new Error(`Cannot decide winner: test is ${t.status}`)
+    }
+    const variant = t.variants.find((v) => v.id === variantId)
+    if (!variant) throw new Error(`Variant not found: ${variantId}`)
+
+    t.winnerVariantId = variantId
+    t.status = 'completed'
+    t.endedAt = new Date().toISOString()
+    t.updatedAt = new Date().toISOString()
+    campaignABTestStore.set(abTestId, t)
+    return this.cloneABTest(t)
+  }
+
+  /** 获取A/B测试效果对比 */
+  getABTestComparison(abTestId: string, tenantId: string): {
+    test: CampaignABTest
+    bestVariant: CampaignVariant | null
+    recommendation: string
+  } {
+    const t = this.assertABTestOwned(abTestId, tenantId)
+    if (t.variants.length === 0) {
+      return { test: this.cloneABTest(t), bestVariant: null, recommendation: 'No variants available' }
+    }
+
+    // Find variant with highest conversion rate
+    const sorted = [...t.variants].sort((a, b) => b.conversionRate - a.conversionRate)
+    const best = sorted[0]
+
+    let recommendation = ''
+    if (t.status === 'completed' && t.winnerVariantId) {
+      recommendation = `Variant "${best.name}" had best conversion rate of ${(best.conversionRate * 100).toFixed(2)}%`
+    } else if (t.status === 'running') {
+      recommendation = `Test still running. Current best: "${best.name}" with ${(best.conversionRate * 100).toFixed(2)}% conversion rate`
+    } else {
+      recommendation = 'Test not yet started or completed'
+    }
+
+    return { test: this.cloneABTest(t), bestVariant: { ...best }, recommendation }
+  }
+
+  private assertABTestOwned(id: string, tenantId: string): CampaignABTest {
+    const t = campaignABTestStore.get(id)
+    if (!t || t.tenantId !== tenantId) throw new Error(`CampaignABTest not found: ${id}`)
+    return t
+  }
+
+  private cloneABTest(t: CampaignABTest): CampaignABTest {
+    return {
+      ...t,
+      variants: t.variants.map((v) => ({ ...v })),
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Brand Operations Calendar (品牌运营日历)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /** 获取品牌运营日历时间轴 */
+  getCalendarTimeline(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+    type?: string,
+  ): CalendarTimeline {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error('Invalid date range')
+    }
+    if (start >= end) {
+      throw new Error('Start date must be before end date')
+    }
+
+    const events: CalendarEvent[] = []
+
+    // Collect campaign events
+    const campaigns = this.listCampaigns(tenantId)
+    for (const c of campaigns) {
+      const cStart = new Date(c.startDate)
+      const cEnd = new Date(c.endDate)
+
+      if (cStart >= start && cStart <= end) {
+        const event: CalendarEvent = {
+          date: c.startDate,
+          type: 'campaign_start',
+          refId: c.id,
+          title: `[Start] ${c.title}`,
+          description: `Activity starts: ${c.description.slice(0, 100)}`,
+        }
+        events.push(event)
+      }
+      if (cEnd >= start && cEnd <= end) {
+        const event: CalendarEvent = {
+          date: c.endDate,
+          type: 'campaign_end',
+          refId: c.id,
+          title: `[End] ${c.title}`,
+          description: `Activity ends`,
+        }
+        events.push(event)
+      }
+    }
+
+    // Collect collaboration events
+    const collabs = this.listCollaborations(tenantId)
+    for (const c of collabs) {
+      const cStart = new Date(c.startDate)
+      const cEnd = new Date(c.endDate)
+
+      if (cStart >= start && cStart <= end) {
+        const event: CalendarEvent = {
+          date: c.startDate,
+          type: 'collaboration_start',
+          refId: c.id,
+          title: `[Collab Start] ${c.title}`,
+          description: `Collaboration with ${c.partner.name}: ${c.description.slice(0, 100)}`,
+        }
+        events.push(event)
+      }
+      if (cEnd >= start && cEnd <= end) {
+        const event: CalendarEvent = {
+          date: c.endDate,
+          type: 'collaboration_end',
+          refId: c.id,
+          title: `[Collab End] ${c.title}`,
+          description: `Collaboration with ${c.partner.name} ends`,
+        }
+        events.push(event)
+      }
+    }
+
+    // Filter by type if specified
+    const filteredEvents = type
+      ? events.filter((e) => e.type === type || e.type.startsWith(type))
+      : events
+
+    // Sort by date
+    const sortedEvents = filteredEvents.sort((a, b) => a.date.localeCompare(b.date))
+
+    // Compute daily counts
+    const dailyMap = new Map<string, number>()
+    for (const e of sortedEvents) {
+      const day = e.date.slice(0, 10)
+      dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1)
+    }
+
+    // Compute weekly counts
+    const weeklyMap = new Map<string, number>()
+    for (const e of sortedEvents) {
+      const d = new Date(e.date)
+      const weekStart = new Date(d)
+      weekStart.setDate(d.getDate() - d.getDay())
+      const week = weekStart.toISOString().slice(0, 10)
+      weeklyMap.set(week, (weeklyMap.get(week) ?? 0) + 1)
+    }
+
+    // Compute monthly counts
+    const monthlyMap = new Map<string, number>()
+    for (const e of sortedEvents) {
+      const month = e.date.slice(0, 7)
+      monthlyMap.set(month, (monthlyMap.get(month) ?? 0) + 1)
+    }
+
+    const dailyCounts = Array.from(dailyMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, count]) => ({ date, count }))
+
+    const weeklyCounts = Array.from(weeklyMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([week, count]) => ({ week, count }))
+
+    const monthlyCounts = Array.from(monthlyMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, count]) => ({ month, count }))
+
+    return {
+      events: sortedEvents,
+      dailyCounts,
+      weeklyCounts,
+      monthlyCounts,
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Brand Asset Recycle Bin (品牌资产回收站)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /** 软删除资产到回收站 */
+  softDeleteEntity(input: {
+    tenantId: string
+    entityType: RecycleBinEntityType
+    entityId: string
+    deletedBy: string
+  }): RecycleBinItem {
+    let entitySummary = ''
+    let originalData = ''
+
+    if (input.entityType === 'asset') {
+      const asset = this.getAsset(input.entityId, input.tenantId)
+      if (!asset) throw new Error(`BrandAsset not found: ${input.entityId}`)
+      entitySummary = `Brand Asset: ${asset.name} (${asset.type})`
+      originalData = JSON.stringify(asset)
+    } else if (input.entityType === 'campaign') {
+      const camp = this.getCampaign(input.entityId, input.tenantId)
+      if (!camp) throw new Error(`BrandCampaign not found: ${input.entityId}`)
+      entitySummary = `Brand Campaign: ${camp.title}`
+      originalData = JSON.stringify(camp)
+    } else if (input.entityType === 'template') {
+      const tpl = this.getTemplate(input.entityId, input.tenantId)
+      if (!tpl) throw new Error(`BrandCampaignTemplate not found: ${input.entityId}`)
+      entitySummary = `Campaign Template: ${tpl.name}`
+      originalData = JSON.stringify(tpl)
+    } else if (input.entityType === 'collaboration') {
+      const collab = this.getCollaboration(input.entityId, input.tenantId)
+      if (!collab) throw new Error(`Collaboration not found: ${input.entityId}`)
+      entitySummary = `Collaboration: ${collab.title}`
+      originalData = JSON.stringify(collab)
+    } else {
+      throw new Error(`Unsupported entity type: ${input.entityType}`)
+    }
+
+    // Remove from active store
+    if (input.entityType === 'asset') {
+      assetStore.delete(input.entityId)
+    } else if (input.entityType === 'campaign') {
+      campaignStore.delete(input.entityId)
+    } else if (input.entityType === 'template') {
+      templateStore.delete(input.entityId)
+    } else if (input.entityType === 'collaboration') {
+      collaborationStore.delete(input.entityId)
+    }
+
+    const now = new Date().toISOString()
+    // 默认30天后过期
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+    const item: RecycleBinItem = {
+      id: createRecycleBinItemId(),
+      tenantId: input.tenantId,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      entitySummary,
+      originalData,
+      deletedBy: input.deletedBy,
+      deletedAt: now,
+      expiresAt,
+    }
+    recycleBinStore.set(item.id, item)
+    this.logger.log(`Soft deleted ${input.entityType} ${input.entityId} to recycle bin`)
+    return { ...item }
+  }
+
+  /** 从回收站恢复 */
+  restoreFromRecycleBin(id: string, tenantId: string): RecycleBinItem {
+    const item = recycleBinStore.get(id)
+    if (!item || item.tenantId !== tenantId) {
+      throw new Error(`RecycleBinItem not found: ${id}`)
+    }
+    if (item.restoredAt) {
+      throw new Error(`RecycleBinItem already restored at ${item.restoredAt}`)
+    }
+
+    // Restore original data
+    try {
+      const original = JSON.parse(item.originalData) as Record<string, any>
+      if (item.entityType === 'asset') {
+        assetStore.set(item.entityId, original as unknown as BrandAsset)
+      } else if (item.entityType === 'campaign') {
+        campaignStore.set(item.entityId, original as unknown as BrandCampaign)
+      } else if (item.entityType === 'template') {
+        templateStore.set(item.entityId, original as unknown as BrandCampaignTemplate)
+      } else if (item.entityType === 'collaboration') {
+        collaborationStore.set(item.entityId, original as unknown as Collaboration)
+      }
+
+      item.restoredAt = new Date().toISOString()
+      recycleBinStore.set(id, item)
+      this.logger.log(`Restored ${item.entityType} ${item.entityId} from recycle bin`)
+    } catch (error: any) {
+      throw new Error(`Failed to restore entity: ${error.message}`)
+    }
+
+    return { ...item }
+  }
+
+  /** 永久删除回收站项目 */
+  permanentlyDeleteFromRecycleBin(id: string, tenantId: string): boolean {
+    const item = recycleBinStore.get(id)
+    if (!item || item.tenantId !== tenantId) return false
+    recycleBinStore.delete(id)
+    return true
+  }
+
+  /** 查询回收站 */
+  listRecycleBinItems(
+    tenantId: string,
+    filter?: { entityType?: RecycleBinEntityType; search?: string },
+  ): RecycleBinItem[] {
+    return Array.from(recycleBinStore.values())
+      .filter((i) => i.tenantId === tenantId)
+      .filter((i) => (filter?.entityType ? i.entityType === filter.entityType : true))
+      .filter((i) =>
+        filter?.search
+          ? i.entitySummary.toLowerCase().includes(filter.search.toLowerCase())
+          : true,
+      )
+      .sort((a, b) => b.deletedAt.localeCompare(a.deletedAt))
+      .map((i) => ({ ...i }))
+  }
+
+  /** 清理过期回收站项目 */
+  cleanExpiredRecycleBinItems(now?: string): number {
+    const cutoff = now ?? new Date().toISOString()
+    let count = 0
+    for (const [id, item] of recycleBinStore) {
+      if (item.expiresAt <= cutoff) {
+        recycleBinStore.delete(id)
+        count++
+      }
+    }
+    if (count > 0) {
+      this.logger.log(`Cleaned ${count} expired recycle bin items`)
+    }
+    return count
   }
 
   // ════════════════════════════════════════════════════

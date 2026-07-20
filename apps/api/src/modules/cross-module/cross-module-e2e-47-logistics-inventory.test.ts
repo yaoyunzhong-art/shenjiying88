@@ -43,8 +43,7 @@ describe('E2E-47: 后勤+库存全链', () => {
   it('反例: 未审批不可采购下单', () => {
     const req = { id: 'req-47-2', item: '墨盒', quantity: 10, status: STATE.PENDING }
     // 未审批状态不可下单
-    const canOrder = req.status === STATE.APPROVED
-    assert.equal(canOrder, false)
+    assert.notEqual(req.status, STATE.APPROVED)
   })
 
   it('反例: 库存不足时审批拒绝', () => {
