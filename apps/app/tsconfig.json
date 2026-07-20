@@ -7,5 +7,5 @@
       "@m5/sdk": ["../../packages/sdk/src/index.ts"],
     }
   },
-  "include": ["App.tsx", "market-bootstrap.ts", "market-bootstrap.test.ts", "types/**/*.d.ts", "services/**/*.ts"]
+  "include": ["App.tsx", "market-bootstrap.ts", "market-bootstrap.test.ts", "types/**/*.d.ts", "services/**/*.ts", "components/**/*.tsx"]
 }

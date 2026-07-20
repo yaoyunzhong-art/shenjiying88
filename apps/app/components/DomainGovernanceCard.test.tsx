@@ -39,14 +39,15 @@ const model = {
         {
           label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
           value: formatDomainGovernanceStatusSummary({
-            requiresAttention: true,
             totalMissingPrimaryScopes: 2,
             totalActiveWithoutPrimaryDomains: 3,
             recommendedReadyScopes: 1,
+            tenantMissingPrimaryScopes: 1,
+            brandMissingPrimaryScopes: 0,
+            storeMissingPrimaryScopes: 1,
+            requiresAttention: true,
             lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
-            currentScopes: [],
-            missingPrimaryScopes: [],
-            activeWithoutPrimaryDomains: [],
+            currentScopes: []
           }),
           tone: 'summary' as const,
         },
@@ -111,7 +112,7 @@ test('DomainGovernanceCard renders shared render sections contract', () => {
   assert.ok(findByText(root.root, model.title), '应渲染 header title slot');
   assert.ok(findByText(root.root, domainGovernanceDisplayCopy.sectionTitles.summary), '应渲染 shared header section title');
   assert.ok(findByText(root.root, domainGovernanceDisplayCopy.detailSectionTitle), '应渲染 detail section title');
-  assert.ok(findByText(root.root, model.renderSections[1].title), '应渲染 detail group label');
+  assert.ok(findByText(root.root, model.renderSections[1]?.title ?? ''), '应渲染 detail group label');
   assert.ok(findByText(root.root, model.workspaceLabel), '应渲染 footer workspace label');
   assert.ok(findByText(root.root, model.ctaLabel), '应渲染 footer CTA');
 });

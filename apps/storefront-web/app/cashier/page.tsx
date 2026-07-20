@@ -17,6 +17,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PageShell,
   Button,
@@ -24,6 +25,12 @@ import {
   Card,
   Tag,
 } from '@m5/ui';
+import {
+  buildStorefrontMemberId,
+  ensureStorefrontMemberRegistered,
+  startStorefrontCheckout,
+  type CheckoutPaymentMethod,
+} from '../../lib/storefront-transactions';
 
 // ============================================================
 // 类型定义 （PRD §6 数据模型对齐）
@@ -97,6 +104,18 @@ function fm(amount: number): string {
   return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
 }
 
+function mapPaymentMethodToCheckoutMethod(method: PaymentMethod): CheckoutPaymentMethod {
+  switch (method) {
+    case 'balance':
+      return 'member_card';
+    case 'cash':
+      return 'cash';
+    case 'wechat':
+    default:
+      return 'wechat';
+  }
+}
+
 // ============================================================
 // 样式常量
 // ============================================================
@@ -120,6 +139,7 @@ const sectionTitle: React.CSSProperties = {
 // ============================================================
 
 export default function CashierPage() {
+  const router = useRouter();
   // ── 核心状态 ──
   const [searchText, setSearchText] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -232,7 +252,7 @@ export default function CashierPage() {
   }, []);
 
   // ── 结账（含空结算防御） ──
-  const handleCheckout = useCallback(() => {
+  const handleCheckout = useCallback(async () => {
     if (cart.length === 0) {
       setMessageText('⚠️ 请添加商品');
       setCheckoutStatus('error');
@@ -244,22 +264,44 @@ export default function CashierPage() {
     }
 
     setIsProcessing(true);
+    setCheckoutStatus('idle');
     setMessageText('');
 
-    // 模拟支付处理
-    setTimeout(() => {
+    try {
+      const normalizedPhone = memberPhone.trim();
+      const memberName = member?.name ?? (normalizedPhone ? `门店会员${normalizedPhone.slice(-4)}` : '门店散客');
+      const memberId = buildStorefrontMemberId(normalizedPhone);
+      const checkoutMethod = mapPaymentMethodToCheckoutMethod(paymentMethod);
+      const checkoutItems = cart.map((item) => ({
+        skuId: item.id,
+        title: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      await ensureStorefrontMemberRegistered(memberId, memberName);
+      const aggregate = await startStorefrontCheckout(
+        memberId,
+        checkoutItems,
+        checkoutMethod,
+        finalTotal,
+      );
+
       setIsProcessing(false);
       setCheckoutStatus('success');
-      const methodLabel = PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.label;
       setMessageText(
-        `✅ 支付成功！金额 ${fm(finalTotal)}，方式：${methodLabel}`
+        `✅ 订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建，正在跳转支付页`
       );
-      // 新订单重置
       setCart([]);
       setPaymentMethod(null);
       setPaymentCodeUrl('');
-    }, 1500);
-  }, [cart, paymentMethod, finalTotal]);
+      router.push(`/h5/payment/${aggregate.order.orderId}`);
+    } catch (error) {
+      setCheckoutStatus('error');
+      setMessageText(error instanceof Error ? `⚠️ ${error.message}` : '⚠️ 下单失败，请稍后重试');
+      setIsProcessing(false);
+    }
+  }, [cart, finalTotal, member?.name, memberPhone, paymentMethod, router]);
 
   const resetOrder = useCallback(() => {
     setCart([]);
@@ -885,9 +927,9 @@ export default function CashierPage() {
             }}
           >
             {isProcessing
-              ? '⏳ 处理中...'
+              ? '⏳ 正在创建订单...'
               : checkoutStatus === 'success'
-                ? '✅ 支付成功'
+                ? '✅ 订单已创建'
                 : `🧾 结算 ${fm(finalTotal)}`}
           </Button>
 

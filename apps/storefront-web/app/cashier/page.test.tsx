@@ -308,50 +308,38 @@ describe('基础结构验证', () => {
 });
 
 // ============================================================
-// P0-E1: 前端 API 集成诊断
+// P0-E1: 前端真实交易接线诊断
 // ============================================================
-describe('cashier — API 集成诊断 [P0-E1]', () => {
-  it('[GAP] 页面使用 setTimeout 模拟结账,未调用真实 API', () => {
+describe('cashier — 真实交易接线诊断 [P0-E1]', () => {
+  it('[READY] 页面已接入真实 checkout helper', () => {
     const src = readSource();
-    const hasApiCall =
-      src.includes('fetch(') ||
-      src.includes('axios.') ||
-      src.includes('/api/cashier') ||
-      src.includes('cashierOrder') ||
-      src.includes('createOrder');
-    assert.equal(hasApiCall, false, '页面不应存在真实 API 调用（诊断确认）');
-    assert.ok(src.includes('setTimeout('), 'handleCheckout 使用 setTimeout');
+    assert.ok(src.includes('startStorefrontCheckout'), '应接入真实下单 helper');
+    assert.ok(src.includes('ensureStorefrontMemberRegistered'), '应在下单前注册/兜底会员');
+    assert.ok(src.includes('buildStorefrontMemberId'), '应根据手机号构造 storefront memberId');
+    assert.ok(src.includes('const handleCheckout = useCallback(async () => {'), 'handleCheckout 应为异步提交');
+    assert.ok(src.includes('await startStorefrontCheckout('), '结账应 await 真实 checkout');
   });
 
-  it('[GAP] 商品和会员数据为内联 Mock,未从 API 获取', () => {
+  it('[READY] 下单成功后应跳转到真实支付页', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_PRODUCTS'), '商品数据为内联 Mock');
-    assert.ok(src.includes('MOCK_MEMBER_DB'), '会员数据为内联 Mock');
-    const hasDataFetching =
-      src.includes('useEffect') &&
-      (src.includes('fetch(') || src.includes('loadProducts'));
-    assert.equal(hasDataFetching, false, '页面未使用 useEffect 获取数据');
+    assert.ok(src.includes('useRouter'), '应接入 Next router');
+    assert.ok(src.includes('router.push(`/h5/payment/${aggregate.order.orderId}`)'), '应跳转到 H5 支付页');
+    assert.ok(src.includes('订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建'), '应展示真实订单创建提示');
   });
 
-  it('[READY] 页面结构支持后续接入 API', () => {
+  it('[TRANSITION] 商品和会员数据仍为本地 Mock,但不再伪造结账成功', () => {
     const src = readSource();
-    assert.ok(src.includes('setIsProcessing'), '加载状态就绪');
-    assert.ok(src.includes('setCheckoutStatus'), '结账状态就绪');
-    assert.ok(src.includes('setMessageText'), '消息状态就绪');
+    assert.ok(src.includes('MOCK_PRODUCTS'), '商品数据仍为内联 Mock');
+    assert.ok(src.includes('MOCK_MEMBER_DB'), '会员数据仍为内联 Mock');
+    assert.ok(src.includes('setTimeout(() => setMessageText('), '当前仍保留消息自动消失定时器');
+    assert.ok(!src.includes('支付成功！金额 ${fm(finalTotal)}'), '不应继续使用本地假支付成功文案');
   });
 
-  it('[SUMMARY] 后端 API 已有参考实现', () => {
+  it('[READY] 页面状态已适配真实提交结果', () => {
     const src = readSource();
-    assert.ok(
-      src.includes('export default function CashierPage'),
-      '页面组件就绪'
-    );
-    console.log('\n📊 [P0-E1] Storefront Cashier API 集成诊断');
-    console.log('   =============================================');
-    console.log('   ✅ 页面 UI 组件完整 (PageShell, Card, Button, Input, Tag)');
-    console.log('   ✅ 状态管理就绪 (isProcessing, checkoutStatus)');
-    console.log('   ✅ AC-35-01~05,07,10 全部覆盖');
-    console.log('   🔴 纯 Mock 前端 (setTimeout 代替真实 API)');
-    console.log('   =============================================');
+    assert.ok(src.includes('setIsProcessing(true)'), '应在提交前进入 processing');
+    assert.ok(src.includes('setCheckoutStatus(\'success\')'), '真实下单成功后应进入 success');
+    assert.ok(src.includes('setCheckoutStatus(\'error\')'), '真实下单失败后应进入 error');
+    assert.ok(src.includes('⚠️ 下单失败，请稍后重试'), '应提供真实失败兜底提示');
   });
 });

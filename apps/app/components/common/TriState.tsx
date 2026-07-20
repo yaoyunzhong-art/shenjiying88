@@ -2,12 +2,12 @@
  * Three-state component for loading / empty / error display patterns.
  *
  * Usage:
- *   <TriState loading={isLoading}>
- *     <TriState.Loading />
- *     <TriState.Error message={error} onRetry={handleRetry} />
- *     <TriState.Empty message="暂无数据" />
- *     {children}   {/* actual content */}
- *   </TriState>
+ *   &lt;TriState loading={isLoading}&gt;
+ *     &lt;TriState.Loading /&gt;
+ *     &lt;TriState.Error message={error} onRetry={handleRetry} /&gt;
+ *     &lt;TriState.Empty message="暂无数据" /&gt;
+ *     {children}   {!-- actual content --}
+ *   &lt;/TriState&gt;
  */
 
 import React from 'react';

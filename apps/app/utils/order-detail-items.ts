@@ -17,7 +17,7 @@ export function buildOrderDetailItemRows(
 ): OrderDetailItemRow[] {
   return order.items.map((item, index) => ({
     key: item.skuId,
-    title: item.title,
+    title: item.title ?? '',
     skuLabel: `SKU: ${item.skuId}`,
     priceLabel: formatOrderCurrencyAmount(item.price, order.currency),
     quantityLabel: `x${item.quantity}`,
