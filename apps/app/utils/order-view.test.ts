@@ -233,3 +233,63 @@ test('resolveOrderDetailViewState prefers aggregate refunded result over stale p
   assert.equal(state.effectiveRefundReason, '门店退款完成');
   assert.equal(state.effectiveRefundCompletedAt, '2026-07-21T06:08:00.000Z');
 });
+
+test('resolveOrderDetailViewState ignores rejected aggregate refunds and keeps paid state', () => {
+  const state = resolveOrderDetailViewState(
+    createBaseOrder(),
+    createAggregate({
+      refunds: [{
+        refundId: 'refund-rejected-001',
+        orderId: 'order-001',
+        paymentId: 'payment-001',
+        memberId: 'member-api-001',
+        refundAmount: 80,
+        reason: '审核驳回',
+        status: 'REJECTED',
+        requestedAt: '2026-07-21T06:00:00.000Z',
+      }],
+    }),
+    {
+      orderId: 'order-001',
+      paymentStatus: 'PAID',
+      paymentAmount: 156,
+      paymentPaidAt: '2026-07-21T01:05:00.000Z',
+      paymentChannel: 'WECHAT_PAY',
+    },
+  );
+
+  assert.equal(state.order.status, 'PAID');
+  assert.equal(state.order.refundedAmount, 0);
+  assert.equal(state.effectiveRefundStatus, undefined);
+  assert.equal(state.effectiveRefundAmount, undefined);
+});
+
+test('resolveOrderDetailViewState prefers aggregate payment fields over stale route payment fallback', () => {
+  const state = resolveOrderDetailViewState(
+    createBaseOrder({
+      status: 'PENDING',
+      totalAmount: 99,
+      paidAmount: 0,
+      paidAt: undefined,
+      paymentChannel: 'CASH',
+      pointsEarned: 0,
+    }),
+    createAggregate(),
+    {
+      orderId: 'order-001',
+      orderNo: 'ORD-STALE-001',
+      paymentStatus: 'PAID',
+      paymentAmount: 66,
+      paymentPaidAt: '2026-07-21T01:30:00.000Z',
+      paymentChannel: 'CASH',
+    },
+  );
+
+  assert.equal(state.order.status, 'PAID');
+  assert.equal(state.order.orderNo, 'ORDAPI20260721001');
+  assert.equal(state.order.totalAmount, 188);
+  assert.equal(state.order.paidAmount, 188);
+  assert.equal(state.order.paymentChannel, 'ALIPAY');
+  assert.equal(state.order.paidAt, '2026-07-21T02:08:00.000Z');
+  assert.equal(state.order.pointsEarned, 188);
+});

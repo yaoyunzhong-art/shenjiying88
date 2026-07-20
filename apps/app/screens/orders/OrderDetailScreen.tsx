@@ -10,11 +10,18 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { getNativeAppOrderTransaction, type NativeAppTransactionAggregate } from '../../market-bootstrap';
+import {
+  buildOrdersRuntimeRouteParams,
+  buildPaymentRouteParams,
+  buildRefundRouteParams,
+} from '../../utils/order-finance';
 import type { OrderDetailRouteParams } from '../../utils/order-route';
 import {
+  resolveOrderDetailViewState,
+  type OrderDetailViewModel,
+} from '../../utils/order-view';
+import {
   getPaymentChannelLabel,
-  normalizePaymentChannel,
-  type PaymentChannel,
 } from '../../utils/payment-channel';
 
 type OrderDetailParams = {
@@ -23,25 +30,14 @@ type OrderDetailParams = {
 
 type OrderStatus = 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
 
-type MockOrderDetail = {
-  orderId: string;
-  orderNo: string;
-  status: OrderStatus;
-  createdAt: string;
-  paidAt?: string;
-  totalAmount: number;
-  currency: string;
-  paymentChannel: PaymentChannel;
-  memberId: string;
-  memberNickname: string;
-  items: Array<{ skuId: string; title: string; quantity: number; price: number }>;
-  pointsEarned: number;
-};
+type MockOrderDetail = OrderDetailViewModel;
 
 const mockOrderDetails: Record<string, MockOrderDetail> = {
   'order-001': {
     orderId: 'order-001',
     orderNo: 'ORD20260612001',
+    paidAmount: 156.00,
+    refundedAmount: 0,
     status: 'PAID',
     createdAt: '2026-06-12T10:30:00.000Z',
     paidAt: '2026-06-12T10:35:00.000Z',
@@ -50,6 +46,7 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
     paymentChannel: 'WECHAT_PAY',
     memberId: 'member-001',
     memberNickname: '张三',
+    itemCount: 4,
     items: [
       { skuId: 'SKU001', title: '拿铁咖啡', quantity: 2, price: 32.00 },
       { skuId: 'SKU002', title: '提拉米苏', quantity: 1, price: 48.00 },
@@ -60,6 +57,8 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
   'order-002': {
     orderId: 'order-002',
     orderNo: 'ORD20260612002',
+    paidAmount: 0,
+    refundedAmount: 0,
     status: 'PENDING',
     createdAt: '2026-06-12T11:15:00.000Z',
     totalAmount: 89.50,
@@ -67,6 +66,7 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
     paymentChannel: 'WECHAT_PAY',
     memberId: 'member-002',
     memberNickname: '李四',
+    itemCount: 3,
     items: [
       { skuId: 'SKU101', title: '美式咖啡', quantity: 1, price: 26.00 },
       { skuId: 'SKU102', title: '牛角包', quantity: 2, price: 31.75 },
@@ -76,6 +76,8 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
   'order-003': {
     orderId: 'order-003',
     orderNo: 'ORD20260611001',
+    paidAmount: 320.00,
+    refundedAmount: 320.00,
     status: 'REFUNDED',
     createdAt: '2026-06-11T14:20:00.000Z',
     paidAt: '2026-06-11T14:25:00.000Z',
@@ -84,6 +86,7 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
     paymentChannel: 'ALIPAY',
     memberId: 'member-003',
     memberNickname: '王五',
+    itemCount: 7,
     items: [
       { skuId: 'SKU201', title: '蛋白棒', quantity: 4, price: 35.00 },
       { skuId: 'SKU202', title: '运动饮料', quantity: 3, price: 60.00 },
@@ -93,6 +96,8 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
   'order-004': {
     orderId: 'order-004',
     orderNo: 'ORD20260610001',
+    paidAmount: 68.00,
+    refundedAmount: 0,
     status: 'PAID',
     createdAt: '2026-06-10T09:45:00.000Z',
     paidAt: '2026-06-10T09:47:00.000Z',
@@ -101,6 +106,7 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
     paymentChannel: 'CASH',
     memberId: 'member-004',
     memberNickname: '赵六',
+    itemCount: 3,
     items: [
       { skuId: 'SKU301', title: '矿泉水', quantity: 1, price: 8.00 },
       { skuId: 'SKU302', title: '能量胶', quantity: 2, price: 30.00 },
@@ -136,6 +142,14 @@ function createFallbackOrderDetail(params?: OrderDetailParams['OrderDetail']): M
   return {
     orderId: params?.orderId ?? defaultMockOrderDetail.orderId,
     orderNo: params?.orderNo ?? '',
+    paidAmount: params?.paymentStatus === 'PAID'
+      ? params.paymentAmount ?? params?.refundRequestedAmount ?? 0
+      : params?.refundStatus
+        ? params?.paymentAmount ?? params.refundRequestedAmount ?? 0
+        : 0,
+    refundedAmount: params?.refundStatus
+      ? params.refundRequestedAmount ?? 0
+      : 0,
     status: fallbackStatus,
     createdAt: params?.refundRequestedAt ?? params?.paymentPaidAt ?? '1970-01-01T00:00:00.000Z',
     paidAt: params?.paymentPaidAt,
@@ -144,28 +158,10 @@ function createFallbackOrderDetail(params?: OrderDetailParams['OrderDetail']): M
     paymentChannel: params?.paymentChannel ?? 'WECHAT_PAY',
     memberId: 'member-unknown',
     memberNickname: '未知会员',
+    itemCount: 0,
     items: [],
     pointsEarned: params?.paymentAmount ? Math.round(params.paymentAmount) : 0,
   };
-}
-
-function resolveOrderStatus(status?: string): OrderStatus | undefined {
-  switch (status) {
-    case 'PAID':
-      return 'PAID';
-    case 'PENDING':
-    case 'PENDING_PAYMENT':
-      return 'PENDING';
-    case 'REFUNDED':
-      return 'REFUNDED';
-    case 'REFUNDING':
-      return 'REFUND_PENDING';
-    case 'CANCELLED':
-    case 'CLOSED':
-      return 'CANCELLED';
-    default:
-      return undefined;
-  }
 }
 
 export function OrderDetailScreen() {
@@ -232,50 +228,20 @@ export function OrderDetailScreen() {
     fetchAggregate();
   }, [fetchAggregate]);
   const baseOrder = createFallbackOrderDetail(routeParams);
-  const latestAggregateRefund = aggregate?.refunds?.length
-    ? [...aggregate.refunds].sort((left, right) =>
-        new Date(right.requestedAt).getTime() - new Date(left.requestedAt).getTime(),
-      )[0]
-    : undefined;
-  const effectiveRefundStatus = routeParams?.refundStatus
-    ?? (latestAggregateRefund
-      ? (['REFUNDED', 'COMPLETED', 'SUCCEEDED'].includes(latestAggregateRefund.status) ? 'REFUNDED' : 'PENDING')
-      : undefined);
-  const effectiveRefundAmount = routeParams?.refundRequestedAmount ?? latestAggregateRefund?.refundAmount;
-  const effectiveRefundReason = routeParams?.refundReason ?? latestAggregateRefund?.reason;
-  const effectiveRefundRequestedAt = routeParams?.refundRequestedAt ?? latestAggregateRefund?.requestedAt;
-  const effectiveRefundCompletedAt = routeParams?.refundCompletedAt ?? latestAggregateRefund?.completedAt;
-  const hasSuccessfulPayment =
-    (routeParams?.paymentStatus === 'PAID' && typeof routeParams?.paymentAmount === 'number')
-    || aggregate?.order.status === 'PAID';
+  const {
+    order,
+    effectiveRefundStatus,
+    effectiveRefundAmount,
+    effectiveRefundReason,
+    effectiveRefundRequestedAt,
+    effectiveRefundCompletedAt,
+  } = resolveOrderDetailViewState(baseOrder, aggregate, routeParams);
   const hasCompletedRefund =
     effectiveRefundStatus === 'REFUNDED' &&
     typeof effectiveRefundAmount === 'number';
   const hasPendingRefund =
     effectiveRefundStatus === 'PENDING' &&
     typeof effectiveRefundAmount === 'number';
-  const order = {
-    ...baseOrder,
-    orderId: aggregate?.order.orderId ?? routeParams?.orderId ?? baseOrder.orderId,
-    orderNo: aggregate?.order.orderNo ?? routeParams?.orderNo ?? baseOrder.orderNo,
-    createdAt: aggregate?.order.createdAt ?? baseOrder.createdAt,
-    memberId: aggregate?.order.memberId ?? baseOrder.memberId,
-    memberNickname: aggregate?.memberNickname ?? baseOrder.memberNickname,
-    items: aggregate?.order.items?.length ? aggregate.order.items : baseOrder.items,
-    currency: aggregate?.order.currency ?? baseOrder.currency,
-    totalAmount: routeParams?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
-    paymentChannel: routeParams?.paymentChannel ?? normalizePaymentChannel(aggregate?.payment?.channel) ?? baseOrder.paymentChannel,
-    paidAt: routeParams?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,
-    pointsEarned: aggregate?.settlement?.pointsEarned
-      ?? (routeParams?.paymentAmount ? Math.round(routeParams.paymentAmount) : baseOrder.pointsEarned),
-    status: hasCompletedRefund
-      ? 'REFUNDED'
-      : hasPendingRefund
-        ? 'REFUND_PENDING'
-        : hasSuccessfulPayment
-          ? 'PAID'
-          : (resolveOrderStatus(aggregate?.order.status) ?? baseOrder.status),
-  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('zh-CN', {
@@ -288,46 +254,57 @@ export function OrderDetailScreen() {
   };
 
   const handleRefund = () => {
-    navigation.navigate!('Refund' as never, {
-      orderId: order.orderId,
-      orderNo: order.orderNo,
-      amount: order.totalAmount,
+    navigation.navigate!('Refund' as never, buildRefundRouteParams({
+      order,
       reason: routeParams?.refundReason,
-      paymentChannel: order.paymentChannel,
-    } as never);
+    }) as never);
   };
 
   const handleConfirmPayment = () => {
-    navigation.navigate!('Payment' as never, {
-      orderId: order.orderId,
-      orderNo: order.orderNo,
-      amount: order.totalAmount,
-      paymentChannel: order.paymentChannel,
-    } as never);
+    navigation.navigate!('Payment' as never, buildPaymentRouteParams({
+      order,
+    }) as never);
   };
 
   const handleBackToOrders = () => {
-    if (routeParams?.refundStatus) {
-      navigation.navigate!('Orders' as never, {
+    if (effectiveRefundStatus === 'PENDING' && typeof effectiveRefundAmount === 'number') {
+      navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
         orderId: order.orderId,
         orderNo: order.orderNo,
-        refundStatus: routeParams.refundStatus,
-        refundRequestedAmount: routeParams.refundRequestedAmount,
-        refundReason: routeParams.refundReason,
-        refundRequestedAt: routeParams.refundRequestedAt,
-        refundCompletedAt: routeParams.refundCompletedAt,
-      } as never);
+        totalAmount: order.totalAmount,
+        paidAt: order.paidAt,
+        paymentChannel: order.paymentChannel,
+        status: 'REFUND_PENDING',
+        refundRequestedAmount: effectiveRefundAmount,
+        refundReason: effectiveRefundReason,
+        refundRequestedAt: effectiveRefundRequestedAt,
+      }) as never);
+      return;
+    }
+    if (effectiveRefundStatus === 'REFUNDED' && typeof effectiveRefundAmount === 'number') {
+      navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
+        orderId: order.orderId,
+        orderNo: order.orderNo,
+        totalAmount: order.totalAmount,
+        paidAt: order.paidAt,
+        paymentChannel: order.paymentChannel,
+        status: 'REFUNDED',
+        refundRequestedAmount: effectiveRefundAmount,
+        refundReason: effectiveRefundReason,
+        refundRequestedAt: effectiveRefundRequestedAt,
+        refundCompletedAt: effectiveRefundCompletedAt,
+      }) as never);
       return;
     }
     if (routeParams?.paymentStatus === 'PAID') {
-      navigation.navigate!('Orders' as never, {
+      navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
         orderId: order.orderId,
         orderNo: order.orderNo,
-        paymentStatus: 'PAID',
-        paymentAmount: routeParams.paymentAmount,
-        paymentPaidAt: routeParams.paymentPaidAt,
-        paymentChannel: routeParams.paymentChannel,
-      } as never);
+        totalAmount: routeParams.paymentAmount ?? order.totalAmount,
+        paidAt: routeParams.paymentPaidAt ?? order.paidAt,
+        paymentChannel: routeParams.paymentChannel ?? order.paymentChannel,
+        status: 'PAID',
+      }) as never);
       return;
     }
     navigation.goBack();

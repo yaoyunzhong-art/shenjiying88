@@ -1520,6 +1520,189 @@ test('OrderDetailScreen: payment return preserves real orderNo when fetch is ena
   }
 });
 
+test('OrderDetailScreen: fetched refunded aggregate wins over stale pending refund params when returning', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders/order-001')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: {
+          memberNickname: '接口会员一号',
+          order: {
+            orderId: 'order-001',
+            orderNo: 'ORDAPI20260720001',
+            memberId: 'member-api-001',
+            items: [],
+            currency: 'CNY',
+            totalAmount: 156,
+            status: 'PAID',
+            latestPaymentId: 'payment-order-001',
+            createdAt: '2026-06-12T10:30:00.000Z',
+            updatedAt: '2026-07-20T05:16:00.000Z',
+            paidAt: '2026-07-20T04:12:00.000Z',
+          },
+          payment: {
+            paymentId: 'payment-order-001',
+            orderId: 'order-001',
+            channel: 'wechat-pay',
+            amount: 156,
+            status: 'SUCCEEDED',
+            createdAt: '2026-06-12T10:30:00.000Z',
+            updatedAt: '2026-07-20T04:12:00.000Z',
+            completedAt: '2026-07-20T04:12:00.000Z',
+          },
+          settlement: {
+            settlementId: 'settlement-order-001',
+            pointsEarned: 156,
+            pointsBalance: 156,
+          },
+          pointsLedger: [],
+          couponRedemptions: [],
+          blindboxFulfillments: [],
+          refunds: [{
+            refundId: 'refund-completed-001',
+            orderId: 'order-001',
+            paymentId: 'payment-order-001',
+            memberId: 'member-api-001',
+            refundAmount: 66,
+            reason: '门店退款完成',
+            status: 'COMPLETED',
+            requestedAt: '2026-07-20T05:05:00.000Z',
+            completedAt: '2026-07-20T05:16:00.000Z',
+          }],
+        },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderDetailComponent({
+        orderId: 'order-001',
+        refundStatus: 'PENDING',
+        refundRequestedAmount: 30,
+        refundReason: '旧回带原因',
+        refundRequestedAt: '2026-07-20T05:00:00.000Z',
+      });
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, '已退款'), '真实聚合已退款时不应被旧待审核回带压回审核中');
+    assert.ok(findByText(root.root, '¥66.00'), '真实聚合已退款时应展示真实退款金额');
+    assert.ok(findByText(root.root, '门店退款完成'), '真实聚合已退款时应展示真实退款原因');
+
+    const touchables = findAllTouchables(root.root);
+    const backButton = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '返回'),
+    );
+
+    assert.ok(backButton, '退款完成时应显示返回按钮');
+    backButton!.props.onPress();
+
+    const navigateCall = mockNavigateCalls.find((item) => item.route === 'Orders');
+    assert.ok(navigateCall, '退款完成返回时应导航回订单列表');
+    assert.equal(navigateCall?.params?.orderId, 'order-001');
+    assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
+    assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
+    assert.equal(navigateCall?.params?.refundRequestedAmount, 66);
+    assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T05:16:00.000Z');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
+});
+
+test('OrderDetailScreen: rejected refunds do not render refund summary', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders/order-001')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: {
+          order: {
+            orderId: 'order-001',
+            orderNo: 'ORDAPI20260720001',
+            memberId: 'member-api-001',
+            items: [],
+            currency: 'CNY',
+            totalAmount: 156,
+            status: 'PAID',
+            latestPaymentId: 'payment-order-001',
+            createdAt: '2026-06-12T10:30:00.000Z',
+            updatedAt: '2026-07-20T05:16:00.000Z',
+            paidAt: '2026-07-20T04:12:00.000Z',
+          },
+          payment: {
+            paymentId: 'payment-order-001',
+            orderId: 'order-001',
+            channel: 'wechat-pay',
+            amount: 156,
+            status: 'SUCCEEDED',
+            createdAt: '2026-06-12T10:30:00.000Z',
+            updatedAt: '2026-07-20T04:12:00.000Z',
+            completedAt: '2026-07-20T04:12:00.000Z',
+          },
+          settlement: {
+            settlementId: 'settlement-order-001',
+            pointsEarned: 156,
+            pointsBalance: 156,
+          },
+          pointsLedger: [],
+          couponRedemptions: [],
+          blindboxFulfillments: [],
+          refunds: [{
+            refundId: 'refund-rejected-001',
+            orderId: 'order-001',
+            paymentId: 'payment-order-001',
+            memberId: 'member-api-001',
+            refundAmount: 66,
+            reason: '审核驳回',
+            status: 'REJECTED',
+            requestedAt: '2026-07-20T05:05:00.000Z',
+          }],
+        },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderDetailComponent({ orderId: 'order-001' });
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, '已完成'), '只有 REJECTED 退款时订单应仍保持已完成');
+    assert.ok(!findByText(root.root, '退款进度'), 'REJECTED 退款不应展示退款进度卡片');
+    assert.ok(!findByText(root.root, '退款结果'), 'REJECTED 退款不应展示退款结果卡片');
+    assert.ok(findByText(root.root, '申请退款'), '只有 REJECTED 退款时仍应允许重新申请退款');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
+});
+
 test('OrderDetailScreen: item prices are formatted correctly', () => {
   const root = createOrderDetailComponent();
 
