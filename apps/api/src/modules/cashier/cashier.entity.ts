@@ -45,7 +45,7 @@ export interface CashierOrderItem {
 
 export interface CashierOrder {
   orderId: string
-  orderNo: string
+  orderNo?: string
   tenantContext: RequestTenantContext
   memberId: string
   items: CashierOrderItem[]

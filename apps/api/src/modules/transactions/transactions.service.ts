@@ -1790,7 +1790,7 @@ export class TransactionsService {
 
     return {
       orderId: order.orderId,
-      orderNo: order.orderNo,
+      orderNo: order.orderNo ?? '',
       memberId: order.memberId,
       status: latestRefund?.status === TransactionRefundStatus.Pending
         ? 'REFUNDING'
