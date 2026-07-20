@@ -701,6 +701,7 @@ test('native app bootstrap: builds checkout and refund payloads for real commerc
   const refund = createNativeAppRefundPayload({
     order: {
       orderId: 'order-001',
+      orderNo: 'ON20260720001',
       memberId: 'app-member-svip-001',
       currency: 'USD',
       totalAmount: 50,

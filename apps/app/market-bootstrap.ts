@@ -99,6 +99,7 @@ export interface NativeAppOrderPaymentSubmitPayload {
 
 export interface NativeAppTransactionOrder {
   orderId: string;
+  orderNo: string;
   memberId: string;
   currency: string;
   totalAmount: number;
@@ -815,6 +816,7 @@ function createNativeAppTransactionFallbackSnapshot(
     aggregate: {
       order: {
         orderId,
+        orderNo: `ON${now.replace(/[-:TZ]/g, '').slice(0,14)}`,
         memberId: checkoutPayload.memberId,
         currency: checkoutPayload.currency ?? 'USD',
         totalAmount: checkoutPayload.amount ?? computeNativeAppCheckoutAmount(checkoutPayload.items),
