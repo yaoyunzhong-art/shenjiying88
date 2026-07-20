@@ -241,12 +241,9 @@ export function OrderDetailScreen() {
     orderNo: aggregate?.order.orderNo ?? routeParams?.orderNo ?? baseOrder.orderNo,
     createdAt: aggregate?.order.createdAt ?? baseOrder.createdAt,
     memberId: aggregate?.order.memberId ?? baseOrder.memberId,
-<<<<<<< Updated upstream
     memberNickname: aggregate?.memberNickname ?? baseOrder.memberNickname,
-=======
     items: aggregate?.order.items?.length ? aggregate.order.items : baseOrder.items,
     currency: aggregate?.order.currency ?? baseOrder.currency,
->>>>>>> Stashed changes
     totalAmount: routeParams?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
     paymentChannel: routeParams?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
     paidAt: routeParams?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,
