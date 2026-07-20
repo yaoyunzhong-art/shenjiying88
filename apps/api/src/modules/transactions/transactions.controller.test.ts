@@ -169,6 +169,15 @@ describe('transactions controller', () => {
       assert.ok(result.payment)
     })
 
+    it('should expose paid aggregate fields used by app order detail', async () => {
+      const created = await checkoutAndPay('m-3b', 88, 'ep-3b')
+      const result = controller.getOrderTransaction(created.order.orderId, CTX)
+      assert.equal(result.payment?.channel, 'wechat')
+      assert.match(result.order.paidAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
+      assert.ok((result.settlement?.awardedPoints ?? 0) > 0)
+      assert.ok(result.pointsLedger.length >= 1)
+    })
+
     it('should throw for non-existing order (negative)', () => {
       assert.throws(() => controller.getOrderTransaction('ghost', CTX), /not found/)
     })
@@ -201,6 +210,32 @@ describe('transactions controller', () => {
       assert.ok(refundedOrder)
       assert.equal(refundedOrder?.refundedAmount, 0)
       assert.match(refundedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
+    })
+
+    it('should include completed refund timestamp after refund approval', async () => {
+      const created = await checkoutAndPay('m-rf-approved', 120, 'ep-rf-approved')
+      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'approved', refundAmount: 30 })
+      await controller.approveRefund(withRefund.refunds[0].refundId, CTX, { operator: 'reviewer' })
+
+      const result = controller.listOrderTransactions(CTX, { hasRefund: true })
+      const refundedOrder = result.items.find((item) => item.orderId === created.order.orderId)
+      assert.ok(refundedOrder)
+      assert.equal(refundedOrder?.refundedAmount, 30)
+      assert.match(refundedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
+      assert.match(refundedOrder?.refundCompletedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
+    })
+
+    it('should keep rejected refund out of refunded amount and completed time', async () => {
+      const created = await checkoutAndPay('m-rf-rejected', 120, 'ep-rf-rejected')
+      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'rejected', refundAmount: 30 })
+      await controller.rejectRefund(withRefund.refunds[0].refundId, CTX, { operator: 'reviewer', note: 'rejected' })
+
+      const result = controller.listOrderTransactions(CTX, { hasRefund: true })
+      const rejectedOrder = result.items.find((item) => item.orderId === created.order.orderId)
+      assert.ok(rejectedOrder)
+      assert.equal(rejectedOrder?.refundedAmount, 0)
+      assert.match(rejectedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
+      assert.equal(rejectedOrder?.refundCompletedAt, undefined)
     })
   })
 

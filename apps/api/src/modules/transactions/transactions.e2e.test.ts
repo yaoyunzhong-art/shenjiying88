@@ -250,7 +250,7 @@ async function buildApp() {
   loyaltyService.resetLoyaltyStoresForTests()
   const cashierService = new CashierService(memberService, loyaltyService)
   cashierService.resetCashierStoresForTests()
-  const transactionsService = new TransactionsService(cashierService, loyaltyService)
+  const transactionsService = new TransactionsService(cashierService, loyaltyService, undefined, memberService)
   const moduleRef = await Test.createTestingModule({
     controllers: [TestTransactionsController],
     providers: [
@@ -406,6 +406,30 @@ it('e2e: list transactions scoped by tenant', async () => {
   }
 })
 
+it('e2e: order detail returns aggregate fields used by app screens', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  ensureMember(memberService, 'm-detail')
+
+  try {
+    const orderId = await settleOrder(app, cashierService, memberService, loyaltyService, 'm-detail', 88, 'ext-pay-detail')
+
+    const detail = await request(app.getHttpServer())
+      .get(`/transactions/orders/${orderId}`)
+      .set(TENANT_A)
+    assert.equal(detail.statusCode, 200)
+    assert.equal(detail.body.data.order.orderId, orderId)
+    assert.match(detail.body.data.order.orderNo, /^ORD\d{11}$/)
+    assert.equal(detail.body.data.memberNickname, 'User-m-detail')
+    assert.equal(detail.body.data.payment.channel, 'wechat')
+    assert.equal(typeof detail.body.data.order.paidAt, 'string')
+    assert.ok((detail.body.data.settlement?.awardedPoints ?? 0) > 0)
+    assert.ok(Array.isArray(detail.body.data.pointsLedger))
+    assert.ok(detail.body.data.pointsLedger.length >= 1)
+  } finally {
+    await app.close()
+  }
+})
+
 it('e2e: refund request → approve → status Approved', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
@@ -447,6 +471,46 @@ it('e2e: refund request → approve → status Approved', async () => {
   }
 })
 
+it('e2e: order detail reflects pending and completed refund timestamps', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  ensureMember(memberService, 'm-rf-detail')
+
+  try {
+    const orderId = await settleOrder(app, cashierService, memberService, loyaltyService, 'm-rf-detail', 160, 'ext-pay-rf-detail')
+
+    const refundRes = await request(app.getHttpServer())
+      .post(`/transactions/orders/${orderId}/refunds`)
+      .set(TENANT_A)
+      .send({ refundAmount: 40, reason: 'detail-refund', operator: 'op-detail' })
+    assert.equal(refundRes.statusCode, 201)
+    const refundId = refundRes.body.data.refunds[0].refundId
+    assert.equal(refundRes.body.data.payment.channel, 'wechat')
+    assert.match(refundRes.body.data.refunds[0].requestedAt, /^\d{4}-\d{2}-\d{2}T/)
+
+    const pendingDetail = await request(app.getHttpServer())
+      .get(`/transactions/orders/${orderId}`)
+      .set(TENANT_A)
+    assert.equal(pendingDetail.statusCode, 200)
+    assert.equal(pendingDetail.body.data.refunds[0].status, 'PENDING')
+    assert.match(pendingDetail.body.data.refunds[0].requestedAt, /^\d{4}-\d{2}-\d{2}T/)
+    assert.equal(pendingDetail.body.data.refunds[0].completedAt, undefined)
+
+    await request(app.getHttpServer())
+      .post(`/transactions/refunds/${refundId}/approve`)
+      .set(TENANT_A)
+      .send({ operator: 'mgr-detail', note: 'ok' })
+
+    const completedDetail = await request(app.getHttpServer())
+      .get(`/transactions/orders/${orderId}`)
+      .set(TENANT_A)
+    assert.equal(completedDetail.statusCode, 200)
+    assert.equal(completedDetail.body.data.refunds[0].status, 'COMPLETED')
+    assert.match(completedDetail.body.data.refunds[0].completedAt, /^\d{4}-\d{2}-\d{2}T/)
+  } finally {
+    await app.close()
+  }
+})
+
 it('e2e: refund request → reject → status Rejected', async () => {
   const { app, memberService, cashierService, loyaltyService } = await buildApp()
   ensureMember(memberService, 'm-1')
@@ -466,6 +530,37 @@ it('e2e: refund request → reject → status Rejected', async () => {
       .send({ operator: 'mgr-1', note: 'out-of-policy' })
     assert.equal(rejectRes.body.data.refunds[0].status, 'REJECTED')
     assert.equal(rejectRes.body.data.refunds[0].reviewedBy, 'mgr-1')
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: rejected refund keeps requested time but does not consume refunded amount', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  ensureMember(memberService, 'm-rf-rejected')
+
+  try {
+    const orderId = await settleOrder(app, cashierService, memberService, loyaltyService, 'm-rf-rejected', 100, 'ext-pay-rf-rejected')
+
+    const refundRes = await request(app.getHttpServer())
+      .post(`/transactions/orders/${orderId}/refunds`)
+      .set(TENANT_A)
+      .send({ refundAmount: 30, reason: 'reject-flow', operator: 'op-rj' })
+    const refundId = refundRes.body.data.refunds[0].refundId
+
+    await request(app.getHttpServer())
+      .post(`/transactions/refunds/${refundId}/reject`)
+      .set(TENANT_A)
+      .send({ operator: 'mgr-rj', note: 'rejected' })
+
+    const list = await request(app.getHttpServer())
+      .get('/transactions/orders')
+      .set(TENANT_A)
+    const rejectedOrder = list.body.data.items.find((order: any) => order.orderId === orderId)
+    assert.ok(rejectedOrder)
+    assert.equal(rejectedOrder.refundedAmount, 0)
+    assert.equal(rejectedOrder.refundCompletedAt, undefined)
+    assert.equal(typeof rejectedOrder.refundRequestedAt, 'string')
   } finally {
     await app.close()
   }

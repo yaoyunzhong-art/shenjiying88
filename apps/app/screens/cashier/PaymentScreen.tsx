@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -75,6 +75,8 @@ export function PaymentScreen() {
   const [memberPhone, setMemberPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [orderAggregate, setOrderAggregate] = useState<NativeAppTransactionAggregate | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderFetchError, setOrderFetchError] = useState<string | null>(null);
   const numericAmount = Number(amount);
   const resolvedOrderNo = orderAggregate?.order.orderNo ?? routeParams?.orderNo ?? 'N/A';
   const resolvedOrderId = orderAggregate?.order.orderId ?? routeParams?.orderId ?? 'N/A';
@@ -91,17 +93,24 @@ export function PaymentScreen() {
     numericAmount <= MAX_PAYMENT_AMOUNT;
   const canSubmit =
     canSubmitAmount &&
-    (selectedChannel !== 'MEMBER_CARD' || memberPhoneValid);
+    (selectedChannel !== 'MEMBER_CARD' || memberPhoneValid) &&
+    (!shouldFetchOrder || !orderLoading);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchOrder = useCallback(() => {
+    const orderId = routeParams?.orderId;
 
-    if (!routeParams?.orderId || !shouldFetchOrder) {
+    if (!orderId || !shouldFetchOrder) {
       setOrderAggregate(null);
-      return;
+      setOrderFetchError(null);
+      setOrderLoading(false);
+      return () => {};
     }
 
-    getNativeAppOrderTransaction(routeParams.orderId)
+    let cancelled = false;
+    setOrderLoading(true);
+    setOrderFetchError(null);
+
+    getNativeAppOrderTransaction(orderId)
       .then((aggregate) => {
         if (cancelled) {
           return;
@@ -120,17 +129,29 @@ export function PaymentScreen() {
             setSelectedChannel(hydratedChannel);
           }
         }
+
+        setOrderLoading(false);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setOrderAggregate(null);
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
         }
+
+        setOrderAggregate(null);
+        setOrderFetchError(
+          error instanceof Error && error.message
+            ? error.message
+            : '订单信息加载失败，请重试',
+        );
+        setOrderLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [routeParams?.orderId, routeParams?.paymentChannel, shouldFetchOrder]);
+  }, [routeParams?.orderId, routeParams.paymentChannel, shouldFetchOrder]);
+
+  useEffect(() => fetchOrder(), [fetchOrder]);
 
   const handleNumberPress = (num: string) => {
     if (num === 'C') {
@@ -271,6 +292,22 @@ export function PaymentScreen() {
                 <Text style={styles.orderValue}>{resolvedPaymentChannelLabel}</Text>
               </View>
             ) : null}
+            {orderLoading ? (
+              <Text style={styles.orderHint}>正在同步真实订单信息...</Text>
+            ) : null}
+            {orderFetchError ? (
+              <>
+                <Text style={styles.orderHint}>订单信息加载失败，可重试或按当前金额继续收款</Text>
+                <Text style={styles.orderErrorText}>{orderFetchError}</Text>
+                <Button
+                  title="重试加载"
+                  onPress={fetchOrder}
+                  variant="outline"
+                  size="small"
+                  style={styles.retryButton}
+                />
+              </>
+            ) : null}
           </Card>
         )}
         <Card style={styles.amountCard}>
@@ -405,6 +442,20 @@ const styles = StyleSheet.create({
   orderValue: {
     fontSize: 14,
     color: '#333333',
+  },
+  orderHint: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#666666',
+  },
+  orderErrorText: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
+  retryButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
   },
   amountLabel: {
     fontSize: 14,

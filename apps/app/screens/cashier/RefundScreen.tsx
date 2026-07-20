@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -73,6 +73,8 @@ export function RefundScreen() {
   const [refundReason, setRefundReason] = useState(initialReason ?? '');
   const [loading, setLoading] = useState(false);
   const [orderAggregate, setOrderAggregate] = useState<NativeAppTransactionAggregate | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderFetchError, setOrderFetchError] = useState<string | null>(null);
   const trimmedRefundAmount = refundAmount.trim();
   const trimmedRefundReason = refundReason.trim();
   const numAmount = Number(trimmedRefundAmount);
@@ -95,16 +97,21 @@ export function RefundScreen() {
     numAmount > 0 &&
     resolvedOriginalAmount > 0 &&
     numAmount <= resolvedOriginalAmount &&
-    trimmedRefundReason.length > 0;
+    trimmedRefundReason.length > 0 &&
+    (!shouldFetchOrder || !orderLoading);
   const isFullRefund = resolvedOriginalAmount > 0 && Math.abs(numAmount - resolvedOriginalAmount) < 0.00001;
 
-  useEffect(() => {
-    let cancelled = false;
-
+  const fetchOrder = useCallback(() => {
     if (!orderId || !shouldFetchOrder) {
       setOrderAggregate(null);
-      return;
+      setOrderFetchError(null);
+      setOrderLoading(false);
+      return () => {};
     }
+
+    let cancelled = false;
+    setOrderLoading(true);
+    setOrderFetchError(null);
 
     getNativeAppOrderTransaction(orderId)
       .then((aggregate) => {
@@ -118,11 +125,20 @@ export function RefundScreen() {
             ? String(aggregate.payment?.amount ?? aggregate.order.totalAmount)
             : previousAmount
         ));
+        setOrderLoading(false);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setOrderAggregate(null);
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
         }
+
+        setOrderAggregate(null);
+        setOrderFetchError(
+          error instanceof Error && error.message
+            ? error.message
+            : '订单信息加载失败，请重试',
+        );
+        setOrderLoading(false);
       });
 
     return () => {
@@ -130,7 +146,13 @@ export function RefundScreen() {
     };
   }, [orderId, shouldFetchOrder]);
 
+  useEffect(() => fetchOrder(), [fetchOrder]);
+
   const handleRefund = async () => {
+    if (orderLoading) {
+      Alert.alert('提示', '订单信息同步中，请稍后再试');
+      return;
+    }
     if (!hasValidAmountFormat || !Number.isFinite(numAmount) || numAmount <= 0) {
       Alert.alert('提示', '请输入有效的退款金额');
       return;
@@ -232,6 +254,22 @@ export function RefundScreen() {
               <Text style={styles.orderValue}>{resolvedPaymentChannelLabel}</Text>
             </View>
           )}
+          {orderLoading && (
+            <Text style={styles.orderStatusText}>正在同步真实订单信息...</Text>
+          )}
+          {orderFetchError && (
+            <>
+              <Text style={styles.orderStatusText}>订单信息加载失败，可重试或按当前信息继续退款</Text>
+              <Text style={styles.orderErrorText}>{orderFetchError}</Text>
+              <Button
+                title="重试加载"
+                onPress={fetchOrder}
+                variant="outline"
+                size="small"
+                style={styles.retryButton}
+              />
+            </>
+          )}
           {!hasOrderContext && (
             <Text style={styles.orderHint}>缺少订单信息，请返回订单详情后重试</Text>
           )}
@@ -314,6 +352,20 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     color: '#FF3B30',
+  },
+  orderStatusText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#666666',
+  },
+  orderErrorText: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
+  retryButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
   },
   section: {
     paddingHorizontal: 16,

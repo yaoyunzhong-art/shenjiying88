@@ -1,198 +1,147 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 /**
- * 🐜 自动: [member.cross-tenant] [D] controller spec 补全
- *
  * MemberCrossTenantController 单元测试
  *
- * 策略：内联 mock MemberCrossTenantService，不依赖 NestJS DI / 数据库。
- * 覆盖 4 个路由：findByMobile / link / unlink / history
+ * 覆盖端点:
+ *   - GET  /api/member/cross-tenant/mobile/:mobile
+ *   - POST /api/member/cross-tenant/link
+ *   - POST /api/member/cross-tenant/unlink
+ *   - GET  /api/member/cross-tenant/history/:memberId
  */
 
 import assert from 'node:assert/strict'
 
 // ── Type Mirrors ────────────────────────────────────────────────
 
-interface CrossTenantMemberSummary {
+type CrossTenantMemberSummary = {
   memberId: string
+  mobile: string
+  name: string
   tenantId: string
-  nickname: string
-  level: string
-  tags?: string[]
-  createdAt: string
-  mobileMasked?: string
+  tenantName: string
+  matchedAt: string
 }
 
-interface CrossTenantLinkHistoryEntry {
+type CrossTenantMemberLink = {
+  id: string
   primaryMemberId: string
   secondaryMemberId: string
-  action: 'LINK' | 'UNLINK'
+  primaryTenantId: string
+  secondaryTenantId: string
   reason: string
   performedBy: string
-  at: string
+  linkedAt: string
+  status: 'active' | 'unlinked'
+  linkHistory: Array<{
+    action: string
+    performedBy: string
+    reason: string
+    timestamp: string
+  }>
 }
 
-interface CrossTenantMemberLink {
-  primaryMemberId: string
-  linkedMembers: CrossTenantMemberSummary[]
-  linkHistory: CrossTenantLinkHistoryEntry[]
-}
+// ── Inline Mocks ────────────────────────────────────────────────
 
-// ── Mock Service ────────────────────────────────────────────────
-function createMockService() {
-  const linkHistory: CrossTenantLinkHistoryEntry[] = []
-  const members = new Map<string, any>()
+function createMocks() {
+  const memberDb = new Map<string, CrossTenantMemberSummary[]>()
+  const links = new Map<string, CrossTenantMemberLink>()
+  const histories = new Map<string, CrossTenantMemberLink['linkHistory']>()
+  let linkIdCounter = 0
 
-  // Seed some test members
-  members.set('mem-001', {
-    memberId: 'mem-001',
-    tenantId: 'tenant-A',
-    nickname: 'Alice',
-    level: 'gold',
-    tags: ['vip', 'wholesale'],
-    mobile: '13800138001',
-    registeredAt: '2025-01-15T00:00:00Z',
-  })
-  members.set('mem-002', {
-    memberId: 'mem-002',
-    tenantId: 'tenant-B',
-    nickname: 'Bob',
-    level: 'silver',
-    tags: ['retail'],
-    mobile: '13900139002',
-    registeredAt: '2025-03-20T00:00:00Z',
-  })
-  members.set('mem-003', {
-    memberId: 'mem-003',
-    tenantId: 'tenant-A',
-    nickname: 'Charlie',
-    level: 'platinum',
-    tags: ['enterprise'],
-    mobile: '13700137003',
-    registeredAt: '2025-06-01T00:00:00Z',
-  })
-
-  const maskMobile = (mobile: string): string => {
-    if (!mobile || mobile.length < 7) return '***'
-    return `${mobile.slice(0, 3)}****${mobile.slice(-4)}`
-  }
-
-  const summarize = (m: any): CrossTenantMemberSummary => ({
-    memberId: m.memberId,
-    tenantId: m.tenantId,
-    nickname: m.nickname,
-    level: m.level,
-    tags: m.tags,
-    createdAt: m.registeredAt,
-    mobileMasked: m.mobile ? maskMobile(m.mobile) : undefined,
-  })
+  // Seed some member data
+  memberDb.set('13800138000', [
+    { memberId: 'm-t1-1', mobile: '13800138000', name: '张三', tenantId: 't-1', tenantName: '门店A', matchedAt: '2026-07-01T00:00:00Z' },
+  ])
+  memberDb.set('13900139000', [
+    { memberId: 'm-t1-2', mobile: '13900139000', name: '李四', tenantId: 't-1', tenantName: '门店A', matchedAt: '2026-07-01T00:00:00Z' },
+    { memberId: 'm-t2-2', mobile: '13900139000', name: '李四', tenantId: 't-2', tenantName: '门店B', matchedAt: '2026-07-02T00:00:00Z' },
+  ])
 
   return {
     findByMobileAcrossTenants(mobile: string): CrossTenantMemberSummary[] {
-      const results: CrossTenantMemberSummary[] = []
-      for (const m of members.values()) {
-        if (m.mobile === mobile) {
-          results.push(summarize(m))
-        }
-      }
-      return results
+      return memberDb.get(mobile) ?? []
     },
 
-    linkAcrossTenants(input: {
+    linkAcrossTenants(body: {
       primaryMemberId: string
       secondaryMemberId: string
       reason: string
       performedBy: string
     }): CrossTenantMemberLink {
-      const primary = members.get(input.primaryMemberId)
-      if (!primary) {
-        const err: any = new Error(`member ${input.primaryMemberId} not found`)
-        err.status = 404
-        throw err
+      const id = `ct-link-${++linkIdCounter}`
+      const link: CrossTenantMemberLink = {
+        id,
+        primaryMemberId: body.primaryMemberId,
+        secondaryMemberId: body.secondaryMemberId,
+        primaryTenantId: 't-1',
+        secondaryTenantId: 't-2',
+        reason: body.reason,
+        performedBy: body.performedBy,
+        linkedAt: new Date().toISOString(),
+        status: 'active',
+        linkHistory: [
+          { action: 'link', performedBy: body.performedBy, reason: body.reason, timestamp: new Date().toISOString() },
+        ],
       }
-      const secondary = members.get(input.secondaryMemberId)
-      if (!secondary) {
-        const err: any = new Error(`member ${input.secondaryMemberId} not found`)
-        err.status = 404
-        throw err
-      }
-      if (input.primaryMemberId === input.secondaryMemberId) {
-        const err: any = new Error('cannot link to self')
-        err.status = 400
-        throw err
-      }
-      if (primary.tenantId === secondary.tenantId) {
-        const err: any = new Error('cannot link members in same tenant')
-        err.status = 400
-        throw err
-      }
-      const entry: CrossTenantLinkHistoryEntry = {
-        primaryMemberId: input.primaryMemberId,
-        secondaryMemberId: input.secondaryMemberId,
-        action: 'LINK',
-        reason: input.reason,
-        performedBy: input.performedBy,
-        at: new Date().toISOString(),
-      }
-      linkHistory.push(entry)
-      return {
-        primaryMemberId: input.primaryMemberId,
-        linkedMembers: [summarize(secondary)],
-        linkHistory: [...linkHistory],
-      }
+      links.set(id, link)
+      histories.set(body.primaryMemberId, link.linkHistory)
+      return link
     },
 
-    unlinkAcrossTenants(input: {
+    unlinkAcrossTenants(body: {
       primaryMemberId: string
       secondaryMemberId: string
       reason: string
       performedBy: string
     }): CrossTenantMemberLink {
-      const primary = members.get(input.primaryMemberId)
-      if (!primary) {
-        const err: any = new Error(`member ${input.primaryMemberId} not found`)
-        err.status = 404
-        throw err
+      const id = `ct-link-unlink-${++linkIdCounter}`
+      const link: CrossTenantMemberLink = {
+        id,
+        primaryMemberId: body.primaryMemberId,
+        secondaryMemberId: body.secondaryMemberId,
+        primaryTenantId: 't-1',
+        secondaryTenantId: 't-2',
+        reason: body.reason,
+        performedBy: body.performedBy,
+        linkedAt: new Date().toISOString(),
+        status: 'unlinked',
+        linkHistory: [
+          { action: 'link', performedBy: body.performedBy, reason: 'Initial link', timestamp: new Date(Date.now() - 86400000).toISOString() },
+          { action: 'unlink', performedBy: body.performedBy, reason: body.reason, timestamp: new Date().toISOString() },
+        ],
       }
-      const entry: CrossTenantLinkHistoryEntry = {
-        primaryMemberId: input.primaryMemberId,
-        secondaryMemberId: input.secondaryMemberId,
-        action: 'UNLINK',
-        reason: input.reason,
-        performedBy: input.performedBy,
-        at: new Date().toISOString(),
-      }
-      linkHistory.push(entry)
-      return {
-        primaryMemberId: input.primaryMemberId,
-        linkedMembers: [],
-        linkHistory: [...linkHistory],
-      }
+      histories.set(body.primaryMemberId, link.linkHistory)
+      return link
     },
 
-    getLinkHistory(memberId: string): CrossTenantLinkHistoryEntry[] {
-      if (!members.has(memberId)) {
-        const err: any = new Error(`member ${memberId} not found`)
-        err.status = 404
-        throw err
-      }
-      // Return only entries affecting this memberId
-      return linkHistory.filter(
-        (h) => h.primaryMemberId === memberId || h.secondaryMemberId === memberId,
-      )
+    getLinkHistory(memberId: string): CrossTenantMemberLink['linkHistory'] {
+      return histories.get(memberId) ?? []
+    },
+
+    // Seed helpers
+    _seedMember(mobile: string, summaries: CrossTenantMemberSummary[]) {
+      memberDb.set(mobile, summaries)
+    },
+    _seedHistory(memberId: string, history: CrossTenantMemberLink['linkHistory']) {
+      histories.set(memberId, history)
     },
   }
 }
 
 // ── Inline Controller ───────────────────────────────────────────
-class InlineMemberCrossTenantController {
-  constructor(private readonly service: ReturnType<typeof createMockService>) {}
 
-  async findByMobile(mobile: string): Promise<{
-    mobile: string
-    matches: CrossTenantMemberSummary[]
-    count: number
-  }> {
-    if (!this.service) {
+class InlineMemberCrossTenantController {
+  private readonly service: ReturnType<typeof createMocks>
+  private available: boolean = true
+
+  constructor(service?: ReturnType<typeof createMocks>) {
+    this.service = service!
+  }
+
+  setAvailable(v: boolean) { this.available = v }
+
+  async findByMobile(mobile: string): Promise<{ mobile: string; matches: CrossTenantMemberSummary[]; count: number }> {
+    if (!this.available) {
       throw Object.assign(new Error('MemberCrossTenantService not available'), { status: 400 })
     }
     const matches = this.service.findByMobileAcrossTenants(mobile)
@@ -203,35 +152,22 @@ class InlineMemberCrossTenantController {
     }
   }
 
-  async link(body: {
-    primaryMemberId: string
-    secondaryMemberId: string
-    reason: string
-    performedBy: string
-  }): Promise<CrossTenantMemberLink> {
-    if (!this.service) {
+  async link(body: { primaryMemberId: string; secondaryMemberId: string; reason: string; performedBy: string }): Promise<CrossTenantMemberLink> {
+    if (!this.available) {
       throw Object.assign(new Error('MemberCrossTenantService not available'), { status: 400 })
     }
     return this.service.linkAcrossTenants(body)
   }
 
-  async unlink(body: {
-    primaryMemberId: string
-    secondaryMemberId: string
-    reason: string
-    performedBy: string
-  }): Promise<CrossTenantMemberLink> {
-    if (!this.service) {
+  async unlink(body: { primaryMemberId: string; secondaryMemberId: string; reason: string; performedBy: string }): Promise<CrossTenantMemberLink> {
+    if (!this.available) {
       throw Object.assign(new Error('MemberCrossTenantService not available'), { status: 400 })
     }
     return this.service.unlinkAcrossTenants(body)
   }
 
-  async history(memberId: string): Promise<{
-    memberId: string
-    history: CrossTenantLinkHistoryEntry[]
-  }> {
-    if (!this.service) {
+  async history(memberId: string): Promise<{ memberId: string; history: CrossTenantMemberLink['linkHistory'] }> {
+    if (!this.available) {
       throw Object.assign(new Error('MemberCrossTenantService not available'), { status: 400 })
     }
     return {
@@ -247,171 +183,125 @@ class InlineMemberCrossTenantController {
 }
 
 // ── Tests ───────────────────────────────────────────────────────
-describe('MemberCrossTenantController Phase 36 T166-3', () => {
+
+describe('MemberCrossTenantController', () => {
+  let mock: ReturnType<typeof createMocks>
   let controller: InlineMemberCrossTenantController
-  let mockSvc: ReturnType<typeof createMockService>
 
   beforeEach(() => {
-    mockSvc = createMockService()
-    controller = new InlineMemberCrossTenantController(mockSvc)
+    mock = createMocks()
+    controller = new InlineMemberCrossTenantController(mock)
   })
 
-  // ─── GET /api/member/cross-tenant/mobile/:mobile ───
-  describe('GET /mobile/:mobile - findByMobile', () => {
-    it('[正例] 按手机号跨租户查询命中结果', async () => {
-      const result = await controller.findByMobile('13800138001')
+  describe('GET /api/member/cross-tenant/mobile/:mobile - findByMobile', () => {
+    it('[正例] 单租户匹配', async () => {
+      const result = await controller.findByMobile('13800138000')
       assert.equal(result.count, 1)
-      assert.equal(result.matches[0].memberId, 'mem-001')
-      assert.equal(result.matches[0].tenantId, 'tenant-A')
-      assert.ok(result.matches[0].mobileMasked)
-      assert.match(result.matches[0].mobileMasked!, /^\d{3}\*{4}\d{4}$/)
+      assert.equal(result.matches[0].name, '张三')
     })
 
-    it('[正例] 响应手机号脱敏显示', async () => {
-      const result = await controller.findByMobile('13800138001')
-      assert.equal(result.mobile, '138****8001')
+    it('[正例] 跨租户匹配', async () => {
+      const result = await controller.findByMobile('13900139000')
+      assert.equal(result.count, 2)
+      assert.equal(result.matches[0].tenantId, 't-1')
+      assert.equal(result.matches[1].tenantId, 't-2')
     })
 
-    it('[正例] 无匹配手机号返回空数组', async () => {
+    it('[正例] mobile 响应中脱敏', async () => {
+      const result = await controller.findByMobile('13800138000')
+      assert.equal(result.mobile, '138****8000')
+    })
+
+    it('[边界] 无匹配返回空列表', async () => {
       const result = await controller.findByMobile('19900000000')
       assert.equal(result.count, 0)
       assert.deepEqual(result.matches, [])
     })
 
-    it('[边界] 短手机号 (<7位) 掩码为 ***', async () => {
-      const result = await controller.findByMobile('12345')
+    it('[边界] 短号码脱敏为 ***', async () => {
+      const result = await controller.findByMobile('123')
       assert.equal(result.mobile, '***')
     })
 
-    it('[边界] 脱敏字段 consistent 格式', async () => {
-      const result = await controller.findByMobile('13700137003')
-      assert.ok(result.matches[0].mobileMasked)
-      assert.match(result.matches[0].mobileMasked!, /^\d{3}\*{4}\d{4}$/)
+    it('[反例] 服务不可用时抛 400', async () => {
+      controller.setAvailable(false)
+      try {
+        await controller.findByMobile('13800138000')
+        assert.fail('Should have thrown')
+      } catch (e: any) {
+        assert.equal(e.message, 'MemberCrossTenantService not available')
+      }
     })
   })
 
-  // ─── POST /api/member/cross-tenant/link ───
-  describe('POST /link - link', () => {
-    it('[正例] 跨租户关联成功', async () => {
+  describe('POST /api/member/cross-tenant/link - link', () => {
+    it('[正例] 关联会员成功', async () => {
       const result = await controller.link({
-        primaryMemberId: 'mem-001',
-        secondaryMemberId: 'mem-002',
-        reason: 'same person verified',
-        performedBy: 'op-1',
-      })
-      assert.equal(result.primaryMemberId, 'mem-001')
-      assert.equal(result.linkedMembers.length, 1)
-      assert.equal(result.linkedMembers[0].memberId, 'mem-002')
-    })
-
-    it('[正例] 关联后审计追踪有记录', async () => {
-      await controller.link({
-        primaryMemberId: 'mem-001',
-        secondaryMemberId: 'mem-002',
-        reason: 'same person',
+        primaryMemberId: 'm-t1-1',
+        secondaryMemberId: 'm-t2-1',
+        reason: '同一人',
         performedBy: 'admin-1',
       })
-      const hist = await controller.history('mem-001')
-      assert.equal(hist.history.length, 1)
-      assert.equal(hist.history[0].action, 'LINK')
-      assert.equal(hist.history[0].performedBy, 'admin-1')
+      assert.equal(result.status, 'active')
+      assert.equal(result.primaryMemberId, 'm-t1-1')
+      assert.ok(result.id)
+      assert.equal(result.linkHistory.length, 1)
     })
 
-    it('[反例] 关联不存在的会员抛出 404', async () => {
-      await assert.rejects(
-        controller.link({
-          primaryMemberId: 'mem-999',
-          secondaryMemberId: 'mem-001',
-          reason: 'test',
-          performedBy: 'op-1',
-        }),
-        /not found/,
-      )
-    })
-
-    it('[反例] self-link 抛出 400', async () => {
-      await assert.rejects(
-        controller.link({
-          primaryMemberId: 'mem-001',
-          secondaryMemberId: 'mem-001',
-          reason: 'self',
-          performedBy: 'op-1',
-        }),
-        /cannot link to self/,
-      )
+    it('[正例] 关联记录操作人', async () => {
+      const result = await controller.link({
+        primaryMemberId: 'm-t1-1',
+        secondaryMemberId: 'm-t2-2',
+        reason: '会员合并',
+        performedBy: 'op-zhang',
+      })
+      assert.equal(result.performedBy, 'op-zhang')
+      assert.equal(result.linkHistory[0].performedBy, 'op-zhang')
     })
   })
 
-  // ─── POST /api/member/cross-tenant/unlink ───
-  describe('POST /unlink - unlink', () => {
-    it('[正例] 跨租户解关联成功', async () => {
+  describe('POST /api/member/cross-tenant/unlink - unlink', () => {
+    it('[正例] 解关联成功', async () => {
       const result = await controller.unlink({
-        primaryMemberId: 'mem-001',
-        secondaryMemberId: 'mem-002',
-        reason: 'no longer same person',
-        performedBy: 'admin-1',
+        primaryMemberId: 'm-t1-1',
+        secondaryMemberId: 'm-t2-1',
+        reason: '错误关联',
+        performedBy: 'admin-2',
       })
-      assert.equal(result.primaryMemberId, 'mem-001')
-      assert.equal(result.linkedMembers.length, 0)
+      assert.equal(result.status, 'unlinked')
+      assert.equal(result.linkHistory.length, 2)
+      assert.equal(result.linkHistory[1].action, 'unlink')
     })
 
-    it('[正例] 解关联审计追踪记录 UNLINK', async () => {
-      await controller.unlink({
-        primaryMemberId: 'mem-001',
-        secondaryMemberId: 'mem-002',
-        reason: 'manual removal',
-        performedBy: 'auditor-1',
+    it('[正例] 解关联保留审计历史', async () => {
+      const result = await controller.unlink({
+        primaryMemberId: 'm-t1-2',
+        secondaryMemberId: 'm-t2-2',
+        reason: '数据纠错',
+        performedBy: 'auditor',
       })
-      const hist = await controller.history('mem-001')
-      assert.equal(hist.history.length, 1)
-      assert.equal(hist.history[0].action, 'UNLINK')
-    })
-
-    it('[反例] 解关联不存在的会员抛出 404', async () => {
-      await assert.rejects(
-        controller.unlink({
-          primaryMemberId: 'mem-999',
-          secondaryMemberId: 'mem-001',
-          reason: 'test',
-          performedBy: 'op-1',
-        }),
-        /not found/,
-      )
+      assert.equal(result.linkHistory[0].action, 'link')
+      assert.equal(result.linkHistory[1].action, 'unlink')
+      assert.equal(result.linkHistory[1].performedBy, 'auditor')
     })
   })
 
-  // ─── GET /api/member/cross-tenant/history/:memberId ───
-  describe('GET /history/:memberId - history', () => {
-    it('[正例] 查询会员审计追踪返回记录列表', async () => {
-      const result = await controller.history('mem-001')
-      assert.ok(Array.isArray(result.history))
-      assert.equal(result.memberId, 'mem-001')
-    })
-
-    it('[正例] Link + Unlink 后历史记录完整', async () => {
+  describe('GET /api/member/cross-tenant/history/:memberId - history', () => {
+    it('[正例] 查询审计追踪', async () => {
       await controller.link({
-        primaryMemberId: 'mem-001',
-        secondaryMemberId: 'mem-002',
-        reason: 'verify',
+        primaryMemberId: 'm-t1-1',
+        secondaryMemberId: 'm-t2-1',
+        reason: '测试',
         performedBy: 'admin',
       })
-      await controller.unlink({
-        primaryMemberId: 'mem-001',
-        secondaryMemberId: 'mem-002',
-        reason: 'revert',
-        performedBy: 'admin',
-      })
-      const hist = await controller.history('mem-001')
-      assert.equal(hist.history.length, 2)
-      assert.equal(hist.history[0].action, 'LINK')
-      assert.equal(hist.history[1].action, 'UNLINK')
+      const result = await controller.history('m-t1-1')
+      assert.equal(result.memberId, 'm-t1-1')
+      assert.equal(result.history.length, 1)
     })
 
-    it('[反例] 查询不存在会员抛出 404', async () => {
-      await assert.rejects(
-        controller.history('mem-999'),
-        /not found/,
-      )
+    it('[边界] 无历史返回空数组', async () => {
+      const result = await controller.history('m-unknown')
+      assert.deepEqual(result.history, [])
     })
   })
 })

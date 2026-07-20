@@ -33,16 +33,23 @@ export interface TransactionRefundContract {
 /** External contract for transaction aggregate summary */
 export interface TransactionAggregateContract {
   orderId: string
+  orderNo: string
   tenantId: string
   memberId: string
+  memberNickname?: string
   orderStatus: string
   paymentStatus?: string
   totalAmount: number
   currency: string
   paidAmount?: number
+  paymentChannel?: string
+  paidAt?: string
   refundedAmount: number
   refundStatus?: TransactionRefundStatus
   refundCount: number
+  refundRequestedAt?: string
+  refundCompletedAt?: string
+  awardedPoints?: number
   couponCode?: string
   blindboxPlanId?: string
   createdAt: string
@@ -132,22 +139,34 @@ export function toTransactionRefundContract(
 export function toTransactionAggregateContract(
   aggregate: TransactionAggregate,
 ): TransactionAggregateContract {
+  const latestRefund = [...aggregate.refunds].sort((left, right) => {
+    const leftTime = new Date(left.completedAt ?? left.requestedAt).getTime()
+    const rightTime = new Date(right.completedAt ?? right.requestedAt).getTime()
+    return rightTime - leftTime
+  })[0]
   const refundedAmount = aggregate.refunds
     .filter((r) => r.status === ('COMPLETED' as TransactionRefundStatus))
     .reduce((sum, r) => sum + r.refundAmount, 0)
 
   return {
     orderId: aggregate.order.orderId,
+    orderNo: aggregate.order.orderNo,
     tenantId: aggregate.order.tenantContext.tenantId,
     memberId: aggregate.order.memberId,
+    memberNickname: aggregate.memberNickname,
     orderStatus: aggregate.order.status,
     paymentStatus: aggregate.payment?.status,
     totalAmount: aggregate.order.totalAmount,
     currency: aggregate.order.currency,
     paidAmount: aggregate.payment?.amount,
+    paymentChannel: aggregate.payment?.channel,
+    paidAt: aggregate.order.paidAt ?? aggregate.payment?.completedAt,
     refundedAmount,
-    refundStatus: aggregate.refunds[0]?.status,
+    refundStatus: latestRefund?.status,
     refundCount: aggregate.refunds.length,
+    refundRequestedAt: latestRefund?.requestedAt,
+    refundCompletedAt: latestRefund?.completedAt,
+    awardedPoints: aggregate.settlement?.awardedPoints,
     couponCode: aggregate.order.couponCode,
     blindboxPlanId: aggregate.order.blindboxPlanId,
     createdAt: aggregate.order.createdAt,
