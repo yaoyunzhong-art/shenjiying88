@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { RequirePermissions, RequireRoles, RequireTenantScope } from '../identity-access/identity-access.decorator'
 import {
   ApprovalDecisionDto,
@@ -16,8 +16,10 @@ import {
   UpsertRateLimitPolicyDto
 } from './trust-governance.dto'
 import { TrustGovernanceService } from './trust-governance.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/trust-governance')
+@UseGuards(TenantGuard)
 @RequireTenantScope()
 export class TrustGovernanceController {
   constructor(private readonly trustGovernanceService: TrustGovernanceService) {}

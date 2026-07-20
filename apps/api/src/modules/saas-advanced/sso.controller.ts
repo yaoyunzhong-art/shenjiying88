@@ -13,6 +13,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common'
 import { SsoService } from './sso.service'
 import type {
@@ -24,6 +25,7 @@ import type {
 } from './sso.dto'
 
 @Controller('saas/sso')
+@UseGuards(TenantGuard)
 export class SsoController {
   constructor(private readonly service: SsoService) {}
 

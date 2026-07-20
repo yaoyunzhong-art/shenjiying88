@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get, Param, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../../tenant/tenant.decorator'
 import type { RequestActorContext, RequestTenantContext } from '../../tenant/tenant.types'
 import {
@@ -8,8 +8,10 @@ import {
   RequireTenantScope
 } from './identity-access.decorator'
 import { IdentityAccessService } from './identity-access.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('identity-access')
+@UseGuards(TenantGuard)
 export class IdentityAccessController {
   constructor(private readonly identityAccessService: IdentityAccessService) {}
 

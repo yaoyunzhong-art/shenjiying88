@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import {
   CurrentActor,
   RequirePermissions,
@@ -39,6 +39,7 @@ const WORKBENCH_ACTION_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'OPERATIONS', 'SE
 const WORKBENCH_SECRET_ROTATION_ROLES = ['SUPER_ADMIN', 'SECURITY_ADMIN'] as const
 
 @Controller('workbenches')
+@UseGuards(TenantGuard)
 export class WorkbenchController {
   constructor(private readonly workbenchService: WorkbenchService) {}
 

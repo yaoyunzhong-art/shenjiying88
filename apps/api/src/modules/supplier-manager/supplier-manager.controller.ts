@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -16,8 +17,10 @@ import {
   UpdateSupplierDto,
 } from './supplier-manager.dto'
 import { SupplierManagerService } from './supplier-manager.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('suppliers')
+@UseGuards(TenantGuard)
 export class SupplierManagerController {
   constructor(private readonly supplierService: SupplierManagerService) {}
 

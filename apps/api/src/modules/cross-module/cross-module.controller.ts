@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { CrossModuleService } from './cross-module.service';
 import type { CrossModuleValidateDto } from './cross-module.dto';
+import { TenantGuard } from '../agent/tenant.guard';
 
 export interface CrossModuleChainStatus {
   chains: {
@@ -15,6 +16,7 @@ export interface CrossModuleChainStatus {
 }
 
 @Controller('cross-module')
+@UseGuards(TenantGuard)
 export class CrossModuleController {
   constructor(private readonly crossModuleService: CrossModuleService) {}
 

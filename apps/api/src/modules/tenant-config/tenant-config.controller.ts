@@ -24,8 +24,10 @@ import {
 import type { ConfigInstance, ConfigItemDefinition, ConfigLevel } from './tenant-config.entity'
 import { BUILTIN_CONFIG_DEFINITIONS, LEVEL_TO_WORKBENCH } from './tenant-config.entity'
 import { requireTenantContext } from '../../common/context/tenant-context'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('tenant-config')
+@UseGuards(TenantGuard)
 export class TenantConfigController {
   constructor(private readonly service: TenantConfigService) {}
 

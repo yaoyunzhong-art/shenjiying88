@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { CashierPaymentCallbackDto } from '../cashier/cashier.dto'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -17,8 +17,10 @@ import {
   ReviewTransactionRefundDto
 } from './transactions.dto'
 import { TransactionsService } from './transactions.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('transactions')
+@UseGuards(TenantGuard)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 

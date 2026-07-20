@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -16,8 +17,10 @@ import {
   UpdateShiftStatusDto,
 } from './shift-scheduler.dto'
 import { ShiftSchedulerService } from './shift-scheduler.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('shift-schedules')
+@UseGuards(TenantGuard)
 export class ShiftSchedulerController {
   constructor(private readonly shiftService: ShiftSchedulerService) {}
 

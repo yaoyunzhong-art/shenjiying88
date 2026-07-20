@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import {
   GovernanceApprovalCancelInput,
@@ -21,6 +21,7 @@ import {
 } from './governance-approval'
 
 @Controller('foundation/governance-approval')
+@UseGuards(TenantGuard)
 export class GovernanceApprovalController {
   constructor(private readonly prisma: PrismaService) {}
 

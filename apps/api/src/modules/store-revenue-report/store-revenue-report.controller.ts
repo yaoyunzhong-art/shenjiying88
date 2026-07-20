@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -14,8 +15,10 @@ import {
   RevenueReportQueryDto,
 } from './store-revenue-report.dto'
 import { StoreRevenueReportService } from './store-revenue-report.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('revenue-reports')
+@UseGuards(TenantGuard)
 export class StoreRevenueReportController {
   constructor(private readonly reportService: StoreRevenueReportService) {}
 

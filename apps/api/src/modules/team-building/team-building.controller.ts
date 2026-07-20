@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import {
   TeamBuildingService,
@@ -19,6 +20,7 @@ import {
 } from './team-building.service'
 
 @Controller('team-building')
+@UseGuards(TenantGuard)
 export class TeamBuildingController {
   constructor(private readonly service: TeamBuildingService) {}
 

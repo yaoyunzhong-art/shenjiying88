@@ -21,6 +21,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
 import { requireTenantContext } from '../../common/context/tenant-context'
 import {
@@ -75,6 +76,7 @@ const DOMAIN_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @ApiTags('saas-domain')
 @Controller('saas/domain')
+@UseGuards(TenantGuard)
 export class CustomDomainController {
   constructor(private readonly service: CustomDomainService) {}
 

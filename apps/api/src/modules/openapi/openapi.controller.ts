@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Query, Param, Injectable, NotFoundException, HttpCode } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Body, Query, Param, Injectable, NotFoundException, HttpCode, UseGuards } from '@nestjs/common'
 import { APIKeyService } from './services/api-key.service'
 import { WebhookService } from './services/webhook.service'
 import { SandboxService } from './services/sandbox.service'
@@ -55,6 +55,7 @@ import type {
  */
 
 @Controller('openapi')
+@UseGuards(TenantGuard)
 @Injectable()
 export class OpenAPIController {
   constructor(

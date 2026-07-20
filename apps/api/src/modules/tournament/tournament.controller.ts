@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -22,8 +23,10 @@ import {
   UpdateTournamentStatusDto
 } from './tournament.dto'
 import { TournamentService } from './tournament.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('tournaments')
+@UseGuards(TenantGuard)
 export class TournamentController {
   constructor(private readonly tournamentService: TournamentService) {}
 

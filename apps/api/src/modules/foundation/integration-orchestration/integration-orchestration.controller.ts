@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { EventListQueryDto, PublishEventDto, WebhookIngestDto } from './integration-orchestration.dto'
 import { IntegrationOrchestrationService } from './integration-orchestration.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/integration-orchestration')
+@UseGuards(TenantGuard)
 export class IntegrationOrchestrationController {
   constructor(private readonly integrationOrchestrationService: IntegrationOrchestrationService) {}
 

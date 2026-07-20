@@ -17,6 +17,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
 import { WebhookService } from './webhook.service'
 import {
@@ -26,8 +27,10 @@ import {
 } from './webhook.dto'
 import { BUILTIN_WEBHOOK_EVENTS, type WebhookEventType } from './webhook.entity'
 import { webhookEventBus } from './webhook.eventbus'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('webhook')
+@UseGuards(TenantGuard)
 export class WebhookController {
   constructor(private readonly service: WebhookService) {}
 

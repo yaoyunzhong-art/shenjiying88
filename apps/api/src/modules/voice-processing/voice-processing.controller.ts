@@ -4,14 +4,17 @@
 
 import {
   Controller, Get, Post, Delete, Param, Body, Query, HttpCode, HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
 import { VoiceProcessingService } from './voice-processing.service'
 import type {
   CreateTtsTaskDto, CreateSttTaskDto, CloneVoiceDto, EnrollVoiceprintDto,
   IdentifySpeakerDto, ListTtsQuery, ListSttQuery,
 } from './voice-processing.dto'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('voice')
+@UseGuards(TenantGuard)
 export class VoiceProcessingController {
   constructor(private readonly service: VoiceProcessingService) {}
 

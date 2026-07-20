@@ -21,12 +21,15 @@ import {
   NotFoundException,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantQuotaService } from './tenant-quota.service'
 import { TenantQuotaParamsDto, UpdateTenantQuotaDto } from './tenant-quota.dto'
 import type { TenantQuota, TenantQuotaUsage } from './tenant-quota.entity'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('tenants')
+@UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class TenantQuotaController {
   constructor(private readonly tenantQuotaService: TenantQuotaService) {}

@@ -8,14 +8,17 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { StoreRankService } from './store-rank.service'
 import { RankQueryDto } from './store-rank.dto'
 import { RankPeriod, RankMetric } from './store-rank.entity'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('store-rank')
+@UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class StoreRankController {
   constructor(private readonly rankService: StoreRankService) {}

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, Req, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query, Param, Req, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { TenantAwareRequest } from './tenant.types'
 import { TenantService } from './tenant.service'
 import { TenantQuotaService } from './tenant-quota.service'
@@ -8,8 +8,10 @@ import { QuotaResourceKind, TenantTier } from './tenant-quota.entity'
 import { TenantLifecycleStatus, TenantStatusReason } from './tenant-lifecycle.entity'
 import type { TenantQuota, TenantQuotaUsage, QuotaCheckResult } from './tenant-quota.entity'
 import type { TenantLifecycleRecord } from './tenant-lifecycle.entity'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('tenant')
+@UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class TenantController {
   constructor(

@@ -12,11 +12,14 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { CreateVenueDto, UpdateVenueDto } from './venue.dto'
 import { VenueService } from './venue.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('venue')
+@UseGuards(TenantGuard)
 export class VenueController {
   constructor(private readonly venueService: VenueService) {}
 

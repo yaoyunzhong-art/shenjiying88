@@ -6,6 +6,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import {
   ApiBearerAuth,
@@ -17,10 +18,12 @@ import {
 import { StockService } from './stock.service'
 import { StockItem } from './stock-item.entity'
 import { StockTransaction, StockTransactionType } from './stock-transaction.entity'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @ApiTags('库存管理')
 @ApiBearerAuth()
 @Controller('stock/items')
+@UseGuards(TenantGuard)
 export class StockController {
   constructor(private readonly stockService: StockService) {}
 

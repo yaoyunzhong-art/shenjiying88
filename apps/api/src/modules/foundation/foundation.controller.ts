@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { CurrentActor, RequirePermissions, RequireRoles, RequireTenantScope, type CurrentActorValue } from './identity-access/identity-access.decorator'
 import { FoundationService } from './foundation.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation')
+@UseGuards(TenantGuard)
 export class FoundationController {
   constructor(private readonly foundationService: FoundationService) {}
 

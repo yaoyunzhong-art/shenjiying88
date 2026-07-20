@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -18,8 +19,10 @@ import {
   UpdateTaskStatusDto,
 } from './task-scheduler.dto'
 import { TaskSchedulerService } from './task-scheduler.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('task-scheduler')
+@UseGuards(TenantGuard)
 export class TaskSchedulerController {
   constructor(private readonly taskService: TaskSchedulerService) {}
 
