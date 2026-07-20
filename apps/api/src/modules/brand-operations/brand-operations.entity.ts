@@ -29,7 +29,14 @@ export interface BrandAsset {
 
 // ── 品牌活动 ─────────────────────────────────────────────────────────────────
 
-export type CampaignStatus = 'draft' | 'active' | 'ended' | 'cancelled'
+export type CampaignStatus = 'draft' | 'pending_review' | 'approved' | 'active' | 'ended' | 'cancelled'
+
+export interface CampaignApproval {
+  reviewerId: string
+  reviewerName: string
+  note: string
+  approvedAt: string
+}
 
 export interface BrandCampaign {
   id: string
@@ -41,6 +48,10 @@ export interface BrandCampaign {
   startDate: string
   endDate: string
   status: CampaignStatus
+  /** 活动审批记录 */
+  approval?: CampaignApproval
+  /** 发布备注/审批意见 */
+  publishNote?: string
   assets: string[]       // BrandAsset.id[]
   coverImageUrl?: string
   createdBy: string
@@ -60,6 +71,58 @@ export interface BrandSyncRecord {
   errorMessage?: string
   syncedAt?: string
   createdAt: string
+}
+
+// ── 联名合作 (Collaboration) ────────────────────────────────────────────────
+
+export type CollaborationType = 'co_branding' | 'sponsorship' | 'joint_promotion' | 'cross_marketing'
+export type PartnerGrade = 'platinum' | 'gold' | 'silver' | 'bronze'
+export type CollaborationStatus = 'draft' | 'negotiating' | 'active' | 'ended' | 'terminated'
+export type RevenueShareType = 'fixed_rate' | 'tiered' | 'fixed_amount' | 'no_share'
+
+export interface RevenueShareConfig {
+  type: RevenueShareType
+  rate?: number
+  tiers?: Array<{ threshold: number; rate: number }>
+  fixedAmount?: number
+  description?: string
+}
+
+export interface PartnerInfo {
+  name: string
+  contactName: string
+  contactPhone: string
+  contactEmail?: string
+  grade: PartnerGrade
+}
+
+export interface Collaboration {
+  id: string
+  tenantId: string
+  brandId: string
+  partner: PartnerInfo
+  type: CollaborationType
+  title: string
+  description: string
+  startDate: string
+  endDate: string
+  status: CollaborationStatus
+  revenueShare: RevenueShareConfig
+  coBrandName?: string
+  campaignIds: string[]
+  terms?: string
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CollaborationMetrics {
+  total: number
+  active: number
+  negotiating: number
+  draftCount: number
+  byGrade: Record<PartnerGrade, number>
+  byType: Record<CollaborationType, number>
 }
 
 // ── 品牌运营统计 ────────────────────────────────────────────────────────────

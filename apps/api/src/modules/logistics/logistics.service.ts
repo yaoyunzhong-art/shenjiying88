@@ -25,6 +25,26 @@ import type {
   RepairOrderEntity,
   RepairOrderStatus
 } from './logistics.entity'
+import type {
+  Supplier,
+  SupplierStatus,
+  CreditLevel,
+  SupplierContract,
+  SupplierEvaluation,
+  SupplierMetrics,
+} from './logistics.supplier.entity'
+import type {
+  InventoryReservation,
+  ReservationStatus,
+  InventoryReservationItem,
+  InventoryCheckResult,
+} from './logistics.inventory.entity'
+import type {
+  SchedulePlan,
+  SchedulePlanStatus,
+  ScheduleTaskLog,
+  SchedulePlanMetrics,
+} from './logistics.schedule.entity'
 
 export interface CreateInspectionTaskInput {
   tenantId: string
@@ -210,6 +230,14 @@ const repairOrderStore = new Map<string, RepairOrderEntity>()
 const materialRequestStore = new Map<string, MaterialRequestEntity>()
 const maintenanceOrderStore = new Map<string, MaintenanceOrderEntity>()
 const procurementRequestStore = new Map<string, ProcurementRequestEntity>()
+
+// ── P-30 Phase 60% new stores ──
+const supplierStore = new Map<string, Supplier>()
+const supplierContractStore = new Map<string, SupplierContract>()
+const supplierEvaluationStore = new Map<string, SupplierEvaluation>()
+const inventoryReservationStore = new Map<string, InventoryReservation>()
+const schedulePlanStore = new Map<string, SchedulePlan>()
+const scheduleTaskLogStore = new Map<string, ScheduleTaskLog>()
 
 @Injectable()
 export class LogisticsService {
@@ -1087,6 +1115,586 @@ export class LogisticsService {
     materialRequestStore.clear()
     maintenanceOrderStore.clear()
     procurementRequestStore.clear()
+    supplierStore.clear()
+    supplierContractStore.clear()
+    supplierEvaluationStore.clear()
+    inventoryReservationStore.clear()
+    schedulePlanStore.clear()
+    scheduleTaskLogStore.clear()
+  }
+
+  // ════════════════════════════════════════════════
+  //  供应商管理 (Supplier) - P-30 Phase 60%
+  // ════════════════════════════════════════════════
+
+  createSupplier(input: {
+    tenantId: string
+    code: string
+    name: string
+    category: string
+    status?: SupplierStatus
+    creditLevel?: CreditLevel
+    address?: string
+    mainProducts?: string[]
+    cooperationYears?: number
+    notes?: string
+  }): Supplier {
+    const now = new Date().toISOString()
+    const supplier: Supplier = {
+      id: `supp-${randomUUID()}`,
+      tenantId: input.tenantId,
+      code: input.code,
+      name: input.name,
+      category: input.category,
+      status: input.status ?? 'active',
+      creditLevel: input.creditLevel ?? 'B',
+      contacts: [],
+      address: input.address,
+      mainProducts: input.mainProducts ?? [],
+      cooperationYears: input.cooperationYears ?? 0,
+      averageScore: 0,
+      evaluationCount: 0,
+      activeContracts: 0,
+      notes: input.notes,
+      createdAt: now,
+      updatedAt: now,
+    }
+    supplierStore.set(supplier.id, supplier)
+    return { ...supplier, contacts: [...supplier.contacts] }
+  }
+
+  getSupplier(id: string, tenantId: string): Supplier | undefined {
+    const s = supplierStore.get(id)
+    if (!s || s.tenantId !== tenantId) return undefined
+    return { ...s, contacts: [...s.contacts] }
+  }
+
+  listSuppliers(
+    tenantId: string,
+    filter?: {
+      status?: SupplierStatus
+      creditLevel?: CreditLevel
+      category?: string
+      search?: string
+    },
+  ): Supplier[] {
+    return Array.from(supplierStore.values())
+      .filter((s) => s.tenantId === tenantId)
+      .filter((s) => (filter?.status ? s.status === filter.status : true))
+      .filter((s) => (filter?.creditLevel ? s.creditLevel === filter.creditLevel : true))
+      .filter((s) => (filter?.category ? s.category === filter.category : true))
+      .filter((s) =>
+        filter?.search
+          ? s.name.toLowerCase().includes(filter.search.toLowerCase()) ||
+            s.code.toLowerCase().includes(filter.search.toLowerCase())
+          : true,
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((s) => ({ ...s, contacts: [...s.contacts] }))
+  }
+
+  updateSupplier(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<Supplier, 'name' | 'category' | 'status' | 'creditLevel' | 'address' | 'mainProducts' | 'cooperationYears' | 'notes'>>,
+  ): Supplier {
+    const s = this.assertSupplierOwned(id, tenantId)
+    const updated: Supplier = {
+      ...s,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    supplierStore.set(id, updated)
+    return { ...updated, contacts: [...updated.contacts] }
+  }
+
+  deleteSupplier(id: string, tenantId: string): boolean {
+    const s = this.getSupplier(id, tenantId)
+    if (!s) return false
+    supplierStore.delete(id)
+    return true
+  }
+
+  addSupplierContact(
+    supplierId: string,
+    tenantId: string,
+    contact: { name: string; phone: string; email?: string; position?: string },
+  ): Supplier {
+    const s = this.assertSupplierOwned(supplierId, tenantId)
+    s.contacts.push({
+      name: contact.name,
+      phone: contact.phone,
+      email: contact.email,
+      position: contact.position,
+    })
+    s.updatedAt = new Date().toISOString()
+    supplierStore.set(supplierId, s)
+    return { ...s, contacts: [...s.contacts] }
+  }
+
+  addSupplierContract(
+    supplierId: string,
+    tenantId: string,
+    input: {
+      type: 'annual' | 'quarterly' | 'project' | 'one_time'
+      contractNumber: string
+      startDate: string
+      endDate: string
+      amount: number
+      autoRenew?: boolean
+      terms?: string
+      signedAt?: string
+    },
+  ): SupplierContract {
+    const s = this.assertSupplierOwned(supplierId, tenantId)
+    const now = new Date().toISOString()
+    const contract: SupplierContract = {
+      id: `scont-${randomUUID()}`,
+      supplierId,
+      type: input.type,
+      contractNumber: input.contractNumber,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      amount: input.amount,
+      autoRenew: input.autoRenew ?? false,
+      terms: input.terms,
+      signedAt: input.signedAt ?? now,
+    }
+    supplierContractStore.set(contract.id, contract)
+    s.activeContracts = Array.from(supplierContractStore.values()).filter(
+      (c) => c.supplierId === supplierId && new Date(c.endDate) > new Date(),
+    ).length
+    s.updatedAt = now
+    supplierStore.set(supplierId, s)
+    return { ...contract }
+  }
+
+  listSupplierContracts(supplierId: string, tenantId: string): SupplierContract[] {
+    this.assertSupplierOwned(supplierId, tenantId)
+    return Array.from(supplierContractStore.values())
+      .filter((c) => c.supplierId === supplierId)
+      .sort((a, b) => b.startDate.localeCompare(a.startDate))
+      .map((c) => ({ ...c }))
+  }
+
+  evaluateSupplier(
+    supplierId: string,
+    tenantId: string,
+    input: {
+      evaluatorId: string
+      evaluatorName: string
+      qualityScore: number
+      deliveryScore: number
+      serviceScore: number
+      priceScore: number
+      comment: string
+    },
+  ): SupplierEvaluation {
+    const s = this.assertSupplierOwned(supplierId, tenantId)
+    const now = new Date().toISOString()
+    const evaluation: SupplierEvaluation = {
+      id: `seval-${randomUUID()}`,
+      supplierId,
+      evaluatorId: input.evaluatorId,
+      evaluatorName: input.evaluatorName,
+      qualityScore: input.qualityScore,
+      deliveryScore: input.deliveryScore,
+      serviceScore: input.serviceScore,
+      priceScore: input.priceScore,
+      comment: input.comment,
+      evaluatedAt: now,
+    }
+    supplierEvaluationStore.set(evaluation.id, evaluation)
+
+    // Recalculate average
+    const allEvals = Array.from(supplierEvaluationStore.values()).filter((e) => e.supplierId === supplierId)
+    const avg =
+      allEvals.reduce((sum, e) => sum + e.qualityScore + e.deliveryScore + e.serviceScore + e.priceScore, 0) /
+      (allEvals.length * 4)
+    s.averageScore = Math.round(avg * 10) / 10
+    s.evaluationCount = allEvals.length
+    s.updatedAt = now
+    supplierStore.set(supplierId, s)
+    return { ...evaluation }
+  }
+
+  listSupplierEvaluations(supplierId: string, tenantId: string): SupplierEvaluation[] {
+    this.assertSupplierOwned(supplierId, tenantId)
+    return Array.from(supplierEvaluationStore.values())
+      .filter((e) => e.supplierId === supplierId)
+      .sort((a, b) => b.evaluatedAt.localeCompare(a.evaluatedAt))
+      .map((e) => ({ ...e }))
+  }
+
+  getSupplierMetrics(tenantId: string): SupplierMetrics {
+    const suppliers = Array.from(supplierStore.values()).filter((s) => s.tenantId === tenantId)
+    const byCreditLevel: Record<CreditLevel, number> = { A: 0, B: 0, C: 0, D: 0 }
+    const byCategory: Record<string, number> = {}
+    let avgScoreSum = 0
+    let avgScoreCount = 0
+    for (const s of suppliers) {
+      byCreditLevel[s.creditLevel] = (byCreditLevel[s.creditLevel] ?? 0) + 1
+      byCategory[s.category] = (byCategory[s.category] ?? 0) + 1
+      if (s.evaluationCount > 0) {
+        avgScoreSum += s.averageScore
+        avgScoreCount++
+      }
+    }
+    const totalContracts = Array.from(supplierContractStore.values()).filter(
+      (c) => suppliers.some((s) => s.id === c.supplierId),
+    ).length
+    const activeContracts = Array.from(supplierContractStore.values()).filter(
+      (c) =>
+        suppliers.some((s) => s.id === c.supplierId) && new Date(c.endDate) > new Date(),
+    ).length
+    return {
+      total: suppliers.length,
+      active: suppliers.filter((s) => s.status === 'active').length,
+      byCreditLevel,
+      byCategory,
+      avgScore: avgScoreCount > 0 ? Math.round((avgScoreSum / avgScoreCount) * 10) / 10 : 0,
+      totalContracts,
+      activeContracts,
+    }
+  }
+
+  // ════════════════════════════════════════════════
+  //  库存预留 (Inventory Reservation) - P-30 Phase 60%
+  // ════════════════════════════════════════════════
+
+  checkInventoryAvailability(
+    tenantId: string,
+    items: Array<{ itemId: string; itemName: string; quantity: number }>,
+    warehouseCode?: string,
+  ): InventoryCheckResult[] {
+    // Simulated inventory check
+    const simulatedStock: Record<string, number> = {
+      'STK-005': 50,
+      'STK-008': 100,
+      'STK-012': 30,
+      'STK-020': 10,
+      'STK-025': 200,
+    }
+    return items.map((item) => {
+      const available = simulatedStock[item.itemId] ?? 0
+      return {
+        itemId: item.itemId,
+        itemName: item.itemName,
+        requestedQuantity: item.quantity,
+        availableQuantity: available,
+        sufficient: available >= item.quantity,
+        warehouseCode: warehouseCode ?? 'WH-MAIN',
+      }
+    })
+  }
+
+  createInventoryReservation(input: {
+    tenantId: string
+    materialRequestId?: string
+    procurementRequestId?: string
+    warehouseCode: string
+    expiresAt: string
+    operatorId: string
+    operatorName: string
+    note?: string
+    items: Array<{
+      itemId: string
+      itemName: string
+      category: string
+      quantity: number
+      unit: string
+    }>
+  }): InventoryReservation {
+    // Check availability first
+    const checks = this.checkInventoryAvailability(
+      input.tenantId,
+      input.items.map((i) => ({ itemId: i.itemId, itemName: i.itemName, quantity: i.quantity })),
+      input.warehouseCode,
+    )
+    const insufficient = checks.filter((c) => !c.sufficient)
+    if (insufficient.length > 0) {
+      throw new Error(
+        `Insufficient inventory: ${insufficient.map((c) => `${c.itemName} (need ${c.requestedQuantity}, avail ${c.availableQuantity})`).join(', ')}`,
+      )
+    }
+
+    const now = new Date().toISOString()
+    const reservation: InventoryReservation = {
+      id: `res-${randomUUID()}`,
+      tenantId: input.tenantId,
+      materialRequestId: input.materialRequestId,
+      procurementRequestId: input.procurementRequestId,
+      reservationCode: `RES-${Date.now().toString(36).toUpperCase()}`,
+      status: 'active',
+      items: input.items.map((i) => ({ ...i })),
+      warehouseCode: input.warehouseCode,
+      expiresAt: input.expiresAt,
+      operatorId: input.operatorId,
+      operatorName: input.operatorName,
+      note: input.note,
+      createdAt: now,
+      updatedAt: now,
+    }
+    inventoryReservationStore.set(reservation.id, reservation)
+    return {
+      ...reservation,
+      items: reservation.items.map((i) => ({ ...i })),
+    }
+  }
+
+  getInventoryReservation(id: string, tenantId: string): InventoryReservation | undefined {
+    const r = inventoryReservationStore.get(id)
+    if (!r || r.tenantId !== tenantId) return undefined
+    return { ...r, items: r.items.map((i) => ({ ...i })) }
+  }
+
+  listInventoryReservations(
+    tenantId: string,
+    filter?: { status?: ReservationStatus; warehouseCode?: string; materialRequestId?: string },
+  ): InventoryReservation[] {
+    return Array.from(inventoryReservationStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .filter((r) => (filter?.status ? r.status === filter.status : true))
+      .filter((r) => (filter?.warehouseCode ? r.warehouseCode === filter.warehouseCode : true))
+      .filter((r) => (filter?.materialRequestId ? r.materialRequestId === filter.materialRequestId : true))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((r) => ({ ...r, items: r.items.map((i) => ({ ...i })) }))
+  }
+
+  cancelInventoryReservation(id: string, tenantId: string): InventoryReservation {
+    const r = inventoryReservationStore.get(id)
+    if (!r || r.tenantId !== tenantId) throw new Error(`Inventory reservation not found: ${id}`)
+    if (r.status !== 'active') {
+      throw new Error(`Cannot cancel reservation with status ${r.status}`)
+    }
+    r.status = 'cancelled'
+    r.updatedAt = new Date().toISOString()
+    inventoryReservationStore.set(id, r)
+    return { ...r, items: r.items.map((i) => ({ ...i })) }
+  }
+
+  fulfillInventoryReservation(id: string, tenantId: string): InventoryReservation {
+    const r = inventoryReservationStore.get(id)
+    if (!r || r.tenantId !== tenantId) throw new Error(`Inventory reservation not found: ${id}`)
+    if (r.status !== 'active') {
+      throw new Error(`Cannot fulfill reservation with status ${r.status}`)
+    }
+    r.status = 'fulfilled'
+    r.updatedAt = new Date().toISOString()
+    inventoryReservationStore.set(id, r)
+    return { ...r, items: r.items.map((i) => ({ ...i })) }
+  }
+
+  // ════════════════════════════════════════════════
+  //  设备巡检定时调度 (SchedulePlan) - P-30 Phase 60%
+  // ════════════════════════════════════════════════
+
+  createSchedulePlan(input: {
+    tenantId: string
+    storeId?: string
+    name: string
+    equipmentId: string
+    equipmentName: string
+    checkType: string
+    cronExpression: string
+    assigneeId: string
+    assigneeName: string
+    notes?: string
+  }): SchedulePlan {
+    const now = new Date().toISOString()
+    const plan: SchedulePlan = {
+      id: `splan-${randomUUID()}`,
+      tenantId: input.tenantId,
+      storeId: input.storeId,
+      name: input.name,
+      equipmentId: input.equipmentId,
+      equipmentName: input.equipmentName,
+      checkType: input.checkType,
+      cronExpression: input.cronExpression,
+      assigneeId: input.assigneeId,
+      assigneeName: input.assigneeName,
+      status: 'active',
+      notes: input.notes,
+      createdBy: input.tenantId,
+      createdAt: now,
+      updatedAt: now,
+    }
+    schedulePlanStore.set(plan.id, plan)
+    return { ...plan }
+  }
+
+  getSchedulePlan(id: string, tenantId: string): SchedulePlan | undefined {
+    const plan = schedulePlanStore.get(id)
+    if (!plan || plan.tenantId !== tenantId) return undefined
+    return { ...plan }
+  }
+
+  listSchedulePlans(
+    tenantId: string,
+    filter?: { status?: SchedulePlanStatus; equipmentId?: string; checkType?: string; assigneeId?: string },
+  ): SchedulePlan[] {
+    return Array.from(schedulePlanStore.values())
+      .filter((p) => p.tenantId === tenantId)
+      .filter((p) => (filter?.status ? p.status === filter.status : true))
+      .filter((p) => (filter?.equipmentId ? p.equipmentId === filter.equipmentId : true))
+      .filter((p) => (filter?.checkType ? p.checkType === filter.checkType : true))
+      .filter((p) => (filter?.assigneeId ? p.assigneeId === filter.assigneeId : true))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((p) => ({ ...p }))
+  }
+
+  updateSchedulePlan(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<SchedulePlan, 'name' | 'status' | 'cronExpression' | 'assigneeId' | 'assigneeName' | 'notes' | 'nextRunAt'>>,
+  ): SchedulePlan {
+    const plan = this.assertSchedulePlanOwned(id, tenantId)
+    const updated: SchedulePlan = {
+      ...plan,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    schedulePlanStore.set(id, updated)
+    return { ...updated }
+  }
+
+  deleteSchedulePlan(id: string, tenantId: string): boolean {
+    const plan = this.getSchedulePlan(id, tenantId)
+    if (!plan) return false
+    schedulePlanStore.delete(id)
+    return true
+  }
+
+  /** 执行调度计划，生成检查日志 */
+  executeSchedulePlan(
+    id: string,
+    tenantId: string,
+    input: {
+      executorId: string
+      executorName: string
+      resultStatus?: 'normal' | 'warning' | 'fault'
+      resultNote?: string
+    },
+  ): ScheduleTaskLog {
+    const plan = this.assertSchedulePlanOwned(id, tenantId)
+    const now = new Date().toISOString()
+
+    const log: ScheduleTaskLog = {
+      id: `slog-${randomUUID()}`,
+      planId: id,
+      tenantId,
+      equipmentId: plan.equipmentId,
+      equipmentName: plan.equipmentName,
+      status: 'completed',
+      resultStatus: input.resultStatus ?? 'normal',
+      resultNote: input.resultNote,
+      executorId: input.executorId,
+      executorName: input.executorName,
+      scheduledAt: plan.nextRunAt ?? now,
+      executedAt: now,
+      createdAt: now,
+    }
+    scheduleTaskLogStore.set(log.id, log)
+
+    plan.lastRunAt = now
+    plan.updatedAt = now
+    schedulePlanStore.set(id, plan)
+
+    return { ...log }
+  }
+
+  listScheduleTaskLogs(
+    planId: string,
+    tenantId: string,
+    limit = 20,
+  ): ScheduleTaskLog[] {
+    return Array.from(scheduleTaskLogStore.values())
+      .filter((l) => l.planId === planId && l.tenantId === tenantId)
+      .sort((a, b) => b.executedAt!.localeCompare(a.executedAt!))
+      .slice(0, limit)
+      .map((l) => ({ ...l }))
+  }
+
+  getSchedulePlanMetrics(tenantId: string): SchedulePlanMetrics {
+    const plans = Array.from(schedulePlanStore.values()).filter((p) => p.tenantId === tenantId)
+    const logs = Array.from(scheduleTaskLogStore.values()).filter((l) => l.tenantId === tenantId)
+    return {
+      total: plans.length,
+      active: plans.filter((p) => p.status === 'active').length,
+      paused: plans.filter((p) => p.status === 'paused').length,
+      totalExecutions: logs.length,
+      completedExecutions: logs.filter((l) => l.status === 'completed').length,
+      failedExecutions: logs.filter((l) => l.status === 'failed').length,
+    }
+  }
+
+  /** 基于cron表达式计算下次执行时间 */
+  computeNextRun(
+    planId: string,
+    tenantId: string,
+    referenceTime: string = new Date().toISOString(),
+  ): SchedulePlan {
+    const plan = this.assertSchedulePlanOwned(planId, tenantId)
+    // Simple cron simulation: advance by interval based on cron parts
+    // For the purpose of P-30 Phase 60%, we simulate by advancing time
+    const parts = plan.cronExpression.split(/\s+/)
+    const ref = new Date(referenceTime)
+    let next = new Date(ref)
+
+    if (parts.length >= 5) {
+      const [, , dayOfMonth, , dayOfWeek] = parts
+      if (dayOfWeek === '*' && dayOfMonth === '*') {
+        // Daily: next run = tomorrow
+        next.setDate(next.getDate() + 1)
+      } else if (dayOfWeek !== '*') {
+        // Weekly: +7 days
+        next.setDate(next.getDate() + 7)
+      } else if (dayOfMonth !== '*') {
+        // Monthly: +30 days
+        next.setDate(next.getDate() + 30)
+      } else {
+        next.setDate(next.getDate() + 1)
+      }
+    } else {
+      next.setDate(next.getDate() + 1)
+    }
+
+    plan.nextRunAt = next.toISOString()
+    plan.updatedAt = ref.toISOString()
+    schedulePlanStore.set(planId, plan)
+    return { ...plan }
+  }
+
+  /** 批量扫描并触发到期的调度计划 */
+  sweepDueSchedules(now: string = new Date().toISOString()): {
+    scanned: number
+    triggered: number
+    logs: ScheduleTaskLog[]
+  } {
+    const duePlans = Array.from(schedulePlanStore.values())
+      .filter((p) => p.status === 'active')
+      .filter(
+        (p) =>
+          !p.nextRunAt || new Date(p.nextRunAt) <= new Date(now),
+      )
+
+    const logs: ScheduleTaskLog[] = []
+    for (const plan of duePlans) {
+      const log = this.executeSchedulePlan(plan.id, plan.tenantId, {
+        executorId: plan.assigneeId,
+        executorName: plan.assigneeName,
+        resultStatus: undefined, // auto-trigger, no result yet
+        resultNote: 'Auto-triggered by sweep',
+      })
+      logs.push(log)
+      this.computeNextRun(plan.id, plan.tenantId, now)
+    }
+
+    return {
+      scanned: duePlans.length,
+      triggered: logs.length,
+      logs,
+    }
   }
 
   private assertOwned(id: string, tenantId: string): InspectionTaskEntity {
@@ -1169,6 +1777,22 @@ export class LogisticsService {
       unit,
       quantity: item.quantity
     }
+  }
+
+  private assertSupplierOwned(id: string, tenantId: string): Supplier {
+    const s = supplierStore.get(id)
+    if (!s || s.tenantId !== tenantId) {
+      throw new Error(`Supplier not found: ${id}`)
+    }
+    return s
+  }
+
+  private assertSchedulePlanOwned(id: string, tenantId: string): SchedulePlan {
+    const plan = schedulePlanStore.get(id)
+    if (!plan || plan.tenantId !== tenantId) {
+      throw new Error(`Schedule plan not found: ${id}`)
+    }
+    return plan
   }
 
   private normalizeTimestamp(raw: string | undefined, errorMessage: string): string {

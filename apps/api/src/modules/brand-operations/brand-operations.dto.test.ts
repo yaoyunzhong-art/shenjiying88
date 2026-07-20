@@ -12,6 +12,6 @@ describe('BrandOperations DTO Enums', () => {
 
   it('should have all campaign statuses', () => {
     const statuses = Object.values(CampaignStatusEnum)
-    expect(statuses).toEqual(['draft', 'active', 'ended', 'cancelled'])
+    expect(statuses).toEqual(['draft', 'pending_review', 'approved', 'active', 'ended', 'cancelled'])
   })
 })

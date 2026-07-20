@@ -17,6 +17,16 @@ import type {
   ProcurementRequestStatus,
   RepairOrderStatus
 } from './logistics.entity'
+import type {
+  SupplierStatus,
+  CreditLevel,
+} from './logistics.supplier.entity'
+import type {
+  ReservationStatus,
+} from './logistics.inventory.entity'
+import type {
+  SchedulePlanStatus,
+} from './logistics.schedule.entity'
 
 @Controller('logistics')
 export class LogisticsController {
@@ -394,5 +404,279 @@ export class LogisticsController {
     @Body() body: { receivedBy: string; receivedByName: string; note?: string }
   ) {
     return this.logisticsService.receiveProcurementRequest(id, tenantId, body)
+  }
+
+  // ═══════════════════════════════════════════
+  //  供应商管理 (Supplier) - P-30 Phase 60%
+  // ═══════════════════════════════════════════
+
+  @Post('suppliers')
+  createSupplier(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      code: string
+      name: string
+      category: string
+      status?: SupplierStatus
+      creditLevel?: CreditLevel
+      address?: string
+      mainProducts?: string[]
+      cooperationYears?: number
+      notes?: string
+    }
+  ) {
+    return this.logisticsService.createSupplier({ tenantId, ...body })
+  }
+
+  @Get('suppliers')
+  listSuppliers(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('status') status?: SupplierStatus,
+    @Query('creditLevel') creditLevel?: CreditLevel,
+    @Query('category') category?: string,
+    @Query('search') search?: string
+  ) {
+    return this.logisticsService.listSuppliers(tenantId, { status, creditLevel, category, search })
+  }
+
+  @Get('suppliers/:id')
+  getSupplier(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getSupplier(id, tenantId) ?? null
+  }
+
+  @Patch('suppliers/:id')
+  updateSupplier(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: any
+  ) {
+    return this.logisticsService.updateSupplier(id, tenantId, body)
+  }
+
+  @Delete('suppliers/:id')
+  deleteSupplier(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    const result = this.logisticsService.deleteSupplier(id, tenantId)
+    return { success: result }
+  }
+
+  @Post('suppliers/:id/contacts')
+  addSupplierContact(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { name: string; phone: string; email?: string; position?: string }
+  ) {
+    return this.logisticsService.addSupplierContact(id, tenantId, body)
+  }
+
+  @Post('suppliers/:id/contracts')
+  addSupplierContract(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      type: 'annual' | 'quarterly' | 'project' | 'one_time'
+      contractNumber: string
+      startDate: string
+      endDate: string
+      amount: number
+      autoRenew?: boolean
+      terms?: string
+      signedAt?: string
+    }
+  ) {
+    return this.logisticsService.addSupplierContract(id, tenantId, body)
+  }
+
+  @Get('suppliers/:id/contracts')
+  listSupplierContracts(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.listSupplierContracts(id, tenantId)
+  }
+
+  @Post('suppliers/:id/evaluations')
+  evaluateSupplier(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      evaluatorId: string
+      evaluatorName: string
+      qualityScore: number
+      deliveryScore: number
+      serviceScore: number
+      priceScore: number
+      comment: string
+    }
+  ) {
+    return this.logisticsService.evaluateSupplier(id, tenantId, body)
+  }
+
+  @Get('suppliers/:id/evaluations')
+  listSupplierEvaluations(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.listSupplierEvaluations(id, tenantId)
+  }
+
+  @Get('suppliers/metrics')
+  getSupplierMetrics(@Headers('x-tenant-id') tenantId: string) {
+    return this.logisticsService.getSupplierMetrics(tenantId)
+  }
+
+  // ═══════════════════════════════════════════
+  //  库存预留 (Inventory Reservation) - P-30 Phase 60%
+  // ═══════════════════════════════════════════
+
+  @Post('inventory/check')
+  checkInventory(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      items: Array<{ itemId: string; itemName: string; quantity: number }>
+      warehouseCode?: string
+    }
+  ) {
+    return this.logisticsService.checkInventoryAvailability(tenantId, body.items, body.warehouseCode)
+  }
+
+  @Post('inventory/reservations')
+  createReservation(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      materialRequestId?: string
+      procurementRequestId?: string
+      warehouseCode: string
+      expiresAt: string
+      operatorId: string
+      operatorName: string
+      note?: string
+      items: Array<{
+        itemId: string
+        itemName: string
+        category: string
+        quantity: number
+        unit: string
+      }>
+    }
+  ) {
+    return this.logisticsService.createInventoryReservation({ tenantId, ...body })
+  }
+
+  @Get('inventory/reservations')
+  listReservations(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('status') status?: ReservationStatus,
+    @Query('warehouseCode') warehouseCode?: string,
+    @Query('materialRequestId') materialRequestId?: string
+  ) {
+    return this.logisticsService.listInventoryReservations(tenantId, {
+      status,
+      warehouseCode,
+      materialRequestId,
+    })
+  }
+
+  @Get('inventory/reservations/:id')
+  getReservation(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getInventoryReservation(id, tenantId) ?? null
+  }
+
+  @Post('inventory/reservations/:id/cancel')
+  cancelReservation(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.cancelInventoryReservation(id, tenantId)
+  }
+
+  @Post('inventory/reservations/:id/fulfill')
+  fulfillReservation(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.fulfillInventoryReservation(id, tenantId)
+  }
+
+  // ═══════════════════════════════════════════
+  //  设备巡检定时调度 (SchedulePlan) - P-30 Phase 60%
+  // ═══════════════════════════════════════════
+
+  @Post('schedule-plans')
+  createSchedulePlan(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      name: string
+      equipmentId: string
+      equipmentName: string
+      checkType: string
+      cronExpression: string
+      assigneeId: string
+      assigneeName: string
+      storeId?: string
+      notes?: string
+    }
+  ) {
+    return this.logisticsService.createSchedulePlan({ tenantId, ...body })
+  }
+
+  @Get('schedule-plans')
+  listSchedulePlans(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('status') status?: SchedulePlanStatus,
+    @Query('equipmentId') equipmentId?: string,
+    @Query('checkType') checkType?: string,
+    @Query('assigneeId') assigneeId?: string
+  ) {
+    return this.logisticsService.listSchedulePlans(tenantId, { status, equipmentId, checkType, assigneeId })
+  }
+
+  @Get('schedule-plans/:id')
+  getSchedulePlan(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getSchedulePlan(id, tenantId) ?? null
+  }
+
+  @Patch('schedule-plans/:id')
+  updateSchedulePlan(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: any
+  ) {
+    return this.logisticsService.updateSchedulePlan(id, tenantId, body)
+  }
+
+  @Delete('schedule-plans/:id')
+  deleteSchedulePlan(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    const result = this.logisticsService.deleteSchedulePlan(id, tenantId)
+    return { success: result }
+  }
+
+  @Post('schedule-plans/:id/compute-next-run')
+  computeNextRun(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { referenceTime?: string }
+  ) {
+    return this.logisticsService.computeNextRun(id, tenantId, body.referenceTime)
+  }
+
+  @Post('schedule-plans/sweep')
+  sweepDueSchedules(@Body() body: { now?: string }) {
+    return this.logisticsService.sweepDueSchedules(body.now)
+  }
+
+  @Post('schedule-plans/:id/execute')
+  executeSchedulePlan(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: {
+      executorId: string
+      executorName: string
+      resultStatus?: 'normal' | 'warning' | 'fault'
+      resultNote?: string
+    }
+  ) {
+    return this.logisticsService.executeSchedulePlan(id, tenantId, body)
+  }
+
+  @Get('schedule-plans/:id/logs')
+  listScheduleTaskLogs(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Query('limit') limit?: string
+  ) {
+    return this.logisticsService.listScheduleTaskLogs(id, tenantId, limit ? parseInt(limit, 10) : 20)
+  }
+
+  @Get('schedule-plans/metrics')
+  getSchedulePlanMetrics(@Headers('x-tenant-id') tenantId: string) {
+    return this.logisticsService.getSchedulePlanMetrics(tenantId)
   }
 }

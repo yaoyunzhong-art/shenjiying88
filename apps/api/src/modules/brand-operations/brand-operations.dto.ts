@@ -6,6 +6,9 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsNumber,
+  Min,
+  Max,
   MinLength,
   MaxLength,
   ArrayMinSize,
@@ -24,6 +27,8 @@ export enum BrandAssetTypeEnum {
 
 export enum CampaignStatusEnum {
   DRAFT = 'draft',
+  PENDING_REVIEW = 'pending_review',
+  APPROVED = 'approved',
   ACTIVE = 'active',
   ENDED = 'ended',
   CANCELLED = 'cancelled',
@@ -82,6 +87,41 @@ export class UpdateBrandAssetDto {
 }
 
 // ── 创建活动 DTO ─────────────────────────────────────────────────────────────
+
+export class ApproveCampaignDto {
+  @IsString()
+  @IsNotEmpty()
+  reviewerId!: string
+
+  @IsString()
+  @IsNotEmpty()
+  reviewerName!: string
+
+  @IsString()
+  @IsNotEmpty()
+  note!: string
+}
+
+export class RejectCampaignDto {
+  @IsString()
+  @IsNotEmpty()
+  reviewerId!: string
+
+  @IsString()
+  @IsNotEmpty()
+  reviewerName!: string
+
+  @IsString()
+  @IsNotEmpty()
+  reason!: string
+}
+
+export class PublishCampaignDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  publishNote?: string
+}
 
 export class CreateBrandCampaignDto {
   @IsString()
@@ -286,6 +326,221 @@ export class QueryBrandCampaignTemplateDto {
   @IsOptional()
   @IsBoolean()
   published?: boolean
+
+  @IsOptional()
+  @IsString()
+  search?: string
+}
+
+// ════════════════════════════════════════════════════
+//  ✨ P-47 Phase 60%: 联名合作 DTOs
+// ════════════════════════════════════════════════════
+
+export enum CollaborationTypeEnum {
+  CO_BRANDING = 'co_branding',
+  SPONSORSHIP = 'sponsorship',
+  JOINT_PROMOTION = 'joint_promotion',
+  CROSS_MARKETING = 'cross_marketing',
+}
+
+export enum PartnerGradeEnum {
+  PLATINUM = 'platinum',
+  GOLD = 'gold',
+  SILVER = 'silver',
+  BRONZE = 'bronze',
+}
+
+export enum CollaborationStatusEnum {
+  DRAFT = 'draft',
+  NEGOTIATING = 'negotiating',
+  ACTIVE = 'active',
+  ENDED = 'ended',
+  TERMINATED = 'terminated',
+}
+
+export enum RevenueShareTypeEnum {
+  FIXED_RATE = 'fixed_rate',
+  TIERED = 'tiered',
+  FIXED_AMOUNT = 'fixed_amount',
+  NO_SHARE = 'no_share',
+}
+
+export class CreateCollaborationDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(200)
+  title!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  description!: string
+
+  @IsEnum(CollaborationTypeEnum)
+  type!: CollaborationTypeEnum
+
+  // Partner info
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  partnerName!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  partnerContactName!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(30)
+  partnerContactPhone!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  partnerContactEmail?: string
+
+  @IsEnum(PartnerGradeEnum)
+  partnerGrade!: PartnerGradeEnum
+
+  // Revenue share
+  @IsEnum(RevenueShareTypeEnum)
+  revenueShareType!: RevenueShareTypeEnum
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  revenueShareRate?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  revenueShareFixedAmount?: number
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  revenueShareDescription?: string
+
+  // Date range
+  @IsDateString()
+  startDate!: string
+
+  @IsDateString()
+  endDate!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  coBrandName?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[]
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(3000)
+  terms?: string
+}
+
+export class UpdateCollaborationDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  title?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string
+
+  @IsOptional()
+  @IsEnum(CollaborationTypeEnum)
+  type?: CollaborationTypeEnum
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  partnerContactName?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  partnerContactPhone?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  partnerContactEmail?: string
+
+  @IsOptional()
+  @IsEnum(PartnerGradeEnum)
+  partnerGrade?: PartnerGradeEnum
+
+  @IsOptional()
+  @IsEnum(RevenueShareTypeEnum)
+  revenueShareType?: RevenueShareTypeEnum
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  revenueShareRate?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  revenueShareFixedAmount?: number
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  revenueShareDescription?: string
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string
+
+  @IsOptional()
+  @IsEnum(CollaborationStatusEnum)
+  status?: CollaborationStatusEnum
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  coBrandName?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[]
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(3000)
+  terms?: string
+}
+
+export class QueryCollaborationDto {
+  @IsOptional()
+  @IsEnum(CollaborationStatusEnum)
+  status?: CollaborationStatusEnum
+
+  @IsOptional()
+  @IsEnum(CollaborationTypeEnum)
+  type?: CollaborationTypeEnum
+
+  @IsOptional()
+  @IsEnum(PartnerGradeEnum)
+  grade?: PartnerGradeEnum
 
   @IsOptional()
   @IsString()

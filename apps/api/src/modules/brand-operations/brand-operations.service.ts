@@ -4,11 +4,20 @@ import type {
   BrandAsset,
   BrandAssetType,
   BrandCampaign,
+  CampaignApproval,
   CampaignStatus,
   BrandSyncRecord,
   SyncStatus,
   BrandCampaignTemplate,
   BrandOperationsMetrics,
+  Collaboration,
+  CollaborationStatus,
+  CollaborationType,
+  PartnerGrade,
+  RevenueShareConfig,
+  RevenueShareType,
+  CollaborationMetrics,
+  PartnerInfo,
 } from './brand-operations.entity'
 
 // ── In-memory stores (Phase-47 骨架阶段,后续替换为 Prisma) ──
@@ -17,6 +26,7 @@ const assetStore = new Map<string, BrandAsset>()
 const campaignStore = new Map<string, BrandCampaign>()
 const syncStore = new Map<string, BrandSyncRecord>()
 const templateStore = new Map<string, BrandCampaignTemplate>()
+const collaborationStore = new Map<string, Collaboration>()
 
 // ── 导入/导出给测试重置 ──
 export function resetBrandOpsStoresForTests(): void {
@@ -24,9 +34,10 @@ export function resetBrandOpsStoresForTests(): void {
   campaignStore.clear()
   syncStore.clear()
   templateStore.clear()
+  collaborationStore.clear()
 }
 
-export const _testonly = { assetStore, campaignStore, syncStore, templateStore }
+export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore }
 
 // ── 创建/更新本地方法 ──
 
@@ -419,10 +430,100 @@ export class BrandOperationsService {
     }
   }
 
+  /** 提交审批: draft → pending_review */
+  submitCampaignForReview(campaignId: string, tenantId: string): BrandCampaign {
+    const camp = this.getCampaign(campaignId, tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${campaignId}`)
+    if (camp.status !== 'draft') {
+      throw new Error(`Cannot submit: campaign status is ${camp.status}`)
+    }
+    const updated: BrandCampaign = {
+      ...camp,
+      status: 'pending_review',
+      updatedAt: new Date().toISOString(),
+    }
+    campaignStore.set(campaignId, updated)
+    return updated
+  }
+
+  /** 审批通过: pending_review → approved */
+  approveCampaign(
+    campaignId: string,
+    tenantId: string,
+    input: { reviewerId: string; reviewerName: string; note: string },
+  ): BrandCampaign {
+    const camp = this.getCampaign(campaignId, tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${campaignId}`)
+    if (camp.status !== 'pending_review') {
+      throw new Error(`Cannot approve: campaign status is ${camp.status}`)
+    }
+    const now = new Date().toISOString()
+    const approval: CampaignApproval = {
+      reviewerId: input.reviewerId,
+      reviewerName: input.reviewerName,
+      note: input.note,
+      approvedAt: now,
+    }
+    const updated: BrandCampaign = {
+      ...camp,
+      status: 'approved',
+      approval,
+      updatedAt: now,
+    }
+    campaignStore.set(campaignId, updated)
+    return updated
+  }
+
+  /** 打回: pending_review → draft */
+  rejectCampaign(
+    campaignId: string,
+    tenantId: string,
+    input: { reviewerId: string; reviewerName: string; reason: string },
+  ): BrandCampaign {
+    const camp = this.getCampaign(campaignId, tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${campaignId}`)
+    if (camp.status !== 'pending_review') {
+      throw new Error(`Cannot reject: campaign status is ${camp.status}`)
+    }
+    const updated: BrandCampaign = {
+      ...camp,
+      status: 'draft',
+      publishNote: `Rejected: ${input.reason}`,
+      updatedAt: new Date().toISOString(),
+    }
+    campaignStore.set(campaignId, updated)
+    return updated
+  }
+
+  /** 发布: approved → active */
+  publishCampaign(
+    campaignId: string,
+    tenantId: string,
+    publishNote?: string,
+  ): BrandCampaign {
+    const camp = this.getCampaign(campaignId, tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${campaignId}`)
+    if (camp.status !== 'approved') {
+      throw new Error(`Cannot publish: campaign status is ${camp.status}`)
+    }
+    const updated: BrandCampaign = {
+      ...camp,
+      status: 'active',
+      publishNote,
+      updatedAt: new Date().toISOString(),
+    }
+    campaignStore.set(campaignId, updated)
+    return updated
+  }
+
   private assertValidStatusTransition(from: CampaignStatus, to: CampaignStatus): void {
     if (from === to) return
+    // draft → active allowed for backward compat (direct activation)
+    // Use submit→approve→publish workflow for approval-gated flow
     const validTransitions: Record<CampaignStatus, CampaignStatus[]> = {
-      draft: ['active', 'cancelled'],
+      draft: ['pending_review', 'active', 'cancelled'],
+      pending_review: ['draft', 'approved', 'cancelled'],
+      approved: ['active', 'cancelled'],
       active: ['ended', 'cancelled'],
       ended: [],
       cancelled: [],
@@ -431,5 +532,141 @@ export class BrandOperationsService {
     if (!allowed || !allowed.includes(to)) {
       throw new Error(`Invalid campaign status transition: ${from} → ${to}`)
     }
+  }
+
+  // ═══════════════════════════════════════════
+  //  Collaboration (联名合作) 管理
+  // ═══════════════════════════════════════════
+
+  createCollaboration(input: {
+    tenantId: string
+    brandId: string
+    title: string
+    description: string
+    type: CollaborationType
+    partner: PartnerInfo
+    revenueShare: RevenueShareConfig
+    startDate: string
+    endDate: string
+    coBrandName?: string
+    campaignIds?: string[]
+    terms?: string
+    createdBy: string
+  }): Collaboration {
+    this.assertDateRangeValid(input.startDate, input.endDate)
+    const now = new Date().toISOString()
+    const collab: Collaboration = {
+      id: `collab-${randomUUID()}`,
+      tenantId: input.tenantId,
+      brandId: input.brandId,
+      title: input.title,
+      description: input.description,
+      type: input.type,
+      partner: input.partner,
+      revenueShare: input.revenueShare,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      status: 'draft',
+      coBrandName: input.coBrandName,
+      campaignIds: input.campaignIds ?? [],
+      terms: input.terms,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    collaborationStore.set(collab.id, collab)
+    this.logger.log(`Created collaboration ${collab.id}: "${collab.title}"`)
+    return collab
+  }
+
+  getCollaboration(collabId: string, tenantId: string): Collaboration | undefined {
+    const collab = collaborationStore.get(collabId)
+    if (!collab || collab.tenantId !== tenantId) return undefined
+    return collab
+  }
+
+  listCollaborations(
+    tenantId: string,
+    filter?: {
+      status?: CollaborationStatus
+      type?: CollaborationType
+      grade?: PartnerGrade
+      search?: string
+    },
+  ): Collaboration[] {
+    return Array.from(collaborationStore.values())
+      .filter((c) => c.tenantId === tenantId)
+      .filter((c) => (filter?.status ? c.status === filter.status : true))
+      .filter((c) => (filter?.type ? c.type === filter.type : true))
+      .filter((c) => (filter?.grade ? c.partner.grade === filter.grade : true))
+      .filter((c) =>
+        filter?.search
+          ? c.title.toLowerCase().includes(filter.search.toLowerCase()) ||
+            c.partner.name.toLowerCase().includes(filter.search.toLowerCase())
+          : true,
+      )
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }
+
+  updateCollaboration(
+    collabId: string,
+    tenantId: string,
+    patch: Partial<Pick<Collaboration, 'title' | 'description' | 'type' | 'startDate' | 'endDate' | 'status' | 'campaignIds' | 'terms' | 'coBrandName'>> & { partner?: Partial<PartnerInfo>; revenueShare?: Partial<RevenueShareConfig> },
+  ): Collaboration {
+    const collab = this.getCollaboration(collabId, tenantId)
+    if (!collab) throw new Error(`Collaboration not found: ${collabId}`)
+
+    const startDate = patch.startDate ?? collab.startDate
+    const endDate = patch.endDate ?? collab.endDate
+    this.assertDateRangeValid(startDate, endDate)
+
+    const updated: Collaboration = {
+      ...collab,
+      ...patch,
+      partner: patch.partner ? { ...collab.partner, ...patch.partner } : collab.partner,
+      revenueShare: patch.revenueShare ? { ...collab.revenueShare, ...patch.revenueShare } : collab.revenueShare,
+      updatedAt: new Date().toISOString(),
+    }
+    collaborationStore.set(collabId, updated)
+    return updated
+  }
+
+  deleteCollaboration(collabId: string, tenantId: string): boolean {
+    const collab = this.getCollaboration(collabId, tenantId)
+    if (!collab) return false
+    collaborationStore.delete(collabId)
+    return true
+  }
+
+  getCollaborationMetrics(tenantId: string): CollaborationMetrics {
+    const collabs = Array.from(collaborationStore.values()).filter((c) => c.tenantId === tenantId)
+    const byGrade: Record<PartnerGrade, number> = { platinum: 0, gold: 0, silver: 0, bronze: 0 }
+    const byType: Record<CollaborationType, number> = { co_branding: 0, sponsorship: 0, joint_promotion: 0, cross_marketing: 0 }
+    for (const c of collabs) {
+      byGrade[c.partner.grade] = (byGrade[c.partner.grade] ?? 0) + 1
+      byType[c.type] = (byType[c.type] ?? 0) + 1
+    }
+    return {
+      total: collabs.length,
+      active: collabs.filter((c) => c.status === 'active').length,
+      negotiating: collabs.filter((c) => c.status === 'negotiating').length,
+      draftCount: collabs.filter((c) => c.status === 'draft').length,
+      byGrade,
+      byType,
+    }
+  }
+
+  /** 将活动关联到合作 */
+  linkCampaignToCollaboration(campaignId: string, collabId: string, tenantId: string): Collaboration {
+    const collab = this.getCollaboration(collabId, tenantId)
+    if (!collab) throw new Error(`Collaboration not found: ${collabId}`)
+    const camp = this.getCampaign(campaignId, tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${campaignId}`)
+    if (!collab.campaignIds.includes(campaignId)) {
+      collab.campaignIds.push(campaignId)
+      collab.updatedAt = new Date().toISOString()
+      collaborationStore.set(collabId, collab)
+    }
+    return collab
   }
 }
