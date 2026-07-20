@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { TenantContext } from '../tenant/tenant.decorator';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 import { BootstrapService } from './bootstrap.service';
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('bootstrap')
 @UseGuards(TenantGuard)

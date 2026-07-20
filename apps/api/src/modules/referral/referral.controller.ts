@@ -10,6 +10,7 @@ import {
   TrackSignupDto,
 } from './referral.dto';
 import type { ReferralCode } from './referral.entity';
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('referral')
 @UseGuards(TenantGuard)

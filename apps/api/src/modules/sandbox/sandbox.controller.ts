@@ -3,6 +3,7 @@
 
 import { Controller, Get, Post, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { SandboxService, ISVAppStore, SDKMultiLangService } from './sandbox-isv.service';
+import { TenantGuard } from '../agent/tenant.guard';
 import type {
   SandboxInstance,
   CodeExecutionResult,
