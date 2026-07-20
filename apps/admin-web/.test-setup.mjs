@@ -307,6 +307,19 @@ const mockUiModule = {
       React.createElement('button', { onClick: onClose, 'data-testid': 'modal-close' }, 'Close'),
     );
   },
+  Dialog: ({ open, children, title, onClose, style, footer }) => {
+    if (!open) return null;
+    return React.createElement('div', { 'data-mock': 'Dialog' },
+      title ? React.createElement('h3', null, title) : null,
+      React.createElement('div', { style: style || {} }, children),
+      footer || null,
+    );
+  },
+  LoadingSkeleton: ({ variant, rows, label }) => {
+    return React.createElement('div', { 'data-mock': 'LoadingSkeleton', 'data-variant': variant || '', 'data-rows': String(rows || 1) },
+      label ? React.createElement('span', null, label) : null,
+    );
+  },
   // useFormSubmit hook — needed by page.tsx creation form
   // The real implementation catches errors and sets errorMessage state without re-throwing
   useFormSubmit: ({ onSubmit, successMessage, defaultErrorMessage }) => {
