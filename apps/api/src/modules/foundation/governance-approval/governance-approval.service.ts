@@ -65,15 +65,15 @@ export class GovernanceApprovalService implements OnModuleDestroy {
     // 审计日志: 新建审批
     this.auditService?.log({
       eventType: 'admin.role_create',
-      actorId: input.createdBy ?? 'system',
+      actorId: input.requestedBy ?? 'system',
       actorType: 'admin',
       resourceType: 'governance_approval',
-      resourceId: result.ticket,
+      resourceId: result.ticket ?? undefined,
       riskLevel: 'low',
       metadata: {
         resourceType: input.resourceType,
         resourceKey: input.resourceKey,
-        approvalType: input.approvalType ?? input.approvalType,
+        operation: input.operation,
       },
     }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
     return result
