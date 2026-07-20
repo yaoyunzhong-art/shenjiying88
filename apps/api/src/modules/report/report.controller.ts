@@ -2,7 +2,7 @@
  * 报表/看板 - Controller (V10 Day 7 Phase 91)
  */
 
-import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException, , UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException, UseGuards } from '@nestjs/common'
 import { ReportService } from './report.service'
 import type {
   ReportDefinition, ReportQueryResponse, DashboardLayout,

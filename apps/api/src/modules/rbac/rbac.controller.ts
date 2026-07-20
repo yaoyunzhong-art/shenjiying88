@@ -1,7 +1,7 @@
 // rbac.controller.ts · RBAC 权限管理接口
 // 2026-07-06 · 5级权限体系：assign/revoke/check/report
 
-import { Controller, Get, Post, Body, Param, HttpCode, HttpStatus, BadRequestException, NotFoundException, InternalServerErrorException, , UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, HttpCode, HttpStatus, BadRequestException, NotFoundException, InternalServerErrorException, UseGuards } from '@nestjs/common'
 import { RBACService, Role, Permission, RBACAuthorizationError } from './rbac.service'
 import {
   AssignRoleDto,

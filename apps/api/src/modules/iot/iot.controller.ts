@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, , UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, UseGuards } from '@nestjs/common'
 import {
   ESP32DeviceService,
   MQTTBrokerService,

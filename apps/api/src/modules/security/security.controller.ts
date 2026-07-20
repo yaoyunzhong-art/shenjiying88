@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, DefaultValuePipe, ParseIntPipe, , UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, DefaultValuePipe, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { SecurityScannerService } from './security-scanner.service'
 import { WAFService, type WAFRule } from './waf.service'
 import type {

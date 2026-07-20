@@ -2,7 +2,7 @@
  * multi-region.controller.ts
  * 用途: 多区域 REST API 控制器
  */
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import {
   BatchCheckHealthDto,
   CanMigrateDto,

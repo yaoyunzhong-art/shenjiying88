@@ -3,7 +3,7 @@
  * 用途: E2E 自动生成模块的 REST 控制器
  * 关联: phase-19-intelligence/spec.md §Phase 2
  */
-import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, , UseGuards } from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { E2EAutoGenService } from './e2e-auto-gen.service'
 import {
   GenerateRequestDto,
