@@ -333,6 +333,18 @@
 | scripts/security-baseline-scan.sh | 脚本 | 🟡 执行中 | 真实8/8扫描 |
 | scripts/device-token-audit.sh | 脚本 | 🟡 执行中 | PushRecord deviceToken持久化 |
 
+### V23 · 礼品卡模块 (2026-07-21 · 树哥交付)
+| 组件 | 位置 | 状态 | 说明 |
+|:-----|:-----|:----:|:------|
+| Module | api/src/modules/gift-card/ | 🟢 完成 | 礼品卡全生命周期管理 |
+| Entity | api/src/modules/gift-card/gift-card.entity.ts | 🟢 完成 | 类型定义(GiftCard/Transaction/Filter) |
+| Service | api/src/modules/gift-card/gift-card.service.ts | 🟢 完成 | 业务CRUD+状态机+交易流水+过期清理 |
+| DTO | api/src/modules/gift-card/gift-card.dto.ts | 🟢 完成 | 请求验证(class-validator) |
+| Controller | api/src/modules/gift-card/gift-card.controller.ts | 🟢 完成 | REST API(@UseGuards(TenantGuard)) |
+| 测试 | api/src/modules/gift-card/gift-card.controller.test.ts | 🟢 17 cases | 创建/激活/充值/消费/冻结/解冻/取消/退款/查询/过期/统计 |
+| E2E链 | api/src/modules/cross-module/cross-module-e2e-57-giftcard.test.ts | 🟢 17 cases | 全链路生命周期+边界条件 |
+| PRD | docs/knowledge/prd/v23/v23-prd-gift-card.md | 🟢 已写入 | 礼品卡全功能PRD(含演进计划) |
+
 ---
 
-> 🦞 龙虾哥 · Phase→模块映射 · 2026-07-20 V22 Day1
+> 🦞 龙虾哥 · Phase→模块映射 · 2026-07-21 V23 Day1
