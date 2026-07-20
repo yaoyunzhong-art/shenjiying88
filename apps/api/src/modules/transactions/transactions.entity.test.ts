@@ -51,14 +51,7 @@ describe('transactions.entity', () => {
       },
       settlement: {
         settlementId: 'set-1',
-        tenantContext: { tenantId: 't-1' },
-        orderId: 'order-1',
-        paymentId: 'pay-1',
-        memberId: 'mem-1',
-        status: LoyaltySettlementStatus.Succeeded as LoyaltySettlementStatus,
-        awardedPoints: 50,
-        createdAt: '2026-06-14T00:00:00.000Z',
-        updatedAt: '2026-06-14T00:00:00.000Z'
+        pointsEarned: 50,
       },
       pointsLedger: [
         {
