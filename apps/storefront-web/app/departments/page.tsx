@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 /* ── Types ── */
 type DepartmentStatus = 'active' | 'on_leave' | 'vacant';
@@ -142,6 +142,8 @@ function MemberStatusBadge({ status }: { status: DepartmentStatus }) {
 
 /* ── 主组件 ── */
 export default function DepartmentsPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
@@ -166,6 +168,9 @@ export default function DepartmentsPage() {
     const overBudget = DEPARTMENTS.filter(d => d.status === 'over_budget').length;
     return { total, totalMembers, totalBudget, totalUsed, totalTarget, totalAchieved, overBudget };
   }, []);
+
+  if (loading) return <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a' }}><div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>加载中...</div></main>;
+  if (error) return <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a' }}><div style={{ textAlign: 'center', padding: '60px 0', color: '#f87171' }}>数据获取失败: {error}</div></main>;
 
   return (
     <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a' }}>

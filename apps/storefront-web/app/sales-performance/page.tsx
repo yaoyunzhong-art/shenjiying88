@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 // ============================================================
 //  Types (mirrored from page.test.ts)
@@ -93,6 +93,8 @@ function formatPercent(value: number): string {
 // ============================================================
 
 export default function SalesPerformancePage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('7d');
   const [currentTime] = useState(() => new Date().toLocaleTimeString('zh-CN', { hour12: false }));
 
@@ -107,6 +109,10 @@ export default function SalesPerformancePage() {
   }, [metrics]);
 
   const periodFilters: PeriodFilter[] = ['7d', '30d', '90d'];
+
+  if (loading) return <div style={{ ...pageStyles.container, textAlign: 'center', padding: '60px 0', color: '#64748b' }}>加载中...</div>;
+  if (error) return <div style={{ ...pageStyles.container, textAlign: 'center', padding: '60px 0', color: '#f87171' }}>数据获取失败: {error}</div>;
+  if (!MOCK_TRANSACTIONS || MOCK_TRANSACTIONS.length === 0) return <div style={{ ...pageStyles.container, textAlign: 'center', padding: '60px 0', color: '#64748b' }}>暂无数据</div>;
 
   return (
     <div style={pageStyles.container}>

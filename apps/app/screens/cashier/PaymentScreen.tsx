@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,14 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
-import { submitNativeAppOrderPayment } from '../../market-bootstrap';
+import {
+  getNativeAppOrderTransaction,
+  submitNativeAppOrderPayment,
+  type NativeAppTransactionAggregate,
+} from '../../market-bootstrap';
 import type { PaymentRouteParams } from '../../utils/order-route';
 import {
+  getPaymentChannelLabel,
   normalizePaymentChannel,
   PAYMENT_CHANNEL_OPTIONS,
   type PaymentChannel,
@@ -53,6 +58,13 @@ export function PaymentScreen() {
   const routeParams = route.params && Object.keys(route.params).length > 0
     ? route.params
     : fallbackRouteParams;
+  const shouldFetchOrder = (() => {
+    const globals = globalThis as {
+      __mockRoute?: PaymentParams['Payment'];
+      __mockOrderFetchEnabled?: boolean;
+    };
+    return Boolean(routeParams?.orderId) && (!globals.__mockRoute || globals.__mockOrderFetchEnabled === true);
+  })();
 
   const initialAmount = routeParams?.amount;
   const initialChannel = routeParams?.paymentChannel ?? 'WECHAT_PAY';
@@ -62,7 +74,15 @@ export function PaymentScreen() {
   const [showMemberInput, setShowMemberInput] = useState(false);
   const [memberPhone, setMemberPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [orderAggregate, setOrderAggregate] = useState<NativeAppTransactionAggregate | null>(null);
   const numericAmount = Number(amount);
+  const resolvedOrderNo = orderAggregate?.order.orderNo ?? routeParams?.orderNo ?? 'N/A';
+  const resolvedOrderId = orderAggregate?.order.orderId ?? routeParams?.orderId ?? 'N/A';
+  const resolvedOrderAmount = orderAggregate?.payment?.amount ?? orderAggregate?.order.totalAmount ?? routeParams?.amount ?? 0;
+  const resolvedPaymentChannel = normalizePaymentChannel(
+    orderAggregate?.payment?.channel ?? routeParams?.paymentChannel,
+  );
+  const resolvedPaymentChannelLabel = getPaymentChannelLabel(resolvedPaymentChannel);
   const memberPhoneValid = /^1\d{10}$/.test(memberPhone.trim());
   const canSubmitAmount =
     amount.trim().length > 0 &&
@@ -72,6 +92,45 @@ export function PaymentScreen() {
   const canSubmit =
     canSubmitAmount &&
     (selectedChannel !== 'MEMBER_CARD' || memberPhoneValid);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!routeParams?.orderId || !shouldFetchOrder) {
+      setOrderAggregate(null);
+      return;
+    }
+
+    getNativeAppOrderTransaction(routeParams.orderId)
+      .then((aggregate) => {
+        if (cancelled) {
+          return;
+        }
+
+        setOrderAggregate(aggregate);
+        setAmount((previousAmount) => (
+          previousAmount.trim().length === 0
+            ? String(aggregate.payment?.amount ?? aggregate.order.totalAmount)
+            : previousAmount
+        ));
+
+        if (!routeParams.paymentChannel) {
+          const hydratedChannel = normalizePaymentChannel(aggregate.payment?.channel);
+          if (hydratedChannel) {
+            setSelectedChannel(hydratedChannel);
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOrderAggregate(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeParams?.orderId, routeParams?.paymentChannel, shouldFetchOrder]);
 
   const handleNumberPress = (num: string) => {
     if (num === 'C') {
@@ -196,16 +255,22 @@ export function PaymentScreen() {
             <Text style={styles.orderTitle}>待支付订单</Text>
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>订单号</Text>
-              <Text style={styles.orderValue}>{routeParams?.orderNo ?? 'N/A'}</Text>
+              <Text style={styles.orderValue}>{resolvedOrderNo}</Text>
             </View>
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>订单ID</Text>
-              <Text style={styles.orderValue}>{routeParams?.orderId ?? 'N/A'}</Text>
+              <Text style={styles.orderValue}>{resolvedOrderId}</Text>
             </View>
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>待收金额</Text>
-              <Text style={styles.orderValue}>¥{(routeParams?.amount ?? 0).toFixed(2)}</Text>
+              <Text style={styles.orderValue}>¥{resolvedOrderAmount.toFixed(2)}</Text>
             </View>
+            {resolvedPaymentChannelLabel ? (
+              <View style={styles.orderRow}>
+                <Text style={styles.orderKey}>原支付渠道</Text>
+                <Text style={styles.orderValue}>{resolvedPaymentChannelLabel}</Text>
+              </View>
+            ) : null}
           </Card>
         )}
         <Card style={styles.amountCard}>

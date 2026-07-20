@@ -6,7 +6,7 @@
  * 状态: SSR渲染 + 客户端增强
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 
 interface Announcement {
@@ -72,7 +72,12 @@ export default function AnnouncementDetailPage() {
   const params = useParams<{ id: string }>()
   const announcementId = typeof params.id === 'string' ? params.id : ''
   const announcement = MOCK_ANNOUNCEMENTS[announcementId]
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [marked, setMarked] = useState(false)
+
+  if (loading) return <div className="max-w-2xl mx-auto py-16 text-center"><div className="animate-pulse text-lg">加载中...</div></div>
+  if (error) return <div className="max-w-2xl mx-auto py-16 text-center"><div className="text-red-500">数据获取失败: {error}</div></div>
 
   if (!announcement) {
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import {
@@ -127,7 +127,26 @@ export default function CampaignDetailPage() {
   const router = useRouter();
   const id = params.id;
 
-  const campaign = useMemo<CampaignDetail | null>(() => MOCK_DATA[id] ?? null, [id]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [campaign, setCampaign] = useState<CampaignDetail | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const found = MOCK_DATA[id] ?? null;
+      if (!found) {
+        setError('活动不存在或已被删除');
+      } else {
+        setCampaign(found);
+      }
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [id]);
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!campaign) return <div>暂无数据</div>;
 
   // 性能面板数据 (mock)
   const perfMetrics = useMemo<CampaignMetric[]>(() => campaign ? mockPerformanceMetrics(campaign) : [], [campaign]);
@@ -136,27 +155,6 @@ export default function CampaignDetailPage() {
 
   // 映射 CampaignStatus -> 面板允许的 status ('paused' 不在面板类型中)
   const panelStatus = campaign && campaign.status === 'paused' ? 'draft' : (campaign?.status ?? 'draft');
-
-  if (!campaign) {
-    return (
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: 48, textAlign: 'center' }}>
-        <PageShell title="活动不存在" description="未找到该营销活动">
-          <div style={{ fontSize: 16, color: '#94a3b8', marginTop: 24 }}>
-            活动 ID &quot;{id}&quot; 不存在或已被删除。
-          </div>
-          <button
-            onClick={() => router.push('/campaigns')}
-            style={{
-              marginTop: 24, padding: '10px 24px', border: 'none', borderRadius: 8,
-              background: 'rgba(59,130,246,0.15)', color: '#93c5fd', cursor: 'pointer', fontSize: 14,
-            }}
-          >
-            ← 返回活动列表
-          </button>
-        </PageShell>
-      </main>
-    );
-  }
 
   const info = STATUS_MAP[campaign.status];
 

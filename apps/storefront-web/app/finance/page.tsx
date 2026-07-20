@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 /* ── Types ── */
 type TransactionType = 'income' | 'expense' | 'transfer';
@@ -86,6 +86,8 @@ function formatCurrency(amount: number): string {
 
 /* ── 主组件 ── */
 export default function FinancePage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<'all' | 'week' | 'month'>('all');
@@ -112,6 +114,10 @@ export default function FinancePage() {
       : 0;
     return { totalRevenue, totalCost, totalProfit, totalOrders, profitRate, momGrowth };
   }, []);
+
+  if (loading) return <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a', textAlign: 'center', paddingTop: 60, color: '#94a3b8' }}>加载中...</main>;
+  if (error) return <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a', textAlign: 'center', paddingTop: 60, color: '#f87171' }}>数据获取失败: {error}</main>;
+  if (!MONTHLY_DATA || MONTHLY_DATA.length === 0) return <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a', textAlign: 'center', paddingTop: 60, color: '#94a3b8' }}>暂无数据</main>;
 
   return (
     <main style={{ minHeight: '100vh', padding: '24px 32px', background: '#0f172a' }}>

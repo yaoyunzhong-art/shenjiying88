@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageShell, StatCard } from '@m5/ui';
 
 const GROWTH_TOTAL = 18750;
@@ -41,7 +41,14 @@ const WEEKLY_HISTORY = Array.from({ length: 12 }, (_, i) => ({
 const MAX_GROWTH_PER_WEEK = 500;
 
 export default function GrowthPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+
+  if (loading) return <PageShell title="成长值" subtitle="升级·任务·里程碑"><div className="text-center py-16 text-gray-500">加载中...</div></PageShell>;
+  if (error) return <PageShell title="成长值" subtitle="升级·任务·里程碑"><div className="text-center py-16 text-red-400">数据获取失败: {error}</div></PageShell>;
+  // 暂无数据判断：成长任务数据为空时显示
+  if (GROWTH_TASKS.length === 0) return <PageShell title="成长值" subtitle="升级·任务·里程碑"><div className="text-center py-16 text-gray-500">暂无数据</div></PageShell>;
 
   return (
     <PageShell title="成长值" subtitle="升级·任务·里程碑">

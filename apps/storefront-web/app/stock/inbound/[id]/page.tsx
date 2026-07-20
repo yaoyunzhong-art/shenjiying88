@@ -6,7 +6,7 @@
  */
 'use client';
 
-import React, { use, useState } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -196,9 +196,29 @@ export default function InboundReceivingPage({
   const { id } = use(params);
   const router = useRouter();
   const toast = useToast();
-  const [detail] = useState<InboundDetail>(() => getMockInbound(id));
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<InboundDetail | null>(null);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [itemInputs, setItemInputs] = useState<Record<string, { inspected: number; pass: number }>>({});
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const data = getMockInbound(id);
+      if (!data) {
+        setError('入库单不存在');
+      } else {
+        setDetail(data);
+      }
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [id]);
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!detail) return <div>暂无数据</div>;
 
   const status = STATUS_MAP[detail.status];
 

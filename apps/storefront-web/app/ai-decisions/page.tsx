@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   AIDecisionPanel,
@@ -247,6 +247,8 @@ const styles = {
 // ============================================================
 
 export default function AIDecisionsPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdated] = useState(() => new Date().toLocaleTimeString('zh-CN', { hour12: false }));
   const [alerts, setAlerts] = useState<{ id: string; message: string; type: 'success' | 'info' | 'warning' }[]>([]);
 
@@ -276,6 +278,10 @@ export default function AIDecisionsPage() {
       { id: `alert-${Date.now()}`, message: `已忽略建议: ${id}`, type: 'info' },
     ]);
   };
+
+  if (loading) return <div style={{ ...styles.container, textAlign: 'center', paddingTop: 60, color: '#64748b' }}>加载中...</div>;
+  if (error) return <div style={{ ...styles.container, textAlign: 'center', paddingTop: 60, color: '#f87171' }}>数据获取失败: {error}</div>;
+  if (!MOCK_RULES || MOCK_RULES.length === 0) return <div style={{ ...styles.container, textAlign: 'center', paddingTop: 60, color: '#64748b' }}>暂无数据</div>;
 
   return (
     <div style={styles.container}>

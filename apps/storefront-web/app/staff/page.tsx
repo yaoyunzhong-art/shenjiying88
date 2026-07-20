@@ -6,7 +6,7 @@
  */
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { PageShell, StatusBadge, SearchFilterInput, Pagination, DataTable, usePagination, useSearchFilter, type DataTableColumn } from '@m5/ui';
 
 // ============================================================
@@ -181,6 +181,8 @@ const COLUMNS: DataTableColumn<StaffRecord>[] = [
 // ============================================================
 
 export default function StaffManagementPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<StaffRole | 'all'>('all');
 
@@ -204,6 +206,10 @@ export default function StaffManagementPage() {
 
   const { page, pageSize, setPage, setPageSize, totalPages, paginate } = usePagination({ initialPageSize: 8 });
   const pageItems = paginate(multiFiltered);
+
+  if (loading) return <PageShell title="员工管理" description="门店员工信息管理与值班状态查看"><div style={{ padding: 60, textAlign: 'center', color: '#64748b' }}>加载中...</div></PageShell>;
+  if (error) return <PageShell title="员工管理" description="门店员工信息管理与值班状态查看"><div style={{ padding: 60, textAlign: 'center', color: '#f87171' }}>数据获取失败: {error}</div></PageShell>;
+  if (!MOCK_STAFF || MOCK_STAFF.length === 0) return <PageShell title="员工管理" description="门店员工信息管理与值班状态查看"><div style={{ padding: 60, textAlign: 'center', color: '#64748b' }}>暂无数据</div></PageShell>;
 
   return (
     <PageShell title="员工管理" description="门店员工信息管理与值班状态查看">

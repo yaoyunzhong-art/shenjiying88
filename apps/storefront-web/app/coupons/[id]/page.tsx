@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   DetailShell,
@@ -105,8 +105,13 @@ export default function CouponDetailPage() {
   const couponId = params?.id as string;
   const coupon = useMemo(() => MOCK_COUPON_DETAILS[couponId], [couponId]);
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'disable' | 'enable' | 'delete'>('disable');
+
+  if (loading) return <DetailShell title="加载中..." subtitle=""><div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>加载中...</div></DetailShell>;
+  if (error) return <DetailShell title="数据获取失败" subtitle=""><div style={{ textAlign: 'center', padding: 48, color: '#f87171' }}>数据获取失败: {error}</div></DetailShell>;
 
   if (!coupon) {
     return (

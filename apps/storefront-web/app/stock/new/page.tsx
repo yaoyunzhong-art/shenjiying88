@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -270,6 +270,12 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
 export default function NewStockItemPage(): React.ReactElement {
   const router = useRouter();
   const toast = useToast();
+
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
 
   const handleSubmit = async (
     data: Record<string, unknown>,

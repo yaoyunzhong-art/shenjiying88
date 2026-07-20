@@ -148,7 +148,8 @@ export default async function StoreManagerDetailPage({ params }: StoreManagerDet
         }}
       >
         <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
-        <div>未找到门店信息 (ID: {id})</div>
+        <div>暂无数据</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 8 }}>未找到门店信息 (ID: {id})</div>
       </div>
     );
   }
