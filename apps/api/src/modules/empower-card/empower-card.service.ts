@@ -10,6 +10,7 @@ import { getPgPool } from '../../database/pg-pool'
 import type { 
   CreateEmpowerCardDto, 
   EmpowerCardEntity, 
+  EmpowerCardHealthResponse,
   EmpowerCardSearchQuery, 
   EmpowerCardSearchResult 
 } from './empower-card.entity'
@@ -258,6 +259,79 @@ export class EmpowerCardService {
   }
 
   // ── 统计 ──
+
+  // ── 健康检查 ──
+
+  async healthCheck(): Promise<EmpowerCardHealthResponse> {
+    await this.ensureTable()
+
+    let cardCount = 0
+    let matchApiReachable = false
+    let quoteApiReachable = false
+    let lastMatch: string | null = null
+
+    if (!this.pool) {
+      // 降级模式: 使用 fallback store
+      cardCount = this.fallbackStore.size
+      try {
+        const result = await this.search({ limit: 1 })
+        matchApiReachable = true
+        // 降级模式无引用日志, 但标记 quoteApi 为 unreachable
+        quoteApiReachable = false
+      } catch {
+        matchApiReachable = false
+      }
+    } else {
+      try {
+        const countResult = await this.pool.query(
+          'SELECT COUNT(*) as cnt FROM empower_card'
+        )
+        cardCount = parseInt(countResult.rows[0].cnt, 10)
+
+        // match API 可达性: 执行一次简单搜索
+        try {
+          await this.pool.query(
+            'SELECT id FROM empower_card LIMIT 1'
+          )
+          matchApiReachable = true
+        } catch {
+          matchApiReachable = false
+        }
+
+        // quote API 可达性: 执行一次简单查询引用日志
+        try {
+          await this.pool.query(
+            'SELECT id FROM empower_card_quote_log LIMIT 1'
+          )
+          quoteApiReachable = true
+        } catch {
+          quoteApiReachable = false
+        }
+
+        // 最近匹配时间
+        const lastResult = await this.pool.query(
+          'SELECT quoted_at FROM empower_card_quote_log ORDER BY quoted_at DESC LIMIT 1'
+        )
+        if (lastResult.rows.length > 0) {
+          const val = lastResult.rows[0].quoted_at
+          lastMatch = val?.toISOString?.() ?? val ?? null
+        }
+      } catch {
+        // DB 完全不可用
+      }
+    }
+
+    const statusCards = cardCount > 0 ? 'up' : cardCount === 0 ? 'down' : 'degraded'
+    const status =
+      statusCards === 'down'
+        ? 'down'
+        : matchApiReachable && quoteApiReachable
+          ? 'up'
+          : 'degraded'
+
+    return { status, cardCount, matchApiReachable, quoteApiReachable, lastMatch }
+  }
+
 
   async getTodayEmpowerScore(): Promise<{ score: number; quotes: number; newCards: number }> {
     await this.ensureTable()

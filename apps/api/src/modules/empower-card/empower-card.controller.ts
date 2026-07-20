@@ -12,7 +12,7 @@
 
 import { Controller, Get, Post, Body, Param, Query, Logger } from '@nestjs/common'
 import { EmpowerCardService } from './empower-card.service'
-import type { CreateEmpowerCardDto, EmpowerCardSearchQuery, EmpowerCardEntity } from './empower-card.entity'
+import type { CreateEmpowerCardDto, EmpowerCardHealthResponse, EmpowerCardSearchQuery, EmpowerCardEntity } from './empower-card.entity'
 
 @Controller('empower-cards')
 export class EmpowerCardController {
@@ -63,6 +63,12 @@ export class EmpowerCardController {
   @Post('decay')
   async applyDecay(): Promise<{ decayed: number; archived: number }> {
     return this.service.applyDecay()
+  }
+
+  /** 健康检查 */
+  @Get('health')
+  async healthCheck(): Promise<EmpowerCardHealthResponse> {
+    return this.service.healthCheck()
   }
 
   /** 今日赋能评分 */

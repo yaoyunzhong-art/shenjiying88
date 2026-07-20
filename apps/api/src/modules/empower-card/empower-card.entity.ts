@@ -45,3 +45,12 @@ export interface EmpowerCardSearchResult {
   cards: EmpowerCardEntity[]
   total: number
 }
+
+/** 健康检查响应 (ADR-045) */
+export interface EmpowerCardHealthResponse {
+  status: 'up' | 'degraded' | 'down'
+  cardCount: number
+  matchApiReachable: boolean
+  quoteApiReachable: boolean
+  lastMatch: string | null
+}

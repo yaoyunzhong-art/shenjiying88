@@ -150,4 +150,37 @@ describe('EmpowerCardService (降级·内存模式)', async () => {
     const r2 = await service.applyDecay()
     assert.ok(typeof r2.decayed === 'number', '第二轮不报错')
   })
+
+  // ── 健康检查 ──
+
+  it('[正例] healthCheck 应返回正确的结构', async () => {
+    const health = await service.healthCheck()
+    assert.ok(['up', 'degraded', 'down'].includes(health.status), 'status 应为 up/degraded/down')
+    assert.ok(typeof health.cardCount === 'number', 'cardCount 应为数字')
+    assert.ok(typeof health.matchApiReachable === 'boolean', 'matchApiReachable 应为布尔')
+    assert.ok(typeof health.quoteApiReachable === 'boolean', 'quoteApiReachable 应为布尔')
+    assert.ok(health.lastMatch === null || typeof health.lastMatch === 'string', 'lastMatch 应为 null 或字符串')
+  })
+
+  it('[正例] healthCheck 应反映已有卡片数量', async () => {
+    const health = await service.healthCheck()
+    // 前面已创建多张卡片, cardCount > 0
+    assert.ok(health.cardCount > 0, `应有卡片存在, 实际: ${health.cardCount}`)
+  })
+
+  it('[正例] healthCheck matchApiReachable 应有值', async () => {
+    const health = await service.healthCheck()
+    // 降级模式下 matchApi 不可达(无pg), quoteApi 不可达
+    // 但函数不应抛错
+    assert.ok(typeof health.matchApiReachable === 'boolean', 'matchApiReachable 应有布尔值')
+  })
+
+  it('[边界] healthCheck 在降级模式(无pg)下不抛错', async () => {
+    const envBak = process.env.POSTGRES_URL
+    delete process.env.POSTGRES_URL
+    // 已有卡片的服务, healthCheck 不应抛错
+    const health = await service.healthCheck()
+    assert.ok(typeof health.status === 'string', '降级模式 healthCheck 也应返回 status')
+    if (envBak !== undefined) process.env.POSTGRES_URL = envBak
+  })
 })
