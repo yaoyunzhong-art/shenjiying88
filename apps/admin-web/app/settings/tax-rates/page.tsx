@@ -6,9 +6,10 @@
  *
  * 管理各品类税率与税务参数
  * 模块: 品类税率 | 税务规则 | 计算配置
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface TaxRatePreview {
   category: string;
@@ -22,6 +23,13 @@ const TAX_RATES: TaxRatePreview[] = [
   { category: '日用品', taxRate: '13%', taxType: '增值税', effectiveDate: '2026-01-01' },
   { category: '电子产品', taxRate: '13%', taxType: '增值税', effectiveDate: '2026-01-01' },
   { category: '服务费', taxRate: '6%', taxType: '增值税', effectiveDate: '2026-01-01' },
+];
+
+const TAX_RULES = [
+  { key: '计税方式', value: '价外税（不含税金额 × 税率）' },
+  { key: '舍入方式', value: '四舍五入到分' },
+  { key: '含税显示', value: '前台展示含税价格' },
+  { key: '发票类型', value: '普通发票 / 增值税专用发票' },
 ];
 
 const styles: Record<string, React.CSSProperties> = {
@@ -40,9 +48,39 @@ const styles: Record<string, React.CSSProperties> = {
   configValue: { fontSize: 13, color: '#e2e8f0', fontWeight: 500 },
   infoBox: { padding: 16, background: 'rgba(59, 130, 246, 0.06)', borderRadius: 10, border: '1px solid rgba(59, 130, 246, 0.15)', marginTop: 16 },
   infoText: { fontSize: 13, color: '#93c5fd', lineHeight: 1.6 },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function TaxRatesPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (TAX_RATES.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>🧾 税率配置</h1>
+        <p style={styles.subtitle}>管理各品类税率与税务参数。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🧾 税率配置</h1>
@@ -78,10 +116,9 @@ export default function TaxRatesPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>⚖️ 税务规则</h2>
         <div style={styles.configList}>
-          <div style={styles.configItem}><span style={styles.configKey}>计税方式</span><span style={styles.configValue}>价外税（不含税金额 × 税率）</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>舍入方式</span><span style={styles.configValue}>四舍五入到分</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>含税显示</span><span style={styles.configValue}>前台展示含税价格</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>发票类型</span><span style={styles.configValue}>普通发票 / 增值税专用发票</span></div>
+          {TAX_RULES.map(r => (
+            <div key={r.key} style={styles.configItem}><span style={styles.configKey}>{r.key}</span><span style={styles.configValue}>{r.value}</span></div>
+          ))}
         </div>
 
         <div style={styles.infoBox}>

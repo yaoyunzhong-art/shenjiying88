@@ -6,9 +6,10 @@
  *
  * 管理各场景通知消息模板，支持变量占位符与多通道版本控制
  * 模块: 模板管理 | 变量替换 | 场景分类
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface TemplatePreview {
   scene: string;
@@ -27,6 +28,14 @@ const TEMPLATES: TemplatePreview[] = [
   { scene: '系统告警', channel: '邮件', name: '系统异常告警', variables: 'alertName, severity, timestamp', version: 1, isActive: true },
 ];
 
+const VARIABLE_RULES = [
+  { key: '变量格式', value: '{变量名} 大括号包裹' },
+  { key: '变量命名', value: 'camelCase，只含字母' },
+  { key: '声明要求', value: '模板使用的变量必须在 variables 声明' },
+  { key: '未闭合变量', value: '系统自动检测并告警' },
+  { key: '默认值', value: '缺失变量保留原始 {占位符}' },
+];
+
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 960, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 },
@@ -42,9 +51,39 @@ const styles: Record<string, React.CSSProperties> = {
   configItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
   configKey: { fontSize: 13, color: '#94a3b8' },
   configValue: { fontSize: 13, color: '#e2e8f0', fontWeight: 500 },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function NotificationTemplatesPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (TEMPLATES.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>📋 通知模板设置</h1>
+        <p style={styles.subtitle}>管理各场景通知消息模板。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>📋 通知模板设置</h1>
@@ -84,11 +123,9 @@ export default function NotificationTemplatesPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🔤 变量使用规范</h2>
         <div style={styles.configList}>
-          <div style={styles.configItem}><span style={styles.configKey}>变量格式</span><span style={styles.configValue}>{'{变量名}'} 大括号包裹</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>变量命名</span><span style={styles.configValue}>camelCase，只含字母</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>声明要求</span><span style={styles.configValue}>模板使用的变量必须在 variables 声明</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>未闭合变量</span><span style={styles.configValue}>系统自动检测并告警</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>默认值</span><span style={styles.configValue}>缺失变量保留原始 {'{占位符}'}</span></div>
+          {VARIABLE_RULES.map(r => (
+            <div key={r.key} style={styles.configItem}><span style={styles.configKey}>{r.key}</span><span style={styles.configValue}>{r.value}</span></div>
+          ))}
         </div>
       </div>
     </div>

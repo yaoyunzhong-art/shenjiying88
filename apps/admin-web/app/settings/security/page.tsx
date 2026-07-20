@@ -5,10 +5,35 @@
  * settings/security/page.tsx — 安全设置
  *
  * 系统安全策略与防护配置，包括密码策略、登录保护、IP白名单等
- * 模块: 密码策略 | 登录保护 | IP白名单 | 安全审计
+ * 模块: 密码策略 | 登录保护 | 安全审计
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+const PASSWORD_POLICIES = [
+  { key: '最小密码长度', value: '8 位' },
+  { key: '需包含大写字母', value: '是' },
+  { key: '需包含小写字母', value: '是' },
+  { key: '需包含数字', value: '是' },
+  { key: '需包含特殊字符', value: '是' },
+  { key: '密码有效期', value: '90 天' },
+  { key: '禁止重复次数', value: '最近 5 次' },
+];
+
+const LOGIN_PROTECTION = [
+  { key: '最大登录尝试次数', value: '5 次' },
+  { key: '锁定时间', value: '30 分钟' },
+  { key: '二次验证', value: '支持短信/邮箱验证码' },
+];
+
+const COMPLIANCE_ITEMS = [
+  { label: '启用密码策略强制验证', enabled: true },
+  { label: '登录失败次数限制', enabled: true },
+  { label: '账户锁定自动解除', enabled: true },
+  { label: 'IP 白名单（未配置）', enabled: false },
+  { label: '操作审计日志记录', enabled: true },
+];
 
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 960, margin: '0 auto' },
@@ -23,9 +48,29 @@ const styles: Record<string, React.CSSProperties> = {
   configValue: { fontSize: 13, color: '#e2e8f0', fontWeight: 500 },
   checklist: { padding: 0, margin: 0, listStyle: 'none' as const, display: 'flex', flexDirection: 'column' as const, gap: 6 },
   checkItem: (enabled: boolean) => ({ fontSize: 13, color: enabled ? '#22c55e' : '#94a3b8', padding: '6px 0', display: 'flex', alignItems: 'center', gap: 8 }),
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function SecurityPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🔒 安全设置</h1>
@@ -35,13 +80,13 @@ export default function SecurityPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🔑 密码策略</h2>
         <div style={styles.configList}>
-          <div style={styles.configItem}><span style={styles.configKey}>最小密码长度</span><span style={styles.configValue}>8 位</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>需包含大写字母</span><span style={styles.configValue}>是</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>需包含小写字母</span><span style={styles.configValue}>是</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>需包含数字</span><span style={styles.configValue}>是</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>需包含特殊字符</span><span style={styles.configValue}>是</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>密码有效期</span><span style={styles.configValue}>90 天</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>禁止重复次数</span><span style={styles.configValue}>最近 5 次</span></div>
+          {PASSWORD_POLICIES.length === 0 ? (
+            <div style={styles.empty}><div style={{ fontSize: 14 }}>暂无数据</div></div>
+          ) : (
+            PASSWORD_POLICIES.map(item => (
+              <div key={item.key} style={styles.configItem}><span style={styles.configKey}>{item.key}</span><span style={styles.configValue}>{item.value}</span></div>
+            ))
+          )}
         </div>
       </div>
 
@@ -49,9 +94,9 @@ export default function SecurityPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🛡️ 登录保护</h2>
         <div style={styles.configList}>
-          <div style={styles.configItem}><span style={styles.configKey}>最大登录尝试次数</span><span style={styles.configValue}>5 次</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>锁定时间</span><span style={styles.configValue}>30 分钟</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>二次验证</span><span style={styles.configValue}>支持短信/邮箱验证码</span></div>
+          {LOGIN_PROTECTION.map(item => (
+            <div key={item.key} style={styles.configItem}><span style={styles.configKey}>{item.key}</span><span style={styles.configValue}>{item.value}</span></div>
+          ))}
         </div>
       </div>
 
@@ -59,11 +104,11 @@ export default function SecurityPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>✅ 安全合规要求</h2>
         <ul style={styles.checklist}>
-          <li style={styles.checkItem(true)}>✓ 启用密码策略强制验证</li>
-          <li style={styles.checkItem(true)}>✓ 登录失败次数限制</li>
-          <li style={styles.checkItem(true)}>✓ 账户锁定自动解除</li>
-          <li style={styles.checkItem(false)}>○ IP 白名单（未配置）</li>
-          <li style={styles.checkItem(true)}>✓ 操作审计日志记录</li>
+          {COMPLIANCE_ITEMS.map(item => (
+            <li key={item.label} style={styles.checkItem(item.enabled)}>
+              {item.enabled ? '✓' : '○'} {item.label}
+            </li>
+          ))}
         </ul>
       </div>
     </div>

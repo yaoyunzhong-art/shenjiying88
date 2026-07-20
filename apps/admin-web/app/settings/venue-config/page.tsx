@@ -6,9 +6,10 @@
  *
  * 管理场馆运营参数与设施配置
  * 模块: 场馆信息 | 营业时间 | 设施管理
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface VenueFacility {
   name: string;
@@ -21,6 +22,14 @@ const FACILITIES: VenueFacility[] = [
   { name: '篮球场地', count: 4, status: '运营中' },
   { name: '乒乓球台', count: 6, status: '运营中' },
   { name: '游泳馆', count: 1, status: '维护中' },
+];
+
+const BUSINESS_HOURS = [
+  { key: '工作日', value: '09:00 — 22:00' },
+  { key: '周末及节假日', value: '08:00 — 23:00' },
+  { key: '预约提前时间', value: '提前 30 分钟' },
+  { key: '最长预约时长', value: '4 小时' },
+  { key: '取消预约时限', value: '提前 2 小时' },
 ];
 
 const styles: Record<string, React.CSSProperties> = {
@@ -38,9 +47,39 @@ const styles: Record<string, React.CSSProperties> = {
   configItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
   configKey: { fontSize: 13, color: '#94a3b8' },
   configValue: { fontSize: 13, color: '#e2e8f0', fontWeight: 500 },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function VenueConfigPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (FACILITIES.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>🏟 场馆配置</h1>
+        <p style={styles.subtitle}>管理场馆运营参数与设施配置。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🏟 场馆配置</h1>
@@ -50,11 +89,9 @@ export default function VenueConfigPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🕐 营业时间</h2>
         <div style={styles.configList}>
-          <div style={styles.configItem}><span style={styles.configKey}>工作日</span><span style={styles.configValue}>09:00 — 22:00</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>周末及节假日</span><span style={styles.configValue}>08:00 — 23:00</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>预约提前时间</span><span style={styles.configValue}>提前 30 分钟</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>最长预约时长</span><span style={styles.configValue}>4 小时</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>取消预约时限</span><span style={styles.configValue}>提前 2 小时</span></div>
+          {BUSINESS_HOURS.map(h => (
+            <div key={h.key} style={styles.configItem}><span style={styles.configKey}>{h.key}</span><span style={styles.configValue}>{h.value}</span></div>
+          ))}
         </div>
       </div>
 

@@ -11,7 +11,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, waitFor, act } from '@testing-library/react';
 import NotificationTemplatesPage from './page';
 import fs from 'node:fs';
 
@@ -68,35 +68,39 @@ function extractVariables(template: string): string[] {
 
 /* ── 辅助 ── */
 
-function setup() {
+async function setupAfterLoad() {
   cleanup();
-  return render(React.createElement(NotificationTemplatesPage));
+  const view = render(React.createElement(NotificationTemplatesPage));
+  await act(async () => {
+    await new Promise(r => setTimeout(r, 0));
+  });
+  return view;
 }
 
 /* ============================================================ */
 
 describe('notification-templates: 页面渲染', () => {
-  it('renders title', () => {
-    const { container } = setup();
+  it('renders title', async () => {
+    const { container } = await setupAfterLoad();
     assert.ok(container.querySelector('h1')?.textContent?.includes('通知模板'));
   });
 
-  it('renders description', () => {
-    const { container } = setup();
+  it('renders description', async () => {
+    const { container } = await setupAfterLoad();
     assert.ok(container.textContent?.includes('模板'));
   });
 
   it('renders without error', () => {
-    assert.doesNotThrow(() => setup());
+    assert.doesNotThrow(() => cleanup() || render(React.createElement(NotificationTemplatesPage)));
   });
 
   it.skip('has padding layout (跳检: happy-dom无内联样式)', () => {
-    const { container } = setup();
+    const { container } = render(React.createElement(NotificationTemplatesPage));
     const _pad = (container.firstElementChild as HTMLElement)?.style?.padding ?? ''; assert.ok(!_pad || _pad.includes('24px'), 'padding should be 24px or empty');
   });
 
-  it('has single h1', () => {
-    const { container } = setup();
+  it('has single h1', async () => {
+    const { container } = await setupAfterLoad();
     assert.equal(container.querySelectorAll('h1').length, 1);
   });
 

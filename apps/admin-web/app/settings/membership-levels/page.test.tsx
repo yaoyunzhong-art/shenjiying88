@@ -57,6 +57,6 @@ describe('settings/membership-levels', () => {
   it('包含等级定义 section', () => { assert.ok(content.includes('等级定义')) })
   it('每个等级有 benefits 字段', () => {
     const benefits = Array.from(content.matchAll(/benefits:/g))
-    assert.equal(benefits.length, 4, `got ${benefits.length} benefits`)
+    assert.equal(benefits.length, 5, `got ${benefits.length} benefits`) // interface field + 4 data items
   })
 })

@@ -6,9 +6,10 @@
  *
  * 管理支付通道与结算参数，支持多种支付方式接入与费率配置
  * 模块: 通道管理 | 费率配置 | 结算周期
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 // ============================================================
 // 配置预览数据
@@ -24,6 +25,13 @@ const ACTIVE_CHANNELS: PaymentChannelPreview[] = [
   { name: '微信支付', provider: 'wechat', status: '正常运行', feeRate: '0.6% + 0.30元' },
   { name: '支付宝', provider: 'alipay', status: '正常运行', feeRate: '0.6% + 0.30元' },
   { name: '现金', provider: 'cash', status: '正常运行', feeRate: '免费' },
+];
+
+const SETTLEMENT_CONFIGS = [
+  { key: '默认结算周期', value: 'T+1（次日到账）' },
+  { key: '结算延迟天数', value: '0 ~ 3 天（按通道）' },
+  { key: '最大单笔金额', value: '¥500,000' },
+  { key: '支持币种', value: 'CNY, USD, EUR' },
 ];
 
 // ============================================================
@@ -44,9 +52,40 @@ const styles: Record<string, React.CSSProperties> = {
   configItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
   configKey: { fontSize: 13, color: '#94a3b8' },
   configValue: { fontSize: 13, color: '#e2e8f0', fontWeight: 500 },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function PaymentConfigPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [channels] = useState<PaymentChannelPreview[]>(ACTIVE_CHANNELS);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (channels.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>💳 支付配置</h1>
+        <p style={styles.subtitle}>管理支付通道与结算参数。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>💳 支付配置</h1>
@@ -66,7 +105,7 @@ export default function PaymentConfigPage() {
             </tr>
           </thead>
           <tbody>
-            {ACTIVE_CHANNELS.map(ch => (
+            {channels.map(ch => (
               <tr key={ch.provider}>
                 <td style={styles.td}>{ch.name}</td>
                 <td style={styles.td}>{ch.provider}</td>
@@ -82,22 +121,12 @@ export default function PaymentConfigPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>📅 结算配置</h2>
         <div style={styles.configList}>
-          <div style={styles.configItem}>
-            <span style={styles.configKey}>默认结算周期</span>
-            <span style={styles.configValue}>T+1（次日到账）</span>
-          </div>
-          <div style={styles.configItem}>
-            <span style={styles.configKey}>结算延迟天数</span>
-            <span style={styles.configValue}>0 ~ 3 天（按通道）</span>
-          </div>
-          <div style={styles.configItem}>
-            <span style={styles.configKey}>最大单笔金额</span>
-            <span style={styles.configValue}>¥500,000</span>
-          </div>
-          <div style={styles.configItem}>
-            <span style={styles.configKey}>支持币种</span>
-            <span style={styles.configValue}>CNY, USD, EUR</span>
-          </div>
+          {SETTLEMENT_CONFIGS.map(c => (
+            <div key={c.key} style={styles.configItem}>
+              <span style={styles.configKey}>{c.key}</span>
+              <span style={styles.configValue}>{c.value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

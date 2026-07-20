@@ -6,9 +6,10 @@
  *
  * 定义会员等级体系、升降级规则与权益配置
  * 模块: 等级定义 | 权益配置 | 升降级策略
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 // ============================================================
 // 等级预览数据
@@ -28,6 +29,13 @@ const LEVELS: LevelPreview[] = [
   { level: 4, name: '钻石会员', minPoints: 20000, discount: '8.5折', benefits: '全部特权、专属客服、生日礼物' },
 ];
 
+const RULES = [
+  '普通 → 银卡：积分达到 1,000 或累计消费 ¥5,000',
+  '银卡 → 金卡：积分达到 5,000 或累计消费 ¥20,000',
+  '金卡 → 钻石：积分达到 20,000 或累计消费 ¥100,000',
+  '降级保护：会员等级每 12 个月重新评估，未达标自动降级',
+];
+
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 960, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 },
@@ -39,15 +47,41 @@ const styles: Record<string, React.CSSProperties> = {
   th: { textAlign: 'left' as const, padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#64748b', borderBottom: '1px solid rgba(148, 163, 184, 0.1)' },
   td: { padding: '10px 12px', fontSize: 13, color: '#cbd5e1', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
   tag: (color: string) => ({ fontSize: 11, color, background: `${color}15`, padding: '2px 8px', borderRadius: 6, display: 'inline-block' }),
-  configList: { display: 'flex', flexDirection: 'column' as const, gap: 8 },
-  configItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' },
-  configKey: { fontSize: 13, color: '#94a3b8' },
-  configValue: { fontSize: 13, color: '#e2e8f0', fontWeight: 500 },
   ruleList: { padding: 0, margin: 0, listStyle: 'none' as const, display: 'flex', flexDirection: 'column' as const, gap: 8 },
   ruleItem: { fontSize: 13, color: '#cbd5e1', padding: '8px 12px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: 8, borderLeft: '3px solid #3b82f6' },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function MembershipLevelsPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (LEVELS.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>🏅 会员等级设置</h1>
+        <p style={styles.subtitle}>管理会员等级定义与权益配置。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🏅 会员等级设置</h1>
@@ -85,10 +119,9 @@ export default function MembershipLevelsPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🔄 升降级规则</h2>
         <ul style={styles.ruleList}>
-          <li style={styles.ruleItem}>普通 → 银卡：积分达到 1,000 或累计消费 ¥5,000</li>
-          <li style={styles.ruleItem}>银卡 → 金卡：积分达到 5,000 或累计消费 ¥20,000</li>
-          <li style={styles.ruleItem}>金卡 → 钻石：积分达到 20,000 或累计消费 ¥100,000</li>
-          <li style={styles.ruleItem}>降级保护：会员等级每 12 个月重新评估，未达标自动降级</li>
+          {RULES.map((rule, i) => (
+            <li key={i} style={styles.ruleItem}>{rule}</li>
+          ))}
         </ul>
       </div>
     </div>

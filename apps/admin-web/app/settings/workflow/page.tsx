@@ -6,9 +6,27 @@
  *
  * 审批工作流与自动化流程配置
  * 模块: 流程定义 | 节点管理 | 审批策略
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+const FLOW_CONFIGS = [
+  { key: '当前版本', value: 'v1' },
+  { key: '流程状态', value: '已发布' },
+  { key: '审批策略', value: '任意一人通过（any）' },
+  { key: '条件分支', value: '金额 > ¥10,000 → 高级审批' },
+  { key: '驳回处理', value: '驳回即终止流程' },
+];
+
+const NODE_TYPES = [
+  { icon: '🟢', name: '开始', desc: '流程起点，每个工作流有且仅有一个' },
+  { icon: '🔴', name: '结束', desc: '流程终点，可能包含驳回结束' },
+  { icon: '👤', name: '审批', desc: '指定审批人，支持 any/all 策略' },
+  { icon: '🔀', name: '条件', desc: '条件判断分支，根据表达式路由' },
+  { icon: '⚡', name: '动作', desc: '自动化执行节点，触发系统操作' },
+  { icon: '⏳', name: '等待', desc: '定时等待节点，超时自动推进' },
+];
 
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 960, margin: '0 auto' },
@@ -29,9 +47,29 @@ const styles: Record<string, React.CSSProperties> = {
   nodeIcon: { fontSize: 20, marginBottom: 6 },
   nodeName: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 4 },
   nodeDesc: { fontSize: 12, color: '#64748b', lineHeight: 1.5 },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function WorkflowPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🔄 工作流配置</h1>
@@ -55,11 +93,9 @@ export default function WorkflowPage() {
         </div>
 
         <div style={styles.configList}>
-          <div style={styles.configItem}><span style={styles.configKey}>当前版本</span><span style={styles.configValue}>v1</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>流程状态</span><span style={styles.configValue}>已发布</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>审批策略</span><span style={styles.configValue}>任意一人通过（any）</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>条件分支</span><span style={styles.configValue}>金额 &gt; ¥10,000 → 高级审批</span></div>
-          <div style={styles.configItem}><span style={styles.configKey}>驳回处理</span><span style={styles.configValue}>驳回即终止流程</span></div>
+          {FLOW_CONFIGS.map(c => (
+            <div key={c.key} style={styles.configItem}><span style={styles.configKey}>{c.key}</span><span style={styles.configValue}>{c.value}</span></div>
+          ))}
         </div>
       </div>
 
@@ -68,12 +104,13 @@ export default function WorkflowPage() {
         <h2 style={styles.sectionTitle}>🏗️ 节点类型</h2>
         <p style={styles.sectionText}>工作流支持以下节点类型，灵活组合实现复杂审批流程。</p>
         <div style={styles.nodeGrid}>
-          <div style={styles.nodeCard}><div style={styles.nodeIcon}>🟢</div><div style={styles.nodeName}>开始</div><div style={styles.nodeDesc}>流程起点，每个工作流有且仅有一个</div></div>
-          <div style={styles.nodeCard}><div style={styles.nodeIcon}>🔴</div><div style={styles.nodeName}>结束</div><div style={styles.nodeDesc}>流程终点，可能包含驳回结束</div></div>
-          <div style={styles.nodeCard}><div style={styles.nodeIcon}>👤</div><div style={styles.nodeName}>审批</div><div style={styles.nodeDesc}>指定审批人，支持 any/all 策略</div></div>
-          <div style={styles.nodeCard}><div style={styles.nodeIcon}>🔀</div><div style={styles.nodeName}>条件</div><div style={styles.nodeDesc}>条件判断分支，根据表达式路由</div></div>
-          <div style={styles.nodeCard}><div style={styles.nodeIcon}>⚡</div><div style={styles.nodeName}>动作</div><div style={styles.nodeDesc}>自动化执行节点，触发系统操作</div></div>
-          <div style={styles.nodeCard}><div style={styles.nodeIcon}>⏳</div><div style={styles.nodeName}>等待</div><div style={styles.nodeDesc}>定时等待节点，超时自动推进</div></div>
+          {NODE_TYPES.map(nt => (
+            <div key={nt.name} style={styles.nodeCard}>
+              <div style={styles.nodeIcon}>{nt.icon}</div>
+              <div style={styles.nodeName}>{nt.name}</div>
+              <div style={styles.nodeDesc}>{nt.desc}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

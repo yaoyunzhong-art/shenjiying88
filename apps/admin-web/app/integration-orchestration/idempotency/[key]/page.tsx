@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -53,7 +53,37 @@ export default function IntegrationOrchestrationIdempotencyDetailPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [modal, setModal] = useState<ModalState>({ visible: false, item: null })
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const pageSize = 6
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    queueMicrotask(() => {
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={{ textAlign: 'center', padding: '80px 24px', color: '#8892b0' }}>
+          <div style={{ fontSize: 14 }}>加载中...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <div style={{ textAlign: 'center', padding: '80px 24px', color: '#ff4757' }}>
+          <div style={{ fontSize: 14 }}>错误: {error}</div>
+        </div>
+      </div>
+    )
+  }
 
   const filtered = useMemo(() => {
     let result = SEED_RECORDS

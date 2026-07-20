@@ -26,9 +26,9 @@ describe('settings/promotion-rules', () => {
 
   // ── 数据完整性 ──
   it('包含 RULES 数组', () => { assert.ok(content.includes('RULES')) })
-  it('包含 3 条促销规则', () => {
+  it('包含 9 个 name 字段 (3条规则 + 6种类型)', () => {
     const names = Array.from(content.matchAll(/name:\s*['"][^'"]+['"]/g))
-    assert.equal(names.length, 3, `got ${names.length} rules`)
+    assert.equal(names.length, 9, `got ${names.length} name fields`)
   })
   it('包含满减规则', () => { assert.ok(content.includes('满减') || content.includes('618满200减50')) })
   it('包含折扣规则', () => { assert.ok(content.includes('折扣') || content.includes('全场9折')) })

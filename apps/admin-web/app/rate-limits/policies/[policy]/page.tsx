@@ -3,6 +3,7 @@
 /**
  * 限流策略详情 — Rate Limits Policy Detail Page
  * 功能: 查看作用域、周期、限额、算法与匹配的配额账本
+ * 三态: 加载态 / 空态 / 错误态 (当前为同步 mock，通过 useEffect 模拟异步加载)
  *
  * 页面结构:
  * - params 解析路由参数, 读取策略 ID
@@ -13,11 +14,10 @@
  * - 返回链接至 Rate Limits 列表
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Badge, BreadcrumbPageHeader, DetailClosureBar, PageShell, Result, StatusBadge,
 } from '@m5/ui';
-import { readRateLimitsPolicyDetailParam } from '@m5/types';
 
 interface PolicySnapshot {
   policyId: string;
@@ -73,12 +73,57 @@ function loadMockPolicy(policyId: string): PolicySnapshot {
   return { policyId, notFound: false, record: r };
 }
 
-export default async function RateLimitsPolicyDetailPage({ params }: PageProps) {
-  const resolved = await params;
-  const policyId = readParam(resolved.policy);
-  const snapshot = loadMockPolicy(policyId ?? '');
+export default function RateLimitsPolicyDetailPage({ params }: PageProps) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<PolicySnapshot | null>(null);
+  const [policyId, setPolicyId] = useState<string | null>(null);
 
-  if (snapshot.notFound || !snapshot.record) {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const resolved = await params;
+        const pid = readParam(resolved.policy);
+        setPolicyId(pid);
+        const snap = loadMockPolicy(pid ?? '');
+        if (!cancelled) {
+          setSnapshot(snap);
+          queueMicrotask(() => { if (!cancelled) setLoading(false); });
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : '加载策略详情失败');
+          queueMicrotask(() => { if (!cancelled) setLoading(false); });
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [params]);
+
+  if (loading) {
+    return (
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8' }}>
+          <div style={{ fontSize: 14 }}>加载中...</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#ef4444' }}>
+          <div style={{ fontSize: 14 }}>错误: {error}</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!snapshot || snapshot.notFound || !snapshot.record) {
     return (
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
         <PageShell title="限流策略不存在" subtitle="该策略不在当前 rate-limits 范围内。">

@@ -2,10 +2,11 @@
  * customers/page.tsx — 门店客户管理列表页 (admin-web)
  *
  * 功能: 列表展示、搜索、状态/等级筛选、数据统计
+ * 三态: loading/empty/error
  */
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   DataTable,
@@ -70,6 +71,17 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'all'>('all')
   const [levelFilter, setLevelFilter] = useState<MemberLevel | 'all'>('all')
   const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 模拟异步数据加载 (连接真实 API 后替换为真实 fetch)
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    queueMicrotask(() => {
+      setLoading(false)
+    })
+  }, [])
 
   const filtered = useMemo(
     () => filterCustomers(MOCK_CUSTOMERS, searchTerm, statusFilter, levelFilter),
@@ -132,6 +144,23 @@ export default function CustomersPage() {
     },
   ]
 
+  // 三态渲染: loading / error / empty / data
+  if (loading) {
+    return (
+      <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
+        <div style={{ fontSize: 14 }}>加载中...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 32, color: '#ef4444', textAlign: 'center' }}>
+        <div style={{ fontSize: 14 }}>错误: {error}</div>
+      </div>
+    )
+  }
+
   return (
     <div>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
@@ -183,32 +212,41 @@ export default function CustomersPage() {
         </select>
       </div>
 
-      {/* 数据表格 */}
-      <DataTable
-        columns={columns}
-        items={paged}
-        rowKey={(r) => r.id}
-        striped
-      />
+      {/* 空态 / 数据表格 */}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8', background: 'rgba(15,23,42,0.6)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.1)' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div>
+          <div style={{ fontSize: 14 }}>当前筛选条件下没有客户记录，请调整筛选条件。</div>
+        </div>
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            items={paged}
+            rowKey={(r) => r.id}
+            striped
+          />
 
-      {/* 分页 */}
-      <div style={{ marginTop: 16, textAlign: 'right', color: '#94a3b8' }}>
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => setPage(i)}
-            style={{
-              margin: '0 4px', padding: '4px 10px', cursor: 'pointer',
-              background: i === page ? 'rgba(22,119,255,0.2)' : 'transparent',
-              border: i === page ? '1px solid #1677ff' : '1px solid rgba(148,163,184,0.3)',
-              borderRadius: 4, color: i === page ? '#1677ff' : '#94a3b8',
-            }}
-          >
-            {i + 1}
-          </button>
-        ))}
-        <span style={{ marginLeft: 8 }}>共 {filtered.length} 条</span>
-      </div>
+          {/* 分页 */}
+          <div style={{ marginTop: 16, textAlign: 'right', color: '#94a3b8' }}>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                style={{
+                  margin: '0 4px', padding: '4px 10px', cursor: 'pointer',
+                  background: i === page ? 'rgba(22,119,255,0.2)' : 'transparent',
+                  border: i === page ? '1px solid #1677ff' : '1px solid rgba(148,163,184,0.3)',
+                  borderRadius: 4, color: i === page ? '#1677ff' : '#94a3b8',
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <span style={{ marginLeft: 8 }}>共 {filtered.length} 条</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }

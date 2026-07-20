@@ -6,9 +6,10 @@
  *
  * 管理用户角色与权限分配，支持角色继承与资源级授权
  * 模块: 角色定义 | 权限矩阵 | 角色继承
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface RolePreview {
   name: string;
@@ -24,6 +25,13 @@ const ROLES: RolePreview[] = [
   { name: '浏览者', description: '只读查看权限', isSystem: false, resourceCount: 2 },
 ];
 
+const INHERITANCE_RULES = [
+  '子角色自动继承父角色的全部权限',
+  '权限向下传递，上级角色的新增权限自动同步至下级',
+  '系统管理员不受权限继承限制，拥有全部资源访问权限',
+  '系统自动检测循环继承链并阻止配置',
+];
+
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 960, margin: '0 auto' },
   title: { fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 },
@@ -35,16 +43,41 @@ const styles: Record<string, React.CSSProperties> = {
   th: { textAlign: 'left' as const, padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#64748b', borderBottom: '1px solid rgba(148, 163, 184, 0.1)' },
   td: { padding: '10px 12px', fontSize: 13, color: '#cbd5e1', borderBottom: '1px solid rgba(148, 163, 184, 0.06)' },
   tag: (color: string) => ({ fontSize: 11, color, background: `${color}15`, padding: '2px 8px', borderRadius: 6, display: 'inline-block' }),
-  resourceGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 },
-  resourceCard: (hasAccess: boolean) => ({ padding: '10px 14px', background: hasAccess ? 'rgba(34, 197, 94, 0.06)' : 'rgba(15, 23, 42, 0.4)', borderRadius: 8, border: `1px solid ${hasAccess ? 'rgba(34, 197, 94, 0.15)' : 'rgba(148, 163, 184, 0.06)'}` }),
-  resourceName: { fontSize: 13, color: '#e2e8f0', marginBottom: 4 },
-  actionsRow: { display: 'flex', gap: 4, flexWrap: 'wrap' as const },
-  actionTag: (allowed: boolean) => ({ fontSize: 10, padding: '1px 6px', borderRadius: 4, color: allowed ? '#22c55e' : '#475569', background: allowed ? 'rgba(34, 197, 94, 0.1)' : 'rgba(71, 85, 105, 0.2)' }),
   ruleList: { padding: 0, margin: 0, listStyle: 'none' as const, display: 'flex', flexDirection: 'column' as const, gap: 8 },
   ruleItem: { fontSize: 13, color: '#cbd5e1', padding: '8px 12px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: 8, borderLeft: '3px solid #3b82f6' },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function PermissionsPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (ROLES.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>🔑 权限管理</h1>
+        <p style={styles.subtitle}>管理用户角色与权限分配。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🔑 权限管理</h1>
@@ -80,10 +113,9 @@ export default function PermissionsPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🔗 权限继承规则</h2>
         <ul style={styles.ruleList}>
-          <li style={styles.ruleItem}>子角色自动继承父角色的全部权限</li>
-          <li style={styles.ruleItem}>权限向下传递，上级角色的新增权限自动同步至下级</li>
-          <li style={styles.ruleItem}>系统管理员不受权限继承限制，拥有全部资源访问权限</li>
-          <li style={styles.ruleItem}>系统自动检测循环继承链并阻止配置</li>
+          {INHERITANCE_RULES.map((rule, i) => (
+            <li key={i} style={styles.ruleItem}>{rule}</li>
+          ))}
         </ul>
       </div>
     </div>

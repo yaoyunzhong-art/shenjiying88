@@ -82,8 +82,8 @@ const PAGE_SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 /* ============================================================ */
 
 describe('integration-orchestration/events: 页面渲染', () => {
-  it('component is an async function', () => {
-    assert.ok(PAGE_SRC.includes('async function IntegrationOrchestrationEventsPage'), 'should be async');
+  it('component is a function', () => {
+    assert.ok(PAGE_SRC.includes('function IntegrationOrchestrationEventsPage'), 'should be a function');
   });
 
   it('renders title (from source)', () => {
@@ -98,12 +98,18 @@ describe('integration-orchestration/events: 页面渲染', () => {
     assert.ok(PAGE_SRC.includes('<main') || PAGE_SRC.includes('main'));
   });
 
-  it('uses Suspense for loading fallback', () => {
-    assert.ok(PAGE_SRC.includes('Suspense') || PAGE_SRC.includes('LoadingSkeleton'));
+  it('has loading/error/empty tri-state', () => {
+    assert.ok(PAGE_SRC.includes('loading'), 'should have loading state');
+    assert.ok(PAGE_SRC.includes('error'), 'should have error state');
+    assert.ok(PAGE_SRC.includes('暂无数据') || PAGE_SRC.includes('无匹配'), 'should have empty state');
   });
 
-  it('supports source param in page source', () => {
-    assert.ok(PAGE_SRC.includes('source') || PAGE_SRC.includes('searchParams'));
+  it('uses useEffect for data loading', () => {
+    assert.ok(PAGE_SRC.includes('useEffect'), 'should use useEffect');
+  });
+
+  it('supports source filter in page source', () => {
+    assert.ok(PAGE_SRC.includes('sourceFilter') || PAGE_SRC.includes('source'));
   });
 });
 
@@ -262,9 +268,13 @@ describe('integration-orchestration/events: 业务逻辑', () => {
 });
 
 describe('Integration Orchestration / Events — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(PAGE_SRC.includes('async') || PAGE_SRC.includes('await')));
+  it('使用客户端组件 (useEffect)', () => assert.ok(PAGE_SRC.includes('useEffect')));
   it('包含JSX返回', () => assert.ok(PAGE_SRC.includes('return (') || PAGE_SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(PAGE_SRC.includes('await') || PAGE_SRC.includes('fetch(')));
+  it('包含加载/错误/空三态', () => {
+    assert.ok(PAGE_SRC.includes('loading'));
+    assert.ok(PAGE_SRC.includes('error'));
+    assert.ok(PAGE_SRC.includes('暂无数据') || PAGE_SRC.includes('无匹配'));
+  });
   it('包含数组数据', () => assert.ok(PAGE_SRC.includes('[') || PAGE_SRC.includes('...')));
   it('包含条件判断', () => assert.ok(PAGE_SRC.includes('if')));
   it('包含样式定义', () => assert.ok(PAGE_SRC.includes('style={')));

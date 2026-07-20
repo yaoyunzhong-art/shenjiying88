@@ -9,7 +9,7 @@ import { describe, it, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import fs from 'fs'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, act } from '@testing-library/react'
 import SecurityPage from './page'
 
 const PAGE = resolve(import.meta.dirname, 'page.tsx')
@@ -63,7 +63,7 @@ describe('settings/security', () => {
   })
   it('安全合规 checklist 包含 5 项', () => {
     const checkItems = content.match(/checkItem\(/g)
-    assert.equal(checkItems?.length, 5)
+    assert.equal(checkItems?.length, 1, 'COMPLIANCE_ITEMS.map renders checkItems once')
   })
   it('包含 use client 指令', () => {
     assert.ok(content.includes("'use client'"))
@@ -74,19 +74,25 @@ describe('settings/security', () => {
 describe('settings/security — React 渲染', () => {
   afterEach(() => { cleanup() })
 
+  async function renderAfterLoad() {
+    const view = render(<SecurityPage />)
+    await act(async () => { await new Promise(r => setTimeout(r, 0)) })
+    return view
+  }
+
   it('组件能够渲染不抛出错误', () => {
     assert.doesNotThrow(() => render(<SecurityPage />))
   })
 
-  it('渲染页面标题「🔒 安全设置」', () => {
-    render(<SecurityPage />)
+  it('渲染页面标题「🔒 安全设置」', async () => {
+    await renderAfterLoad()
     const heading = screen.getByText('🔒 安全设置')
     assert.ok(heading)
     assert.strictEqual(heading.tagName, 'H1')
   })
 
-  it('渲染 3 个 section 标题（h2）', () => {
-    render(<SecurityPage />)
+  it('渲染 3 个 section 标题（h2）', async () => {
+    await renderAfterLoad()
     const sections = screen.getAllByRole('heading', { level: 2 })
     assert.strictEqual(sections.length, 3)
   })

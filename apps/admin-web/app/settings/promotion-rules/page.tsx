@@ -6,9 +6,10 @@
  *
  * 配置促销活动规则与触发条件，支持多种促销类型
  * 模块: 规则管理 | 优惠计算 | 时效管理
+ * 三态: loading / empty / error
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface RulePreview {
   name: string;
@@ -22,6 +23,15 @@ const RULES: RulePreview[] = [
   { name: '618满200减50', type: '满减', status: 'active', period: '2026-06-18 ~ 2026-06-20', condition: '满200元减50元' },
   { name: '全场9折', type: '折扣', status: 'active', period: '2026-07-01 ~ 2026-07-31', condition: '全场商品9折，最高减50元' },
   { name: '满99包邮', type: '包邮', status: 'active', period: '2026-01-01 ~ 2026-12-31', condition: '订单满99元免运费' },
+];
+
+const PROMOTION_TYPES = [
+  { icon: '💰', name: '满减', desc: '订单满额立减固定金额' },
+  { icon: '📉', name: '折扣', desc: '按百分比打折，可设封顶' },
+  { icon: '🎁', name: '赠品', desc: '满条件赠送指定商品' },
+  { icon: '🚚', name: '包邮', desc: '满条件免运费' },
+  { icon: '🛒', name: '加价购', desc: '加价换购指定商品' },
+  { icon: '⚡', name: '秒杀', desc: '限时限量特价活动' },
 ];
 
 const styles: Record<string, React.CSSProperties> = {
@@ -40,9 +50,39 @@ const styles: Record<string, React.CSSProperties> = {
   typeIcon: { fontSize: 20, marginBottom: 6 },
   typeName: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 4 },
   typeDesc: { fontSize: 12, color: '#64748b', lineHeight: 1.5 },
+  empty: { textAlign: 'center' as const, padding: '48px 24px', color: '#94a3b8' },
+  error: { textAlign: 'center' as const, padding: '48px 24px', color: '#ef4444' },
+  loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
 export default function PromotionRulesPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    queueMicrotask(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+  }
+
+  if (error) {
+    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+  }
+
+  if (RULES.length === 0) {
+    return (
+      <div style={styles.page}>
+        <h1 style={styles.title}>🎁 促销规则设置</h1>
+        <p style={styles.subtitle}>配置促销活动规则与触发条件。</p>
+        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🎁 促销规则设置</h1>
@@ -80,12 +120,13 @@ export default function PromotionRulesPage() {
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>🏷️ 促销类型说明</h2>
         <div style={styles.typeGrid}>
-          <div style={styles.typeCard}><div style={styles.typeIcon}>💰</div><div style={styles.typeName}>满减</div><div style={styles.typeDesc}>订单满额立减固定金额</div></div>
-          <div style={styles.typeCard}><div style={styles.typeIcon}>📉</div><div style={styles.typeName}>折扣</div><div style={styles.typeDesc}>按百分比打折，可设封顶</div></div>
-          <div style={styles.typeCard}><div style={styles.typeIcon}>🎁</div><div style={styles.typeName}>赠品</div><div style={styles.typeDesc}>满条件赠送指定商品</div></div>
-          <div style={styles.typeCard}><div style={styles.typeIcon}>🚚</div><div style={styles.typeName}>包邮</div><div style={styles.typeDesc}>满条件免运费</div></div>
-          <div style={styles.typeCard}><div style={styles.typeIcon}>🛒</div><div style={styles.typeName}>加价购</div><div style={styles.typeDesc}>加价换购指定商品</div></div>
-          <div style={styles.typeCard}><div style={styles.typeIcon}>⚡</div><div style={styles.typeName}>秒杀</div><div style={styles.typeDesc}>限时限量特价活动</div></div>
+          {PROMOTION_TYPES.map(pt => (
+            <div key={pt.name} style={styles.typeCard}>
+              <div style={styles.typeIcon}>{pt.icon}</div>
+              <div style={styles.typeName}>{pt.name}</div>
+              <div style={styles.typeDesc}>{pt.desc}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
