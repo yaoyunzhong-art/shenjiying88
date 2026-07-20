@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoyaltyModule } from '../loyalty/loyalty.module'
 import { MemberModule } from '../member/member.module'
 import { OrderService } from './order.service'
@@ -9,6 +10,7 @@ import { CashierBillingController } from './cashier-billing.controller'
 import { CashierSseController } from './cashier.sse'
 import { CashierEventEmitter } from './cashier.events'
 import { CashierService } from './cashier.service'
+import { CashierOrderEntity, CashierPaymentEntity } from './cashier.entity'
 import { PaymentChannelRegistry } from './ports/payment-channel.registry'
 import { PaymentChannelBootstrap } from './ports/payment-channel.bootstrap'
 import { CashierToLytBridge } from './bridges/cashier-to-lyt.bridge'
@@ -54,7 +56,10 @@ import { CommercialBillingModule } from '../foundation/commercial-billing/commer
  *       CommercialBillingModule 提供 BillingWall (P3-5, 调用方付费拦截)
  */
 @Module({
-  imports: [MemberModule, LoyaltyModule, InventoryItemModule, CommercialBillingModule],
+  imports: [
+    TypeOrmModule.forFeature([CashierOrderEntity, CashierPaymentEntity]),
+    MemberModule, LoyaltyModule, InventoryItemModule, CommercialBillingModule
+  ],
   controllers: [CashierController, CashierBillingController, CashierSseController],
   providers: [
     CashierService,

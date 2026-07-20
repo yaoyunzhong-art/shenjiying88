@@ -30,6 +30,7 @@ import {
   generateDropPolicySql,
   generateVerifyTenantFilterSql,
   generatePolicyTestSql,
+  generateVerifyMultitenantSql,
   validateName,
   RlsService,
   generateGetPolicySql,
@@ -765,6 +766,92 @@ describe('SQL 生成 扩展', () => {
   it('generateEmptyPolicySql 空 policyName 用默认空字符串', () => {
     const sql = generateDropPolicySql('MemberProfile', '')
     expect(sql).toContain('""')
+  })
+
+  // ─── RQ-20260720-013: RLS Verify 验证 SQL ──────────────────
+  it('generateVerifyMultitenantSql 查询 information_schema 检查所有表 tenantId 列', () => {
+    const sql = generateVerifyMultitenantSql()
+    expect(sql).toContain('information_schema.columns')
+    expect(sql).toContain('tenantId')
+    expect(sql).toContain('tenant_id')
+    expect(sql).toContain('has_tenant_id')
+    expect(sql).toContain("n.nspname = 'public'")
+  })
+
+  it('generateVerifyMultitenantSql 过滤非用户表', () => {
+    const sql = generateVerifyMultitenantSql()
+    expect(sql).toContain("relkind = 'r'")
+    expect(sql).toContain('pg_class')
+    expect(sql).toContain('pg_namespace')
+  })
+
+  it('generateVerifyMultitenantSql 只返回 public schema 表', () => {
+    const sql = generateVerifyMultitenantSql()
+    expect(sql).toContain("n.nspname = 'public'")
+  })
+})
+
+// ─── RQ-20260720-013: verifyMultitenantStatus 服务方法 ──────
+
+describe('V20: verifyMultitenantStatus 多租户整体验证', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('当所有表具备 tenantId 时返回 isolated=true', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+      { table_name: 'Brand', schema_name: 'public', has_tenant_id: true },
+      { table_name: 'Store', schema_name: 'public', has_tenant_id: true },
+      { table_name: 'MemberProfile', schema_name: 'public', has_tenant_id: true },
+    ])
+    const service = new RlsService(mockPrisma)
+    const result = await service.verifyMultitenantStatus()
+    expect(result.isolated).toBe(true)
+    expect(result.totalTables).toBe(3)
+    expect(result.tenantIdTables).toBe(3)
+    expect(result.missingTenantIdTables).toEqual([])
+    expect(result.checkedAt).toBeDefined()
+  })
+
+  it('当有表缺少 tenantId 时返回 isolated=false', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+      { table_name: 'Brand', schema_name: 'public', has_tenant_id: true },
+      { table_name: 'OldTable', schema_name: 'public', has_tenant_id: false },
+      { table_name: 'MemberProfile', schema_name: 'public', has_tenant_id: true },
+      { table_name: 'Untracked', schema_name: 'billing', has_tenant_id: false },
+    ])
+    const service = new RlsService(mockPrisma)
+    const result = await service.verifyMultitenantStatus()
+    expect(result.isolated).toBe(false)
+    expect(result.totalTables).toBe(4)
+    expect(result.tenantIdTables).toBe(2)
+    expect(result.missingTenantIdTables).toContain('public.OldTable')
+    expect(result.missingTenantIdTables).toContain('billing.Untracked')
+  })
+
+  it('空数据库返回 isolated=true 且计数为零', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([])
+    const service = new RlsService(mockPrisma)
+    const result = await service.verifyMultitenantStatus()
+    expect(result.isolated).toBe(true)
+    expect(result.totalTables).toBe(0)
+    expect(result.tenantIdTables).toBe(0)
+    expect(result.missingTenantIdTables).toEqual([])
+  })
+
+  it('查询委托到 prisma.$queryRawUnsafe', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([])
+    const service = new RlsService(mockPrisma)
+    await service.verifyMultitenantStatus()
+    expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledOnce()
+    const sql = mockPrisma.$queryRawUnsafe.mock.calls[0][0]
+    expect(sql).toContain('information_schema.columns')
+    expect(sql).toContain('tenantId')
   })
 })
 

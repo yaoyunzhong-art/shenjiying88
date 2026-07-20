@@ -119,6 +119,7 @@ export function RefundScreen() {
                   text: '确定',
                   onPress: () => navigation.navigate?.('OrderDetail', {
                     orderId,
+                    orderNo: aggregate.order.orderNo ?? orderNo,
                     refundStatus,
                     refundRequestedAmount: numAmount,
                     refundReason: trimmedRefundReason,

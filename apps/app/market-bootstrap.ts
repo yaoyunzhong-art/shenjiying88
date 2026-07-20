@@ -988,10 +988,14 @@ function createNativeAppOrderPaymentFallbackAggregate(
 ): NativeAppTransactionAggregate {
   const paidAt = paymentPayload.paidAt ?? new Date().toISOString()
   const paymentId = existingAggregate?.payment?.paymentId ?? `fallback-payment-${orderId}`
+  const fallbackOrderNo =
+    existingAggregate?.order.orderNo
+    ?? `ORD${paidAt.slice(0, 10).replaceAll('-', '')}001`
 
   return {
     order: {
       orderId,
+      orderNo: fallbackOrderNo,
       memberId: existingAggregate?.order.memberId ?? `fallback-member-${orderId}`,
       currency: existingAggregate?.order.currency ?? 'CNY',
       totalAmount: paymentPayload.amount,

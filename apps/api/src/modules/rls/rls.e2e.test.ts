@@ -52,8 +52,32 @@ import {
  * RlsHelperService expects a prisma instance providing $queryRawUnsafe and $executeRawUnsafe.
  */
 const mockPrisma = {
-  $queryRawUnsafe: async (_sql: string, ..._args: unknown[]) => {
-    // Return an empty array simulating no rows for pg_class queries
+  $queryRawUnsafe: async (sql: string, ..._args: unknown[]) => {
+    // Detect RLS verify query — return mock tenant-aware tables
+    if (sql.includes('information_schema.columns') && sql.includes('tenantId')) {
+      return [
+        { table_name: 'Brand', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'Store', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'User', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'MemberProfile', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'MemberProfileExtension', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'LytMemberSnapshot', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'LytOrderSnapshot', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'LytPaymentSnapshot', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'MemberOperationsTask', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'MemberOperationsExecutionReceipt', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'AuditLog', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'LytConnection', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'AccessPolicy', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'FoundationAlertAcknowledgement', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'MarketingPushDecisionLog', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'InspectionTask', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'InvoiceV2', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'ReconciliationReportModel', schema_name: 'public', has_tenant_id: true },
+        { table_name: 'FinanceLedger', schema_name: 'public', has_tenant_id: true },
+      ]
+    }
+    // Default: return empty array for other queries (RLS status, policies, etc.)
     return []
   },
   $executeRawUnsafe: async (_sql: string): Promise<Array<unknown>> => {
@@ -272,6 +296,55 @@ it('e2e: DELETE /api/rls/tenant/pool returns false for nonexistent pool', async 
       .send({ tenantId: 't-nonexistent' })
     assert.equal(res.statusCode, 200)
     assert.equal(res.body.success, false)
+  } finally {
+    await app.close()
+  }
+})
+
+// ─── RQ-20260720-013: RLS Verify 端点 E2E ──────────────────────
+
+it('e2e: GET /api/rls/verify/isolation returns multitenant isolation status', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer()).get('/api/rls/verify/isolation')
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.success, true)
+    assert.equal(typeof res.body.data.isolated, 'boolean')
+    assert.equal(typeof res.body.data.totalTables, 'number')
+    assert.equal(typeof res.body.data.tenantIdTables, 'number')
+    assert.ok(Array.isArray(res.body.data.missingTenantIdTables))
+    assert.equal(typeof res.body.data.checkedAt, 'string')
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: GET /api/rls/verify/isolation preserves verifiedAt timestamp', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer()).get('/api/rls/verify/isolation')
+    assert.equal(res.statusCode, 200)
+    const checkedAt = new Date(res.body.data.checkedAt)
+    assert.ok(checkedAt instanceof Date)
+    assert.ok(checkedAt.getTime() > 0)
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: GET /api/rls/verify/isolation consistent isolated flag', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer()).get('/api/rls/verify/isolation')
+    assert.equal(res.statusCode, 200)
+    // 当 isolate = true => missingTenantIdTables 为空
+    if (res.body.data.isolated) {
+      assert.equal(res.body.data.missingTenantIdTables.length, 0)
+      assert.equal(res.body.data.tenantIdTables, res.body.data.totalTables)
+    } else {
+      assert.ok(res.body.data.missingTenantIdTables.length > 0)
+      assert.ok(res.body.data.tenantIdTables < res.body.data.totalTables)
+    }
   } finally {
     await app.close()
   }

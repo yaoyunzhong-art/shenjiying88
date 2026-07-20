@@ -68,6 +68,7 @@ export class VenueService {
       type: input.type,
       capacity: input.capacity,
       status: VenueStatus.IDLE,
+      tenantId: 'default-tenant',
       priceCents: input.priceCents,
       timeSlotPricing: input.timeSlotPricing ?? [],
       holidayPricing: input.holidayPricing ?? [],

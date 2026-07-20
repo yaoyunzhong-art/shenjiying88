@@ -76,6 +76,7 @@ export {
   generateUpdatePolicySql,
   generateDropPolicySql,
   generateVerifyTenantFilterSql,
+  generateVerifyMultitenantSql,
   generatePolicyTestSql,
   validateName,
 } from './rls.helper'
@@ -94,6 +95,7 @@ export {
   InitPoolDto,
   VerifyAccessDto,
   GetAuditLogDto,
+  RlsVerifyResultDto,
 } from './rls.dto'
 
 // ─── RLS 常量 ───────────────────────────────────────────────────────────────

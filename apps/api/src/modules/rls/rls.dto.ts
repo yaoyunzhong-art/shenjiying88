@@ -271,3 +271,26 @@ export class GetAuditLogDto {
   @Max(1000)
   limit?: number = 50
 }
+
+// ─── RQ-20260720-013: RLS verify 端点 ────────────────────────────
+
+/**
+ * RLS 整体隔离验证响应 — 多租户隔离策略是否生效。
+ * 检查所有 tenant-aware 表是否具备 tenantId 列。
+ */
+export class RlsVerifyResultDto {
+  /** 检查通过 */
+  isolated!: boolean
+
+  /** 总表数 */
+  totalTables!: number
+
+  /** 具备 tenantId 的表数 */
+  tenantIdTables!: number
+
+  /** 缺少 tenantId 的表（异常） */
+  missingTenantIdTables!: string[]
+
+  /** 检查时间 */
+  checkedAt!: string
+}

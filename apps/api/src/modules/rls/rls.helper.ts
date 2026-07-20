@@ -280,6 +280,33 @@ export function generateVerifyTenantFilterSql(
 }
 
 /**
+ * 生成查询所有用户表及其是否具有 tenantId/tenant_id 列的 SQL。
+ * 检查 information_schema.columns 以返回完整报告。
+ */
+export function generateVerifyMultitenantSql(): string {
+  return `
+    SELECT
+      c.relname AS table_name,
+      n.nspname AS schema_name,
+      CASE
+        WHEN tc.column_name IS NOT NULL THEN TRUE
+        ELSE FALSE
+      END AS has_tenant_id
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    LEFT JOIN (
+      SELECT DISTINCT table_name, column_name
+      FROM information_schema.columns
+      WHERE column_name IN ('tenantId', 'tenant_id')
+    ) tc ON tc.table_name = c.relname
+    WHERE c.relkind = 'r'
+      AND n.nspname = 'public'
+      AND tc.column_name IS NOT NULL
+    ORDER BY c.relname
+  `.trim()
+}
+
+/**
  * 生成测试 RLS 策略生效的 SQL：
  * 设置 app.tenant_id → 查询当前用户数据量。配合 verifyTenantFilter 可验证隔离。
  */
@@ -728,6 +755,38 @@ export class RlsService {
     const result: Array<{ leaked_rows: number }> = await this.prisma.$queryRawUnsafe(sql)
     const leakedRows = result[0]?.leaked_rows ?? -1
     return { leakedRows }
+  }
+
+  // ── RQ-20260720-013: 多租户验证 ─────────────────────────────────
+
+  /**
+   * 多租户隔离策略整体验证。
+   * 查询数据库 information_schema，确认所有 tenant-aware 表是否具备 tenantId 列。
+   * @returns 包含隔离状态、总表数、tenantId 表数、缺失表列表的验证报告
+   */
+  async verifyMultitenantStatus(): Promise<{
+    isolated: boolean
+    totalTables: number
+    tenantIdTables: number
+    missingTenantIdTables: string[]
+    checkedAt: string
+  }> {
+    const sql = generateVerifyMultitenantSql()
+    const rows: Array<{ table_name: string; schema_name: string; has_tenant_id: boolean }> =
+      await this.prisma.$queryRawUnsafe(sql)
+
+    const allTables = rows.map((r) => r.table_name)
+    const missingTenantIdTables = rows
+      .filter((r) => !r.has_tenant_id)
+      .map((r) => `${r.schema_name}.${r.table_name}`)
+
+    return {
+      isolated: missingTenantIdTables.length === 0,
+      totalTables: allTables.length,
+      tenantIdTables: rows.filter((r) => r.has_tenant_id).length,
+      missingTenantIdTables,
+      checkedAt: new Date().toISOString(),
+    }
   }
 
   /**

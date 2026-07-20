@@ -152,6 +152,7 @@ export function PaymentScreen() {
             if (routeParams?.orderId) {
               navigation.navigate?.('OrderDetail', {
                 orderId: routeParams.orderId,
+                orderNo: aggregate?.order.orderNo ?? routeParams.orderNo,
                 paymentStatus: 'PAID',
                 paymentAmount: aggregate?.payment?.amount ?? numericAmount,
                 paymentPaidAt: aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? paymentPaidAt,

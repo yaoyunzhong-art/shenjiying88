@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Optional } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { CACHE_SERVICE, type CacheService } from '../../infrastructure/cache/cache.module'
 import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
@@ -12,6 +14,8 @@ import {
   CashierOrderStatus,
   CashierPaymentStatus,
   computeCashierOrderTotal,
+  CashierOrderEntity,
+  CashierPaymentEntity,
   type CashierOrder,
   type CashierPayment
 } from './cashier.entity'
@@ -28,7 +32,11 @@ export class CashierService {
     @Optional()
     private readonly integrationOrchestrationService?: IntegrationOrchestrationService,
     @Optional() @Inject(CACHE_SERVICE)
-    private readonly cache?: CacheService
+    private readonly cache?: CacheService,
+    @Optional() @InjectRepository(CashierOrderEntity)
+    private readonly orderRepo?: Repository<CashierOrderEntity>,
+    @Optional() @InjectRepository(CashierPaymentEntity)
+    private readonly paymentRepo?: Repository<CashierPaymentEntity>
   ) {
     this.seedIfNeeded()
   }
@@ -36,63 +44,118 @@ export class CashierService {
     // ── 持久化私有工具 ──────────────────────────────────────────────────
 
   /**
-   * P0-A1: write-through — 订单写入 Map + 异步 Redis
+   * P0-A1/RQ-20260720-011: write-through — 订单写入内存 + Redis + DB
+   * 保持内存 Map 作为 L1 缓存，DB 作为 L3 持久化
    */
-  private persistOrder(order: CashierOrder): void {
+  private async persistOrderAsync(order: CashierOrder): Promise<void> {
     orderStore.set(order.orderId, order)
     this.cache?.set(`cashier:order:${order.orderId}`, order, 3600).catch(() => {
       // Redis 不可用时静默降级,不影响主流程
     })
+    await this.persistOrderToDb(order)
+  }
+
+  /** 异步 DB 持久化 */
+  private async persistOrderToDb(order: CashierOrder): Promise<void> {
+    if (!this.orderRepo) return
+    try {
+      const entity = CashierOrderEntity.fromContract(order)
+      await this.orderRepo.upsert(entity, ['orderId'])
+    } catch (e) {
+      // DB 不可用时静默降级
+    }
   }
 
   /**
-   * P0-A1: write-through — 支付写入 Map + 异步 Redis
+   * P0-A1/RQ-20260720-011: write-through — 支付写入内存 + Redis + DB
    */
-  private persistPayment(payment: CashierPayment): void {
+  private async persistPaymentAsync(payment: CashierPayment): Promise<void> {
     paymentStore.set(payment.paymentId, payment)
     this.cache?.set(`cashier:payment:${payment.paymentId}`, payment, 3600).catch(() => {})
+    await this.persistPaymentToDb(payment)
+  }
+
+  /** 异步 DB 持久化 */
+  private async persistPaymentToDb(payment: CashierPayment): Promise<void> {
+    if (!this.paymentRepo) return
+    try {
+      const entity = CashierPaymentEntity.fromContract(payment)
+      await this.paymentRepo.upsert(entity, ['paymentId'])
+    } catch (e) {
+      // DB 不可用时静默降级
+    }
   }
 
   /**
-   * P0-A1: cache-aside — 查订单,先内存后 Redis
+   * P0-A1/RQ-20260720-011: cache-aside — 查订单,先内存后 Redis 再 DB
+   * L1: Memory → L2: Redis → L3: DB
    */
   private async loadOrder(orderId: string): Promise<CashierOrder | undefined> {
     const fromMemory = orderStore.get(orderId)
     if (fromMemory) return fromMemory
 
-    if (!this.cache) return undefined
-
-    try {
-      const fromRedis = await this.cache.get<CashierOrder>(`cashier:order:${orderId}`)
-      if (fromRedis) {
-        // 回填内存
-        orderStore.set(orderId, fromRedis)
-        return fromRedis
+    // 尝试 Redis
+    if (this.cache) {
+      try {
+        const fromRedis = await this.cache.get<CashierOrder>(`cashier:order:${orderId}`)
+        if (fromRedis) {
+          orderStore.set(orderId, fromRedis)
+          return fromRedis
+        }
+      } catch {
+        // Redis 错误静默降级
       }
-    } catch {
-      // Redis 错误静默降级
     }
+
+    // 尝试 DB
+    if (this.orderRepo) {
+      try {
+        const fromDb = await this.orderRepo.findOne({ where: { orderId } })
+        if (fromDb) {
+          const contract = fromDb.toContract()
+          orderStore.set(orderId, contract)
+          return contract
+        }
+      } catch {
+        // DB 错误静默降级
+      }
+    }
+
     return undefined
   }
 
   /**
-   * P0-A1: cache-aside — 查支付,先内存后 Redis
+   * P0-A1/RQ-20260720-011: cache-aside — 查支付,先内存后 Redis 再 DB
    */
   private async loadPayment(paymentId: string): Promise<CashierPayment | undefined> {
     const fromMemory = paymentStore.get(paymentId)
     if (fromMemory) return fromMemory
 
-    if (!this.cache) return undefined
-
-    try {
-      const fromRedis = await this.cache.get<CashierPayment>(`cashier:payment:${paymentId}`)
-      if (fromRedis) {
-        paymentStore.set(paymentId, fromRedis)
-        return fromRedis
+    if (this.cache) {
+      try {
+        const fromRedis = await this.cache.get<CashierPayment>(`cashier:payment:${paymentId}`)
+        if (fromRedis) {
+          paymentStore.set(paymentId, fromRedis)
+          return fromRedis
+        }
+      } catch {
+        // Redis 错误静默降级
       }
-    } catch {
-      // Redis 错误静默降级
     }
+
+    if (this.paymentRepo) {
+      try {
+        const fromDb = await this.paymentRepo.findOne({ where: { paymentId } })
+        if (fromDb) {
+          const contract = fromDb.toContract()
+          paymentStore.set(paymentId, contract)
+          return contract
+        }
+      } catch {
+        // DB 错误静默降级
+      }
+    }
+
     return undefined
   }
 
@@ -179,7 +242,7 @@ export class CashierService {
       updatedAt: now,
       source: 'memory'
     }
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     await this.publishEvent('cashier.order-created', {
       orderId: order.orderId,
@@ -235,11 +298,11 @@ export class CashierService {
       createdAt: now,
       updatedAt: now
     }
-    this.persistPayment(payment)
+    await this.persistPaymentAsync(payment)
     order.status = CashierOrderStatus.PendingPayment
     order.latestPaymentId = payment.paymentId
     order.updatedAt = now
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     await this.publishEvent('cashier.payment-created', {
       orderId,
@@ -335,8 +398,8 @@ export class CashierService {
 
     order.latestPaymentId = existingPayment.paymentId
     order.updatedAt = now
-    this.persistPayment(existingPayment)
-    this.persistOrder(order)
+    await this.persistPaymentAsync(existingPayment)
+    await this.persistOrderAsync(order)
 
     await this.publishEvent(input.standardizedEventName, {
       orderId: order.orderId,
@@ -382,7 +445,7 @@ export class CashierService {
       payment.sourceEventName = 'cashier.payment-timeout-closed'
       payment.updatedAt = now
       payment.completedAt = now
-      this.persistPayment(payment)
+      await this.persistPaymentAsync(payment)
 
       await this.publishEvent('cashier.payment-failed', {
         orderId: order.orderId,
@@ -396,7 +459,7 @@ export class CashierService {
     order.closedAt = now
     order.closeReason = reason
     order.updatedAt = now
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     if (payment) {
       await this.loyaltyService?.settleFailedOrder(order, payment)
@@ -446,7 +509,7 @@ export class CashierService {
       payment.sourceEventName = 'cashier.payment-manual-close'
       payment.updatedAt = now
       payment.completedAt = now
-      this.persistPayment(payment)
+      await this.persistPaymentAsync(payment)
 
       await this.publishEvent('cashier.payment-failed', {
         orderId: order.orderId,
@@ -462,7 +525,7 @@ export class CashierService {
     order.closedBy = input?.operator
     order.closeNote = input?.reason
     order.updatedAt = now
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     if (payment) {
       await this.loyaltyService?.settleFailedOrder(order, payment)

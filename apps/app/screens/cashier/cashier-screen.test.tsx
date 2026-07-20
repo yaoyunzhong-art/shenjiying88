@@ -468,6 +468,7 @@ test('PaymentScreen: successful payment submits real api flow and returns paid s
           data: {
             order: {
               orderId: 'order-002',
+              orderNo: 'ORDAPI20260720002',
               memberId: 'member-002',
               currency: 'CNY',
               totalAmount: 89.5,
@@ -559,6 +560,7 @@ test('PaymentScreen: successful payment submits real api flow and returns paid s
     const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
     assert.ok(navigateCall, '成功收款后应回到订单详情');
     assert.equal(navigateCall?.params?.orderId, 'order-002');
+    assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720002');
     assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
     assert.equal(navigateCall?.params?.paymentAmount, 89.5);
     assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
@@ -797,7 +799,7 @@ test('RefundScreen: confirm refund submits real api request and shows success al
       ok: true,
       json: async () => ({
         data: {
-          order: { orderId: 'order-001' },
+          order: { orderId: 'order-001', orderNo: 'ORDAPI20260720001' },
           refunds: [{ refundId: 'refund-001', status: 'PENDING' }],
         },
       }),
@@ -843,6 +845,7 @@ test('RefundScreen: confirm refund submits real api request and shows success al
     const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
     assert.ok(navigateCall, '成功后应把退款状态回带到订单详情');
     assert.equal(navigateCall?.params?.orderId, 'order-001');
+    assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
     assert.equal(navigateCall?.params?.refundStatus, 'PENDING');
     assert.equal(navigateCall?.params?.refundRequestedAmount, 88.5);
     assert.equal(navigateCall?.params?.refundReason, '顾客取消');
@@ -858,7 +861,7 @@ test('RefundScreen: completed refund response returns refunded status to order d
     ok: true,
     json: async () => ({
       data: {
-        order: { orderId: 'order-001' },
+        order: { orderId: 'order-001', orderNo: 'ORDAPI20260720001' },
         refunds: [{
           refundId: 'refund-002',
           status: 'COMPLETED',
@@ -899,6 +902,7 @@ test('RefundScreen: completed refund response returns refunded status to order d
 
     const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
     assert.ok(navigateCall, '完成态后应回带到订单详情');
+    assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
     assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
     assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T03:05:00.000Z');
   } finally {

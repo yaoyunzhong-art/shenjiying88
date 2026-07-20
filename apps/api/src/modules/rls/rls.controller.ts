@@ -20,6 +20,7 @@
  *   POST   /api/rls/pool/init      — 初始化租户连接池
  *   POST   /api/rls/verify/access  — 验证用户-租户访问权限
  *   GET    /api/rls/audit          — 查询租户审计日志
+ *   GET    /api/v1/rls/verify      — 验证多租户隔离策略（RQ-20260720-013）
  */
 
 import {
@@ -45,6 +46,7 @@ import {
   InitPoolDto,
   ListPoliciesDto,
   RlsStatusQueryDto,
+  RlsVerifyResultDto,
   SetupIsolationDto,
   UpdatePolicyDto,
   VerifyAccessDto,
@@ -251,6 +253,32 @@ export class RlsController {
         ...result,
       },
     }
+  }
+
+  // ─── RQ-20260720-013: 多租户整体验证端点 ────────────────────
+
+  /**
+   * GET /api/v1/rls/verify
+   * 验证多租户隔离策略是否对所有 tenant-aware 表生效。
+   * 返回全部模型的 tenantId 字段检查报告。
+   *
+   * 响应:
+   *   {
+   *     "success": true,
+   *     "data": {
+   *       "isolated": true/false,
+   *       "totalTables": 19,
+   *       "tenantIdTables": 19,
+   *       "missingTenantIdTables": [],
+   *       "checkedAt": "2026-07-20T02:00:00.000Z"
+   *     }
+   *   }
+   */
+  @Get('verify/isolation')
+  async verifyMultitenant() {
+    const result = await this.rlsService.verifyMultitenantStatus()
+    // 直接返回数据对象，ResponseInterceptor 会包装为 { success, data, timestamp }
+    return result
   }
 
   // ─── V18: 3项租户隔离增强 ─────────────────────────────────
