@@ -39,12 +39,14 @@ export default function PaymentPage() {
   const [payment, setPayment] = useState<PaymentOrder | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('wechat');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
   // 初始化支付订单
   useEffect(() => {
     async function createPaymentOrder() {
+      setError(null);
       setLoading(true);
       // 模拟创建支付订单
       const mockAmount = 9999; // 99.99元
@@ -54,7 +56,13 @@ export default function PaymentPage() {
         method: selectedMethod,
       });
 
-      if (result.success && result.data) {
+      if (!result.success) {
+        setError(result.error?.message || '创建支付订单失败，请稍后重试');
+        setLoading(false);
+        return;
+      }
+
+      if (result.data) {
         setPayment(result.data);
         // 设置倒计时
         if (result.data.expireAt) {
@@ -97,6 +105,30 @@ export default function PaymentPage() {
     handleBack();
   }
 
+  if (error) {
+    return (
+      <MobileLayout title="订单支付" showBack onBack={handleBack}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: 48,
+            color: '#f87171',
+          }}
+        >
+          <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>加载失败</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontSize: 14, cursor: 'pointer' }}
+          >
+            重新加载
+          </button>
+        </div>
+      </MobileLayout>
+    );
+  }
+
   if (loading) {
     return (
       <MobileLayout title="订单支付" showBack onBack={handleBack}>
@@ -107,7 +139,7 @@ export default function PaymentPage() {
     );
   }
 
-  if (!payment) {
+  if (!loading && !error && !payment) {
     return (
       <MobileLayout title="订单支付" showBack onBack={handleBack}>
         <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
