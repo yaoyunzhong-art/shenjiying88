@@ -12,6 +12,7 @@ import React from 'react';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity, FlatList, type AlertButton } from 'react-native';
 import { OrderCard } from '../../components/OrderCard';
+import { createNativeAppTransactionAggregateResponse } from '../../test-utils/native-app-transaction-aggregate';
 import type { OrderSummaryViewModel } from '../../utils/order-view';
 import { OrderListScreen } from './OrderListScreen';
 import { OrderDetailScreen } from './OrderDetailScreen';
@@ -1101,6 +1102,181 @@ test('OrderListScreen: swipe refresh control renders without crash', () => {
   }
 });
 
+test('OrderListScreen: retry fetch reuses current base query after initial failure', async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  let attempt = 0;
+  mockGlobals.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+    if (!isOrderListRequest(url)) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    attempt += 1;
+    if (attempt === 1) {
+      throw new Error('network error');
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: buildOrderListPageData([
+          {
+            orderId: 'retry-order-001',
+            orderNo: 'ORDAPIRETRY20260721',
+            memberId: 'member-retry-001',
+            status: 'PAID',
+            itemCount: 2,
+            totalAmount: 98,
+            paidAmount: 98,
+            refundedAmount: 0,
+            paymentChannel: 'cash',
+            currency: 'CNY',
+            createdAt: '2026-07-21T06:00:00.000Z',
+            updatedAt: '2026-07-21T06:02:00.000Z',
+            paidAt: '2026-07-21T06:02:00.000Z',
+          },
+        ]),
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, '加载失败'), '首次拉取失败后应展示加载失败态');
+
+    const retryButton = findAllTouchables(root.root).find((touchable) =>
+      touchable.findAllByType(Text).some((txt) => txt.props.children === '重试'),
+    );
+    assert.ok(retryButton, '失败态应展示重试按钮');
+
+    await act(async () => {
+      retryButton!.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.equal(fetchCalls.length, 2, '点击重试后应重新请求一次真实列表');
+    assert.deepEqual(
+      getOrderListRequestQuery(fetchCalls[1]!.url, fetchCalls[1]?.init),
+      { page: '1', pageSize: '10' },
+      '重试应继续使用当前基础 query 重新请求真实列表',
+    );
+    assert.ok(findTextInOrderCards(root, 'ORDAPIRETRY20260721'), '重试成功后应展示重试返回的订单');
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete mockGlobals.__mockOrderListFetchEnabled;
+  }
+});
+
+test('OrderListScreen: pull refresh keeps active filter and date range query', async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  mockGlobals.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListNow = '2026-07-21T12:00:00.000Z';
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+    if (!isOrderListRequest(url)) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    const query = getOrderListRequestQuery(url, init);
+    const items = query.status === 'PAID' && query.fromDate
+      ? [{
+          orderId: 'refresh-order-001',
+          orderNo: 'ORDAPIREFRESH20260721',
+          memberId: 'member-refresh-001',
+          status: 'PAID',
+          itemCount: 1,
+          totalAmount: 108,
+          paidAmount: 108,
+          refundedAmount: 0,
+          paymentChannel: 'ALIPAY',
+          currency: 'CNY',
+          createdAt: '2026-07-21T07:00:00.000Z',
+          updatedAt: '2026-07-21T07:05:00.000Z',
+          paidAt: '2026-07-21T07:05:00.000Z',
+        }]
+      : [];
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: buildOrderListPageData(items),
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent();
+      await Promise.resolve();
+    });
+
+    const touchables = findAllTouchables(root.root);
+    const paidTab = touchables.find((touchable) =>
+      touchable.findAllByType(Text).some((txt) => txt.props.children === '已完成'),
+    );
+    const last7DaysTab = touchables.find((touchable) =>
+      touchable.findAllByType(Text).some((txt) => txt.props.children === '近7天'),
+    );
+    assert.ok(paidTab, '已完成选项卡应在');
+    assert.ok(last7DaysTab, '近7天选项卡应在');
+
+    await act(async () => {
+      paidTab!.props.onPress();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      last7DaysTab!.props.onPress();
+      await Promise.resolve();
+    });
+
+    const flatList = getOrderListFlatList(root);
+    const refreshControl = flatList.props.refreshControl as React.ReactElement<{ onRefresh?: () => void }>;
+    assert.ok(refreshControl, '真实列表场景应继续挂载下拉刷新控件');
+
+    await act(async () => {
+      refreshControl.props.onRefresh?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.equal(fetchCalls.length, 4, '初次拉取、切换状态、切换日期、下拉刷新各应触发一次请求');
+    assert.deepEqual(
+      getOrderListRequestQuery(fetchCalls[3]!.url, fetchCalls[3]?.init),
+      {
+        status: 'PAID',
+        page: '1',
+        pageSize: '10',
+        fromDate: '2026-07-15T12:00:00.000Z',
+        toDate: '2026-07-21T12:00:00.000Z',
+      },
+      '下拉刷新应沿用当前已完成 + 近7天筛选的 query',
+    );
+    assert.ok(findTextInOrderCards(root, 'ORDAPIREFRESH20260721'), '下拉刷新后应展示当前筛选条件返回的订单');
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete mockGlobals.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListNow;
+  }
+});
+
 /* ================================================================== */
 /*  ORDER DETAIL SCREEN TESTS                                          */
 /* ================================================================== */
@@ -1174,50 +1350,40 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
       throw new Error(`unexpected request: ${url}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          memberNickname: '接口会员二号',
-          order: {
-            orderId: 'order-002',
-            orderNo: 'ORDAPI20260720002',
-            memberId: 'member-api-002',
-            items: [
-              { skuId: 'SKU-API-201', title: '燕麦拿铁', quantity: 1, price: 38 },
-              { skuId: 'SKU-API-202', title: '坚果能量棒', quantity: 2, price: 29 },
-            ],
-            currency: 'CNY',
-            totalAmount: 120,
-            status: 'PENDING_PAYMENT',
-            latestPaymentId: 'payment-order-002',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-002',
-            orderId: 'order-002',
-            channel: 'ALIPAY',
-            amount: 120,
-            status: 'PENDING',
-            externalPaymentId: 'app-pos-order-002',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-          },
-          settlement: {
-            settlementId: 'settlement-order-002',
-            pointsEarned: 120,
-            pointsBalance: 120,
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      memberNickname: '接口会员二号',
+      order: {
+        orderId: 'order-002',
+        orderNo: 'ORDAPI20260720002',
+        memberId: 'member-api-002',
+        items: [
+          { skuId: 'SKU-API-201', title: '燕麦拿铁', quantity: 1, price: 38 },
+          { skuId: 'SKU-API-202', title: '坚果能量棒', quantity: 2, price: 29 },
+        ],
+        totalAmount: 120,
+        status: 'PENDING_PAYMENT',
+        latestPaymentId: 'payment-order-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: undefined,
+      },
+      payment: {
+        paymentId: 'payment-order-002',
+        orderId: 'order-002',
+        channel: 'ALIPAY',
+        amount: 120,
+        status: 'PENDING',
+        externalPaymentId: 'app-pos-order-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: undefined,
+      },
+      settlement: {
+        settlementId: 'settlement-order-002',
+        pointsEarned: 120,
+        pointsBalance: 120,
+      },
+    });
   }) as typeof fetch;
 
   try {
@@ -1235,6 +1401,140 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
     assert.ok(findByText(root.root, '燕麦拿铁'), '启用真实聚合后应展示接口返回的商品明细');
     assert.ok(findByText(root.root, '坚果能量棒'), '启用真实聚合后应展示接口返回的商品明细');
     assert.ok(findByText(root.root, 'SKU-API-201'), '启用真实聚合后应展示接口返回的 SKU');
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete mockGlobals.__mockOrderFetchEnabled;
+  }
+});
+
+test('OrderDetailScreen: renders loading state while real aggregate request is pending', async () => {
+  const originalFetch = globalThis.fetch;
+  let resolveResponse!: (response: Response) => void;
+  mockGlobals.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (() =>
+    new Promise<Response>((resolve) => {
+      resolveResponse = resolve;
+    })) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderDetailComponent({ orderId: 'order-002' });
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, '加载中...'), '真实聚合请求未完成时应展示加载态');
+
+    await act(async () => {
+      resolveResponse(createNativeAppTransactionAggregateResponse({
+        memberNickname: '接口会员加载态',
+        order: {
+          orderId: 'order-002',
+          orderNo: 'ORDAPILOADING20260721',
+          memberId: 'member-loading-002',
+          totalAmount: 120,
+          status: 'PENDING_PAYMENT',
+          latestPaymentId: 'payment-loading-002',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-21T08:10:00.000Z',
+          paidAt: undefined,
+        },
+        payment: {
+          paymentId: 'payment-loading-002',
+          orderId: 'order-002',
+          channel: 'ALIPAY',
+          amount: 120,
+          status: 'PENDING',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-21T08:10:00.000Z',
+          completedAt: undefined,
+        },
+        settlement: {
+          settlementId: 'settlement-loading-002',
+          pointsEarned: 120,
+          pointsBalance: 120,
+        },
+      }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, 'ORDAPILOADING20260721'), '请求完成后应切回详情内容');
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete mockGlobals.__mockOrderFetchEnabled;
+  }
+});
+
+test('OrderDetailScreen: retry after aggregate error recovers detail content', async () => {
+  const originalFetch = globalThis.fetch;
+  let attempt = 0;
+  mockGlobals.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders/order-002')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    attempt += 1;
+    if (attempt === 1) {
+      throw new Error('接口暂时不可用');
+    }
+
+    return createNativeAppTransactionAggregateResponse({
+      memberNickname: '重试成功会员',
+      order: {
+        orderId: 'order-002',
+        orderNo: 'ORDAPIRETRYDETAIL20260721',
+        memberId: 'member-retry-002',
+        totalAmount: 120,
+        status: 'PAID',
+        latestPaymentId: 'payment-retry-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-21T08:20:00.000Z',
+        paidAt: '2026-07-21T08:20:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-retry-002',
+        orderId: 'order-002',
+        channel: 'WECHAT_PAY',
+        amount: 120,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-21T08:20:00.000Z',
+        completedAt: '2026-07-21T08:20:00.000Z',
+      },
+      settlement: {
+        settlementId: 'settlement-retry-002',
+        pointsEarned: 120,
+        pointsBalance: 120,
+      },
+    });
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderDetailComponent({ orderId: 'order-002' });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, '加载失败'), '真实聚合失败后应展示失败态');
+    assert.ok(findByText(root.root, '接口暂时不可用'), '失败态应展示真实错误信息');
+
+    const retryButton = findAllTouchables(root.root).find((touchable) => hasExactText(touchable, '重试'));
+    assert.ok(retryButton, '失败态应展示重试按钮');
+
+    await act(async () => {
+      retryButton!.props.onPress();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    assert.equal(attempt, 2, '点击重试后应再次请求详情聚合');
+    assert.ok(findByText(root.root, 'ORDAPIRETRYDETAIL20260721'), '重试成功后应恢复详情内容');
+    assert.ok(findByText(root.root, '重试成功会员'), '重试成功后应展示最新聚合会员昵称');
   } finally {
     globalThis.fetch = originalFetch;
     delete mockGlobals.__mockOrderFetchEnabled;
@@ -1505,47 +1805,35 @@ test('OrderDetailScreen: payment return preserves real orderNo when fetch is ena
       throw new Error(`unexpected request: ${url}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          order: {
-            orderId: 'order-002',
-            orderNo: 'ORDAPI20260720002',
-            memberId: 'member-api-002',
-            currency: 'CNY',
-            totalAmount: 120,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-002',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            paidAt: '2026-07-20T04:10:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-002',
-            orderId: 'order-002',
-            channel: 'ALIPAY',
-            amount: 120,
-            status: 'SUCCEEDED',
-            externalPaymentId: 'app-pos-order-002',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            completedAt: '2026-07-20T04:10:00.000Z',
-          },
-          settlement: {
-            settlementId: 'settlement-order-002',
-            pointsEarned: 120,
-            pointsBalance: 120,
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-002',
+        orderNo: 'ORDAPI20260720002',
+        memberId: 'member-api-002',
+        totalAmount: 120,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-002',
+        orderId: 'order-002',
+        channel: 'ALIPAY',
+        amount: 120,
+        status: 'SUCCEEDED',
+        externalPaymentId: 'app-pos-order-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: {
+        settlementId: 'settlement-order-002',
+        pointsEarned: 120,
+        pointsBalance: 120,
+      },
+    });
   }) as typeof fetch;
 
   try {
@@ -1591,58 +1879,46 @@ test('OrderDetailScreen: fetched refunded aggregate wins over stale pending refu
       throw new Error(`unexpected request: ${url}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          memberNickname: '接口会员一号',
-          order: {
-            orderId: 'order-001',
-            orderNo: 'ORDAPI20260720001',
-            memberId: 'member-api-001',
-            items: [],
-            currency: 'CNY',
-            totalAmount: 156,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-001',
-            createdAt: '2026-06-12T10:30:00.000Z',
-            updatedAt: '2026-07-20T05:16:00.000Z',
-            paidAt: '2026-07-20T04:12:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-001',
-            orderId: 'order-001',
-            channel: 'wechat-pay',
-            amount: 156,
-            status: 'SUCCEEDED',
-            createdAt: '2026-06-12T10:30:00.000Z',
-            updatedAt: '2026-07-20T04:12:00.000Z',
-            completedAt: '2026-07-20T04:12:00.000Z',
-          },
-          settlement: {
-            settlementId: 'settlement-order-001',
-            pointsEarned: 156,
-            pointsBalance: 156,
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [{
-            refundId: 'refund-completed-001',
-            orderId: 'order-001',
-            paymentId: 'payment-order-001',
-            memberId: 'member-api-001',
-            refundAmount: 66,
-            reason: '门店退款完成',
-            status: 'COMPLETED',
-            requestedAt: '2026-07-20T05:05:00.000Z',
-            completedAt: '2026-07-20T05:16:00.000Z',
-          }],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      memberNickname: '接口会员一号',
+      order: {
+        orderId: 'order-001',
+        orderNo: 'ORDAPI20260720001',
+        memberId: 'member-api-001',
+        totalAmount: 156,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-001',
+        createdAt: '2026-06-12T10:30:00.000Z',
+        updatedAt: '2026-07-20T05:16:00.000Z',
+        paidAt: '2026-07-20T04:12:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-001',
+        orderId: 'order-001',
+        channel: 'wechat-pay',
+        amount: 156,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T10:30:00.000Z',
+        updatedAt: '2026-07-20T04:12:00.000Z',
+        completedAt: '2026-07-20T04:12:00.000Z',
+      },
+      settlement: {
+        settlementId: 'settlement-order-001',
+        pointsEarned: 156,
+        pointsBalance: 156,
+      },
+      refunds: [{
+        refundId: 'refund-completed-001',
+        orderId: 'order-001',
+        paymentId: 'payment-order-001',
+        memberId: 'member-api-001',
+        refundAmount: 66,
+        reason: '门店退款完成',
+        status: 'COMPLETED',
+        requestedAt: '2026-07-20T05:05:00.000Z',
+        completedAt: '2026-07-20T05:16:00.000Z',
+      }],
+    });
   }) as typeof fetch;
 
   try {
@@ -1696,56 +1972,44 @@ test('OrderDetailScreen: rejected refunds do not render refund summary', async (
       throw new Error(`unexpected request: ${url}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          order: {
-            orderId: 'order-001',
-            orderNo: 'ORDAPI20260720001',
-            memberId: 'member-api-001',
-            items: [],
-            currency: 'CNY',
-            totalAmount: 156,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-001',
-            createdAt: '2026-06-12T10:30:00.000Z',
-            updatedAt: '2026-07-20T05:16:00.000Z',
-            paidAt: '2026-07-20T04:12:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-001',
-            orderId: 'order-001',
-            channel: 'wechat-pay',
-            amount: 156,
-            status: 'SUCCEEDED',
-            createdAt: '2026-06-12T10:30:00.000Z',
-            updatedAt: '2026-07-20T04:12:00.000Z',
-            completedAt: '2026-07-20T04:12:00.000Z',
-          },
-          settlement: {
-            settlementId: 'settlement-order-001',
-            pointsEarned: 156,
-            pointsBalance: 156,
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [{
-            refundId: 'refund-rejected-001',
-            orderId: 'order-001',
-            paymentId: 'payment-order-001',
-            memberId: 'member-api-001',
-            refundAmount: 66,
-            reason: '审核驳回',
-            status: 'REJECTED',
-            requestedAt: '2026-07-20T05:05:00.000Z',
-          }],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-001',
+        orderNo: 'ORDAPI20260720001',
+        memberId: 'member-api-001',
+        totalAmount: 156,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-001',
+        createdAt: '2026-06-12T10:30:00.000Z',
+        updatedAt: '2026-07-20T05:16:00.000Z',
+        paidAt: '2026-07-20T04:12:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-001',
+        orderId: 'order-001',
+        channel: 'wechat-pay',
+        amount: 156,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T10:30:00.000Z',
+        updatedAt: '2026-07-20T04:12:00.000Z',
+        completedAt: '2026-07-20T04:12:00.000Z',
+      },
+      settlement: {
+        settlementId: 'settlement-order-001',
+        pointsEarned: 156,
+        pointsBalance: 156,
+      },
+      refunds: [{
+        refundId: 'refund-rejected-001',
+        orderId: 'order-001',
+        paymentId: 'payment-order-001',
+        memberId: 'member-api-001',
+        refundAmount: 66,
+        reason: '审核驳回',
+        status: 'REJECTED',
+        requestedAt: '2026-07-20T05:05:00.000Z',
+      }],
+    });
   }) as typeof fetch;
 
   try {

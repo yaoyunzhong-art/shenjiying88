@@ -249,28 +249,32 @@ describe('report entity - 报表类型定义', () => {
   })
 
   // ============ METRIC_LABELS ============
-  it('METRIC_LABELS 包含 8 个指标中文名', () => {
-    assert.equal(Object.keys(METRIC_LABELS).length, 8)
+  it('METRIC_LABELS 包含 10 个指标中文名 (V23 新增客流/转化)', () => {
+    assert.equal(Object.keys(METRIC_LABELS).length, 10)
     assert.equal(METRIC_LABELS['sales.amount'], '销售额')
+    assert.equal(METRIC_LABELS['sales.traffic'], '客流量')
+    assert.equal(METRIC_LABELS['sales.conversion'], '转化率')
     assert.equal(METRIC_LABELS['ai.latency'], 'AI 延迟')
   })
 
   // ============ METRIC_UNITS ============
-  it('METRIC_UNITS 包含 8 个指标单位', () => {
-    assert.equal(Object.keys(METRIC_UNITS).length, 8)
+  it('METRIC_UNITS 包含 10 个指标单位 (V23 新增客流/转化)', () => {
+    assert.equal(Object.keys(METRIC_UNITS).length, 10)
     assert.equal(METRIC_UNITS['sales.amount'], '元')
+    assert.equal(METRIC_UNITS['sales.traffic'], '人')
+    assert.equal(METRIC_UNITS['sales.conversion'], '%')
     assert.equal(METRIC_UNITS['ai.tokens'], 'tokens')
   })
 
   // ============ 边界情况 ============
   it('空指标标签不崩溃', () => {
     // 所有指标都有标签
-    const allCovered = Object.keys(METRIC_LABELS).length >= 8
+    const allCovered = Object.keys(METRIC_LABELS).length >= 10
     assert.ok(allCovered)
   })
 
   it('空指标单位不崩溃', () => {
-    const allCovered = Object.keys(METRIC_UNITS).length >= 8
+    const allCovered = Object.keys(METRIC_UNITS).length >= 10
     assert.ok(allCovered)
   })
 })

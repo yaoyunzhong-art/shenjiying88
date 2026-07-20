@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { createNativeAppTransactionAggregateResponse } from '../../test-utils/native-app-transaction-aggregate';
 import { PaymentScreen } from './PaymentScreen';
 import { RefundScreen } from './RefundScreen';
 
@@ -212,46 +213,35 @@ test('PaymentScreen: hydrates real order info when fetch is enabled', async () =
       throw new Error(`unexpected request: ${url}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          order: {
-            orderId: 'order-002',
-            orderNo: 'ORDAPI20260720002',
-            memberId: 'member-002',
-            currency: 'CNY',
-            totalAmount: 108.8,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-002',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            paidAt: '2026-07-20T04:10:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-002',
-            orderId: 'order-002',
-            channel: 'alipay',
-            amount: 108.8,
-            status: 'SUCCEEDED',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            completedAt: '2026-07-20T04:10:00.000Z',
-          },
-          settlement: {
-            settlementId: 'settlement-order-002',
-            pointsEarned: 109,
-            pointsBalance: 109,
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-002',
+        orderNo: 'ORDAPI20260720002',
+        memberId: 'member-002',
+        currency: 'CNY',
+        totalAmount: 108.8,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-002',
+        orderId: 'order-002',
+        channel: 'alipay',
+        amount: 108.8,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: {
+        settlementId: 'settlement-order-002',
+        pointsEarned: 109,
+        pointsBalance: 109,
+      },
+    });
   }) as typeof fetch;
 
   try {
@@ -293,38 +283,31 @@ test('PaymentScreen: loading linked order keeps submit disabled until hydration 
     const submitBtn = findTouchableByText(root.root, '确认收款');
     assert.equal(submitBtn?.props.disabled, true, '关联订单同步中时确认收款按钮应禁用');
 
-    resolveResponse?.(new Response(JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-005',
-          orderNo: 'ORDAPI20260720005',
-          memberId: 'member-005',
-          currency: 'CNY',
-          totalAmount: 77.7,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-005',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-005',
-          orderId: 'order-005',
-          channel: 'wechat-pay',
-          amount: 77.7,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [],
+    resolveResponse?.(createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-005',
+        orderNo: 'ORDAPI20260720005',
+        memberId: 'member-005',
+        currency: 'CNY',
+        totalAmount: 77.7,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-005',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
       },
-    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      payment: {
+        paymentId: 'payment-order-005',
+        orderId: 'order-005',
+        channel: 'wechat-pay',
+        amount: 77.7,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: null,
+    }));
 
     await act(async () => {
       await Promise.resolve();
@@ -368,38 +351,31 @@ test('PaymentScreen: submitting while linked order is still loading only shows s
     assert.equal(alertCalls.at(-1)?.message, '订单信息同步中，请稍后再试');
     assert.equal(findAllModals(root.root).some((modal) => modal.props.visible), false, '同步中不应打开确认弹窗');
 
-    resolveResponse?.(new Response(JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-005a',
-          orderNo: 'ORDAPI20260720005A',
-          memberId: 'member-005a',
-          currency: 'CNY',
-          totalAmount: 66.6,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-005a',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-005a',
-          orderId: 'order-005a',
-          channel: 'wechat-pay',
-          amount: 66.6,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [],
+    resolveResponse?.(createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-005a',
+        orderNo: 'ORDAPI20260720005A',
+        memberId: 'member-005a',
+        currency: 'CNY',
+        totalAmount: 66.6,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-005a',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
       },
-    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      payment: {
+        paymentId: 'payment-order-005a',
+        orderId: 'order-005a',
+        channel: 'wechat-pay',
+        amount: 66.6,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: null,
+    }));
 
     await act(async () => {
       await Promise.resolve();
@@ -420,41 +396,31 @@ test('PaymentScreen: fetch failure shows retry hint and can recover', async () =
       throw new Error('network unavailable');
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          order: {
-            orderId: 'order-006',
-            orderNo: 'ORDAPI20260720006',
-            memberId: 'member-006',
-            currency: 'CNY',
-            totalAmount: 128.5,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-006',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            paidAt: '2026-07-20T04:10:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-006',
-            orderId: 'order-006',
-            channel: 'alipay',
-            amount: 128.5,
-            status: 'SUCCEEDED',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            completedAt: '2026-07-20T04:10:00.000Z',
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-006',
+        orderNo: 'ORDAPI20260720006',
+        memberId: 'member-006',
+        currency: 'CNY',
+        totalAmount: 128.5,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-006',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-006',
+        orderId: 'order-006',
+        channel: 'alipay',
+        amount: 128.5,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: null,
+    });
   }) as typeof fetch;
 
   try {
@@ -487,41 +453,31 @@ test('PaymentScreen: fetch failure shows retry hint and can recover', async () =
 test('PaymentScreen: route preset amount and selected channel are not overridden by hydration', async () => {
   const originalFetch = globalThis.fetch;
   mockGlobals.__mockOrderFetchEnabled = true;
-  globalThis.fetch = (async () => new Response(
-    JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-007',
-          orderNo: 'ORDAPI20260720007',
-          memberId: 'member-007',
-          currency: 'CNY',
-          totalAmount: 128.5,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-007',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-007',
-          orderId: 'order-007',
-          channel: 'alipay',
-          amount: 128.5,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [],
-      },
-    }),
-    { status: 200, headers: { 'content-type': 'application/json' } },
-  )) as typeof fetch;
+  globalThis.fetch = (async () => createNativeAppTransactionAggregateResponse({
+    order: {
+      orderId: 'order-007',
+      orderNo: 'ORDAPI20260720007',
+      memberId: 'member-007',
+      currency: 'CNY',
+      totalAmount: 128.5,
+      status: 'PAID',
+      latestPaymentId: 'payment-order-007',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      paidAt: '2026-07-20T04:10:00.000Z',
+    },
+    payment: {
+      paymentId: 'payment-order-007',
+      orderId: 'order-007',
+      channel: 'alipay',
+      amount: 128.5,
+      status: 'SUCCEEDED',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      completedAt: '2026-07-20T04:10:00.000Z',
+    },
+    settlement: null,
+  })) as typeof fetch;
 
   try {
     let root!: ReturnType<typeof create>;
@@ -778,47 +734,36 @@ test('PaymentScreen: successful payment submits real api flow and returns paid s
 
     if (url.endsWith('/transactions/orders/order-002') && (!init?.method || init.method === 'GET')) {
       const paidAt = fetchCalls.length > 1 ? '2026-07-20T03:20:00.000Z' : undefined;
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'OK',
-          data: {
-            order: {
-              orderId: 'order-002',
-              orderNo: 'ORDAPI20260720002',
-              memberId: 'member-002',
-              currency: 'CNY',
-              totalAmount: 89.5,
-              status: paidAt ? 'PAID' : 'PENDING_PAYMENT',
-              latestPaymentId: 'payment-order-002',
-              createdAt: '2026-06-12T11:15:00.000Z',
-              updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
-              paidAt,
-            },
-            payment: {
-              paymentId: 'payment-order-002',
-              orderId: 'order-002',
-              channel: 'WECHAT_PAY',
-              amount: 89.5,
-              status: paidAt ? 'SUCCEEDED' : 'PENDING',
-              externalPaymentId: 'app-pos-order-002',
-              createdAt: '2026-06-12T11:15:00.000Z',
-              updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
-              completedAt: paidAt,
-            },
-            settlement: {
-              settlementId: 'settlement-order-002',
-              pointsEarned: 90,
-              pointsBalance: 90,
-            },
-            pointsLedger: [],
-            couponRedemptions: [],
-            blindboxFulfillments: [],
-            refunds: [],
-          },
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      );
+      return createNativeAppTransactionAggregateResponse({
+        order: {
+          orderId: 'order-002',
+          orderNo: 'ORDAPI20260720002',
+          memberId: 'member-002',
+          currency: 'CNY',
+          totalAmount: 89.5,
+          status: paidAt ? 'PAID' : 'PENDING_PAYMENT',
+          latestPaymentId: 'payment-order-002',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
+          paidAt,
+        },
+        payment: {
+          paymentId: 'payment-order-002',
+          orderId: 'order-002',
+          channel: 'WECHAT_PAY',
+          amount: 89.5,
+          status: paidAt ? 'SUCCEEDED' : 'PENDING',
+          externalPaymentId: 'app-pos-order-002',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
+          completedAt: paidAt,
+        },
+        settlement: {
+          settlementId: 'settlement-order-002',
+          pointsEarned: 90,
+          pointsBalance: 90,
+        },
+      });
     }
 
     if (url.endsWith('/transactions/payments/standardized-callback') && init?.method === 'POST') {
@@ -895,47 +840,36 @@ test('PaymentScreen: successful payment keeps hydrated orderNo and normalized pa
 
     if (url.endsWith('/transactions/orders/order-003') && (!init?.method || init.method === 'GET')) {
       const paidAt = fetchCalls.length > 1 ? '2026-07-20T05:20:00.000Z' : undefined;
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'OK',
-          data: {
-            order: {
-              orderId: 'order-003',
-              orderNo: 'ORDAPI20260720003',
-              memberId: 'member-003',
-              currency: 'CNY',
-              totalAmount: 66.6,
-              status: paidAt ? 'PAID' : 'PENDING_PAYMENT',
-              latestPaymentId: 'payment-order-003',
-              createdAt: '2026-06-12T11:15:00.000Z',
-              updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
-              paidAt,
-            },
-            payment: {
-              paymentId: 'payment-order-003',
-              orderId: 'order-003',
-              channel: 'alipay',
-              amount: 66.6,
-              status: paidAt ? 'SUCCEEDED' : 'PENDING',
-              externalPaymentId: 'app-pos-order-003',
-              createdAt: '2026-06-12T11:15:00.000Z',
-              updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
-              completedAt: paidAt,
-            },
-            settlement: {
-              settlementId: 'settlement-order-003',
-              pointsEarned: 67,
-              pointsBalance: 67,
-            },
-            pointsLedger: [],
-            couponRedemptions: [],
-            blindboxFulfillments: [],
-            refunds: [],
-          },
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      );
+      return createNativeAppTransactionAggregateResponse({
+        order: {
+          orderId: 'order-003',
+          orderNo: 'ORDAPI20260720003',
+          memberId: 'member-003',
+          currency: 'CNY',
+          totalAmount: 66.6,
+          status: paidAt ? 'PAID' : 'PENDING_PAYMENT',
+          latestPaymentId: 'payment-order-003',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
+          paidAt,
+        },
+        payment: {
+          paymentId: 'payment-order-003',
+          orderId: 'order-003',
+          channel: 'alipay',
+          amount: 66.6,
+          status: paidAt ? 'SUCCEEDED' : 'PENDING',
+          externalPaymentId: 'app-pos-order-003',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: paidAt ?? '2026-06-12T11:15:00.000Z',
+          completedAt: paidAt,
+        },
+        settlement: {
+          settlementId: 'settlement-order-003',
+          pointsEarned: 67,
+          pointsBalance: 67,
+        },
+      });
     }
 
     if (url.endsWith('/transactions/payments/standardized-callback') && init?.method === 'POST') {
@@ -1068,41 +1002,31 @@ test('RefundScreen: hydrates real order info and payment channel when fetch is e
       throw new Error(`unexpected request: ${url}`);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          order: {
-            orderId: 'order-002',
-            orderNo: 'ORDAPI20260720002',
-            memberId: 'member-002',
-            currency: 'CNY',
-            totalAmount: 108.8,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-002',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            paidAt: '2026-07-20T04:10:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-002',
-            orderId: 'order-002',
-            channel: 'alipay',
-            amount: 108.8,
-            status: 'SUCCEEDED',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            completedAt: '2026-07-20T04:10:00.000Z',
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-002',
+        orderNo: 'ORDAPI20260720002',
+        memberId: 'member-002',
+        currency: 'CNY',
+        totalAmount: 108.8,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-002',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-002',
+        orderId: 'order-002',
+        channel: 'alipay',
+        amount: 108.8,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: null,
+    });
   }) as typeof fetch;
 
   try {
@@ -1144,38 +1068,31 @@ test('RefundScreen: loading linked order keeps submit disabled until hydration c
     const refundBtn = findTouchableByText(root.root, '确认退款');
     assert.equal(refundBtn?.props.disabled, true, '关联订单同步中时确认退款按钮应禁用');
 
-    resolveResponse?.(new Response(JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-009',
-          orderNo: 'ORDAPI20260720009',
-          memberId: 'member-009',
-          currency: 'CNY',
-          totalAmount: 55.5,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-009',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-009',
-          orderId: 'order-009',
-          channel: 'wechat-pay',
-          amount: 55.5,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [],
+    resolveResponse?.(createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-009',
+        orderNo: 'ORDAPI20260720009',
+        memberId: 'member-009',
+        currency: 'CNY',
+        totalAmount: 55.5,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-009',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
       },
-    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      payment: {
+        paymentId: 'payment-order-009',
+        orderId: 'order-009',
+        channel: 'wechat-pay',
+        amount: 55.5,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: null,
+    }));
 
     await act(async () => {
       await Promise.resolve();
@@ -1199,41 +1116,31 @@ test('RefundScreen: fetch failure shows retry hint and can recover', async () =>
       throw new Error('refund order unavailable');
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OK',
-        data: {
-          order: {
-            orderId: 'order-010',
-            orderNo: 'ORDAPI20260720010',
-            memberId: 'member-010',
-            currency: 'CNY',
-            totalAmount: 90,
-            status: 'PAID',
-            latestPaymentId: 'payment-order-010',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            paidAt: '2026-07-20T04:10:00.000Z',
-          },
-          payment: {
-            paymentId: 'payment-order-010',
-            orderId: 'order-010',
-            channel: 'alipay',
-            amount: 90,
-            status: 'SUCCEEDED',
-            createdAt: '2026-06-12T11:15:00.000Z',
-            updatedAt: '2026-07-20T04:10:00.000Z',
-            completedAt: '2026-07-20T04:10:00.000Z',
-          },
-          pointsLedger: [],
-          couponRedemptions: [],
-          blindboxFulfillments: [],
-          refunds: [],
-        },
-      }),
-      { status: 200, headers: { 'content-type': 'application/json' } },
-    );
+    return createNativeAppTransactionAggregateResponse({
+      order: {
+        orderId: 'order-010',
+        orderNo: 'ORDAPI20260720010',
+        memberId: 'member-010',
+        currency: 'CNY',
+        totalAmount: 90,
+        status: 'PAID',
+        latestPaymentId: 'payment-order-010',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        paidAt: '2026-07-20T04:10:00.000Z',
+      },
+      payment: {
+        paymentId: 'payment-order-010',
+        orderId: 'order-010',
+        channel: 'alipay',
+        amount: 90,
+        status: 'SUCCEEDED',
+        createdAt: '2026-06-12T11:15:00.000Z',
+        updatedAt: '2026-07-20T04:10:00.000Z',
+        completedAt: '2026-07-20T04:10:00.000Z',
+      },
+      settlement: null,
+    });
   }) as typeof fetch;
 
   try {
@@ -1270,50 +1177,41 @@ test('RefundScreen: fetch failure shows retry hint and can recover', async () =>
 test('RefundScreen: keeps route refund reason after order hydration', async () => {
   const originalFetch = globalThis.fetch;
   mockGlobals.__mockOrderFetchEnabled = true;
-  globalThis.fetch = (async () => new Response(
-    JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-002',
-          orderNo: 'ORDAPI20260720002',
-          memberId: 'member-002',
-          currency: 'CNY',
-          totalAmount: 108.8,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-002',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-002',
-          orderId: 'order-002',
-          channel: 'alipay',
-          amount: 108.8,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [{
-          refundId: 'refund-history-001',
-          orderId: 'order-002',
-          paymentId: 'payment-order-002',
-          memberId: 'member-002',
-          refundAmount: 10,
-          reason: '历史退款原因',
-          status: 'REJECTED',
-          requestedAt: '2026-07-19T04:10:00.000Z',
-        }],
-      },
-    }),
-    { status: 200, headers: { 'content-type': 'application/json' } },
-  )) as typeof fetch;
+  globalThis.fetch = (async () => createNativeAppTransactionAggregateResponse({
+    order: {
+      orderId: 'order-002',
+      orderNo: 'ORDAPI20260720002',
+      memberId: 'member-002',
+      currency: 'CNY',
+      totalAmount: 108.8,
+      status: 'PAID',
+      latestPaymentId: 'payment-order-002',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      paidAt: '2026-07-20T04:10:00.000Z',
+    },
+    payment: {
+      paymentId: 'payment-order-002',
+      orderId: 'order-002',
+      channel: 'alipay',
+      amount: 108.8,
+      status: 'SUCCEEDED',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      completedAt: '2026-07-20T04:10:00.000Z',
+    },
+    settlement: null,
+    refunds: [{
+      refundId: 'refund-history-001',
+      orderId: 'order-002',
+      paymentId: 'payment-order-002',
+      memberId: 'member-002',
+      refundAmount: 10,
+      reason: '历史退款原因',
+      status: 'REJECTED',
+      requestedAt: '2026-07-19T04:10:00.000Z',
+    }],
+  })) as typeof fetch;
 
   try {
     let root!: ReturnType<typeof create>;
@@ -1333,50 +1231,41 @@ test('RefundScreen: keeps route refund reason after order hydration', async () =
 test('RefundScreen: does not reuse historical refund reason when route reason is absent', async () => {
   const originalFetch = globalThis.fetch;
   mockGlobals.__mockOrderFetchEnabled = true;
-  globalThis.fetch = (async () => new Response(
-    JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-003',
-          orderNo: 'ORDAPI20260720003',
-          memberId: 'member-003',
-          currency: 'CNY',
-          totalAmount: 88.8,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-003',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-003',
-          orderId: 'order-003',
-          channel: 'wechat-pay',
-          amount: 88.8,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [{
-          refundId: 'refund-history-002',
-          orderId: 'order-003',
-          paymentId: 'payment-order-003',
-          memberId: 'member-003',
-          refundAmount: 20,
-          reason: '上次退款原因',
-          status: 'REJECTED',
-          requestedAt: '2026-07-19T04:10:00.000Z',
-        }],
-      },
-    }),
-    { status: 200, headers: { 'content-type': 'application/json' } },
-  )) as typeof fetch;
+  globalThis.fetch = (async () => createNativeAppTransactionAggregateResponse({
+    order: {
+      orderId: 'order-003',
+      orderNo: 'ORDAPI20260720003',
+      memberId: 'member-003',
+      currency: 'CNY',
+      totalAmount: 88.8,
+      status: 'PAID',
+      latestPaymentId: 'payment-order-003',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      paidAt: '2026-07-20T04:10:00.000Z',
+    },
+    payment: {
+      paymentId: 'payment-order-003',
+      orderId: 'order-003',
+      channel: 'wechat-pay',
+      amount: 88.8,
+      status: 'SUCCEEDED',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      completedAt: '2026-07-20T04:10:00.000Z',
+    },
+    settlement: null,
+    refunds: [{
+      refundId: 'refund-history-002',
+      orderId: 'order-003',
+      paymentId: 'payment-order-003',
+      memberId: 'member-003',
+      refundAmount: 20,
+      reason: '上次退款原因',
+      status: 'REJECTED',
+      requestedAt: '2026-07-19T04:10:00.000Z',
+    }],
+  })) as typeof fetch;
 
   try {
     let root!: ReturnType<typeof create>;
@@ -1396,41 +1285,31 @@ test('RefundScreen: does not reuse historical refund reason when route reason is
 test('RefundScreen: route preset refund amount is not overridden by hydration', async () => {
   const originalFetch = globalThis.fetch;
   mockGlobals.__mockOrderFetchEnabled = true;
-  globalThis.fetch = (async () => new Response(
-    JSON.stringify({
-      success: true,
-      message: 'OK',
-      data: {
-        order: {
-          orderId: 'order-011',
-          orderNo: 'ORDAPI20260720011',
-          memberId: 'member-011',
-          currency: 'CNY',
-          totalAmount: 120,
-          status: 'PAID',
-          latestPaymentId: 'payment-order-011',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          paidAt: '2026-07-20T04:10:00.000Z',
-        },
-        payment: {
-          paymentId: 'payment-order-011',
-          orderId: 'order-011',
-          channel: 'wechat-pay',
-          amount: 120,
-          status: 'SUCCEEDED',
-          createdAt: '2026-06-12T11:15:00.000Z',
-          updatedAt: '2026-07-20T04:10:00.000Z',
-          completedAt: '2026-07-20T04:10:00.000Z',
-        },
-        pointsLedger: [],
-        couponRedemptions: [],
-        blindboxFulfillments: [],
-        refunds: [],
-      },
-    }),
-    { status: 200, headers: { 'content-type': 'application/json' } },
-  )) as typeof fetch;
+  globalThis.fetch = (async () => createNativeAppTransactionAggregateResponse({
+    order: {
+      orderId: 'order-011',
+      orderNo: 'ORDAPI20260720011',
+      memberId: 'member-011',
+      currency: 'CNY',
+      totalAmount: 120,
+      status: 'PAID',
+      latestPaymentId: 'payment-order-011',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      paidAt: '2026-07-20T04:10:00.000Z',
+    },
+    payment: {
+      paymentId: 'payment-order-011',
+      orderId: 'order-011',
+      channel: 'wechat-pay',
+      amount: 120,
+      status: 'SUCCEEDED',
+      createdAt: '2026-06-12T11:15:00.000Z',
+      updatedAt: '2026-07-20T04:10:00.000Z',
+      completedAt: '2026-07-20T04:10:00.000Z',
+    },
+    settlement: null,
+  })) as typeof fetch;
 
   try {
     let root!: ReturnType<typeof create>;
@@ -1673,41 +1552,31 @@ test('RefundScreen: successful refund keeps hydrated orderNo and normalized paym
     fetchCalls.push({ url, init });
 
     if (url.endsWith('/transactions/orders/order-001') && (!init?.method || init.method === 'GET')) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'OK',
-          data: {
-            order: {
-              orderId: 'order-001',
-              orderNo: 'ORDAPI20260720001',
-              memberId: 'member-001',
-              currency: 'CNY',
-              totalAmount: 156,
-              status: 'PAID',
-              latestPaymentId: 'payment-order-001',
-              createdAt: '2026-06-12T10:30:00.000Z',
-              updatedAt: '2026-07-20T03:00:00.000Z',
-              paidAt: '2026-07-20T03:00:00.000Z',
-            },
-            payment: {
-              paymentId: 'payment-order-001',
-              orderId: 'order-001',
-              channel: 'wechat-pay',
-              amount: 156,
-              status: 'SUCCEEDED',
-              createdAt: '2026-06-12T10:30:00.000Z',
-              updatedAt: '2026-07-20T03:00:00.000Z',
-              completedAt: '2026-07-20T03:00:00.000Z',
-            },
-            pointsLedger: [],
-            couponRedemptions: [],
-            blindboxFulfillments: [],
-            refunds: [],
-          },
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      );
+      return createNativeAppTransactionAggregateResponse({
+        order: {
+          orderId: 'order-001',
+          orderNo: 'ORDAPI20260720001',
+          memberId: 'member-001',
+          currency: 'CNY',
+          totalAmount: 156,
+          status: 'PAID',
+          latestPaymentId: 'payment-order-001',
+          createdAt: '2026-06-12T10:30:00.000Z',
+          updatedAt: '2026-07-20T03:00:00.000Z',
+          paidAt: '2026-07-20T03:00:00.000Z',
+        },
+        payment: {
+          paymentId: 'payment-order-001',
+          orderId: 'order-001',
+          channel: 'wechat-pay',
+          amount: 156,
+          status: 'SUCCEEDED',
+          createdAt: '2026-06-12T10:30:00.000Z',
+          updatedAt: '2026-07-20T03:00:00.000Z',
+          completedAt: '2026-07-20T03:00:00.000Z',
+        },
+        settlement: null,
+      });
     }
 
     if (url.endsWith('/transactions/orders/order-001/refunds') && init?.method === 'POST') {

@@ -83,6 +83,29 @@ export interface AggregateResultContract {
   totals: Record<string, number>
 }
 
+// ─── 营收/客流/转化结果合约 (V23) ───
+
+export interface RevenueReportContract {
+  period: string
+  from?: string
+  to?: string
+  totals: Record<string, number>
+}
+
+export interface TrafficReportContract {
+  period: string
+  from?: string
+  to?: string
+  totals: Record<string, number>
+}
+
+export interface ConversionReportContract {
+  period: string
+  from?: string
+  to?: string
+  totals: Record<string, number>
+}
+
 // ─── Mappers ───
 
 export function toReportDefinitionContract(

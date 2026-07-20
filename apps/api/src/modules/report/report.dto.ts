@@ -103,3 +103,26 @@ export class DashboardListResponseDto {
   items!: any[]
   total!: number
 }
+
+// ============ 营收/客流/转化报表 (V23) ============
+
+export class RevenueReportResponseDto {
+  period!: string
+  from?: string
+  to?: string
+  totals!: Record<string, number>
+}
+
+export class TrafficReportResponseDto {
+  period!: string
+  from?: string
+  to?: string
+  totals!: Record<string, number>
+}
+
+export class ConversionReportResponseDto {
+  period!: string
+  from?: string
+  to?: string
+  totals!: Record<string, number>
+}

@@ -1,5 +1,6 @@
 /**
  * venue.dto.ts — P-25 场地管理 DTO
+ * V24: 新增场地预订 DTO
  */
 import {
   IsArray,
@@ -11,7 +12,13 @@ import {
   ValidateNested,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { VenueType, VenueStatus, TimeSlotPricing, HolidayPricing } from './venue.entity'
+import {
+  VenueType,
+  VenueStatus,
+  VenueShift,
+  TimeSlotPricing,
+  HolidayPricing,
+} from './venue.entity'
 
 class TimeSlotPricingDto implements TimeSlotPricing {
   @IsString()
@@ -119,4 +126,44 @@ export class UpdateVenueDto {
   @IsOptional()
   @IsString()
   description?: string
+}
+
+/** 创建预订 DTO */
+export class CreateVenueBookingDto {
+  @IsString()
+  venueId!: string
+
+  @IsString()
+  userId!: string
+
+  @IsString()
+  userName!: string
+
+  @IsString()
+  date!: string
+
+  @IsEnum(VenueShift)
+  shift!: VenueShift
+
+  @IsString()
+  startTime!: string
+
+  @IsString()
+  endTime!: string
+
+  @IsInt()
+  @Min(0)
+  priceCents!: number
+
+  @IsInt()
+  @Min(0)
+  depositCents!: number
+
+  @IsInt()
+  @Min(1)
+  guestCount!: number
+
+  @IsOptional()
+  @IsString()
+  remark?: string
 }

@@ -29,6 +29,11 @@ const ROUTES: Array<{ method: number; path: string; handler: string; verb: strin
   { method: 0, path: 'dashboard/:id',             handler: 'getDashboard',   verb: 'GET'  },
   { method: 1, path: 'dashboard/create',          handler: 'createDashboard',verb: 'POST' },
   { method: 1, path: 'dashboard/update/:id',      handler: 'updateDashboard',verb: 'POST' },
+
+  // V23 新增端点
+  { method: 0, path: 'revenue',                    handler: 'revenueReport',   verb: 'GET'  },
+  { method: 0, path: 'traffic',                    handler: 'trafficReport',   verb: 'GET'  },
+  { method: 0, path: 'conversion',                 handler: 'conversionReport',verb: 'GET'  },
 ]
 
 describe('路由元数据验证', () => {
@@ -46,7 +51,7 @@ describe('路由元数据验证', () => {
     })
   }
 
-  it('所有 11 个路由都注册了元数据', () => {
+  it('所有 14 个路由都注册了元数据 (V23 新增 revenue/traffic/conversion)', () => {
     const methods = ROUTES.map((r) => r.handler)
     for (const handler of methods) {
       const method = Reflect.getMetadata('method', ReportController.prototype[handler as keyof ReportController])
@@ -486,6 +491,102 @@ describe('数据查询 & 注入', () => {
     const result = ctrl.aggregate('inventory.turnover', 'product')
     // inventory.turnover 无数据源, 返回空 Map
     assert.equal(Object.keys(result.totals).length, 0)
+  })
+})
+
+// ══════════════════════════════════════════════════════════════
+// 营收 / 客流 / 转化 专用端点 (V23 管理层报表)
+// ══════════════════════════════════════════════════════════════
+
+describe('营收报表 (GET /report/revenue)', () => {
+  it('revenueReport 返回正确的结构', () => {
+    const ctrl = makeController()
+    const result = ctrl.revenueReport('daily')
+    assert.ok(result.period)
+    assert.equal(result.period, 'daily')
+    assert.ok(typeof result.totals === 'object')
+  })
+
+  it('revenueReport 包含门店维度的营收数据', () => {
+    const ctrl = makeController()
+    // 种子数据中包含 sales.amount 按 store 维度
+    const result = ctrl.revenueReport('daily')
+    const storeKeys = Object.keys(result.totals)
+    assert.ok(storeKeys.length > 0, '应有门店营收数据')
+    assert.ok(storeKeys.some((k) => k.startsWith('store-')), '门店 key 格式正确')
+    for (const val of Object.values(result.totals)) {
+      assert.equal(typeof val, 'number')
+      assert.ok(val > 0, '营收值应大于 0')
+    }
+  })
+
+  it('revenueReport 支持自定义 period', () => {
+    const ctrl = makeController()
+    const result = ctrl.revenueReport('weekly', '2026-07-01', '2026-07-07')
+    assert.equal(result.period, 'weekly')
+    assert.equal(result.from, '2026-07-01')
+    assert.equal(result.to, '2026-07-07')
+  })
+})
+
+describe('客流报表 (GET /report/traffic)', () => {
+  it('trafficReport 返回正确的数据结构', () => {
+    const ctrl = makeController()
+    const result = ctrl.trafficReport('daily')
+    assert.equal(result.period, 'daily')
+    assert.ok(typeof result.totals === 'object')
+  })
+
+  it('trafficReport 在无客流数据时返回空 totals', () => {
+    const ctrl = makeController()
+    const result = ctrl.trafficReport('daily')
+    // 种子数据没有 sales.traffic，所以应该为空
+    assert.equal(Object.keys(result.totals).length, 0)
+  })
+
+  it('trafficReport 注入数据后能正常聚合', () => {
+    const ctrl = makeController()
+    // 先注入客流数据
+    ctrl.ingest({
+      points: [
+        { bucket: '2026-07-01', dimension: 'store-001', metric: 'sales.traffic', value: 500 } as any,
+        { bucket: '2026-07-01', dimension: 'store-002', metric: 'sales.traffic', value: 320 } as any,
+        { bucket: '2026-07-01', dimension: 'store-001', metric: 'sales.traffic', value: 150 } as any,
+      ],
+    })
+    const result = ctrl.trafficReport('daily')
+    assert.equal(Object.keys(result.totals).length, 2, '两个门店应有数据')
+    assert.equal(result.totals['store-001'], 650, 'store-001 客流应 = 500+150')
+    assert.equal(result.totals['store-002'], 320, 'store-002 客流应 = 320')
+  })
+})
+
+describe('转化报表 (GET /report/conversion)', () => {
+  it('conversionReport 返回正确的数据结构', () => {
+    const ctrl = makeController()
+    const result = ctrl.conversionReport('daily')
+    assert.equal(result.period, 'daily')
+    assert.ok(typeof result.totals === 'object')
+  })
+
+  it('conversionReport 在无转化数据时返回空 totals', () => {
+    const ctrl = makeController()
+    const result = ctrl.conversionReport('daily')
+    assert.equal(Object.keys(result.totals).length, 0)
+  })
+
+  it('conversionReport 注入转化数据后聚合正确', () => {
+    const ctrl = makeController()
+    ctrl.ingest({
+      points: [
+        { bucket: '2026-07-01', dimension: 'store-001', metric: 'sales.conversion', value: 15.2 } as any,
+        { bucket: '2026-07-01', dimension: 'store-002', metric: 'sales.conversion', value: 22.8 } as any,
+      ],
+    })
+    const result = ctrl.conversionReport('daily')
+    assert.equal(Object.keys(result.totals).length, 2)
+    assert.equal(result.totals['store-001'], 15.2)
+    assert.equal(result.totals['store-002'], 22.8)
   })
 })
 

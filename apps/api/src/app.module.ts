@@ -162,6 +162,7 @@ import { BrandOperationsModule } from './modules/brand-operations/brand-operatio
 import { StoreModule } from './modules/store/store.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
+import { NoticeModule } from './modules/notice/notice.module';
 
 @Module({
   imports: [
@@ -336,6 +337,7 @@ import { ProbationTransferModule } from './modules/transfer/probation-transfer.m
     StoreModule,
     FeedbackModule,
     ProbationTransferModule,
+    NoticeModule,
   ],
   providers: [
     RequestGovernanceService,
