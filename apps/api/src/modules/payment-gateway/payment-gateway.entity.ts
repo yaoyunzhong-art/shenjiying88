@@ -13,7 +13,7 @@ export interface PaymentTransaction {
   id: string
   orderId: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   provider: PaymentProvider
   status: PaymentStatus
   amount: number
@@ -32,7 +32,7 @@ export interface RefundRecord {
   id: string
   originalTransactionId: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   amount: number
   reason?: string
   status: PaymentStatus

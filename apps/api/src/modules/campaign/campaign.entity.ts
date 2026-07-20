@@ -71,7 +71,7 @@ export interface CampaignPlan {
   planId: string
   tenantContext: RequestTenantContext
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   code: string
   title: string
   description?: string
@@ -92,7 +92,7 @@ export interface CampaignDispatch {
   actionIndex: number
   tenantContext: RequestTenantContext
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   memberId?: string
   orderId?: string
   paymentId?: string

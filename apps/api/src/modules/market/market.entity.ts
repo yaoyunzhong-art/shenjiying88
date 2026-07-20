@@ -114,7 +114,7 @@ export class MarketProfile {
   countryCode!: CountryCode
 
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId!: string
+  tenantId?: string
 
   /** Locale configuration */
   locale!: MarketLocale

@@ -72,7 +72,7 @@ export interface P36Member {
   name: string
   level: MemberP36Level
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   points: number
   balance: number      // 预付余额(分)
   totalSpent: number   // 累计消费(分)
@@ -85,7 +85,7 @@ export interface PointsTransaction {
   id: string
   memberId: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   type: 'earn' | 'redeem' | 'expire' | 'admin'
   amount: number
   orderId?: string
@@ -98,7 +98,7 @@ export interface BalanceTransaction {
   id: string
   memberId: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   type: 'recharge' | 'payment' | 'refund' | 'admin'
   amount: number
   orderId?: string

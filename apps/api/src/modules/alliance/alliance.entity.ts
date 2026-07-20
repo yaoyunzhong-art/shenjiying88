@@ -33,7 +33,7 @@ export type {
  */
 export interface AllianceRegisterRequest {
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   name: string
   businessType: BusinessType
   contact: string

@@ -17,7 +17,7 @@ export interface TaxRate {
   rate: number // e.g., 0.13 for 13%
   jurisdiction: string // e.g., 'CN', 'US-VA', 'US-TX', 'HK'
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   enabled: boolean
   description?: string
   createdAt: Date

@@ -34,7 +34,7 @@ export interface BlindBoxTier {
 export interface BlindBoxPlan {
   planId: string;
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string;
+  tenantId?: string;
   name: string;
   tiers: BlindBoxTier[];
   guaranteePityCount: number;
@@ -46,7 +46,7 @@ export interface BlindBoxDrawRecord {
   recordId: string;
   planId: string;
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string;
+  tenantId?: string;
   userId: string;
   tier: string;
   prizeId: string;

@@ -9,7 +9,7 @@ export type ContentType = 'video' | 'document' | 'quiz' | 'assignment' | 'live'
 export interface Course {
   courseId: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   title: string
   description: string
   modules: CourseModule[]
@@ -62,7 +62,7 @@ export interface Enrollment {
   userId: string
   courseId: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   enrolledAt: Date
   progress: number
   status: CourseStatus

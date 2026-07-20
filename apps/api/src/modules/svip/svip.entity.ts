@@ -16,7 +16,7 @@ export interface SVIPSubscription {
   userId: string;
   planId: string;
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string;
+  tenantId?: string;
   status: SVIPStatus;
   startAt: Date;
   expireAt: Date;
@@ -28,7 +28,7 @@ export interface SVIPBenefit {
   benefitId: string;
   subscriptionId: string;
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string;
+  tenantId?: string;
   type: SVIPBenefitType;
   usedAt?: Date;
   expiresAt?: Date;

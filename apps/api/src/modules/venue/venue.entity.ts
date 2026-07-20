@@ -40,7 +40,7 @@ export interface HolidayPricing {
 export interface Venue {
   id: string
   /** 租户 ID（RLS 多租户隔离字段） */
-  tenantId: string
+  tenantId?: string
   name: string
   type: VenueType
   capacity: number
