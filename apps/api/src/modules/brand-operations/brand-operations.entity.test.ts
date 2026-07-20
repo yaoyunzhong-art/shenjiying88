@@ -150,10 +150,14 @@ describe('BrandOperations Entity Types', () => {
         activeCampaigns: 3,
         totalStoreAssignments: 12,
         syncedStores: 9,
+        totalTemplates: 2,
+        publishedTemplates: 1,
       }
       expect(metrics.totalAssets).toBe(10)
       expect(metrics.activeCampaigns).toBe(3)
       expect(metrics.syncedStores).toBe(9)
+      expect(metrics.totalTemplates).toBe(2)
+      expect(metrics.publishedTemplates).toBe(1)
     })
   })
 })

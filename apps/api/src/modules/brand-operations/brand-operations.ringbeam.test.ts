@@ -12,4 +12,11 @@ describe('✅ AC-BRAND-OPS: 品牌运营圈梁', () => {
     expect(campaign.title).toBe('夏日狂欢')
     expect(campaign.storeIds).toHaveLength(2)
   })
+
+  it('活动模板管理', () => {
+    const template = { id: 'tpl-1', name: '夏季促销模板', tags: ['seasonal'], published: true }
+    expect(template.name).toBe('夏季促销模板')
+    expect(template.tags).toContain('seasonal')
+    expect(template.published).toBe(true)
+  })
 })

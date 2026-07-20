@@ -17,11 +17,16 @@ import {
   CreateBrandCampaignDto,
   UpdateBrandCampaignDto,
   QueryBrandCampaignDto,
+  CreateBrandCampaignTemplateDto,
+  UpdateBrandCampaignTemplateDto,
+  QueryBrandCampaignTemplateDto,
+  ApplyTemplateToCampaignDto,
 } from './brand-operations.dto'
 import type {
   BrandAsset,
   BrandCampaign,
   BrandSyncRecord,
+  BrandCampaignTemplate,
   BrandOperationsMetrics,
 } from './brand-operations.entity'
 
@@ -149,6 +154,77 @@ export class BrandOperationsController {
   @Get('stores/:storeId/campaigns')
   getSyncedCampaigns(@Param('storeId') storeId: string): BrandCampaign[] {
     return this.service.getSyncedCampaigns(storeId, MOCK_TENANT_ID)
+  }
+
+  // ═══════════════════════════════════════════
+  //  CampaignTemplate CRUD
+  // ═══════════════════════════════════════════
+
+  @Post('templates')
+  createTemplate(@Body() body: CreateBrandCampaignTemplateDto): BrandCampaignTemplate {
+    return this.service.createTemplate({
+      tenantId: MOCK_TENANT_ID,
+      brandId: MOCK_BRAND_ID,
+      name: body.name,
+      description: body.description,
+      defaultStoreIds: body.defaultStoreIds,
+      defaultAssets: body.defaultAssets,
+      coverImageUrl: body.coverImageUrl,
+      defaultDurationDays: body.defaultDurationDays,
+      tags: body.tags,
+      published: body.published,
+      createdBy: MOCK_TENANT_ID,
+    })
+  }
+
+  @Get('templates')
+  listTemplates(@Query() query: QueryBrandCampaignTemplateDto): BrandCampaignTemplate[] {
+    return this.service.listTemplates(MOCK_TENANT_ID, {
+      tag: query.tag,
+      published: query.published,
+      search: query.search,
+    })
+  }
+
+  @Get('templates/:templateId')
+  getTemplate(@Param('templateId') templateId: string): BrandCampaignTemplate | undefined {
+    return this.service.getTemplate(templateId, MOCK_TENANT_ID)
+  }
+
+  @Patch('templates/:templateId')
+  updateTemplate(
+    @Param('templateId') templateId: string,
+    @Body() body: UpdateBrandCampaignTemplateDto,
+  ): BrandCampaignTemplate {
+    return this.service.updateTemplate(templateId, MOCK_TENANT_ID, body)
+  }
+
+  @Delete('templates/:templateId')
+  deleteTemplate(@Param('templateId') templateId: string): { success: boolean } {
+    const result = this.service.deleteTemplate(templateId, MOCK_TENANT_ID)
+    return { success: result }
+  }
+
+  // ═══════════════════════════════════════════
+  //  从模板创建活动
+  // ═══════════════════════════════════════════
+
+  @Post('templates/:templateId/apply')
+  applyTemplate(
+    @Param('templateId') templateId: string,
+    @Body() body: ApplyTemplateToCampaignDto,
+  ): BrandCampaign {
+    return this.service.applyTemplateToCampaign({
+      templateId,
+      tenantId: MOCK_TENANT_ID,
+      brandId: MOCK_BRAND_ID,
+      title: body.title,
+      description: body.description,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      storeIds: body.storeIds,
+      createdBy: body.createdBy,
+    })
   }
 
   // ═══════════════════════════════════════════

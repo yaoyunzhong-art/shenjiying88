@@ -271,4 +271,90 @@ describe('P-30 logistics ringbeam', () => {
     expect(outbound.outbound?.warehouseCode).toBe('WH-CLEAN')
     expect(outbound.outbound?.outboundAt).toBe('2026-07-15T08:30:00.000Z')
   })
+
+  // ════════════════════════════════════════════════
+  //  P-30 扩展: 设备维保
+  // ════════════════════════════════════════════════
+
+  it('AC-30-05: 设备维保闭环: pending → in_progress → pending_acceptance → completed', () => {
+    const service = new LogisticsService()
+    service.resetStoreForTests()
+
+    const order = service.createMaintenanceOrder({
+      tenantId: 'tenant-p30',
+      storeId: 'store-a',
+      equipmentId: 'equip-mnt-1',
+      equipmentName: '跳舞机',
+      issueDescription: '踏板感应器失灵',
+      reporterId: 'guide-01',
+      reporterName: '导玩小王',
+    })
+    expect(order.status).toBe('pending')
+    expect(order.id).toMatch(/^mnt-/)
+
+    const started = service.startMaintenanceOrder(order.id, 'tenant-p30', {
+      assigneeId: 'tech-01',
+      assigneeName: '赵维修',
+    })
+    expect(started.status).toBe('in_progress')
+
+    const completed = service.completeMaintenanceOrder(order.id, 'tenant-p30', {
+      completionNote: '更换踏板传感器',
+    })
+    expect(completed.status).toBe('pending_acceptance')
+
+    const accepted = service.acceptMaintenanceOrder(order.id, 'tenant-p30', {
+      acceptedBy: 'guide-01',
+      acceptanceNote: '踏板恢复正常',
+    })
+    expect(accepted.status).toBe('completed')
+    expect(accepted.acceptedBy).toBe('guide-01')
+  })
+
+  it('AC-30-06: 耗材采购对接P-37审批流: 创建→提交→审批(含P-37工单)→下单→收货', () => {
+    const service = new LogisticsService()
+    service.resetStoreForTests()
+
+    // 创建采购申请
+    const req = service.createProcurementRequest({
+      tenantId: 'tenant-p30',
+      requesterId: 'store-mgr-01',
+      requesterName: '店长',
+      department: '清洁组',
+      purpose: '月度清洁耗材补充',
+      vendorName: '清洁用品供应商',
+    })
+    expect(req.status).toBe('draft')
+
+    // 提交审批
+    const submitted = service.submitProcurementRequest(req.id, 'tenant-p30')
+    expect(submitted.status).toBe('pending_approval')
+
+    // 审批通过 + 记录P-37审批工单号
+    const approved = service.approveProcurementRequest(req.id, 'tenant-p30', {
+      approverId: 'ops-mgr-01',
+      approverName: '运行经理',
+      note: '预算内，同意采购',
+      approvalTicket: 'APR-PROC-2026-001', // P-37 审批工单号
+    })
+    expect(approved.status).toBe('approved')
+    expect(approved.approval?.approvalTicket).toBe('APR-PROC-2026-001')
+
+    // 下单
+    const ordered = service.orderProcurementRequest(req.id, 'tenant-p30', {
+      orderNumber: 'PO-2026-007',
+      vendorName: '清洁用品供应商',
+      operatorId: 'ops-01',
+      operatorName: '运行专员',
+    })
+    expect(ordered.status).toBe('ordered')
+
+    // 收货
+    const received = service.receiveProcurementRequest(req.id, 'tenant-p30', {
+      receivedBy: 'store-mgr-01',
+      receivedByName: '店长',
+      note: '已入库',
+    })
+    expect(received.status).toBe('received')
+  })
 })

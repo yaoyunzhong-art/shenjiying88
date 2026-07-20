@@ -5,12 +5,16 @@ import {
   Headers,
   Param,
   Post,
-  Query
+  Patch,
+  Query,
+  Delete
 } from '@nestjs/common'
 import { LogisticsService } from './logistics.service'
 import type {
   CleanScheduleStatus,
+  MaintenanceOrderStatus,
   MaterialRequestStatus,
+  ProcurementRequestStatus,
   RepairOrderStatus
 } from './logistics.entity'
 
@@ -258,5 +262,137 @@ export class LogisticsController {
     }
   ) {
     return this.logisticsService.outboundMaterialRequest(id, tenantId, body)
+  }
+
+  // ═══════════════════════════════════════════
+  //  设备维保 (MaintenanceOrder)
+  // ═══════════════════════════════════════════
+
+  @Post('maintenance-orders')
+  createMaintenanceOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+    return this.logisticsService.createMaintenanceOrder({
+      tenantId,
+      storeId: body.storeId,
+      equipmentId: body.equipmentId,
+      equipmentName: body.equipmentName,
+      issueDescription: body.issueDescription,
+      reporterId: body.reporterId,
+      reporterName: body.reporterName,
+    })
+  }
+
+  @Get('maintenance-orders')
+  listMaintenanceOrders(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('status') status?: MaintenanceOrderStatus,
+    @Query('equipmentId') equipmentId?: string,
+    @Query('assigneeId') assigneeId?: string,
+  ) {
+    return this.logisticsService.listMaintenanceOrders(tenantId, { status, equipmentId, assigneeId })
+  }
+
+  @Get('maintenance-orders/:id')
+  getMaintenanceOrder(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getMaintenanceOrder(id, tenantId) ?? null
+  }
+
+  @Post('maintenance-orders/:id/start')
+  startMaintenanceOrder(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { assigneeId: string; assigneeName: string; startedAt?: string }
+  ) {
+    return this.logisticsService.startMaintenanceOrder(id, tenantId, body)
+  }
+
+  @Post('maintenance-orders/:id/complete')
+  completeMaintenanceOrder(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { completionNote: string; completedAt?: string }
+  ) {
+    return this.logisticsService.completeMaintenanceOrder(id, tenantId, body)
+  }
+
+  @Post('maintenance-orders/:id/accept')
+  acceptMaintenanceOrder(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { acceptedBy: string; acceptanceNote: string; acceptedAt?: string }
+  ) {
+    return this.logisticsService.acceptMaintenanceOrder(id, tenantId, body)
+  }
+
+  // ═══════════════════════════════════════════
+  //  耗材采购 (对接 P-37 审批流)
+  // ═══════════════════════════════════════════
+
+  @Post('procurement-requests')
+  createProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+    return this.logisticsService.createProcurementRequest({
+      tenantId,
+      storeId: body.storeId,
+      requesterId: body.requesterId,
+      requesterName: body.requesterName,
+      department: body.department,
+      purpose: body.purpose,
+      vendorName: body.vendorName,
+      notes: body.notes,
+    })
+  }
+
+  @Get('procurement-requests')
+  listProcurementRequests(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('status') status?: ProcurementRequestStatus,
+    @Query('requesterId') requesterId?: string,
+  ) {
+    return this.logisticsService.listProcurementRequests(tenantId, { status, requesterId })
+  }
+
+  @Get('procurement-requests/:id')
+  getProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getProcurementRequest(id, tenantId) ?? null
+  }
+
+  @Post('procurement-requests/:id/submit')
+  submitProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.submitProcurementRequest(id, tenantId)
+  }
+
+  @Post('procurement-requests/:id/approve')
+  approveProcurementRequest(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { approverId: string; approverName: string; note: string; approvalTicket?: string; approvedAt?: string }
+  ) {
+    return this.logisticsService.approveProcurementRequest(id, tenantId, body)
+  }
+
+  @Post('procurement-requests/:id/reject')
+  rejectProcurementRequest(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { rejecterId: string; rejecterName: string; reason: string }
+  ) {
+    return this.logisticsService.rejectProcurementRequest(id, tenantId, body)
+  }
+
+  @Post('procurement-requests/:id/order')
+  orderProcurementRequest(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { orderNumber: string; vendorName: string; operatorId: string; operatorName: string }
+  ) {
+    return this.logisticsService.orderProcurementRequest(id, tenantId, body)
+  }
+
+  @Post('procurement-requests/:id/receive')
+  receiveProcurementRequest(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { receivedBy: string; receivedByName: string; note?: string }
+  ) {
+    return this.logisticsService.receiveProcurementRequest(id, tenantId, body)
   }
 }

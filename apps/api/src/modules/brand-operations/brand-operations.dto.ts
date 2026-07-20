@@ -183,3 +183,145 @@ export class QueryBrandCampaignDto {
   @IsDateString()
   startTo?: string
 }
+
+// ── 活动模板枚举 ──────────────────────────────────────────────────────────────
+
+export enum TemplateTagEnum {
+  SEASONAL = 'seasonal',
+  PROMOTION = 'promotion',
+  HOLIDAY = 'holiday',
+  NEW_PRODUCT = 'new_product',
+  ANNIVERSARY = 'anniversary',
+  CUSTOM = 'custom',
+}
+
+// ── 创建模板 DTO ─────────────────────────────────────────────────────────────
+
+export class CreateBrandCampaignTemplateDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(200)
+  name!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  description!: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  defaultStoreIds?: string[]
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  defaultAssets?: string[]
+
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[]
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean
+
+  @IsOptional()
+  defaultDurationDays?: number
+}
+
+// ── 更新模板 DTO ─────────────────────────────────────────────────────────────
+
+export class UpdateBrandCampaignTemplateDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  name?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  defaultStoreIds?: string[]
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  defaultAssets?: string[]
+
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[]
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean
+
+  @IsOptional()
+  defaultDurationDays?: number
+}
+
+// ── 查询模板 DTO ─────────────────────────────────────────────────────────────
+
+export class QueryBrandCampaignTemplateDto {
+  @IsOptional()
+  @IsString()
+  tag?: string
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean
+
+  @IsOptional()
+  @IsString()
+  search?: string
+}
+
+// ── 从模板创建活动 DTO ───────────────────────────────────────────────────────
+
+export class ApplyTemplateToCampaignDto {
+  @IsString()
+  @IsNotEmpty()
+  templateId!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(200)
+  title!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  description!: string
+
+  @IsDateString()
+  startDate!: string
+
+  @IsDateString()
+  endDate!: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  storeIds?: string[]
+
+  @IsString()
+  @IsNotEmpty()
+  createdBy!: string
+}

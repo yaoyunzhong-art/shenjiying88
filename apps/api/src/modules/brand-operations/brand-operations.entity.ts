@@ -64,6 +64,33 @@ export interface BrandSyncRecord {
 
 // ── 品牌运营统计 ────────────────────────────────────────────────────────────
 
+// ── 活动模板 ────────────────────────────────────────────────────────────────
+
+export interface BrandCampaignTemplate {
+  id: string
+  tenantId: string
+  brandId: string
+  name: string
+  description: string
+  /** 模板预设门店列表 */
+  defaultStoreIds: string[]
+  /** 模板预设素材列表 */
+  defaultAssets: string[]
+  /** 模板预设封面图 */
+  coverImageUrl?: string
+  /** 默认活动时长（天数） */
+  defaultDurationDays?: number
+  /** 模板标签 */
+  tags: string[]
+  /** 是否已发布 */
+  published: boolean
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ── 品牌运营统计 ────────────────────────────────────────────────────────────
+
 export interface BrandOperationsMetrics {
   totalAssets: number
   activeAssets: number
@@ -71,4 +98,6 @@ export interface BrandOperationsMetrics {
   activeCampaigns: number
   totalStoreAssignments: number
   syncedStores: number
+  totalTemplates: number
+  publishedTemplates: number
 }

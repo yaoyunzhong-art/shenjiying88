@@ -12,9 +12,16 @@ import type {
   InspectionTaskEntity,
   InspectionTaskResult,
   InspectionTaskStatus,
+  MaintenanceOrderEntity,
+  MaintenanceOrderStatus,
   MaterialRequestEntity,
   MaterialRequestItem,
   MaterialRequestStatus,
+  ProcurementApproval,
+  ProcurementOrderRecord,
+  ProcurementReceiveRecord,
+  ProcurementRequestEntity,
+  ProcurementRequestStatus,
   RepairOrderEntity,
   RepairOrderStatus
 } from './logistics.entity'
@@ -125,10 +132,84 @@ export interface OutboundMaterialRequestInput {
   outboundAt?: string
 }
 
+// ── 设备维保输入 ─────────────────────────────────────────────────────────────
+
+export interface CreateMaintenanceOrderInput {
+  tenantId: string
+  storeId?: string
+  equipmentId: string
+  equipmentName: string
+  issueDescription: string
+  reporterId: string
+  reporterName: string
+}
+
+export interface StartMaintenanceOrderInput {
+  assigneeId: string
+  assigneeName: string
+  startedAt?: string
+}
+
+export interface CompleteMaintenanceOrderInput {
+  completionNote: string
+  completedAt?: string
+}
+
+export interface AcceptMaintenanceOrderInput {
+  acceptedBy: string
+  acceptanceNote: string
+  acceptedAt?: string
+}
+
+// ── 耗材采购输入 (对接P-37审批流) ───────────────────────────────────────────
+
+export interface CreateProcurementRequestInput {
+  tenantId: string
+  storeId?: string
+  requesterId: string
+  requesterName: string
+  department?: string
+  purpose: string
+  vendorName?: string
+  notes?: string
+}
+
+export interface ApproveProcurementRequestInput {
+  approverId: string
+  approverName: string
+  note: string
+  approvalTicket?: string // P-37 审批工单号
+  approvedAt?: string
+}
+
+export interface RejectProcurementRequestInput {
+  rejecterId: string
+  rejecterName: string
+  reason: string
+  rejectedAt?: string
+}
+
+export interface OrderProcurementInput {
+  orderNumber: string
+  vendorName: string
+  operatorId: string
+  operatorName: string
+  orderedAt?: string
+}
+
+export interface ReceiveProcurementInput {
+  receivedBy: string
+  receivedByName: string
+  note?: string
+  receivedAt?: string
+}
+
 const inspectionTaskStore = new Map<string, InspectionTaskEntity>()
 const cleanScheduleStore = new Map<string, CleanScheduleEntity>()
 const repairOrderStore = new Map<string, RepairOrderEntity>()
 const materialRequestStore = new Map<string, MaterialRequestEntity>()
+const maintenanceOrderStore = new Map<string, MaintenanceOrderEntity>()
+const procurementRequestStore = new Map<string, ProcurementRequestEntity>()
 
 @Injectable()
 export class LogisticsService {
@@ -713,11 +794,299 @@ export class LogisticsService {
     }
   }
 
+  // ════════════════════════════════════════════════
+  //  设备维保 (MaintenanceOrder) - P-30 扩展
+  //  状态机: pending → in_progress → pending_acceptance → completed
+  // ════════════════════════════════════════════════
+
+  createMaintenanceOrder(input: CreateMaintenanceOrderInput): MaintenanceOrderEntity {
+    const issueDescription = input.issueDescription.trim()
+    if (!issueDescription) {
+      throw new Error('issueDescription is required')
+    }
+
+    const now = new Date().toISOString()
+    const order: MaintenanceOrderEntity = {
+      id: `mnt-${randomUUID()}`,
+      tenantId: input.tenantId,
+      storeId: input.storeId,
+      equipmentId: input.equipmentId,
+      equipmentName: input.equipmentName,
+      issueDescription,
+      status: 'pending',
+      reporterId: input.reporterId,
+      reporterName: input.reporterName,
+      createdAt: now,
+      updatedAt: now,
+    }
+    maintenanceOrderStore.set(order.id, order)
+    return { ...order }
+  }
+
+  listMaintenanceOrders(
+    tenantId: string,
+    filter?: { status?: MaintenanceOrderStatus; equipmentId?: string; assigneeId?: string }
+  ): MaintenanceOrderEntity[] {
+    return Array.from(maintenanceOrderStore.values())
+      .filter((o) => o.tenantId === tenantId)
+      .filter((o) => (filter?.status ? o.status === filter.status : true))
+      .filter((o) => (filter?.equipmentId ? o.equipmentId === filter.equipmentId : true))
+      .filter((o) => (filter?.assigneeId ? o.assigneeId === filter.assigneeId : true))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map((o) => ({ ...o }))
+  }
+
+  getMaintenanceOrder(id: string, tenantId: string): MaintenanceOrderEntity | undefined {
+    const order = maintenanceOrderStore.get(id)
+    if (!order || order.tenantId !== tenantId) return undefined
+    return { ...order }
+  }
+
+  /** pending → in_progress: 开始维保 */
+  startMaintenanceOrder(
+    id: string,
+    tenantId: string,
+    input: StartMaintenanceOrderInput
+  ): MaintenanceOrderEntity {
+    const order = this.assertMaintenanceOwned(id, tenantId)
+    if (order.status !== 'pending') {
+      throw new Error(`Maintenance order cannot start from status ${order.status}`)
+    }
+
+    const startedAt = this.normalizeTimestamp(input.startedAt, 'startedAt must be a valid datetime')
+    order.status = 'in_progress'
+    order.assigneeId = input.assigneeId
+    order.assigneeName = input.assigneeName
+    order.startedAt = startedAt
+    order.updatedAt = startedAt
+    maintenanceOrderStore.set(order.id, order)
+    return { ...order }
+  }
+
+  /** in_progress → pending_acceptance: 完成维保，待验收 */
+  completeMaintenanceOrder(
+    id: string,
+    tenantId: string,
+    input: CompleteMaintenanceOrderInput
+  ): MaintenanceOrderEntity {
+    const order = this.assertMaintenanceOwned(id, tenantId)
+    if (order.status !== 'in_progress') {
+      throw new Error(`Maintenance order cannot complete from status ${order.status}`)
+    }
+
+    const completionNote = input.completionNote.trim()
+    if (!completionNote) {
+      throw new Error('completionNote is required')
+    }
+
+    const completedAt = this.normalizeTimestamp(input.completedAt, 'completedAt must be a valid datetime')
+    order.status = 'pending_acceptance'
+    order.completionNote = completionNote
+    order.completedAt = completedAt
+    order.updatedAt = completedAt
+    maintenanceOrderStore.set(order.id, order)
+    return { ...order }
+  }
+
+  /** pending_acceptance → completed: 验收通过 */
+  acceptMaintenanceOrder(
+    id: string,
+    tenantId: string,
+    input: AcceptMaintenanceOrderInput
+  ): MaintenanceOrderEntity {
+    const order = this.assertMaintenanceOwned(id, tenantId)
+    if (order.status !== 'pending_acceptance') {
+      throw new Error(`Maintenance order cannot be accepted from status ${order.status}`)
+    }
+
+    const acceptedAt = this.normalizeTimestamp(input.acceptedAt, 'acceptedAt must be a valid datetime')
+    order.status = 'completed'
+    order.acceptanceNote = input.acceptanceNote
+    order.acceptedAt = acceptedAt
+    order.acceptedBy = input.acceptedBy
+    order.updatedAt = acceptedAt
+    maintenanceOrderStore.set(order.id, order)
+    return { ...order }
+  }
+
+  // ════════════════════════════════════════════════
+  //  耗材采购 (Procurement) - P-30 扩展, 对接 P-37 审批流
+  //  状态机: draft → pending_approval → approved/rejected → ordered → received
+  // ════════════════════════════════════════════════
+
+  createProcurementRequest(input: CreateProcurementRequestInput): ProcurementRequestEntity {
+    const purpose = input.purpose.trim()
+    if (!purpose) {
+      throw new Error('purpose is required')
+    }
+
+    const now = new Date().toISOString()
+    const request: ProcurementRequestEntity = {
+      id: `proc-${randomUUID()}`,
+      tenantId: input.tenantId,
+      storeId: input.storeId,
+      requesterId: input.requesterId,
+      requesterName: input.requesterName,
+      department: input.department?.trim() || undefined,
+      purpose,
+      vendorName: input.vendorName?.trim() || undefined,
+      notes: input.notes?.trim() || undefined,
+      status: 'draft',
+      createdAt: now,
+      updatedAt: now,
+    }
+    procurementRequestStore.set(request.id, request)
+    return { ...request }
+  }
+
+  listProcurementRequests(
+    tenantId: string,
+    filter?: { status?: ProcurementRequestStatus; requesterId?: string }
+  ): ProcurementRequestEntity[] {
+    return Array.from(procurementRequestStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .filter((r) => (filter?.status ? r.status === filter.status : true))
+      .filter((r) => (filter?.requesterId ? r.requesterId === filter.requesterId : true))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map((r) => ({ ...r, approval: r.approval ? { ...r.approval } : undefined }))
+  }
+
+  getProcurementRequest(id: string, tenantId: string): ProcurementRequestEntity | undefined {
+    const request = procurementRequestStore.get(id)
+    if (!request || request.tenantId !== tenantId) return undefined
+    return {
+      ...request,
+      approval: request.approval ? { ...request.approval } : undefined,
+      orderRecord: request.orderRecord ? { ...request.orderRecord } : undefined,
+      receiveRecord: request.receiveRecord ? { ...request.receiveRecord } : undefined,
+    }
+  }
+
+  /** draft → pending_approval: 提交审批（对接 P-37 GovernanceApproval） */
+  submitProcurementRequest(id: string, tenantId: string): ProcurementRequestEntity {
+    const request = this.assertProcurementOwned(id, tenantId)
+    if (request.status !== 'draft') {
+      throw new Error(`Procurement request cannot be submitted from status ${request.status}`)
+    }
+
+    request.status = 'pending_approval'
+    request.updatedAt = new Date().toISOString()
+    procurementRequestStore.set(request.id, request)
+    return { ...request, approval: request.approval ? { ...request.approval } : undefined }
+  }
+
+  /** pending_approval → approved: 审批通过（可记录P-37审批工单号） */
+  approveProcurementRequest(
+    id: string,
+    tenantId: string,
+    input: ApproveProcurementRequestInput
+  ): ProcurementRequestEntity {
+    const request = this.assertProcurementOwned(id, tenantId)
+    if (request.status !== 'pending_approval') {
+      throw new Error(`Procurement request cannot be approved from status ${request.status}`)
+    }
+
+    const approvedAt = this.normalizeTimestamp(input.approvedAt, 'approvedAt must be a valid datetime')
+    request.status = 'approved'
+    request.approval = {
+      approvalTicket: input.approvalTicket,
+      approverId: input.approverId,
+      approverName: input.approverName,
+      note: input.note,
+      approvedAt,
+    }
+    request.updatedAt = approvedAt
+    procurementRequestStore.set(request.id, request)
+    return {
+      ...request,
+      approval: { ...request.approval },
+    }
+  }
+
+  /** pending_approval → rejected: 审批拒绝 */
+  rejectProcurementRequest(
+    id: string,
+    tenantId: string,
+    input: RejectProcurementRequestInput
+  ): ProcurementRequestEntity {
+    const request = this.assertProcurementOwned(id, tenantId)
+    if (request.status !== 'pending_approval') {
+      throw new Error(`Procurement request cannot be rejected from status ${request.status}`)
+    }
+
+    const rejectedAt = this.normalizeTimestamp(input.rejectedAt, 'rejectedAt must be a valid datetime')
+    request.status = 'rejected'
+    request.notes = input.reason
+    request.updatedAt = rejectedAt
+    procurementRequestStore.set(request.id, request)
+    return { ...request }
+  }
+
+  /** approved → ordered: 下单采购 */
+  orderProcurementRequest(
+    id: string,
+    tenantId: string,
+    input: OrderProcurementInput
+  ): ProcurementRequestEntity {
+    const request = this.assertProcurementOwned(id, tenantId)
+    if (request.status !== 'approved') {
+      throw new Error(`Procurement request cannot be ordered from status ${request.status}`)
+    }
+
+    const orderedAt = this.normalizeTimestamp(input.orderedAt, 'orderedAt must be a valid datetime')
+    request.status = 'ordered'
+    request.orderRecord = {
+      orderNumber: input.orderNumber,
+      vendorName: input.vendorName,
+      orderedAt,
+      operatorId: input.operatorId,
+      operatorName: input.operatorName,
+    }
+    request.updatedAt = orderedAt
+    procurementRequestStore.set(request.id, request)
+    return {
+      ...request,
+      orderRecord: { ...request.orderRecord },
+      approval: request.approval ? { ...request.approval } : undefined,
+    }
+  }
+
+  /** ordered → received: 收货入库 */
+  receiveProcurementRequest(
+    id: string,
+    tenantId: string,
+    input: ReceiveProcurementInput
+  ): ProcurementRequestEntity {
+    const request = this.assertProcurementOwned(id, tenantId)
+    if (request.status !== 'ordered') {
+      throw new Error(`Procurement request cannot be received from status ${request.status}`)
+    }
+
+    const receivedAt = this.normalizeTimestamp(input.receivedAt, 'receivedAt must be a valid datetime')
+    request.status = 'received'
+    request.receiveRecord = {
+      receivedAt,
+      receivedBy: input.receivedBy,
+      receivedByName: input.receivedByName,
+      note: input.note?.trim() || undefined,
+    }
+    request.updatedAt = receivedAt
+    procurementRequestStore.set(request.id, request)
+    return {
+      ...request,
+      receiveRecord: { ...request.receiveRecord },
+      approval: request.approval ? { ...request.approval } : undefined,
+      orderRecord: request.orderRecord ? { ...request.orderRecord } : undefined,
+    }
+  }
+
   resetStoreForTests(): void {
     inspectionTaskStore.clear()
     cleanScheduleStore.clear()
     repairOrderStore.clear()
     materialRequestStore.clear()
+    maintenanceOrderStore.clear()
+    procurementRequestStore.clear()
   }
 
   private assertOwned(id: string, tenantId: string): InspectionTaskEntity {
@@ -748,6 +1117,22 @@ export class LogisticsService {
     const request = materialRequestStore.get(id)
     if (!request || request.tenantId !== tenantId) {
       throw new Error(`Material request not found: ${id}`)
+    }
+    return request
+  }
+
+  private assertMaintenanceOwned(id: string, tenantId: string): MaintenanceOrderEntity {
+    const order = maintenanceOrderStore.get(id)
+    if (!order || order.tenantId !== tenantId) {
+      throw new Error(`Maintenance order not found: ${id}`)
+    }
+    return order
+  }
+
+  private assertProcurementOwned(id: string, tenantId: string): ProcurementRequestEntity {
+    const request = procurementRequestStore.get(id)
+    if (!request || request.tenantId !== tenantId) {
+      throw new Error(`Procurement request not found: ${id}`)
     }
     return request
   }

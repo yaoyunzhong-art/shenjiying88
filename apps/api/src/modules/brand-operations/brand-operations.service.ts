@@ -7,6 +7,7 @@ import type {
   CampaignStatus,
   BrandSyncRecord,
   SyncStatus,
+  BrandCampaignTemplate,
   BrandOperationsMetrics,
 } from './brand-operations.entity'
 
@@ -15,15 +16,17 @@ import type {
 const assetStore = new Map<string, BrandAsset>()
 const campaignStore = new Map<string, BrandCampaign>()
 const syncStore = new Map<string, BrandSyncRecord>()
+const templateStore = new Map<string, BrandCampaignTemplate>()
 
 // ── 导入/导出给测试重置 ──
 export function resetBrandOpsStoresForTests(): void {
   assetStore.clear()
   campaignStore.clear()
   syncStore.clear()
+  templateStore.clear()
 }
 
-export const _testonly = { assetStore, campaignStore, syncStore }
+export const _testonly = { assetStore, campaignStore, syncStore, templateStore }
 
 // ── 创建/更新本地方法 ──
 
@@ -269,6 +272,8 @@ export class BrandOperationsService {
     const campaigns = Array.from(campaignStore.values()).filter((c) => c.tenantId === tenantId)
     const syncs = Array.from(syncStore.values())
 
+    const templates = Array.from(templateStore.values()).filter((t) => t.tenantId === tenantId)
+
     return {
       totalAssets: assets.length,
       activeAssets: assets.filter((a) => a.active).length,
@@ -276,7 +281,132 @@ export class BrandOperationsService {
       activeCampaigns: campaigns.filter((c) => c.status === 'active').length,
       totalStoreAssignments: campaigns.reduce((sum, c) => sum + c.storeIds.length, 0),
       syncedStores: syncs.filter((s) => s.status === 'synced').length,
+      totalTemplates: templates.length,
+      publishedTemplates: templates.filter((t) => t.published).length,
     }
+  }
+
+  // ═══════════════════════════════════════════
+  //  CampaignTemplate 管理
+  // ═══════════════════════════════════════════
+
+  createTemplate(input: {
+    tenantId: string
+    brandId: string
+    name: string
+    description: string
+    defaultStoreIds?: string[]
+    defaultAssets?: string[]
+    coverImageUrl?: string
+    defaultDurationDays?: number
+    tags?: string[]
+    published?: boolean
+    createdBy: string
+  }): BrandCampaignTemplate {
+    const now = new Date().toISOString()
+    const template: BrandCampaignTemplate = {
+      id: `tpl-${randomUUID()}`,
+      tenantId: input.tenantId,
+      brandId: input.brandId,
+      name: input.name,
+      description: input.description,
+      defaultStoreIds: input.defaultStoreIds ?? [],
+      defaultAssets: input.defaultAssets ?? [],
+      coverImageUrl: input.coverImageUrl,
+      defaultDurationDays: input.defaultDurationDays,
+      tags: input.tags ?? [],
+      published: input.published ?? false,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    templateStore.set(template.id, template)
+    this.logger.log(`Created campaign template ${template.id}: "${template.name}"`)
+    return template
+  }
+
+  getTemplate(templateId: string, tenantId: string): BrandCampaignTemplate | undefined {
+    const tpl = templateStore.get(templateId)
+    if (!tpl || tpl.tenantId !== tenantId) return undefined
+    return tpl
+  }
+
+  listTemplates(
+    tenantId: string,
+    filter?: { tag?: string; published?: boolean; search?: string },
+  ): BrandCampaignTemplate[] {
+    return Array.from(templateStore.values())
+      .filter((t) => t.tenantId === tenantId)
+      .filter((t) => (filter?.tag ? t.tags.includes(filter.tag) : true))
+      .filter((t) => (filter?.published !== undefined ? t.published === filter.published : true))
+      .filter((t) =>
+        filter?.search
+          ? t.name.toLowerCase().includes(filter.search.toLowerCase()) ||
+            t.description.toLowerCase().includes(filter.search.toLowerCase())
+          : true,
+      )
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }
+
+  updateTemplate(
+    templateId: string,
+    tenantId: string,
+    patch: Partial<Pick<BrandCampaignTemplate, 'name' | 'description' | 'defaultStoreIds' | 'defaultAssets' | 'coverImageUrl' | 'defaultDurationDays' | 'tags' | 'published'>>,
+  ): BrandCampaignTemplate {
+    const tpl = this.getTemplate(templateId, tenantId)
+    if (!tpl) {
+      throw new Error(`BrandCampaignTemplate not found: ${templateId}`)
+    }
+    const updated: BrandCampaignTemplate = {
+      ...tpl,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    templateStore.set(templateId, updated)
+    return updated
+  }
+
+  deleteTemplate(templateId: string, tenantId: string): boolean {
+    const tpl = this.getTemplate(templateId, tenantId)
+    if (!tpl) return false
+    templateStore.delete(templateId)
+    return true
+  }
+
+  /** 从模板快速创建品牌活动 */
+  applyTemplateToCampaign(input: {
+    templateId: string
+    tenantId: string
+    brandId: string
+    title: string
+    description: string
+    startDate: string
+    endDate: string
+    storeIds?: string[]
+    createdBy: string
+  }): BrandCampaign {
+    const tpl = this.getTemplate(input.templateId, input.tenantId)
+    if (!tpl) {
+      throw new Error(`BrandCampaignTemplate not found: ${input.templateId}`)
+    }
+
+    // 合并模板预设门店与自定义门店
+    const mergedStoreIds = [
+      ...new Set([...tpl.defaultStoreIds, ...(input.storeIds ?? [])]),
+    ]
+
+    return this.createCampaign({
+      tenantId: input.tenantId,
+      brandId: input.brandId,
+      title: input.title,
+      description: input.description,
+      storeIds: mergedStoreIds.length > 0 ? mergedStoreIds : tpl.defaultStoreIds,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      assets: tpl.defaultAssets,
+      coverImageUrl: tpl.coverImageUrl,
+      createdBy: input.createdBy,
+    })
   }
 
   // ═══════════════════════════════════════════
