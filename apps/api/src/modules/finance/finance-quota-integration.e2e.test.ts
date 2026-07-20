@@ -121,11 +121,11 @@ it('e2e: createInvoice 正常路径创建 invoice + Campaign quota +1', async ()
 })
 
 it('e2e: tenant suspend 后 createInvoice 抛 TenantLifecycleBlockedException', async () => {
-  const { finance, lifecycle, close } = await buildAppWithQuota()
+  const { finance, quota, lifecycle, close } = await buildAppWithQuota()
   try {
     lifecycle.suspend('tenant-test', TenantStatusReason.BillingOverdue, 'billing')
     await assert.rejects(
-      () => guardedCreateInvoice(finance, undefined, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-susp')),
+      () => guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-susp')),
       TenantLifecycleBlockedException
     )
   } finally {
@@ -188,11 +188,12 @@ it('e2e: recordLedger 不计入 Campaign quota', async () => {
 })
 
 it('e2e: tenant reactivate 后 createInvoice 恢复', async () => {
-  const { finance, lifecycle, close } = await buildAppWithQuota()
+  const { finance, quota, lifecycle, close } = await buildAppWithQuota()
   try {
     lifecycle.suspend('tenant-test')
     await assert.rejects(
-      () => finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('o-susp'))
+      () => guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-susp')),
+      TenantLifecycleBlockedException
     )
     lifecycle.reactivate('tenant-test', 'admin')
     const invoice = await finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('o-recov'))
@@ -209,8 +210,11 @@ it('e2e: 多 tenant 隔离 - tenant-A suspend 不影响 tenant-B', async () => {
     lifecycle.initialize('tenant-B')
 
     lifecycle.suspend('tenant-test')
-    await assert.rejects(() => finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('iso-A')))
-    const invB = await finance.createInvoice(ctx('tenant-B'), makeInvoiceInput('iso-B'))
+    await assert.rejects(
+      () => guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('iso-A')),
+      TenantLifecycleBlockedException
+    )
+    const invB = await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-B'), makeInvoiceInput('iso-B'))
     assert.ok(invB.id)
     assert.equal(quota.getUsage('tenant-test').campaigns, 0)
     assert.equal(quota.getUsage('tenant-B').campaigns, 1)

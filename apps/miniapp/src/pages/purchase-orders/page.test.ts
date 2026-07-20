@@ -90,7 +90,7 @@ describe('purchase-orders/index 页面源码分析 — 正例集', () => {
   });
 
   it('应包含空状态展示', () => {
-    assert.match(SOURCE, /暂无符合条件的采购单/);
+    assert.match(SOURCE, /EmptyState|暂无采购单/);
   });
 
   it('应包含点击跳转（goToDetail -> navigateTo 详情页）', () => {

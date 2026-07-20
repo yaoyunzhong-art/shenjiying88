@@ -4,8 +4,9 @@
  * 功能: 今日待办、快速服务、最近交易、快捷操作
  */
 import { View, Text, Button, Input } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Taro from '@tarojs/taro';
+import { TriStateContainer, useTriState, PageSkeleton, EmptyState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -82,8 +83,14 @@ const formatPhone = (phone: string): string => {
 // ---- 组件 ----
 
 export default function SalesToolsPage() {
+  const { status: pageStatus, setLoading, setSuccess } = useTriState('loading');
   const [activeTab, setActiveTab] = useState<'task' | 'customer' | 'transaction'>('task');
   const [searchCustomer, setSearchCustomer] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSuccess(), 300);
+    return () => clearTimeout(timer);
+  }, [setLoading, setSuccess]);
 
   // 今日数据
   const now = new Date();
@@ -224,9 +231,12 @@ export default function SalesToolsPage() {
       />
       <View style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filteredCustomers.length === 0 ? (
-          <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无客户，未找到匹配客户</Text>
-          </View>
+          <EmptyState
+            icon={searchCustomer ? '🔍' : '👥'}
+            title={searchCustomer ? '未找到匹配客户' : '暂无客户'}
+            description={searchCustomer ? '尝试修改搜索关键词' : '暂无客户数据'}
+            compact
+          />
         ) : (
           filteredCustomers.map((cust) => (
             <View
@@ -339,6 +349,10 @@ export default function SalesToolsPage() {
   );
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      loadingComponent={<PageSkeleton rows={3} />}
+    >
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       {/* 顶栏 */}
       <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -423,6 +437,7 @@ export default function SalesToolsPage() {
         {activeTab === 'transaction' && renderTransactions()}
       </View>
     </View>
+    </TriStateContainer>
   );
 }
 

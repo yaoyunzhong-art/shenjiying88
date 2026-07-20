@@ -4,7 +4,7 @@
  * 功能: 详情展示、状态流转、编辑/删除操作
  */
 import { View, Text, Button, ScrollView } from '@tarojs/components';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Taro from '@tarojs/taro';
 import {
   deleteMiniappPurchaseOrder,
@@ -12,6 +12,7 @@ import {
   loadMiniappPurchaseOrderDetail,
   type MiniappPurchaseOrderDetail,
 } from '../../../supplychain-runtime';
+import { DetailSkeleton, TriStateContainer, useTriState } from '../../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -81,20 +82,43 @@ const PurchaseOrderDetailPage = () => {
   const [localStatus, setLocalStatus] = useState<OrderStatus>(detail.status);
   const orderId = useMemo(() => resolveCurrentOrderId(), []);
 
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappPurchaseOrderDetail(orderId, MOCK_DETAIL).then((snapshot) => {
-      if (!cancelled) {
-        setDetail(snapshot.data);
-        setDeliveryNote(snapshot.note);
-      }
-    });
+    setLoading();
+    loadMiniappPurchaseOrderDetail(orderId, MOCK_DETAIL)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setDetail(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载采购单详情失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseOrderDetail(orderId, MOCK_DETAIL)
+      .then((snapshot) => {
+        setDetail(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [orderId, setLoading, setError, setSuccess]);
 
   useEffect(() => {
     setLocalStatus(detail.status);
@@ -155,6 +179,13 @@ const PurchaseOrderDetailPage = () => {
   const availableActions = getStatusActions(localStatus);
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="采购单详情加载失败"
+      errorMessage="无法加载采购单详情，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<DetailSkeleton />}
+    >
     <ScrollView className='purchase-order-detail' style={{ padding: 16, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* 订单头部 */}
       <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 }}>
@@ -271,6 +302,7 @@ const PurchaseOrderDetailPage = () => {
         )}
       </View>
     </ScrollView>
+    </TriStateContainer>
   );
 };
 

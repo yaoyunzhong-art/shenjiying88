@@ -1,5 +1,5 @@
 import { View, Text, Button } from '@tarojs/components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
 import type { DomainGovernanceDisplayModel } from '@m5/types';
 import { buildDomainGovernanceDisplayModel } from '@m5/types';
@@ -32,6 +32,7 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
+import { CardSkeleton, TriStateContainer, useTriState } from '../../components/TriStateComponents';
 
 const MEMBER_OPERATION_SHORTCUTS = [
   { label: '采购单', route: '/pages/purchase-orders/index' },
@@ -91,26 +92,51 @@ export default function MemberPage() {
   const callbackReceipt = submitOutcome && handlerSync ? createMiniappCallbackReceipt(submitOutcome, handlerSync) : null;
   const retryPolicy = ledger[0] && replayOutcome ? createMiniappReplayRetryPolicy(ledger[0], replayOutcome) : null;
 
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappRuntimeConsumerContract().then((contract) => {
-      if (!cancelled) {
-        setConsumerContract(contract);
-      }
-    });
-
-    loadMiniappMemberRuntimeSnapshot().then((runtime) => {
-      if (!cancelled) {
-        setMemberRuntime(runtime);
-        setSession(runtime.session);
-      }
-    });
+    setLoading();
+    Promise.all([
+      loadMiniappRuntimeConsumerContract(),
+      loadMiniappMemberRuntimeSnapshot(),
+    ])
+      .then(([contract, runtime]) => {
+        if (!cancelled) {
+          setConsumerContract(contract);
+          setMemberRuntime(runtime);
+          setSession(runtime.session);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载会员数据失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    Promise.all([
+      loadMiniappRuntimeConsumerContract(),
+      loadMiniappMemberRuntimeSnapshot(),
+    ])
+      .then(([contract, runtime]) => {
+        setConsumerContract(contract);
+        setMemberRuntime(runtime);
+        setSession(runtime.session);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setSuccess]);
 
   const openOperationalPage = (route: string, label: string) => {
     if (!session.authenticated) {
@@ -122,6 +148,13 @@ export default function MemberPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="会员中心加载失败"
+      errorMessage="无法加载会员数据，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<CardSkeleton />}
+    >
     <View style={{ padding: '32px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       <Text>
         会员中心已接入移动端 bootstrap 运行态，当前为 {bootstrap.deliveryMode} / {bootstrap.marketCode}。
@@ -541,5 +574,6 @@ export default function MemberPage() {
         </View>
       ) : null}
     </View>
+    </TriStateContainer>
   )
 }

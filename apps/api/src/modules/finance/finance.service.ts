@@ -227,6 +227,9 @@ export class FinanceService {
     tenantContext: RequestTenantContext,
     input: CreateSettlementDto
   ): Promise<Settlement> {
+    if (input.startDate > input.endDate) {
+      throw new Error('Settlement start date must be before or equal to end date')
+    }
     const now = new Date().toISOString()
     const storeId = input.storeId ?? tenantContext.storeId
 

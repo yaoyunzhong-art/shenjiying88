@@ -7,6 +7,7 @@ import {
   CashierOrderStatus,
   CashierPaymentStatus
 } from '../cashier/cashier.entity'
+import { MemberService } from '../member/member.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { PrismaService } from '../../prisma/prisma.service'
@@ -71,7 +72,8 @@ export class TransactionsService {
   constructor(
     private readonly cashierService: CashierService,
     private readonly loyaltyService: LoyaltyService,
-    @Optional() private readonly prisma?: PrismaService
+    @Optional() private readonly prisma?: PrismaService,
+    @Optional() private readonly memberService?: MemberService
   ) {}
 
   private getOrderSnapshotModel():
@@ -239,9 +241,11 @@ export class TransactionsService {
     const latestPayment = payments[0]
 
     const tenantId = tenantContext.tenantId
+    const memberNickname = this.memberService?.getProfile(order.memberId)?.nickname
 
     return {
       order,
+      memberNickname,
       payment: latestPayment,
       settlement: this.loyaltyService.listSettlements(tenantId)
         .find((s) => s.orderId === orderId),

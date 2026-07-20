@@ -4,13 +4,14 @@
  * 功能: 详情展示、状态流转（质检→通过/拒绝→退款/换货/关闭）、编辑/删除
  */
 import { View, Text, Button, ScrollView, Textarea } from '@tarojs/components';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
 import {
   executeMiniappPurchaseReturnAction,
   loadMiniappPurchaseReturnDetail,
   type MiniappReturnOrderDetail,
 } from '../../../supplychain-runtime';
+import { DetailSkeleton, TriStateContainer, useTriState } from '../../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -243,20 +244,43 @@ export default function ReturnOrderDetailPage() {
   const [remark, setRemark] = useState('');
   const returnId = useMemo(() => resolveCurrentReturnId(), []);
 
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappPurchaseReturnDetail(returnId, MOCK_DETAIL).then((snapshot) => {
-      if (!cancelled) {
-        setDetail(snapshot.data);
-        setDeliveryNote(snapshot.note);
-      }
-    });
+    setLoading();
+    loadMiniappPurchaseReturnDetail(returnId, MOCK_DETAIL)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setDetail(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载退货单详情失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [returnId]);
+  }, [returnId, setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseReturnDetail(returnId, MOCK_DETAIL)
+      .then((snapshot) => {
+        setDetail(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [returnId, setLoading, setError, setSuccess]);
 
   useEffect(() => {
     setLocalStatus(detail.status);
@@ -308,6 +332,13 @@ export default function ReturnOrderDetailPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="退货单详情加载失败"
+      errorMessage="无法加载退货单详情，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<DetailSkeleton />}
+    >
     <ScrollView style={{ padding: 16, background: '#0f172a', minHeight: '100vh', color: '#e2e8f0' }}>
       {/* 头部：单号 + 状态 */}
       <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -403,5 +434,6 @@ export default function ReturnOrderDetailPage() {
         </View>
       </View>
     </ScrollView>
+    </TriStateContainer>
   );
 }

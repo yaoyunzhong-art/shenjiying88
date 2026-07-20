@@ -4,8 +4,9 @@
  * 功能: 积分余额展示、兑换商品列表、兑换历史、分类筛选
  */
 import { View, Text, Button, Input, Picker } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Taro from '@tarojs/taro';
+import { TriStateContainer, useTriState, PageSkeleton, EmptyState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -144,10 +145,16 @@ const RedeemCard: React.FC<{
 // ---- 主页面 ----
 
 export default function RedeemCenterPage() {
+  const { status: pageStatus, setLoading, setSuccess } = useTriState('loading');
   const [activeTab, setActiveTab] = useState<'items' | 'history'>('items');
   const [category, setCategory] = useState<string>('全部');
   const [searchText, setSearchText] = useState<string>('');
   const [selectedRecord, setSelectedRecord] = useState<RedeemRecord | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSuccess(), 300);
+    return () => clearTimeout(timer);
+  }, [setLoading, setSuccess]);
 
   const filteredItems = useMemo(() => {
     const cat = CATEGORY_MAP[category] ?? 'ALL';
@@ -210,6 +217,10 @@ export default function RedeemCenterPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      loadingComponent={<PageSkeleton rows={4} />}
+    >
     <View style={{ background: '#f3f4f6', minHeight: '100vh', paddingBottom: '20px' }}>
       {/* 顶部积分卡片 */}
       <PointsHeader balance={MOCK_POINTS_BALANCE} />
@@ -328,5 +339,6 @@ export default function RedeemCenterPage() {
         </View>
       )}
     </View>
+    </TriStateContainer>
   );
 }

@@ -442,9 +442,12 @@ describe('[finance] 合约: 跨租户隔离', () => {
 
   it('createSettlement 起始>结束报错', async () => {
     const svc = makeService()
-    assert.throws(() => svc.createSettlement(CTX_A, {
-      startDate: '2030-01-01T00:00:00Z',
-      endDate: '2020-01-01T00:00:00Z'
-    }))
+    await assert.rejects(
+      () => svc.createSettlement(CTX_A, {
+        startDate: '2030-01-01T00:00:00Z',
+        endDate: '2020-01-01T00:00:00Z'
+      }),
+      /start date must be before/
+    )
   })
 })

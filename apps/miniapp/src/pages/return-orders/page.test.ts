@@ -97,7 +97,7 @@ describe('return-orders/index 页面源码分析 — 正例集', () => {
   });
 
   it('应包含空状态展示', () => {
-    assert.match(SOURCE, /暂无符合条件的退货单/);
+    assert.match(SOURCE, /EmptyState|暂无退货单/);
   });
 
   it('应包含点击跳转（goToDetail -> navigateTo 详情页）', () => {

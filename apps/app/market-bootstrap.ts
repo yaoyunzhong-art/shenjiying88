@@ -141,6 +141,7 @@ export interface NativeAppTransactionRefund {
 
 export interface NativeAppTransactionAggregate {
   order: NativeAppTransactionOrder;
+  memberNickname?: string;
   payment?: NativeAppTransactionPayment;
   settlement?: {
     settlementId?: string;

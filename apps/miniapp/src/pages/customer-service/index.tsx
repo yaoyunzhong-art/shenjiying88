@@ -4,8 +4,9 @@
  * 功能: 服务工单、会员咨询、满意度评价、快捷操作
  */
 import { View, Text, Button, Input, Textarea } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Taro from '@tarojs/taro';
+import { TriStateContainer, useTriState, PageSkeleton, EmptyState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -96,12 +97,18 @@ const getPriorityScore = (p: TicketPriority): number => ({ urgent: 4, high: 3, n
 // ---- 组件 ----
 
 export default function CustomerServicePage() {
+  const { status: pageStatus, setLoading, setSuccess } = useTriState('loading');
   const [activeTab, setActiveTab] = useState<'ticket' | 'faq' | 'stats'>('ticket');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [quickReplyVisible, setQuickReplyVisible] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSuccess(), 300);
+    return () => clearTimeout(timer);
+  }, [setLoading, setSuccess]);
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -260,9 +267,12 @@ export default function CustomerServicePage() {
       {/* 工单列表 */}
       <View style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {sortedTickets.length === 0 ? (
-          <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无匹配工单</Text>
-          </View>
+          <EmptyState
+            icon={searchQuery || statusFilter !== 'all' ? '🔍' : '📋'}
+            title={searchQuery || statusFilter !== 'all' ? '未找到匹配工单' : '暂无工单'}
+            description={searchQuery || statusFilter !== 'all' ? '尝试修改搜索关键词或筛选条件' : '当前没有待处理的工单'}
+            compact
+          />
         ) : (
           sortedTickets.map((ticket) => (
             <View
@@ -512,6 +522,10 @@ export default function CustomerServicePage() {
   );
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      loadingComponent={<PageSkeleton rows={3} />}
+    >
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh', paddingBottom: quickReplyVisible ? 160 : 16 }}>
       {/* 顶栏 */}
       <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -657,6 +671,7 @@ export default function CustomerServicePage() {
       {/* 快捷回复面板 */}
       {quickReplyVisible && renderQuickReplyPanel()}
     </View>
+    </TriStateContainer>
   );
 }
 

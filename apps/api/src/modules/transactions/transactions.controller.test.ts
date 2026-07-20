@@ -49,7 +49,7 @@ function buildServices() {
   const loyaltyService = new LoyaltyService(memberService)
   const cashierService = new CashierService(memberService, loyaltyService)
   controller = new TransactionsController(
-    new TransactionsService(cashierService, loyaltyService)
+    new TransactionsService(cashierService, loyaltyService, undefined, memberService)
   )
 }
 
@@ -165,6 +165,7 @@ describe('transactions controller', () => {
       const created = await checkoutAndPay('m-3', 50, 'ep-3')
       const result = controller.getOrderTransaction(created.order.orderId, CTX)
       assert.equal(result.order.memberId, 'm-3')
+      assert.equal(result.memberNickname, 'Test-m-3')
       assert.ok(result.payment)
     })
 

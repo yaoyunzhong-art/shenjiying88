@@ -75,6 +75,7 @@ export interface TransactionRefundRecord {
 
 export interface TransactionAggregate {
   order: CashierOrder
+  memberNickname?: string
   payment?: CashierPayment
   settlement?: LoyaltyOrderSettlement
   pointsLedger: PointsLedgerEntry[]

@@ -240,6 +240,7 @@ export function OrderDetailScreen() {
     orderId: aggregate?.order.orderId ?? routeParams?.orderId ?? baseOrder.orderId,
     orderNo: aggregate?.order.orderNo ?? routeParams?.orderNo ?? baseOrder.orderNo,
     memberId: aggregate?.order.memberId ?? baseOrder.memberId,
+    memberNickname: aggregate?.memberNickname ?? baseOrder.memberNickname,
     totalAmount: routeParams?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
     paymentChannel: routeParams?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
     paidAt: routeParams?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,

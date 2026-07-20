@@ -4,12 +4,13 @@
  * 功能: 列表搜索、状态筛选、分页浏览
  */
 import { View, Text, Button, Input, Picker } from '@tarojs/components';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
 import {
   loadMiniappPurchaseReturns,
   type MiniappReturnOrderListItem,
 } from '../../supplychain-runtime';
+import { EmptyState, PageSkeleton, TriStateContainer, useTriState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -60,20 +61,51 @@ export default function ReturnOrdersPage() {
   const [statusIdx, setStatusIdx] = useState(0);
   const [page, setPage] = useState(1);
 
+  const { status: pageStatus, setLoading, setError, setEmpty, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappPurchaseReturns(MOCK_RETURNS).then((snapshot) => {
-      if (!cancelled) {
-        setReturns(snapshot.data);
-        setDeliveryNote(snapshot.note);
-      }
-    });
+    setLoading();
+    loadMiniappPurchaseReturns(MOCK_RETURNS)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setReturns(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          if (snapshot.data.length === 0) {
+            setEmpty();
+          } else {
+            setSuccess();
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载退货单失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setLoading, setError, setEmpty, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseReturns(MOCK_RETURNS)
+      .then((snapshot) => {
+        setReturns(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        if (snapshot.data.length === 0) {
+          setEmpty();
+        } else {
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setEmpty, setSuccess]);
 
   const statusLabel = (STATUS_OPTIONS[statusIdx] ?? '全部') as string;
   const statusFilter: ReturnStatus | 'ALL' = STATUS_MAP[statusLabel] ?? 'ALL';
@@ -120,6 +152,16 @@ export default function ReturnOrdersPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="退货单加载失败"
+      errorMessage="无法加载退货单数据，请检查网络后重试"
+      onRetry={handleRetry}
+      emptyIcon="🧾"
+      emptyTitle="暂无退货单"
+      emptyDescription="当前没有符合条件的退货单数据"
+      loadingComponent={<PageSkeleton />}
+    >
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       {/* 标题 */}
       <Text style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9' }}>退货售后</Text>
@@ -183,10 +225,13 @@ export default function ReturnOrdersPage() {
 
       {/* 列表 */}
       <View style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {pageItems.length === 0 ? (
-          <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无符合条件的退货单</Text>
-          </View>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={searchText ? '🔍' : '🧾'}
+            title={searchText || statusIdx > 0 ? '未找到匹配结果' : '暂无退货单'}
+            description={searchText || statusIdx > 0 ? '尝试修改搜索关键词或筛选条件' : undefined}
+            compact
+          />
         ) : (
           pageItems.map((ro) => (
             <View
@@ -279,6 +324,7 @@ export default function ReturnOrdersPage() {
         </Text>
       </View>
     </View>
+    </TriStateContainer>
   );
 }
 

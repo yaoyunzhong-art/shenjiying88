@@ -993,6 +993,7 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
         success: true,
         message: 'OK',
         data: {
+          memberNickname: '接口会员二号',
           order: {
             orderId: 'order-002',
             memberId: 'member-api-002',
@@ -1038,6 +1039,7 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
     assert.ok(findByText(root.root, '支付宝'), '启用真实聚合后应展示接口返回的支付渠道');
     assert.ok(findByText(root.root, '¥120.00'), '启用真实聚合后应展示接口返回的支付金额');
     assert.ok(findByText(root.root, 'member-api-002'), '启用真实聚合后应展示接口返回的会员ID');
+    assert.ok(findByText(root.root, '接口会员二号'), '启用真实聚合后应展示接口返回的会员昵称');
   } finally {
     globalThis.fetch = originalFetch;
     // @ts-expect-error cleanup

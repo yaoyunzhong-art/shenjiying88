@@ -4,12 +4,13 @@
  * 功能: 列表搜索、状态筛选、分页浏览
  */
 import { View, Text, Button, Input, Picker } from '@tarojs/components';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
 import {
   loadMiniappPurchaseOrders,
   type MiniappPurchaseOrderListItem,
 } from '../../supplychain-runtime';
+import { TriStateContainer, useTriState, PageSkeleton, EmptyState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
@@ -53,21 +54,51 @@ const MOCK_ORDERS: PurchaseOrder[] = [
 const PAGE_SIZE = 5;
 
 export default function PurchaseOrdersPage() {
+  const { status: pageStatus, setLoading, setError, setEmpty, setSuccess } = useTriState('loading');
   const [orders, setOrders] = useState<PurchaseOrder[]>(MOCK_ORDERS);
   const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示采购单数据。');
   const [searchText, setSearchText] = useState('');
   const [statusIdx, setStatusIdx] = useState(0);
   const [page, setPage] = useState(1);
 
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseOrders(MOCK_ORDERS)
+      .then((snapshot) => {
+        setOrders(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        if (snapshot.data.length === 0) {
+          setEmpty();
+        } else {
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setEmpty, setSuccess]);
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappPurchaseOrders(MOCK_ORDERS).then((snapshot) => {
-      if (!cancelled) {
-        setOrders(snapshot.data);
-        setDeliveryNote(snapshot.note);
-      }
-    });
+    setLoading();
+    loadMiniappPurchaseOrders(MOCK_ORDERS)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setOrders(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          if (snapshot.data.length === 0) {
+            setEmpty();
+          } else {
+            setSuccess();
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载采购单失败');
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -120,6 +151,16 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="采购单加载失败"
+      errorMessage="无法加载采购单数据，请检查网络后重试"
+      onRetry={handleRetry}
+      emptyIcon="📋"
+      emptyTitle="暂无采购单"
+      emptyDescription="当前没有符合条件的采购单数据"
+      loadingComponent={<PageSkeleton />}
+    >
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       {/* 标题 */}
       <Text style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9' }}>采购单</Text>
@@ -193,10 +234,13 @@ export default function PurchaseOrdersPage() {
 
       {/* 列表 */}
       <View style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {pageItems.length === 0 ? (
-          <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无符合条件的采购单</Text>
-          </View>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={searchText ? '🔍' : '📋'}
+            title={searchText || statusIdx > 0 ? '未找到匹配结果' : '暂无采购单'}
+            description={searchText || statusIdx > 0 ? '尝试修改搜索关键词或筛选条件' : undefined}
+            compact
+          />
         ) : (
           pageItems.map((order) => (
             <View
@@ -279,6 +323,7 @@ export default function PurchaseOrdersPage() {
         </Text>
       </View>
     </View>
+    </TriStateContainer>
   );
 }
 

@@ -1,5 +1,5 @@
 import { View, Text, Button } from '@tarojs/components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
 import type {
   DomainGovernanceDisplayModel,
@@ -47,6 +47,7 @@ import {
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
 import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
+import { CardSkeleton, TriStateContainer, useTriState } from '../../components/TriStateComponents';
 
 const OPERATION_SHORTCUTS = [
   { label: '采购单', route: '/pages/purchase-orders/index' },
@@ -124,21 +125,45 @@ export default function IndexPage() {
     setGovernanceGeneratedAt(contract.governance.generatedAt);
   }
 
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappRuntimeConsumerContract().then((contract) => {
-      if (!cancelled) {
-        setConsumerContract(contract);
-        setGovernanceAlerts(contract.governance.alerts);
-        setGovernanceGeneratedAt(contract.governance.generatedAt);
-      }
-    });
+    setLoading();
+    loadMiniappRuntimeConsumerContract()
+      .then((contract) => {
+        if (!cancelled) {
+          setConsumerContract(contract);
+          setGovernanceAlerts(contract.governance.alerts);
+          setGovernanceGeneratedAt(contract.governance.generatedAt);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappRuntimeConsumerContract()
+      .then((contract) => {
+        setConsumerContract(contract);
+        setGovernanceAlerts(contract.governance.alerts);
+        setGovernanceGeneratedAt(contract.governance.generatedAt);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setSuccess]);
 
   const openOperationalPage = (route: string, label: string) => {
     if (!session.authenticated) {
@@ -150,6 +175,13 @@ export default function IndexPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="首页加载失败"
+      errorMessage="无法获取运行态合约，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<CardSkeleton />}
+    >
     <View style={{ padding: '32px', color: '#e2e8f0', background: '#020617', minHeight: '100vh' }}>
       <Text>
         M5 门店小程序骨架已就位，当前市场为 {bootstrap.marketCode}，交付模式为 {bootstrap.deliveryMode}，后续按 tenant /
@@ -824,5 +856,6 @@ export default function IndexPage() {
         </View>
       ) : null}
     </View>
+    </TriStateContainer>
   )
 }
