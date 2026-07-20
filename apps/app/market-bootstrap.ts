@@ -97,10 +97,18 @@ export interface NativeAppOrderPaymentSubmitPayload {
   source?: string;
 }
 
+export interface NativeAppTransactionOrderItem {
+  skuId: string;
+  title?: string;
+  quantity: number;
+  price: number;
+}
+
 export interface NativeAppTransactionOrder {
   orderId: string;
   orderNo: string;
   memberId: string;
+  items?: NativeAppTransactionOrderItem[];
   currency: string;
   totalAmount: number;
   status: string;

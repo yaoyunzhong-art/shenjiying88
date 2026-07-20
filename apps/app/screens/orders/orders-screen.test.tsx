@@ -1007,7 +1007,12 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
           memberNickname: '接口会员二号',
           order: {
             orderId: 'order-002',
+            orderNo: 'ORDAPI20260720002',
             memberId: 'member-api-002',
+            items: [
+              { skuId: 'SKU-API-201', title: '燕麦拿铁', quantity: 1, price: 38 },
+              { skuId: 'SKU-API-202', title: '坚果能量棒', quantity: 2, price: 29 },
+            ],
             currency: 'CNY',
             totalAmount: 120,
             status: 'PENDING_PAYMENT',
@@ -1047,10 +1052,17 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
       await Promise.resolve();
     });
 
+    assert.ok(findByText(root.root, 'ORDAPI20260720002'), '启用真实聚合后应展示接口返回的订单号');
     assert.ok(findByText(root.root, '支付宝'), '启用真实聚合后应展示接口返回的支付渠道');
     assert.ok(findByText(root.root, '¥120.00'), '启用真实聚合后应展示接口返回的支付金额');
     assert.ok(findByText(root.root, 'member-api-002'), '启用真实聚合后应展示接口返回的会员ID');
+<<<<<<< Updated upstream
     assert.ok(findByText(root.root, '接口会员二号'), '启用真实聚合后应展示接口返回的会员昵称');
+=======
+    assert.ok(findByText(root.root, '燕麦拿铁'), '启用真实聚合后应展示接口返回的商品明细');
+    assert.ok(findByText(root.root, '坚果能量棒'), '启用真实聚合后应展示接口返回的商品明细');
+    assert.ok(findByText(root.root, 'SKU-API-201'), '启用真实聚合后应展示接口返回的 SKU');
+>>>>>>> Stashed changes
   } finally {
     globalThis.fetch = originalFetch;
     // @ts-expect-error cleanup
