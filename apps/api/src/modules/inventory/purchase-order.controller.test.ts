@@ -8,8 +8,15 @@ import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
 import { PurchaseOrderController } from './purchase-order.controller'
 
+interface MockOrderService {
+  getOrderHistory(...args: unknown[]): { kind: string; args: unknown[] }
+  getTimeline(...args: unknown[]): { kind: string; args: unknown[] }
+  getBatchSummary(...args: unknown[]): { kind: string; args: unknown[] }
+  batchApprove(...args: unknown[]): { kind: string; args: unknown[] }
+}
+
 function createController() {
-  const orderService = {
+  const orderService: MockOrderService = {
     getOrderHistory: (...args: unknown[]) => ({ kind: 'getOrderHistory', args }),
     getTimeline: (...args: unknown[]) => ({ kind: 'getTimeline', args }),
     getBatchSummary: (...args: unknown[]) => ({ kind: 'getBatchSummary', args }),
@@ -28,7 +35,7 @@ const tenantContext = {
 describe('PurchaseOrderController', () => {
   it('getOrderHistory 转发到 orderService', () => {
     const controller = createController()
-    const result = controller.getOrderHistory('po-1', tenantContext) as unknown as { args: unknown[] }
+    const result = controller.getOrderHistory('po-1', tenantContext) as unknown as { kind: string; args: unknown[] }
 
     assert.equal(result.kind, 'getOrderHistory')
     assert.equal(result.args[0], 'po-1')
@@ -37,7 +44,7 @@ describe('PurchaseOrderController', () => {
 
   it('getOrderTimeline 转发到 orderService', () => {
     const controller = createController()
-    const result = controller.getOrderTimeline('po-1', tenantContext) as unknown as { args: unknown[] }
+    const result = controller.getOrderTimeline('po-1', tenantContext) as unknown as { kind: string; args: unknown[] }
 
     assert.equal(result.kind, 'getTimeline')
     assert.equal(result.args[0], 'po-1')
@@ -47,7 +54,7 @@ describe('PurchaseOrderController', () => {
     const controller = createController()
     const result = controller.getBatchSummary(
       tenantContext, { orderIds: ['po-1', 'po-2'] }
-    ) as unknown as { args: unknown[] }
+    ) as unknown as { kind: string; args: unknown[] }
 
     assert.equal(result.kind, 'getBatchSummary')
     assert.deepEqual(result.args[0], ['po-1', 'po-2'])
@@ -58,7 +65,7 @@ describe('PurchaseOrderController', () => {
     const result = controller.batchApprove(
       tenantContext,
       { orderIds: ['po-1', 'po-2'], approverId: 'admin', approverName: 'Admin', comment: 'batch ok' }
-    ) as unknown as { args: unknown[] }
+    ) as unknown as { kind: string; args: unknown[] }
 
     assert.equal(result.kind, 'batchApprove')
     assert.deepEqual(result.args[2], {
