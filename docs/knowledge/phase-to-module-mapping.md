@@ -309,6 +309,13 @@
 | E2E链 | api/src/modules/cross-module/cross-module-e2e-54-crm.test.ts | 🟢 完成 | #54 客户全生命周期HTTP链路 |
 | PRD | docs/knowledge/prd/v23/v23-prd-crm-management.md | 🟢 已写入 | V23 Phase 1 · CRM客户管理全功能PRD |
 
+### V23 · 团建活动管理模块 (2026-07-21 · 树哥交付)
+| 组件 | 位置 | 状态 | 说明 |
+|:-----|:-----|:----:|:------|
+| 页面 | apps/admin-web/app/team-building/page.tsx | 🟢 完成 | 活动列表+统计卡片+新建弹窗+状态筛选+搜索+三态覆盖 |
+| 测试 | apps/admin-web/app/team-building/page.test.tsx | 🟢 36 tests | 统计/筛选/formatCurrency/组件渲染/新建弹窗交互/常量映射 |
+| PRD | docs/knowledge/prd/v23/v23-prd-team-building.md | 🟢 已写入 | 团建活动管理PRD |
+
 ### 2026-07-21 凌晨产出
 | 资产 | 类型 | 状态 | 说明 |
 |:-----|:-----|:----:|:------|
