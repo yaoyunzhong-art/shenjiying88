@@ -1790,13 +1790,14 @@ export class TransactionsService {
 
     return {
       orderId: order.orderId,
-      orderNo: order.orderId,
+      orderNo: order.orderNo,
       memberId: order.memberId,
       status: latestRefund?.status === TransactionRefundStatus.Pending
         ? 'REFUNDING'
         : latestRefund?.status === TransactionRefundStatus.Completed
           ? TransactionRefundStatus.Completed
           : order.status,
+      itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
       totalAmount: order.totalAmount,
       paidAmount,
       refundedAmount,

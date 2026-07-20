@@ -159,7 +159,7 @@ function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
     createdAt: order.createdAt,
     paidAt: matchedMockOrder?.paidAt,
     paymentChannel: matchedMockOrder?.paymentChannel,
-    itemCount: matchedMockOrder?.itemCount ?? 0,
+    itemCount: order.itemCount,
   };
 }
 

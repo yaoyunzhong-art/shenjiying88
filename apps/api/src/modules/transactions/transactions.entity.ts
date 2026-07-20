@@ -320,6 +320,7 @@ export interface TransactionOrderListItem {
   orderNo: string
   memberId: string
   status: CashierOrder['status'] | TransactionRefundStatus | string
+  itemCount: number
   totalAmount: number
   paidAmount: number
   refundedAmount: number

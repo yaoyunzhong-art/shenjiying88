@@ -181,6 +181,8 @@ describe('transactions controller', () => {
       assert.ok(result.items.length >= 1)
       assert.ok(result.total >= 1)
       assert.equal(result.page, 1)
+      assert.equal(result.items[0]?.itemCount, 1)
+      assert.match(result.items[0]?.orderNo ?? '', /^ORD\d{11}$/)
     })
 
     it('should filter by memberId', async () => {

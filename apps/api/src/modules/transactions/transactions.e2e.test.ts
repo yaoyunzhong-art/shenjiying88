@@ -393,6 +393,8 @@ it('e2e: list transactions scoped by tenant', async () => {
     assert.ok(listA.body.data.items.length >= 1)
     assert.ok(listA.body.data.total >= 1)
     assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.itemCount === 'number'))
+    assert.ok(listA.body.data.items.every((order: any) => /^ORD\d{11}$/.test(order.orderNo)))
 
     const listB = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_B)
     assert.equal(listB.body.data.total, 0)

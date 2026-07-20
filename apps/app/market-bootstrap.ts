@@ -159,6 +159,7 @@ export interface NativeAppOrderListItem {
   orderNo: string;
   memberId: string;
   status: string;
+  itemCount: number;
   totalAmount: number;
   paidAmount: number;
   refundedAmount: number;
