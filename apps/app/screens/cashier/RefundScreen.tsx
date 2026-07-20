@@ -79,10 +79,22 @@ export function RefundScreen() {
   const trimmedRefundReason = refundReason.trim();
   const numAmount = Number(trimmedRefundAmount);
   const hasOrderContext = Boolean(orderAggregate?.order.orderId ?? orderId);
+  const hasHydratedAggregate = Boolean(orderAggregate);
   const resolvedOriginalAmount = orderAggregate?.payment?.amount
     ?? orderAggregate?.order.totalAmount
     ?? initialAmount
     ?? 0;
+  const reservedRefundAmount = hasHydratedAggregate
+    ? orderAggregate!.refunds
+      .filter((refund) => refund.status !== 'REJECTED')
+      .reduce((sum, refund) => sum + refund.refundAmount, 0)
+    : 0;
+  const resolvedRefundableAmount = Math.max(
+    0,
+    hasHydratedAggregate
+      ? resolvedOriginalAmount - reservedRefundAmount
+      : resolvedOriginalAmount,
+  );
   const resolvedOrderNo = orderAggregate?.order.orderNo ?? orderNo ?? 'N/A';
   const resolvedOrderId = orderAggregate?.order.orderId ?? orderId ?? 'N/A';
   const resolvedPaymentChannel = normalizePaymentChannel(
@@ -90,16 +102,30 @@ export function RefundScreen() {
   );
   const resolvedPaymentChannelLabel = getPaymentChannelLabel(resolvedPaymentChannel);
   const hasValidAmountFormat = /^\d+(\.\d{1,2})?$/.test(trimmedRefundAmount);
+  const missingResolvedRefundAmount =
+    hasOrderContext &&
+    !orderLoading &&
+    resolvedOriginalAmount <= 0;
+  const exceedsRefundableBalance =
+    hasValidAmountFormat &&
+    Number.isFinite(numAmount) &&
+    numAmount > resolvedRefundableAmount;
+  const noRefundableBalance =
+    hasOrderContext &&
+    !orderLoading &&
+    hasHydratedAggregate &&
+    resolvedRefundableAmount <= 0;
   const canSubmitRefund =
     hasOrderContext &&
     hasValidAmountFormat &&
     Number.isFinite(numAmount) &&
     numAmount > 0 &&
-    resolvedOriginalAmount > 0 &&
-    numAmount <= resolvedOriginalAmount &&
+    resolvedRefundableAmount > 0 &&
+    !exceedsRefundableBalance &&
     trimmedRefundReason.length > 0 &&
-    (!shouldFetchOrder || !orderLoading);
-  const isFullRefund = resolvedOriginalAmount > 0 && Math.abs(numAmount - resolvedOriginalAmount) < 0.00001;
+    (!shouldFetchOrder || !orderLoading) &&
+    !missingResolvedRefundAmount;
+  const isFullRefund = resolvedRefundableAmount > 0 && Math.abs(numAmount - resolvedRefundableAmount) < 0.00001;
 
   const fetchOrder = useCallback(() => {
     if (!orderId || !shouldFetchOrder) {
@@ -165,8 +191,16 @@ export function RefundScreen() {
       Alert.alert('提示', '缺少订单信息，无法提交退款');
       return;
     }
-    if (numAmount > resolvedOriginalAmount) {
-      Alert.alert('提示', '退款金额不能超过原订单金额');
+    if (missingResolvedRefundAmount) {
+      Alert.alert('提示', '订单可退金额尚未同步成功，请先重试加载真实订单');
+      return;
+    }
+    if (noRefundableBalance) {
+      Alert.alert('提示', '当前订单已无可退余额');
+      return;
+    }
+    if (exceedsRefundableBalance) {
+      Alert.alert('提示', `退款金额不能超过可退余额 ¥${resolvedRefundableAmount.toFixed(2)}`);
       return;
     }
     if (!canSubmitRefund) {
@@ -248,6 +282,22 @@ export function RefundScreen() {
               ¥{resolvedOriginalAmount.toFixed(2)}
             </Text>
           </View>
+          {hasHydratedAggregate ? (
+            <>
+              <View style={styles.orderRow}>
+                <Text style={styles.orderKey}>已占用退款</Text>
+                <Text style={styles.orderValue}>
+                  ¥{reservedRefundAmount.toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.orderRow}>
+                <Text style={styles.orderKey}>可退余额</Text>
+                <Text style={styles.orderValue}>
+                  ¥{resolvedRefundableAmount.toFixed(2)}
+                </Text>
+              </View>
+            </>
+          ) : null}
           {resolvedPaymentChannelLabel && (
             <View style={styles.orderRow}>
               <Text style={styles.orderKey}>原支付渠道</Text>
@@ -261,6 +311,9 @@ export function RefundScreen() {
             <>
               <Text style={styles.orderStatusText}>订单信息加载失败，可重试或按当前信息继续退款</Text>
               <Text style={styles.orderErrorText}>{orderFetchError}</Text>
+              {missingResolvedRefundAmount ? (
+                <Text style={styles.orderGuardText}>当前未拿到真实可退金额，请先重试加载后再退款</Text>
+              ) : null}
               <Button
                 title="重试加载"
                 onPress={fetchOrder}
@@ -273,6 +326,14 @@ export function RefundScreen() {
           {!hasOrderContext && (
             <Text style={styles.orderHint}>缺少订单信息，请返回订单详情后重试</Text>
           )}
+          {noRefundableBalance ? (
+            <Text style={styles.orderGuardText}>当前订单已无可退余额，不能重复退款</Text>
+          ) : null}
+          {!noRefundableBalance && exceedsRefundableBalance ? (
+            <Text style={styles.orderGuardText}>
+              当前退款金额超过可退余额 ¥{resolvedRefundableAmount.toFixed(2)}，请调整后再提交
+            </Text>
+          ) : null}
         </Card>
 
         <View style={styles.section}>
@@ -296,8 +357,9 @@ export function RefundScreen() {
 
         <View style={styles.notice}>
           <Text style={styles.noticeTitle}>退款须知</Text>
-          <Text style={styles.noticeText}>• 退款金额不能超过原订单金额</Text>
+          <Text style={styles.noticeText}>• 退款金额不能超过当前可退余额</Text>
           <Text style={styles.noticeText}>• 金额最多支持 2 位小数，最小退款金额为 0.01</Text>
+          <Text style={styles.noticeText}>• 已退款/审核中的金额会占用余额，`REJECTED` 不占用</Text>
           <Text style={styles.noticeText}>• {isFullRefund ? '当前为全额退款' : '当前为部分退款'}，状态以接口返回结果为准</Text>
           <Text style={styles.noticeText}>• 退款将按原支付渠道返回</Text>
           <Text style={styles.noticeText}>• 如有疑问请联系客服</Text>
@@ -362,6 +424,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 13,
     color: '#FF3B30',
+  },
+  orderGuardText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#FF9500',
   },
   retryButton: {
     marginTop: 12,

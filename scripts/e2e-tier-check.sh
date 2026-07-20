@@ -354,19 +354,22 @@ quality_check() {
     bn="$(basename "$file")"
 
     local a
-    a=$(grep -cE '\bas\b.*\bany\b' "$file" 2>/dev/null || echo 0)
+    a=$(grep -cE '\bas\b.*\bany\b' "$file" 2>/dev/null || true)
+    a=${a:-0}; a=$((a+0))
     as_any_count=$((as_any_count + a))
-    [[ $a -gt 0 ]] && err "$bn: 发现 $a 处 as any"
+    [ "$a" -gt 0 ] 2>/dev/null && err "$bn: 发现 $a 处 as any"
 
     local s
-    s=$(grep -c 'describe\.skip' "$file" 2>/dev/null || echo 0)
+    s=$(grep -c 'describe\.skip' "$file" 2>/dev/null || true)
+    s=${s:-0}; s=$((s+0))
     desc_skip_count=$((desc_skip_count + s))
-    [[ $s -gt 0 ]] && err "$bn: 发现 $s 处 describe.skip"
+    [ "$s" -gt 0 ] 2>/dev/null && err "$bn: 发现 $s 处 describe.skip"
 
     local o
-    o=$(grep -c 'it\.only' "$file" 2>/dev/null || echo 0)
+    o=$(grep -c 'it\.only' "$file" 2>/dev/null || true)
+    o=${o:-0}; o=$((o+0))
     it_only_count=$((it_only_count + o))
-    [[ $o -gt 0 ]] && err "$bn: 发现 $o 处 it.only"
+    [ "$o" -gt 0 ] 2>/dev/null && err "$bn: 发现 $o 处 it.only"
   done < <(ls "$E2E_DIR"/cross-module-e2e-*.test.ts 2>/dev/null)
 
   echo ""
