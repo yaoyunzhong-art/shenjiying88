@@ -16,12 +16,18 @@ const CAMPAIGNS: Campaign[] = [
 const CHANNELS = [...new Set(CAMPAIGNS.map(c=>c.channel))];
 
 export default function CampaignPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [channelFilter, setChannelFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const filtered = channelFilter==='all' ? CAMPAIGNS : CAMPAIGNS.filter(c=>c.channel===channelFilter);
   const totalBudget = CAMPAIGNS.reduce((s,c)=>s+c.budget,0);
   const totalSpent = CAMPAIGNS.reduce((s,c)=>s+c.spent,0);
   const totalImpressions = CAMPAIGNS.reduce((s,c)=>s+c.impressions,0);
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!CAMPAIGNS || CAMPAIGNS.length === 0) return <div>暂无数据</div>
 
   return (
     <PageShell title="营销活动">

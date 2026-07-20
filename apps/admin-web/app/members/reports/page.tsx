@@ -99,10 +99,16 @@ function formatMoney(amount: number): string {
 }
 
 export default function MemberReportsPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const metrics = useMemo(() => metricsCache, []);
   const rfm = useMemo(() => generateRFM(), []);
   const activity = useMemo(() => generateActivity(), []);
   const [tab, setTab] = useState<'overview' | 'rfm' | 'trend'>('overview');
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!metrics || metrics.length === 0) return <div>暂无数据</div>
 
   const latest = metrics[0]!;
   const totals = useMemo(() => ({

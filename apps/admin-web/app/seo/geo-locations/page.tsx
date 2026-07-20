@@ -14,9 +14,15 @@ const MOCK_ROWS: GeoRow[] = [
 ]
 
 export default function GeoLocationsPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [rows] = useState(MOCK_ROWS)
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState<string>('ALL')
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!rows || rows.length === 0) return <div>暂无数据</div>
 
   const cities = useMemo(() => [...new Set(rows.map(r => r.city))].sort(), [rows])
 

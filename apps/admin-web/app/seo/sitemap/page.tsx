@@ -21,8 +21,14 @@ const FREQ_COLORS: Record<string, string> = {
 }
 
 export default function SitemapPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [rows] = useState(MOCK_ROWS)
   const [freqFilter, setFreqFilter] = useState<string>('ALL')
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!rows || rows.length === 0) return <div>暂无数据</div>
 
   const filtered = useMemo(() => {
     if (freqFilter === 'ALL') return rows

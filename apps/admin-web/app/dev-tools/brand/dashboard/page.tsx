@@ -22,11 +22,17 @@ const BRAND_METRICS: BrandMetric[] = [
 ];
 
 export default function BrandDashboardPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState('halfyear');
   const totalRev = REVENUE.reduce((s,r)=>s+r.revenue,0);
   const totalCost = REVENUE.reduce((s,r)=>s+r.cost,0);
   const totalLeads = REVENUE.reduce((s,r)=>s+r.leads,0);
   const avgRoi = Math.round(REVENUE.reduce((s,r)=>s+parseInt(r.roi),0)/REVENUE.length);
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!REVENUE || REVENUE.length === 0) return <div>暂无数据</div>
 
   return (
     <PageShell title="品牌运营看板">

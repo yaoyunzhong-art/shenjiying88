@@ -6,7 +6,14 @@ import { PageShell, Card, Statistic, Tabs, Button, Space, Tag } from '@m5/ui';
 const DOC_ITEMS = ['收银API','会员API','库存API','报表API','活动API'];
 
 export default function OpenPlatformPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [tabKey, setTabKey] = useState('api');
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!DOC_ITEMS || DOC_ITEMS.length === 0) return <div>暂无数据</div>
+
   return (
     <PageShell title="开放平台">
       <Space style={{width:'100%',flexDirection:'column',gap:16}}>

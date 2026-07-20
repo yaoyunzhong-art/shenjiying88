@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { message } from 'antd';
 import {
   PageShell,
@@ -33,8 +33,12 @@ function formatAmount(amount: number): string {
 function OrderDetailContent() {
   const params = useParams<{ id: string }>();
   const orderId = params?.id ?? '';
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const vm = useMemo(() => loadOrderDetail(orderId), [orderId]);
 
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
   if (!vm) {
     return (
       <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#f87171' }}>

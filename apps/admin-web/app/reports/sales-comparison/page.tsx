@@ -36,6 +36,12 @@ const styles = {
 export default function SalesComparisonPage() {
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<string>('all')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
 
   const filtered = useMemo(() => {
     let list = SEED

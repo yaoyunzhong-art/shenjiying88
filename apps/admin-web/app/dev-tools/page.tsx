@@ -298,8 +298,14 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 // ==================== 主页面 ====================
 
 export default function DevToolsPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!DEV_TOOLS || DEV_TOOLS.length === 0) return <div>暂无数据</div>
 
   const filtered = useMemo(
     () => filterEntries(DEV_TOOLS, searchQuery, categoryFilter),

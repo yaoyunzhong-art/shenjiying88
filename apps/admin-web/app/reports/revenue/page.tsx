@@ -131,7 +131,14 @@ function RevenueBarChart({ data }: { data: DailyRevenue[] }) {
 // ============================================================
 
 export default function RevenuePage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [days, setDays] = useState(30);
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!MOCK_DATA || MOCK_DATA.length === 0) return <div>暂无数据</div>
+
 
   const data = MOCK_DATA.slice(-days);
   const dailyChange = calcPercent(TODAY.revenue, YESTERDAY.revenue);

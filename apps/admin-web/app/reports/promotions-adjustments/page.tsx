@@ -42,6 +42,12 @@ export default function PromotionsAdjustmentsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended' | 'scheduled'>('all')
   const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
 
   const filtered = useMemo(() => {
     let list = SEED

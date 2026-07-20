@@ -40,6 +40,12 @@ export default function StoreSummaryPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ orders: s.orders + r.orders, revenue: s.revenue + r.revenue, members: s.members + r.members }), { orders: 0, revenue: 0, members: 0 })

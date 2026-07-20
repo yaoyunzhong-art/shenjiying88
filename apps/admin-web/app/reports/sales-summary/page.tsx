@@ -29,6 +29,9 @@ const SEED: DailySale[] = [
   { date: '2026-07-21', orders: 42, revenue: 12340, refunds: 0, netRevenue: 12340, avgOrder: 293.8, topProduct: '会员续费' },
 ]
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const PERIOD_LABELS = ['today', 'week', 'month', 'quarter'].reduce((acc, k) => ({ ...acc, [k]: { today: '今日', week: '本周', month: '本月', quarter: '本季' }[k] }), {}) as Record<Period, string>
+
 const styles = {
   container: { background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh', padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Inter', -apple-system, sans-serif" } as React.CSSProperties,
   card: { background: '#1a1a2e', borderRadius: '12px', padding: '16px', border: '1px solid #2a2a3e' } as React.CSSProperties,
@@ -47,6 +50,12 @@ export default function SalesSummaryPage() {
   const [search, setSearch] = useState('')
   const [period, setPeriod] = useState<Period>('week')
   const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ orders: s.orders + r.orders, revenue: s.revenue + r.revenue, refunds: s.refunds + r.refunds, netRevenue: s.netRevenue + r.netRevenue }), { orders: 0, revenue: 0, refunds: 0, netRevenue: 0 })

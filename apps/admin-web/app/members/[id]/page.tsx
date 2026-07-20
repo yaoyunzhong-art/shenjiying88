@@ -56,11 +56,17 @@ function mockVisits() {
 
 export default function MemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const member = useMemo(() => mockMember(id), [id]);
   const points = useMemo(() => mockPoints(), []);
   const recharges = useMemo(() => mockRecharges(), []);
   const visits = useMemo(() => mockVisits(), []);
   const [tab, setTab] = useState<'overview'|'points'|'recharge'|'visits'>('overview');
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!member || !points || !recharges || !visits) return <div>暂无数据</div>
 
   return (
     <main style={{ maxWidth: 1020, margin: '24px auto', padding: '0 16px' }}>

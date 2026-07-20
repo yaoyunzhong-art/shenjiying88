@@ -43,6 +43,12 @@ export default function UserPortraitPage() {
   const [search, setSearch] = useState('')
   const [levelFilter, setLevelFilter] = useState<string>('all')
   const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
+  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ orders: s.orders + r.orders, spend: s.spend + r.spend }), { orders: 0, spend: 0 })
