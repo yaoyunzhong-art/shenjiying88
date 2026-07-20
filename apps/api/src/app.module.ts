@@ -158,6 +158,7 @@ import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { TeamBuildingModule } from './modules/team-building/team-building.module';
 import { HrModule } from './modules/hr/hr.module';
+import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
 
 @Module({
   imports: [
@@ -328,6 +329,7 @@ import { HrModule } from './modules/hr/hr.module';
     CategoriesModule,
     TeamBuildingModule,
     HrModule,
+    BrandOperationsModule,
   ],
   providers: [
     RequestGovernanceService,
