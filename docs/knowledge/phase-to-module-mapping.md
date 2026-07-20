@@ -11,7 +11,7 @@
 | 1 | 🟢 代码 | TSC零错误 | `pnpm turbo typecheck` | ✅ 持续 | 必需 |
 | 2 | 🟢 测试 | 0 fail · 无skip | `pnpm test` | ✅ 持续 | 必需 |
 | 3 | 🟢 审计 | 圈梁表更新 | 本文件维护 | ✅ 持续 | 必需 |
-| 4 | 🟡 PRD | 新建页面24h内补PRD | PRD摘要卡 | 🟡 渐进 | 建议 |
+| 4 | 🔴 PRD | 新建页面24h内补PRD(硬箍) | docs/knowledge/prd/v23/*.md | 🔴 2026-07-21升级 | 硬性验收 |
 | 5 | 🟠 知识赋能 | 知识库自动检索 | `POST /api/empower-cards/match` | 🟡 渐进 | 建议 |
 | 6 | 🔴 基建 | CI/Docker/Build均绿 | GitHub workflow | 🆕 **V23新增** | P0 |
 | 7 | 🧪 E2E | 50条E2E链全绿 | `pnpm e2e` | 🆕 **V23新增** | P1 |
