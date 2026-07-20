@@ -10,14 +10,15 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  *   - 客户评分更新
  *   - 交互记录创建
  *   - 工单创建与状态流转
+ *
+ * 注意: ResponseInterceptor 会包装响应, 实际数据在 res.body.data.data
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { Controller, Get, Inject, Post, Patch, Body, Param, Query } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
 import { CrmService, type CrmCustomerStatus, type TicketPriority, type TicketStatus, type CrmInteraction } from './crm.service'
 
 @Controller('test/crm')
@@ -73,7 +74,6 @@ async function buildApp() {
   }).compile()
 
   const app = moduleRef.createNestApplication()
-  app.useGlobalInterceptors(new ResponseInterceptor())
   await app.init()
   return { app, crmService }
 }
@@ -106,11 +106,12 @@ it('e2e: update engagement score then verify', async () => {
   try {
     const customers = crmService.list()
     const customerId = customers[0].id
+    const beforeScore = customers[0].engagementScore
 
     const res = await request(app.getHttpServer())
       .patch(`/test/crm/customers/${customerId}/score`)
       .send({ delta: 10 })
-    assert.equal(res.body.data.engagementScore, customers[0].engagementScore + 10)
+    assert.equal(res.body.data.engagementScore, beforeScore + 10)
   } finally {
     await app.close()
   }
