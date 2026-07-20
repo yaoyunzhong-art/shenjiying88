@@ -15,6 +15,7 @@ import { getNativeAppOrderTransaction, type NativeAppTransactionAggregate } from
 type OrderDetailParams = {
   OrderDetail: {
     orderId: string;
+    orderNo?: string;
     paymentStatus?: 'PAID';
     paymentAmount?: number;
     paymentPaidAt?: string;
@@ -237,6 +238,7 @@ export function OrderDetailScreen() {
   const order = {
     ...baseOrder,
     orderId: aggregate?.order.orderId ?? routeParams?.orderId ?? baseOrder.orderId,
+    orderNo: aggregate?.order.orderNo ?? routeParams?.orderNo ?? baseOrder.orderNo,
     memberId: aggregate?.order.memberId ?? baseOrder.memberId,
     totalAmount: routeParams?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
     paymentChannel: routeParams?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
@@ -284,6 +286,7 @@ export function OrderDetailScreen() {
     if (routeParams?.refundStatus) {
       navigation.navigate!('Orders' as never, {
         orderId: order.orderId,
+        orderNo: order.orderNo,
         refundStatus: routeParams.refundStatus,
         refundRequestedAmount: routeParams.refundRequestedAmount,
         refundReason: routeParams.refundReason,
@@ -295,6 +298,7 @@ export function OrderDetailScreen() {
     if (routeParams?.paymentStatus === 'PAID') {
       navigation.navigate!('Orders' as never, {
         orderId: order.orderId,
+        orderNo: order.orderNo,
         paymentStatus: 'PAID',
         paymentAmount: routeParams.paymentAmount,
         paymentPaidAt: routeParams.paymentPaidAt,

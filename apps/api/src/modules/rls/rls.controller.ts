@@ -312,4 +312,107 @@ export class RlsController {
       },
     }
   }
+
+  // ─── V19: 多租户集成示例 ───────────────────────────────────
+
+  /**
+   * POST /api/rls/tenant/context
+   * 多租户集成示例: 设置租户上下文并执行隔离查询。
+   * 演示 DAO/Repository 中 tenantId 透传的标准模式。
+   *
+   * 请求示例:
+   *   {
+   *     "tenantId": "t-store-a",
+   *     "tableName": "members"
+   *   }
+   *
+   * 响应:
+   *   {
+   *     "success": true,
+   *     "data": {
+   *       "tenantId": "t-store-a",
+   *       "contextSet": true,
+   *       "tenantFilter": "\"tenantId\" = 't-store-a'",
+   *       "pools": [ ... ]
+   *     }
+   *   }
+   */
+  @Post('tenant/context')
+  @HttpCode(HttpStatus.OK)
+  async setTenantContext(
+    @Body() body: { tenantId: string; tableName?: string }
+  ) {
+    const { tenantId, tableName } = body
+    if (!tenantId) {
+      return {
+        success: false,
+        message: 'tenantId is required',
+      }
+    }
+
+    // 1. 设置租户上下文
+    await this.rlsService.setTenantContext(tenantId)
+
+    // 2. 构建 tenantId 过滤条件（供 DAO/Repository 使用）
+    const tenantFilter = this.rlsService.buildTenantFilter(tenantId)
+    const tenantFilterWithAlias = this.rlsService.buildTenantFilter(tenantId, 't')
+
+    // 3. 初始化/刷新租户连接池追踪
+    this.rlsService.initTenantPool(tenantId)
+    const pools = this.rlsService.getTenantPoolSnapshot()
+
+    // 4. 审计记录
+    await this.rlsService.logAudit(
+      tenantId,
+      'TENANT_CONTEXT_SET',
+      tableName ?? '*',
+      null,
+      `Tenant context set via API demo endpoint`
+    )
+
+    return {
+      success: true,
+      data: {
+        tenantId,
+        contextSet: true,
+        tenantFilter,
+        tenantFilterWithAlias,
+        poolActive: true,
+        pools,
+      },
+    }
+  }
+
+  /**
+   * GET /api/rls/tenant/pools
+   * 查看所有活跃的租户连接池（观测性端点）。
+   */
+  @Get('tenant/pools')
+  async getTenantPools() {
+    const pools = this.rlsService.getTenantPoolSnapshot()
+    return {
+      success: true,
+      data: {
+        pools,
+        total: pools.length,
+      },
+    }
+  }
+
+  /**
+   * DELETE /api/rls/tenant/pool
+   * 释放指定租户的连接池。
+   */
+  @Delete('tenant/pool')
+  @HttpCode(HttpStatus.OK)
+  async releaseTenantPool(@Body() body: { tenantId: string }) {
+    const released = this.rlsService.releaseTenantPool(body.tenantId)
+    return {
+      success: released,
+      message: released
+        ? `Pool released for tenant "${body.tenantId}"`
+        : `No pool found for tenant "${body.tenantId}"`,
+      data: { tenantId: body.tenantId, released },
+    }
+  }
 }

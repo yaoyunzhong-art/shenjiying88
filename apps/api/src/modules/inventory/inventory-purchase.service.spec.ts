@@ -796,8 +796,9 @@ describe('InventoryPurchaseService', () => {
 
       const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
       const inspected = inspectReturn(ret.id, tenant)
-      const approved = approveReturn(ret.id, tenant)
+      // inspectReturn updates store directly; snapshot status before approveReturn overwrites
       expect(inspected.status).toBe(ReturnStatus.Shipped)
+      const approved = approveReturn(ret.id, tenant)
       expect(approved.status).toBe(ReturnStatus.Approved)
     })
 
@@ -829,8 +830,9 @@ describe('InventoryPurchaseService', () => {
 
       const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
       const rejected = rejectReturn(ret.id, tenant)
-      const completed = closeReturn(ret.id, tenant)
+      // rejectReturn updates store directly; snapshot status before closeReturn overwrites
       expect(rejected.status).toBe(ReturnStatus.Rejected)
+      const completed = closeReturn(ret.id, tenant)
       expect(completed.status).toBe(ReturnStatus.Closed)
     })
 

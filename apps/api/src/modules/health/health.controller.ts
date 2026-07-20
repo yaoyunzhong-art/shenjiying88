@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,11 +18,13 @@ import { HealthService } from './health.service'
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
+  @Public()
   @Get()
   getHealth() {
     return this.healthService.ping()
   }
 
+  @Public()
   @Get('ping')
   getPing() {
     return this.healthService.ping()

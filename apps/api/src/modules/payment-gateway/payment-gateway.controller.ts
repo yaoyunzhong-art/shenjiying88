@@ -32,6 +32,7 @@ export class PaymentGatewayController {
         amount: dto.amount,
         currency: dto.currency,
         provider: dto.provider,
+        tenantId,
         metadata: dto.metadata,
         locale: dto.locale,
         returnUrl: dto.returnUrl,
@@ -55,7 +56,7 @@ export class PaymentGatewayController {
   @Get('pay/:id')
   async queryPayment(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string): Promise<PayResultDto> {
     try {
-      return await this.paymentGatewayService.query(id)
+      return await this.paymentGatewayService.query(id, tenantId)
     } catch (error) {
       if (error instanceof PaymentError) {
         const status =
@@ -82,6 +83,7 @@ export class PaymentGatewayController {
         transactionId: dto.transactionId,
         amount: dto.amount,
         reason: dto.reason,
+        tenantId,
       })
     } catch (error) {
       if (error instanceof PaymentError) {
@@ -105,7 +107,7 @@ export class PaymentGatewayController {
   @Get('refund/:id')
   async queryRefund(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string): Promise<PayResultDto> {
     try {
-      return await this.paymentGatewayService.queryRefund(id)
+      return await this.paymentGatewayService.queryRefund(id, tenantId)
     } catch (error) {
       if (error instanceof PaymentError) {
         const status =

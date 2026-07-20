@@ -1436,3 +1436,146 @@ model EmpowerCardQuoteLog {
   @@index([quotedAt])
   @@map("empower_card_quote_log")
 }
+
+// ═══════════════════════════════════════════════════════════════
+// P-38 财务对账 - Reconciliation models
+// ═══════════════════════════════════════════════════════════════
+
+model ReconciliationReportModel {
+  id              String          @id @default(uuid())
+  tenantId        String?
+  date            String          // YYYY-MM-DD
+  internalTotal   Int             @default(0)
+  externalTotal   Int             @default(0)
+  matchedCount    Int             @default(0)
+  exactMatchCount Int             @default(0)
+  internalTotalCents Int          @default(0)
+  externalTotalCents Int          @default(0)
+  totalDiffCents  Int             @default(0)
+  matchKeyType    String          @default("orderNo")
+  durationMs      Int             @default(0)
+  toleranceCents  Int             @default(0)
+  generatedAt     DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  diffs           ReconcileDiffModel[]
+  matches         ReconcileMatchModel[]
+
+  @@index([tenantId])
+  @@index([date])
+  @@index([tenantId, date])
+  @@map("reconciliation_report")
+}
+
+model ReconcileDiffModel {
+  id                  String          @id @default(uuid())
+  reportId            String
+  kind                String          // amount-mismatch | missing-internal | missing-external | duplicate
+  orderNo             String?
+  internalId          String?
+  externalId          String?
+  internalAmountCents Int?
+  externalAmountCents Int?
+  diffCents           Int             @default(0)
+  duplicateIds        String?
+  note                String?
+
+  report              ReconciliationReportModel @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([kind])
+  @@map("reconcile_diff")
+}
+
+model ReconcileMatchModel {
+  id                  String          @id @default(uuid())
+  reportId            String
+  internalId          String
+  externalId          String
+  orderNo             String?
+  internalAmountCents Int             @default(0)
+  externalAmountCents Int             @default(0)
+  matched             Boolean         @default(false)
+
+  report              ReconciliationReportModel @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("reconcile_match")
+}
+
+model ResolvedDiffModel {
+  id          String    @id @default(uuid())
+  diffKey     String    @unique
+  resolvedAt  DateTime  @default(now())
+  resolvedBy  String?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([diffKey])
+  @@map("resolved_diff")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// P-38 财务对账 - Ledger/Account/Settlement persistence models
+// ═══════════════════════════════════════════════════════════════
+
+model FinanceLedger {
+  id            String   @id @default(uuid())
+  tenantId      String
+  brandId       String?
+  storeId       String?
+  type          String   // REVENUE | EXPENSE | REFUND | ADJUSTMENT
+  amount        Float    @default(0)
+  balance       Float    @default(0)
+  orderId       String?
+  transactionId String?
+  description   String   @default("")
+  category      String?
+  recordedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([tenantId, recordedAt])
+  @@index([storeId])
+  @@map("finance_ledger")
+}
+
+model FinanceAccount {
+  id        String   @id @default(uuid())
+  tenantId  String
+  storeId   String?
+  name      String
+  type      String   // CASH | WECHAT | ALIPAY | BANK | OTHER
+  balance   Float    @default(0)
+  status    String   @default("ACTIVE") // ACTIVE | FROZEN | CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([type])
+  @@map("finance_account")
+}
+
+model FinanceSettlement {
+  id                String   @id @default(uuid())
+  tenantId          String
+  storeId           String?
+  startDate         DateTime
+  endDate           DateTime
+  totalRevenue      Float    @default(0)
+  totalExpense      Float    @default(0)
+  netProfit         Float    @default(0)
+  settlementStatus  String   @default("PENDING") // PENDING | CONFIRMED | DISPUTED
+  settledAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([settlementStatus])
+  @@map("finance_settlement")
+}

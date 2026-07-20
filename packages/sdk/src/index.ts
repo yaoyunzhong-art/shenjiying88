@@ -2190,6 +2190,157 @@ export function createBusinessClient(baseUrl?: string) {
         api.getData(`/payment-gateway/refund/${refundId}`, init),
     },
 
+    // ── Budget (GET/POST /api/v1/finance/budgets) ──
+    budget: {
+      /** 预算列表 */
+      list: (query?: {
+        tenantId?: string;
+        status?: string;
+        category?: string;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          id: string;
+          tenantId: string;
+          name: string;
+          category: string;
+          totalCents: number;
+          usedCents: number;
+          remainingCents: number;
+          currency: string;
+          period: string;
+          status: string;
+          version: number;
+          notes: string;
+          createdAt: string;
+          updatedAt: string;
+        }>>('/finance/budgets', { ...init, headers: { ...(query ? {
+          'x-tenant-id': query.tenantId ?? '',
+          'x-status': query.status ?? '',
+          'x-category': query.category ?? '',
+        } : {}), ...(init?.headers ?? {}) } }),
+
+      /** 创建预算 */
+      create: (body: {
+        tenantId: string;
+        name: string;
+        category: string;
+        totalCents: number;
+        currency?: string;
+        period: string;
+        notes?: string;
+        idempotencyKey: string;
+      }, init?: RequestInit) =>
+        api.postData<{ id: string; version: number }>('/finance/budgets', body, init),
+
+      /** 提交审批 */
+      submitForApproval: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/${id}/submit`, body, init),
+
+      /** 关闭预算 */
+      close: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/${id}/close`, body, init),
+
+      /** 审批请求列表 */
+      listApprovals: (query?: {
+        budgetId?: string;
+        status?: string;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          id: string;
+          budgetId: string;
+          budgetName: string;
+          requester: string;
+          amountCents: number;
+          reason: string;
+          status: 'PENDING' | 'APPROVED' | 'REJECTED';
+          version: number;
+          createdAt: string;
+        }>>('/finance/budgets/approvals', { ...init, headers: { ...(query ? {
+          'x-budget-id': query.budgetId ?? '',
+          'x-status': query.status ?? '',
+        } : {}), ...(init?.headers ?? {}) } }),
+
+      /** 批准审批请求 */
+      approveApproval: (approvalId: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/approvals/${approvalId}/approve`, body, init),
+
+      /** 驳回审批请求 */
+      rejectApproval: (approvalId: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/approvals/${approvalId}/reject`, body, init),
+    },
+
+    // ── Promotions (GET/POST /api/v1/marketing/promotions) ──
+    promotions: {
+      /** 促销列表 */
+      list: (query?: {
+        tenantId?: string;
+        storeId?: string;
+        status?: string;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          id: string;
+          name: string;
+          type: string;
+          discount: string;
+          scope: string;
+          start: string;
+          end: string;
+          budget: number;
+          used: number;
+          status: 'active' | 'scheduled' | 'ended' | 'draft';
+          targetGoal?: string;
+          version: number;
+          createdAt: string;
+          updatedAt: string;
+        }>>('/marketing/promotions', { ...init, headers: { ...(query ? {
+          'x-tenant-id': query.tenantId ?? '',
+          'x-store-id': query.storeId ?? '',
+          'x-status': query.status ?? '',
+        } : {}), ...(init?.headers ?? {}) } }),
+
+      /** 创建促销 */
+      create: (body: {
+        tenantId: string;
+        storeId: string;
+        name: string;
+        type: string;
+        discount: string;
+        scope: string;
+        start: string;
+        end: string;
+        budget: number;
+        targetGoal?: string;
+        idempotencyKey: string;
+      }, init?: RequestInit) =>
+        api.postData<{ id: string; version: number }>('/marketing/promotions', body, init),
+
+      /** 发布草稿促销 */
+      publish: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/marketing/promotions/${id}/publish`, body, init),
+
+      /** 结束促销 */
+      end: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/marketing/promotions/${id}/end`, body, init),
+    },
+
     // ── Convenience: 原始 ApiClient 实例 (用于自定义请求) ──
     raw: api,
   };

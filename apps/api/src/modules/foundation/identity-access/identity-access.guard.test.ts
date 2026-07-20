@@ -9,6 +9,7 @@ import { ExecutionContext } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { IdentityAccessGuard } from './identity-access.guard'
 import { IdentityAccessService } from './identity-access.service'
+import { IS_PUBLIC_KEY } from './public.decorator'
 
 const makeReq = (overrides: Record<string, unknown> = {}): any => ({
   tenantContext: {
@@ -29,19 +30,28 @@ const makeReq = (overrides: Record<string, unknown> = {}): any => ({
   ...overrides,
 })
 
+/**
+ * makeReflector 支持传入额外的 metadata 映射 (例如 IS_PUBLIC_KEY).
+ *
+ * handlerRoles / handlerPermissions / tenantScopeMeta 是便捷参数,
+ * 会覆盖 extra 中的对应 key (保持向后兼容).
+ */
 const makeReflector = (
   handlerRoles: string[] | null = null,
   handlerPermissions: string[] | null = null,
-  tenantScopeMeta: any = null
-) =>
-  ({
-    getAllAndOverride: (key: string) => {
-      if (key === 'identity-access:roles') return handlerRoles ?? []
-      if (key === 'identity-access:permissions') return handlerPermissions ?? []
-      if (key === 'identity-access:tenant-scope') return tenantScopeMeta ?? undefined
-      return undefined
-    },
-  }) as any as Reflector
+  tenantScopeMeta: any = null,
+  extra: Record<string, unknown> = {}
+): Reflector => {
+  const base: Record<string, unknown> = {
+    'identity-access:roles': handlerRoles ?? [],
+    'identity-access:permissions': handlerPermissions ?? [],
+    'identity-access:tenant-scope': tenantScopeMeta ?? undefined,
+    ...extra,
+  }
+  return {
+    getAllAndOverride: (key: string) => base[key],
+  } as any as Reflector
+}
 
 const makeContext = (req: any = makeReq()) =>
   ({
@@ -53,17 +63,61 @@ const makeContext = (req: any = makeReq()) =>
   }) as any as ExecutionContext
 
 describe('IdentityAccessGuard', () => {
-  describe('canActivate', () => {
-    it('returns true when no roles, permissions, or tenant scope metadata set', () => {
+  describe('canActivate — @Public() decorator', () => {
+    it('allows request marked with @Public() even without roles/permissions/tenant-scope', () => {
+      const reflector = makeReflector(null, null, null, { [IS_PUBLIC_KEY]: true })
+      const service = new IdentityAccessService()
+      const guard = new IdentityAccessGuard(reflector, service)
+      const context = makeContext()
+
+      assert.equal(guard.canActivate(context), true)
+    })
+
+    it('allows request marked with @Public() even with missing actorContext', () => {
+      const reflector = makeReflector(null, null, null, { [IS_PUBLIC_KEY]: true })
+      const service = new IdentityAccessService()
+      const guard = new IdentityAccessGuard(reflector, service)
+      const req = makeReq()
+      delete req.actorContext
+      const context = makeContext(req)
+
+      assert.equal(guard.canActivate(context), true)
+    })
+
+    it('rejects unmarked request (default-deny) without roles/permissions/tenant-scope', () => {
       const reflector = makeReflector()
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
       const context = makeContext()
 
-      const result = guard.canActivate(context)
-      assert.equal(result, true)
+      assert.throws(
+        () => guard.canActivate(context),
+        (err: Error) => {
+          assert.ok(err instanceof UnauthorizedException)
+          assert.ok(err.message.includes('not publicly accessible'))
+          return true
+        }
+      )
     })
 
+    it('rejects request with @Public()=false', () => {
+      const reflector = makeReflector(null, null, null, { [IS_PUBLIC_KEY]: false })
+      const service = new IdentityAccessService()
+      const guard = new IdentityAccessGuard(reflector, service)
+      const context = makeContext()
+
+      assert.throws(
+        () => guard.canActivate(context),
+        (err: Error) => {
+          assert.ok(err instanceof UnauthorizedException)
+          assert.ok(err.message.includes('not publicly accessible'))
+          return true
+        }
+      )
+    })
+  })
+
+  describe('canActivate — roles', () => {
     it('throws UnauthorizedException when actorContext is missing', () => {
       const reflector = makeReflector(['tenant-admin'])
       const service = new IdentityAccessService()
@@ -119,7 +173,9 @@ describe('IdentityAccessGuard', () => {
 
       assert.equal(guard.canActivate(context), true)
     })
+  })
 
+  describe('canActivate — permissions', () => {
     it('throws ForbiddenException when required permission not satisfied', () => {
       const reflector = makeReflector([], ['identity-access:write'])
       const service = new IdentityAccessService()
@@ -144,7 +200,9 @@ describe('IdentityAccessGuard', () => {
 
       assert.equal(guard.canActivate(context), true)
     })
+  })
 
+  describe('canActivate — tenant scope', () => {
     it('passes scope check when tenantScopeMeta has tenantIdParam but params empty (undefined skips check)', () => {
       const reflector = makeReflector(['tenant-admin'], [], { tenantIdParam: 'tenantId' })
       const service = new IdentityAccessService()

@@ -76,6 +76,7 @@ export type WorkStackParamList = {
   } | undefined;
   OrderDetail: {
     orderId: string;
+    orderNo?: string;
     paymentStatus?: 'PAID';
     paymentAmount?: number;
     paymentPaidAt?: string;

@@ -502,6 +502,88 @@ export class RlsService {
     return { allowed: false, tenantId, reason: 'No tenant membership record found' }
   }
 
+  // ── tenantId 透传与隔离查询 ──────────────────────────────
+
+  /**
+   * 设置当前会话的 tenant 上下文 (SET app.tenant_id)。
+   * DAO/Repository 在每次查询前调用此方法设定租户过滤上下文。
+   * 配合 RLS policy 中的 current_setting('app.tenant_id') 使用。
+   *
+   * @example
+   *   await rlsService.setTenantContext('tenant-abc')
+   *   const rows = await prisma.member.findMany() // 自动 RLS 过滤
+   */
+  async setTenantContext(tenantId: string): Promise<void> {
+    const safe = sanitizeLiteral(tenantId)
+    // 通过事务设定租户上下文，后续所有查询自动受 RLS 过滤
+    await this.prisma.$executeRawUnsafe(`SELECT set_config('app.tenant_id', '${safe}', TRUE)`)
+    await this.logAudit(tenantId, 'SET_CONTEXT', '*', null, `Tenant context set to ${tenantId}`)
+  }
+
+  /**
+   * 构建 tenantId 过滤 WHERE 子句。
+   * 供 DAO/Repository 在构建查询时拼接，确保多租户隔离。
+   *
+   * @param alias 表别名（可选，如 "m"）
+   * @param column tenantId 列名（默认 tenantId）
+   * @returns WHERE 子句片段，如 "m."tenantId" = 'tenant-abc'"
+   */
+  buildTenantFilter(tenantId: string, alias?: string, column: string = 'tenantId'): string {
+    const safeTid = sanitizeLiteral(tenantId)
+    const safeCol = sanitizeColumnName(column)
+    if (alias) {
+      return `"${alias}"."${safeCol}" = '${safeTid}'`
+    }
+    return `"${safeCol}" = '${safeTid}'`
+  }
+
+  /**
+   * 执行 tenant 感知的原始查询：自动注入 tenantId 过滤。
+   * DAO/Repository 可使用此方法替换直接 prisma.$queryRawUnsafe 调用。
+   *
+   * @param sql 查询 SQL（不含 tenantId 过滤）
+   * @param tenantId 租户 ID
+   * @param tenantColumn tenantId 列名
+   * @returns 查询结果
+   */
+  async tenantAwareQuery<T = any>(
+    sql: string,
+    tenantId: string,
+    tenantColumn: string = 'tenantId'
+  ): Promise<T[]> {
+    const safeTid = sanitizeLiteral(tenantId)
+    const safeCol = sanitizeColumnName(tenantColumn)
+
+    // 1. 设定租户上下文（确保 RLS policy 生效）
+    await this.prisma.$executeRawUnsafe(`SELECT set_config('app.tenant_id', '${safeTid}', TRUE)`)
+
+    // 2. 执行原始查询（RLS policy 自动过滤）
+    const rows: T[] = await this.prisma.$queryRawUnsafe(sql)
+
+    return rows
+  }
+
+  /**
+   * 在指定 tenant 上下文中执行回调函数。
+   * 自动设置租户上下文、执行回调、审计记录。
+   *
+   * @example
+   *   const orders = await rlsService.withTenant('tenant-abc', async (tid) => {
+   *     return await prisma.order.findMany()
+   *   })
+   */
+  async withTenant<T>(tenantId: string, fn: (tid: string) => Promise<T>): Promise<T> {
+    await this.setTenantContext(tenantId)
+    return await fn(tenantId)
+  }
+
+  /**
+   * 列出所有租户的连接池摘要（增强观测性）。
+   */
+  listTenantPools(): TenantPoolEntry[] {
+    return this.getTenantPoolSnapshot()
+  }
+
   // ── RLS CRUD 操作 ──────────────────────────────────────────
 
   /**

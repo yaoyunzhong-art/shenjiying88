@@ -1172,6 +1172,7 @@ test('OrderDetailScreen: tapping back after payment success returns to Orders wi
   const navigateCall = mockNavigateCalls.find((item) => item.route === 'Orders');
   assert.ok(navigateCall, '支付完成返回时应导航回订单列表');
   assert.equal(navigateCall?.params?.orderId, 'order-002');
+  assert.equal(navigateCall?.params?.orderNo, 'ORD20260612002');
   assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
   assert.equal(navigateCall?.params?.paymentAmount, 89.5);
 });
@@ -1221,6 +1222,7 @@ test('OrderDetailScreen: tapping back after pending refund returns to Orders wit
   const navigateCall = mockNavigateCalls.find((item) => item.route === 'Orders');
   assert.ok(navigateCall, '退款审核中返回时应导航回订单列表');
   assert.equal(navigateCall?.params?.orderId, 'order-001');
+  assert.equal(navigateCall?.params?.orderNo, 'ORD20260612001');
   assert.equal(navigateCall?.params?.refundStatus, 'PENDING');
   assert.equal(navigateCall?.params?.refundRequestedAmount, 88.5);
   assert.equal(navigateCall?.params?.refundReason, '顾客取消');
@@ -1262,8 +1264,96 @@ test('OrderDetailScreen: tapping back after refunded returns to Orders with comp
   const navigateCall = mockNavigateCalls.find((item) => item.route === 'Orders');
   assert.ok(navigateCall, '退款完成返回时应导航回订单列表');
   assert.equal(navigateCall?.params?.orderId, 'order-001');
+  assert.equal(navigateCall?.params?.orderNo, 'ORD20260612001');
   assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
   assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T02:08:09.000Z');
+});
+
+test('OrderDetailScreen: payment return preserves real orderNo when fetch is enabled', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders/order-002')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: {
+          order: {
+            orderId: 'order-002',
+            orderNo: 'ORDAPI20260720002',
+            memberId: 'member-api-002',
+            currency: 'CNY',
+            totalAmount: 120,
+            status: 'PAID',
+            latestPaymentId: 'payment-order-002',
+            createdAt: '2026-06-12T11:15:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+            paidAt: '2026-07-20T04:10:00.000Z',
+          },
+          payment: {
+            paymentId: 'payment-order-002',
+            orderId: 'order-002',
+            channel: 'ALIPAY',
+            amount: 120,
+            status: 'SUCCEEDED',
+            externalPaymentId: 'app-pos-order-002',
+            createdAt: '2026-06-12T11:15:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+            completedAt: '2026-07-20T04:10:00.000Z',
+          },
+          settlement: {
+            settlementId: 'settlement-order-002',
+            pointsEarned: 120,
+            pointsBalance: 120,
+          },
+          pointsLedger: [],
+          couponRedemptions: [],
+          blindboxFulfillments: [],
+          refunds: [],
+        },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderDetailComponent({
+        orderId: 'order-002',
+        orderNo: 'ORDAPI20260720002',
+        paymentStatus: 'PAID',
+        paymentAmount: 120,
+        paymentPaidAt: '2026-07-20T04:10:00.000Z',
+        paymentChannel: 'ALIPAY',
+      });
+      await Promise.resolve();
+    });
+
+    const touchables = findAllTouchables(root.root);
+    const backButton = touchables.find((t) =>
+      t.findAllByType(Text).some((txt) => txt.props.children === '返回'),
+    );
+
+    assert.ok(backButton, '真实聚合支付完成时应显示返回按钮');
+    backButton!.props.onPress();
+
+    const navigateCall = mockNavigateCalls.find((item) => item.route === 'Orders');
+    assert.ok(navigateCall, '返回时应导航回订单列表');
+    assert.equal(navigateCall?.params?.orderId, 'order-002');
+    assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720002');
+    assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
 });
 
 test('OrderDetailScreen: item prices are formatted correctly', () => {

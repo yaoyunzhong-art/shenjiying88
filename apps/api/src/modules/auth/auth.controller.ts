@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { AuthService } from './auth.service'
 import {
   LoginBySmsDto,
@@ -28,6 +29,7 @@ export class AuthController {
    * POST /auth/login/sms
    * 手机号+短信验证码登录
    */
+  @Public()
   @Post('login/sms')
   @HttpCode(HttpStatus.OK)
   async loginBySms(
@@ -54,6 +56,7 @@ export class AuthController {
    * POST /auth/login/password
    * 密码登录
    */
+  @Public()
   @Post('login/password')
   @HttpCode(HttpStatus.OK)
   async loginByPassword(
@@ -86,6 +89,7 @@ export class AuthController {
    * POST /auth/login/wechat
    * 微信登录
    */
+  @Public()
   @Post('login/wechat')
   @HttpCode(HttpStatus.OK)
   async loginByWechat(
@@ -112,6 +116,7 @@ export class AuthController {
    * POST /auth/refresh
    * 刷新Token
    */
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Body() body: RefreshTokenDto) {
@@ -133,6 +138,7 @@ export class AuthController {
    * POST /auth/logout
    * 登出
    */
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(

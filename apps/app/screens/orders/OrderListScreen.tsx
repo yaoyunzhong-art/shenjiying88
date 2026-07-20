@@ -21,6 +21,7 @@ type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
 type OrderStackParamList = {
   OrderList: {
     orderId?: string;
+    orderNo?: string;
     paymentStatus?: 'PAID';
     paymentAmount?: number;
     paymentPaidAt?: string;
@@ -33,6 +34,7 @@ type OrderStackParamList = {
   } | undefined;
   OrderDetail: {
     orderId: string;
+    orderNo?: string;
     paymentStatus?: 'PAID';
     paymentAmount?: number;
     paymentPaidAt?: string;
@@ -359,6 +361,7 @@ export function OrderListScreen() {
     const matchedOrder = ordersWithRuntimeState.find((item) => item.orderId === orderId);
     navigation.navigate('OrderDetail', {
       orderId,
+      orderNo: matchedOrder?.orderNo,
       ...(matchedOrder?.status === 'PAID' ? {
         paymentStatus: 'PAID' as const,
         paymentAmount: matchedOrder.totalAmount,
