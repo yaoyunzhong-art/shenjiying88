@@ -7,7 +7,7 @@
  * 功能: 展示所有租户的配额使用情况：店铺上限、用户上限、存储空间、当前使用量
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   PageShell,
   StatCard,
@@ -250,6 +250,25 @@ function computeQuotaStats(items: TenantQuota[]) {
 }
 
 export default function AdminTenantsQuotaPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<TenantQuota[] | null>(null);
+
+  useEffect(() => {
+    try {
+      setData(tenantQuotas);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
+  if (error) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
+  if (!data || data.length === 0) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+
+  const
   const [tab, setTab] = useState<'quota' | 'overview'>('quota');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
 

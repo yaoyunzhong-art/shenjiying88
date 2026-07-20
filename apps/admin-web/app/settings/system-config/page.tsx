@@ -8,7 +8,7 @@
  * 模块: 基础设置 | 品牌信息 | 运行参数
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 32, maxWidth: 960, margin: '0 auto' },
@@ -24,6 +24,24 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function SystemConfigPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setData(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></div>;
+  if (error) return <div style={styles.page}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></div>;
+  if (!data) return <div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></div>;
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>⚙️ 系统配置</h1>

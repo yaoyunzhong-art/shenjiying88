@@ -6,7 +6,7 @@
  * 功能: 品牌列表、品牌详情、品牌活动、品牌分析
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
 type BrandStatus = 'active'|'inactive'|'pending';
@@ -48,6 +48,24 @@ function buildColumns(): DataTableColumn<Brand>[] {
 }
 
 export default function BrandsPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<Brand[] | null>(null);
+
+  useEffect(() => {
+    try {
+      setData(brands);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
+  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
+  if (!data || data.length === 0) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+
   const stats = useMemo(()=>({
     total:brands.length,active:brands.filter(b=>b.status==='active').length,
     pending:brands.filter(b=>b.status==='pending').length,

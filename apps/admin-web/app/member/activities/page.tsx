@@ -122,6 +122,24 @@ function buildColumns(): DataTableColumn<ActivityItem>[] {
 // ---- 页面 ----
 
 export default function MemberActivitiesPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<ActivityItem[] | null>(null);
+
+  useEffect(() => {
+    try {
+      setData(MOCK_ACTIVITIES);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
+  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
+  if (!data || data.length === 0) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+
   const searchFields = useMemo<(keyof ActivityItem)[]>(
     () => ['id', 'memberName', 'memberPhone', 'description'],
     [],

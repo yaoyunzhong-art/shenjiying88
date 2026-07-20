@@ -7,7 +7,7 @@
  * 功能: 系统名称、Logo上传、短信/邮件服务、支付通道、安全策略
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageShell, StatusBadge, Switch } from '@m5/ui';
 
 // ============================================================
@@ -866,6 +866,24 @@ styles.testBtn = {
 // ============================================================
 
 export default function SettingsPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setData(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
+  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
+  if (!data) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
       <PageShell title="系统全局设置" subtitle="基础配置 · 服务通道 · 安全策略">

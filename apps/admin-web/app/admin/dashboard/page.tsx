@@ -7,7 +7,7 @@
  * 功能: 总部看板，展示平台整体运营数据
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PageShell,
   StatCard,
@@ -361,6 +361,25 @@ function formatMoney(n: number): string {
 // ============================================================
 
 export default function AdminDashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setData(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></div>;
+  if (error) return <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></div>;
+  if (!data) return <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></div>;
+
+  const
   const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'distribution'>('overview');
 
   return (

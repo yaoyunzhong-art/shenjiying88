@@ -8,7 +8,7 @@
  * 模块: 通知规则 | 渠道管理 | 频率控制
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface NotifRulePreview {
   category: string;
@@ -45,6 +45,24 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function NotificationsPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<NotifRulePreview[] | null>(null);
+
+  useEffect(() => {
+    try {
+      setData(RULES);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></div>;
+  if (error) return <div style={styles.page}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></div>;
+  if (!data || data.length === 0) return <div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></div>;
+
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>🔔 通知设置</h1>

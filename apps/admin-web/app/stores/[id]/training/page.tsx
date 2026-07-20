@@ -1,6 +1,6 @@
 // 📚 培训管理 · 培训计划/课程/考核 · 完整培训管理
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Modal, Input, message, Progress } from '@m5/ui';
 
 interface Course {
@@ -28,6 +28,25 @@ const SCFG: Record<string, { color: string; label: string }> = {
 };
 
 export default function TrainingPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<Course[] | null>(null);
+
+  useEffect(() => {
+    try {
+      setData(COURSES);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#94a3b8' }}>加载中...</div></PageShell>;
+  if (error) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#ef4444' }}>数据获取失败: {error}</div></PageShell>;
+  if (!data || data.length === 0) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#94a3b8' }}>暂无数据</div></PageShell>;
+
+  const
   const [showAdd, setShowAdd] = useState(false);
   const [filter, setFilter] = useState<string>('all');
 
