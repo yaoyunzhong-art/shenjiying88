@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MemberTierDistribution } from '@m5/ui';
 import type { MemberTier } from '@m5/ui';
 
@@ -18,6 +18,14 @@ const MOCK_TIERS: MemberTier[] = [
 // ─── 页面组件 ─────────────────────────────────────────
 
 export default function MemberTiersPage() {
+  // 三态条件渲染
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setLoading(false) }, []);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!MOCK_TIERS || MOCK_TIERS.length === 0) return <div>暂无数据</div>;
+
   const [showTrends, setShowTrends] = useState(true);
   const [selectedTier, setSelectedTier] = useState<MemberTier | null>(null);
 

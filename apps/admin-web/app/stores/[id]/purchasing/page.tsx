@@ -59,14 +59,14 @@ export default function PurchasingPage() {
   // 三态条件渲染
   const [loading, _setLoading] = useState(false)
   const [error, _setError] = useState<string | null>(null)
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!DATA || DATA.length === 0) return <div>暂无数据</div>;
-
   const [filter, setFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showAdd, setShowAdd] = useState(false);
   const [tab, setTab] = useState('list');
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!DATA || DATA.length === 0) return <div>暂无数据</div>;
 
   const filtered = useMemo(() => {
     let r = DATA;

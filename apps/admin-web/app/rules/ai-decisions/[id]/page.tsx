@@ -5,7 +5,7 @@
  */
 'use client';
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback, use, useEffect } from 'react';
 
 import {
   DetailShell,
@@ -113,6 +113,14 @@ function statusVariant(status: AiDecisionStatus) {
 
 export default function AiDecisionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  // 三态条件渲染
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setLoading(false) }, []);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!id) return <div>暂无数据</div>;
+
   const [detail, setDetail] = useState<AiDecisionDetail>(() => mockDetail(id));
   const [isRetrying, setIsRetrying] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);

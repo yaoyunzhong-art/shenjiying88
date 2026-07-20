@@ -63,12 +63,12 @@ export default function LogisticsPage() {
   // 三态条件渲染
   const [loading, _setLoading] = useState(false)
   const [error, _setError] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false);
+  const [shipmentFilter, setShipmentFilter] = useState<string>('all');
+
   if (loading) return <div>加载中...</div>;
   if (error) return <div>数据获取失败: {error}</div>;
   if (!SHIPMENTS || SHIPMENTS.length === 0) return <div>暂无数据</div>;
-
-  const [showCreate, setShowCreate] = useState(false);
-  const [shipmentFilter, setShipmentFilter] = useState<string>('all');
 
   const pendingCount = SHIPMENTS.filter(s => s.status === 'pending_shipping').length;
   const inTransitCount = SHIPMENTS.filter(s => s.status === 'in_transit').length;

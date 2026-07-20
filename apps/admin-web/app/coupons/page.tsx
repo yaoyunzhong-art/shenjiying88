@@ -214,6 +214,16 @@ function buildColumns(
 // ---- 页面组件 ----
 
 function CouponsPageContent() {
+  // 三态条件渲染
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => { setLoading(false) }, [])
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!MOCK_COUPONS || MOCK_COUPONS.length === 0) return <div>暂无数据</div>;
+
   // 搜索过滤
   const searchFields = useMemo<(keyof CouponItem)[]>(
     () => ['code', 'name', 'createdBy', 'scopeLabel'],

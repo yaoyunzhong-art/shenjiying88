@@ -165,6 +165,14 @@ function buildColumns(
 // ---- 页面组件 ----
 
 export default function MarketsPage() {
+  // 三态条件渲染
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setLoading(false) }, []);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!MOCK_MARKETS || MOCK_MARKETS.length === 0) return <div>暂无数据</div>;
+
   // 搜索过滤
   const searchFields = useMemo<(keyof MarketItem)[]>(() => ['code', 'name', 'region', 'currency', 'timezone'], []);
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(MOCK_MARKETS, searchFields);

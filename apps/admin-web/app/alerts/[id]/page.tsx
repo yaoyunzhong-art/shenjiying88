@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -56,10 +56,21 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function AlertDetailPage() {
+  // 三态条件渲染
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<ModalState>({ visible: false, mode: 'view', item: null })
   const [page, setPage] = useState(1)
   const pageSize = 6
+
+  // 模拟数据加载完成
+  useEffect(() => { setLoading(false) }, [])
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!SEED_ALERTS || SEED_ALERTS.length === 0) return <div>暂无数据</div>;
 
   const filtered = useMemo(() => {
     if (!search.trim()) return SEED_ALERTS

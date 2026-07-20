@@ -192,6 +192,14 @@ const statCardStyle: React.CSSProperties = {
 // ---- 页面组件 ----
 
 export default function RulesPage() {
+  // 三态条件渲染
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setLoading(false) }, []);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!MOCK_RULES || MOCK_RULES.length === 0) return <div>暂无数据</div>;
+
   const [statusFilter, setStatusFilter] = useState<RuleStatus | 'ALL'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<RuleCategory | 'ALL'>('ALL');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
