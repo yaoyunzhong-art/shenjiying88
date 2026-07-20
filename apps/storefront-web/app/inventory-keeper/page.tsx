@@ -125,11 +125,33 @@ function StockBar({ stock, min, max }: { stock: number; min: number; max: number
 
 /* ── 主组件 ── */
 export default function InventoryKeeperPage() {
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('全部');
   const [statusFilter, setStatusFilter] = useState('全部');
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+          加载中...
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main style={{ minHeight: '100vh', padding: '24px 16px', background: '#0f172a' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', padding: 48, color: '#f87171' }}>
+          数据获取失败: {error}
+        </div>
+      </main>
+    );
+  }
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();

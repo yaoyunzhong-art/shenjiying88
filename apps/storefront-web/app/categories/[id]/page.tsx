@@ -122,14 +122,32 @@ export default function CategoryDetailPage() {
   const categoryId = params?.id as string;
   const category = useMemo(() => MOCK_CATEGORIES[categoryId], [categoryId]);
 
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'archive' | 'activate' | 'hide' | 'delete'>('archive');
+
+  if (loading) {
+    return (
+      <DetailShell title="加载中">
+        <div style={{ textAlign: 'center', padding: 48, color: '#94a3b8', fontSize: 14 }}>加载中...</div>
+      </DetailShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <DetailShell title="数据获取失败">
+        <div style={{ textAlign: 'center', padding: 48, color: '#f87171', fontSize: 14 }}>数据获取失败: {error}</div>
+      </DetailShell>
+    );
+  }
 
   if (!category) {
     return (
       <DetailShell title="分类不存在" subtitle="">
         <div style={{ textAlign: 'center', padding: 48, color: '#64748b', fontSize: 14 }}>
-          未找到该分类（ID: {categoryId}），可能已被删除
+          暂无数据 — 未找到该分类（ID: {categoryId}），可能已被删除
         </div>
       </DetailShell>
     );

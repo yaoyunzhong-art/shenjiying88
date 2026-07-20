@@ -147,6 +147,11 @@ export default function DeliveryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const toast = useToast();
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
+
+  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>加载中...</div>;
+  if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#f87171' }}>数据获取失败: {error}</div>;
   const { toasts, dismiss } = toast;
   const id = useMemo(() => String(params?.id ?? ''), [params]);
 

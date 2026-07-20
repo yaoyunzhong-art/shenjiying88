@@ -253,8 +253,19 @@ export default async function StoreSitePage({
   const isH5 = storeScope[storeScope.length - 1] === 'h5';
   const resolved = resolveStoreScope(isH5 ? storeScope.slice(0, -1) : storeScope);
 
+  // 三态守卫
   if (!resolved) {
     notFound();
+  }
+
+  if (!storeScope || storeScope.length === 0) {
+    return (
+      <main style={{ maxWidth: 720, margin: '0 auto', padding: 48, textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
+        <div>暂无数据</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 8 }}>缺少门店路径参数</div>
+      </main>
+    );
   }
 
   const { marketCode, tenantCode, brandCode, storeCode } = resolved;
