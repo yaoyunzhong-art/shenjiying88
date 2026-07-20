@@ -273,4 +273,23 @@
 
 ---
 
+### 2026-07-21 凌晨产出
+| 资产 | 类型 | 状态 | 说明 |
+|:-----|:-----|:----:|:------|
+| scripts/fail-safe-meltdown.sh | 脚本 | ✅ 275行 | Gate6-C1 恶化熔断 |
+| docs/knowledge/e2e-tier-grading.md | 文档 | ✅ 完整 | E2E链L0/L1/L2分级方案 |
+| scripts/e2e-tier-check.sh | 脚本 | ✅ 500行 | 分级检查+quality+verify |
+| 知识库种子数据 | 数据 | ✅ 297条 | empower_card表S1-S6全覆盖 |
+| GET /api/empower-cards/health | API | ✅ | 知识API健康检查端点 |
+| scripts/knowledge-daily-crawl.sh | 脚本 | ✅ 233行 | 知识日采(API→DB→文件三级降级) |
+| scripts/fail-safe-meltdown.sh | 脚本 | ✅ | 连续3天下降≥20%触发熔断 |
+| as any E2E清理 | 修复 | ✅ 78→0 | 47个E2E文件全清as any |
+| RefundScreen TSC修复 | 修复 | ✅ | orderAggregate可能null |
+| scripts/remote-push-detect.sh | 脚本 | 🟡 执行中 | Gate6-C2 远程推送检测 |
+| scripts/authguard-coverage-check.sh | 脚本 | ✅ | AuthGuard覆盖率4.06% FAIL |
+| scripts/security-baseline-scan.sh | 脚本 | 🟡 执行中 | 真实8/8扫描 |
+| scripts/device-token-audit.sh | 脚本 | 🟡 执行中 | PushRecord deviceToken持久化 |
+
+---
+
 > 🦞 龙虾哥 · Phase→模块映射 · 2026-07-20 V22 Day1
