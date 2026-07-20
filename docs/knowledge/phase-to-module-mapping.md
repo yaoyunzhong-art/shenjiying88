@@ -283,6 +283,19 @@
 | 测试 | api/src/competitor-track/test | 🟢 完成 | 38个it覆盖 CRUD+统计+对比+边界+错误 |
 | PRD | docs/knowledge/prd/v23/v23-prd-competitor-track.md | 🟢 已写入 | PRD-competitor-track-001 |
 
+### V23 Day2 · 联名管理模块 (2026-07-21 · 树哥交付 · G10审计条件)
+| 组件 | 位置 | 状态 | 说明 |
+|:-----|:-----|:----:|:------|
+| Entity | api/src/collab/collab.entity.ts | 🟢 完成 | CollabProject + CollabStatus枚举(6态) |
+| DTO | api/src/collab/collab.dto.ts | 🟢 完成 | Create/Update/Filter 三套DTO + class-validator |
+| Contract | api/src/collab/collab.contract.ts | 🟢 完成 | CollabProjectContract + toCollabProjectContract |
+| Service | api/src/collab/collab.service.ts | 🟢 完成 | CRUD + 状态筛选 + 状态合法性校验 + 按状态统计 |
+| Controller | api/src/collab/collab.controller.ts | 🟢 完成 | 7端点 POST+GET+GET+GET+PATCH+PATCH+DELETE · @UseGuards(TenantGuard) |
+| 模块 | api/src/collab/collab.module.ts | 🟢 完成 | NestJS Module定义 |
+| 测试 | api/src/collab/collab.controller.test.ts | 🟢 完成 | 19个it覆盖 正例9+反例5+边界3+状态流转2=19 |
+| 圈梁测试 | api/src/collab/collab.ringbeam.test.ts | 🟢 完成 | 15个圈梁检查it |
+| PRD | docs/knowledge/prd/v23/v23-prd-collab-management.md | 🟢 已写入 | V23 Phase 1 · 联名管理基本CRUD |
+
 ### 2026-07-21 凌晨产出
 | 资产 | 类型 | 状态 | 说明 |
 |:-----|:-----|:----:|:------|

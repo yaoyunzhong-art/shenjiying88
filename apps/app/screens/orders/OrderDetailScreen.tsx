@@ -22,6 +22,12 @@ import {
   type OrderDetailViewModel,
 } from '../../utils/order-view';
 import {
+  formatOrderCurrencyAmount,
+  formatOrderDateTime,
+  getOrderRefundDisplay,
+  getOrderStatusLabel,
+} from '../../utils/order-display';
+import {
   getPaymentChannelLabel,
 } from '../../utils/payment-channel';
 
@@ -116,14 +122,6 @@ const mockOrderDetails: Record<string, MockOrderDetail> = {
 
 const defaultMockOrderDetail = mockOrderDetails['order-001']!;
 
-const statusLabels: Record<string, string> = {
-  PENDING: '待支付',
-  PAID: '已完成',
-  REFUND_PENDING: '退款审核中',
-  REFUNDED: '已退款',
-  CANCELLED: '已取消',
-};
-
 export function OrderDetailScreen() {
   const fallbackNavigation = (globalThis as {
     __mockNavigation?: {
@@ -210,16 +208,9 @@ export function OrderDetailScreen() {
   const hasPendingRefund =
     effectiveRefundStatus === 'PENDING' &&
     typeof effectiveRefundAmount === 'number';
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const refundDisplay = effectiveRefundStatus
+    ? getOrderRefundDisplay(effectiveRefundStatus)
+    : undefined;
 
   const handleRefund = () => {
     navigation.navigate!('Refund' as never, buildRefundRouteParams({
@@ -288,7 +279,7 @@ export function OrderDetailScreen() {
                   (order.status === 'REFUNDED' || order.status === 'REFUND_PENDING') && styles.statusTextInfo,
                 ]}
               >
-                {statusLabels[order.status]}
+                {getOrderStatusLabel(order.status)}
               </Text>
             </View>
           </View>
@@ -298,29 +289,31 @@ export function OrderDetailScreen() {
           </View>
           <View style={styles.statusRow}>
             <Text style={styles.statusKey}>下单时间</Text>
-            <Text style={styles.statusValue}>{formatDate(order.createdAt)}</Text>
+            <Text style={styles.statusValue}>{formatOrderDateTime(order.createdAt)}</Text>
           </View>
           {order.paidAt && (
             <View style={styles.statusRow}>
               <Text style={styles.statusKey}>支付时间</Text>
-              <Text style={styles.statusValue}>{formatDate(order.paidAt)}</Text>
+              <Text style={styles.statusValue}>{formatOrderDateTime(order.paidAt)}</Text>
             </View>
           )}
         </Card>
 
         {(hasPendingRefund || hasCompletedRefund) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{hasCompletedRefund ? '退款结果' : '退款进度'}</Text>
+            <Text style={styles.sectionTitle}>{refundDisplay?.sectionTitle}</Text>
             <Card style={styles.refundCard}>
               <View style={styles.statusRow}>
                 <Text style={styles.statusKey}>退款状态</Text>
                 <Text style={hasCompletedRefund ? styles.refundCompletedValue : styles.refundPendingValue}>
-                  {hasCompletedRefund ? '已退款' : '退款审核中'}
+                  {refundDisplay?.statusLabel}
                 </Text>
               </View>
               <View style={styles.statusRow}>
-                <Text style={styles.statusKey}>{hasCompletedRefund ? '退款金额' : '申请金额'}</Text>
-                <Text style={styles.statusValue}>¥{effectiveRefundAmount!.toFixed(2)}</Text>
+                <Text style={styles.statusKey}>{refundDisplay?.amountLabel}</Text>
+                <Text style={styles.statusValue}>
+                  {formatOrderCurrencyAmount(effectiveRefundAmount!)}
+                </Text>
               </View>
               <View style={styles.statusRow}>
                 <Text style={styles.statusKey}>退款原因</Text>
@@ -328,14 +321,14 @@ export function OrderDetailScreen() {
               </View>
               {effectiveRefundRequestedAt ? (
                 <View style={styles.statusRow}>
-                  <Text style={styles.statusKey}>{hasCompletedRefund ? '申请时间' : '申请时间'}</Text>
-                  <Text style={styles.statusValue}>{formatDate(effectiveRefundRequestedAt)}</Text>
+                  <Text style={styles.statusKey}>申请时间</Text>
+                  <Text style={styles.statusValue}>{formatOrderDateTime(effectiveRefundRequestedAt)}</Text>
                 </View>
               ) : null}
               {hasCompletedRefund && effectiveRefundCompletedAt ? (
                 <View style={styles.statusRow}>
                   <Text style={styles.statusKey}>完成时间</Text>
-                  <Text style={styles.statusValue}>{formatDate(effectiveRefundCompletedAt)}</Text>
+                  <Text style={styles.statusValue}>{formatOrderDateTime(effectiveRefundCompletedAt)}</Text>
                 </View>
               ) : null}
             </Card>
@@ -354,7 +347,7 @@ export function OrderDetailScreen() {
                   </View>
                   <View style={styles.itemPrice}>
                     <Text style={styles.itemPriceText}>
-                      ¥{item.price.toFixed(2)}
+                      {formatOrderCurrencyAmount(item.price, order.currency)}
                     </Text>
                     <Text style={styles.itemQuantity}>x{item.quantity}</Text>
                   </View>
@@ -379,7 +372,7 @@ export function OrderDetailScreen() {
             <View style={styles.paymentRow}>
               <Text style={styles.paymentKey}>支付金额</Text>
               <Text style={styles.paymentValue}>
-                ¥{order.totalAmount.toFixed(2)}
+                {formatOrderCurrencyAmount(order.totalAmount, order.currency)}
               </Text>
             </View>
             <View style={styles.paymentRow}>
