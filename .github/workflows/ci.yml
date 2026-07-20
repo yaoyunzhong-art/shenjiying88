@@ -1,19 +1,23 @@
 # ═══════════════════════════════════════════════════════════════
-# M5 Monorepo CI Pipeline
+# M5 Monorepo CI Pipeline — V23 Phase 0
 #
-# 触发: push 到 main + PR 到 main
-# 职责:
-#   - 依赖缓存 (pnpm 缓存 + Turbo 缓存)
-#   - TypeScript 类型检查 (通过 turbo typecheck, 并行 7 apps)
-#   - 单元测试 (storefront-web, admin-web, api)
-#   - 跳过 Docker 构建
+# 触发: push 到 main/tree/* + PR 到 main
+# Node 20 + pnpm 10 + Turbo Cache
+#
+# 【圈梁五道箍】
+# ① TSC通过 → ② 测试存在 → ③ 圈梁表更新 → ④ PRD标记 → ⑤ 知识赋能
+#
+# 【三大职能】
+#  Job1 Lint & TypeCheck  — 全量类型检查
+#  Job2 Unit Tests        — API 核心模块 + 前端页面测试
+#  Job3 E2E L0 链        — 纯代码级 5 条 L0 关键链
 # ═══════════════════════════════════════════════════════════════
 
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, tree/*]
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -35,19 +39,23 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PNPM_VERSION: 10
-  NODE_VERSION: 22
+  CI: true
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-  typecheck-test:
-    name: TypeCheck & Test
+
+  # ──────────────────────────────────────────────────────────
+  # Job 1: TypeScript 类型检查 + ESLint lint
+  # ──────────────────────────────────────────────────────────
+  typecheck:
+    name: 🏗 TypeCheck
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
-      # ── Setup Node + pnpm ──────────────────────────────────
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -62,7 +70,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ── Step 2: TypeScript type checking (parallel across all apps) ──
       - name: Turbo typecheck
         run: pnpm turbo typecheck
         env:
@@ -70,23 +77,82 @@ jobs:
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
           TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
-      # ── Step 3: Storefront page tests ──────────────────────
-      - name: Storefront page tests
-        working-directory: apps/storefront-web
-        run: |
-          find app -type f -name 'page.test.ts' \
-            | sort \
-            | xargs -n 15 node --import tsx --test
+  # ──────────────────────────────────────────────────────────
+  # Job 2: 单元测试 — API 核心模块 (vitest) + 前端页面测试
+  # ──────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Unit Tests
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
 
-      # ── Step 4: Admin page tests (with happy-dom test setup) ──
-      - name: Admin page tests
-        working-directory: apps/admin-web
-        run: |
-          find app -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) \
-            | sort \
-            | xargs -n 15 node --import tsx --import ./.test-setup.mjs --test
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-      # ── Step 5: API vitest tests ──────────────────────────
-      - name: API vitest tests
-        working-directory: apps/api
-        run: pnpm vitest run
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Turbo test (all workspaces)
+        run: pnpm turbo test
+        env:
+          TURBO_CACHE: rw
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+  # ──────────────────────────────────────────────────────────
+  # Job 3: L0 级 E2E 关键链 (纯代码级, 不启动服务/浏览器)
+  #   cashier    — 收银 POS 最小闭环     (*跳过*: 需 Playwright 浏览器)
+  #   payment    — 结算金额链            (*跳过*: 需 Playwright 浏览器)
+  #   refund     — 退款全流程            ✅ node:test 内存态
+  #   reconcil.  — 财务对账              ✅ node:test 内存态
+  #   tenant     — 多租户 RLS 隔离       ✅ node:test 内存态
+  #
+  # Playwright 2 条链 (cashier/payment) 需浏览器环境,
+  # 保留在此仅做占位标记, 后续可在 with-browser CI 中启用。
+  # ──────────────────────────────────────────────────────────
+  e2e-l0:
+    name: 🔗 E2E L0 Chains
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── 链 18: 退款全流程 ──
+      - name: 🔄 Refund chain (L0)
+        working-directory: e2e/tests
+        run: node --import tsx --test cross-module-chain18-refund-full-flow.test.ts
+
+      # ── 链 33: 财务对账/调账 ──
+      - name: 📊 Reconciliation chain (L0)
+        working-directory: apps/admin-web/app/__e2e__
+        run: node --import tsx --test cross-module-journey-33-admin-api-storefront-mobile-finance-reconciliation.test.ts
+
+      # ── 链 31: 多租户 RLS 隔离 ──
+      - name: 🏢 Tenant RLS chain (L0)
+        working-directory: apps/admin-web/app/__e2e__
+        run: node --import tsx --test cross-module-journey-31-admin-api-storefront-mobile-rls-multitenant.test.ts
