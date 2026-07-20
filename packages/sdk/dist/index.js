@@ -1368,6 +1368,45 @@ function createBusinessClient(baseUrl) {
       /** 查询退款状态 */
       queryRefund: (refundId, init) => api.getData(`/payment-gateway/refund/${refundId}`, init)
     },
+    // ── Budget (GET/POST /api/v1/finance/budgets) ──
+    budget: {
+      /** 预算列表 */
+      list: (query, init) => api.getData("/finance/budgets", { ...init, headers: { ...query ? {
+        "x-tenant-id": query.tenantId ?? "",
+        "x-status": query.status ?? "",
+        "x-category": query.category ?? ""
+      } : {}, ...init?.headers ?? {} } }),
+      /** 创建预算 */
+      create: (body, init) => api.postData("/finance/budgets", body, init),
+      /** 提交审批 */
+      submitForApproval: (id, body, init) => api.postData(`/finance/budgets/${id}/submit`, body, init),
+      /** 关闭预算 */
+      close: (id, body, init) => api.postData(`/finance/budgets/${id}/close`, body, init),
+      /** 审批请求列表 */
+      listApprovals: (query, init) => api.getData("/finance/budgets/approvals", { ...init, headers: { ...query ? {
+        "x-budget-id": query.budgetId ?? "",
+        "x-status": query.status ?? ""
+      } : {}, ...init?.headers ?? {} } }),
+      /** 批准审批请求 */
+      approveApproval: (approvalId, body, init) => api.postData(`/finance/budgets/approvals/${approvalId}/approve`, body, init),
+      /** 驳回审批请求 */
+      rejectApproval: (approvalId, body, init) => api.postData(`/finance/budgets/approvals/${approvalId}/reject`, body, init)
+    },
+    // ── Promotions (GET/POST /api/v1/marketing/promotions) ──
+    promotions: {
+      /** 促销列表 */
+      list: (query, init) => api.getData("/marketing/promotions", { ...init, headers: { ...query ? {
+        "x-tenant-id": query.tenantId ?? "",
+        "x-store-id": query.storeId ?? "",
+        "x-status": query.status ?? ""
+      } : {}, ...init?.headers ?? {} } }),
+      /** 创建促销 */
+      create: (body, init) => api.postData("/marketing/promotions", body, init),
+      /** 发布草稿促销 */
+      publish: (id, body, init) => api.postData(`/marketing/promotions/${id}/publish`, body, init),
+      /** 结束促销 */
+      end: (id, body, init) => api.postData(`/marketing/promotions/${id}/end`, body, init)
+    },
     // ── Convenience: 原始 ApiClient 实例 (用于自定义请求) ──
     raw: api
   };

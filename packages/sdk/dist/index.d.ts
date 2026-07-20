@@ -779,6 +779,146 @@ declare function createBusinessClient(baseUrl?: string): {
         /** 查询退款状态 */
         queryRefund: (refundId: string, init?: RequestInit) => Promise<unknown>;
     };
+    budget: {
+        /** 预算列表 */
+        list: (query?: {
+            tenantId?: string;
+            status?: string;
+            category?: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            tenantId: string;
+            name: string;
+            category: string;
+            totalCents: number;
+            usedCents: number;
+            remainingCents: number;
+            currency: string;
+            period: string;
+            status: string;
+            version: number;
+            notes: string;
+            createdAt: string;
+            updatedAt: string;
+        }[]>;
+        /** 创建预算 */
+        create: (body: {
+            tenantId: string;
+            name: string;
+            category: string;
+            totalCents: number;
+            currency?: string;
+            period: string;
+            notes?: string;
+            idempotencyKey: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            version: number;
+        }>;
+        /** 提交审批 */
+        submitForApproval: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 关闭预算 */
+        close: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 审批请求列表 */
+        listApprovals: (query?: {
+            budgetId?: string;
+            status?: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            budgetId: string;
+            budgetName: string;
+            requester: string;
+            amountCents: number;
+            reason: string;
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            version: number;
+            createdAt: string;
+        }[]>;
+        /** 批准审批请求 */
+        approveApproval: (approvalId: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 驳回审批请求 */
+        rejectApproval: (approvalId: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+    };
+    promotions: {
+        /** 促销列表 */
+        list: (query?: {
+            tenantId?: string;
+            storeId?: string;
+            status?: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            name: string;
+            type: string;
+            discount: string;
+            scope: string;
+            start: string;
+            end: string;
+            budget: number;
+            used: number;
+            status: "active" | "scheduled" | "ended" | "draft";
+            targetGoal?: string;
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+        }[]>;
+        /** 创建促销 */
+        create: (body: {
+            tenantId: string;
+            storeId: string;
+            name: string;
+            type: string;
+            discount: string;
+            scope: string;
+            start: string;
+            end: string;
+            budget: number;
+            targetGoal?: string;
+            idempotencyKey: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            version: number;
+        }>;
+        /** 发布草稿促销 */
+        publish: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 结束促销 */
+        end: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+    };
     raw: ApiClient;
 };
 type BusinessClient = ReturnType<typeof createBusinessClient>;
@@ -790,4 +930,4 @@ type BusinessClient = ReturnType<typeof createBusinessClient>;
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessClient, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessClient, type BusinessOrderListItem, type BusinessOrderListPage, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
