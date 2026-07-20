@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common'
 import { CompetitorTrackService } from './competitor-track.service'
-import { TrackQueryDto, CreateCompetitorDto } from './competitor-track.dto'
+import { TrackQueryDto, CreateCompetitorDto, UpdateCompetitorDto } from './competitor-track.dto'
 import type { CompetitorDto, TrackSummaryDto, CompetitorListDto } from './competitor-track.dto'
 import { TenantGuard } from '../agent/tenant.guard'
 
@@ -61,5 +61,22 @@ export class CompetitorTrackController {
   async create(@Body() body: CreateCompetitorDto): Promise<{ success: boolean; data: CompetitorDto }> {
     const result = await this.competitorTrackService.create(body)
     return { success: true, data: result }
+  }
+
+  /** PATCH /competitor-track/:id - 更新竞品 */
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateCompetitorDto
+  ): Promise<{ success: boolean; data: CompetitorDto }> {
+    const result = await this.competitorTrackService.update(id, body)
+    return { success: true, data: result }
+  }
+
+  /** DELETE /competitor-track/:id - 删除竞品 */
+  @Delete(':id')
+  async delete(@Param('id') id: string): Promise<{ success: boolean; message: string }> {
+    await this.competitorTrackService.delete(id)
+    return { success: true, message: `Competitor "${id}" deleted successfully` }
   }
 }

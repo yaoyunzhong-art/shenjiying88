@@ -273,6 +273,16 @@
 
 ---
 
+### V23 Day2 · 竞品跟踪模块 (2026-07-21 · 树哥交付)
+| 组件 | 位置 | 状态 | 说明 |
+|:-----|:-----|:----:|:------|
+| Entity | api/src/competitor-track/entity | 🟢 完成 | Competitor + CompetitorCategory enum |
+| DTO | api/src/competitor-track/dto | 🟢 完成 | Query/Create/Update/Competitor/TrackSummary/CompetitorList |
+| Service | api/src/competitor-track/service | 🟢 完成 | findAll/findById/getSummary/getComparison/create/update/delete |
+| Controller | api/src/competitor-track/controller | 🟢 完成 | 7端点 GET×4 + POST/PATCH/DELETE · @UseGuards(TenantGuard) |
+| 测试 | api/src/competitor-track/test | 🟢 完成 | 38个it覆盖 CRUD+统计+对比+边界+错误 |
+| PRD | docs/knowledge/prd/v23/v23-prd-competitor-track.md | 🟢 已写入 | PRD-competitor-track-001 |
+
 ### 2026-07-21 凌晨产出
 | 资产 | 类型 | 状态 | 说明 |
 |:-----|:-----|:----:|:------|

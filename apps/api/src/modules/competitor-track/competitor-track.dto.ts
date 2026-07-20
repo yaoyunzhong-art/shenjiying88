@@ -67,6 +67,51 @@ export class CreateCompetitorDto {
   weakness!: string
 }
 
+/** 竞品更新 DTO（Partial 更新，所有字段可选） */
+export class UpdateCompetitorDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  competitorName?: string
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  city?: string
+
+  @IsOptional()
+  @IsString()
+  @IsEnum(CompetitorCategory)
+  category?: string
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  priceLevel?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(5)
+  rating?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  visitorCount?: number
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  advantage?: string
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  weakness?: string
+}
+
 /** 竞品信息 DTO */
 export interface CompetitorDto {
   id: string

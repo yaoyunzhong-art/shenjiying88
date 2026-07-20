@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderCard } from '../../components/OrderCard';
 import {
   listNativeAppOrdersPage,
-  type NativeAppOrderListItem,
   type NativeAppOrderListQuery,
 } from '../../market-bootstrap';
 import type {
@@ -20,9 +19,16 @@ import type {
   OrderRuntimeRouteParams,
 } from '../../utils/order-route';
 import {
-  normalizePaymentChannel,
-  type PaymentChannel,
-} from '../../utils/payment-channel';
+  buildOrderDetailRouteParams,
+} from '../../utils/order-finance';
+import {
+  mergeRuntimeOrderIntoTarget,
+} from '../../utils/order-runtime';
+import {
+  buildRuntimeFallbackOrderSummary,
+  mapApiOrderToSummaryView,
+  type OrderSummaryViewModel,
+} from '../../utils/order-view';
 
 type OrderStackParamList = {
   OrderList: OrderRuntimeRouteParams | undefined;
@@ -34,23 +40,7 @@ type OrderListNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'O
 type OrderStatus = 'ALL' | 'PENDING' | 'PAID' | 'REFUNDED';
 type OrderDateRange = 'ALL_TIME' | 'LAST_7_DAYS' | 'LAST_30_DAYS';
 
-interface OrderItem {
-  orderId: string;
-  orderNo: string;
-  totalAmount: number;
-  paidAmount: number;
-  refundedAmount: number;
-  currency: string;
-  status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
-  createdAt: string;
-  paidAt?: string;
-  refundRequestedAt?: string;
-  refundCompletedAt?: string;
-  paymentChannel?: PaymentChannel;
-  itemCount: number;
-}
-
-const mockOrders: OrderItem[] = [
+const mockOrders: OrderSummaryViewModel[] = [
   {
     orderId: 'order-001',
     orderNo: 'ORD20260612001',
@@ -119,86 +109,6 @@ const dateRangeFilters: { id: OrderDateRange; label: string }[] = [
 
 const ORDER_LIST_PAGE_SIZE = 10;
 
-function resolveOrderStatus(
-  status?: string,
-  fallbackStatus: OrderItem['status'] = 'PENDING',
-): OrderItem['status'] {
-  switch (status) {
-    case 'PAID':
-      return 'PAID';
-    case 'PENDING':
-    case 'PENDING_PAYMENT':
-      return 'PENDING';
-    case 'REFUNDED':
-      return 'REFUNDED';
-    case 'REFUNDING':
-      return 'REFUND_PENDING';
-    case 'CANCELLED':
-    case 'CLOSED':
-      return 'CANCELLED';
-    default:
-      return fallbackStatus;
-  }
-}
-
-function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
-  return {
-    orderId: order.orderId,
-    orderNo: order.orderNo,
-    totalAmount: order.totalAmount,
-    paidAmount: order.paidAmount,
-    refundedAmount: order.refundedAmount,
-    currency: order.currency,
-    status: resolveOrderStatus(order.status),
-    createdAt: order.createdAt,
-    paidAt: order.paidAt,
-    refundRequestedAt: order.refundRequestedAt,
-    refundCompletedAt: order.refundCompletedAt,
-    paymentChannel: normalizePaymentChannel(order.paymentChannel),
-    itemCount: order.itemCount,
-  };
-}
-
-function buildRuntimeFallbackOrder(
-  routeParams?: OrderRuntimeRouteParams,
-): OrderItem | undefined {
-  if (!routeParams?.orderId) {
-    return undefined;
-  }
-
-  const runtimeStatus = routeParams.refundStatus === 'REFUNDED'
-    ? 'REFUNDED'
-    : routeParams.refundStatus === 'PENDING'
-      ? 'REFUND_PENDING'
-      : routeParams.paymentStatus === 'PAID'
-        ? 'PAID'
-        : 'PENDING';
-  const runtimeTotalAmount = routeParams.paymentAmount ?? routeParams.refundRequestedAmount ?? 0;
-  const runtimePaidAmount = routeParams.paymentStatus === 'PAID' || routeParams.refundStatus
-    ? routeParams.paymentAmount ?? routeParams.refundRequestedAmount ?? 0
-    : 0;
-  const runtimeRefundedAmount = routeParams.refundStatus
-    ? routeParams.refundRequestedAmount ?? 0
-    : 0;
-  const runtimeCreatedAt = routeParams.paymentPaidAt ?? routeParams.refundRequestedAt ?? new Date().toISOString();
-
-  return {
-    orderId: routeParams.orderId,
-    orderNo: routeParams.orderNo ?? routeParams.orderId,
-    totalAmount: runtimeTotalAmount,
-    paidAmount: runtimePaidAmount,
-    refundedAmount: runtimeRefundedAmount,
-    currency: 'CNY',
-    status: runtimeStatus,
-    createdAt: runtimeCreatedAt,
-    paidAt: routeParams.paymentPaidAt,
-    refundRequestedAt: routeParams.refundRequestedAt,
-    refundCompletedAt: routeParams.refundCompletedAt,
-    paymentChannel: routeParams.paymentChannel,
-    itemCount: 0,
-  };
-}
-
 function getOrderListNow(): Date {
   const mockedNow = (globalThis as {
     __mockOrderListNow?: string | number | Date;
@@ -248,7 +158,7 @@ function buildOrderListQuery(
   return query;
 }
 
-function mergePagedOrders(previous: OrderItem[] | null, next: OrderItem[]): OrderItem[] {
+function mergePagedOrders(previous: OrderSummaryViewModel[] | null, next: OrderSummaryViewModel[]): OrderSummaryViewModel[] {
   const merged = [...(previous ?? [])];
 
   next.forEach((item) => {
@@ -298,7 +208,7 @@ export function OrderListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [apiOrders, setApiOrders] = useState<OrderItem[] | null>(null);
+  const [apiOrders, setApiOrders] = useState<OrderSummaryViewModel[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const baseQuery = useMemo(
     () => buildOrderListQuery(selectedFilter, selectedDateRange),
@@ -310,7 +220,7 @@ export function OrderListScreen() {
     mode: 'replace' | 'append' = 'replace',
   ) => {
     const result = await listNativeAppOrdersPage(query);
-    const mappedOrders = result.items.map(mapApiOrderToOrderItem);
+    const mappedOrders = result.items.map(mapApiOrderToSummaryView);
     setApiOrders((previousOrders) => (
       mode === 'append' ? mergePagedOrders(previousOrders, mappedOrders) : mappedOrders
     ));
@@ -325,7 +235,7 @@ export function OrderListScreen() {
     setApiOrders(null);
     listNativeAppOrdersPage(buildOrderListQuery(selectedFilter, selectedDateRange))
       .then((result) => {
-        setApiOrders(result.items.map(mapApiOrderToOrderItem));
+        setApiOrders(result.items.map(mapApiOrderToSummaryView));
         setHasMore(result.page * result.pageSize < result.total);
       })
       .catch(() => {
@@ -346,7 +256,7 @@ export function OrderListScreen() {
     listNativeAppOrdersPage(baseQuery)
       .then((result) => {
         if (!cancelled) {
-          setApiOrders(result.items.map(mapApiOrderToOrderItem));
+          setApiOrders(result.items.map(mapApiOrderToSummaryView));
           setHasMore(result.page * result.pageSize < result.total);
         }
       })
@@ -365,47 +275,12 @@ export function OrderListScreen() {
 
   const orders = apiOrders ?? mockOrders;
   const routeRuntimeOrder = routeParams?.orderId && !orders.some((order) => order.orderId === routeParams.orderId)
-    ? buildRuntimeFallbackOrder(routeParams)
+    ? buildRuntimeFallbackOrderSummary(routeParams)
     : undefined;
   const ordersWithRuntimeFallback = routeRuntimeOrder ? [...orders, routeRuntimeOrder] : orders;
-
-  const ordersWithRuntimeState = ordersWithRuntimeFallback.map((order) => {
-    if (order.orderId !== routeParams?.orderId) {
-      return order;
-    }
-
-    if (routeParams?.paymentStatus === 'PAID') {
-      return {
-        ...order,
-        status: 'PAID' as const,
-        totalAmount: routeParams.paymentAmount ?? order.totalAmount,
-        paidAmount: routeParams.paymentAmount ?? order.paidAmount ?? order.totalAmount,
-        paidAt: routeParams.paymentPaidAt ?? order.paidAt,
-        paymentChannel: routeParams.paymentChannel ?? order.paymentChannel,
-      };
-    }
-
-    if (routeParams?.refundStatus === 'PENDING') {
-      return {
-        ...order,
-        status: 'REFUND_PENDING' as const,
-        refundedAmount: routeParams.refundRequestedAmount ?? order.refundedAmount ?? order.paidAmount ?? order.totalAmount,
-        refundRequestedAt: routeParams.refundRequestedAt ?? order.refundRequestedAt,
-      };
-    }
-
-    if (routeParams?.refundStatus === 'REFUNDED') {
-      return {
-        ...order,
-        status: 'REFUNDED' as const,
-        refundedAmount: routeParams.refundRequestedAmount ?? order.refundedAmount ?? order.paidAmount ?? order.totalAmount,
-        refundRequestedAt: routeParams.refundRequestedAt ?? order.refundRequestedAt,
-        refundCompletedAt: routeParams.refundCompletedAt ?? order.refundCompletedAt,
-      };
-    }
-
-    return order;
-  });
+  const ordersWithRuntimeState = ordersWithRuntimeFallback.map((order) => (
+    mergeRuntimeOrderIntoTarget(order, routeParams)
+  ));
 
   const filteredOrders = selectedFilter === 'ALL'
     ? ordersWithRuntimeState
@@ -418,25 +293,12 @@ export function OrderListScreen() {
 
   const handleOrderPress = (orderId: string) => {
     const matchedOrder = ordersWithRuntimeState.find((item) => item.orderId === orderId);
-    navigation.navigate('OrderDetail', {
-      orderId,
-      orderNo: matchedOrder?.orderNo,
-      ...(matchedOrder?.status === 'PAID' ? {
-        paymentStatus: 'PAID' as const,
-        paymentAmount: matchedOrder.totalAmount,
-        paymentPaidAt: matchedOrder.paidAt,
-        paymentChannel: matchedOrder.paymentChannel,
-      } : {}),
-      ...(matchedOrder?.status === 'REFUND_PENDING' ? {
-        refundStatus: 'PENDING' as const,
-        refundRequestedAt: matchedOrder.refundRequestedAt,
-      } : {}),
-      ...(matchedOrder?.status === 'REFUNDED' ? {
-        refundStatus: 'REFUNDED' as const,
-        refundRequestedAt: matchedOrder.refundRequestedAt,
-        refundCompletedAt: matchedOrder.refundCompletedAt,
-      } : {}),
-    });
+    navigation.navigate(
+      'OrderDetail',
+      matchedOrder
+        ? buildOrderDetailRouteParams({ order: matchedOrder })
+        : { orderId },
+    );
   };
 
   const handleRefresh = useCallback(() => {
@@ -527,7 +389,7 @@ export function OrderListScreen() {
     </TouchableOpacity>
   );
 
-  const renderOrder = ({ item }: { item: OrderItem }) => (
+  const renderOrder = ({ item }: { item: OrderSummaryViewModel }) => (
     <OrderCard
       orderId={item.orderId}
       orderNo={item.orderNo}

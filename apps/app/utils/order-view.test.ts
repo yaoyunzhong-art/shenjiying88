@@ -5,6 +5,7 @@ import type {
   NativeAppTransactionAggregate,
 } from '../market-bootstrap';
 import {
+  buildRuntimeFallbackOrderDetail,
   buildRuntimeFallbackOrderSummary,
   mapApiOrderToSummaryView,
   resolveCashierLinkedOrderViewState,
@@ -118,6 +119,47 @@ test('buildRuntimeFallbackOrderSummary preserves refunded timestamps', () => {
   assert.equal(view?.refundRequestedAt, '2026-07-21T04:00:00.000Z');
   assert.equal(view?.refundCompletedAt, '2026-07-21T04:06:00.000Z');
   assert.equal(view?.paymentChannel, 'ALIPAY');
+});
+
+test('buildRuntimeFallbackOrderDetail derives paid detail state from route params', () => {
+  const view = buildRuntimeFallbackOrderDetail({
+    orderId: 'order-detail-runtime-001',
+    orderNo: 'ORDDETAIL20260721001',
+    paymentStatus: 'PAID',
+    paymentAmount: 128,
+    paymentPaidAt: '2026-07-21T04:30:00.000Z',
+    paymentChannel: 'cash',
+  }, {
+    paymentChannel: 'WECHAT_PAY',
+    itemCount: 0,
+    items: [],
+  });
+
+  assert.equal(view.orderId, 'order-detail-runtime-001');
+  assert.equal(view.orderNo, 'ORDDETAIL20260721001');
+  assert.equal(view.status, 'PAID');
+  assert.equal(view.totalAmount, 128);
+  assert.equal(view.paidAmount, 128);
+  assert.equal(view.paymentChannel, 'CASH');
+  assert.equal(view.paidAt, '2026-07-21T04:30:00.000Z');
+});
+
+test('buildRuntimeFallbackOrderDetail keeps refunded timestamps and default member info', () => {
+  const view = buildRuntimeFallbackOrderDetail({
+    orderId: 'order-detail-runtime-002',
+    orderNo: 'ORDDETAIL20260721002',
+    refundStatus: 'REFUNDED',
+    refundRequestedAmount: 66,
+    refundRequestedAt: '2026-07-21T04:35:00.000Z',
+    refundCompletedAt: '2026-07-21T04:42:00.000Z',
+  });
+
+  assert.equal(view.status, 'REFUNDED');
+  assert.equal(view.refundedAmount, 66);
+  assert.equal(view.refundRequestedAt, '2026-07-21T04:35:00.000Z');
+  assert.equal(view.refundCompletedAt, '2026-07-21T04:42:00.000Z');
+  assert.equal(view.memberId, 'member-unknown');
+  assert.equal(view.memberNickname, '未知会员');
 });
 
 test('resolveCashierLinkedOrderViewState falls back to route values without aggregate', () => {

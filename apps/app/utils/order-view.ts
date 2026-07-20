@@ -55,6 +55,17 @@ export interface CashierLinkedOrderViewState {
   hasHydratedAggregate: boolean;
 }
 
+interface BuildRuntimeFallbackOrderDetailOptions {
+  currency?: string;
+  createdAt?: string;
+  itemCount?: number;
+  paymentChannel?: PaymentChannel;
+  memberId?: string;
+  memberNickname?: string;
+  items?: NativeAppTransactionOrderItem[];
+  pointsEarned?: number;
+}
+
 export function mapApiOrderToSummaryView(
   order: NativeAppOrderListItem,
 ): OrderSummaryViewModel {
@@ -113,6 +124,37 @@ export function buildRuntimeFallbackOrderSummary(
     refundCompletedAt: routeParams.refundCompletedAt,
     paymentChannel: routeParams.paymentChannel,
     itemCount: options?.itemCount ?? 0,
+  };
+}
+
+export function buildRuntimeFallbackOrderDetail(
+  routeParams?: OrderDetailRouteParams,
+  options?: BuildRuntimeFallbackOrderDetailOptions,
+): OrderDetailViewModel {
+  const summary = buildRuntimeFallbackOrderSummary(routeParams, {
+    currency: options?.currency,
+    createdAt: options?.createdAt,
+    itemCount: options?.itemCount,
+  });
+
+  return {
+    orderId: summary?.orderId ?? routeParams?.orderId ?? 'N/A',
+    orderNo: summary?.orderNo ?? routeParams?.orderNo ?? routeParams?.orderId ?? '',
+    totalAmount: summary?.totalAmount ?? routeParams?.paymentAmount ?? routeParams?.refundRequestedAmount ?? 0,
+    paidAmount: summary?.paidAmount ?? 0,
+    refundedAmount: summary?.refundedAmount ?? 0,
+    currency: summary?.currency ?? options?.currency ?? 'CNY',
+    status: summary?.status ?? 'PENDING',
+    createdAt: summary?.createdAt ?? options?.createdAt ?? '1970-01-01T00:00:00.000Z',
+    paidAt: summary?.paidAt,
+    refundRequestedAt: summary?.refundRequestedAt,
+    refundCompletedAt: summary?.refundCompletedAt,
+    paymentChannel: summary?.paymentChannel ?? options?.paymentChannel,
+    itemCount: summary?.itemCount ?? options?.itemCount ?? 0,
+    memberId: options?.memberId ?? 'member-unknown',
+    memberNickname: options?.memberNickname ?? '未知会员',
+    items: options?.items ?? [],
+    pointsEarned: options?.pointsEarned ?? (routeParams?.paymentAmount ? Math.round(routeParams.paymentAmount) : 0),
   };
 }
 

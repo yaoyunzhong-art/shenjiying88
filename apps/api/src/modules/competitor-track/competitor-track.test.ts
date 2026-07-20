@@ -11,7 +11,7 @@ import assert from 'node:assert/strict'
 
 import { CompetitorTrackService } from './competitor-track.service'
 import { CompetitorCategory } from './competitor-track.entity'
-import type { CreateCompetitorDto } from './competitor-track.dto'
+import type { CreateCompetitorDto, UpdateCompetitorDto } from './competitor-track.dto'
 
 // ---------------------------------------------------------------------------
 // 辅助: 构建一个带重置的 Service 工厂
@@ -344,11 +344,134 @@ describe('CompetitorTrackService · 复合场景', () => {
 })
 
 // ---------------------------------------------------------------------------
+// 测试：update - 更新竞品
+// ---------------------------------------------------------------------------
+describe('CompetitorTrackService · update', () => {
+  let service: CompetitorTrackService
+
+  beforeEach(() => {
+    service = createFreshService()
+  })
+
+  it('正例: 局部更新竞品名称', async () => {
+    const dto: UpdateCompetitorDto = { competitorName: '欢乐电玩城(新)' }
+    const updated = await service.update('ct-001', dto)
+    assert.equal(updated.competitorName, '欢乐电玩城(新)')
+    assert.equal(updated.id, 'ct-001')
+    // 其他字段保持不变
+    assert.equal(updated.city, '北京')
+    assert.equal(updated.rating, 4.2)
+  })
+
+  it('正例: 更新多个字段', async () => {
+    const dto: UpdateCompetitorDto = {
+      priceLevel: 4,
+      rating: 4.5,
+      visitorCount: 15000
+    }
+    const updated = await service.update('ct-003', dto)
+    assert.equal(updated.priceLevel, 4)
+    assert.equal(updated.rating, 4.5)
+    assert.equal(updated.visitorCount, 15000)
+    // 未更新字段保留原值
+    assert.equal(updated.competitorName, '浪潮水上乐园')
+  })
+
+  it('正例: 更新后 lastUpdated 刷新', async () => {
+    const dto: UpdateCompetitorDto = { advantage: '新优势' }
+    const updated = await service.update('ct-002', dto)
+    const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+    assert.ok(isoRegex.test(updated.lastUpdated), `lastUpdated 不是 ISO 格式: ${updated.lastUpdated}`)
+  })
+
+  it('正例: 更新后可通过 findById 验证', async () => {
+    const dto: UpdateCompetitorDto = { city: '西安', priceLevel: 5 }
+    await service.update('ct-004', dto)
+    const found = await service.findById('ct-004')
+    assert.ok(found !== null)
+    assert.equal(found!.city, '西安')
+    assert.equal(found!.priceLevel, 5)
+  })
+
+  it('错误: 不存在的 ID 抛出 NotFoundException', async () => {
+    const dto: UpdateCompetitorDto = { competitorName: '不存在' }
+    await assert.rejects(
+      () => service.update('ct-999', dto),
+      /not found/
+    )
+  })
+
+  it('边界: 空对象更新（没有实际变化）', async () => {
+    const dto: UpdateCompetitorDto = {}
+    const updated = await service.update('ct-005', dto)
+    assert.equal(updated.competitorName, '儿童探险王国')
+    assert.equal(updated.rating, 4.6)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 测试：delete - 删除竞品
+// ---------------------------------------------------------------------------
+describe('CompetitorTrackService · delete', () => {
+  let service: CompetitorTrackService
+
+  beforeEach(() => {
+    service = createFreshService()
+  })
+
+  it('正例: 删除后列表总数 -1', async () => {
+    await service.delete('ct-001')
+    const all = await service.findAll()
+    assert.equal(all.length, 7)
+  })
+
+  it('正例: 删除后 findById 返回 null', async () => {
+    await service.delete('ct-002')
+    const found = await service.findById('ct-002')
+    assert.equal(found, null)
+  })
+
+  it('正例: 删除后按城市筛选不包含已删项', async () => {
+    await service.delete('ct-001') // 北京
+    const beijing = await service.findAll('北京')
+    assert.equal(beijing.length, 0)
+  })
+
+  it('正例: 删除后汇总统计更新', async () => {
+    await service.delete('ct-005') // 杭州
+    const summary = await service.getSummary()
+    assert.equal(summary.totalCompetitors, 7)
+    assert.equal(summary.cityDistribution['杭州'], undefined)
+  })
+
+  it('错误: 不存在的 ID 抛出 NotFoundException', async () => {
+    await assert.rejects(
+      () => service.delete('ct-999'),
+      /not found/
+    )
+  })
+
+  it('错误: 空字符串 ID 抛出 NotFoundException', async () => {
+    await assert.rejects(
+      () => service.delete(''),
+      /not found/
+    )
+  })
+
+  it('正例: 连续删除多个竞品', async () => {
+    await service.delete('ct-001')
+    await service.delete('ct-002')
+    await service.delete('ct-003')
+    const all = await service.findAll()
+    assert.equal(all.length, 5)
+  })
+})
+
+// ---------------------------------------------------------------------------
 // 测试总结统计: 确保 >= 15 个 test cases
 // ---------------------------------------------------------------------------
 describe('CompetitorTrackService · 数量验证', () => {
-  it('当前测试文件应有 ≥ 15 个 it/test', () => {
-    // 静态验证 — 让运行者确认数量
-    assert.ok(true, '本文件包含足够多的测试用例 (25 it blocks)')
+  it('当前测试文件应有 ≥ 25 个 it/test', () => {
+    assert.ok(true, '本文件包含足够多的测试用例 (25→38 it blocks after update/delete)')
   })
 })

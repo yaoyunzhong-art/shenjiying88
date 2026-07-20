@@ -1,27 +1,13 @@
-import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Card } from './common/Card';
 import {
   getPaymentChannelLabel,
-  type PaymentChannel,
 } from '../utils/payment-channel';
+import type { OrderSummaryViewModel } from '../utils/order-view';
 
-interface OrderCardProps {
-  orderId: string;
-  orderNo: string;
-  totalAmount: number;
-  paidAmount: number;
-  refundedAmount: number;
-  currency: string;
-  status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
-  createdAt: string;
-  paidAt?: string;
-  refundRequestedAt?: string;
-  refundCompletedAt?: string;
-  paymentChannel?: PaymentChannel;
-  itemCount: number;
+type OrderCardProps = OrderSummaryViewModel & {
   onPress?: () => void;
-}
+};
 
 const statusLabels: Record<string, string> = {
   PENDING: '待支付',

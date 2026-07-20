@@ -11,12 +11,13 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { getNativeAppOrderTransaction, type NativeAppTransactionAggregate } from '../../market-bootstrap';
 import {
-  buildOrdersRuntimeRouteParams,
+  buildOrderDetailBackToOrdersRouteParams,
   buildPaymentRouteParams,
   buildRefundRouteParams,
 } from '../../utils/order-finance';
 import type { OrderDetailRouteParams } from '../../utils/order-route';
 import {
+  buildRuntimeFallbackOrderDetail,
   resolveOrderDetailViewState,
   type OrderDetailViewModel,
 } from '../../utils/order-view';
@@ -27,8 +28,6 @@ import {
 type OrderDetailParams = {
   OrderDetail: OrderDetailRouteParams;
 };
-
-type OrderStatus = 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
 
 type MockOrderDetail = OrderDetailViewModel;
 
@@ -125,45 +124,6 @@ const statusLabels: Record<string, string> = {
   CANCELLED: '已取消',
 };
 
-function createFallbackOrderDetail(params?: OrderDetailParams['OrderDetail']): MockOrderDetail {
-  const matchedMockOrder = params?.orderId ? mockOrderDetails[params.orderId] : undefined;
-  if (matchedMockOrder) {
-    return matchedMockOrder;
-  }
-
-  const fallbackStatus: OrderStatus = params?.refundStatus === 'REFUNDED'
-    ? 'REFUNDED'
-    : params?.refundStatus === 'PENDING'
-      ? 'REFUND_PENDING'
-      : params?.paymentStatus === 'PAID'
-        ? 'PAID'
-        : 'PENDING';
-
-  return {
-    orderId: params?.orderId ?? defaultMockOrderDetail.orderId,
-    orderNo: params?.orderNo ?? '',
-    paidAmount: params?.paymentStatus === 'PAID'
-      ? params.paymentAmount ?? params?.refundRequestedAmount ?? 0
-      : params?.refundStatus
-        ? params?.paymentAmount ?? params.refundRequestedAmount ?? 0
-        : 0,
-    refundedAmount: params?.refundStatus
-      ? params.refundRequestedAmount ?? 0
-      : 0,
-    status: fallbackStatus,
-    createdAt: params?.refundRequestedAt ?? params?.paymentPaidAt ?? '1970-01-01T00:00:00.000Z',
-    paidAt: params?.paymentPaidAt,
-    totalAmount: params?.paymentAmount ?? params?.refundRequestedAmount ?? 0,
-    currency: 'CNY',
-    paymentChannel: params?.paymentChannel ?? 'WECHAT_PAY',
-    memberId: 'member-unknown',
-    memberNickname: '未知会员',
-    itemCount: 0,
-    items: [],
-    pointsEarned: params?.paymentAmount ? Math.round(params.paymentAmount) : 0,
-  };
-}
-
 export function OrderDetailScreen() {
   const fallbackNavigation = (globalThis as {
     __mockNavigation?: {
@@ -227,7 +187,15 @@ export function OrderDetailScreen() {
   useEffect(() => {
     fetchAggregate();
   }, [fetchAggregate]);
-  const baseOrder = createFallbackOrderDetail(routeParams);
+  const matchedMockOrder = routeParams?.orderId ? mockOrderDetails[routeParams.orderId] : undefined;
+  const baseOrder = matchedMockOrder ?? buildRuntimeFallbackOrderDetail(routeParams, {
+    currency: 'CNY',
+    paymentChannel: 'WECHAT_PAY',
+    memberId: 'member-unknown',
+    memberNickname: '未知会员',
+    items: [],
+    itemCount: 0,
+  });
   const {
     order,
     effectiveRefundStatus,
@@ -267,37 +235,18 @@ export function OrderDetailScreen() {
   };
 
   const handleBackToOrders = () => {
-    if (effectiveRefundStatus === 'PENDING' && typeof effectiveRefundAmount === 'number') {
-      navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
-        order,
-        paidAt: order.paidAt,
-        status: 'REFUND_PENDING',
-        refundRequestedAmount: effectiveRefundAmount,
-        refundReason: effectiveRefundReason,
-        refundRequestedAt: effectiveRefundRequestedAt,
-      }) as never);
-      return;
-    }
-    if (effectiveRefundStatus === 'REFUNDED' && typeof effectiveRefundAmount === 'number') {
-      navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
-        order,
-        paidAt: order.paidAt,
-        status: 'REFUNDED',
-        refundRequestedAmount: effectiveRefundAmount,
-        refundReason: effectiveRefundReason,
-        refundRequestedAt: effectiveRefundRequestedAt,
-        refundCompletedAt: effectiveRefundCompletedAt,
-      }) as never);
-      return;
-    }
-    if (routeParams?.paymentStatus === 'PAID') {
-      navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
-        order,
-        totalAmount: routeParams.paymentAmount ?? order.totalAmount,
-        paidAt: routeParams.paymentPaidAt ?? order.paidAt,
-        paymentChannel: routeParams.paymentChannel ?? order.paymentChannel,
-        status: 'PAID',
-      }) as never);
+    const backRouteParams = buildOrderDetailBackToOrdersRouteParams({
+      order,
+      routeParams,
+      effectiveRefundStatus,
+      effectiveRefundAmount,
+      effectiveRefundReason,
+      effectiveRefundRequestedAt,
+      effectiveRefundCompletedAt,
+    });
+
+    if (backRouteParams) {
+      navigation.navigate!('Orders' as never, backRouteParams as never);
       return;
     }
     navigation.goBack();

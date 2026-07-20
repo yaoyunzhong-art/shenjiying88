@@ -10,7 +10,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
-import { Alert, Text, TouchableOpacity, FlatList } from 'react-native';
+import { Alert, Text, TouchableOpacity, FlatList, type AlertButton } from 'react-native';
+import { OrderCard } from '../../components/OrderCard';
+import type { OrderSummaryViewModel } from '../../utils/order-view';
 import { OrderListScreen } from './OrderListScreen';
 import { OrderDetailScreen } from './OrderDetailScreen';
 
@@ -29,9 +31,8 @@ const mockNavigation = {
   },
 };
 
-const alertCalls: Array<{ title: string; message?: string; buttons?: Array<{ text: string; style?: string; onPress?: () => void }> }> = [];
-// @ts-expect-error mock
-Alert.alert = (title: string, message?: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {
+const alertCalls: Array<{ title: string; message?: string; buttons?: AlertButton[] }> = [];
+Alert.alert = (title: string, message?: string, buttons?: AlertButton[]) => {
   alertCalls.push({ title, message, buttons });
 };
 
@@ -40,6 +41,8 @@ const mockGlobals = globalThis as typeof globalThis & {
   __mockAppContext?: unknown;
   __mockRoute?: Record<string, unknown>;
   __mockOrderFetchEnabled?: boolean;
+  __mockOrderListFetchEnabled?: boolean;
+  __mockOrderListNow?: string | number | Date;
 };
 
 mockGlobals.__mockNavigation = mockNavigation;
@@ -129,6 +132,27 @@ function createOrderDetailComponent(params?: Record<string, unknown>): ReactTest
   alertCalls.length = 0;
   mockGlobals.__mockRoute = (params ?? { orderId: 'order-001' }) as never;
   return create(<OrderDetailScreen />);
+}
+
+function createOrderCardComponent(overrides?: Partial<OrderSummaryViewModel>): ReactTestRenderer {
+  const order: OrderSummaryViewModel = {
+    orderId: 'order-card-001',
+    orderNo: 'ORDCARD20260720001',
+    totalAmount: 156,
+    paidAmount: 156,
+    refundedAmount: 0,
+    currency: 'CNY',
+    status: 'PAID',
+    createdAt: '2026-07-20T01:00:00.000Z',
+    paidAt: '2026-07-20T01:05:00.000Z',
+    refundRequestedAt: undefined,
+    refundCompletedAt: undefined,
+    paymentChannel: 'WECHAT_PAY',
+    itemCount: 3,
+    ...overrides,
+  };
+
+  return create(<OrderCard {...order} />);
 }
 
 function getOrderListFlatList(root: ReactTestRenderer): ReactTestInstance {
@@ -363,8 +387,7 @@ test('OrderListScreen: runtime fallback order keeps refund timestamps when curre
 
 test('OrderListScreen: prefers real order list payload when list fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!isOrderListRequest(url)) {
@@ -430,15 +453,13 @@ test('OrderListScreen: prefers real order list payload when list fetch is enable
     assert.ok(findTextInOrderCards(root, '支付时间'), '启用真实列表后应展示接口返回的支付时间');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListFetchEnabled;
   }
 });
 
 test('OrderListScreen: fetched paid order keeps api payment fields when navigating to detail', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!isOrderListRequest(url)) {
@@ -487,20 +508,22 @@ test('OrderListScreen: fetched paid order keeps api payment fields when navigati
       orderTouchable.props.onPress();
       const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
       assert.ok(navCall, '点击真实列表订单应导航到 OrderDetail');
+      assert.equal(navCall?.params?.orderId, 'order-001');
+      assert.equal(navCall?.params?.orderNo, 'ORDAPI20260720001');
+      assert.equal(navCall?.params?.paymentStatus, 'PAID');
+      assert.equal(navCall?.params?.paymentAmount, 188);
       assert.equal(navCall?.params?.paymentPaidAt, '2026-07-20T04:12:00.000Z');
       assert.equal(navCall?.params?.paymentChannel, 'WECHAT_PAY');
     }
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListFetchEnabled;
   }
 });
 
 test('OrderListScreen: runtime params still override fetched order list state', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!isOrderListRequest(url)) {
@@ -548,16 +571,14 @@ test('OrderListScreen: runtime params still override fetched order list state', 
     assert.ok(findTextInOrderCards(root, '¥128.00'), '真实列表场景下仍应承接支付回带金额');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListFetchEnabled;
   }
 });
 
 test('OrderListScreen: paid filter passes status query to real order list api', async () => {
   const originalFetch = globalThis.fetch;
   const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     fetchCalls.push({ url, init });
@@ -646,15 +667,13 @@ test('OrderListScreen: paid filter passes status query to real order list api', 
     assert.ok(findTextInOrderCards(root, 'ORDAPI20260720004'), '已完成筛选后应展示服务端返回的已完成订单');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListFetchEnabled;
   }
 });
 
 test('OrderListScreen: refunded filter keeps runtime refund order visible with real api filtering', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (!isOrderListRequest(url)) {
@@ -730,18 +749,15 @@ test('OrderListScreen: refunded filter keeps runtime refund order visible with r
     assert.ok(findTextInOrderCards(root, '退款完成时间'), '已退款筛选应展示服务端返回的退款完成时间');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListFetchEnabled;
   }
 });
 
 test('OrderListScreen: last 7 days range passes date query to real order list api', async () => {
   const originalFetch = globalThis.fetch;
   const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListNow = '2026-07-20T12:00:00.000Z';
+  mockGlobals.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListNow = '2026-07-20T12:00:00.000Z';
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     fetchCalls.push({ url, init });
@@ -790,18 +806,15 @@ test('OrderListScreen: last 7 days range passes date query to real order list ap
     );
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListNow;
+    delete mockGlobals.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListNow;
   }
 });
 
 test('OrderListScreen: load more passes next page query and keeps runtime order visible', async () => {
   const originalFetch = globalThis.fetch;
   const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
-  // @ts-expect-error test flag
-  globalThis.__mockOrderListFetchEnabled = true;
+  mockGlobals.__mockOrderListFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     fetchCalls.push({ url, init });
@@ -891,8 +904,7 @@ test('OrderListScreen: load more passes next page query and keeps runtime order 
     assert.ok(findTextInOrderCards(root, '已完成'), '分页场景下当前运行态订单仍应承接支付成功状态');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderListFetchEnabled;
+    delete mockGlobals.__mockOrderListFetchEnabled;
   }
 });
 
@@ -1007,6 +1019,11 @@ test('OrderListScreen: tapping an order card navigates to OrderDetail', () => {
     const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
     assert.ok(navCall, '点击订单应导航到 OrderDetail');
     assert.equal(navCall?.params?.orderId, 'order-001', '应传递正确 orderId');
+    assert.equal(navCall?.params?.orderNo, 'ORD20260612001');
+    assert.equal(navCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navCall?.params?.paymentAmount, 156);
+    assert.equal(navCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
+    assert.equal(navCall?.params?.paymentChannel, 'WECHAT_PAY');
   }
 });
 
@@ -1023,6 +1040,11 @@ test('OrderListScreen: tapping order card navigates with correct order ID', () =
     const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
     assert.ok(navCall, '应导航到 OrderDetail');
     assert.equal(navCall?.params?.orderId, 'order-004', '应传递 order-004');
+    assert.equal(navCall?.params?.orderNo, 'ORD20260610001');
+    assert.equal(navCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navCall?.params?.paymentAmount, 68);
+    assert.equal(navCall?.params?.paymentPaidAt, '2026-06-10T09:47:00.000Z');
+    assert.equal(navCall?.params?.paymentChannel, 'CASH');
   }
 });
 
@@ -1044,6 +1066,13 @@ test('OrderListScreen: tapping refunded order card preserves refund timestamps',
     orderTouchable.props.onPress();
     const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
     assert.ok(navCall, '点击退款订单应导航到 OrderDetail');
+    assert.equal(navCall?.params?.orderId, 'order-001');
+    assert.equal(navCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navCall?.params?.paymentAmount, 88.5);
+    assert.equal(navCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
+    assert.equal(navCall?.params?.paymentChannel, 'WECHAT_PAY');
+    assert.equal(navCall?.params?.refundStatus, 'REFUNDED');
+    assert.equal(navCall?.params?.refundRequestedAmount, 88.5);
     assert.equal(navCall?.params?.refundRequestedAt, '2026-07-20T02:03:04.000Z');
     assert.equal(navCall?.params?.refundCompletedAt, '2026-07-20T02:08:09.000Z');
   }
@@ -1450,6 +1479,23 @@ test('OrderDetailScreen: tapping back after refunded returns to Orders with comp
   assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T02:08:09.000Z');
 });
 
+test('OrderDetailScreen: unknown route order renders shared fallback detail state', () => {
+  const root = createOrderDetailComponent({
+    orderId: 'order-runtime-003',
+    orderNo: 'ORDRUNTIME20260720003',
+    paymentStatus: 'PAID',
+    paymentAmount: 66.6,
+    paymentPaidAt: '2026-07-20T06:20:00.000Z',
+    paymentChannel: 'CASH',
+  });
+
+  assert.ok(findByText(root.root, 'ORDRUNTIME20260720003'), '未知订单应展示路由带回订单号');
+  assert.ok(findByText(root.root, '已完成'), '未知订单支付成功时应展示已完成');
+  assert.ok(findByText(root.root, '现金'), '未知订单应复用共享 fallback 渠道展示');
+  assert.ok(findByText(root.root, '¥66.60'), '未知订单应展示共享 fallback 金额');
+  assert.ok(findByText(root.root, '未知会员'), '未知订单应展示共享 fallback 会员昵称');
+});
+
 test('OrderDetailScreen: payment return preserves real orderNo when fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
   mockGlobals.__mockOrderFetchEnabled = true;
@@ -1788,4 +1834,45 @@ test('OrderListScreen: cards render status-based amount labels', () => {
   assert.ok(paidCard && findByText(paidCard.root, '实付金额'), '已支付订单应显示实付金额');
   assert.ok(pendingCard && findByText(pendingCard.root, '应付金额'), '待支付订单应显示应付金额');
   assert.ok(refundedCard && findByText(refundedCard.root, '已退款金额'), '已退款订单应显示已退款金额');
+});
+
+test('OrderCard: renders paid summary directly from shared order summary model', () => {
+  const root = createOrderCardComponent();
+
+  assert.ok(findByText(root.root, 'ORDCARD20260720001'), '应显示共享 summary 里的订单号');
+  assert.ok(findByText(root.root, '实付金额'), '已支付卡片应显示实付金额口径');
+  assert.ok(findByText(root.root, '¥156.00'), '已支付卡片应显示共享 summary 的实付金额');
+  assert.ok(findByText(root.root, '微信支付'), '已支付卡片应显示共享 summary 的支付渠道');
+  assert.ok(findByText(root.root, '支付时间'), '已支付卡片应显示支付时间');
+});
+
+test('OrderCard: renders pending refund summary directly from shared order summary model', () => {
+  const root = createOrderCardComponent({
+    status: 'REFUND_PENDING',
+    refundedAmount: 88.5,
+    refundRequestedAt: '2026-07-20T01:10:00.000Z',
+    paymentChannel: 'ALIPAY',
+  });
+
+  assert.ok(findByText(root.root, '退款审核中'), '退款中卡片应显示退款审核中');
+  assert.ok(findByText(root.root, '申请退款金额'), '退款中卡片应切换为申请退款金额口径');
+  assert.ok(findByText(root.root, '¥88.50'), '退款中卡片应显示共享 summary 的退款申请金额');
+  assert.ok(findByText(root.root, '申请时间'), '退款中卡片应显示退款申请时间');
+  assert.ok(findByText(root.root, '支付宝'), '退款中卡片应继续显示已归一化的支付渠道');
+});
+
+test('OrderCard: hides payment row when channel is absent and keeps refunded timestamp', () => {
+  const root = createOrderCardComponent({
+    status: 'REFUNDED',
+    refundedAmount: 66.6,
+    paymentChannel: undefined,
+    refundRequestedAt: '2026-07-20T01:10:00.000Z',
+    refundCompletedAt: '2026-07-20T01:20:00.000Z',
+  });
+
+  assert.ok(findByText(root.root, '已退款'), '退款完成卡片应显示已退款状态');
+  assert.ok(findByText(root.root, '已退款金额'), '退款完成卡片应显示已退款金额口径');
+  assert.ok(findByText(root.root, '¥66.60'), '退款完成卡片应显示共享 summary 的退款金额');
+  assert.ok(findByText(root.root, '退款完成时间'), '退款完成卡片应显示退款完成时间');
+  assert.equal(findByText(root.root, '支付方式'), undefined, '缺少渠道时不应渲染支付方式行');
 });

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { NativeAppTransactionAggregate } from '../market-bootstrap';
 import {
+  buildOrderDetailBackToOrdersRouteParams,
+  buildOrderDetailRouteParams,
   buildOrderDetailPaymentRouteParams,
   buildOrderDetailRefundRouteParams,
   buildOrdersRuntimeRouteParams,
@@ -151,6 +153,36 @@ test('buildRefundRouteParams keeps refund reason while reusing linked order snap
   });
 });
 
+test('buildOrderDetailRouteParams carries payment and refund fields for refunded order summary', () => {
+  const params = buildOrderDetailRouteParams({
+    order: {
+      orderId: 'order-011',
+      orderNo: 'ORD20260720011',
+      status: 'REFUNDED',
+      totalAmount: 188,
+      paidAmount: 188,
+      refundedAmount: 66,
+      paidAt: '2026-07-20T06:00:00.000Z',
+      refundRequestedAt: '2026-07-20T06:10:00.000Z',
+      refundCompletedAt: '2026-07-20T06:15:00.000Z',
+      paymentChannel: 'ALIPAY',
+    },
+  });
+
+  assert.deepEqual(params, {
+    orderId: 'order-011',
+    orderNo: 'ORD20260720011',
+    paymentStatus: 'PAID',
+    paymentAmount: 188,
+    paymentPaidAt: '2026-07-20T06:00:00.000Z',
+    paymentChannel: 'ALIPAY',
+    refundStatus: 'REFUNDED',
+    refundRequestedAmount: 66,
+    refundRequestedAt: '2026-07-20T06:10:00.000Z',
+    refundCompletedAt: '2026-07-20T06:15:00.000Z',
+  });
+});
+
 test('buildOrdersRuntimeRouteParams returns normalized pending refund payload', () => {
   const params = buildOrdersRuntimeRouteParams({
     orderId: 'order-001',
@@ -192,4 +224,62 @@ test('buildOrdersRuntimeRouteParams prefers linked order snapshot and normalizes
     paymentPaidAt: '2026-07-20T08:00:00.000Z',
     paymentChannel: 'WECHAT_PAY',
   });
+});
+
+test('buildOrderDetailBackToOrdersRouteParams returns refunded payload from effective refund state', () => {
+  const params = buildOrderDetailBackToOrdersRouteParams({
+    order: {
+      orderId: 'order-012',
+      orderNo: 'ORD20260720012',
+      status: 'REFUNDED',
+      totalAmount: 199,
+      paidAmount: 199,
+      refundedAmount: 66,
+      paidAt: '2026-07-20T09:00:00.000Z',
+      refundRequestedAt: '2026-07-20T09:10:00.000Z',
+      refundCompletedAt: '2026-07-20T09:18:00.000Z',
+      paymentChannel: 'ALIPAY',
+    },
+    routeParams: {
+      orderId: 'order-012',
+      refundStatus: 'PENDING',
+      refundRequestedAmount: 20,
+      refundReason: '旧回带',
+    },
+    effectiveRefundStatus: 'REFUNDED',
+    effectiveRefundAmount: 66,
+    effectiveRefundReason: '门店退款完成',
+    effectiveRefundRequestedAt: '2026-07-20T09:10:00.000Z',
+    effectiveRefundCompletedAt: '2026-07-20T09:18:00.000Z',
+  });
+
+  assert.deepEqual(params, {
+    orderId: 'order-012',
+    orderNo: 'ORD20260720012',
+    paymentStatus: 'PAID',
+    paymentAmount: 199,
+    paymentPaidAt: '2026-07-20T09:00:00.000Z',
+    paymentChannel: 'ALIPAY',
+    refundStatus: 'REFUNDED',
+    refundRequestedAmount: 66,
+    refundReason: '门店退款完成',
+    refundRequestedAt: '2026-07-20T09:10:00.000Z',
+    refundCompletedAt: '2026-07-20T09:18:00.000Z',
+  });
+});
+
+test('buildOrderDetailBackToOrdersRouteParams returns undefined when no runtime handoff is needed', () => {
+  const params = buildOrderDetailBackToOrdersRouteParams({
+    order: {
+      orderId: 'order-013',
+      orderNo: 'ORD20260720013',
+      status: 'PENDING',
+      totalAmount: 88,
+      paidAmount: 0,
+      refundedAmount: 0,
+      paymentChannel: 'WECHAT_PAY',
+    },
+  });
+
+  assert.equal(params, undefined);
 });

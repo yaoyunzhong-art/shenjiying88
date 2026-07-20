@@ -11,6 +11,7 @@ import type {
 import {
   deriveAggregateRefundState,
   getLatestRelevantRefund,
+  type OrderRuntimeMergeTarget,
 } from './order-runtime';
 import {
   normalizePaymentChannel,
@@ -66,6 +67,24 @@ interface BuildRefundDetailParamsInput {
   fallbackCompletedAt?: string;
 }
 
+type OrderDetailLinkedOrderSnapshot = Pick<
+  OrderRuntimeMergeTarget,
+  | 'orderId'
+  | 'orderNo'
+  | 'status'
+  | 'totalAmount'
+  | 'paidAmount'
+  | 'refundedAmount'
+  | 'paidAt'
+  | 'refundRequestedAt'
+  | 'refundCompletedAt'
+  | 'paymentChannel'
+>;
+
+interface BuildOrderDetailRouteParamsInput {
+  order: OrderDetailLinkedOrderSnapshot;
+}
+
 interface BuildOrdersRuntimeParamsInput {
   order?: RouteLinkedOrderSnapshot;
   orderId?: string;
@@ -78,6 +97,16 @@ interface BuildOrdersRuntimeParamsInput {
   refundRequestedAt?: string;
   refundCompletedAt?: string;
   status: 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
+}
+
+interface BuildOrderDetailBackToOrdersParamsInput {
+  order: OrderDetailLinkedOrderSnapshot;
+  routeParams?: OrderDetailRouteParams;
+  effectiveRefundStatus?: 'PENDING' | 'REFUNDED';
+  effectiveRefundAmount?: number;
+  effectiveRefundReason?: string;
+  effectiveRefundRequestedAt?: string;
+  effectiveRefundCompletedAt?: string;
 }
 
 export function getAggregateOrderTotalAmount(
@@ -154,6 +183,43 @@ export function buildRefundRouteParams(
     ...buildPaymentRouteParams(input),
     reason: input.reason,
   };
+}
+
+export function buildOrderDetailRouteParams(
+  input: BuildOrderDetailRouteParamsInput,
+): OrderDetailRouteParams {
+  const paymentAmount = input.order.paidAmount || input.order.totalAmount;
+  const refundAmount = input.order.refundedAmount || paymentAmount;
+  const baseParams: OrderDetailRouteParams = {
+    orderId: input.order.orderId,
+    orderNo: input.order.orderNo,
+  };
+
+  if (
+    input.order.status === 'PAID'
+    || input.order.status === 'REFUND_PENDING'
+    || input.order.status === 'REFUNDED'
+  ) {
+    baseParams.paymentStatus = 'PAID';
+    baseParams.paymentAmount = paymentAmount;
+    baseParams.paymentPaidAt = input.order.paidAt;
+    baseParams.paymentChannel = input.order.paymentChannel;
+  }
+
+  if (input.order.status === 'REFUND_PENDING') {
+    baseParams.refundStatus = 'PENDING';
+    baseParams.refundRequestedAmount = refundAmount;
+    baseParams.refundRequestedAt = input.order.refundRequestedAt;
+  }
+
+  if (input.order.status === 'REFUNDED') {
+    baseParams.refundStatus = 'REFUNDED';
+    baseParams.refundRequestedAmount = refundAmount;
+    baseParams.refundRequestedAt = input.order.refundRequestedAt;
+    baseParams.refundCompletedAt = input.order.refundCompletedAt;
+  }
+
+  return baseParams;
 }
 
 export function buildOrderDetailPaymentRouteParams(
@@ -247,4 +313,49 @@ export function buildOrdersRuntimeRouteParams(
     refundRequestedAt: input.refundRequestedAt,
     refundCompletedAt: input.refundCompletedAt,
   };
+}
+
+export function buildOrderDetailBackToOrdersRouteParams(
+  input: BuildOrderDetailBackToOrdersParamsInput,
+): OrderRuntimeRouteParams | undefined {
+  if (
+    input.effectiveRefundStatus === 'PENDING'
+    && typeof input.effectiveRefundAmount === 'number'
+  ) {
+    return buildOrdersRuntimeRouteParams({
+      order: input.order,
+      paidAt: input.order.paidAt,
+      status: 'REFUND_PENDING',
+      refundRequestedAmount: input.effectiveRefundAmount,
+      refundReason: input.effectiveRefundReason,
+      refundRequestedAt: input.effectiveRefundRequestedAt,
+    });
+  }
+
+  if (
+    input.effectiveRefundStatus === 'REFUNDED'
+    && typeof input.effectiveRefundAmount === 'number'
+  ) {
+    return buildOrdersRuntimeRouteParams({
+      order: input.order,
+      paidAt: input.order.paidAt,
+      status: 'REFUNDED',
+      refundRequestedAmount: input.effectiveRefundAmount,
+      refundReason: input.effectiveRefundReason,
+      refundRequestedAt: input.effectiveRefundRequestedAt,
+      refundCompletedAt: input.effectiveRefundCompletedAt,
+    });
+  }
+
+  if (input.routeParams?.paymentStatus === 'PAID') {
+    return buildOrdersRuntimeRouteParams({
+      order: input.order,
+      totalAmount: input.routeParams.paymentAmount ?? input.order.totalAmount,
+      paidAt: input.routeParams.paymentPaidAt ?? input.order.paidAt,
+      paymentChannel: input.routeParams.paymentChannel ?? input.order.paymentChannel,
+      status: 'PAID',
+    });
+  }
+
+  return undefined;
 }
