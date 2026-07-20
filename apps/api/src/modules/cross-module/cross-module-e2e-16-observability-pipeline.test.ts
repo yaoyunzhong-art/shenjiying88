@@ -160,7 +160,7 @@ async function buildApp() {
   const { lines, stream } = buildCapturingStream();
   const logger = new LoggerService(
     { level: 'trace', pretty: false, redactPaths: ['password', 'token'], serviceName: 'e2e-test' },
-    stream as any,
+    stream as unknown as NodeJS.WritableStream,
   );
   const tracing = new TracingService('e2e');
   const metrics = new MetricsService(false);

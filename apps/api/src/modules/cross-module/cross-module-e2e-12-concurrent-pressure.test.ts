@@ -36,7 +36,7 @@ import {
 import request from 'supertest'
 import type { Request } from 'express'
 import { ReservationService } from '../reservation/reservation.service'
-import { ReservationStatus } from '../reservation/reservation.entity'
+import { ReservationStatus, ReservationType } from '../reservation/reservation.entity'
 import { CashierService } from '../cashier/cashier.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
@@ -113,7 +113,7 @@ async function buildApp() {
   const inventoryService = new InventoryService()
 
   // 注入 spy 替换 IntegrationOrchestrationService (避免 prisma 依赖)
-  ;(cashierService as any).integrationOrchestrationService = {
+  ;(cashierService as unknown as Record<string, { publishEvent: () => Promise<void> }>).integrationOrchestrationService = {
     async publishEvent() {
       /* no-op */
     }
@@ -161,7 +161,7 @@ it('e2e-12: 50 concurrent reservations on same resource - only one wins', async 
   for (let i = 0; i < CONCURRENCY; i++) {
     const r = reservationService.create({
       tenantId: 'tenant-A',
-      type: 'GAME' as any,
+      type: 'GAME' as unknown as ReservationType,
       resourceId: 'room-A',
       resourceName: 'Room A',
       userId: `user-${i}`,
@@ -224,8 +224,8 @@ it('e2e-12: 50 concurrent payment callbacks on same order - idempotent', async (
       settlePaidOrder: async () => ({ status: 'SUCCEEDED' }),
       settleFailedOrder: async () => ({ status: 'FAILED' }),
       applyRefund: async () => ({})
-    } as any
-    ;(cashierService as any).loyaltyService = noopLoyalty
+    } as Record<string, unknown>
+    ;(cashierService as unknown as Record<string, typeof noopLoyalty>).loyaltyService = noopLoyalty
 
     // 前置: 注册会员 + 创建订单 + 创建支付
     await request(app.getHttpServer()).post('/members').set(TENANT_A_HEADERS).send({ memberId: 'concurrent-payer' })

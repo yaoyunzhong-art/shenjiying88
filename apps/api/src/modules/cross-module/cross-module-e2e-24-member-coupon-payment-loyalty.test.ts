@@ -379,7 +379,7 @@ it('E2E链#24 反例: 优惠券过期不可核销', () => {
 
   // 模拟过期: 直接将优惠券状态设为 EXPIRED
   const found = couponService['coupons'].find((c: any) => c.couponId === coupon.couponId);
-  if (found) (found as any).status = 'EXPIRED';
+  if (found) (found as Coupon).status = 'EXPIRED';
 
   const order = cashierService.createOrder(member.memberId, 'tenant-001', 'store-sh001', 500);
   const paidOrder = cashierService.processPayment(order.orderId, couponService, coupon.couponId);

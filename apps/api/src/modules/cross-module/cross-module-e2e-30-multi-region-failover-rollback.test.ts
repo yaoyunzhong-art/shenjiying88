@@ -235,7 +235,7 @@ describe('[L3-E2E][30] 多云区域容灾·健康监测·自动回滚', () => {
     })
 
     it('[反例] 部署空配置 → 拒绝', () => {
-      assert.throws(() => executeDeploy('', null as any, 0), /deployId/)
+      assert.throws(() => executeDeploy('', (null as unknown as Record<string, unknown>), 0), /deployId/)
     })
 
     it('[反例] 重复部署相同ID → 拒绝', () => {

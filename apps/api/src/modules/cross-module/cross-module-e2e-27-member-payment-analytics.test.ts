@@ -79,7 +79,7 @@ class TestMemberPaymentAnalyticsController {
     @Query() query: { scope?: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }
   ) {
     const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.analyticsController.getOperationSnapshot(tenantContext, query as any)
+    return this.analyticsController.getOperationSnapshot(tenantContext, query as unknown as Record<string, string | undefined>)
   }
 }
 
@@ -180,8 +180,8 @@ it('e2e xm27: member payment activity writes coupon and notification metrics int
     assert.equal(totalValue(snapshot, 'totalNotifications'), 3)
     assert.equal(totalValue(snapshot, 'totalMarketingRedemptions'), 0)
     assert.ok(!JSON.stringify(snapshot).includes('member-payment-001'))
-    assert.equal((snapshot as any).memberId, undefined)
-    assert.equal((snapshot as any).mobile, undefined)
+    assert.equal((snapshot as Record<string, unknown>).memberId, undefined)
+    assert.equal((snapshot as Record<string, unknown>).mobile, undefined)
   } finally {
     await app.close()
   }

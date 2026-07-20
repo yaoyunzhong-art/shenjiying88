@@ -318,7 +318,7 @@ it('E2E链#25 边界: 所有 User Role 应有对应 workbench surfaces', () => {
   for (const role of allRoles) {
     const surfaces = SdkRoleHelper.getWorkbenchSurfaces(role);
     assert.ok(surfaces.length > 0, `Role ${role} should have at least one workbench surface`);
-    assert.ok(!surfaces.includes(undefined as any), `Role ${role} should not have undefined surfaces`);
+    assert.ok(!surfaces.includes(undefined as unknown as SupportedSurface), `Role ${role} should not have undefined surfaces`);
   }
 });
 

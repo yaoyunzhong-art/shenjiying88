@@ -43,7 +43,7 @@ class TestCampaignAnalyticsController {
   @Post('campaigns')
   registerCampaign(@Req() req: Request, @Body() body: Record<string, unknown>) {
     const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.campaignController.registerCampaign(tenantContext, body as any)
+    return this.campaignController.registerCampaign(tenantContext, body as unknown as import('../campaign/campaign.dto').RegisterCampaignDto)
   }
 
   @Patch('campaigns/:planId/status')
@@ -53,13 +53,13 @@ class TestCampaignAnalyticsController {
     @Body() body: { status: string }
   ) {
     const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.campaignController.updateCampaignStatus(tenantContext, planId, body as any)
+    return this.campaignController.updateCampaignStatus(tenantContext, planId, body as unknown as import('../campaign/campaign.dto').UpdateCampaignStatusDto)
   }
 
   @Post('campaigns/evaluate')
   evaluateCampaign(@Req() req: Request, @Body() body: Record<string, unknown>) {
     const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.campaignController.evaluateTriggers(tenantContext, body as any)
+    return this.campaignController.evaluateTriggers(tenantContext, body as unknown as import('../campaign/campaign.dto').EvaluateCampaignDto)
   }
 
   @Get('analytics/snapshot')
@@ -68,7 +68,7 @@ class TestCampaignAnalyticsController {
     @Query() query: { scope?: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }
   ) {
     const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.analyticsController.getOperationSnapshot(tenantContext, query as any)
+    return this.analyticsController.getOperationSnapshot(tenantContext, query as unknown as import('../analytics/analytics.dto').GetOperationSnapshotDto)
   }
 }
 

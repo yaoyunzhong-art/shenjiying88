@@ -106,9 +106,9 @@ function createContent(
   locale: string,
   author: string,
 ): { content: ContentItem; error?: string } {
-  if (!title || title.trim() === '') return { content: null as any, error: 'title is required' }
-  if (!body || body.trim() === '') return { content: null as any, error: 'body is required' }
-  if (body.length > 50000) return { content: null as any, error: 'body exceeds maximum length of 50000 characters' }
+  if (!title || title.trim() === '') return { content: undefined as unknown as ContentItem, error: 'title is required' }
+  if (!body || body.trim() === '') return { content: undefined as unknown as ContentItem, error: 'body is required' }
+  if (body.length > 50000) return { content: undefined as unknown as ContentItem, error: 'body exceeds maximum length of 50000 characters' }
 
   const id = `content-${++contentIdCounter}`
   const now = new Date().toISOString()
@@ -134,8 +134,8 @@ function getContent(id: string): ContentItem | undefined {
 
 function updateContent(id: string, updates: Partial<Pick<ContentItem, 'title' | 'body'>>): { content: ContentItem; error?: string } {
   const existing = contentStore.get(id)
-  if (!existing) return { content: null as any, error: 'content not found' }
-  if (existing.status === 'published') return { content: null as any, error: 'cannot update published content' }
+  if (!existing) return { content: undefined as unknown as ContentItem, error: 'content not found' }
+  if (existing.status === 'published') return { content: undefined as unknown as ContentItem, error: 'cannot update published content' }
 
   const updated: ContentItem = {
     ...existing,
