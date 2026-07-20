@@ -160,6 +160,7 @@ import { TeamBuildingModule } from './modules/team-building/team-building.module
 import { HrModule } from './modules/hr/hr.module';
 import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
 import { StoreModule } from './modules/store/store.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
   imports: [
@@ -332,6 +333,7 @@ import { StoreModule } from './modules/store/store.module';
     HrModule,
     BrandOperationsModule,
     StoreModule,
+    FeedbackModule,
   ],
   providers: [
     RequestGovernanceService,
