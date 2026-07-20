@@ -17,10 +17,9 @@ import {
   Query,
   Logger,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceReportService } from './finance-report.service'

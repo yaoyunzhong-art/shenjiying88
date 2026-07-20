@@ -24,10 +24,9 @@ import {
   Res,
   Logger,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import type { Response } from 'express'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'

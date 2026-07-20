@@ -1,4 +1,9 @@
-import { Controller, Get, Query } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

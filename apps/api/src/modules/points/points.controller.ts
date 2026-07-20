@@ -9,10 +9,9 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { PointsAtomicService } from './points-atomic.service'
 import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier } from './points-risk.service'
 import {

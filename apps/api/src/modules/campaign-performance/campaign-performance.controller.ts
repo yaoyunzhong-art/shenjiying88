@@ -8,10 +8,9 @@ import {
   Post,
   Query,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CampaignQueryDto, CreateCampaignDto } from './campaign-performance.dto'
 import { CampaignPerformanceService } from './campaign-performance.service'

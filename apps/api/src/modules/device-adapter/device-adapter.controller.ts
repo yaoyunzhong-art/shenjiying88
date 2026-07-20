@@ -11,10 +11,9 @@ import {
   HttpException,
   HttpStatus,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { DeviceAdapterService, DeviceStatus } from './device-adapter.service'
 import {
   RegisterDeviceDto,

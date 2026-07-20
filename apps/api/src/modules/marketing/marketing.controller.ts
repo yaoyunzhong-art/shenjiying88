@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Query, Injectable, Optional, Req } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Injectable,
+  Optional,
+  Req,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

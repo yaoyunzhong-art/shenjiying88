@@ -23,10 +23,9 @@ import {
   HttpStatus,
   Logger,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { LicenseRenewalService } from './license-renewal.service'
 import type {
   CreateRenewalRecordDto,

@@ -24,10 +24,9 @@ import {
   Post,
   Query,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import {
   BillingService,
   BillRequest,

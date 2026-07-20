@@ -29,10 +29,9 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { OmnichannelReachService, SMSDualChannelService, InternationalEmailService } from './omnichannel.service'
 import type {
   ReachRequest,

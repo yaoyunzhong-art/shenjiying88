@@ -7,7 +7,16 @@
  * @see docs/knowledge/prd/prd-member-p36.md
  */
 
-import { Controller, Get, Post, Param, Body, HttpException, HttpStatus } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

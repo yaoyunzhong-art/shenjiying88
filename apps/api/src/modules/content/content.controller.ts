@@ -15,10 +15,9 @@ import {
   HttpStatus,
   HttpCode,
   UseGuards,
+} from '@nestjs/common'
 
-import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common';
+import { TenantGuard } from '../agent/tenant.guard';
 import { ContentService } from './content.service';
 import {
   CreateContentDto,

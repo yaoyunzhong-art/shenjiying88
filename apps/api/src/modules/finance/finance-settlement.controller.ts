@@ -10,7 +10,16 @@
  *   GET    /api/finance/settlement/metrics          — 结算指标
  */
 
-import { Controller, Get, Post, Body, Query, Param, Logger } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Param,
+  Logger,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

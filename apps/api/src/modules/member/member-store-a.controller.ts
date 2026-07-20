@@ -9,7 +9,16 @@
  * - GET /api/members/:id/levels — 查看会员等级
  */
 
-import { Controller, Get, Post, Param, Body, HttpException, HttpStatus } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

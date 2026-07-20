@@ -10,10 +10,9 @@ import {
   UsePipes,
   ValidationPipe,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { BrandOperationsService } from './brand-operations.service'
 import {
   CreateBrandAssetDto,

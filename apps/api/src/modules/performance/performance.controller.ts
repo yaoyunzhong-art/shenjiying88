@@ -2,10 +2,9 @@ import {
   Controller, Get, Post, Body, Param, Query,
   UsePipes, ValidationPipe, Delete, Patch,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { PerformanceService } from './performance.service'
 import {
   MultiLevelConfigDto, SetCacheDto, MSetCacheDto, MGetCacheDto,

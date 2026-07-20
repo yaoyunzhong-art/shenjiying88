@@ -9,7 +9,15 @@
  *   POST   /api/finance/dashboard/cash-flow/outflow  — 记录流出
  */
 
-import { Controller, Get, Post, Query, Body, Logger } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Body,
+  Logger,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

@@ -5,7 +5,16 @@
  * 依赖: KnowledgeService (业务封装) + KnowledgeIndexerService (底层索引)
  */
 
-import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

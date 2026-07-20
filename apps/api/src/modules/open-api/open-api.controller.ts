@@ -20,10 +20,9 @@ import {
   Query,
   Req,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import type { Request } from 'express'
 import { OpenApiService } from './open-api.service'
 import type { SyncPayload, CommandPayload } from './open-api.entity'

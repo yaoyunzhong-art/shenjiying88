@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, BadRequestException } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UsePipes,
+  ValidationPipe,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
 

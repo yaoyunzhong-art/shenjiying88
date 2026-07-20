@@ -10,10 +10,9 @@ import {
   ValidationPipe,
   ParseBoolPipe,
   UseGuards,
+} from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-
-} from '@nestjs/common'
 import { BrandCustomService } from './brand-custom.service'
 import {
   RegisterTenantDto,
