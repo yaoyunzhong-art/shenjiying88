@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -34,6 +34,11 @@ const PARENT_OPTIONS = [
 export default function NewCategoryPage() {
   const router = useRouter();
   const toast = useToast();
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>数据获取失败: {error}</div>
 
   const fields = useMemo<FormPageField[]>(() => {
     return [

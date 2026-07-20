@@ -16,8 +16,6 @@ interface DailySale {
   topProduct: string
 }
 
-const PERIOD_LABELS: Record<Period, string> = ['today', 'week', 'month', 'quarter'].reduce((acc, k) => ({ ...acc, [k]: { today: '今日', week: '本周', month: '本月', quarter: '本季' }[k] }), {}) as Record<Period, string>
-
 const SEED: DailySale[] = [
   { date: '2026-07-14', orders: 128, revenue: 38620, refunds: 3, netRevenue: 37420, avgOrder: 301.7, topProduct: '射击体验券' },
   { date: '2026-07-15', orders: 145, revenue: 43210, refunds: 2, netRevenue: 42610, avgOrder: 298.0, topProduct: 'VR射击套餐' },
@@ -29,8 +27,7 @@ const SEED: DailySale[] = [
   { date: '2026-07-21', orders: 42, revenue: 12340, refunds: 0, netRevenue: 12340, avgOrder: 293.8, topProduct: '会员续费' },
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const PERIOD_LABELS = ['today', 'week', 'month', 'quarter'].reduce((acc, k) => ({ ...acc, [k]: { today: '今日', week: '本周', month: '本月', quarter: '本季' }[k] }), {}) as Record<Period, string>
+const PERIOD_LABELS: Record<Period, string> = ['today', 'week', 'month', 'quarter'].reduce((acc, k) => ({ ...acc, [k]: { today: '今日', week: '本周', month: '本月', quarter: '本季' }[k] }), {}) as Record<Period, string>
 
 const styles = {
   container: { background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh', padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Inter', -apple-system, sans-serif" } as React.CSSProperties,
