@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,6 +32,8 @@ const privileges: PrivilegeItem[] = [
 export function MemberCenterScreen() {
   const navigation = useNavigation<MemberCenterNavigationProp>();
   const session = useSession();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = () => {
     navigation.navigate('MemberLogin');
@@ -40,6 +42,24 @@ export function MemberCenterScreen() {
   const handleProfile = () => {
     navigation.navigate('MemberProfile');
   };
+
+  if (loading) {
+    return (
+      <View style={styles.guestContainer}>
+        <Text style={styles.guestIcon}>⏳</Text>
+        <Text style={styles.guestTitle}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.guestContainer}>
+        <Text style={styles.guestIcon}>⚠️</Text>
+        <Text style={styles.guestTitle}>数据获取失败</Text>
+        <Text style={styles.guestSubtitle}>{error}</Text>
+      </View>
+    );
+  }
 
   if (!session.authenticated) {
     return (

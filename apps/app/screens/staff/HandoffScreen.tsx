@@ -10,10 +10,27 @@ import {
 } from 'react-native';
 
 export function HandoffScreen() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [cashAmount, setCashAmount] = useState('¥3,580');
   const [orderCount, setOrderCount] = useState('86');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.centerText}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.centerText}>数据获取失败: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -150,4 +167,5 @@ const styles = StyleSheet.create({
   confirmBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   cancelBtn: { padding: 16, alignItems: 'center' },
   cancelBtnText: { color: '#64748B', fontSize: 16 },
+  centerText: { fontSize: 16, color: '#64748B', textAlign: 'center', marginTop: 100 },
 });

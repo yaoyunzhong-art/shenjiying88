@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,8 @@ type SettingsNavProp = NativeStackNavigationProp<SettingsStackParamList>;
 export function SettingsScreen() {
   const navigation = useNavigation<SettingsNavProp>();
   const { state, dispatch, logout } = useAppContext();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [offlineMode, setOfflineMode] = React.useState(state.isOfflineMode);
   const [pushNotifications, setPushNotifications] = React.useState(state.pushNotificationsEnabled);
   const [biometric, setBiometric] = React.useState(state.biometricEnabled);
@@ -131,6 +133,21 @@ export function SettingsScreen() {
       {rightElement}
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>数据获取失败: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -335,5 +352,11 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 100,
+  },
+  permissionText: {
+    color: '#333333',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 100,
   },
 });

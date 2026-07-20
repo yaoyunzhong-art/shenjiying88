@@ -1,7 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 
 export function MemberHomeScreen() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.centerText}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.centerText}>数据获取失败: {error}</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       {/* 头部 */}
@@ -101,4 +119,5 @@ const styles = StyleSheet.create({
   quickIcon: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   quickEmoji: { fontSize: 24 },
   quickLabel: { fontSize: 14, fontWeight: '600', color: '#1E293B' },
+  centerText: { fontSize: 16, color: '#64748B', textAlign: 'center', marginTop: 100 },
 });
