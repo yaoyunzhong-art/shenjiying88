@@ -14,8 +14,8 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { VenueController } from './venue.controller'
-import { VenueBookingStatus, VenueShift, VenueStatus, VenueType } from './venue.entity'
-import type { Venue, VenueBooking, CreateBookingInput, ListBookingQuery } from './venue.service'
+import { VenueBookingStatus, VenueShift, VenueStatus, VenueType, type Venue, type VenueBooking } from './venue.entity'
+import type { CreateBookingInput, ListBookingQuery } from './venue.service'
 
 // ── Mock types ───────────────────────────────────────────────────────────
 
