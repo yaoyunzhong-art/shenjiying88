@@ -127,14 +127,14 @@ export function mapLedgerTypeToFinanceType(
 export function getFinanceRangeStart(range: FinanceRange, now = new Date()) {
   const start = new Date(now);
   if (range === 'week') {
-    start.setDate(start.getDate() - 6);
+    start.setUTCDate(start.getUTCDate() - 6);
   } else if (range === 'month') {
-    start.setDate(start.getDate() - 29);
+    start.setUTCDate(start.getUTCDate() - 29);
   } else {
-    start.setMonth(start.getMonth() - 5);
-    start.setDate(1);
+    start.setUTCMonth(start.getUTCMonth() - 5);
+    start.setUTCDate(1);
   }
-  start.setHours(0, 0, 0, 0);
+  start.setUTCHours(0, 0, 0, 0);
   return start;
 }
 
@@ -190,8 +190,8 @@ export function buildFinanceTrend(
   const buckets = new Map<string, FinanceTrendPoint>();
 
   for (let index = monthCount - 1; index >= 0; index -= 1) {
-    const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
-    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - index, 1));
+    const month = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
     buckets.set(month, {
       month,
       revenue: 0,
