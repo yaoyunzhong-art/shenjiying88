@@ -283,6 +283,9 @@ test('OrderListScreen: merges pending refund params into matching order card', (
   });
 
   assert.ok(findTextInOrderCards(root, '退款审核中'), '退款回带后列表卡片应显示退款审核中');
+  assert.ok(findTextInOrderCards(root, '申请退款金额'), '退款回带后列表卡片应切换为申请退款金额口径');
+  assert.ok(findTextInOrderCards(root, '¥88.50'), '退款回带后列表卡片应展示退款申请金额');
+  assert.ok(findTextInOrderCards(root, '申请时间'), '退款回带后列表卡片应展示申请时间');
 });
 
 test('OrderListScreen: merges refunded params into matching order card', () => {
@@ -296,6 +299,9 @@ test('OrderListScreen: merges refunded params into matching order card', () => {
   });
 
   assert.ok(findTextInOrderCards(root, '已退款'), '退款完成回带后列表卡片应显示已退款');
+  assert.ok(findTextInOrderCards(root, '已退款金额'), '退款完成回带后列表卡片应显示已退款金额口径');
+  assert.ok(findTextInOrderCards(root, '¥88.50'), '退款完成回带后列表卡片应展示退款金额');
+  assert.ok(findTextInOrderCards(root, '退款完成时间'), '退款完成回带后列表卡片应展示退款完成时间');
 });
 
 test('OrderListScreen: merges paid params into matching order card', () => {
@@ -308,6 +314,9 @@ test('OrderListScreen: merges paid params into matching order card', () => {
   });
 
   assert.ok(findTextInOrderCards(root, '已完成'), '收款完成回带后列表卡片应显示已完成');
+  assert.ok(findTextInOrderCards(root, '实付金额'), '收款完成回带后列表卡片应显示实付金额口径');
+  assert.ok(findTextInOrderCards(root, '微信支付'), '收款完成回带后列表卡片应显示支付方式');
+  assert.ok(findTextInOrderCards(root, '支付时间'), '收款完成回带后列表卡片应显示支付时间');
 });
 
 test('OrderListScreen: prefers real order list payload when list fetch is enabled', async () => {
@@ -334,9 +343,12 @@ test('OrderListScreen: prefers real order list payload when list fetch is enable
             totalAmount: 188,
             paidAmount: 188,
             refundedAmount: 0,
+            refundRequestedAt: '2026-07-20T04:15:00.000Z',
+            paymentChannel: 'wechat-pay',
             currency: 'CNY',
             createdAt: '2026-07-20T04:10:00.000Z',
             updatedAt: '2026-07-20T04:10:00.000Z',
+            paidAt: '2026-07-20T04:12:00.000Z',
           },
           {
             orderId: 'order-002',
@@ -370,6 +382,72 @@ test('OrderListScreen: prefers real order list payload when list fetch is enable
     assert.ok(findTextInOrderCards(root, '¥188.00'), '启用真实列表后应展示接口返回的金额');
     assert.ok(findTextInOrderCards(root, '3 件'), '启用真实列表后应展示接口返回的商品数量');
     assert.ok(findTextInOrderCards(root, '退款审核中'), '启用真实列表后应按接口状态映射退款审核中');
+    assert.ok(findTextInOrderCards(root, '申请退款金额'), '启用真实列表后退款中订单应展示申请退款金额口径');
+    assert.ok(findTextInOrderCards(root, '申请时间'), '启用真实列表后退款中订单应展示申请时间');
+    assert.ok(findTextInOrderCards(root, '微信支付'), '启用真实列表后应展示接口返回的支付方式');
+    assert.ok(findTextInOrderCards(root, '支付时间'), '启用真实列表后应展示接口返回的支付时间');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderListFetchEnabled;
+  }
+});
+
+test('OrderListScreen: fetched paid order keeps api payment fields when navigating to detail', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderListFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!isOrderListRequest(url)) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: buildOrderListPageData([
+          {
+            orderId: 'order-001',
+            orderNo: 'ORDAPI20260720001',
+            memberId: 'member-api-001',
+            status: 'PAID',
+            itemCount: 3,
+            totalAmount: 188,
+            paidAmount: 188,
+            refundedAmount: 0,
+            paymentChannel: 'wechat-pay',
+            currency: 'CNY',
+            createdAt: '2026-07-20T04:10:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+            paidAt: '2026-07-20T04:12:00.000Z',
+          },
+        ]),
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createOrderListComponent();
+      await Promise.resolve();
+    });
+
+    const orderCard = getRenderedOrderCard(root, 'ORDAPI20260720001');
+    const touchables = orderCard?.root.findAllByType(TouchableOpacity) ?? [];
+    const orderTouchable = touchables[0];
+
+    assert.ok(orderTouchable, '真实列表订单卡片应在');
+    if (orderTouchable) {
+      orderTouchable.props.onPress();
+      const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
+      assert.ok(navCall, '点击真实列表订单应导航到 OrderDetail');
+      assert.equal(navCall?.params?.paymentPaidAt, '2026-07-20T04:12:00.000Z');
+      assert.equal(navCall?.params?.paymentChannel, 'WECHAT_PAY');
+    }
   } finally {
     globalThis.fetch = originalFetch;
     // @ts-expect-error cleanup
@@ -552,6 +630,8 @@ test('OrderListScreen: refunded filter keeps runtime refund order visible with r
           totalAmount: 320,
           paidAmount: 320,
           refundedAmount: 320,
+          refundRequestedAt: '2026-07-20T04:05:00.000Z',
+          refundCompletedAt: '2026-07-20T04:18:00.000Z',
           currency: 'CNY',
           createdAt: '2026-07-20T04:13:00.000Z',
           updatedAt: '2026-07-20T04:13:00.000Z',
@@ -605,6 +685,7 @@ test('OrderListScreen: refunded filter keeps runtime refund order visible with r
     const orderIds = (flatList.props.data as Array<{ orderId: string }>).map((item) => item.orderId);
     assert.ok(orderIds.includes('order-001'), '真实筛选下也应补回当前退款运行态订单');
     assert.ok(findTextInOrderCards(root, '退款审核中'), '补回的运行态订单应展示退款审核中');
+    assert.ok(findTextInOrderCards(root, '退款完成时间'), '已退款筛选应展示服务端返回的退款完成时间');
   } finally {
     globalThis.fetch = originalFetch;
     // @ts-expect-error cleanup
@@ -900,6 +981,29 @@ test('OrderListScreen: tapping order card navigates with correct order ID', () =
     const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
     assert.ok(navCall, '应导航到 OrderDetail');
     assert.equal(navCall?.params?.orderId, 'order-004', '应传递 order-004');
+  }
+});
+
+test('OrderListScreen: tapping refunded order card preserves refund timestamps', () => {
+  const root = createOrderListComponent({
+    orderId: 'order-001',
+    refundStatus: 'REFUNDED',
+    refundRequestedAmount: 88.5,
+    refundRequestedAt: '2026-07-20T02:03:04.000Z',
+    refundCompletedAt: '2026-07-20T02:08:09.000Z',
+  });
+
+  const orderCard = getRenderedOrderCard(root, 'ORD20260612001');
+  const touchables = orderCard?.root.findAllByType(TouchableOpacity) ?? [];
+  const orderTouchable = touchables[0];
+
+  assert.ok(orderTouchable, '退款订单卡片应在');
+  if (orderTouchable) {
+    orderTouchable.props.onPress();
+    const navCall = mockNavigateCalls.find((c) => c.route === 'OrderDetail');
+    assert.ok(navCall, '点击退款订单应导航到 OrderDetail');
+    assert.equal(navCall?.params?.refundRequestedAt, '2026-07-20T02:03:04.000Z');
+    assert.equal(navCall?.params?.refundCompletedAt, '2026-07-20T02:08:09.000Z');
   }
 });
 
@@ -1420,4 +1524,31 @@ test('OrderListScreen: renders all 4 order item counts', () => {
     ),
   );
   assert.equal(itemCounts.length, 4, '每个订单应显示商品数量');
+});
+
+test('OrderListScreen: mock paid orders render payment info in cards', () => {
+  const root = createOrderListComponent();
+
+  assert.ok(findTextInOrderCards(root, '微信支付'), '已支付 mock 订单应显示微信支付');
+  assert.ok(findTextInOrderCards(root, '支付宝'), '已退款 mock 订单应显示支付宝');
+  assert.ok(findTextInOrderCards(root, '现金'), '现金支付 mock 订单应显示现金');
+
+  const paymentTimeLabels = renderFlatListOrderCards(root).flatMap((card) =>
+    card.root.findAllByType(Text).filter((t) =>
+      collectTextContent(t.props.children).join('') === '支付时间',
+    ),
+  );
+  assert.equal(paymentTimeLabels.length, 3, '有 paidAt 的订单卡片应显示支付时间');
+});
+
+test('OrderListScreen: cards render status-based amount labels', () => {
+  const root = createOrderListComponent();
+
+  const paidCard = getRenderedOrderCard(root, 'ORD20260612001');
+  const pendingCard = getRenderedOrderCard(root, 'ORD20260612002');
+  const refundedCard = getRenderedOrderCard(root, 'ORD20260611001');
+
+  assert.ok(paidCard && findByText(paidCard.root, '实付金额'), '已支付订单应显示实付金额');
+  assert.ok(pendingCard && findByText(pendingCard.root, '应付金额'), '待支付订单应显示应付金额');
+  assert.ok(refundedCard && findByText(refundedCard.root, '已退款金额'), '已退款订单应显示已退款金额');
 });

@@ -303,12 +303,12 @@ async function settleOrder(
     items: [{ skuId: 'sku-1', title: 'x', quantity: 1, price: amount }]
   } as any)
   const orderId = order.orderId
-  cashierService.createPayment(orderId, {
+  await cashierService.createPayment(orderId, {
     channel: 'wechat',
     amount,
     externalPaymentId
   } as any)
-  cashierService.applyPaymentCallback({
+  await cashierService.applyPaymentCallback({
     orderId,
     tenantId: 'tenant-A',
     externalPaymentId,
@@ -395,6 +395,8 @@ it('e2e: list transactions scoped by tenant', async () => {
     assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
     assert.ok(listA.body.data.items.every((order: any) => typeof order.itemCount === 'number'))
     assert.ok(listA.body.data.items.every((order: any) => /^ORD\d{11}$/.test(order.orderNo)))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paymentChannel === 'string'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paidAt === 'string'))
 
     const listB = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_B)
     assert.equal(listB.body.data.total, 0)
@@ -431,6 +433,15 @@ it('e2e: refund request → approve → status Approved', async () => {
       .get(`/transactions/refunds/${refundId}`)
       .set(TENANT_A)
     assert.equal(detail.body.data.status, 'COMPLETED')
+
+    const list = await request(app.getHttpServer())
+      .get('/transactions/orders')
+      .set(TENANT_A)
+    const refundedOrder = list.body.data.items.find((order: any) => order.orderId === orderId)
+    assert.ok(refundedOrder)
+    assert.equal(refundedOrder.status, 'COMPLETED')
+    assert.equal(typeof refundedOrder.refundRequestedAt, 'string')
+    assert.equal(typeof refundedOrder.refundCompletedAt, 'string')
   } finally {
     await app.close()
   }
@@ -697,6 +708,8 @@ it('e2e: list orders scoped by tenant', async () => {
     assert.ok(listA.body.data.items.length >= 2)
     assert.equal(listA.body.data.total, 2)
     assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paymentChannel === 'string'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paidAt === 'string'))
   } finally {
     await app.close()
   }

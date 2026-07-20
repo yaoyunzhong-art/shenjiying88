@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 
 interface Ticket {
@@ -102,6 +103,18 @@ export function TicketWorkplaceScreen() {
   const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'processing'>('all');
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    const timer = setTimeout(() => {
+      setTickets(mockTickets);
+      setLoading(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredTickets = tickets.filter((ticket) => {
     if (activeTab === 'pending') return ticket.status === 'pending';
@@ -119,6 +132,24 @@ export function TicketWorkplaceScreen() {
   const handleTicketPress = (ticket: Ticket) => {
     console.log('Navigate to ticket detail:', ticket.id);
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#7C3AED" />
+        <Text style={styles.loadingText}>工单加载中...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.emptyIcon}>⚠️</Text>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -496,5 +527,23 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 12,
     color: '#64748B',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 12,
+  },
+  errorText: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });

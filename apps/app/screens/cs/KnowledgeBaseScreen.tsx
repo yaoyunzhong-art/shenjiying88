@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 
 interface Article {
@@ -103,6 +104,19 @@ export function KnowledgeBaseScreen() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [articles, setArticles] = useState<Article[]>(mockArticles);
   const [showBookmarks, setShowBookmarks] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Simulate async load
+    setLoading(true);
+    setError(null);
+    const timer = setTimeout(() => {
+      setArticles(mockArticles);
+      setLoading(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredArticles = articles.filter((article) => {
     const matchesSearch =
@@ -127,6 +141,24 @@ export function KnowledgeBaseScreen() {
   const handleArticlePress = (article: Article) => {
     console.log('Open article:', article.id);
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#059669" />
+        <Text style={styles.loadingText}>知识库加载中...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.emptyIcon}>⚠️</Text>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -550,5 +582,23 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 12,
     color: '#64748B',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 12,
+  },
+  errorText: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });

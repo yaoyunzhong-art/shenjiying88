@@ -4,6 +4,14 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 const tabs = ['全部', '待支付', '进行中', '已完成', '已退款'] as const;
 type Tab = typeof tabs[number];
 
+const tabEmptyMessages: Record<string, string> = {
+  '全部': '暂无订单',
+  '待支付': '暂无待支付订单',
+  '进行中': '暂无进行中的订单',
+  '已完成': '暂无已完成订单',
+  '已退款': '暂无已退款订单',
+};
+
 const mockOrders = [
   { id: '1', store: '神机营体育·城西店', time: '2026-07-04 14:30', amount: 580, status: 'completed', items: '羽毛球私教课 × 1' },
   { id: '2', store: '神机营体育·城西店', time: '2026-07-03 10:20', amount: 128, status: 'completed', items: '运动饮料 × 2' },
@@ -52,25 +60,32 @@ export function MyOrdersScreen() {
 
       {/* Order List */}
       <ScrollView style={{ flex: 1, padding: 16 }}>
-        {filtered.map(order => {
-          const config = statusConfig[order.status];
-          if (!config) return null;
-          return (
-            <TouchableOpacity key={order.id} style={styles.orderCard}>
-              <View style={styles.orderHeader}>
-                <Text style={styles.storeName}>{order.store}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: config.color + '20' }]}>
-                  <Text style={[styles.statusText, { color: config.color }]}>{config.label}</Text>
+        {filtered.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>📋</Text>
+            <Text style={styles.emptyText}>{tabEmptyMessages[activeTab]}</Text>
+          </View>
+        ) : (
+          filtered.map(order => {
+            const config = statusConfig[order.status];
+            if (!config) return null;
+            return (
+              <TouchableOpacity key={order.id} style={styles.orderCard}>
+                <View style={styles.orderHeader}>
+                  <Text style={styles.storeName}>{order.store}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: config.color + '20' }]}>
+                    <Text style={[styles.statusText, { color: config.color }]}>{config.label}</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.items}>{order.items}</Text>
-              <View style={styles.orderFooter}>
-                <Text style={styles.time}>{order.time}</Text>
-                <Text style={styles.amount}>¥{order.amount}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                <Text style={styles.items}>{order.items}</Text>
+                <View style={styles.orderFooter}>
+                  <Text style={styles.time}>{order.time}</Text>
+                  <Text style={styles.amount}>¥{order.amount}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -93,4 +108,18 @@ const styles = StyleSheet.create({
   orderFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
   time: { fontSize: 13, color: '#94A3B8' },
   amount: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 120,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#94A3B8',
+  },
 });

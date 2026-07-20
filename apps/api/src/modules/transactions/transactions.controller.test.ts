@@ -183,6 +183,8 @@ describe('transactions controller', () => {
       assert.equal(result.page, 1)
       assert.equal(result.items[0]?.itemCount, 1)
       assert.match(result.items[0]?.orderNo ?? '', /^ORD\d{11}$/)
+      assert.equal(result.items[0]?.paymentChannel, 'wechat')
+      assert.match(result.items[0]?.paidAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
     })
 
     it('should filter by memberId', async () => {
@@ -195,7 +197,10 @@ describe('transactions controller', () => {
       const created = await checkoutAndPay('m-rf', 100, 'ep-rf')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'test', refundAmount: 50 })
       const result = controller.listOrderTransactions(CTX, { hasRefund: true })
-      assert.ok(result.items.some((item) => item.orderId === created.order.orderId))
+      const refundedOrder = result.items.find((item) => item.orderId === created.order.orderId)
+      assert.ok(refundedOrder)
+      assert.equal(refundedOrder?.refundedAmount, 0)
+      assert.match(refundedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
     })
   })
 

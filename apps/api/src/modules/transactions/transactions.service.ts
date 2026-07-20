@@ -1801,9 +1801,13 @@ export class TransactionsService {
       totalAmount: order.totalAmount,
       paidAmount,
       refundedAmount,
+      refundRequestedAt: latestRefund?.requestedAt,
+      refundCompletedAt: latestRefund?.completedAt,
+      paymentChannel: aggregate.payment?.channel,
       currency: order.currency,
       createdAt: order.createdAt,
-      updatedAt: order.updatedAt
+      updatedAt: order.updatedAt,
+      paidAt: order.paidAt ?? aggregate.payment?.completedAt
     }
   }
 }

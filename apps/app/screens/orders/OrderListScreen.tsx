@@ -56,10 +56,14 @@ interface OrderItem {
   orderId: string;
   orderNo: string;
   totalAmount: number;
+  paidAmount: number;
+  refundedAmount: number;
   currency: string;
   status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
   createdAt: string;
   paidAt?: string;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
   paymentChannel?: PaymentChannel;
   itemCount: number;
 }
@@ -69,6 +73,8 @@ const mockOrders: OrderItem[] = [
     orderId: 'order-001',
     orderNo: 'ORD20260612001',
     totalAmount: 156.00,
+    paidAmount: 156.00,
+    refundedAmount: 0,
     currency: 'CNY',
     status: 'PAID',
     createdAt: '2026-06-12T10:30:00.000Z',
@@ -80,6 +86,8 @@ const mockOrders: OrderItem[] = [
     orderId: 'order-002',
     orderNo: 'ORD20260612002',
     totalAmount: 89.50,
+    paidAmount: 0,
+    refundedAmount: 0,
     currency: 'CNY',
     status: 'PENDING',
     createdAt: '2026-06-12T11:15:00.000Z',
@@ -90,6 +98,8 @@ const mockOrders: OrderItem[] = [
     orderId: 'order-003',
     orderNo: 'ORD20260611001',
     totalAmount: 320.00,
+    paidAmount: 320.00,
+    refundedAmount: 320.00,
     currency: 'CNY',
     status: 'REFUNDED',
     createdAt: '2026-06-11T14:20:00.000Z',
@@ -101,6 +111,8 @@ const mockOrders: OrderItem[] = [
     orderId: 'order-004',
     orderNo: 'ORD20260610001',
     totalAmount: 68.00,
+    paidAmount: 68.00,
+    refundedAmount: 0,
     currency: 'CNY',
     status: 'PAID',
     createdAt: '2026-06-10T09:45:00.000Z',
@@ -147,6 +159,28 @@ function resolveOrderStatus(
   }
 }
 
+function normalizePaymentChannel(channel?: string): PaymentChannel | undefined {
+  switch (channel) {
+    case 'WECHAT_PAY':
+    case 'wechat':
+    case 'wechat-pay':
+      return 'WECHAT_PAY';
+    case 'ALIPAY':
+    case 'alipay':
+    case 'ali-pay':
+      return 'ALIPAY';
+    case 'CASH':
+    case 'cash':
+      return 'CASH';
+    case 'MEMBER_CARD':
+    case 'member-card':
+    case 'member_card':
+      return 'MEMBER_CARD';
+    default:
+      return undefined;
+  }
+}
+
 function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
   const matchedMockOrder = mockOrders.find((item) => item.orderId === order.orderId);
 
@@ -154,11 +188,15 @@ function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
     orderId: order.orderId,
     orderNo: order.orderNo,
     totalAmount: order.totalAmount,
+    paidAmount: order.paidAmount,
+    refundedAmount: order.refundedAmount,
     currency: order.currency,
     status: resolveOrderStatus(order.status, matchedMockOrder?.status ?? 'PENDING'),
     createdAt: order.createdAt,
-    paidAt: matchedMockOrder?.paidAt,
-    paymentChannel: matchedMockOrder?.paymentChannel,
+    paidAt: order.paidAt,
+    refundRequestedAt: order.refundRequestedAt,
+    refundCompletedAt: order.refundCompletedAt,
+    paymentChannel: normalizePaymentChannel(order.paymentChannel),
     itemCount: order.itemCount,
   };
 }
@@ -263,6 +301,7 @@ export function OrderListScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [apiOrders, setApiOrders] = useState<OrderItem[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const baseQuery = useMemo(
     () => buildOrderListQuery(selectedFilter, selectedDateRange),
     [selectedFilter, selectedDateRange],
@@ -278,8 +317,23 @@ export function OrderListScreen() {
       mode === 'append' ? mergePagedOrders(previousOrders, mappedOrders) : mappedOrders
     ));
     setHasMore(result.page * result.pageSize < result.total);
+    setFetchError(null);
     return result;
   }, [baseQuery]);
+
+  const handleRetryFetch = useCallback(() => {
+    setCurrentPage(1);
+    setFetchError(null);
+    setApiOrders(null);
+    listNativeAppOrdersPage(buildOrderListQuery(selectedFilter, selectedDateRange))
+      .then((result) => {
+        setApiOrders(result.items.map(mapApiOrderToOrderItem));
+        setHasMore(result.page * result.pageSize < result.total);
+      })
+      .catch(() => {
+        setFetchError('订单加载失败，请重试');
+      });
+  }, [selectedFilter, selectedDateRange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -301,6 +355,7 @@ export function OrderListScreen() {
       .catch(() => {
         if (!cancelled) {
           setApiOrders(null);
+          setFetchError('订单加载失败');
           setHasMore(false);
         }
       });
@@ -326,6 +381,7 @@ export function OrderListScreen() {
         ...order,
         status: 'PAID' as const,
         totalAmount: routeParams.paymentAmount ?? order.totalAmount,
+        paidAmount: routeParams.paymentAmount ?? order.paidAmount ?? order.totalAmount,
         paidAt: routeParams.paymentPaidAt ?? order.paidAt,
         paymentChannel: routeParams.paymentChannel ?? order.paymentChannel,
       };
@@ -335,6 +391,8 @@ export function OrderListScreen() {
       return {
         ...order,
         status: 'REFUND_PENDING' as const,
+        refundedAmount: routeParams.refundRequestedAmount ?? order.refundedAmount ?? order.paidAmount ?? order.totalAmount,
+        refundRequestedAt: routeParams.refundRequestedAt ?? order.refundRequestedAt,
       };
     }
 
@@ -342,6 +400,9 @@ export function OrderListScreen() {
       return {
         ...order,
         status: 'REFUNDED' as const,
+        refundedAmount: routeParams.refundRequestedAmount ?? order.refundedAmount ?? order.paidAmount ?? order.totalAmount,
+        refundRequestedAt: routeParams.refundRequestedAt ?? order.refundRequestedAt,
+        refundCompletedAt: routeParams.refundCompletedAt ?? order.refundCompletedAt,
       };
     }
 
@@ -370,9 +431,12 @@ export function OrderListScreen() {
       } : {}),
       ...(matchedOrder?.status === 'REFUND_PENDING' ? {
         refundStatus: 'PENDING' as const,
+        refundRequestedAt: matchedOrder.refundRequestedAt,
       } : {}),
       ...(matchedOrder?.status === 'REFUNDED' ? {
         refundStatus: 'REFUNDED' as const,
+        refundRequestedAt: matchedOrder.refundRequestedAt,
+        refundCompletedAt: matchedOrder.refundCompletedAt,
       } : {}),
     });
   };
@@ -389,6 +453,7 @@ export function OrderListScreen() {
     loadOrders(refreshQuery, 'replace')
       .catch(() => {
         setApiOrders(null);
+        setFetchError('订单刷新失败');
         setHasMore(false);
       })
       .finally(() => {
@@ -469,9 +534,15 @@ export function OrderListScreen() {
       orderId={item.orderId}
       orderNo={item.orderNo}
       totalAmount={item.totalAmount}
+      paidAmount={item.paidAmount}
+      refundedAmount={item.refundedAmount}
       currency={item.currency}
       status={item.status}
       createdAt={item.createdAt}
+      paidAt={item.paidAt}
+      refundRequestedAt={item.refundRequestedAt}
+      refundCompletedAt={item.refundCompletedAt}
+      paymentChannel={item.paymentChannel}
       itemCount={item.itemCount}
       onPress={() => handleOrderPress(item.orderId)}
     />
@@ -505,6 +576,17 @@ export function OrderListScreen() {
     );
   };
 
+  const renderErrorState = () => (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorIcon}>⚠️</Text>
+      <Text style={styles.errorTitle}>加载失败</Text>
+      <Text style={styles.errorMessage}>{fetchError}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={handleRetryFetch}>
+        <Text style={styles.retryText}>重试</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.filterContainer}>
@@ -513,6 +595,9 @@ export function OrderListScreen() {
       <View style={styles.dateRangeContainer}>
         {dateRangeFilters.map(renderDateRangeTab)}
       </View>
+      {fetchError && shouldFetchOrders ? (
+        renderErrorState()
+      ) : (
       <FlatList
         data={filteredOrders}
         renderItem={renderOrder}
@@ -525,6 +610,7 @@ export function OrderListScreen() {
         ListFooterComponent={renderListFooter}
         showsVerticalScrollIndicator={false}
       />
+      )}
     </View>
   );
 }
@@ -627,5 +713,40 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: '#999999',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 120,
+    paddingHorizontal: 32,
+  },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  errorTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

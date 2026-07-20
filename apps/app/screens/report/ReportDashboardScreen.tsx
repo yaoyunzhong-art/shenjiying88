@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+} from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -8,6 +16,13 @@ type Period = typeof periods[number];
 
 export function ReportDashboardScreen() {
   const [period, setPeriod] = useState<Period>('今日');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const timer = setTimeout(() => setLoading(false), 400);
+    return () => clearTimeout(timer);
+  }, [period]);
   
   const revenueData = {
     today: 12580.5,
@@ -27,6 +42,15 @@ export function ReportDashboardScreen() {
     { name: '王收银', orders: 45, revenue: 8920, rank: 2 },
     { name: '张店长', orders: 18, revenue: 3200, rank: 3 },
   ];
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1E40AF" />
+        <Text style={styles.loadingText}>报表加载中...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -141,4 +165,15 @@ const styles = StyleSheet.create({
   chartPlaceholder: { height: 160, backgroundColor: '#F8FAFC', borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
   chartText: { fontSize: 20 },
   chartSubtext: { fontSize: 13, color: '#64748B', marginTop: 8 },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 12,
+  },
 });

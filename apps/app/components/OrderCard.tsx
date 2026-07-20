@@ -6,9 +6,15 @@ interface OrderCardProps {
   orderId: string;
   orderNo: string;
   totalAmount: number;
+  paidAmount: number;
+  refundedAmount: number;
   currency: string;
   status: 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
   createdAt: string;
+  paidAt?: string;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
+  paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
   itemCount: number;
   onPress?: () => void;
 }
@@ -29,13 +35,26 @@ const statusColors: Record<string, string> = {
   CANCELLED: '#999999',
 };
 
+const channelLabels: Record<string, string> = {
+  WECHAT_PAY: '微信支付',
+  ALIPAY: '支付宝',
+  CASH: '现金',
+  MEMBER_CARD: '会员卡',
+};
+
 export function OrderCard({
   orderId,
   orderNo,
   totalAmount,
+  paidAmount,
+  refundedAmount,
   currency,
   status,
   createdAt,
+  paidAt,
+  refundRequestedAt,
+  refundCompletedAt,
+  paymentChannel,
   itemCount,
   onPress,
 }: OrderCardProps) {
@@ -53,6 +72,36 @@ export function OrderCard({
   const formatAmount = (amount: number, curr: string) => {
     return `${curr === 'CNY' ? '¥' : '$'}${amount.toFixed(2)}`;
   };
+
+  const amountSummary = (() => {
+    switch (status) {
+      case 'PENDING':
+        return {
+          label: '应付金额',
+          value: totalAmount,
+        };
+      case 'PAID':
+        return {
+          label: '实付金额',
+          value: paidAmount || totalAmount,
+        };
+      case 'REFUND_PENDING':
+        return {
+          label: '申请退款金额',
+          value: refundedAmount || paidAmount || totalAmount,
+        };
+      case 'REFUNDED':
+        return {
+          label: '已退款金额',
+          value: refundedAmount || paidAmount || totalAmount,
+        };
+      default:
+        return {
+          label: '订单金额',
+          value: totalAmount,
+        };
+    }
+  })();
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
@@ -85,11 +134,35 @@ export function OrderCard({
             <Text style={styles.infoLabel}>下单时间</Text>
             <Text style={styles.infoValue}>{formatDate(createdAt)}</Text>
           </View>
+          {paidAt ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>支付时间</Text>
+              <Text style={styles.infoValue}>{formatDate(paidAt)}</Text>
+            </View>
+          ) : null}
+          {paymentChannel ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>支付方式</Text>
+              <Text style={styles.infoValue}>{channelLabels[paymentChannel]}</Text>
+            </View>
+          ) : null}
+          {status === 'REFUND_PENDING' && refundRequestedAt ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>申请时间</Text>
+              <Text style={styles.infoValue}>{formatDate(refundRequestedAt)}</Text>
+            </View>
+          ) : null}
+          {status === 'REFUNDED' && refundCompletedAt ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>退款完成时间</Text>
+              <Text style={styles.infoValue}>{formatDate(refundCompletedAt)}</Text>
+            </View>
+          ) : null}
         </View>
         <View style={styles.footer}>
-          <Text style={styles.amountLabel}>实付金额</Text>
+          <Text style={styles.amountLabel}>{amountSummary.label}</Text>
           <Text style={styles.amountValue}>
-            {formatAmount(totalAmount, currency)}
+            {formatAmount(amountSummary.value, currency)}
           </Text>
         </View>
       </Card>

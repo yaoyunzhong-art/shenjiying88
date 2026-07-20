@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 
 export function HandoffScreen() {
   const [cashAmount, setCashAmount] = useState('¥3,580');
   const [orderCount, setOrderCount] = useState('86');
   const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <ScrollView style={styles.container}>
@@ -89,8 +98,20 @@ export function HandoffScreen() {
       </View>
 
       {/* 确认按钮 */}
-      <TouchableOpacity style={styles.confirmBtn}>
-        <Text style={styles.confirmBtnText}>确认交接</Text>
+      <TouchableOpacity
+        style={[styles.confirmBtn, submitting && styles.confirmBtnDisabled]}
+        onPress={() => {
+          if (submitting) return;
+          setSubmitting(true);
+          setTimeout(() => setSubmitting(false), 1500);
+        }}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.confirmBtnText}>确认交接</Text>
+        )}
       </TouchableOpacity>
       <TouchableOpacity style={styles.cancelBtn}>
         <Text style={styles.cancelBtnText}>取消</Text>
@@ -125,6 +146,7 @@ const styles = StyleSheet.create({
   noteCard: { backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 16, padding: 16 },
   noteInput: { fontSize: 15, color: '#1E293B', minHeight: 100, textAlignVertical: 'top' },
   confirmBtn: { backgroundColor: '#10B981', marginHorizontal: 16, marginTop: 24, padding: 16, borderRadius: 12, alignItems: 'center' },
+  confirmBtnDisabled: { opacity: 0.6 },
   confirmBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   cancelBtn: { padding: 16, alignItems: 'center' },
   cancelBtnText: { color: '#64748B', fontSize: 16 },

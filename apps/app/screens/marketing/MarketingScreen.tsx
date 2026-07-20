@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 
 const categories = ['优惠券', '盲盒', '赛事', '团建'] as const;
 type Category = typeof categories[number];
@@ -31,6 +38,38 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 
 export function MarketingScreen() {
   const [activeCategory, setActiveCategory] = useState<Category>('优惠券');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#1E40AF" />
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorTitle}>加载失败</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => setError(null)}>
+          <Text style={styles.retryText}>重试</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -167,4 +206,17 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: 20, fontWeight: '700', color: '#1E293B' },
   statLabel: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  centerContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  loadingText: { fontSize: 15, color: '#64748B', marginTop: 12 },
+  errorIcon: { fontSize: 48, marginBottom: 12 },
+  errorTitle: { fontSize: 17, fontWeight: '600', color: '#333333', marginBottom: 8 },
+  errorMessage: { fontSize: 14, color: '#666666', textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#1E40AF', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 },
+  retryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
 });

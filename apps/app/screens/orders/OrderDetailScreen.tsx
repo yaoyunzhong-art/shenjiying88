@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ type OrderDetailParams = {
 };
 
 type OrderStatus = 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
+type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
 
 type MockOrderDetail = {
   orderId: string;
@@ -38,7 +39,7 @@ type MockOrderDetail = {
   paidAt?: string;
   totalAmount: number;
   currency: string;
-  paymentChannel: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+  paymentChannel: PaymentChannel;
   memberId: string;
   memberNickname: string;
   items: Array<{ skuId: string; title: string; quantity: number; price: number }>;
@@ -133,6 +134,58 @@ const channelLabels: Record<string, string> = {
   MEMBER_CARD: '会员卡',
 };
 
+function normalizePaymentChannel(channel?: string): PaymentChannel | undefined {
+  switch (channel) {
+    case 'WECHAT_PAY':
+    case 'wechat':
+    case 'wechat-pay':
+      return 'WECHAT_PAY';
+    case 'ALIPAY':
+    case 'alipay':
+    case 'ali-pay':
+      return 'ALIPAY';
+    case 'CASH':
+    case 'cash':
+      return 'CASH';
+    case 'MEMBER_CARD':
+    case 'member-card':
+    case 'member_card':
+      return 'MEMBER_CARD';
+    default:
+      return undefined;
+  }
+}
+
+function createFallbackOrderDetail(params?: OrderDetailParams['OrderDetail']): MockOrderDetail {
+  const matchedMockOrder = params?.orderId ? mockOrderDetails[params.orderId] : undefined;
+  if (matchedMockOrder) {
+    return matchedMockOrder;
+  }
+
+  const fallbackStatus: OrderStatus = params?.refundStatus === 'REFUNDED'
+    ? 'REFUNDED'
+    : params?.refundStatus === 'PENDING'
+      ? 'REFUND_PENDING'
+      : params?.paymentStatus === 'PAID'
+        ? 'PAID'
+        : 'PENDING';
+
+  return {
+    orderId: params?.orderId ?? defaultMockOrderDetail.orderId,
+    orderNo: params?.orderNo ?? '',
+    status: fallbackStatus,
+    createdAt: params?.refundRequestedAt ?? params?.paymentPaidAt ?? '1970-01-01T00:00:00.000Z',
+    paidAt: params?.paymentPaidAt,
+    totalAmount: params?.paymentAmount ?? params?.refundRequestedAmount ?? 0,
+    currency: 'CNY',
+    paymentChannel: params?.paymentChannel ?? 'WECHAT_PAY',
+    memberId: 'member-unknown',
+    memberNickname: '未知会员',
+    items: [],
+    pointsEarned: params?.paymentAmount ? Math.round(params.paymentAmount) : 0,
+  };
+}
+
 function resolveOrderStatus(status?: string): OrderStatus | undefined {
   switch (status) {
     case 'PAID':
@@ -187,32 +240,35 @@ export function OrderDetailScreen() {
     return !globals.__mockRoute || globals.__mockOrderFetchEnabled === true;
   })();
   const [aggregate, setAggregate] = useState<NativeAppTransactionAggregate | null>(null);
+  const [aggregateLoading, setAggregateLoading] = useState(false);
+  const [aggregateError, setAggregateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchAggregate = useCallback(() => {
     const orderId = routeParams?.orderId;
 
     if (!orderId || !shouldFetchAggregate) {
       return;
     }
 
+    setAggregateLoading(true);
+    setAggregateError(null);
+
     getNativeAppOrderTransaction(orderId)
       .then((result) => {
-        if (!cancelled) {
-          setAggregate(result);
-        }
+        setAggregate(result);
+        setAggregateLoading(false);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setAggregate(null);
-        }
+      .catch((err: unknown) => {
+        setAggregate(null);
+        setAggregateError(err instanceof Error ? err.message : '订单加载失败，请重试');
+        setAggregateLoading(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [routeParams?.orderId, shouldFetchAggregate]);
-  const baseOrder = mockOrderDetails[routeParams?.orderId ?? defaultMockOrderDetail.orderId]! ?? defaultMockOrderDetail;
+
+  useEffect(() => {
+    fetchAggregate();
+  }, [fetchAggregate]);
+  const baseOrder = createFallbackOrderDetail(routeParams);
   const latestAggregateRefund = aggregate?.refunds?.length
     ? [...aggregate.refunds].sort((left, right) =>
         new Date(right.requestedAt).getTime() - new Date(left.requestedAt).getTime(),
@@ -245,7 +301,7 @@ export function OrderDetailScreen() {
     items: aggregate?.order.items?.length ? aggregate.order.items : baseOrder.items,
     currency: aggregate?.order.currency ?? baseOrder.currency,
     totalAmount: routeParams?.paymentAmount ?? aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? baseOrder.totalAmount,
-    paymentChannel: routeParams?.paymentChannel ?? (aggregate?.payment?.channel as MockOrderDetail['paymentChannel'] | undefined) ?? baseOrder.paymentChannel,
+    paymentChannel: routeParams?.paymentChannel ?? normalizePaymentChannel(aggregate?.payment?.channel) ?? baseOrder.paymentChannel,
     paidAt: routeParams?.paymentPaidAt ?? aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? baseOrder.paidAt,
     pointsEarned: aggregate?.settlement?.pointsEarned
       ?? (routeParams?.paymentAmount ? Math.round(routeParams.paymentAmount) : baseOrder.pointsEarned),
@@ -315,6 +371,20 @@ export function OrderDetailScreen() {
 
   return (
     <View style={styles.container}>
+      {shouldFetchAggregate && aggregateLoading ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>加载中...</Text>
+        </View>
+      ) : shouldFetchAggregate && aggregateError ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>加载失败</Text>
+          <Text style={styles.errorMessage}>{aggregateError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchAggregate}>
+            <Text style={styles.retryText}>重试</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Card style={styles.statusCard}>
           <View style={styles.statusHeader}>
@@ -450,6 +520,7 @@ export function OrderDetailScreen() {
           </Card>
         </View>
       </ScrollView>
+      )}
 
       <View style={styles.footer}>
         {order.status === 'PENDING' && (
@@ -667,5 +738,50 @@ const styles = StyleSheet.create({
   },
   fullWidthButton: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 120,
+  },
+  loadingText: {
+    fontSize: 15,
+    color: '#666666',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 120,
+    paddingHorizontal: 32,
+  },
+  errorIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  errorTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

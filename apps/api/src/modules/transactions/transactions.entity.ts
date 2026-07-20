@@ -324,9 +324,13 @@ export interface TransactionOrderListItem {
   totalAmount: number
   paidAmount: number
   refundedAmount: number
+  refundRequestedAt?: string
+  refundCompletedAt?: string
+  paymentChannel?: string
   currency: string
   createdAt: string
   updatedAt: string
+  paidAt?: string
 }
 
 export interface TransactionOrderListPage {

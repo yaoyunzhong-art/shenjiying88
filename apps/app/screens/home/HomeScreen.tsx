@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { buildDomainGovernanceDisplayModel } from '@m5/types';
@@ -15,9 +22,9 @@ const mockStats = {
 };
 
 const mockTasks = [
-  { id: '1', title: '待处理退款 (3)', priority: 'high' },
-  { id: '2', title: '库存预警 (2)', priority: 'medium' },
-  { id: '3', title: '员工排班待确认', priority: 'low' },
+  { id: '1', title: '待处理退款 (3)', priority: 'high' as const },
+  { id: '2', title: '库存预警 (2)', priority: 'medium' as const },
+  { id: '3', title: '员工排班待确认', priority: 'low' as const },
 ];
 
 const mockAnnouncements = [
@@ -72,7 +79,22 @@ const quickActions: Record<Role, { id: string; title: string; icon: string; rout
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const bootstrap = useBootstrap();
-  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = () => {
+    setLoading(true);
+    setError(null);
+    // Simulate async data fetch
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
   // 模拟当前角色，实际应从全局状态或API获取
   const currentRole: Role = 'shop_manager';
   const role = roleConfig[currentRole];
@@ -92,6 +114,28 @@ export function HomeScreen() {
     };
     return configs[type];
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#1E40AF" />
+        <Text style={styles.loadingText}>加载中...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorTitle}>加载失败</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchDashboard}>
+          <Text style={styles.retryText}>重试</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -141,32 +185,44 @@ export function HomeScreen() {
 
       {/* 待办任务 */}
       <Text style={styles.sectionTitle}>
-        待办任务 {mockStats.pendingTasks > 0 && <Text style={styles.badge}>{mockStats.pendingTasks}</Text>}
+        待办任务 {mockTasks.length > 0 && <Text style={styles.badge}>{mockTasks.length}</Text>}
       </Text>
-      {mockTasks.map((task) => (
-        <TouchableOpacity key={task.id} style={styles.taskItem} onPress={() => console.log('Task pressed:', task.id)}>
-          <View
-            style={[
-              styles.taskDot,
-              {
-                backgroundColor:
-                  task.priority === 'high' ? '#EF4444' : task.priority === 'medium' ? '#F59E0B' : '#10B981',
-              },
-            ]}
-          />
-          <Text style={styles.taskText}>{task.title}</Text>
-          <Text style={styles.taskArrow}>›</Text>
-        </TouchableOpacity>
-      ))}
+      {mockTasks.length === 0 ? (
+        <View style={styles.emptySection}>
+          <Text style={styles.emptySectionText}>暂无待办任务 🎉</Text>
+        </View>
+      ) : (
+        mockTasks.map((task) => (
+          <TouchableOpacity key={task.id} style={styles.taskItem} onPress={() => console.log('Task pressed:', task.id)}>
+            <View
+              style={[
+                styles.taskDot,
+                {
+                  backgroundColor:
+                    task.priority === 'high' ? '#EF4444' : task.priority === 'medium' ? '#F59E0B' : '#10B981',
+                },
+              ]}
+            />
+            <Text style={styles.taskText}>{task.title}</Text>
+            <Text style={styles.taskArrow}>›</Text>
+          </TouchableOpacity>
+        ))
+      )}
 
       {/* 公告 */}
       <Text style={styles.sectionTitle}>门店公告</Text>
-      {mockAnnouncements.map((item) => (
-        <View key={item.id} style={styles.announcement}>
-          <Text style={styles.announcementTitle}>{item.title}</Text>
-          <Text style={styles.announcementTime}>{item.time}</Text>
+      {mockAnnouncements.length === 0 ? (
+        <View style={styles.emptySection}>
+          <Text style={styles.emptySectionText}>暂无公告</Text>
         </View>
-      ))}
+      ) : (
+        mockAnnouncements.map((item) => (
+          <View key={item.id} style={styles.announcement}>
+            <Text style={styles.announcementTitle}>{item.title}</Text>
+            <Text style={styles.announcementTime}>{item.time}</Text>
+          </View>
+        ))
+      )}
 
       <View style={styles.bottomPadding} />
     </ScrollView>
@@ -175,6 +231,31 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
+  centerContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  loadingText: { fontSize: 15, color: '#64748B', marginTop: 12 },
+  errorIcon: { fontSize: 48, marginBottom: 12 },
+  errorTitle: { fontSize: 17, fontWeight: '600', color: '#333333', marginBottom: 8 },
+  errorMessage: { fontSize: 14, color: '#666666', textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#1E40AF', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 },
+  retryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  emptySection: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginBottom: 8,
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  emptySectionText: {
+    fontSize: 14,
+    color: '#94A3B8',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

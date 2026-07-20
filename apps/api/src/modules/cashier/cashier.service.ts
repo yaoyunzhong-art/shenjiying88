@@ -217,6 +217,17 @@ export class CashierService {
     })
   }
 
+  private createOrderNo(tenantContext: RequestTenantContext, now: string) {
+    const datePart = now.slice(0, 10).replaceAll('-', '')
+    const currentDayCount = Array.from(orderStore.values()).filter(
+      (order) =>
+        order.tenantContext.tenantId === tenantContext.tenantId &&
+        order.createdAt.startsWith(now.slice(0, 10))
+    ).length
+
+    return `ORD${datePart}${String(currentDayCount + 1).padStart(3, '0')}`
+  }
+
   async createOrder(
     tenantContext: RequestTenantContext,
     input: CreateCashierOrderDto
@@ -229,6 +240,7 @@ export class CashierService {
     const now = new Date().toISOString()
     const order: CashierOrder = {
       orderId: `order-${randomUUID()}`,
+      orderNo: this.createOrderNo(tenantContext, now),
       tenantContext,
       memberId: input.memberId,
       items: input.items.map((item) => ({ ...item })),
