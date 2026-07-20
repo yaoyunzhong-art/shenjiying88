@@ -1,25 +1,41 @@
-# 🗺️ Phase → 模块映射表 V1
+# 🗺️ Phase → 模块映射表 V2
 
-> 生成: 2026-07-14 14:05 · 基于118模块扫描 + 10个PRD文件
+> 生成: 2026-07-20 22:45 · 基于264 admin-web + 171 storefront-web + 50 E2E链 + 7道箍
 
 ---
 
-## 一、已绑定Phase（10个Phase → ~48模块）
+## 一、圈梁七大箍体系（V23新增🔴基建+🧪E2E）
+
+| # | 箍 | 含义 | 检查 | 状态 | 权重 |
+|:-:|:--:|:-----|:-----|:----:|:----:|
+| 1 | 🟢 代码 | TSC零错误 | `pnpm turbo typecheck` | ✅ 持续 | 必需 |
+| 2 | 🟢 测试 | 0 fail · 无skip | `pnpm test` | ✅ 持续 | 必需 |
+| 3 | 🟢 审计 | 圈梁表更新 | 本文件维护 | ✅ 持续 | 必需 |
+| 4 | 🟡 PRD | 新建页面24h内补PRD | PRD摘要卡 | 🟡 渐进 | 建议 |
+| 5 | 🟠 知识赋能 | 知识库自动检索 | `POST /api/empower-cards/match` | 🟡 渐进 | 建议 |
+| 6 | 🔴 基建 | CI/Docker/Build均绿 | GitHub workflow | 🆕 **V23新增** | P0 |
+| 7 | 🧪 E2E | 50条E2E链全绿 | `pnpm e2e` | 🆕 **V23新增** | P1 |
+
+---
+
+## 二、已绑定Phase（10个Phase → ~48模块）
 
 | Phase | 名称 | PRD | 核心模块 | 延伸模块 | 审计状态 |
 |:-----:|:-----|:----|:---------|:---------|:--------:|
 | P-35 | 收银店A | ✅ | cashier(61files) | lyt(31), payment-gateway(20), transactions(18) | 🟡部分 |
 | P-36 | 会员店A | ✅ | member(47), member-level(21), points(20), loyalty(23) | svip(19) | 🟢完成 |
-| P-30 | SSE后勤 | ✅ | logistics(5), reservation(20), maintenance(32) | admin-web inspection(page) | 🟢已增强 |
-| P-31 | 多租户隔离 | ✅ | tenant(45), tenant-config(23) | saas-advanced(25), saas-billing(18) | 🟡部分 |
-| P-37 | 库存采购 | ✅ | inventory(48) | — | 🟡完成 |
-| P-38 | 财务对账 | ✅ | finance(47), reports(29), audit(18), reconciliation-rules(2), profit-loss(2) | currency(19), transactions(18), **E2E(90)**, cost-cash-flow(44), dashboard(49), reconciliation(40), report(37), payment(54) | 🟢**368tests** ✅ |
-| P-47 | 品牌运营 | ✅ | brand-custom(21), marketing(33), campaigns(2) | marketing-metrics(20), content(19), campaign(25) | 🟡部分 |
+| **P-30** | **SSE后勤** | ✅ | **logistics(10+)** + maintenance(32) + reservation(20) | **equipment maintenance**·**consumable procurement**·**supplier mgmt**·**inspection**·**feedback**·**report**·**inventory alert** | 🟢**完全体** |
+| P-31 | 多租户隔离 | ✅ | tenant(45), tenant-config(23), rls(6) | saas-advanced(25), saas-billing(18) | 🟢**100%** |
+| P-37 | 库存采购 | ✅ | inventory(48) + purchase-orders | — | 🟢**100%** |
+| P-38 | 财务对账 | ✅ | finance(47), reports(29), audit(18), reconciliation-rules(2), profit-loss(2) | currency(19), transactions(18), **E2E(90)**, cost-cash-flow(44), dashboard(49), reconciliation(40), report(37), payment(54) | 🟢**368tests ✅** |
+| **P-47** | **品牌运营** | ✅ | brand-custom(21), marketing(33), **brand-operations(10+)** | **campaign template**·**brand asset**·**collaboration**·**export record**·**contract**·**AB test**·**recycle bin** | 🟢**完全体** |
 | P-48 | 联名券 | ✅ | coupon(28), alliance(28), alliances(2) | referral(21), blindbox(23), loyalty(23) | 🟢完成 |
 | P-49 | 开放平台 | ✅ | open-api(18), openapi(47), tenant-llm(25) | agent(49), AI模块群(25模块) | 🟡部分 |
 | P-53 | 部署DevOps | ✅ | deploy(21), ops-manual(21) | runbook(21), canary(20), auto-rollback(19) | 🟡完成 |
 
-## 二、无Phase模块需要绑定
+---
+
+## 三、无Phase模块需要绑定
 
 ### V20-V22 HR模块绑定 (2026-07-20)
 | 页面 | 位置 | 代码✅ | 测试✅ | 审计✅ | PRD | 推荐Phase |
@@ -47,11 +63,9 @@
 | Tags | admin-web/app/tags/ | ~300行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
 | Coupon Templates | admin-web/app/coupon-templates/ | ~300行 | 68测试 | 🆕 | 🔴 | P-35收银 优惠券模板 |
 | Alliances | admin-web/app/alliances/ | ~280行 | 38测试 | 🆕 | 🟡已发 | P-48联名 联盟管理 |
-| Analytics | admin-web/app/analytics/ | ~300行 | 55测试 | 🆕 | 🟡已发 | P-Admin 数据分析 |
 | Coupons | admin-web/app/coupons/ | ~590行 | 65测试(7假阳) | 🆕 | 🟡已发 | P-48联名 优惠券发放 |
 | Customer Tags | admin-web/app/customer-tags/ | ~250行 | 57测试 | 🆕 | 🔴 | P-36会员 客户标签 |
 | Procurement | admin-web/app/procurement/ | ~460行 | 38测试 | 🆕 | 🟡已发 | P-Admin 采购管理 |
-| Knowledge | admin-web/app/knowledge/ | ~200行 | 30测试 | 🆕 | 🔴 | P-Admin 知识库 |
 | Member | admin-web/app/member/ | ~300行 | 80测试 | 🆕 | 🔴 | P-36会员 会员管理 |
 | Reports | admin-web/app/reports/ | ~300行 | 48测试 | 🆕 | 🔴 | P-38财务 报表中心 |
 | Rules | admin-web/app/rules/ | ~350行 | 40测试 | 🆕 | 🟡已发 | P-Admin 规则管理 |
@@ -104,7 +118,7 @@
 
 ### 基础设施组（建议创建 Phase-P0 基础设施）
 | 模块 | 文件数 | 测试 | 推荐Phase |
-|:-----|:------:|:----:|:---------:|
+|:-----|:------:|:----:|:---------|
 | auth | 24 | ✅15 | 新建P-Infra-1 权限框架 |
 | permission | 23 | ✅14 | 新建P-Infra-1 权限框架 |
 | rbac | 17 | ✅13 | 新建P-Infra-1 权限框架 |
@@ -129,7 +143,6 @@
 | ai-marketing | 30 | ✅18 | P-AI-6 营销 |
 
 ### tob-web 全量页面测试拉升 (2026-07-19 13:22 · V21 Day1)
-
 | 页面 | 位置 | 原测试 | 现测试 | 审计 | PRD |
 |:-----|:-----|:-----:|:-----:|:----:|:---:|
 | alerts | tob-web/app/alerts/ | 2 | **49** | ✅V21 | 🟡已有 |
@@ -147,7 +160,6 @@
 | **总计** | **12页** | **48** | **~551** | **✅** | — |
 
 ### app端 屏幕测试增强 (2026-07-19 12:30 · V21 Day1)
-
 | 屏幕 | 位置 | 原测试 | 现测试 |
 |:-----|:-----|:-----:|:-----:|
 | cashier | apps/app/screens/cashier/ | 0 | **28** |
@@ -156,7 +168,6 @@
 | **总计** | **3屏幕** | **0** | **79** |
 
 ### mobile端 + Pad端 屏幕测试增强 (2026-07-19 12:45 · V21 Day1)
-
 | 屏幕 | 位置 | 原测试 | 现测试 |
 |:-----|:-----|:-----:|:-----:|
 | OrderDetailScreen | mobile/src/screens/ | 0 | **37** |
@@ -169,11 +180,23 @@
 
 ---
 
-*🦞 龙虾哥 · Phase→模块映射 · 2026-07-19 V21 Day1 更新*
+## 四、全局指标统计
+
+| 指标 | 值 |
+|:-----|:---:|
+| E2E链 | **50条** 🧪 |
+| admin-web 页面 | **264页** 🟢 三态全覆盖 |
+| storefront-web 页面 | **171页** 🟢 162/165 三态覆盖 |
+| app(RN) 屏幕 | **35屏** 🟢 三态全覆盖 |
+| 三态总覆盖 | **464页/屏** ✅ |
+| 总测试数 | **~62,000+** |
+| 圈梁箍 | **7道** ✅ |
 
 ---
 
-## V21 Day1 (2026-07-19) 圈梁更新
+## 五、V21 Day1-V22 圈梁更新汇总
+
+### V21 Day1 (2026-07-19) 圈梁更新
 
 | Phase | 变更 | 信号 | PRD | 测试量 | 知识赋能 | 备注 |
 |:-----:|:-----|:----:|:---:|:------:|:--------:|:-----|
@@ -184,51 +207,70 @@
 | **P-30** | 维修工单列表+详情页 | 🟢 | PRD-010 ✅ | 14 | — | admin-web任务完成 |
 | **B2** | 发票管理CRUD+持久化 | 🟡 | 需求卡 ✅ | 19 | — | 基础功能完成 |
 
-### 今日全局指标 (16:35)
-- **Commits**: 182 · **总**: 2,150 · 连续稳态: **32🏆**
-- **TSC**: 6/7 apps 0 (mobile 1基线)
-- **全系统测试**: ≈ **62,000+**
-- **知识体系**: 233条(DB) + 15条SEO待注入
-- **P-49 完成度**: 🟢 **100%** | **P-50**: 🟡 75%
-
----
-## P-50 运营参谋系统 V2 · V21 Day1 (2026-07-19 16:10)
-
-| # | 模块 | 状态 | tests | TSC | 圈梁 | 知识 |
-|:-:|:----|:----:|:----:|:---:|:----:|:----:|
-| M1 | venue-data.service | 🟢 | 13 | 0 | ✅ | 侦察兵DB |
-| M2 | intelligence-ai.service | 🟢 | 15 | 0 | ✅ | empower_card |
-| M3+M4 | finance/panorama | 🟢 | 12 | 0 | ✅ | 财务全景 |
-| M5 | monitor-collector | 🟢 | 19 | 0 | ✅ | 竞争监控 |
-| M6 | 活动6类扩充 | 🟢 | 10 | 0 | ✅ | 活动参谋 |
-| 总 | P-50 V2 | 🟢 96% | **82** | 0 | ✅ | 赋能248条 |
-
----
-
-## V21 Day2 · P-31 RLS 多租户隔离收尾 (2026-07-20 09:30)
-
-### 完成内容
+### V21 Day2 · P-31 RLS 多租户隔离收尾 (2026-07-20 09:30)
 | 项目 | 状态 | 详情 |
 |:----|:----:|:----|
 | Service层 tenantId 透传 | 🟢 | setTenantContext / buildTenantFilter / withTenant / tenantAwareQuery |
 | 19 entity 补充 tenantId 字段 | 🟢 | transactions/blindbox/training/content/payment-gateway/alliance/svip/venue/market/stock×2/member-p36/tax/member-predict/campaign/points/loyalty |
 | Controller 多租户集成端点 | 🟢 | POST /api/rls/tenant/context · GET /api/rls/tenant/pools · DELETE /api/rls/tenant/pool |
-| 测试覆盖 | 🟢 | helper 123 ✅ (V19新增26it) · dto 26 ✅ · role 35 ✅ · e2e新增5it |
+| 测试覆盖 | 🟢 | helper 123 ✅ + dto 26 ✅ + role 35 ✅ + e2e新增5it |
 | 多租户隔离验证 | 🟢 | 正例(2) + 反例(2) + 边界(3) + 审计隔离 |
-| P-31 审计状态 | 🟢 | 🔄 从 🟡部分 → 🟢完成 |
+| P-31 审计状态 | 🟢 | **100%完成** |
 
-### P-31 核心模块清单
-| 模块 | 文件数 | 测试 | 状态 |
-|:----|:-----:|:----:|:----:|
-| rls | 6文件 | 184 ✅ | 🟢 **100%** |
-| tenant | 45 | ✅ | 🟢 **100%** |
-| tenant-config | 23 | ✅ | 🟢 |
-| saas-advanced | 25 | ✅ | 🟢 |
-| saas-billing | 18 | ✅ | 🟢 |
-| **19 entity tenantId追加** | 19+ | ✅ | 🟢 |
+### V22 Day1 (2026-07-20) — 3 Phase同日100% + E2E 50链
 
-### 赋能卡片
-- 🎯 多租户隔离: `RlsService.setTenantContext()` 设定租户会话上下文
-- 🎯 tenantId透传: `RlsService.buildTenantFilter()` 构建过滤WHERE子句
-- 🎯 租户上下文: `RlsService.withTenant()` 在隔离上下文中执行业务回调
-- 🎯 连接池观测: `RlsService.listTenantPools()` 生产级连接池监控
+| 项目 | 状态 | 详情 |
+|:-----|:----:|:------|
+| **P-31 RLS多租户** | 🟢 **100%** | RLS控制器+19 entity tenantId追加+多租户验证全通 |
+| **P-37 库存采购** | 🟢 **100%** | 采购全链CRUD+库存预警+跨模块E2E |
+| **P-38 财务对账** | 🟢 **100%** | 财务E2E 90+网关+Cost+Settlement+Supplement |
+| **P-47 品牌运营** | 🟢 **100% 完全体** | campaign template·brand asset·collaboration·export·contract·AB test·recycle bin |
+| **P-30 后勤管理** | 🟢 **100% 完全体** | equipment maintenance·consumable procurement·supplier·inspection·feedback·report·inventory alert |
+| **admin-web 三态** | 🟢 **264页全覆盖** | 最后3页补全→264页全部三态 ✅ |
+| **storefront 三态** | 🟢 **162/165页** | 剩余3页待补全 |
+| **E2E链** | 🧪 **50条** | E2E-44~50 新增7条跨模块链 |
+| **V23圈梁** | 🟡 **7道箍上线** | 新增🔴基建箍 + 🧪E2E箍 |
+| **全局测试** | **~62,000+** | TSC 15/15 FULL TURBO ✅ |
+
+### E2E链详细清单 (50条)
+| # | 链名 | Phase | 完成 |
+|:-:|:-----|:-----:|:----:|
+| 1-30 | 核心业务链 (P-35/36/37/38/48) | 多Phase | ✅ V19之前 |
+| 31 | RLS多租户隔离 | P-31 | ✅ V19 |
+| 32 | 库存采购全链 | P-37 | ✅ V19 |
+| 33 | 财务对账全链 | P-38 | ✅ V19 |
+| 34-43 | V21拓展链 (AI·SEO·P-49·P-50等) | 多Phase | ✅ V21 |
+| 44 | 品牌运营+后勤跨模块 | P-47+P-30 | ✅ V22 |
+| 45 | 财务对账+交易全链 | P-38 | ✅ V22 |
+| 46 | 品牌商城全链 | P-47 | ✅ V22 |
+| 47 | 后勤库存全链 | P-30 | ✅ V22 |
+| 48 | 品牌财务全链 | P-47+P-38 | ✅ V22 |
+| 49 | 后勤财务全链 | P-30+P-38 | ✅ V22 |
+| 50 | 多租户安全全链 | P-31+Infra | ✅ V22 |
+
+---
+
+## 六、V22 Day1 全局快照 (2026-07-20 22:45)
+- **Commits**: 105 (今日) · **总**: 2,255
+- **Continuous Steady**: 32🏆
+- **TSC**: 15/15 apps 0 error
+- **全系统测试**: ≈ **62,000+**
+- **E2E链**: **50条** 🧪
+- **知识体系**: ~260条(DB) + 15条SEO
+- **三态覆盖**: **464页/屏** (admin-web 264 + storefront-web 162 + app(RN) 35 + tob-web 3差)
+
+---
+
+## 📋 变更日志
+
+| 日期 | 版本 | 变更摘要 |
+|:----:|:----:|:---------|
+| 2026-07-14 | V1 | 初始创建：10 Phase → 48模块 |
+| 2026-07-17 | V1 | V19 Day2 D段 24新页 + 3 E2E链(31-33) |
+| 2026-07-18 | V1 | storefront 15薄页 + app/mobile端屏幕测试增强 |
+| 2026-07-19 | V1 | V21 Day1: P-49 100%/P-50 75% + tob-web 12页 + storefront/purchase-orders/brands增强 |
+| 2026-07-20 | **V2** | **V22发布日**: 新增**V23 7道箍**·P-47/P-30 100%完全体·admin-web 264页🟢·storefront 162/165🟢·E2E链50条·P-31/P-37/P-38 100%·L3评分🟢S 100/100 |
+
+---
+
+> 🦞 龙虾哥 · Phase→模块映射 · 2026-07-20 V22 Day1
