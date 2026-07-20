@@ -161,6 +161,7 @@ import { HrModule } from './modules/hr/hr.module';
 import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
 import { StoreModule } from './modules/store/store.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
 
 @Module({
   imports: [
@@ -334,6 +335,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
     BrandOperationsModule,
     StoreModule,
     FeedbackModule,
+    ProbationTransferModule,
   ],
   providers: [
     RequestGovernanceService,
