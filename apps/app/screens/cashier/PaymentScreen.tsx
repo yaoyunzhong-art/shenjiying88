@@ -188,6 +188,10 @@ export function PaymentScreen() {
   };
 
   const handleSubmit = () => {
+    if (orderLoading) {
+      Alert.alert('提示', '订单信息同步中，请稍后再试');
+      return;
+    }
     if (!canSubmitAmount) {
       const invalidAmountMessage =
         numericAmount > MAX_PAYMENT_AMOUNT

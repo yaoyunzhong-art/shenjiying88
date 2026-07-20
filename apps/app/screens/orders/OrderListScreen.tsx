@@ -142,8 +142,6 @@ function resolveOrderStatus(
 }
 
 function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
-  const matchedMockOrder = mockOrders.find((item) => item.orderId === order.orderId);
-
   return {
     orderId: order.orderId,
     orderNo: order.orderNo,
@@ -151,13 +149,53 @@ function mapApiOrderToOrderItem(order: NativeAppOrderListItem): OrderItem {
     paidAmount: order.paidAmount,
     refundedAmount: order.refundedAmount,
     currency: order.currency,
-    status: resolveOrderStatus(order.status, matchedMockOrder?.status ?? 'PENDING'),
+    status: resolveOrderStatus(order.status),
     createdAt: order.createdAt,
     paidAt: order.paidAt,
     refundRequestedAt: order.refundRequestedAt,
     refundCompletedAt: order.refundCompletedAt,
     paymentChannel: normalizePaymentChannel(order.paymentChannel),
     itemCount: order.itemCount,
+  };
+}
+
+function buildRuntimeFallbackOrder(
+  routeParams?: OrderRuntimeRouteParams,
+): OrderItem | undefined {
+  if (!routeParams?.orderId) {
+    return undefined;
+  }
+
+  const runtimeStatus = routeParams.refundStatus === 'REFUNDED'
+    ? 'REFUNDED'
+    : routeParams.refundStatus === 'PENDING'
+      ? 'REFUND_PENDING'
+      : routeParams.paymentStatus === 'PAID'
+        ? 'PAID'
+        : 'PENDING';
+  const runtimeTotalAmount = routeParams.paymentAmount ?? routeParams.refundRequestedAmount ?? 0;
+  const runtimePaidAmount = routeParams.paymentStatus === 'PAID' || routeParams.refundStatus
+    ? routeParams.paymentAmount ?? routeParams.refundRequestedAmount ?? 0
+    : 0;
+  const runtimeRefundedAmount = routeParams.refundStatus
+    ? routeParams.refundRequestedAmount ?? 0
+    : 0;
+  const runtimeCreatedAt = routeParams.paymentPaidAt ?? routeParams.refundRequestedAt ?? new Date().toISOString();
+
+  return {
+    orderId: routeParams.orderId,
+    orderNo: routeParams.orderNo ?? routeParams.orderId,
+    totalAmount: runtimeTotalAmount,
+    paidAmount: runtimePaidAmount,
+    refundedAmount: runtimeRefundedAmount,
+    currency: 'CNY',
+    status: runtimeStatus,
+    createdAt: runtimeCreatedAt,
+    paidAt: routeParams.paymentPaidAt,
+    refundRequestedAt: routeParams.refundRequestedAt,
+    refundCompletedAt: routeParams.refundCompletedAt,
+    paymentChannel: routeParams.paymentChannel,
+    itemCount: 0,
   };
 }
 
@@ -327,7 +365,7 @@ export function OrderListScreen() {
 
   const orders = apiOrders ?? mockOrders;
   const routeRuntimeOrder = routeParams?.orderId && !orders.some((order) => order.orderId === routeParams.orderId)
-    ? mockOrders.find((order) => order.orderId === routeParams.orderId)
+    ? buildRuntimeFallbackOrder(routeParams)
     : undefined;
   const ordersWithRuntimeFallback = routeRuntimeOrder ? [...orders, routeRuntimeOrder] : orders;
 

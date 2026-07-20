@@ -4,26 +4,28 @@
  */
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   MobileLayout,
   H5Card,
-  H5Badge,
   H5Button,
   useH5Back,
 } from '../../../../components/h5-components';
 import {
-  paymentService,
-  formatPrice,
-  getPaymentMethodName,
-  getPaymentMethodIcon,
-  type PaymentOrder,
-  type PaymentMethod,
-} from '../../../../lib/payment-service';
+  formatCurrency,
+  getPaymentMethodLabel,
+  getStorefrontOrderTransaction,
+  mapAggregateToPaymentView,
+  mapChannelToH5Method,
+  submitStorefrontPaymentSuccess,
+  type H5PaymentMethod,
+  type PaymentViewModel,
+  type StorefrontTransactionAggregate,
+} from '../../../../lib/storefront-transactions';
 
-const PAYMENT_METHODS: { method: PaymentMethod; name: string; icon: string }[] = [
+const PAYMENT_METHODS: { method: H5PaymentMethod; name: string; icon: string }[] = [
   { method: 'wechat', name: '微信支付', icon: '💚' },
   { method: 'alipay', name: '支付宝', icon: '💙' },
   { method: 'bankcard', name: '银行卡', icon: '💳' },
@@ -36,71 +38,82 @@ export default function PaymentPage() {
   const orderId = params.orderId as string;
   const handleBack = useH5Back();
 
-  const [payment, setPayment] = useState<PaymentOrder | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('wechat');
+  const [aggregate, setAggregate] = useState<StorefrontTransactionAggregate | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<H5PaymentMethod>('wechat');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // 初始化支付订单
   useEffect(() => {
-    async function createPaymentOrder() {
+    let cancelled = false;
+
+    async function loadOrderTransaction() {
       setError(null);
       setLoading(true);
-      // 模拟创建支付订单
-      const mockAmount = 9999; // 99.99元
-      const result = await paymentService.createPayment({
-        orderId: orderId || `order-${Date.now()}`,
-        amount: mockAmount,
-        method: selectedMethod,
-      });
-
-      if (!result.success) {
-        setError(result.error?.message || '创建支付订单失败，请稍后重试');
-        setLoading(false);
-        return;
-      }
-
-      if (result.data) {
-        setPayment(result.data);
-        // 设置倒计时
-        if (result.data.expireAt) {
-          const expireTime = new Date(result.data.expireAt).getTime();
-          const updateCountdown = () => {
-            const remaining = Math.max(0, Math.floor((expireTime - Date.now()) / 1000));
-            setCountdown(remaining);
-            if (remaining === 0) {
-              setPayment((p) => p ? { ...p, status: 'expired' } : p);
-            }
-          };
-          updateCountdown();
-          const timer = setInterval(updateCountdown, 1000);
-          return () => clearInterval(timer);
+      try {
+        const nextAggregate = await getStorefrontOrderTransaction(orderId);
+        if (cancelled) return;
+        setAggregate(nextAggregate);
+        setSelectedMethod(mapChannelToH5Method(nextAggregate.payment?.channel));
+      } catch (nextError) {
+        if (cancelled) return;
+        setError(nextError instanceof Error ? nextError.message : '加载订单失败，请稍后重试');
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
       }
-      setLoading(false);
     }
 
-    createPaymentOrder();
+    loadOrderTransaction();
+    return () => {
+      cancelled = true;
+    };
   }, [orderId]);
 
-  // 切换支付方式
-  function handleMethodChange(method: PaymentMethod) {
+  const payment = useMemo<PaymentViewModel | null>(() => {
+    if (!aggregate) return null;
+    return mapAggregateToPaymentView(aggregate, selectedMethod);
+  }, [aggregate, selectedMethod]);
+
+  useEffect(() => {
+    if (!payment?.expireAt || payment.status !== 'pending') {
+      setCountdown(0);
+      return;
+    }
+
+    const expireTime = new Date(payment.expireAt).getTime();
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.floor((expireTime - Date.now()) / 1000));
+      setCountdown(remaining);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [payment?.expireAt, payment?.status]);
+
+  function handleMethodChange(method: H5PaymentMethod) {
     setSelectedMethod(method);
   }
 
-  // 发起支付
   async function handlePay() {
+    if (!aggregate) return;
+
     setCreating(true);
-    // 模拟支付
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setCreating(false);
-    // 跳转到支付结果页
-    router.push(`/h5/payment/${orderId}/result?status=success`);
+    setError(null);
+    try {
+      const refreshedAggregate = await submitStorefrontPaymentSuccess(aggregate, selectedMethod);
+      setAggregate(refreshedAggregate);
+      router.push(`/h5/payment/${orderId}/result`);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '支付提交失败，请稍后重试');
+    } finally {
+      setCreating(false);
+    }
   }
 
-  // 取消支付
   function handleCancel() {
     handleBack();
   }
@@ -119,7 +132,7 @@ export default function PaymentPage() {
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>加载失败</div>
           <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>{error}</div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => router.refresh()}
             style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontSize: 14, cursor: 'pointer' }}
           >
             重新加载
@@ -133,7 +146,7 @@ export default function PaymentPage() {
     return (
       <MobileLayout title="订单支付" showBack onBack={handleBack}>
         <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
-          正在创建支付订单...
+          正在加载真实订单...
         </div>
       </MobileLayout>
     );
@@ -168,11 +181,11 @@ export default function PaymentPage() {
             fontFamily: 'Arial, sans-serif',
           }}
         >
-          {formatPrice(payment.amount)}
+          {formatCurrency(payment.amount, aggregate?.order.currency)}
         </div>
         {payment.originalAmount && (
           <div style={{ marginTop: 8, fontSize: 14, color: '#64748b' }}>
-            原价: <s>{formatPrice(payment.originalAmount)}</s>
+            原价: <s>{formatCurrency(payment.originalAmount, aggregate?.order.currency)}</s>
           </div>
         )}
       </H5Card>
@@ -196,7 +209,7 @@ export default function PaymentPage() {
       {payment.qrCode && payment.status === 'pending' && (
         <H5Card style={{ marginBottom: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 12 }}>
-            请使用{getPaymentMethodName(selectedMethod)}扫码支付
+            请使用{getPaymentMethodLabel(selectedMethod)}扫码支付
           </div>
           <div
             style={{
@@ -216,7 +229,7 @@ export default function PaymentPage() {
             />
           </div>
           <div style={{ fontSize: 12, color: '#64748b' }}>
-            打开{getPaymentMethodName(selectedMethod)}扫一扫完成支付
+            打开{getPaymentMethodLabel(selectedMethod)}扫一扫完成支付
           </div>
         </H5Card>
       )}
@@ -277,7 +290,7 @@ export default function PaymentPage() {
             取消支付
           </H5Button>
           <H5Button variant="primary" fullWidth loading={creating} onClick={handlePay}>
-            确认支付 {formatPrice(payment.amount)}
+            确认支付 {formatCurrency(payment.amount, aggregate?.order.currency)}
           </H5Button>
         </div>
       )}

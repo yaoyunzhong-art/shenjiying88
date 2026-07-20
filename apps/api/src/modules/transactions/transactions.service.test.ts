@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import assert from 'node:assert/strict'
 import { BlindboxFulfillmentStatus } from '../loyalty/loyalty.entity'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
 import { CashierService } from '../cashier/cashier.service'
+import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
+import { LedgerType } from '../finance/finance.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { TransactionsService, resetTransactionsServiceTestState } from './transactions.service'
 import {
@@ -22,6 +24,7 @@ function createContext(): RequestTenantContext {
 
 beforeEach(() => {
   resetTransactionsServiceTestState()
+  resetFinanceServiceTestState()
 })
 
 describe('TransactionsService', () => {
@@ -197,6 +200,74 @@ describe('TransactionsService', () => {
     })
     assert.equal(refundedOrders.length >= 1, true)
     assert.equal(refundedOrders.some((entry) => entry.refunds.length > 0), true)
+  })
+
+  it('listOrderListPage prefers latest refund activity instead of raw refund array order', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'mem-tx-list-2',
+      tenantContext: createContext(),
+      nickname: 'List User 2'
+    })
+    const loyaltyService = new LoyaltyService(memberService)
+    const cashierService = new CashierService(memberService, loyaltyService)
+    const service = new TransactionsService(cashierService, loyaltyService)
+
+    const created = await service.startCheckout(createContext(), {
+      memberId: 'mem-tx-list-2',
+      items: [{ skuId: 'sku-list-latest-refund', quantity: 2, price: 50 }],
+      paymentChannel: 'wechat-pay',
+      externalPaymentId: 'ext-list-latest-refund'
+    })
+
+    await service.applyPaymentCallback({
+      standardizedEventName: 'cashier.payment-succeeded',
+      aggregateId: created.order.orderId,
+      orderId: created.order.orderId,
+      tenantId: createContext().tenantId,
+      externalPaymentId: 'ext-list-latest-refund',
+      transactionNo: 'txn-list-latest-refund'
+    })
+
+    const firstRefund = await service.requestRefund(created.order.orderId, createContext(), {
+      reason: 'first-refund',
+      refundAmount: 20
+    })
+    await service.approveRefund(firstRefund.refunds[0]!.refundId, createContext(), {
+      operator: 'reviewer-list'
+    })
+
+    await service.requestRefund(created.order.orderId, createContext(), {
+      reason: 'second-refund',
+      refundAmount: 10
+    })
+
+    const aggregate = service.getOrderTransaction(created.order.orderId, createContext())
+    const approvedRefund = aggregate.refunds.find((refund) => refund.refundId === firstRefund.refunds[0]!.refundId)
+    const pendingRefund = aggregate.refunds.find((refund) => refund.refundId !== firstRefund.refunds[0]!.refundId)
+
+    assert.ok(approvedRefund)
+    assert.ok(pendingRefund)
+
+    approvedRefund.requestedAt = '2026-06-23T10:00:00.000Z'
+    approvedRefund.completedAt = '2026-06-23T10:20:00.000Z'
+    pendingRefund.requestedAt = '2026-06-23T10:10:00.000Z'
+
+    const page = service.listOrderListPage(createContext(), {
+      memberId: 'mem-tx-list-2',
+      hasRefund: true
+    })
+    const order = page.items.find((item) => item.orderId === created.order.orderId)
+
+    assert.ok(order)
+    assert.equal(order?.status, TransactionRefundStatus.Completed)
+    assert.equal(order?.itemCount, 2)
+    assert.equal(order?.paidAmount, 100)
+    assert.equal(order?.refundedAmount, 20)
+    assert.equal(order?.refundRequestedAt, '2026-06-23T10:00:00.000Z')
+    assert.equal(order?.refundCompletedAt, '2026-06-23T10:20:00.000Z')
+    assert.equal(order?.paymentChannel, 'wechat-pay')
+    assert.equal(order?.paidAt, created.order.paidAt)
   })
 
   it('batchTimeoutCloseOrders closes only eligible orders and returns processed ids', async () => {
@@ -1682,5 +1753,111 @@ describe('TransactionsService', () => {
     assert.equal(aggregate.order.couponCode, 'COUPON-TX')
     assert.equal(aggregate.order.blindboxPlanId, 'bb-tx-plan')
     assert.equal(aggregate.order.blindboxQuantity, 3)
+  })
+
+  it('applyPaymentCallback writes a single revenue ledger when finance integration is enabled', async () => {
+    const financeService = new FinanceService()
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'mem-tx-finance-payment',
+      tenantContext: createContext(),
+      nickname: 'Finance Payment User'
+    })
+    const loyaltyService = new LoyaltyService(memberService)
+    const cashierService = new CashierService(memberService, loyaltyService)
+    const service = new TransactionsService(
+      cashierService,
+      loyaltyService,
+      undefined,
+      memberService,
+      financeService
+    )
+
+    const created = await service.startCheckout(createContext(), {
+      memberId: 'mem-tx-finance-payment',
+      items: [{ skuId: 'sku-finance-payment', quantity: 1, price: 168 }],
+      paymentChannel: 'wechat-pay',
+      externalPaymentId: 'ext-finance-payment'
+    })
+
+    await service.applyPaymentCallback({
+      standardizedEventName: 'cashier.payment-succeeded',
+      aggregateId: created.order.orderId,
+      orderId: created.order.orderId,
+      tenantId: createContext().tenantId,
+      externalPaymentId: 'ext-finance-payment',
+      transactionNo: 'txn-finance-payment'
+    })
+    await service.applyPaymentCallback({
+      standardizedEventName: 'cashier.payment-succeeded',
+      aggregateId: created.order.orderId,
+      orderId: created.order.orderId,
+      tenantId: createContext().tenantId,
+      externalPaymentId: 'ext-finance-payment',
+      transactionNo: 'txn-finance-payment-repeat'
+    })
+
+    const ledgers = financeService.listLedgers(createContext(), {
+      type: LedgerType.Revenue,
+      orderId: created.order.orderId
+    })
+
+    assert.equal(ledgers.length, 1)
+    assert.equal(ledgers[0]?.amount, 168)
+    assert.equal(ledgers[0]?.transactionId, created.payment?.paymentId)
+    assert.match(ledgers[0]?.description ?? '', /Transaction payment succeeded/)
+  })
+
+  it('approveRefund writes a single refund ledger when finance integration is enabled', async () => {
+    const financeService = new FinanceService()
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'mem-tx-finance-refund',
+      tenantContext: createContext(),
+      nickname: 'Finance Refund User'
+    })
+    const loyaltyService = new LoyaltyService(memberService)
+    const cashierService = new CashierService(memberService, loyaltyService)
+    const service = new TransactionsService(
+      cashierService,
+      loyaltyService,
+      undefined,
+      memberService,
+      financeService
+    )
+
+    const created = await service.startCheckout(createContext(), {
+      memberId: 'mem-tx-finance-refund',
+      items: [{ skuId: 'sku-finance-refund', quantity: 1, price: 268 }],
+      paymentChannel: 'alipay',
+      externalPaymentId: 'ext-finance-refund'
+    })
+
+    await service.applyPaymentCallback({
+      standardizedEventName: 'cashier.payment-succeeded',
+      aggregateId: created.order.orderId,
+      orderId: created.order.orderId,
+      tenantId: createContext().tenantId,
+      externalPaymentId: 'ext-finance-refund',
+      transactionNo: 'txn-finance-refund'
+    })
+
+    const requested = await service.requestRefund(created.order.orderId, createContext(), {
+      reason: 'finance-refund-test',
+      refundAmount: 68
+    })
+    const refundId = requested.refunds[0]!.refundId
+
+    await service.approveRefund(refundId, createContext(), { operator: 'finance-reviewer' })
+
+    const refundLedgers = financeService.listLedgers(createContext(), {
+      type: LedgerType.Refund,
+      orderId: created.order.orderId
+    })
+
+    assert.equal(refundLedgers.length, 1)
+    assert.equal(refundLedgers[0]?.amount, 68)
+    assert.equal(refundLedgers[0]?.transactionId, refundId)
+    assert.match(refundLedgers[0]?.description ?? '', /Transaction refund approved/)
   })
 })

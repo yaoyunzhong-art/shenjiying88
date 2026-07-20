@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { it } from 'vitest'
 /**
  * E2E: Transactions 交易流水 HTTP 链路
  *
@@ -37,6 +37,8 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { LedgerType } from '../finance/finance.entity'
+import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
 import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
@@ -244,16 +246,25 @@ class TestTransactionsController {
 async function buildApp() {
   resetMemberServiceTestState()
   resetTransactionsServiceTestState()
+  resetFinanceServiceTestState()
   const memberService = new MemberService()
   const metricsService = new MarketingMetricsService()
+  const financeService = new FinanceService()
   const loyaltyService = new LoyaltyService(memberService, undefined, metricsService)
   loyaltyService.resetLoyaltyStoresForTests()
   const cashierService = new CashierService(memberService, loyaltyService)
   cashierService.resetCashierStoresForTests()
-  const transactionsService = new TransactionsService(cashierService, loyaltyService, undefined, memberService)
+  const transactionsService = new TransactionsService(
+    cashierService,
+    loyaltyService,
+    undefined,
+    memberService,
+    financeService
+  )
   const moduleRef = await Test.createTestingModule({
     controllers: [TestTransactionsController],
     providers: [
+      { provide: FinanceService, useValue: financeService },
       { provide: MemberService, useValue: memberService },
       { provide: LoyaltyService, useValue: loyaltyService },
       { provide: CashierService, useValue: cashierService },
@@ -266,7 +277,7 @@ async function buildApp() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
   app.useGlobalInterceptors(new ResponseInterceptor())
   await app.init()
-  return { app, memberService, loyaltyService, cashierService, transactionsService, metricsService }
+  return { app, memberService, loyaltyService, cashierService, transactionsService, metricsService, financeService }
 }
 
 const TENANT_A = {
@@ -318,7 +329,7 @@ async function settleOrder(
 }
 
 it('e2e: payment callback persists order transaction', async () => {
-  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  const { app, memberService, cashierService, loyaltyService, financeService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
   try {
@@ -336,6 +347,13 @@ it('e2e: payment callback persists order transaction', async () => {
     assert.equal(callback.body.data.order.orderId, orderId)
     assert.equal(callback.body.data.order.totalAmount, 150)
     assert.equal(callback.body.data.payment.status, 'SUCCEEDED')
+
+    const ledgers = financeService.listLedgers(tenantContextA(), {
+      type: LedgerType.Revenue,
+      orderId
+    })
+    assert.equal(ledgers.length, 1)
+    assert.equal(ledgers[0]?.amount, 150)
   } finally {
     await app.close()
   }
@@ -431,7 +449,7 @@ it('e2e: order detail returns aggregate fields used by app screens', async () =>
 })
 
 it('e2e: refund request → approve → status Approved', async () => {
-  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  const { app, memberService, cashierService, loyaltyService, financeService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
   try {
@@ -466,6 +484,14 @@ it('e2e: refund request → approve → status Approved', async () => {
     assert.equal(refundedOrder.status, 'COMPLETED')
     assert.equal(typeof refundedOrder.refundRequestedAt, 'string')
     assert.equal(typeof refundedOrder.refundCompletedAt, 'string')
+
+    const refundLedgers = financeService.listLedgers(tenantContextA(), {
+      type: LedgerType.Refund,
+      orderId
+    })
+    assert.equal(refundLedgers.length, 1)
+    assert.equal(refundLedgers[0]?.amount, 50)
+    assert.equal(refundLedgers[0]?.transactionId, refundId)
   } finally {
     await app.close()
   }

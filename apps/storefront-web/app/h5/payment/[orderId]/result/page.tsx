@@ -5,41 +5,43 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   MobileLayout,
-  H5Card,
   H5Button,
   useH5Back,
 } from '../../../../../components/h5-components';
-
-type PaymentResultStatus = 'success' | 'failed' | 'pending';
-
 import { useTriState } from '../../../../_components/useTriState';
 import { TriStateRenderer } from '../../../../_components/TriStateRenderer';
+import {
+  RESULT_DISPLAY,
+  formatCurrency,
+  getPaymentMethodLabel,
+  getPaymentResultActions,
+  getStorefrontOrderTransaction,
+  mapAggregateToResultStatus,
+  type StorefrontTransactionAggregate,
+} from '../../../../../lib/storefront-transactions';
 
 export default function PaymentResultPage() {
   const [ready, setReady] = useState(false);
+  const [aggregate, setAggregate] = useState<StorefrontTransactionAggregate | null>(null);
   const { loading, error, wrapLoad } = useTriState({ loading: true });
   const params = useParams();
-  const searchParams = useSearchParams();
   const orderId = params.orderId as string;
-  const status = (searchParams.get('status') as PaymentResultStatus) || 'pending';
   const handleBack = useH5Back();
 
-  // 模拟支付结果查询
   React.useEffect(() => {
-    wrapLoad(
-      new Promise<void>((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 500);
-      }),
-    ).then(() => {
+    wrapLoad(getStorefrontOrderTransaction(orderId)).then((result) => {
+      setAggregate(result);
       setReady(true);
     });
-  }, []);
+  }, [orderId, wrapLoad]);
+
+  const status = aggregate ? mapAggregateToResultStatus(aggregate) : 'pending';
+  const display = RESULT_DISPLAY[status];
+  const actions = getPaymentResultActions(status, orderId);
 
   return (
     <MobileLayout
@@ -50,14 +52,13 @@ export default function PaymentResultPage() {
     >
       <TriStateRenderer
         loading={loading}
-        empty={!ready && !loading && !error}
+        empty={!aggregate && !loading && !error}
         error={error}
         onRetry={() =>
-          wrapLoad(
-            new Promise<void>((resolve) => {
-              setTimeout(() => resolve(), 500);
-            }),
-          ).then(() => setReady(true))
+          wrapLoad(getStorefrontOrderTransaction(orderId)).then((result) => {
+            setAggregate(result);
+            setReady(true);
+          })
         }
       >
       {/* 结果展示 */}
@@ -67,21 +68,14 @@ export default function PaymentResultPage() {
             width: 80,
             height: 80,
             borderRadius: '50%',
-            background:
-              status === 'success'
-                ? 'rgba(74, 222, 128, 0.15)'
-                : status === 'failed'
-                ? 'rgba(239, 68, 68, 0.15)'
-                : 'rgba(251, 191, 36, 0.15)',
+            background: display.bgColor,
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 20,
           }}
         >
-          <span style={{ fontSize: 40 }}>
-            {status === 'success' ? '✅' : status === 'failed' ? '❌' : '⏳'}
-          </span>
+          <span style={{ fontSize: 40 }}>{display.icon}</span>
         </div>
 
         <h1
@@ -92,24 +86,24 @@ export default function PaymentResultPage() {
             margin: '0 0 8px',
           }}
         >
-          {status === 'success'
-            ? '支付成功'
-            : status === 'failed'
-            ? '支付失败'
-            : '支付处理中'}
+          {display.title}
         </h1>
 
         <p style={{ fontSize: 14, color: '#94a3b8', margin: 0 }}>
-          {status === 'success'
-            ? '感谢您的支付，订单已确认'
-            : status === 'failed'
-            ? '支付未完成，请稍后重试'
-            : '正在等待支付结果确认'}
+          {display.subtitle}
         </p>
       </div>
 
       {/* 订单信息 */}
-      <H5Card style={{ marginBottom: 20 }}>
+      <div
+        style={{
+          marginBottom: 20,
+          padding: 18,
+          borderRadius: 16,
+          background: 'rgba(15, 23, 42, 0.65)',
+          border: '1px solid rgba(148, 163, 184, 0.16)',
+        }}
+      >
         <div
           style={{
             display: 'flex',
@@ -119,7 +113,7 @@ export default function PaymentResultPage() {
           }}
         >
           <span style={{ fontSize: 13, color: '#94a3b8' }}>订单编号</span>
-          <code style={{ fontSize: 13, color: '#60a5fa' }}>{orderId}</code>
+          <code style={{ fontSize: 13, color: '#60a5fa' }}>{aggregate?.order.orderNo ?? orderId}</code>
         </div>
         <div
           style={{
@@ -131,7 +125,7 @@ export default function PaymentResultPage() {
         >
           <span style={{ fontSize: 13, color: '#94a3b8' }}>支付方式</span>
           <span style={{ fontSize: 13, color: '#e2e8f0' }}>
-            {status === 'success' ? '微信支付' : '-'}
+            {getPaymentMethodLabel(aggregate?.payment?.channel)}
           </span>
         </div>
         <div
@@ -143,54 +137,44 @@ export default function PaymentResultPage() {
         >
           <span style={{ fontSize: 13, color: '#94a3b8' }}>支付时间</span>
           <span style={{ fontSize: 13, color: '#e2e8f0' }}>
-            {status === 'success' ? new Date().toLocaleString('zh-CN') : '-'}
+            {aggregate?.payment?.completedAt
+              ? new Date(aggregate.payment.completedAt).toLocaleString('zh-CN')
+              : aggregate?.order.paidAt
+                ? new Date(aggregate.order.paidAt).toLocaleString('zh-CN')
+                : '-'}
           </span>
         </div>
-      </H5Card>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: '1px solid rgba(148, 163, 184, 0.12)',
+          }}
+        >
+          <span style={{ fontSize: 13, color: '#94a3b8' }}>支付金额</span>
+          <span style={{ fontSize: 14, color: '#f8fafc', fontWeight: 600 }}>
+            {formatCurrency(aggregate?.payment?.amount ?? aggregate?.order.totalAmount ?? 0, aggregate?.order.currency)}
+          </span>
+        </div>
+      </div>
 
       {/* 操作按钮 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {status === 'success' && (
-          <>
-            <Link href="/h5/orders" style={{ textDecoration: 'none' }}>
-              <H5Button variant="primary" fullWidth>
-                查看订单
-              </H5Button>
-            </Link>
-            <Link href="/h5" style={{ textDecoration: 'none' }}>
-              <H5Button variant="secondary" fullWidth>
-                返回首页
-              </H5Button>
-            </Link>
-          </>
-        )}
-
-        {status === 'failed' && (
-          <>
-            <Link href={`/h5/payment/${orderId}`} style={{ textDecoration: 'none' }}>
-              <H5Button variant="primary" fullWidth>
-                重新支付
-              </H5Button>
-            </Link>
-            <Link href="/h5" style={{ textDecoration: 'none' }}>
-              <H5Button variant="secondary" fullWidth>
-                返回首页
-              </H5Button>
-            </Link>
-          </>
-        )}
-
-        {status === 'pending' && (
-          <>
-            <H5Button variant="secondary" fullWidth onClick={handleBack}>
-              返回支付页面
+        {actions.map((action) =>
+          action.action === 'back' ? (
+            <H5Button key={action.label} variant={action.variant} fullWidth onClick={handleBack}>
+              {action.label}
             </H5Button>
-            <Link href="/h5" style={{ textDecoration: 'none' }}>
-              <H5Button variant="ghost" fullWidth>
-                先逛逛其他
+          ) : (
+            <Link key={action.label} href={action.href ?? '/h5'} style={{ textDecoration: 'none' }}>
+              <H5Button variant={action.variant} fullWidth>
+                {action.label}
               </H5Button>
             </Link>
-          </>
+          ),
         )}
       </div>
 

@@ -614,3 +614,25 @@ describe('checkout — 表单深层验证', () => {
     assert.ok(!source.includes('@m5/admin'), 'should not import from @m5/admin');
   });
 });
+
+describe('checkout — P54 真主链接线', () => {
+  it('73. 页面已接入 storefront transactions helper', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('startStorefrontCheckout'), 'should call real checkout helper');
+    assert.ok(source.includes('ensureStorefrontMemberRegistered'), 'should ensure member before checkout');
+    assert.ok(source.includes('buildStorefrontMemberId'), 'should derive a stable memberId from phone');
+  });
+
+  it('74. 提交成功后跳转真实 h5 payment orderId 页面', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes("router.push(`/h5/payment/${aggregate.order.orderId}`)"), 'should navigate to real payment page');
+  });
+
+  it('75. 真实下单 payload 使用 activeItems 映射 skuId/title/quantity/price', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('const checkoutItems = activeItems.map'), 'should map active items');
+    assert.ok(source.includes('skuId: item.id'), 'should map skuId from cart item id');
+    assert.ok(source.includes('title: item.name'), 'should map title from cart item name');
+    assert.ok(source.includes('price: item.price'), 'should keep yuan amount');
+  });
+});

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PageShell,
   FormField,
@@ -14,6 +15,11 @@ import {
   RadioGroup,
   Divider,
 } from '@m5/ui';
+import {
+  buildStorefrontMemberId,
+  ensureStorefrontMemberRegistered,
+  startStorefrontCheckout,
+} from '../../lib/storefront-transactions';
 
 // ==================== 类型定义 ====================
 
@@ -282,6 +288,7 @@ function CartItemRow({
 // ==================== 主页面组件 ====================
 
 export default function CheckoutPage() {
+  const router = useRouter();
   // ---- 商品列表（可编辑） ----
   const [cartItems, setCartItems] = useState<CartItem[]>(
     defaultCart.filter((i) => i.quantity > 0),
@@ -423,13 +430,28 @@ export default function CheckoutPage() {
     setSubmitResult(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const memberId = buildStorefrontMemberId(formData.phone);
+      const checkoutItems = activeItems.map((item) => ({
+        skuId: item.id,
+        title: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      await ensureStorefrontMemberRegistered(memberId, formData.name.trim());
+      const aggregate = await startStorefrontCheckout(
+        memberId,
+        checkoutItems,
+        formData.paymentMethod as PaymentMethodValue,
+        total,
+        couponStatus?.valid ? formData.couponCode.trim().toUpperCase() : undefined,
+      );
+
       setSubmitResult({
         success: true,
-        message: `订单已提交成功！订单金额 ¥${total.toFixed(2)}，支付方式：${
-          paymentOptions.find((p) => p.value === formData.paymentMethod)?.label ?? formData.paymentMethod
-        }`,
+        message: `订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建，正在跳转支付页...`,
       });
+      router.push(`/h5/payment/${aggregate.order.orderId}`);
     } catch (err) {
       setSubmitResult({
         success: false,
@@ -438,7 +460,7 @@ export default function CheckoutPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, total, canCheckout]);
+  }, [activeItems, canCheckout, couponStatus?.valid, formData, router, total]);
 
   const handleReset = useCallback(() => {
     setFormData({

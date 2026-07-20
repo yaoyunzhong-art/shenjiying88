@@ -343,6 +343,80 @@ test('PaymentScreen: loading linked order keeps submit disabled until hydration 
   }
 });
 
+test('PaymentScreen: submitting while linked order is still loading only shows sync alert', async () => {
+  const originalFetch = globalThis.fetch;
+  let resolveResponse: ((value: Response) => void) | undefined;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (() => new Promise<Response>((resolve) => {
+    resolveResponse = resolve;
+  })) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createPaymentComponent({
+        orderId: 'order-005a',
+        amount: 66.6,
+      });
+      await Promise.resolve();
+    });
+
+    const submitBtn = findTouchableByText(root.root, '确认收款');
+    assert.equal(submitBtn?.props.disabled, true, '关联订单同步中时确认收款按钮应禁用');
+
+    await act(async () => {
+      submitBtn?.props.onPress?.();
+      await Promise.resolve();
+    });
+
+    assert.equal(alertCalls.at(-1)?.title, '提示');
+    assert.equal(alertCalls.at(-1)?.message, '订单信息同步中，请稍后再试');
+    assert.equal(findAllModals(root.root).some((modal) => modal.props.visible), false, '同步中不应打开确认弹窗');
+
+    resolveResponse?.(new Response(JSON.stringify({
+      success: true,
+      message: 'OK',
+      data: {
+        order: {
+          orderId: 'order-005a',
+          orderNo: 'ORDAPI20260720005A',
+          memberId: 'member-005a',
+          currency: 'CNY',
+          totalAmount: 66.6,
+          status: 'PAID',
+          latestPaymentId: 'payment-order-005a',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-20T04:10:00.000Z',
+          paidAt: '2026-07-20T04:10:00.000Z',
+        },
+        payment: {
+          paymentId: 'payment-order-005a',
+          orderId: 'order-005a',
+          channel: 'wechat-pay',
+          amount: 66.6,
+          status: 'SUCCEEDED',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-20T04:10:00.000Z',
+          completedAt: '2026-07-20T04:10:00.000Z',
+        },
+        pointsLedger: [],
+        couponRedemptions: [],
+        blindboxFulfillments: [],
+        refunds: [],
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
+});
+
 test('PaymentScreen: fetch failure shows retry hint and can recover', async () => {
   const originalFetch = globalThis.fetch;
   let requestCount = 0;

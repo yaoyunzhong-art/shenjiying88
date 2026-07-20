@@ -319,6 +319,44 @@ test('OrderListScreen: merges paid params into matching order card', () => {
   assert.ok(findTextInOrderCards(root, '支付时间'), '收款完成回带后列表卡片应显示支付时间');
 });
 
+test('OrderListScreen: creates runtime fallback order when current order is not in mock list', () => {
+  const root = createOrderListComponent({
+    orderId: 'order-runtime-001',
+    orderNo: 'ORDRUNTIME20260720001',
+    paymentStatus: 'PAID',
+    paymentAmount: 66.6,
+    paymentPaidAt: '2026-07-20T06:20:00.000Z',
+    paymentChannel: 'CASH',
+  });
+
+  const flatList = getOrderListFlatList(root);
+  const orderIds = (flatList.props.data as Array<{ orderId: string }>).map((item) => item.orderId);
+  assert.ok(orderIds.includes('order-runtime-001'), 'mock 不存在的当前订单也应在列表中补出运行态卡片');
+  assert.ok(findTextInOrderCards(root, 'ORDRUNTIME20260720001'), '运行态兜底卡片应展示路由订单号');
+  assert.ok(findTextInOrderCards(root, '实付金额'), '运行态兜底卡片应按支付成功切换金额口径');
+  assert.ok(findTextInOrderCards(root, '¥66.60'), '运行态兜底卡片应展示路由带回金额');
+  assert.ok(findTextInOrderCards(root, '现金'), '运行态兜底卡片应展示路由带回渠道');
+});
+
+test('OrderListScreen: runtime fallback order keeps refund timestamps when current order is not in mock list', () => {
+  const root = createOrderListComponent({
+    orderId: 'order-runtime-002',
+    orderNo: 'ORDRUNTIME20260720002',
+    refundStatus: 'REFUNDED',
+    refundRequestedAmount: 28.8,
+    refundRequestedAt: '2026-07-20T06:21:00.000Z',
+    refundCompletedAt: '2026-07-20T06:25:00.000Z',
+  });
+
+  const flatList = getOrderListFlatList(root);
+  const orderIds = (flatList.props.data as Array<{ orderId: string }>).map((item) => item.orderId);
+  assert.ok(orderIds.includes('order-runtime-002'), '退款完成的新订单也应在列表中补出运行态卡片');
+  assert.ok(findTextInOrderCards(root, '已退款'), '运行态退款卡片应展示已退款状态');
+  assert.ok(findTextInOrderCards(root, '已退款金额'), '运行态退款卡片应切换为已退款金额口径');
+  assert.ok(findTextInOrderCards(root, '退款完成时间'), '运行态退款卡片应展示退款完成时间');
+  assert.ok(findTextInOrderCards(root, '¥28.80'), '运行态退款卡片应展示退款金额');
+});
+
 test('OrderListScreen: prefers real order list payload when list fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
   // @ts-expect-error test flag
