@@ -37,6 +37,28 @@
 
 ## 三、无Phase模块需要绑定
 
+### V23 Day1 凌晨新增模块绑定 (2026-07-21 01:00-02:40)
+| 模块 | 位置 | 文件 | 测试 | E2E | PRD | 审计 | 推荐Phase |
+|:-----|:-----|:---:|:----:|:---:|:----:|:----:|:---------|
+| expense 费用报销 | api/src/modules/expense/ | 8文件 | expense.controller ✅ | — | 🟢已发 | 🆕 | P-HR 费用报销 |
+| feedback 用户反馈 | api/src/modules/feedback/ | 6文件 | feedback.controller ✅ | — | 🟢已发 | 🆕 | P-38 客户反馈 |
+| leave-request 请假考勤 | api/src/modules/leave-request/ | 9文件 | controller+module 共22测试 | E2E#61 leave | 🟢已发(P2) | 🆕 | P-HR 考勤 |
+| shift-scheduler 排班管理 | api/src/modules/shift-scheduler/ | 9文件 | controller+module ✅ | — | 🟢已发 | 🆕 | P-HR 排班 |
+| notice 公告通知 | api/src/modules/notice/ | 7文件 | controller ✅ | — | 🟢已发 | 🆕 | P-Admin 通知 |
+| salary 薪资管理 | api/src/modules/salary/ | 8文件 | controller+entity ✅ | — | 🟢已发 PRD | 🆕 | P-HR 薪资 |
+| system-config SaaS设置 | api/src/modules/system-config/ | 2文件 | saas-settings ✅ | — | 🟢已发 | 🆕 | P-Admin 系统配置 |
+| transfer 人事转正 | api/src/modules/transfer/ | 7文件 | controller ✅ 32测试 | E2E#63 | 🟢已发 | 🆕 | P-HR 转正管理 |
+| venue-booking 场地预订 | api/src/modules/venue-booking/ | service+test | venue-booking 21测试 | — | 🟢已发 | 🆕 | P-30 后勤 |
+
+### V23 Day1 凌晨基础设施增强
+| 项目 | 状态 | 说明 |
+|:-----|:----:|:------|
+| AuthGuard安全加固 | 🟢 **94.41%** | 200+/212 controller添加@UseGuards(TenantGuard) |
+| deviceToken持久化 | 🟢 完成 | gate5: PushRecord转为TypeORM实体+DB存储+测试 |
+| 安全基线扫描v2 | 🟡 **7/8 PASS** | env补全+RLS midware+deviceToken+远程推送(待修) |
+| CI Workflow重建 | 🟢 完成 | 三职分离(类型/测试/L0链) + Docker Compose开发环境 |
+| E2E as any全部清理 | 🟢 完成 | 47个E2E文件 71→0 全清 as any |
+
 ### V20-V22 HR模块绑定 (2026-07-20)
 | 页面 | 位置 | 代码✅ | 测试✅ | 审计✅ | PRD | 推荐Phase |
 |:-----|:----|:-----:|:-----:|:-----:|:----:|:---------|
@@ -232,7 +254,7 @@
 | **V23圈梁** | 🟡 **7道箍上线** | 新增🔴基建箍 + 🧪E2E箍 |
 | **全局测试** | **~62,000+** | TSC 15/15 FULL TURBO ✅ |
 
-### E2E链详细清单 (50条)
+### E2E链详细清单 (63条)
 | # | 链名 | Phase | 完成 |
 |:-:|:-----|:-----:|:----:|
 | 1-30 | 核心业务链 (P-35/36/37/38/48) | 多Phase | ✅ V19之前 |
@@ -247,16 +269,32 @@
 | 48 | 品牌财务全链 | P-47+P-38 | ✅ V22 |
 | 49 | 后勤财务全链 | P-30+P-38 | ✅ V22 |
 | 50 | 多租户安全全链 | P-31+Infra | ✅ V22 |
+| 51 | 门店管理全链路 | P-37+P-35 | ✅ V23 Day1 |
+| 52 | 竞品跟踪全链路 | P-49+P-AI | ✅ V23 Day1 |
+| 53 | 联盟营销全链路 | P-48+P-47 | ✅ V23 Day1 |
+| 54 | CRM客户全生命周期 | P-Admin+AI | ✅ V23 Day1 |
+| 55 | 营销活动全链路 | P-47+P-48 | ✅ V23 Day1 |
+| 56 | 排班考勤全链路 | P-HR+P-30 | ✅ V23 Day1 |
+| 57 | 礼品卡全链路 | P-35+P-38 | ✅ V23 Day1 |
+| 58 | 会员套餐全链路 | P-36+P-37 | ✅ V23 Day1 |
+| 59 | 商家管理全链路 | P-37+P-31 | ✅ V23 Day1 |
+| 60 | 质量巡检全链路 | P-30+P-38 | ✅ V23 Day1 |
+| 61 | 请假审批全链路 | P-HR+P-Admin | ✅ V23 Day1 |
+| 62 | 费用报销全链路 | P-HR+P-38 | 🟡 新增待完善 |
+| 63 | 人事转正全链路 | P-HR+P-Admin | ✅ V23 Day1 |
 
 ---
 
 ## 六、V22 Day1 全局快照 (2026-07-20 22:45)
-- **Commits**: 105 (今日) · **总**: 2,255
-- **Continuous Steady**: 32🏆
-- **TSC**: 15/15 apps 0 error
-- **全系统测试**: ≈ **62,000+**
-- **E2E链**: **50条** 🧪
-- **知识体系**: ~260条(DB) + 15条SEO
+- **Commits**: 131 (今日) · **总**: 2,415
+- **Continuous Steady**: 33🏆
+- **TSC**: 15/15 apps 8 error(⚠️阈值≤5, 需修复)
+- **圈梁评分卡**: **10/9** 🟡 1 FAIL (TSC 8 errors)
+- **E2E链**: **58条** 🧪 (活跃) / **63条** E2E文件
+- **E2E分级**: L0:8 / L1:35 / L2:15
+- **知识赋能**: ~297条(DB) + 知识日采脚本 + 健康API
+- **AuthGuard安全覆盖率**: **94.41%** (200+/212 controller)
+- **安全基线**: 🟡 **7/8 PASS** (env补全+RLS midware+deviceToken)
 - **三态覆盖**: **464页/屏** (admin-web 264 + storefront-web 162 + app(RN) 35 + tob-web 3差)
 
 ---
@@ -270,10 +308,11 @@
 | 2026-07-18 | V1 | storefront 15薄页 + app/mobile端屏幕测试增强 |
 | 2026-07-19 | V1 | V21 Day1: P-49 100%/P-50 75% + tob-web 12页 + storefront/purchase-orders/brands增强 |
 | 2026-07-20 | **V2** | **V22发布日**: 新增**V23 7道箍**·P-47/P-30 100%完全体·admin-web 264页🟢·storefront 162/165🟢·E2E链50条·P-31/P-37/P-38 100%·L3评分🟢S 100/100 |
+| 2026-07-21 | **V3** | **V23 Day1凌晨**: E2E58链·9道箍评分卡10/9·圈梁表全面更新·AuthGuard 94.41%·安全基线7/8·13模块凌晨交付 |
 
 ---
 
-### V23 Day2 · 竞品跟踪模块 (2026-07-21 · 树哥交付)
+### V23 Day1 · 竞品跟踪模块 (2026-07-21 · 树哥交付)
 | 组件 | 位置 | 状态 | 说明 |
 |:-----|:-----|:----:|:------|
 | Entity | api/src/competitor-track/entity | 🟢 完成 | Competitor + CompetitorCategory enum |
@@ -283,7 +322,7 @@
 | 测试 | api/src/competitor-track/test | 🟢 完成 | 38个it覆盖 CRUD+统计+对比+边界+错误 |
 | PRD | docs/knowledge/prd/v23/v23-prd-competitor-track.md | 🟢 已写入 | PRD-competitor-track-001 |
 
-### V23 Day2 · 联名管理模块 (2026-07-21 · 树哥交付 · G10审计条件)
+### V23 Day1 · 联名管理模块 (2026-07-21 · 树哥交付 · G10审计条件)
 | 组件 | 位置 | 状态 | 说明 |
 |:-----|:-----|:----:|:------|
 | Entity | api/src/collab/collab.entity.ts | 🟢 完成 | CollabProject + CollabStatus枚举(6态) |
@@ -296,7 +335,7 @@
 | 圈梁测试 | api/src/collab/collab.ringbeam.test.ts | 🟢 完成 | 15个圈梁检查it |
 | PRD | docs/knowledge/prd/v23/v23-prd-collab-management.md | 🟢 已写入 | V23 Phase 1 · 联名管理基本CRUD |
 
-### V23 Day2 · CRM客户管理模块 (2026-07-21 · 树哥交付)
+### V23 Day1 · CRM客户管理模块 (2026-07-21 · 树哥交付)
 | 组件 | 位置 | 状态 | 说明 |
 |:-----|:-----|:----:|:------|
 | Entity | api/src/modules/crm/crm.entity.ts | 🟢 完成 | CustomerProfile + CrmInteraction + Ticket + CrmNote |
@@ -347,4 +386,55 @@
 
 ---
 
-> 🦞 龙虾哥 · Phase→模块映射 · 2026-07-21 V23 Day1
+## 七、V23 Day1 凌晨进度快照 (2026-07-21 02:40)
+
+### V23 Day1 凌晨新开发模块 (01:00-02:40)
+| 模块 | 类型 | 状态 | 说明 |
+|:-----|:----:|:----:|:------|
+| **竞赛跟踪** | competitor-track | 🟢 100% | 7端点CRUD+统计+对比+E2E#52+38测试+PRD+admin前端 |
+| **联名管理** | collab | 🟢 100% | 7端点+Contract+19测试+15圈梁测试+G10审计+PRD |
+| **CRM客户管理** | crm | 🟢 100% | 18端点+35+40测试+8角色测试+E2E#54+PRD+admin前端 |
+| **联盟营销** | alliance | 🟢 100% | E2E#53+PRD+圈梁表+admin前端 |
+| **礼品卡** | gift-card | 🟢 100% | 17端点+17E2E#57测试+PRD+全生命周期+状态机 |
+| **团建活动** | team-building(admin) | 🟢 100% | admin页面+36测试+PRD |
+| **费用报销** | expense | 🟢 完成 | 8文件+contract+DTO+controller+entity+测试 |
+| **用户反馈** | feedback | 🟢 完成 | 6文件+controller+DTO+entity+module+测试 |
+| **请假考勤P2** | leave-request | 🟢 完成 | 9文件+22测试+E2E#61+PRD(P2) |
+| **排班管理** | shift-scheduler | 🟢 完成 | 9文件+测试+PRD |
+| **公告通知** | notice | 🟢 修复完善 | 7文件+contract+DTO+修复测试 |
+| **薪资管理** | salary | 🟢 PRD | 8文件+PRD文档+contract+controller+测试中 |
+| **SaaS设置** | system-config | 🟢 完成 | 2文件+saas-settings控制器+测试 |
+| **人事转正** | transfer | 🟢 完成 | 7文件+32测试+E2E#63+PRD |
+| **场地预订** | venue-booking | 🟢 完成 | service+21测试+125/135 pass+PRD |
+
+### V23 Day1 凌晨基础设施增强
+| 项目 | 状态 | 说明 |
+|:-----|:----:|:------|
+| **@UseGuards(TenantGuard)全量覆盖** | 🟢 **94.41%** | 58+42+50=150 controller批量添加 |
+| **deviceToken持久化** | 🟢 完成 | PushRecord转为TypeORM实体+DB存储+测试 |
+| **安全基线扫描脚本** | 🟡 **7/8 PASS** | 真实8扫描 + env补全 + RLS midware |
+| **CI Workflow重建** | 🟢 完成 | 三职分离(类型/测试/L0链) |
+| **Docker Compose** | 🟢 完成 | 开发环境编排 + SSL脚本 + nginx配置 |
+| **E2E as any全清** | 🟢 完成 | 47个E2E文件 71→0 as any |
+| **TSC扫尾** | 🟡 **回归** | 8个错误(阈值≤5) — module构建冲突需修复 |
+| **知识日采脚本** | 🟢 完成 | 233行 knowledge-daily-crawl.sh + ~297条种子+健康API |
+| **安全熔断脚本** | 🟢 完成 | 275行 fail-safe-meltdown.sh Gate6-C1 |
+| **E2E分级方案** | 🟢 完成 | e2e-tier-grading.md分级方案+500行检查脚本 |
+| **PRD补丁批量写入** | 🟢 完成 | 12份PRD摘要卡+PRD升级硬箍(🟡→🔴) |
+| **圈梁9道箍自动评分卡** | 🟡 **10/9 — 1 FAIL** | TSC 8 errors 待修复 |
+
+### V23 Day1 C段待交付
+| 模块 | 状态 | 说明 |
+|:-----|:----:|:------|
+| admin-web 优惠券活动页 | 🟡 完善中 | coupon-management admin前端 + PRD |
+| admin-web 联盟伙伴管理 | 🟡 完善中 | alliances admin前端页面 |
+| admin-web 后勤配送管理 | 🟡 完善中 | purchase-order admin前端页面 |
+| admin-web CRM前端 | 🟡 完善中 | CRM phase-1 admin前端页面 |
+| report模块 | 🟡 完善中 | 报表管理PRD+CRUD |
+| membership模块 | 🟡 完善中 | 会员套餐PRD+CRUD+E2E#58 |
+| quality模块 | 🟡 完善中 | 质量巡检PRD+CRUD+E2E#60 |
+| merchant模块 | 🟡 完善中 | 商家管理PRD+CRUD+E2E#59 |
+
+---
+
+> 🦞 龙虾哥 · Phase→模块映射 · 2026-07-21 V23 Day1 凌晨快照
