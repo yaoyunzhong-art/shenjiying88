@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -77,6 +80,15 @@ export class ShiftSchedulerController {
     @Body() body: UpdateShiftScheduleDto,
   ) {
     return this.shiftService.updateShift(shiftId, tenantContext.tenantId, body)
+  }
+
+  @Delete(':shiftId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteShift(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('shiftId') shiftId: string,
+  ): void {
+    return this.shiftService.deleteShift(shiftId, tenantContext.tenantId)
   }
 
   @Patch(':shiftId/status')

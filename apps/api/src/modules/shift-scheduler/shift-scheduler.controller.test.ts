@@ -87,6 +87,13 @@ describe('ShiftSchedulerController', () => {
       assert.equal(method, 1)
       assert.equal(path, 'seed')
     })
+
+    it('deleteShift should be DELETE /:shiftId', () => {
+      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.deleteShift)
+      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.deleteShift)
+      assert.equal(method, 3)
+      assert.equal(path, ':shiftId')
+    })
   })
 
   // ── Controller Logic ──
@@ -185,6 +192,41 @@ describe('ShiftSchedulerController', () => {
       })
       const emp1 = controller.getEmployeeWeeklyShifts(TENANT, 'EMP-001', '2026-07-13', '2026-07-19')
       assert.equal(emp1.length, 1)
+    })
+  })
+
+  describe('deleteShift', () => {
+    it('should delete shift and return void', () => {
+      const s = controller.createShift(TENANT, {
+        employeeId: 'EMP-001', employeeName: 'A', date: '2026-07-16',
+        shiftType: ShiftType.Morning, startTime: '08:00', endTime: '16:00', location: 'L1',
+      })
+      const result = controller.deleteShift(TENANT, s.id)
+      assert.strictEqual(result, undefined)
+      assert.throws(() => {
+        controller.getShift(TENANT, s.id)
+      }, /Shift schedule not found/)
+    })
+
+    it('should throw on delete non-existent shift', () => {
+      assert.throws(() => {
+        controller.deleteShift(TENANT, 'nonexistent')
+      }, /Shift schedule not found/)
+    })
+
+    it('should not affect other tenant shifts on delete', () => {
+      const s1 = controller.createShift(TENANT, {
+        employeeId: 'EMP-001', employeeName: 'A', date: '2026-07-16',
+        shiftType: ShiftType.Morning, startTime: '08:00', endTime: '16:00', location: 'L1',
+      })
+      const OTHER = { tenantId: 'tenant-002' }
+      controller.createShift(OTHER, {
+        employeeId: 'EMP-001', employeeName: 'A', date: '2026-07-16',
+        shiftType: ShiftType.Morning, startTime: '08:00', endTime: '16:00', location: 'L2',
+      })
+      controller.deleteShift(TENANT, s1.id)
+      assert.equal(controller.listShifts(TENANT, {}).length, 0)
+      assert.equal(controller.listShifts(OTHER, {}).length, 1)
     })
   })
 
