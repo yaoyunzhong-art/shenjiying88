@@ -19,6 +19,9 @@ export type AuditEventType =
   | 'payment.initiated' | 'payment.completed' | 'payment.failed' | 'payment.refunded'
   | 'settlement.created' | 'settlement.approved' | 'settlement.rejected' | 'settlement.paid'
   | 'admin.config_change' | 'admin.user_impersonate' | 'admin.data_export'
+  | 'admin.role_create' | 'admin.role_update' | 'admin.role_delete'
+  | 'admin.permission_grant' | 'admin.permission_revoke'
+  | 'user.role_assigned' | 'user.role_unassigned'
   | 'compliance.consent_recorded' | 'compliance.dsr_submitted' | 'compliance.dsr_processed'
 
 export type ActorType = 'user' | 'admin' | 'system' | 'api_key'

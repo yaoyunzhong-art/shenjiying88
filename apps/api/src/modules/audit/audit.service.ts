@@ -3,6 +3,8 @@
  * 用途: 全链路审计追踪、分账日志记录、异常行为检测、合规报告生成
  */
 
+import { Logger } from '@nestjs/common'
+
 export type AuditEventType =
   | 'auth.login' | 'auth.logout' | 'auth.register' | 'auth.password_change'
   | 'user.profile_update' | 'user.consent_update' | 'user.data_delete'
@@ -11,6 +13,9 @@ export type AuditEventType =
   | 'payment.initiated' | 'payment.completed' | 'payment.failed' | 'payment.refunded'
   | 'settlement.created' | 'settlement.approved' | 'settlement.rejected' | 'settlement.paid'
   | 'admin.config_change' | 'admin.user_impersonate' | 'admin.data_export'
+  | 'admin.role_create' | 'admin.role_update' | 'admin.role_delete'
+  | 'admin.permission_grant' | 'admin.permission_revoke'
+  | 'user.role_assigned' | 'user.role_unassigned'
   | 'compliance.consent_recorded' | 'compliance.dsr_submitted' | 'compliance.dsr_processed'
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
@@ -53,6 +58,7 @@ export interface AuditQuery {
 export type SettlementEventType = 'created' | 'approved' | 'paid' | 'rejected'
 
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name)
   private readonly auditLogs = new Map<string, AuditLog>()
   private clientIP: string | null = null
   private traceId: string | null = null
@@ -79,17 +85,30 @@ export class AuditService {
       traceId: event.traceId ?? this.traceId ?? undefined,
     }
     this.auditLogs.set(id, log)
+
+    // 根据风险等级选择日志级别
+    const riskLevel = event.riskLevel
+    const logMsg = `[AUDIT] ${event.eventType} actor=${event.actorId} type=${event.actorType} id=${id} risk=${riskLevel}`
+    if (riskLevel === 'critical' || riskLevel === 'high') {
+      this.logger.warn(logMsg)
+    } else {
+      this.logger.log(logMsg)
+    }
+
     return id
   }
 
   /** 批量记录（用于高频事件，如积分变动）*/
   async logBatch(events: Omit<AuditLog, 'id' | 'timestamp'>[]): Promise<string[]> {
-    return Promise.all(events.map((e) => this.log(e)))
+    const ids = await Promise.all(events.map((e) => this.log(e)))
+    this.logger.log(`[AUDIT] Batch ${events.length} events, ids=[${ids.slice(0, 5).join(',')}${ids.length > 5 ? '...' : ''}]`)
+    return ids
   }
 
   /** 设置 IP 地址（从请求上下文提取，X-Forwarded-For / X-Real-IP）*/
   setClientIP(ip: string): void {
     this.clientIP = ip
+    this.logger.log(`[AUDIT] Client IP set: ${ip}`)
   }
 
   /** 获取当前设置的 IP 地址 */
@@ -111,6 +130,7 @@ export class AuditService {
 
   /** 分页查询审计日志 */
   async query(filter: AuditQuery): Promise<{ items: AuditLog[]; nextCursor?: string; total: number }> {
+    this.logger.log(`[AUDIT] Query: actorId=${filter.actorId ?? '-'} tenantId=${filter.tenantId ?? '-'} eventType=${filter.eventType ?? '-'} riskLevel=${filter.riskLevel ?? '-'} limit=${filter.limit ?? '-'}`)
     let results = Array.from(this.auditLogs.values())
 
     // 按过滤条件筛选
@@ -166,21 +186,26 @@ export class AuditService {
       nextCursor = `${last.timestamp.getTime()}||${last.id}`
     }
 
+    this.logger.log(`[AUDIT] Query result: ${results.length} items (total=${total})`)
     return { items: results, nextCursor, total }
   }
 
   /** 获取单条审计详情 */
   async getById(id: string): Promise<AuditLog | null> {
-    return this.auditLogs.get(id) ?? null
+    const log = this.auditLogs.get(id) ?? null
+    this.logger.log(`[AUDIT] GetById id=${id} found=${log !== null}`)
+    return log
   }
 
   /** 获取用户在时间范围内的所有操作（用于 DSR access）*/
   async getUserActivityLog(userId: string, from: Date, to: Date): Promise<AuditLog[]> {
+    this.logger.log(`[AUDIT] GetUserActivity userId=${userId} from=${from.toISOString()} to=${to.toISOString()}`)
     const results = Array.from(this.auditLogs.values()).filter(
       (l) => l.actorId === userId && l.timestamp >= from && l.timestamp <= to,
     )
     // 按时间正序排列
     results.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    this.logger.log(`[AUDIT] User activity: ${results.length} records for userId=${userId}`)
     return results
   }
 
@@ -193,6 +218,8 @@ export class AuditService {
     const anomalies: Array<{ pattern: string; riskLevel: RiskLevel; count: number }> = []
     const now = Date.now()
     const windowMs = windowMinutes * 60 * 1000
+
+    this.logger.log(`[AUDIT] Running anomaly detection, window=${windowMinutes}min`)
 
     // 收集所有日志
     const logs = Array.from(this.auditLogs.values())
@@ -226,6 +253,13 @@ export class AuditService {
       'admin.config_change',
       'admin.user_impersonate',
       'admin.data_export',
+      'admin.role_create',
+      'admin.role_update',
+      'admin.role_delete',
+      'admin.permission_grant',
+      'admin.permission_revoke',
+      'user.role_assigned',
+      'user.role_unassigned',
     ]
     for (const log of logs) {
       if (sensitiveEvents.includes(log.eventType)) {
@@ -257,13 +291,26 @@ export class AuditService {
       })
     }
 
+    if (anomalies.length > 0) {
+      this.logger.warn(`[AUDIT] Anomalies detected: ${anomalies.length} patterns found`)
+      for (const a of anomalies) {
+        this.logger.warn(`[AUDIT]   Anomaly: risk=${a.riskLevel} count=${a.count} pattern=${a.pattern}`)
+      }
+    } else {
+      this.logger.log('[AUDIT] No anomalies detected')
+    }
+
     return anomalies
   }
 
   /** 计算风险评分（0-100）*/
   async computeRiskScore(actorId: string): Promise<number> {
+    this.logger.log(`[AUDIT] Computing risk score for actorId=${actorId}`)
     const logs = Array.from(this.auditLogs.values()).filter((l) => l.actorId === actorId)
-    if (logs.length === 0) return 0
+    if (logs.length === 0) {
+      this.logger.log(`[AUDIT] No audit logs found for actorId=${actorId}, score=0`)
+      return 0
+    }
 
     const now = Date.now()
     const oneDayMs = 24 * 60 * 60 * 1000
@@ -304,7 +351,9 @@ export class AuditService {
     if (recentHighRisk.length >= 3) score += 20
     else if (recentHighRisk.length >= 1) score += 10
 
-    return Math.min(100, score)
+    const finalScore = Math.min(100, score)
+    this.logger.log(`[AUDIT] Risk score for actorId=${actorId}: ${finalScore}/100 (anomalies=${anomalies.length}, recentOps=${recentOps.length})`)
+    return finalScore
   }
 
   // ── 分账日志 ─────────────────────────────────────────────────────────
@@ -322,13 +371,14 @@ export class AuditService {
       paid: 'settlement.paid',
       rejected: 'settlement.rejected',
     }
+    this.logger.log(`[AUDIT] Settlement event: ${eventType} settlementId=${settlementId} amount=${amount}`)
     return this.log({
       eventType: eventTypeMap[eventType],
       actorId: 'system',
       actorType: 'system',
       settlementId,
       settlementAmount: amount,
-      piiFields: [], // 分账不涉及 PII
+      piiFields: [],
       riskLevel: eventType === 'rejected' ? 'medium' : 'low',
       metadata,
     })
@@ -336,10 +386,12 @@ export class AuditService {
 
   /** 查询分账关联的所有审计记录 */
   async getSettlementAuditTrail(settlementId: string): Promise<AuditLog[]> {
+    this.logger.log(`[AUDIT] Query settlement trail: settlementId=${settlementId}`)
     const results = Array.from(this.auditLogs.values()).filter(
       (l) => l.settlementId === settlementId,
     )
     results.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    this.logger.log(`[AUDIT] Settlement trail: ${results.length} records for settlementId=${settlementId}`)
     return results
   }
 
@@ -347,12 +399,14 @@ export class AuditService {
 
   /** 导出审计报告（用于合规审查）*/
   async exportReport(from: Date, to: Date, format: 'json' | 'csv'): Promise<string> {
+    this.logger.log(`[AUDIT] Export report: from=${from.toISOString()} to=${to.toISOString()} format=${format}`)
     const logs = Array.from(this.auditLogs.values()).filter(
       (l) => l.timestamp >= from && l.timestamp <= to,
     )
     logs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
 
     if (format === 'json') {
+      this.logger.log(`[AUDIT] Export complete: ${logs.length} records, format=json`)
       return JSON.stringify(logs, null, 2)
     }
 
@@ -387,6 +441,7 @@ export class AuditService {
         l.settlementAmount ?? '',
       ].join(','),
     )
+    this.logger.log(`[AUDIT] Export complete: ${logs.length} records, format=csv`)
     return [headers.join(','), ...rows].join('\n')
   }
 
@@ -397,6 +452,7 @@ export class AuditService {
     dsrRequests: unknown[]
     dataBreaches: unknown[]
   }> {
+    this.logger.log(`[AUDIT] Generating compliance report for tenantId=${tenantId}`)
     const logs = Array.from(this.auditLogs.values()).filter((l) => l.tenantId === tenantId)
 
     // processing activities: 所有数据处理操作
@@ -443,6 +499,7 @@ export class AuditService {
         riskLevel: l.riskLevel,
       }))
 
+    this.logger.log(`[AUDIT] Compliance report generated: tenantId=${tenantId} activities=${processingActivities.length} consents=${consentRecords.length} dsr=${dsrRequests.length} breaches=${dataBreaches.length}`)
     return {
       processingActivities,
       consentRecords,
@@ -459,6 +516,7 @@ export class AuditService {
     this.clientIP = null
     this.traceId = null
     this.idCounter = 0
+    this.logger.warn('[AUDIT] In-memory logs cleared (test mode)')
   }
 
   /** 获取所有日志（仅用于测试）*/
