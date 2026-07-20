@@ -98,6 +98,9 @@ export {
   RlsVerifyResultDto,
 } from './rls.dto'
 
+// ─── Prisma 中间件扩展 ──────────────────────────────────────────────────────
+export { createRlsExtension, createRlsClient } from './rls.middleware-prisma'
+
 // ─── RLS 常量 ───────────────────────────────────────────────────────────────
 export const RLS_DEFAULT_TENANT_COLUMN = 'tenant_id'
 export const RLS_POLICY_PREFIX = 'tenant_isolation_policy'

@@ -85,6 +85,17 @@ declare -a L1_FILE_RULES=(
   'cross-module-e2e-42-sdk-domain-api-storefront'   # #42
   'cross-module-e2e-44-brand-logistics'             # #44
   'cross-module-e2e-46-brand-storefront'            # #46
+  'cross-module-e2e-51-store-management'            # #51
+  'cross-module-e2e-52-competitor-track'            # #52
+  'cross-module-e2e-53-alliance'                    # #53
+  'cross-module-e2e-54-crm'                         # #54
+  'cross-module-e2e-55-campaign'                    # #55
+  'cross-module-e2e-56-schedule'                    # #56
+  'cross-module-e2e-57-giftcard'                    # #57
+  'cross-module-e2e-58-membership'                  # #58
+  'cross-module-e2e-59-merchant'                    # #59
+  'cross-module-e2e-60-quality'                     # #60
+  'cross-module-e2e-61-leave'                       # #61
 )
 
 # ============================================================================
@@ -303,26 +314,31 @@ verify_consistency() {
     local script_tier
     script_tier=$(classify_file "$file")
 
-    # 从文档中查找该文件的级别
-    local doc_line
-    doc_line=$(grep "$basename" "$DOC_FILE" 2>/dev/null | head -1)
+    # 从文档的附录 7.2 文件列表表中查找该文件的级别
+    # 匹配格式: | N | \`basename\` | **L0** | ... 或 | N | \`basename\` | L1 | ...
+    local doc_tier
+    doc_tier="?"
 
-    if [[ -z "$doc_line" ]]; then
-      warn "文档中未找到 $basename"
-      issues=$((issues + 1))
-      continue
+    # 尝试从附录 7.2 文件列表表精确匹配 (行中包含 basename + L0/L1/L2)
+    # 格式: | N | \`basename\` | **L0** | N |  或  | N | \`basename\` | L1 | N |
+    local table_line
+    table_line=$(grep "$basename" "$DOC_FILE" 2>/dev/null \
+      | grep -E '\|.*L[012].*\|' \
+      | head -1)
+    if [[ -n "$table_line" ]]; then
+      if echo "$table_line" | grep -Eq '\*\*L0\*\*'; then
+        doc_tier="L0"
+      elif echo "$table_line" | grep -Eq '\*\*L1\*\*|\|\s*L1\s*\|'; then
+        doc_tier="L1"
+      elif echo "$table_line" | grep -Eq '\*\*L2\*\*|\|\s*L2\s*\|'; then
+        doc_tier="L2"
+      fi
     fi
 
-    # 文档中的 L0/L1/L2 标记
-    local doc_tier
-    if echo "$doc_line" | grep -q "L0"; then
-      doc_tier="L0"
-    elif echo "$doc_line" | grep -q "L1"; then
-      doc_tier="L1"
-    elif echo "$doc_line" | grep -q "L2"; then
-      doc_tier="L2"
-    else
-      doc_tier="?"
+    if [[ "$doc_tier" == "?" ]]; then
+      warn "文档中未找到 $basename 的分级"
+      issues=$((issues + 1))
+      continue
     fi
 
     if [[ "$script_tier" != "$doc_tier" ]]; then
@@ -448,7 +464,7 @@ main() {
         echo "用法: bash scripts/e2e-tier-check.sh [选项]"
         echo ""
         echo "选项:"
-        echo "  --tier L0|L1|L2   按级别运行测试 (L0=5条生命线, L1=20条核心, L2=全量47条)"
+        echo "  --tier L0|L1|L2   按级别运行测试 (L0=5条生命线, L1=26条核心, L2=全量58条)"
         echo "  --list             列出分级明细"
         echo "  --verify           校验文档 vs 脚本分级一致性"
         echo "  --quality, -q      质量检查 (as any / describe.skip / it.only)"

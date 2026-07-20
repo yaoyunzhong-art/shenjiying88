@@ -41,7 +41,9 @@ import { getTenantContext } from '../../common/context/tenant-context'
 // ── 已知包含 tenantId 字段且需要中间件自动注入的业务模型白名单 ──
 // 从 schema.prisma 中识别。
 // 不在白名单中的模型（如 Tenant, Brand, User, AuditLog 等）不自动注入。
+// 只包含具有 tenantId 列的实际业务模型（排除系统/身份模型）。
 const TENANT_AWARE_MODELS = new Set([
+  // ── 核心业务模型（required tenantId） ──
   'Store',
   'MemberProfile',
   'MemberProfileExtension',
@@ -51,13 +53,41 @@ const TENANT_AWARE_MODELS = new Set([
   'MemberOperationsTask',
   'MemberOperationsExecutionReceipt',
   'LytConnection',
-  'MarketProfile',
+  'CustomDomain',
+  'FoundationAlertAcknowledgement',
+  'EdgeNode',
+  'ConfigAuditLog',
+  'MarketingPushDecisionLog',
+  'InspectionTask',
+  'InvoiceV2',
+  'FinanceLedger',
+  'FinanceAccount',
+  'FinanceSettlement',
+
+  // ── 扩展业务模型（optional tenantId，有上下文时注入） ──
   'RegionalConfigOverride',
-  'EmailChannelConfig',
-  'SocialChannelConfig',
+  'PortalSite',
   'IdentityAccount',
   'OrganizationNode',
-  'OrganizationMembership',
+  'AccessPolicy',
+  'GovernanceApproval',
+  'ConfigEntry',
+  'SecretAsset',
+  'CertificateAsset',
+  'DomainEvent',
+  'WebhookSubscription',
+  'NotificationTemplate',
+  'NotificationDispatch',
+  'FileAsset',
+  'OpenPlatformApp',
+  'RateLimitPolicy',
+  'FeatureFlag',
+  'BackupSnapshot',
+  'RestoreRun',
+  'PiiPolicy',
+  'AiModelConfig',
+  'AiExecutionRecord',
+  'ReconciliationReportModel',
 ])
 
 // ── 查询操作（需要 WHERE tenantId 注入） ──────────────────────
