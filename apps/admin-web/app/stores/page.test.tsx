@@ -1,6 +1,9 @@
 /**
  * stores/page.test.tsx — 门店列表页 L1 冒烟测试
  * 覆盖: 正例·边界·防御
+ *
+ * 注意：page.tsx 已重构为从 stores-data.ts 导入类型/常量的架构，
+ * 因此不再在 page.tsx 中直接内联定义。
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -23,16 +26,17 @@ describe('stores — 正例', () => {
     assert.ok(src.includes('export default function StoresPage'), '缺少默认导出组件');
   });
 
-  it('应包含 MOCK_STORES 和 StoreItem 接口', () => {
+  it('应从 stores-data.ts 导入 StoreItem 接口', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_STORES'), '缺少 MOCK_STORES');
-    assert.ok(src.includes('interface StoreItem'), '缺少 StoreItem 接口');
+    // 不再内联定义，转为从外部导入
+    assert.ok(src.includes("from '../stores-data'"), '缺少从 stores-data 导入');
+    assert.ok(src.includes('type StoreItem') || src.includes('StoreItem,'), '缺少 StoreItem 类型导入');
   });
 
   it('应计算 total / active / highRisk 统计', () => {
     const src = readSource();
-    assert.ok(src.includes('total:'), '缺少 total');
-    assert.ok(src.includes('active:'), '缺少 active');
+    assert.ok(src.includes('total:') || src.includes('stats.total'), '缺少 total');
+    assert.ok(src.includes('stats.active'), '缺少 active');
     assert.ok(src.includes('highRisk'), '缺少 highRisk');
   });
 
@@ -41,25 +45,26 @@ describe('stores — 正例', () => {
     assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
   });
 
-  it('应导出 STORE_STATUS_MAP 常量', () => {
+  it('应从 stores-data.ts 导入 STORE_STATUS_MAP', () => {
     const src = readSource();
-    assert.ok(src.includes('export const STORE_STATUS_MAP'), '缺少导出 STORE_STATUS_MAP');
+    assert.ok(src.includes('STORE_STATUS_MAP') && !src.includes('export const STORE_STATUS_MAP'),
+      '应从外部导入 STORE_STATUS_MAP');
   });
 
-  it('应导出 RISK_LEVEL_MAP 常量', () => {
+  it('应从 stores-data.ts 导入 STORE_RISK_LEVEL_MAP', () => {
     const src = readSource();
-    assert.ok(src.includes('export const RISK_LEVEL_MAP'), '缺少导出 RISK_LEVEL_MAP');
+    assert.ok(src.includes('STORE_RISK_LEVEL_MAP'), '缺少 STORE_RISK_LEVEL_MAP');
   });
 
-  it('应导出 MOCK_STORES 数据', () => {
+  it('应使用 computed stats，而非直接内联 MOCK_STORES', () => {
     const src = readSource();
-    assert.ok(src.includes('export const MOCK_STORES'), '缺少导出 MOCK_STORES');
+    assert.ok(src.includes('computeStoreStats'), '缺少 computeStoreStats');
   });
 
-  it('应包含 totalTenants 和 totalBrands 统计', () => {
+  it('应包含租户数和品牌数统计', () => {
     const src = readSource();
-    assert.ok(src.includes('totalTenants'), '缺少 totalTenants');
-    assert.ok(src.includes('totalBrands'), '缺少 totalBrands');
+    assert.ok(src.includes('totalTenants') || src.includes('stats.totalTenants'), '缺少 totalTenants');
+    assert.ok(src.includes('brandCount') || src.includes('computeStoreStats'), '缺少品牌统计');
   });
 
   it('应包含 4 列统计卡片布局', () => {
@@ -76,9 +81,9 @@ describe('stores — 正例', () => {
 // ---- 边界 ----
 
 describe('stores — 边界', () => {
-  it('空 MOCK_STORES 时长度应为 0', () => {
+  it('应统计门店长度', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_STORES.length'), '长度统计');
+    assert.ok(src.includes('stores.length') || src.includes('stats.total'), '长度统计');
   });
 
   it('应支持 marketCode 市场分类', () => {
@@ -98,7 +103,7 @@ describe('stores — 边界', () => {
 
   it('应支持风险等级 Tabs 筛选组件', () => {
     const src = readSource();
-    assert.ok(src.includes("riskLevel: 'low' | 'medium' | 'high'"), '缺少风险等级类型');
+    assert.ok(src.includes('riskFilter') || src.includes('STORE_RISK_LEVEL_MAP'), '缺少风险等级筛选');
   });
 
   it('应支持 DetailActionBar 操作栏', () => {
@@ -168,7 +173,7 @@ describe('stores — 深度组件', () => {
   it('包含 && 或 ? 条件逻辑', () => {
     const src = readSource(); assert.ok(src.includes(' && ') || src.includes(' ? '));
   });
-  it('包含事件处理 onClick', () => {
+  it('包含事件处理 onClick/onChange', () => {
     const src = readSource(); assert.ok(src.includes('onClick') || src.includes('onChange'));
   });
   it('包含style内联样式', () => {
@@ -183,8 +188,9 @@ describe('stores — 深度组件', () => {
   it('包含 filter 不可变过滤', () => {
     const src = readSource(); assert.ok(src.includes('.filter('));
   });
-  it('包含 reduce 数据聚合', () => {
-    const src = readSource(); assert.ok(src.includes('.reduce('));
+  it('包含 reduce 或 for-of 数据聚合', () => {
+    const src = readSource();
+    assert.ok(src.includes('.reduce(') || src.includes('computeStoreStats'), '数据聚合');
   });
   it('包含 Tabs 筛选组件', () => {
     const src = readSource(); assert.ok(src.includes('Tabs'));
@@ -192,14 +198,15 @@ describe('stores — 深度组件', () => {
 });
 
 describe('stores — 业务深度', () => {
-  it('包含15条Mock门店数据', () => {
+  it('包含从 stores-data 导入的类型定义', () => {
     const src = readSource();
-    const match = src.match(/MOCK_STORES[\s\S]{0,20}\[/);
-    assert.ok(match, 'MOCK_STORES数组定义');
+    assert.ok(src.includes("from '../stores-data'"), '依赖 stores-data 模块');
   });
-  it('包含门店状态枚举4种', () => {
+  it('包含门店状态枚举4种（通过 STORE_STATUSES / STORE_STATUS_MAP 引用）', () => {
     const src = readSource();
-    assert.ok(src.includes("'active'") && src.includes("'inactive'") && src.includes("'pending'") && src.includes("'suspended'"));
+    // 页面从 stores-data 导入 STORE_STATUSES/STORE_STATUS_MAP，不再内联字符串
+    assert.ok(src.includes('STORE_STATUSES') || src.includes('STORE_STATUS_MAP'), '需要引用门店状态常量');
+    assert.ok(src.includes('statusFilter') && src.includes('StoreStatus'), '需要状态筛选逻辑');
   });
   it('包含市场分类marketCode', () => {
     const src = readSource(); assert.ok(src.includes('cn-mainland') || src.includes('marketCode'));
@@ -224,6 +231,22 @@ describe('stores — 业务深度', () => {
   });
   it('包含筛选后重置分页逻辑', () => {
     const src = readSource(); assert.ok(src.includes('resetPage'));
+  });
+  it('包含门店详情导航（link to /stores/${id}）', () => {
+    const src = readSource();
+    assert.ok(src.includes('/stores/'));
+  });
+  it('包含删除功能（handleDelete）', () => {
+    const src = readSource();
+    assert.ok(src.includes('handleDelete') || src.includes('onDelete') || src.includes('deleteConfirm'));
+  });
+  it('包含 useStoreCapabilityGating 能力门控', () => {
+    const src = readSource();
+    assert.ok(src.includes('useStoreCapabilityGating'), '缺少能力门控');
+  });
+  it('包含 loadAdminStoreList 异步加载', () => {
+    const src = readSource();
+    assert.ok(src.includes('loadAdminStoreList'), '缺少异步数据加载');
   });
 });
 

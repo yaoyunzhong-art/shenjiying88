@@ -67,11 +67,12 @@ interface BuildRefundDetailParamsInput {
 }
 
 interface BuildOrdersRuntimeParamsInput {
-  orderId: string;
-  orderNo: string;
-  totalAmount: number;
+  order?: RouteLinkedOrderSnapshot;
+  orderId?: string;
+  orderNo?: string;
+  totalAmount?: number;
   paidAt?: string;
-  paymentChannel?: PaymentChannel;
+  paymentChannel?: string;
   refundRequestedAmount?: number;
   refundReason?: string;
   refundRequestedAt?: string;
@@ -204,17 +205,19 @@ export function buildOrdersRuntimeRouteParams(
   input: BuildOrdersRuntimeParamsInput,
 ): OrderRuntimeRouteParams {
   const baseParams: OrderRuntimeRouteParams = {
-    orderId: input.orderId,
-    orderNo: input.orderNo,
+    orderId: input.order?.orderId ?? input.orderId,
+    orderNo: input.order?.orderNo ?? input.orderNo,
   };
+  const paymentAmount = input.order?.totalAmount ?? input.totalAmount;
+  const paymentChannel = normalizePaymentChannel(input.order?.paymentChannel ?? input.paymentChannel);
 
   if (input.status === 'PAID') {
     return {
       ...baseParams,
       paymentStatus: 'PAID',
-      paymentAmount: input.totalAmount,
+      paymentAmount,
       paymentPaidAt: input.paidAt,
-      paymentChannel: input.paymentChannel,
+      paymentChannel,
     };
   }
 
@@ -222,9 +225,9 @@ export function buildOrdersRuntimeRouteParams(
     return {
       ...baseParams,
       paymentStatus: 'PAID',
-      paymentAmount: input.totalAmount,
+      paymentAmount,
       paymentPaidAt: input.paidAt,
-      paymentChannel: input.paymentChannel,
+      paymentChannel,
       refundStatus: 'PENDING',
       refundRequestedAmount: input.refundRequestedAmount,
       refundReason: input.refundReason,
@@ -235,9 +238,9 @@ export function buildOrdersRuntimeRouteParams(
   return {
     ...baseParams,
     paymentStatus: 'PAID',
-    paymentAmount: input.totalAmount,
+    paymentAmount,
     paymentPaidAt: input.paidAt,
-    paymentChannel: input.paymentChannel,
+    paymentChannel,
     refundStatus: 'REFUNDED',
     refundRequestedAmount: input.refundRequestedAmount,
     refundReason: input.refundReason,

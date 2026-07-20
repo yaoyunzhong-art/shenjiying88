@@ -1,3 +1,5 @@
+/// <reference path="../../types/react-test-renderer.d.ts" />
+/// <reference path="../../types/test-globals.d.ts" />
 /**
  * orders-screen.test.tsx
  * B页面 - 订单 (OrderListScreen + OrderDetailScreen) 渲染/交互测试
@@ -7,8 +9,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
-import { act, create } from 'react-test-renderer';
-import { Alert, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl } from 'react-native';
+import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
+import { Alert, Text, TouchableOpacity, FlatList } from 'react-native';
+import { OrderListScreen } from './OrderListScreen';
+import { OrderDetailScreen } from './OrderDetailScreen';
 
 /* ------------------------------------------------------------------ */
 /*  Mock setup                                                         */
@@ -31,11 +35,16 @@ Alert.alert = (title: string, message?: string, buttons?: Array<{ text: string; 
   alertCalls.push({ title, message, buttons });
 };
 
-// @ts-expect-error mock
-globalThis.__mockNavigation = mockNavigation;
+const mockGlobals = globalThis as typeof globalThis & {
+  __mockNavigation?: typeof mockNavigation;
+  __mockAppContext?: unknown;
+  __mockRoute?: Record<string, unknown>;
+  __mockOrderFetchEnabled?: boolean;
+};
 
-// @ts-expect-error mock
-globalThis.__mockAppContext = {
+mockGlobals.__mockNavigation = mockNavigation;
+
+mockGlobals.__mockAppContext = {
   state: {
     session: {
       authenticated: true,
@@ -77,15 +86,6 @@ globalThis.__mockAppContext = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Import screens after mocks are set up                              */
-/* ------------------------------------------------------------------ */
-
-const OrderListScreenModule = require('./OrderListScreen');
-const OrderDetailScreenModule = require('./OrderDetailScreen');
-const { OrderListScreen } = OrderListScreenModule;
-const { OrderDetailScreen } = OrderDetailScreenModule;
-
-/* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -104,34 +104,38 @@ function collectTextContent(node: unknown, chunks: string[] = []): string[] {
   return chunks;
 }
 
-function findByText(root: ReturnType<typeof create>['root'], text: string) {
+function findByText(root: ReactTestInstance, text: string): ReactTestInstance | undefined {
   const all = root.findAllByType(Text);
   return all.find((t) => collectTextContent(t.props.children).join('').includes(text));
 }
 
-function findAllTouchables(root: ReturnType<typeof create>['root']) {
+function findAllTouchables(root: ReactTestInstance): ReactTestInstance[] {
   return root.findAllByType(TouchableOpacity);
 }
 
-function createOrderListComponent(params?: Record<string, unknown>) {
+function hasExactText(node: ReactTestInstance, text: string) {
+  return node.findAllByType(Text).some((txt) => txt.props.children === text);
+}
+
+function createOrderListComponent(params?: Record<string, unknown>): ReactTestRenderer {
   mockNavigateCalls.length = 0;
   alertCalls.length = 0;
-  globalThis.__mockRoute = params as never;
+  mockGlobals.__mockRoute = params as never;
   return create(<OrderListScreen />);
 }
 
-function createOrderDetailComponent(params?: Record<string, unknown>) {
+function createOrderDetailComponent(params?: Record<string, unknown>): ReactTestRenderer {
   mockNavigateCalls.length = 0;
   alertCalls.length = 0;
-  globalThis.__mockRoute = (params ?? { orderId: 'order-001' }) as never;
+  mockGlobals.__mockRoute = (params ?? { orderId: 'order-001' }) as never;
   return create(<OrderDetailScreen />);
 }
 
-function getOrderListFlatList(root: ReturnType<typeof create>) {
+function getOrderListFlatList(root: ReactTestRenderer): ReactTestInstance {
   return root.root.findByType(FlatList);
 }
 
-function renderFlatListOrderCards(root: ReturnType<typeof create>) {
+function renderFlatListOrderCards(root: ReactTestRenderer): ReactTestRenderer[] {
   const flatList = getOrderListFlatList(root);
   const data = (flatList.props.data ?? []) as Array<Record<string, unknown>>;
 
@@ -1062,8 +1066,9 @@ test('OrderListScreen: swipe refresh control renders without crash', () => {
   const refreshControl = flatList.props.refreshControl as React.ReactElement<{ onRefresh?: () => void }>;
   assert.ok(refreshControl, '应包含下拉刷新控件');
 
-  if (refreshControl && refreshControl.props.onRefresh) {
-    assert.doesNotThrow(() => refreshControl.props.onRefresh(), '下拉刷新不应崩溃');
+  const onRefresh = refreshControl?.props.onRefresh;
+  if (typeof onRefresh === 'function') {
+    assert.doesNotThrow(() => onRefresh(), '下拉刷新不应崩溃');
   }
 });
 
@@ -1133,8 +1138,7 @@ test('OrderDetailScreen: renders pending order status for order-002', () => {
 
 test('OrderDetailScreen: prefers real aggregate payload when order fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!url.endsWith('/transactions/orders/order-002')) {
@@ -1204,8 +1208,7 @@ test('OrderDetailScreen: prefers real aggregate payload when order fetch is enab
     assert.ok(findByText(root.root, 'SKU-API-201'), '启用真实聚合后应展示接口返回的 SKU');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
@@ -1339,6 +1342,8 @@ test('OrderDetailScreen: tapping back after payment success returns to Orders wi
   assert.equal(navigateCall?.params?.orderNo, 'ORD20260612002');
   assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
   assert.equal(navigateCall?.params?.paymentAmount, 89.5);
+  assert.equal(navigateCall?.params?.paymentPaidAt, '2026-07-20T03:20:00.000Z');
+  assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
 });
 
 test('OrderDetailScreen: renders pending refund summary from returned params', () => {
@@ -1387,9 +1392,14 @@ test('OrderDetailScreen: tapping back after pending refund returns to Orders wit
   assert.ok(navigateCall, '退款审核中返回时应导航回订单列表');
   assert.equal(navigateCall?.params?.orderId, 'order-001');
   assert.equal(navigateCall?.params?.orderNo, 'ORD20260612001');
+  assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+  assert.equal(navigateCall?.params?.paymentAmount, 156);
+  assert.equal(navigateCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
+  assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
   assert.equal(navigateCall?.params?.refundStatus, 'PENDING');
   assert.equal(navigateCall?.params?.refundRequestedAmount, 88.5);
   assert.equal(navigateCall?.params?.refundReason, '顾客取消');
+  assert.equal(navigateCall?.params?.refundRequestedAt, '2026-07-20T02:03:04.000Z');
 });
 
 test('OrderDetailScreen: renders refunded summary from returned params', () => {
@@ -1429,14 +1439,20 @@ test('OrderDetailScreen: tapping back after refunded returns to Orders with comp
   assert.ok(navigateCall, '退款完成返回时应导航回订单列表');
   assert.equal(navigateCall?.params?.orderId, 'order-001');
   assert.equal(navigateCall?.params?.orderNo, 'ORD20260612001');
+  assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+  assert.equal(navigateCall?.params?.paymentAmount, 156);
+  assert.equal(navigateCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
+  assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
   assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
+  assert.equal(navigateCall?.params?.refundRequestedAmount, 88.5);
+  assert.equal(navigateCall?.params?.refundReason, '顾客取消');
+  assert.equal(navigateCall?.params?.refundRequestedAt, '2026-07-20T02:03:04.000Z');
   assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T02:08:09.000Z');
 });
 
 test('OrderDetailScreen: payment return preserves real orderNo when fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!url.endsWith('/transactions/orders/order-002')) {
@@ -1501,9 +1517,7 @@ test('OrderDetailScreen: payment return preserves real orderNo when fetch is ena
     });
 
     const touchables = findAllTouchables(root.root);
-    const backButton = touchables.find((t) =>
-      t.findAllByType(Text).some((txt) => txt.props.children === '返回'),
-    );
+    const backButton = touchables.find((t) => hasExactText(t, '返回'));
 
     assert.ok(backButton, '真实聚合支付完成时应显示返回按钮');
     backButton!.props.onPress();
@@ -1513,17 +1527,18 @@ test('OrderDetailScreen: payment return preserves real orderNo when fetch is ena
     assert.equal(navigateCall?.params?.orderId, 'order-002');
     assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720002');
     assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navigateCall?.params?.paymentAmount, 120);
+    assert.equal(navigateCall?.params?.paymentPaidAt, '2026-07-20T04:10:00.000Z');
+    assert.equal(navigateCall?.params?.paymentChannel, 'ALIPAY');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('OrderDetailScreen: fetched refunded aggregate wins over stale pending refund params when returning', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!url.endsWith('/transactions/orders/order-001')) {
@@ -1602,9 +1617,7 @@ test('OrderDetailScreen: fetched refunded aggregate wins over stale pending refu
     assert.ok(findByText(root.root, '门店退款完成'), '真实聚合已退款时应展示真实退款原因');
 
     const touchables = findAllTouchables(root.root);
-    const backButton = touchables.find((t) =>
-      t.findAllByType(Text).some((txt) => txt.props.children === '返回'),
-    );
+    const backButton = touchables.find((t) => hasExactText(t, '返回'));
 
     assert.ok(backButton, '退款完成时应显示返回按钮');
     backButton!.props.onPress();
@@ -1613,20 +1626,24 @@ test('OrderDetailScreen: fetched refunded aggregate wins over stale pending refu
     assert.ok(navigateCall, '退款完成返回时应导航回订单列表');
     assert.equal(navigateCall?.params?.orderId, 'order-001');
     assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
+    assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navigateCall?.params?.paymentAmount, 156);
+    assert.equal(navigateCall?.params?.paymentPaidAt, '2026-07-20T04:12:00.000Z');
+    assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
     assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
     assert.equal(navigateCall?.params?.refundRequestedAmount, 66);
+    assert.equal(navigateCall?.params?.refundReason, '门店退款完成');
+    assert.equal(navigateCall?.params?.refundRequestedAt, '2026-07-20T05:05:00.000Z');
     assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T05:16:00.000Z');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('OrderDetailScreen: rejected refunds do not render refund summary', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!url.endsWith('/transactions/orders/order-001')) {
@@ -1698,8 +1715,7 @@ test('OrderDetailScreen: rejected refunds do not render refund summary', async (
     assert.ok(findByText(root.root, '申请退款'), '只有 REJECTED 退款时仍应允许重新申请退款');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
@@ -1730,7 +1746,7 @@ test('OrderDetailScreen: renders all 3 expected sections in order', () => {
 
 test('OrderDetailScreen: renders with empty orderId gracefully', () => {
   // Re-create with no route params
-  delete globalThis.__mockRoute;
+  delete mockGlobals.__mockRoute;
   assert.doesNotThrow(() => {
     create(<OrderDetailScreen />);
   }, '无参数渲染不应崩溃');

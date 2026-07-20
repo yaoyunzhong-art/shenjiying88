@@ -269,11 +269,8 @@ export function OrderDetailScreen() {
   const handleBackToOrders = () => {
     if (effectiveRefundStatus === 'PENDING' && typeof effectiveRefundAmount === 'number') {
       navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
-        orderId: order.orderId,
-        orderNo: order.orderNo,
-        totalAmount: order.totalAmount,
+        order,
         paidAt: order.paidAt,
-        paymentChannel: order.paymentChannel,
         status: 'REFUND_PENDING',
         refundRequestedAmount: effectiveRefundAmount,
         refundReason: effectiveRefundReason,
@@ -283,11 +280,8 @@ export function OrderDetailScreen() {
     }
     if (effectiveRefundStatus === 'REFUNDED' && typeof effectiveRefundAmount === 'number') {
       navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
-        orderId: order.orderId,
-        orderNo: order.orderNo,
-        totalAmount: order.totalAmount,
+        order,
         paidAt: order.paidAt,
-        paymentChannel: order.paymentChannel,
         status: 'REFUNDED',
         refundRequestedAmount: effectiveRefundAmount,
         refundReason: effectiveRefundReason,
@@ -298,8 +292,7 @@ export function OrderDetailScreen() {
     }
     if (routeParams?.paymentStatus === 'PAID') {
       navigation.navigate!('Orders' as never, buildOrdersRuntimeRouteParams({
-        orderId: order.orderId,
-        orderNo: order.orderNo,
+        order,
         totalAmount: routeParams.paymentAmount ?? order.totalAmount,
         paidAt: routeParams.paymentPaidAt ?? order.paidAt,
         paymentChannel: routeParams.paymentChannel ?? order.paymentChannel,

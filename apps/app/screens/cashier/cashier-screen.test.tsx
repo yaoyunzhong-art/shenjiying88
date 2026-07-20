@@ -1,3 +1,5 @@
+/// <reference path="../../types/react-test-renderer.d.ts" />
+/// <reference path="../../types/test-globals.d.ts" />
 /**
  * cashier-screen.test.tsx
  * B页面 - 收银台 (PaymentScreen + RefundScreen) 渲染/交互测试
@@ -6,9 +8,10 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import React from 'react';
-import { act, create } from 'react-test-renderer';
-import { Alert, Text, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
+import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
+import { Alert, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { PaymentScreen } from './PaymentScreen';
+import { RefundScreen } from './RefundScreen';
 
 /* ------------------------------------------------------------------ */
 /*  Mock setup                                                         */
@@ -26,16 +29,20 @@ const mockNavigation = {
 };
 
 const alertCalls: Array<{ title: string; message?: string; buttons?: Array<{ text: string; style?: string; onPress?: () => void }> }> = [];
-// @ts-expect-error mock
 Alert.alert = (title: string, message?: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {
   alertCalls.push({ title, message, buttons });
 };
 
-// @ts-expect-error mock
-globalThis.__mockNavigation = mockNavigation;
+const mockGlobals = globalThis as typeof globalThis & {
+  __mockNavigation?: typeof mockNavigation;
+  __mockAppContext?: unknown;
+  __mockRoute?: Record<string, unknown>;
+  __mockOrderFetchEnabled?: boolean;
+};
 
-// @ts-expect-error mock
-globalThis.__mockAppContext = {
+mockGlobals.__mockNavigation = mockNavigation;
+
+mockGlobals.__mockAppContext = {
   state: {
     session: {
       authenticated: true,
@@ -77,15 +84,6 @@ globalThis.__mockAppContext = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Import screens after mocks are set up                              */
-/* ------------------------------------------------------------------ */
-
-const PaymentScreenModule = require('./PaymentScreen');
-const RefundScreenModule = require('./RefundScreen');
-const { PaymentScreen } = PaymentScreenModule;
-const { RefundScreen } = RefundScreenModule;
-
-/* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -104,43 +102,44 @@ function collectTextContent(node: unknown, chunks: string[] = []): string[] {
   return chunks;
 }
 
-function findByText(root: ReturnType<typeof create>['root'], text: string) {
+function findByText(root: ReactTestInstance, text: string): ReactTestInstance | undefined {
   const all = root.findAllByType(Text);
   return all.find((t) => collectTextContent(t.props.children).join('').includes(text));
 }
 
-function findAllTouchables(root: ReturnType<typeof create>['root']) {
+function findAllTouchables(root: ReactTestInstance): ReactTestInstance[] {
   return root.findAllByType(TouchableOpacity);
 }
 
-function findTouchableByText(root: ReturnType<typeof create>['root'], text: string) {
+function hasExactText(node: ReactTestInstance, text: string) {
+  return node.findAllByType(Text).some((txt) => collectTextContent(txt.props.children).join('') === text);
+}
+
+function findTouchableByText(root: ReactTestInstance, text: string): ReactTestInstance | undefined {
   return findAllTouchables(root).find((touchable) =>
-    touchable.findAllByType(Text).some((txt) => collectTextContent(txt.props.children).join('') === text),
+    hasExactText(touchable, text),
   );
 }
 
-function findAllModals(root: ReturnType<typeof create>['root']) {
+function findAllModals(root: ReactTestInstance): ReactTestInstance[] {
   return root.findAllByType(Modal);
 }
 
-function findAllTextInputs(root: ReturnType<typeof create>['root']) {
+function findAllTextInputs(root: ReactTestInstance): ReactTestInstance[] {
   return root.findAllByType(TextInput);
 }
 
-function createPaymentComponent(params?: Record<string, unknown>) {
+function createPaymentComponent(params?: Record<string, unknown>): ReactTestRenderer {
   mockNavigateCalls.length = 0;
   alertCalls.length = 0;
-  globalThis.__mockRoute = params as never;
+  mockGlobals.__mockRoute = params as never;
   return create(<PaymentScreen />);
 }
 
-function createRefundComponent(params?: Record<string, unknown>) {
+function createRefundComponent(params?: Record<string, unknown>): ReactTestRenderer {
   mockNavigateCalls.length = 0;
   alertCalls.length = 0;
-  // The RefundScreen reads route.params; set up mock route
-  // @ts-expect-error mock
-  const mockUseRoute = () => ({ params: params ?? {}, key: 'refund', name: 'Refund' });
-  globalThis.__mockRoute = params ?? {};
+  mockGlobals.__mockRoute = params ?? {};
   return create(<RefundScreen />);
 }
 
@@ -206,8 +205,7 @@ test('PaymentScreen: renders linked order info when opened from pending order', 
 
 test('PaymentScreen: hydrates real order info when fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!url.endsWith('/transactions/orders/order-002')) {
@@ -269,16 +267,14 @@ test('PaymentScreen: hydrates real order info when fetch is enabled', async () =
     assert.ok(findByText(root.root, '108.8'), '金额输入应在拉单后自动补齐真实金额');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('PaymentScreen: loading linked order keeps submit disabled until hydration completes', async () => {
   const originalFetch = globalThis.fetch;
   let resolveResponse: ((value: Response) => void) | undefined;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (() => new Promise<Response>((resolve) => {
     resolveResponse = resolve;
   })) as typeof fetch;
@@ -338,16 +334,14 @@ test('PaymentScreen: loading linked order keeps submit disabled until hydration 
     assert.equal(enabledSubmitBtn?.props.disabled, false, '订单同步完成后确认收款按钮应恢复可用');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('PaymentScreen: submitting while linked order is still loading only shows sync alert', async () => {
   const originalFetch = globalThis.fetch;
   let resolveResponse: ((value: Response) => void) | undefined;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (() => new Promise<Response>((resolve) => {
     resolveResponse = resolve;
   })) as typeof fetch;
@@ -412,16 +406,14 @@ test('PaymentScreen: submitting while linked order is still loading only shows s
     });
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('PaymentScreen: fetch failure shows retry hint and can recover', async () => {
   const originalFetch = globalThis.fetch;
   let requestCount = 0;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async () => {
     requestCount += 1;
     if (requestCount === 1) {
@@ -488,15 +480,13 @@ test('PaymentScreen: fetch failure shows retry hint and can recover', async () =
     assert.ok(findByText(root.root, '¥128.50'), '重试成功后应展示真实待收金额');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('PaymentScreen: route preset amount and selected channel are not overridden by hydration', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async () => new Response(
     JSON.stringify({
       success: true,
@@ -557,8 +547,7 @@ test('PaymentScreen: route preset amount and selected channel are not overridden
     assert.ok(findByText(root.root, '支付方式：微信支付'), '确认弹窗应保留路由预选的支付渠道');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
@@ -616,11 +605,9 @@ test('PaymentScreen: pressing number keys updates amount', () => {
 
 test('PaymentScreen: pressing decimal point inserts dot', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const dot = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '.'));
-  const key5 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '5'));
+  const key1 = findTouchableByText(root.root, '1');
+  const dot = findTouchableByText(root.root, '.');
+  const key5 = findTouchableByText(root.root, '5');
 
   assert.ok(key1 && dot && key5);
 
@@ -634,11 +621,9 @@ test('PaymentScreen: pressing decimal point inserts dot', () => {
 
 test('PaymentScreen: pressing C clears amount', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const key2 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '2'));
-  const clearC = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === 'C'));
+  const key1 = findTouchableByText(root.root, '1');
+  const key2 = findTouchableByText(root.root, '2');
+  const clearC = findTouchableByText(root.root, 'C');
 
   assert.ok(key1 && key2 && clearC);
 
@@ -652,12 +637,10 @@ test('PaymentScreen: pressing C clears amount', () => {
 
 test('PaymentScreen: pressing ⌫ deletes last digit', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const key2 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '2'));
-  const key3 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '3'));
-  const backspace = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '⌫'));
+  const key1 = findTouchableByText(root.root, '1');
+  const key2 = findTouchableByText(root.root, '2');
+  const key3 = findTouchableByText(root.root, '3');
+  const backspace = findTouchableByText(root.root, '⌫');
 
   assert.ok(key1 && key2 && key3 && backspace);
 
@@ -676,13 +659,11 @@ test('PaymentScreen: pressing ⌫ deletes last digit', () => {
 
 test('PaymentScreen: prevent more than 2 decimal places', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const dot = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '.'));
-  const key5 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '5'));
-  const key6 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '6'));
-  const key7 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '7'));
+  const key1 = findTouchableByText(root.root, '1');
+  const dot = findTouchableByText(root.root, '.');
+  const key5 = findTouchableByText(root.root, '5');
+  const key6 = findTouchableByText(root.root, '6');
+  const key7 = findTouchableByText(root.root, '7');
 
   assert.ok(key1 && dot && key5 && key6 && key7);
 
@@ -700,11 +681,7 @@ test('PaymentScreen: prevent more than 2 decimal places', () => {
 
 test('PaymentScreen: tapping confirm with empty amount shows alert', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const confirmBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '确认收款'),
-  );
+  const confirmBtn = findTouchableByText(root.root, '确认收款');
 
   assert.ok(confirmBtn, '确认收款按钮应在');
   if (confirmBtn) {
@@ -719,11 +696,7 @@ test('PaymentScreen: tapping confirm with empty amount shows alert', () => {
 
 test('PaymentScreen: selecting Alipay switches channel', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const alipayBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '支付宝'),
-  );
+  const alipayBtn = findTouchableByText(root.root, '支付宝');
 
   assert.ok(alipayBtn, '支付宝按钮应在');
   if (alipayBtn) {
@@ -735,11 +708,7 @@ test('PaymentScreen: selecting Alipay switches channel', () => {
 
 test('PaymentScreen: selecting Cash switches channel', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const cashBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '现金'),
-  );
+  const cashBtn = findTouchableByText(root.root, '现金');
 
   assert.ok(cashBtn, '现金按钮应在');
   if (cashBtn) {
@@ -758,20 +727,14 @@ test('PaymentScreen: selecting Member Card shows phone input', () => {
   });
   // Member input only appears after selecting 会员卡
 
-  const touchables = findAllTouchables(root.root);
-  const memberCardBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '会员卡'),
-  );
+  const memberCardBtn = findTouchableByText(root.root, '会员卡');
   assert.ok(memberCardBtn, '会员卡按钮应在');
 
   memberCardBtn!.props.onPress();
 
   // After selecting, re-render to see the member input
   const root2 = createPaymentComponent();
-  const touchables2 = findAllTouchables(root2.root);
-  const memberCardBtn2 = touchables2.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '会员卡'),
-  );
+  const memberCardBtn2 = findTouchableByText(root2.root, '会员卡');
 
   // Simulate selecting member card
   setTimeout(() => {
@@ -786,11 +749,9 @@ test('PaymentScreen: selecting Member Card shows phone input', () => {
 
 test('PaymentScreen: entering valid amount and tapping confirm opens modal', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const key0 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
-  const key00 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
+  const key1 = findTouchableByText(root.root, '1');
+  const key0 = findTouchableByText(root.root, '0');
+  const key00 = findTouchableByText(root.root, '0');
 
   assert.ok(key1 && key0 && key00);
 
@@ -798,9 +759,7 @@ test('PaymentScreen: entering valid amount and tapping confirm opens modal', () 
   key0!.props.onPress();
   key00!.props.onPress();
 
-  const confirmBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '确认收款'),
-  );
+  const confirmBtn = findTouchableByText(root.root, '确认收款');
 
   assert.ok(confirmBtn);
   confirmBtn!.props.onPress();
@@ -890,9 +849,7 @@ test('PaymentScreen: successful payment submits real api flow and returns paid s
       confirmBtn!.props.onPress();
     });
 
-    const modalConfirmBtn = findAllTouchables(root.root).find((touchable) =>
-      touchable.findAllByType(Text).some((txt) => txt.props.children === '确认'),
-    );
+    const modalConfirmBtn = findTouchableByText(root.root, '确认');
     assert.ok(modalConfirmBtn, '确认弹窗中的确认按钮应在');
 
     await act(async () => {
@@ -931,8 +888,7 @@ test('PaymentScreen: successful payment submits real api flow and returns paid s
 test('PaymentScreen: successful payment keeps hydrated orderNo and normalized payment channel', async () => {
   const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     fetchCalls.push({ url, init });
@@ -1010,9 +966,7 @@ test('PaymentScreen: successful payment keeps hydrated orderNo and normalized pa
       confirmBtn!.props.onPress();
     });
 
-    const modalConfirmBtn = findAllTouchables(root.root).find((touchable) =>
-      touchable.findAllByType(Text).some((txt) => txt.props.children === '确认'),
-    );
+    const modalConfirmBtn = findTouchableByText(root.root, '确认');
     assert.ok(modalConfirmBtn, '确认弹窗中的确认按钮应在');
 
     await act(async () => {
@@ -1033,25 +987,21 @@ test('PaymentScreen: successful payment keeps hydrated orderNo and normalized pa
     assert.equal(navigateCall?.params?.paymentPaidAt, '2026-07-20T05:20:00.000Z');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('PaymentScreen: modal shows confirm and cancel buttons', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  // Enter 100
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const key0a = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
-  const key0b = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
+  const key1 = findTouchableByText(root.root, '1');
+  const key0a = findTouchableByText(root.root, '0');
+  const key0b = findTouchableByText(root.root, '0');
   assert.ok(key1 && key0a && key0b);
   key1!.props.onPress();
   key0a!.props.onPress();
   key0b!.props.onPress();
 
-  const confirmBtn = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '确认收款'));
+  const confirmBtn = findTouchableByText(root.root, '确认收款');
   confirmBtn!.props.onPress();
 
   // The confirm modal should be shown — we verify the confirm Modal exists in the component
@@ -1111,8 +1061,7 @@ test('RefundScreen: missing order context shows hint and keeps submit disabled',
 
 test('RefundScreen: hydrates real order info and payment channel when fetch is enabled', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     if (!url.endsWith('/transactions/orders/order-002')) {
@@ -1168,16 +1117,14 @@ test('RefundScreen: hydrates real order info and payment channel when fetch is e
     assert.ok(findByText(root.root, '支付宝'), '真实渠道 alipay 应归一化展示为支付宝');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('RefundScreen: loading linked order keeps submit disabled until hydration completes', async () => {
   const originalFetch = globalThis.fetch;
   let resolveResponse: ((value: Response) => void) | undefined;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (() => new Promise<Response>((resolve) => {
     resolveResponse = resolve;
   })) as typeof fetch;
@@ -1238,16 +1185,14 @@ test('RefundScreen: loading linked order keeps submit disabled until hydration c
     assert.equal(enabledRefundBtn?.props.disabled, false, '订单同步完成后确认退款按钮应恢复可用');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('RefundScreen: fetch failure shows retry hint and can recover', async () => {
   const originalFetch = globalThis.fetch;
   let requestCount = 0;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async () => {
     requestCount += 1;
     if (requestCount === 1) {
@@ -1318,15 +1263,13 @@ test('RefundScreen: fetch failure shows retry hint and can recover', async () =>
     assert.ok(findByText(root.root, '¥90.00'), '重试成功后应展示真实原订单金额');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('RefundScreen: keeps route refund reason after order hydration', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async () => new Response(
     JSON.stringify({
       success: true,
@@ -1383,15 +1326,13 @@ test('RefundScreen: keeps route refund reason after order hydration', async () =
     assert.equal(inputs[1]?.props.value, '顾客取消', '路由默认退款原因应优先于历史退款原因');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('RefundScreen: does not reuse historical refund reason when route reason is absent', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async () => new Response(
     JSON.stringify({
       success: true,
@@ -1448,15 +1389,13 @@ test('RefundScreen: does not reuse historical refund reason when route reason is
     assert.equal(inputs[1]?.props.value, '', '未传入退款原因时不应自动复用历史退款原因');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
 test('RefundScreen: route preset refund amount is not overridden by hydration', async () => {
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async () => new Response(
     JSON.stringify({
       success: true,
@@ -1511,8 +1450,7 @@ test('RefundScreen: route preset refund amount is not overridden by hydration', 
     assert.equal(inputs[0]?.props.value, '50', '退款金额输入应保留路由预填值');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
@@ -1537,10 +1475,8 @@ test('PaymentScreen: initial amount is 0.00 and submit button disabled', () => {
 
 test('PaymentScreen: entering currency symbol input updates display', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key5 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '5'));
-  const key0 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
+  const key5 = findTouchableByText(root.root, '5');
+  const key0 = findTouchableByText(root.root, '0');
 
   assert.ok(key5 && key0);
   key5!.props.onPress();
@@ -1552,12 +1488,10 @@ test('PaymentScreen: entering currency symbol input updates display', () => {
 
 test('PaymentScreen: entering decimal-only amount works', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key0 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
-  const dot = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '.'));
-  const key5 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '5'));
-  const key0b = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
+  const key0 = findTouchableByText(root.root, '0');
+  const dot = findTouchableByText(root.root, '.');
+  const key5 = findTouchableByText(root.root, '5');
+  const key0b = findTouchableByText(root.root, '0');
 
   assert.ok(key0 && dot && key5 && key0b);
   key0!.props.onPress();
@@ -1642,18 +1576,14 @@ test('PaymentScreen: leading zeros collapse before non-zero digit', () => {
 
 test('PaymentScreen: pressing confirm after entering amount does not crash', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const key0 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '0'));
+  const key1 = findTouchableByText(root.root, '1');
+  const key0 = findTouchableByText(root.root, '0');
 
   assert.ok(key1 && key0);
   key1!.props.onPress();
   key0!.props.onPress();
 
-  const confirmBtn = touchables.find((t) =>
-    t.findAllByType(Text).some((txt) => txt.props.children === '确认收款'),
-  );
+  const confirmBtn = findTouchableByText(root.root, '确认收款');
 
   assert.doesNotThrow(() => {
     confirmBtn?.props.onPress();
@@ -1662,8 +1592,7 @@ test('PaymentScreen: pressing confirm after entering amount does not crash', () 
 
 test('RefundScreen: tapping refund button without reason shows alert', () => {
   // Set an amount but no reason
-  // @ts-expect-error mock
-  globalThis.__mockRoute = {
+  mockGlobals.__mockRoute = {
     amount: 100,
   };
 
@@ -1696,10 +1625,7 @@ test('RefundScreen: confirm refund submits real api request and shows success al
       amount: 88.5,
       reason: '顾客取消',
     });
-    const touchables = findAllTouchables(root.root);
-    const refundBtn = touchables.find((t) =>
-      t.findAllByType(Text).some((txt) => txt.props.children === '确认退款'),
-    );
+    const refundBtn = findTouchableByText(root.root, '确认退款');
 
     assert.ok(refundBtn, '确认退款按钮应在');
     refundBtn!.props.onPress();
@@ -1741,8 +1667,7 @@ test('RefundScreen: confirm refund submits real api request and shows success al
 test('RefundScreen: successful refund keeps hydrated orderNo and normalized payment channel', async () => {
   const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
   const originalFetch = globalThis.fetch;
-  // @ts-expect-error test flag
-  globalThis.__mockOrderFetchEnabled = true;
+  mockGlobals.__mockOrderFetchEnabled = true;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     fetchCalls.push({ url, init });
@@ -1848,11 +1773,14 @@ test('RefundScreen: successful refund keeps hydrated orderNo and normalized paym
 
     const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
     assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
+    assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navigateCall?.params?.paymentAmount, 156);
+    assert.equal(navigateCall?.params?.paymentPaidAt, '2026-07-20T03:00:00.000Z');
     assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
+    assert.equal(navigateCall?.params?.refundReason, '顾客取消');
   } finally {
     globalThis.fetch = originalFetch;
-    // @ts-expect-error cleanup
-    delete globalThis.__mockOrderFetchEnabled;
+    delete mockGlobals.__mockOrderFetchEnabled;
   }
 });
 
@@ -1904,7 +1832,10 @@ test('RefundScreen: completed refund response returns refunded status to order d
     const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
     assert.ok(navigateCall, '完成态后应回带到订单详情');
     assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
+    assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
+    assert.equal(navigateCall?.params?.paymentAmount, 156);
     assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
+    assert.equal(navigateCall?.params?.refundReason, '整单退款');
     assert.equal(navigateCall?.params?.refundCompletedAt, '2026-07-20T03:05:00.000Z');
   } finally {
     globalThis.fetch = originalFetch;
@@ -1924,10 +1855,7 @@ test('RefundScreen: api failure shows error alert instead of fake success', asyn
       amount: 66,
       reason: '支付异常',
     });
-    const touchables = findAllTouchables(root.root);
-    const refundBtn = touchables.find((t) =>
-      t.findAllByType(Text).some((txt) => txt.props.children === '确认退款'),
-    );
+    const refundBtn = findTouchableByText(root.root, '确认退款');
 
     assert.ok(refundBtn, '确认退款按钮应在');
     refundBtn!.props.onPress();
@@ -1950,10 +1878,8 @@ test('RefundScreen: api failure shows error alert instead of fake success', asyn
 
 test('PaymentScreen: multiple decimal points are prevented', () => {
   const root = createPaymentComponent();
-  const touchables = findAllTouchables(root.root);
-
-  const key1 = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '1'));
-  const dot = touchables.find((t) => t.findAllByType(Text).some((txt) => txt.props.children === '.'));
+  const key1 = findTouchableByText(root.root, '1');
+  const dot = findTouchableByText(root.root, '.');
 
   assert.ok(key1 && dot);
 

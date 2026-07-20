@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,13 @@ import {
   type NativeAppTransactionAggregate,
 } from '../../market-bootstrap';
 import {
+  buildOrderDetailRefundRouteParams,
+} from '../../utils/order-finance';
+import {
+  resolveCashierLinkedOrderViewState,
+} from '../../utils/order-view';
+import {
   getPaymentChannelLabel,
-  normalizePaymentChannel,
-  type PaymentChannel,
 } from '../../utils/payment-channel';
 
 type RefundParams = {
@@ -78,28 +82,21 @@ export function RefundScreen() {
   const trimmedRefundAmount = refundAmount.trim();
   const trimmedRefundReason = refundReason.trim();
   const numAmount = Number(trimmedRefundAmount);
-  const hasOrderContext = Boolean(orderAggregate?.order.orderId ?? orderId);
-  const hasHydratedAggregate = Boolean(orderAggregate);
-  const resolvedOriginalAmount = orderAggregate?.payment?.amount
-    ?? orderAggregate?.order.totalAmount
-    ?? initialAmount
-    ?? 0;
-  const reservedRefundAmount = hasHydratedAggregate
-    ? orderAggregate!.refunds
-      .filter((refund) => refund.status !== 'REJECTED')
-      .reduce((sum, refund) => sum + refund.refundAmount, 0)
-    : 0;
-  const resolvedRefundableAmount = Math.max(
-    0,
-    hasHydratedAggregate
-      ? resolvedOriginalAmount - reservedRefundAmount
-      : resolvedOriginalAmount,
-  );
-  const resolvedOrderNo = orderAggregate?.order.orderNo ?? orderNo ?? 'N/A';
-  const resolvedOrderId = orderAggregate?.order.orderId ?? orderId ?? 'N/A';
-  const resolvedPaymentChannel = normalizePaymentChannel(
-    orderAggregate?.payment?.channel ?? initialPaymentChannel,
-  );
+  const linkedOrderView = resolveCashierLinkedOrderViewState({
+    aggregate: orderAggregate,
+    fallbackOrderId: orderId,
+    fallbackOrderNo: orderNo,
+    fallbackAmount: initialAmount,
+    fallbackChannel: initialPaymentChannel,
+  });
+  const hasOrderContext = Boolean(linkedOrderView.orderId && linkedOrderView.orderId !== 'N/A');
+  const hasHydratedAggregate = linkedOrderView.hasHydratedAggregate;
+  const resolvedOriginalAmount = linkedOrderView.collectibleAmount;
+  const reservedRefundAmount = linkedOrderView.reservedRefundAmount;
+  const resolvedRefundableAmount = Math.max(0, linkedOrderView.refundableAmount);
+  const resolvedOrderNo = linkedOrderView.orderNo;
+  const resolvedOrderId = linkedOrderView.orderId;
+  const resolvedPaymentChannel = linkedOrderView.paymentChannel;
   const resolvedPaymentChannelLabel = getPaymentChannelLabel(resolvedPaymentChannel);
   const hasValidAmountFormat = /^\d+(\.\d{1,2})?$/.test(trimmedRefundAmount);
   const missingResolvedRefundAmount =
@@ -146,9 +143,16 @@ export function RefundScreen() {
         }
 
         setOrderAggregate(aggregate);
+        const aggregateSnapshot = resolveCashierLinkedOrderViewState({
+          aggregate,
+          fallbackOrderId: orderId,
+          fallbackOrderNo: orderNo,
+          fallbackAmount: initialAmount,
+          fallbackChannel: initialPaymentChannel,
+        });
         setRefundAmount((previousAmount) => (
           previousAmount.trim().length === 0
-            ? String(aggregate.payment?.amount ?? aggregate.order.totalAmount)
+            ? String(aggregateSnapshot.refundableAmount || aggregateSnapshot.collectibleAmount)
             : previousAmount
         ));
         setOrderLoading(false);
@@ -237,16 +241,16 @@ export function RefundScreen() {
               Alert.alert('提示', successMessage, [
                 {
                   text: '确定',
-                  onPress: () => navigation.navigate?.('OrderDetail', {
-                    orderId,
+                  onPress: () => navigation.navigate?.('OrderDetail', buildOrderDetailRefundRouteParams({
+                    orderId: aggregate.order.orderId ?? orderId,
                     orderNo: aggregate.order.orderNo ?? orderAggregate?.order.orderNo ?? orderNo,
-                    paymentChannel: normalizePaymentChannel(aggregate.payment?.channel) ?? resolvedPaymentChannel,
-                    refundStatus,
+                    aggregate,
                     refundRequestedAmount: numAmount,
                     refundReason: trimmedRefundReason,
-                    refundRequestedAt,
-                    refundCompletedAt,
-                  }),
+                    fallbackPaymentChannel: resolvedPaymentChannel,
+                    fallbackRequestedAt: refundRequestedAt,
+                    fallbackCompletedAt: refundCompletedAt,
+                  })),
                 },
               ]);
             } catch (error) {

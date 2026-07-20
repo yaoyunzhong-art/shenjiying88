@@ -20,6 +20,7 @@ import {
   type PortalBootstrapResponse,
   type RuntimeGovernanceReceipt
 } from '@m5/types';
+import { getAggregateOrderFinancialSnapshot } from './utils/order-finance';
 
 export interface NativeAppBootstrapSnapshot {
   deliveryMode: 'api' | 'fallback';
@@ -804,14 +805,10 @@ export function createNativeAppCheckoutPayload(
 export function createNativeAppRefundPayload(
   aggregate: NativeAppTransactionAggregate
 ): NativeAppRefundPayload {
-  const paymentAmount = aggregate.payment?.amount ?? aggregate.order.totalAmount
-  const reservedAmount = aggregate.refunds
-    .filter((refund) => refund.status !== 'REJECTED')
-    .reduce((sum, refund) => sum + refund.refundAmount, 0)
-  const refundableAmount = Math.max(0, paymentAmount - reservedAmount)
+  const { paidAmount, refundableAmount } = getAggregateOrderFinancialSnapshot(aggregate)
 
   return {
-    refundAmount: refundableAmount > 0 ? Math.min(refundableAmount, paymentAmount) : undefined,
+    refundAmount: refundableAmount > 0 ? Math.min(refundableAmount, paidAmount) : undefined,
     reason: 'app-native-refund-rehearsal',
     operator: 'app-runtime'
   }

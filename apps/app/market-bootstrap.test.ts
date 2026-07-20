@@ -793,6 +793,50 @@ test('native app bootstrap: refund payload ignores rejected refunds and keeps re
   assert.equal(refund.reason, 'app-native-refund-rehearsal');
 });
 
+test('native app bootstrap: refund payload falls back to order total when payment is absent', () => {
+  const refund = createNativeAppRefundPayload({
+    order: {
+      orderId: 'order-004',
+      orderNo: 'ORD20260720004',
+      memberId: 'member-004',
+      currency: 'CNY',
+      totalAmount: 88,
+      status: 'PAID',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z'
+    },
+    settlement: undefined,
+    pointsLedger: [],
+    couponRedemptions: [],
+    blindboxFulfillments: [],
+    refunds: [
+      {
+        refundId: 'refund-pending-004',
+        orderId: 'order-004',
+        paymentId: 'payment-004',
+        memberId: 'member-004',
+        refundAmount: 18,
+        reason: '处理中',
+        status: 'PENDING',
+        requestedAt: '2026-07-20T00:20:00.000Z'
+      },
+      {
+        refundId: 'refund-rejected-004',
+        orderId: 'order-004',
+        paymentId: 'payment-004',
+        memberId: 'member-004',
+        refundAmount: 10,
+        reason: '驳回',
+        status: 'REJECTED',
+        requestedAt: '2026-07-20T00:21:00.000Z'
+      }
+    ]
+  });
+
+  assert.equal(refund.refundAmount, 70);
+  assert.equal(refund.reason, 'app-native-refund-rehearsal');
+});
+
 test('native app bootstrap: skips refund api when aggregate has no refundable amount left', async () => {
   let fetchCalled = false;
   const originalFetch = globalThis.fetch;

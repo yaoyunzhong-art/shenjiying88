@@ -169,3 +169,27 @@ test('buildOrdersRuntimeRouteParams returns normalized pending refund payload', 
   assert.equal(params.refundRequestedAmount, 45);
   assert.equal(params.paymentChannel, 'WECHAT_PAY');
 });
+
+test('buildOrdersRuntimeRouteParams prefers linked order snapshot and normalizes channel', () => {
+  const params = buildOrdersRuntimeRouteParams({
+    order: {
+      orderId: 'order-009',
+      orderNo: 'ORD20260720009',
+      totalAmount: 299,
+      paymentChannel: 'wechat-pay',
+    },
+    totalAmount: 88,
+    paidAt: '2026-07-20T08:00:00.000Z',
+    paymentChannel: 'ALIPAY',
+    status: 'PAID',
+  });
+
+  assert.deepEqual(params, {
+    orderId: 'order-009',
+    orderNo: 'ORD20260720009',
+    paymentStatus: 'PAID',
+    paymentAmount: 299,
+    paymentPaidAt: '2026-07-20T08:00:00.000Z',
+    paymentChannel: 'WECHAT_PAY',
+  });
+});
