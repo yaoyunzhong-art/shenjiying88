@@ -1,18 +1,6 @@
-# V23-PRD-12: 门店管理模块 — Store Management
+# 🗺️ PRD: 商店管理模块(Phase 1)
+> 日期: 2026-07-21 | 圈梁: 代码✅ 测试✅(34 tests) 审计✅ E2E✅ PRD补写
 
-> 版本: v1.0 · 签发人: 树哥
-> 日期: 2026-07-21 · 状态: 🟢 已签发
-> 圈梁: E2E-C1
-
-- **名称**: 门店管理模块
-- **用途**: 实现门店 CRUD 管理功能，包括门店创建、编辑、列表分页搜索、状态管理，配合 E2E-51 全链路测试覆盖
-- **输出**: `src/modules/store/store.controller.ts` + `__tests__/store*.test.ts` + E2E 测试
-- **圈梁状态**: 代码✅ 测试✅ 审计✅ PRD新建
-- **日期**: 2026-07-21
-- **作用**: E2E-C1 门店管理功能验收
-
-## 完成定义
-
-1. 门店 CRUD API 全量实现，含分页、搜索、状态筛选
-2. E2E-51 全链路测试通过
-3. 门店数据归属 tenantId，受 RLS 保护
+**用途**: 门店CRUD管理——Controller(6端点)+Service+DTO+34 tests+admin-web前端(779行)+E2E链
+**产出**: `apps/api/src/modules/store/` + `apps/admin-web/app/stores/`
+**作用**: V23 Phase 1核心功能
