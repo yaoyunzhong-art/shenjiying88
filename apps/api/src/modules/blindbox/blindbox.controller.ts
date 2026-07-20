@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Query, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Query,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { Observable } from 'rxjs';
 import { BlindboxService } from './blindbox.service';
 import {
@@ -28,6 +39,7 @@ interface DrawResult {
   message?: string;
 }
 
+@UseGuards(TenantGuard)
 @Controller('blindbox')
 export class BlindboxController {
   constructor(private readonly blindboxService: BlindboxService) {}

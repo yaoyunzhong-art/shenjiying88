@@ -9,6 +9,10 @@ import {
   UsePipes,
   ValidationPipe,
   ParseBoolPipe,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { BrandCustomService } from './brand-custom.service'
 import {
@@ -32,6 +36,7 @@ import type {
   PresetTheme,
 } from './brand-custom.entity'
 
+@UseGuards(TenantGuard)
 @Controller('brand-custom')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class BrandCustomController {

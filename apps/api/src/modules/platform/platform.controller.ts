@@ -1,6 +1,16 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { PlatformService } from './platform.service';
 
+@UseGuards(TenantGuard)
 @Controller('platform')
 export class PlatformController {
   constructor(private readonly svc: PlatformService) {}

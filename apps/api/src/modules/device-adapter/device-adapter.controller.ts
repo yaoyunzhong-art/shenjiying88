@@ -10,6 +10,10 @@ import {
   ValidationPipe,
   HttpException,
   HttpStatus,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { DeviceAdapterService, DeviceStatus } from './device-adapter.service'
 import {
@@ -36,6 +40,7 @@ import type {
  *
  * 提供设备注册、管理、执行命令的 RESTful 接口
  */
+@UseGuards(TenantGuard)
 @Controller('device-adapter')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class DeviceAdapterController {

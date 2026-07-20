@@ -24,6 +24,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   CrmService,
@@ -60,6 +64,7 @@ class UpdateTicketStatusDto {
   status!: TicketStatus
 }
 
+@UseGuards(TenantGuard)
 @Controller('api/crm')
 export class CrmController {
   constructor(private readonly svc: CrmService) {}

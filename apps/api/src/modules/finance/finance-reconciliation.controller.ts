@@ -20,6 +20,9 @@ import {
   Logger,
   UseGuards
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceReconciliationService } from './finance-reconciliation.service'
@@ -38,6 +41,7 @@ import {
 /**
  * 无需显式 TenantGuard — @TenantContext() 内部处理租户注入
  */
+@UseGuards(TenantGuard)
 @Controller('finance/reconciliation')
 export class FinanceReconciliationController {
   private readonly logger = new Logger(FinanceReconciliationController.name)

@@ -10,6 +10,9 @@
  */
 
 import { Controller, Get, Post, Query, Body, Logger } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
@@ -37,6 +40,7 @@ export class RecordCashFlowDto {
 
 // ─── Controller ──────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('finance/dashboard')
 export class FinanceHealthDashboardController {
   private readonly logger = new Logger(FinanceHealthDashboardController.name)

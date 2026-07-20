@@ -1,4 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,6 +20,7 @@ import {
 } from './campaign.entity'
 import { CampaignService } from './campaign.service'
 
+@UseGuards(TenantGuard)
 @Controller('campaigns')
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}

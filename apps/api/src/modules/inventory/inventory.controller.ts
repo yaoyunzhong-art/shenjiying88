@@ -1,4 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -15,6 +18,7 @@ import {
 } from './inventory.dto'
 import { InventoryService } from './inventory.service'
 
+@UseGuards(TenantGuard)
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}

@@ -1,4 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -14,6 +17,7 @@ import { HealthQueryDto } from './health.dto'
 import type { HealthCheckContext } from './health.entity'
 import { HealthService } from './health.service'
 
+@UseGuards(TenantGuard)
 @Controller('health')
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}

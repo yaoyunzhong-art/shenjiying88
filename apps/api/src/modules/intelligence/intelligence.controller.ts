@@ -1,7 +1,11 @@
 import { Controller, Get, Param, Post, Body, Query, NotFoundException, BadRequestException } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { IntelligenceService } from './intelligence.service'
 import type { RenovationTier } from './intelligence.entity'
 
+@UseGuards(TenantGuard)
 @Controller('intelligence')
 export class IntelligenceController {
   constructor(private readonly svc: IntelligenceService) {}

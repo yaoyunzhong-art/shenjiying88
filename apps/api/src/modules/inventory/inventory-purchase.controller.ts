@@ -22,7 +22,11 @@ import {
   Body,
   Param,
   Query,
-  Logger
+  Logger,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   CurrentActor,
@@ -41,6 +45,7 @@ function resolveActorName(actorContext: CurrentActorValue, fallback?: string) {
   return actorContext?.actorName ?? actorContext?.actorId ?? fallback
 }
 
+@UseGuards(TenantGuard)
 @Controller('inventory/purchase')
 export class InventoryPurchaseController {
   private readonly logger = new Logger(InventoryPurchaseController.name)

@@ -7,7 +7,11 @@ import {
   Put,
   Query,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   InventoryItemService,
@@ -29,6 +33,7 @@ import {
 interface TenantQuery { tenantId?: string }
 interface StockQuery { tenantId?: string; qty?: number }
 
+@UseGuards(TenantGuard)
 @Controller('api/inventory/items')
 export class InventoryItemController {
   constructor(private readonly svc: InventoryItemService) {}

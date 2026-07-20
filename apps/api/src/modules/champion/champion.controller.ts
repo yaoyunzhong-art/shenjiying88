@@ -20,6 +20,10 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common';
 import {
   RegisterChampionDto,
@@ -29,6 +33,7 @@ import {
 } from './champion.dto';
 import { ChampionService } from './champion.service';
 
+@UseGuards(TenantGuard)
 @Controller('champions')
 export class ChampionController {
   constructor(private readonly championService: ChampionService) {}

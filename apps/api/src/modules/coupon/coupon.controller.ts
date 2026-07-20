@@ -22,6 +22,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { CouponService } from './coupon.service'
 import {
@@ -41,6 +45,7 @@ import type {
   RedeemResponse,
 } from './coupon.contract'
 
+@UseGuards(TenantGuard)
 @Controller('coupons')
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}

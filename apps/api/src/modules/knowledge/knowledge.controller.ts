@@ -6,6 +6,9 @@
  */
 
 import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { KnowledgeService } from './knowledge.service'
 import type {
   IndexDocumentDto,
@@ -19,6 +22,7 @@ import type {
 import type { KnowledgeKind } from './knowledge.entity'
 import { KnowledgeErrorCodes } from './knowledge.contract'
 
+@UseGuards(TenantGuard)
 @Controller('knowledge')
 export class KnowledgeController {
   constructor(private readonly knowledgeService: KnowledgeService) {}

@@ -6,7 +6,11 @@ import {
   Body,
   Logger,
   Optional,
-  BadRequestException
+  BadRequestException,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   MemberDormancyService,
@@ -32,6 +36,7 @@ import { MemberDormancyCron, type CronMetrics } from './member-dormancy.cron'
  *
  * TODO: 接入 TenantGuard + AdminGuard (Phase-37 RBAC)
  */
+@UseGuards(TenantGuard)
 @Controller('api/member/dormancy')
 export class MemberDormancyController {
   private readonly logger = new Logger(MemberDormancyController.name)

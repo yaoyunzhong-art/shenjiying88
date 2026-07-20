@@ -1,8 +1,12 @@
 import { Controller, Get, Post, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { MemberPredictService } from './member-predict.service'
 import { PredictQueryDto } from './member-predict.dto'
 import type { MemberPredictDto, PredictSummaryDto, MemberPredictListDto } from './member-predict.dto'
 
+@UseGuards(TenantGuard)
 @Controller('member-predict')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class MemberPredictController {

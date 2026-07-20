@@ -7,7 +7,11 @@ import {
   Post,
   Patch,
   Query,
-  Delete
+  Delete,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { LogisticsService } from './logistics.service'
 import type {
@@ -32,6 +36,7 @@ import type {
   AlertTriggerType,
 } from './logistics.phase-p30-80.entity'
 
+@UseGuards(TenantGuard)
 @Controller('logistics')
 export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) {}

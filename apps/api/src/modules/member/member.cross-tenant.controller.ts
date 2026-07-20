@@ -6,7 +6,11 @@ import {
   Body,
   Logger,
   Optional,
-  BadRequestException
+  BadRequestException,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   MemberCrossTenantService,
@@ -28,6 +32,7 @@ import {
  *  - 操作日志 (link/unlink 记录 performedBy)
  *  - PII 脱敏 (返回前 maskMobile)
  */
+@UseGuards(TenantGuard)
 @Controller('api/member/cross-tenant')
 export class MemberCrossTenantController {
   private readonly logger = new Logger(MemberCrossTenantController.name)

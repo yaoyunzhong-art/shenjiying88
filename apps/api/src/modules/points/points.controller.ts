@@ -7,7 +7,11 @@ import {
   Query,
   BadRequestException,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { PointsAtomicService } from './points-atomic.service'
 import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier } from './points-risk.service'
@@ -38,6 +42,7 @@ import type {
   RiskAlertRecord
 } from './points.entity'
 
+@UseGuards(TenantGuard)
 @Controller('points')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class PointsController {

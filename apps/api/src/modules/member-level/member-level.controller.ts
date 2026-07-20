@@ -1,9 +1,13 @@
 import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, BadRequestException } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { MemberLevelService } from './member-level.service'
 import { LevelEvaluationInputDto, BatchLevelInputDto, LevelConfigUpdateDto } from './member-level.dto'
 import { MemberLevelTier, MemberLevelSub, type LevelInfo, type BatchLevelOutput, type AllLevelConfig } from './member-level.entity'
 import type { LevelChangeRecord } from './member-level.entity'
 
+@UseGuards(TenantGuard)
 @Controller('member-level')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class MemberLevelController {

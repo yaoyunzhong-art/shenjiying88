@@ -5,7 +5,11 @@ import {
   Param,
   Patch,
   Post,
-  Query
+  Query,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -25,6 +29,7 @@ import {
 } from './notification.entity'
 import { NotificationService } from './notification.service'
 
+@UseGuards(TenantGuard)
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

@@ -14,6 +14,10 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common';
 import { ContentService } from './content.service';
 import {
@@ -26,6 +30,7 @@ import {
 } from './content.dto';
 import type { ContentEntity } from './content.entity';
 
+@UseGuards(TenantGuard)
 @Controller('content')
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}

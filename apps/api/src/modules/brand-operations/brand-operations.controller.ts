@@ -9,6 +9,10 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { BrandOperationsService } from './brand-operations.service'
 import {
@@ -83,6 +87,7 @@ import type {
 const MOCK_TENANT_ID = 'tenant-1'
 const MOCK_BRAND_ID = 'brand-1'
 
+@UseGuards(TenantGuard)
 @Controller('brand-operations')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class BrandOperationsController {

@@ -23,6 +23,10 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   BillingService,
@@ -57,6 +61,7 @@ class ListInvoicesQueryDto {
   tenantId!: string
 }
 
+@UseGuards(TenantGuard)
 @Controller('api/billing')
 export class BillingController {
   constructor(private readonly svc: BillingService) {}

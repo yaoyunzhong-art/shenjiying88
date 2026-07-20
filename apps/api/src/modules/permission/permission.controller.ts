@@ -13,6 +13,10 @@ import {
   HttpStatus,
   UnauthorizedException,
   ForbiddenException,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { PermissionService } from './permission.service'
 import {
@@ -159,6 +163,7 @@ const TEST_ROLE_CONTEXTS: Record<string, PermissionContext> = {
   },
 }
 
+@UseGuards(TenantGuard)
 @Controller('permission')
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}

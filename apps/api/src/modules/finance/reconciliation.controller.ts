@@ -22,7 +22,11 @@ import {
   Body,
   Query,
   Res,
-  Logger
+  Logger,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import type { Response } from 'express'
 import { TenantContext } from '../tenant/tenant.decorator'
@@ -88,6 +92,7 @@ export class MonthlyReportQueryDto {
 
 // ─── Controller ──────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('finance/reconciliation')
 export class ReconciliationController {
   private readonly logger = new Logger(ReconciliationController.name)

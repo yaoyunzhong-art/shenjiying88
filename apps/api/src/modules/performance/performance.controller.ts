@@ -1,6 +1,10 @@
 import {
   Controller, Get, Post, Body, Param, Query,
   UsePipes, ValidationPipe, Delete, Patch,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { PerformanceService } from './performance.service'
 import {
@@ -21,6 +25,7 @@ import type {
   ScaleHistoryEntry, CostEstimate, OptimizationSuggestion,
 } from './performance.entity'
 
+@UseGuards(TenantGuard)
 @Controller('performance')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class PerformanceController {

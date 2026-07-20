@@ -1,6 +1,16 @@
 // marketing-metrics.controller.ts - Phase-17 T12
 // 用途: 营销指标 API 端点
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import type { Request } from 'express';
 import type { TenantAwareRequest } from '../tenant/tenant.types';
 import { MarketingMetricsService } from './marketing-metrics.service';
@@ -13,6 +23,7 @@ import {
   RecordHistogramDto,
 } from './marketing-metrics.dto';
 
+@UseGuards(TenantGuard)
 @Controller('marketing-metrics')
 export class MarketingMetricsController {
   constructor(private readonly metricsService: MarketingMetricsService) {}

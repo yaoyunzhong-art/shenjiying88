@@ -1,4 +1,7 @@
 import { Controller, Get, Post, Body, Query, Injectable, Optional, Req } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import type { Request } from 'express'
 import type { TenantAwareRequest } from '../tenant/tenant.types'
 import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
@@ -30,6 +33,7 @@ import type { TenantId, TouchPoint, CouponIssueRequest, AttributionResult } from
  *  GET  /marketing/channel/route            渠道路由
  */
 
+@UseGuards(TenantGuard)
 @Controller('marketing')
 @Injectable()
 export class MarketingController {

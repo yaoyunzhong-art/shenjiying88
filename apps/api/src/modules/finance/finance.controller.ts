@@ -1,4 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -14,6 +17,7 @@ import {
 } from './finance.dto'
 import { FinanceService } from './finance.service'
 
+@UseGuards(TenantGuard)
 @Controller('finance')
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}

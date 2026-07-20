@@ -26,6 +26,10 @@ import {
   HttpCode,
   HttpStatus,
   ForbiddenException,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import type { Request } from 'express'
 import { LicenseService } from './license.service'
@@ -34,6 +38,7 @@ import { RequireLicense } from './license.guard'
 import { runWithTenant, type TenantContext } from '../../common/context/tenant-context'
 import type { LicenseScope } from './license.entity'
 
+@UseGuards(TenantGuard)
 @Controller('license')
 export class LicenseController {
   constructor(

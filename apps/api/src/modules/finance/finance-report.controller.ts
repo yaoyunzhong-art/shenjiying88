@@ -15,7 +15,11 @@ import {
   Body,
   Param,
   Query,
-  Logger
+  Logger,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -26,6 +30,7 @@ import {
   ExportReportDto
 } from './dto/create-report.dto'
 
+@UseGuards(TenantGuard)
 @Controller('finance/reports')
 export class FinanceReportController {
   private readonly logger = new Logger(FinanceReportController.name)

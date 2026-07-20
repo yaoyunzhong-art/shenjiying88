@@ -11,6 +11,9 @@
  */
 
 import { Controller, Get, Post, Body, Query, Param, Logger } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceSettlementCron, type SettlementPeriodicity } from './finance-settlement.cron'
@@ -27,6 +30,7 @@ export class AcknowledgeNotificationDto {
 
 // ─── Controller ──────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('finance/settlement')
 export class FinanceSettlementController {
   private readonly logger = new Logger(FinanceSettlementController.name)

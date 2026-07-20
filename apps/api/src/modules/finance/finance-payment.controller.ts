@@ -1,4 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put, Query, HttpCode, HttpStatus } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import {
   FinancePaymentService,
   type ListPaymentFilter,
@@ -18,6 +21,7 @@ import type {
 
 interface TenantQuery { tenantId?: string }
 
+@UseGuards(TenantGuard)
 @Controller('api/finance')
 export class FinancePaymentController {
   constructor(private readonly svc: FinancePaymentService) {}

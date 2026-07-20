@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import type {
   LytMemberSnapshotContract,
   MemberOperationsExecutionReceiptContract,
@@ -25,6 +35,7 @@ import {
   MemberStatusAdjustDto
 } from './member.dto';
 
+@UseGuards(TenantGuard)
 @Controller('members')
 export class MemberController {
   constructor(private readonly memberService: MemberService) {}

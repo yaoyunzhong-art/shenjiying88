@@ -19,7 +19,18 @@
  * - GET  /compliance/audit/verify      校验审计链完整性
  * - GET  /compliance/health            合规模块健康检查
  */
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { PIIDetectorService } from './pii-detector.service';
 import { PIIMaskerService } from './pii-masker.service';
 import { GDPRErasureService } from './gdpr-erasure.service';
@@ -53,6 +64,7 @@ import type {
   ComplianceHealthResponseDto,
 } from './compliance.dto';
 
+@UseGuards(TenantGuard)
 @Controller('compliance')
 export class ComplianceController {
   constructor(

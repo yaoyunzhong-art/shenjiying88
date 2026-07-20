@@ -13,6 +13,10 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  UseGuards,
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 } from '@nestjs/common'
 import {
   PointsSettlementContract,
@@ -42,6 +46,7 @@ function fail(error: string, message?: string): ApiEnvelope {
 
 // ─── Controller ──────────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('chain')
 export class ChainController {
   constructor(

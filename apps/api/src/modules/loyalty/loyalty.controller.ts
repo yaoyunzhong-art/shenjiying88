@@ -1,4 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -13,6 +16,7 @@ import {
 } from './loyalty.dto'
 import { LoyaltyService } from './loyalty.service'
 
+@UseGuards(TenantGuard)
 @Controller('loyalty')
 export class LoyaltyController {
   constructor(private readonly loyaltyService: LoyaltyService) {}
