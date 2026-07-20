@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 
 import {
@@ -190,15 +190,34 @@ const STATUS_TABS = [
   { key: 'inactive' as const, label: '已关闭' },
 ];
 
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
+
 // ---- 页面 ----
 
 export default function StoresListPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [stores, setStores] = useState<Store[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<Store[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_STORES), 400);
+      }),
+    ).then((data) => {
+      if (data) setStores(data);
+      setPageReady(true);
+    });
+  }, []);
+
   // 搜索
   const searchFields = useMemo<(keyof Store)[]>(
     () => ['name', 'code', 'city', 'district', 'address', 'managerName', 'phone'],
     [],
   );
-  const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(MOCK_STORES, searchFields);
+  const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(stores, searchFields);
 
   // 状态过滤
   const [statusFilter, setStatusFilter] = useState<StoreStatus | 'ALL'>('ALL');
@@ -219,17 +238,33 @@ export default function StoresListPage() {
 
   // 统计
   const stats = useMemo(() => {
-    const active = MOCK_STORES.filter((s) => s.status === 'active').length;
-    const totalRevenue = MOCK_STORES.reduce((sum, s) => sum + s.monthlyRevenue, 0);
-    const totalStaff = MOCK_STORES.reduce((sum, s) => sum + s.staffCount, 0);
-    return { total: MOCK_STORES.length, active, totalRevenue, totalStaff };
-  }, []);
+    const totalCount = MOCK_STORES.length;
+    const active = stores.filter((s) => s.status === 'active').length;
+    const totalRevenue = stores.reduce((sum, s) => sum + s.monthlyRevenue, 0);
+    const totalStaff = stores.reduce((sum, s) => sum + s.staffCount, 0);
+    return { total: totalCount, active, totalRevenue, totalStaff };
+  }, [stores]);
 
   return (
     <PageShell
       title="门店列表"
       description="浏览所有门店信息，包括基础信息、运营状态和业绩概览。"
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={stores.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<Store[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_STORES), 400);
+            }),
+          ).then((data) => {
+            if (data) setStores(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div
         style={{
@@ -284,6 +319,7 @@ export default function StoresListPage() {
           onPageChange={pagination.setPage}
         />
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

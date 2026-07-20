@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 
 import {
@@ -227,35 +227,42 @@ function SuccessGuide({ storeName, onReset }: { storeName: string; onReset: () =
 
 // ---- 主页面 ----
 
+import { useTriState } from '../../_components/useTriState';
+import { TriStateRenderer } from '../../_components/TriStateRenderer';
+
 export default function NewStorePage() {
   const [submitting, setSubmitting] = useState(false);
   const [successData, setSuccessData] = useState<{ storeName: string } | null>(null);
+  const { loading: formLoading, error: formError, setError: setFormError, wrapLoad } = useTriState();
 
   const handleSubmit = useCallback(
     async (values: Record<string, unknown>): Promise<{ data: Record<string, unknown>; message?: string } | null> => {
+      setFormError(null);
       setSubmitting(true);
-      try {
-        // 模拟 API 提交
-        await new Promise((resolve) => setTimeout(resolve, 1200));
 
-        const data = values as unknown as NewStoreFormData;
+      const result = await wrapLoad(
+        (async () => {
+          // 模拟 API 提交
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          const data = values as unknown as NewStoreFormData;
 
-        // mock 冲突检测：编码冲突
-        if (data.code === 'SZ-NS-001' || data.code === 'BJ-CY-001') {
-          return null; // null = 失败
-        }
+          // mock 冲突检测：编码冲突
+          if (data.code === 'SZ-NS-001' || data.code === 'BJ-CY-001') {
+            return null;
+          }
 
-        setSuccessData({ storeName: data.name });
-        return {
-          data: values,
-          message: `门店「${data.name}」创建成功！`,
-        };
-      } catch {
-        setSuccessData(null);
-        return null;
-      } finally {
-        setSubmitting(false);
+          return { data: values, message: `门店「${data.name}」创建成功！` };
+        })(),
+      );
+
+      if (result) {
+        setSuccessData({ storeName: (values as unknown as NewStoreFormData).name });
+      } else {
+        setFormError('门店编码冲突，请修改后重试');
       }
+
+      setSubmitting(false);
+      return result;
     },
     [],
   );
@@ -266,6 +273,12 @@ export default function NewStorePage() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      <TriStateRenderer
+        loading={formLoading}
+        empty={false}
+        error={formError}
+        onRetry={() => setFormError(null)}
+      >
       {successData && (
         <SuccessGuide storeName={successData.storeName} onReset={handleReset} />
       )}
@@ -280,6 +293,7 @@ export default function NewStorePage() {
         submitLabel={submitting ? '提交中…' : '创建门店'}
         backUrl="/stores"
       />
+      </TriStateRenderer>
     </div>
   );
 }

@@ -6,8 +6,11 @@
  */
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+
+import { useTriState } from '../../_components/useTriState';
+import { TriStateRenderer } from '../../_components/TriStateRenderer';
 
 /* ── 类型 ── */
 
@@ -171,7 +174,22 @@ export default function StoreRatingDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const item = MOCK_RATINGS[id];
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [item, setItem] = useState<RatingDetailItem | null>(null);
+  const [pageReady, setPageReady] = useState(false);
+
+  useEffect(() => {
+    wrapLoad(
+      new Promise<RatingDetailItem | undefined>((resolve) => {
+        setTimeout(() => resolve(MOCK_RATINGS[id]), 300);
+      }),
+    ).then((data) => {
+      if (data) {
+        setItem(data);
+      }
+      setPageReady(true);
+    });
+  }, [id]);
 
   const [replying, setReplying] = useState(false);
   const [editingReply, setEditingReply] = useState(false);
@@ -257,29 +275,6 @@ export default function StoreRatingDetailPage() {
     router.push('/store-ratings');
   }, [router]);
 
-  /* ── 未找到 ── */
-  if (!item) {
-    return (
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: 48, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 8 }}>评价未找到</h1>
-        <p style={{ color: '#6b7280', marginBottom: 24 }}>
-          未找到 ID 为 <strong>{id}</strong> 的评价，可能已被删除。
-        </p>
-        <button
-          onClick={handleBack}
-          style={{
-            padding: '8px 24px', borderRadius: 8, border: '1px solid #d1d5db',
-            background: '#fff', color: '#374151', fontSize: 14, cursor: 'pointer',
-          }}
-          data-testid="rating-detail-back-list"
-        >
-          返回评价列表
-        </button>
-      </div>
-    );
-  }
-
   /* ── 正在删除 ── */
   if (deleting) {
     return (
@@ -287,7 +282,7 @@ export default function StoreRatingDetailPage() {
         <div style={{ fontSize: 48, marginBottom: 16 }}>🗑️</div>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 8 }}>删除完成</h1>
         <p style={{ color: '#6b7280', marginBottom: 24 }}>
-          评价 <strong>#{item.id}</strong> 已成功删除，正在返回评价列表...
+          评价 <strong>#{id}</strong> 已成功删除，正在返回评价列表...
         </p>
       </div>
     );
@@ -299,6 +294,40 @@ export default function StoreRatingDetailPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
+      <TriStateRenderer
+        loading={loading}
+        empty={!item && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<RatingDetailItem | undefined>((resolve) => {
+              setTimeout(() => resolve(MOCK_RATINGS[id]), 300);
+            }),
+          ).then((data) => {
+            if (data) setItem(data);
+            setPageReady(true);
+          })
+        }
+        emptyContent={
+          <>
+            <span style={{ fontSize: 48 }}>🔍</span>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '12px 0' }}>评价未找到</h1>
+            <p style={{ color: '#6b7280', marginBottom: 20 }}>
+              未找到 ID 为 <strong>{id}</strong> 的评价，可能已被删除。
+            </p>
+            <button
+              onClick={handleBack}
+              style={{
+                padding: '8px 24px', borderRadius: 8, border: '1px solid #d1d5db',
+                background: '#fff', color: '#374151', fontSize: 14, cursor: 'pointer',
+              }}
+              data-testid="rating-detail-back-list"
+            >
+              返回评价列表
+            </button>
+          </>
+        }
+      >
       {/* ← 返回按钮 */}
       <button
         onClick={handleBack}
@@ -664,6 +693,7 @@ export default function StoreRatingDetailPage() {
           )}
         </div>
       </div>
+      </TriStateRenderer>
     </div>
   );
 }

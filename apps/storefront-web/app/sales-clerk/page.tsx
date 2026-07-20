@@ -6,7 +6,7 @@
  */
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { SalesClerkTool, PageShell, StatusBadge } from '@m5/ui';
 import type {
   DailyReceptionStats,
@@ -445,8 +445,23 @@ function QuickActionBar() {
 // 页面组件
 // ============================================================
 
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
+
 export default function SalesClerkPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
   const [followUps, setFollowUps] = useState(MOCK_FOLLOW_UP_CLIENTS);
+  const [pageReady, setPageReady] = useState(false);
+
+  useEffect(() => {
+    wrapLoad(
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 400);
+      }),
+    ).then(() => {
+      setPageReady(true);
+    });
+  }, []);
   const [scriptCopied, setScriptCopied] = useState<string | null>(null);
 
   const handleFollowUp = useCallback((clientId: string) => {
@@ -460,6 +475,21 @@ export default function SalesClerkPage() {
 
   return (
     <PageShell title="导购员工作台">
+      <TriStateRenderer
+        loading={loading}
+        empty={!pageReady && !loading && !error}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<void>((resolve) => {
+              setTimeout(() => resolve(), 400);
+            }),
+          ).then(() => {
+            setFollowUps(MOCK_FOLLOW_UP_CLIENTS);
+            setPageReady(true);
+          })
+        }
+      >
       <div
         style={{
           padding: '24px 32px',
@@ -533,6 +563,7 @@ export default function SalesClerkPage() {
           onScriptCopy={handleScriptCopy}
         />
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

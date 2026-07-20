@@ -4,7 +4,7 @@
  */
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -16,12 +16,30 @@ import {
 
 type PaymentResultStatus = 'success' | 'failed' | 'pending';
 
+import { useTriState } from '../../../../_components/useTriState';
+import { TriStateRenderer } from '../../../../_components/TriStateRenderer';
+
 export default function PaymentResultPage() {
+  const [ready, setReady] = useState(false);
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
   const params = useParams();
   const searchParams = useSearchParams();
   const orderId = params.orderId as string;
   const status = (searchParams.get('status') as PaymentResultStatus) || 'pending';
   const handleBack = useH5Back();
+
+  // 模拟支付结果查询
+  React.useEffect(() => {
+    wrapLoad(
+      new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 500);
+      }),
+    ).then(() => {
+      setReady(true);
+    });
+  }, []);
 
   return (
     <MobileLayout
@@ -30,6 +48,18 @@ export default function PaymentResultPage() {
       onBack={handleBack}
       showNav={false}
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={!ready && !loading && !error}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<void>((resolve) => {
+              setTimeout(() => resolve(), 500);
+            }),
+          ).then(() => setReady(true))
+        }
+      >
       {/* 结果展示 */}
       <div style={{ textAlign: 'center', paddingTop: 40, paddingBottom: 32 }}>
         <div
@@ -176,6 +206,7 @@ export default function PaymentResultPage() {
           联系客服
         </Link>
       </div>
+      </TriStateRenderer>
     </MobileLayout>
   );
 }

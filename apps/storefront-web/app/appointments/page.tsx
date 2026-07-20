@@ -6,7 +6,7 @@
  * 功能: 日期选择 → 场地类型筛选 → 时间段展示 → 预约确认
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 
 // ================================================================
 // Types
@@ -431,8 +431,21 @@ const styles = {
 // Component
 // ================================================================
 
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
+
 export default function AppointmentsPage() {
   const [selectedDate, setSelectedDate] = useState('');
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageReady, setPageReady] = useState(false);
+
+  useEffect(() => {
+    wrapLoad(
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 400);
+      }),
+    ).then(() => setPageReady(true));
+  }, []);
   const [selectedZone, setSelectedZone] = useState<ZoneType | 'all'>('all');
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -511,6 +524,18 @@ export default function AppointmentsPage() {
 
   return (
     <main style={styles.container}>
+      <TriStateRenderer
+        loading={loading}
+        empty={!pageReady && !loading && !error}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<void>((resolve) => {
+              setTimeout(() => resolve(), 400);
+            }),
+          ).then(() => setPageReady(true))
+        }
+      >
       {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.headerTitle}>📅 场地预约</h1>
@@ -713,6 +738,7 @@ export default function AppointmentsPage() {
 
       {/* Toast */}
       <div style={styles.toast(showToast)}>{toastMessage}</div>
+      </TriStateRenderer>
     </main>
   );
 }
