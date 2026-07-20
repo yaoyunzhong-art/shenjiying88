@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query
-} from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -13,8 +6,10 @@ import {
 } from './queue.contract'
 import { CallNextDto, JoinQueueDto, QueueQueryDto } from './queue.dto'
 import { QueueService } from './queue.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('queue')
+@UseGuards(TenantGuard)
 export class QueueController {
   constructor(private readonly queueService: QueueService) {}
 

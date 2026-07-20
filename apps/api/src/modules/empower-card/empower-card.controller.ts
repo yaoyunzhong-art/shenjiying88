@@ -10,11 +10,13 @@
  * GET    /api/empower-cards/stats/today — 今日赋能评分
  */
 
-import { Controller, Get, Post, Body, Param, Query, Logger } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, Logger, UseGuards } from '@nestjs/common'
 import { EmpowerCardService } from './empower-card.service'
 import type { CreateEmpowerCardDto, EmpowerCardHealthResponse, EmpowerCardSearchQuery, EmpowerCardEntity } from './empower-card.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('empower-cards')
+@UseGuards(TenantGuard)
 export class EmpowerCardController {
   private readonly logger = new Logger(EmpowerCardController.name)
 

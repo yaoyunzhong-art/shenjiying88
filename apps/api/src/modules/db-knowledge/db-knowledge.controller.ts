@@ -5,13 +5,15 @@
  * 所有接口在 DB 不可用时会优雅降级返回空值。
  */
 
-import { Controller, Get, Post, Query, Param, Body, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, Post, Query, Param, Body, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { DbKnowledgeService } from './db-knowledge.service'
 import { SearchQueryDto, KindQueryDto, GroupQueryDto, CityQueryDto, PatternFilterDto } from './db-knowledge.dto'
 import type { SearchResult, KnowledgeDoc, ExpertProfile, AcceptancePulse, PhaseRecord, PatternRecord, CompetitorVenue, DailyBrief } from './db-knowledge.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('db-knowledge')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class DbKnowledgeController {
   constructor(private readonly dbKnowledgeService: DbKnowledgeService) {}
 

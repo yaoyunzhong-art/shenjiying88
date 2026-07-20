@@ -19,6 +19,7 @@ import {
   resubmitGovernanceApproval,
   summarizeGovernanceApprovals
 } from './governance-approval'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/governance-approval')
 @UseGuards(TenantGuard)

@@ -17,6 +17,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { AuditService } from './audit.service'
 import {
+import { TenantGuard } from '../agent/tenant.guard'
   CreateAuditLogDto,
   AuditLogQueryDto,
   AuditLogResponseDto,
@@ -31,6 +32,7 @@ import {
 @ApiTags('审计日志')
 @ApiBearerAuth()
 @Controller('api/audit')
+@UseGuards(TenantGuard)
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

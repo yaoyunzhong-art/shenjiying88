@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common'
 import { CompetitorTrackService } from './competitor-track.service'
 import { TrackQueryDto, CreateCompetitorDto } from './competitor-track.dto'
 import type { CompetitorDto, TrackSummaryDto, CompetitorListDto } from './competitor-track.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('competitor-track')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class CompetitorTrackController {
   constructor(private readonly competitorTrackService: CompetitorTrackService) {}
 

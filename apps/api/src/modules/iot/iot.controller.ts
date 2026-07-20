@@ -1,16 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common'
+import { Controller, Get, Post, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, , UseGuards } from '@nestjs/common'
 import {
   ESP32DeviceService,
   MQTTBrokerService,
@@ -43,6 +31,7 @@ import {
   AutoAssignWorkOrderDto,
   DeviceHealthQueryDto,
 } from './iot.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * IoT 设备管理控制器
@@ -51,6 +40,7 @@ import {
  */
 @Controller('iot')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class IoTController {
   constructor(
     private readonly deviceService: ESP32DeviceService,

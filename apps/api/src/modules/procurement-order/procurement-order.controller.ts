@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -18,8 +9,10 @@ import {
   UpdateProcurementStatusDto,
 } from './procurement-order.dto'
 import { ProcurementOrderService } from './procurement-order.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('procurement-orders')
+@UseGuards(TenantGuard)
 export class ProcurementOrderController {
   constructor(private readonly orderService: ProcurementOrderService) {}
 

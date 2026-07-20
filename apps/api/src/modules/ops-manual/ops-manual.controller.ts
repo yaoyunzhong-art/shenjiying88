@@ -12,17 +12,7 @@
  * - GET    /ops-manual/records/:id         获取生成记录详情
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, HttpCode, HttpStatus, Logger, , UseGuards } from '@nestjs/common'
 import { OpsManualService } from './ops-manual.service'
 import type {
   GenerateManualDto,
@@ -39,8 +29,10 @@ import type {
   ManualRecordListResponseDto,
   ManualRecordQueryDto,
 } from './ops-manual.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ops-manual')
+@UseGuards(TenantGuard)
 export class OpsManualController {
   private readonly logger = new Logger(OpsManualController.name)
 

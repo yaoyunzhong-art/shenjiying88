@@ -20,6 +20,7 @@ import {
   WorkbenchRuntimeReplaySubmitDto,
   WorkbenchSecretRotationDto
 } from './workbench.dto'
+import { TenantGuard } from '../agent/tenant.guard';
 
 const WORKBENCH_READ_ROLES = [
   'SUPER_ADMIN',

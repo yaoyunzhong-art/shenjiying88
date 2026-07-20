@@ -1,6 +1,6 @@
 // auto-rollback.controller.ts - Phase-19 T27
 // 用途: 自动回滚控制器 - POST /auto-rollback/trigger, /confirm, /cancel, /configure, GET /status, /records
-import { Controller, Post, Get, Body, Query, Param, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Post, Get, Body, Query, Param, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { AutoRollbackService } from './auto-rollback.service'
 import type { RollbackStatus, RollbackSeverity, SnapshotKind } from './auto-rollback.entity'
 import {
@@ -13,9 +13,11 @@ import {
   toSnapshotDto,
   toEngineStatusDto,
 } from './auto-rollback.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('auto-rollback')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AutoRollbackController {
   constructor(private readonly autoRollbackService: AutoRollbackService) {}
 

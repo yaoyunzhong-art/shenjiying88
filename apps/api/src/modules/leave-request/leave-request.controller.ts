@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -16,8 +8,10 @@ import {
 } from './leave-request.dto'
 import { LeaveRequestService } from './leave-request.service'
 import { LeaveStatus } from './leave-request.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('leave-requests')
+@UseGuards(TenantGuard)
 export class LeaveRequestController {
   constructor(private readonly leaveService: LeaveRequestService) {}
 

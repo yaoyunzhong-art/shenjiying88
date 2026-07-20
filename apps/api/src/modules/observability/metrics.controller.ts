@@ -1,27 +1,15 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-  Param,
-  Post,
-  Put,
-  Res,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Injectable, NotFoundException, Param, Post, Put, Res, , UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import type { Response } from 'express'
 import { MetricsService } from './metrics.service'
 import { ObservabilityService } from './observability.service'
 import type { CreateAlertRuleRequest, UpdateAlertRuleRequest, AlertRuleResponse } from './metrics.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Injectable()
 @ApiTags('observability')
 @Controller()
+@UseGuards(TenantGuard)
 export class MetricsController {
   constructor(
     @Inject(MetricsService) private readonly metricsService: MetricsService,

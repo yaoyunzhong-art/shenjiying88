@@ -2,16 +2,7 @@
  * multi-region.controller.ts
  * 用途: 多区域 REST API 控制器
  */
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
 import {
   BatchCheckHealthDto,
   CanMigrateDto,
@@ -31,8 +22,10 @@ import {
 } from './multi-region.entity'
 import { FailoverService } from './failover.service'
 import { MultiRegionService } from './multi-region.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('multi-region')
+@UseGuards(TenantGuard)
 export class MultiRegionController {
   constructor(
     private readonly regions: MultiRegionService,

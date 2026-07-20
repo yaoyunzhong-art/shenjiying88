@@ -1,17 +1,5 @@
 // runbook.controller.ts - 运维手册 API 控制器
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  NotFoundException,
-} from '@nestjs/common'
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException, , UseGuards } from '@nestjs/common'
 import { RunbookService } from './runbook.service'
 import {
   CreateRunbookDto,
@@ -20,9 +8,11 @@ import {
   MapAlertDto,
 } from './runbook.dto'
 import type { Runbook, AlertMapping } from './runbook.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('runbook')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class RunbookController {
   constructor(private readonly runbookService: RunbookService) {}
 

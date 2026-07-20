@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,8 +8,10 @@ import {
 } from './quality-inspection.dto'
 import { InspectionType } from './quality-inspection.entity'
 import { QualityInspectionService } from './quality-inspection.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('quality-inspections')
+@UseGuards(TenantGuard)
 export class QualityInspectionController {
   constructor(private readonly inspectionService: QualityInspectionService) {}
 

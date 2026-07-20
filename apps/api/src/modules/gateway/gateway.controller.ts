@@ -1,12 +1,14 @@
 // gateway.controller.ts — Gateway API 网关 REST 控制器
-import { Controller, Post, Get, Body, Param, Query, UsePipes, ValidationPipe, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, Query, UsePipes, ValidationPipe, HttpCode, HttpStatus, NotFoundException, UseGuards } from '@nestjs/common'
 import { APIGateway, RateLimiterService, APIKeyManager } from './gateway.service'
 import { GatewayAnalyticsService } from './gateway-analytics.service'
 import { AuthCheckDto, RouteLookupDto, QuotaSetDto, QuotaQueryDto, CreateApiKeyDto, RevokeApiKeyDto, AnalyticsQueryDto } from './gateway.dto'
 import type { AuthResult, RateLimitResult, QuotaStatus, APIKey, GatewayLogEntry, GatewayAnalyticsSummary, EndpointAnalytics, ClientAnalytics, TimeSeriesPoint, AnomalyDetectionResult } from './gateway.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('gateway')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class GatewayController {
   constructor(
     private readonly apiGateway: APIGateway,

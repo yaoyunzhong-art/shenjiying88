@@ -2,7 +2,7 @@
 // 创建: 2026-06-26 · Pulse-自动
 // 状态: IMPLEMENTED · Referral 控制器
 
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ReferralService } from './referral.service';
 import {
   GenerateCodeDto,
@@ -12,6 +12,7 @@ import {
 import type { ReferralCode } from './referral.entity';
 
 @Controller('referral')
+@UseGuards(TenantGuard)
 export class ReferralController {
   constructor(private readonly referralService: ReferralService) {}
 

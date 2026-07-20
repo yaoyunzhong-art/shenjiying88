@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -20,8 +11,10 @@ import {
   BulkCreateClausesDto,
 } from './contract-manager.dto'
 import { ContractManagerService } from './contract-manager.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('contracts')
+@UseGuards(TenantGuard)
 export class ContractManagerController {
   constructor(private readonly contractService: ContractManagerService) {}
 

@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { AlertQueryDto, AlertSummaryDto, CreateInventoryAlertDto, InventoryAlertDto, InventoryAlertListDto } from './inventory-alert.dto'
 import { InventoryAlertService } from './inventory-alert.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @ApiTags('库存预警分析')
 @ApiBearerAuth()
 @Controller('inventory-alert')
+@UseGuards(TenantGuard)
 export class InventoryAlertController {
   constructor(private readonly service: InventoryAlertService) {}
 

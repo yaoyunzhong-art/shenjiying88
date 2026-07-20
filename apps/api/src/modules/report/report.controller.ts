@@ -2,15 +2,15 @@
  * 报表/看板 - Controller (V10 Day 7 Phase 91)
  */
 
-import {
-  Controller, Get, Post, Delete, Body, Param, Query, BadRequestException,
-} from '@nestjs/common'
+import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException, , UseGuards } from '@nestjs/common'
 import { ReportService } from './report.service'
 import type {
   ReportDefinition, ReportQueryResponse, DashboardLayout,
 } from './report.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('report')
+@UseGuards(TenantGuard)
 export class ReportController {
   constructor(private readonly service: ReportService) {}
 

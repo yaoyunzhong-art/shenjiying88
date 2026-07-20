@@ -23,6 +23,7 @@ import type {
   SsoLoginInitiateDto,
   SsoLoginCompleteDto,
 } from './sso.dto'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('saas/sso')
 @UseGuards(TenantGuard)

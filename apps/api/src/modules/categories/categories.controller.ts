@@ -2,12 +2,13 @@
 // 路由前缀: /api/v1/categories (全局前缀自动添加)
 // 创建: 2026-07-20
 
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CategoriesService, Category } from './categories.service';
 
 @ApiTags('商品分类')
 @Controller('categories')
+@UseGuards(TenantGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

@@ -1,16 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  HttpCode,
-  HttpStatus
-} from '@nestjs/common'
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import {
   type ReportDefinition,
@@ -34,6 +22,7 @@ import { PaymentMixService } from './reports/payment-mix.service'
 import { HourlyHeatmapService } from './reports/hourly-heatmap.service'
 import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * Phase-39 T169: 报表中心 Controller
@@ -72,6 +61,7 @@ interface QueryParams {
 }
 
 @Controller('api/reports')
+@UseGuards(TenantGuard)
 export class ReportController {
   private definitions = new Map<string, ReportDefinition>()
 

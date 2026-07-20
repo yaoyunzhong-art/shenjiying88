@@ -5,7 +5,7 @@ import {
   Param,
   Patch,
   Post,
-  Query
+  Query,
   UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'

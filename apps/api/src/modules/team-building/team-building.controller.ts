@@ -18,6 +18,7 @@ import {
   type TeamBuildingType,
   type TeamBuildingStats,
 } from './team-building.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('team-building')
 @UseGuards(TenantGuard)

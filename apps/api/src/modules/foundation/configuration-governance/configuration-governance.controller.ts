@@ -13,6 +13,7 @@ import {
   RotateSecretDto,
   UpsertConfigEntryDto
 } from './configuration-governance.dto'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/configuration-governance')
 @UseGuards(TenantGuard)

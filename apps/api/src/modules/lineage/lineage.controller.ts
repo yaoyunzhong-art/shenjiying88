@@ -4,16 +4,7 @@
  * 提供字段血缘追踪、影响分析、敏感数据分类、数据流监控、合规报告 REST API
  */
 
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Param,
-  Query,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, Query, HttpException, HttpStatus, , UseGuards } from '@nestjs/common'
 import { DataLineageTracker, ImpactAnalyzer } from './data-lineage.service'
 import {
   SensitiveDataClassifier,
@@ -28,6 +19,7 @@ import type {
   ComplianceReport,
   ExposureRisk,
 } from './lineage.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 // ─── 工具 ────────────────────────────────────────────────────
 
@@ -42,6 +34,7 @@ function fail(error: string, message?: string) {
 // ─── Controller ──────────────────────────────────────────────
 
 @Controller('lineage')
+@UseGuards(TenantGuard)
 export class LineageController {
   constructor(
     private readonly lineageTracker: DataLineageTracker,

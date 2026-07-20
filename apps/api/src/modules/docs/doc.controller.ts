@@ -3,18 +3,7 @@
  * 提供文档生成、端点注册、schema管理、文档配置等 REST 接口
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, UsePipes, ValidationPipe, NotFoundException, BadRequestException, , UseGuards } from '@nestjs/common'
 import { DocService } from './doc.service'
 import { SwaggerGenService } from './swagger-gen.service'
 import {
@@ -30,9 +19,11 @@ import type {
   DocEndpointInfo,
   DocStats,
 } from './doc.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('docs')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class DocController {
   constructor(
     private readonly docService: DocService,

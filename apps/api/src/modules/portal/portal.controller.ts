@@ -1,4 +1,4 @@
-import { Controller, Get, Optional } from '@nestjs/common'
+import { Controller, Get, Optional, UseGuards } from '@nestjs/common'
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -9,9 +9,11 @@ import {
   PortalDomainGovernanceSummaryDto,
   PortalDto,
 } from './portal.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @ApiTags('portal')
 @Controller('portals')
+@UseGuards(TenantGuard)
 export class PortalController {
   constructor(
     private readonly portalService: PortalService,

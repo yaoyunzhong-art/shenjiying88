@@ -16,8 +16,10 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common'
 import { RetrievalService } from './retrieval.service'
 import type { RetrievalQuery, RetrievalResponse } from './retrieval.types'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('api/retrieval')
+@UseGuards(TenantGuard)
 export class RetrievalController {
   constructor(private readonly retrievalService: RetrievalService) {}
 

@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { TenantContext } from '../tenant/tenant.decorator';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 import { BootstrapService } from './bootstrap.service';
 
 @Controller('bootstrap')
+@UseGuards(TenantGuard)
 export class BootstrapController {
   constructor(private readonly svc: BootstrapService) {}
 

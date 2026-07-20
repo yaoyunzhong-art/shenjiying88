@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, , UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,8 +9,10 @@ import {
   UpdateDeliveryStatusDto,
 } from './delivery-tracking.dto'
 import { DeliveryTrackingService } from './delivery-tracking.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('delivery-tracking')
+@UseGuards(TenantGuard)
 export class DeliveryTrackingController {
   constructor(private readonly deliveryService: DeliveryTrackingService) {}
 

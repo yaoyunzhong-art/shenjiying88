@@ -11,6 +11,7 @@ import type {
   WebhookEventType,
   SandboxStatus
 } from './openapi.entity'
+import { TenantGuard } from '../agent/tenant.guard';
 
 /**
  * Phase-44 T174 / P-44: OpenAPIController (开放 API 网关)

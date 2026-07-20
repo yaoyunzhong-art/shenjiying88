@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Param, BadRequestException, Query } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, BadRequestException, Query, UseGuards } from '@nestjs/common'
 import { MonitoringService } from './monitoring.service'
 import type { MetricPoint, AlertRule, Alert, AlertSeverity } from './monitoring.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('monitoring')
+@UseGuards(TenantGuard)
 export class MonitoringController {
   constructor(private readonly service: MonitoringService) {}
 

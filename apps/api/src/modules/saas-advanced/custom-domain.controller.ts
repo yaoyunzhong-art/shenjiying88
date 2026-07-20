@@ -53,6 +53,7 @@ import {
   ValidateDomainRequest,
   ValidateDomainResponse,
 } from './custom-domain.dto'
+import { TenantGuard } from '../agent/tenant.guard';
 
 const DOMAIN_GOVERNANCE_READ_ROLES = [
   'SUPER_ADMIN',

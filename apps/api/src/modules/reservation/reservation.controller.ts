@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  Query
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -19,8 +8,10 @@ import {
 } from './reservation.dto'
 import { ReservationStatus } from './reservation.entity'
 import { ReservationService } from './reservation.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('reservations')
+@UseGuards(TenantGuard)
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 

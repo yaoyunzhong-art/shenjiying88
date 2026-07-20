@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query
-} from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -32,6 +25,7 @@ import {
   PushNotificationScheduler,
   WebSocketService
 } from './push.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * 将 service 返回的轻量 ScheduledPush 转为 entity 完整 ScheduledPush
@@ -92,6 +86,7 @@ function toEntityWSClient(
 }
 
 @Controller('push')
+@UseGuards(TenantGuard)
 export class PushController {
   constructor(
     private readonly apnsService: APNsService,

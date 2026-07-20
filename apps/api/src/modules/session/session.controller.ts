@@ -1,18 +1,7 @@
 // session.controller.ts · 会话管理接口
 // Phase-FP P10 · 2026-07-08
 
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Param,
-  Delete,
-  HttpCode,
-  HttpStatus,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, Delete, HttpCode, HttpStatus, NotFoundException, BadRequestException, , UseGuards } from '@nestjs/common'
 import { SessionService } from './session.service'
 import {
   CreateSessionDto,
@@ -23,8 +12,10 @@ import {
   CreateSessionResponseDto,
 } from './session.dto'
 import { DeviceInfo } from './session.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('sessions')
+@UseGuards(TenantGuard)
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 

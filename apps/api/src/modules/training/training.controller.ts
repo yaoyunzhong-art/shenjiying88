@@ -8,7 +8,7 @@ import {
   UsePipes,
   ValidationPipe,
   NotFoundException,
-  BadRequestException
+  BadRequestException,
   UseGuards,
 } from '@nestjs/common'
 import { TrainingService } from './training.service'

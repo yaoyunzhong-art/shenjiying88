@@ -1,19 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  HttpException,
-  HttpStatus,
-  DefaultValuePipe,
-  ParseIntPipe,
-} from '@nestjs/common'
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, DefaultValuePipe, ParseIntPipe, , UseGuards } from '@nestjs/common'
 import { SecurityScannerService } from './security-scanner.service'
 import { WAFService, type WAFRule } from './waf.service'
 import type {
@@ -32,9 +17,11 @@ import {
   UpdateWAFRuleDto,
   EvaluateRequestDto,
 } from './security.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('security')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class SecurityController {
   constructor(
     private readonly scannerService: SecurityScannerService,
