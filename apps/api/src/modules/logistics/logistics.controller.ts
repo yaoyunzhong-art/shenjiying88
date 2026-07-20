@@ -27,6 +27,10 @@ import type {
 import type {
   SchedulePlanStatus,
 } from './logistics.schedule.entity'
+import type {
+  FeedbackScore,
+  AlertTriggerType,
+} from './logistics.phase-p30-80.entity'
 
 @Controller('logistics')
 export class LogisticsController {
@@ -678,5 +682,221 @@ export class LogisticsController {
   @Get('schedule-plans/metrics')
   getSchedulePlanMetrics(@Headers('x-tenant-id') tenantId: string) {
     return this.logisticsService.getSchedulePlanMetrics(tenantId)
+  }
+
+  // ═══════════════════════════════════════════
+  //  维修反馈闭环 (RepairFeedback + RepairKnowledge) - P-30 Phase 80%
+  // ═══════════════════════════════════════════
+
+  @Post('repair-feedbacks')
+  createRepairFeedback(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      repairOrderId: string
+      maintenanceOrderId?: string
+      score: FeedbackScore
+      comment: string
+      reviewerId: string
+      reviewerName: string
+      timely: boolean
+      qualitySatisfied: boolean
+    }
+  ) {
+    return this.logisticsService.createRepairFeedback({ tenantId, ...body })
+  }
+
+  @Get('repair-feedbacks')
+  listRepairFeedbacks(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('score') score?: string,
+    @Query('repairOrderId') repairOrderId?: string,
+  ) {
+    return this.logisticsService.listRepairFeedbacks(tenantId, {
+      score: score ? parseInt(score, 10) as FeedbackScore : undefined,
+      repairOrderId,
+    })
+  }
+
+  @Get('repair-feedbacks/:id')
+  getRepairFeedback(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getRepairFeedback(id, tenantId) ?? null
+  }
+
+  @Post('repair-knowledge')
+  createRepairKnowledge(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      repairOrderId: string
+      maintenanceOrderId?: string
+      equipmentId: string
+      equipmentName: string
+      issueType: string
+      issueDescription: string
+      rootCause: string
+      solution: string
+      partsUsed?: string[]
+      repairHours?: number
+      technicianId: string
+      technicianName: string
+      isCommonCase?: boolean
+      tags?: string[]
+    }
+  ) {
+    return this.logisticsService.createRepairKnowledge({ tenantId, ...body })
+  }
+
+  @Get('repair-knowledge')
+  listRepairKnowledge(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('equipmentId') equipmentId?: string,
+    @Query('issueType') issueType?: string,
+    @Query('tag') tag?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.logisticsService.listRepairKnowledge(tenantId, { equipmentId, issueType, tag, search })
+  }
+
+  @Get('repair-knowledge/:id')
+  getRepairKnowledge(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    return this.logisticsService.getRepairKnowledge(id, tenantId) ?? null
+  }
+
+  @Patch('repair-knowledge/:id')
+  updateRepairKnowledge(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: any
+  ) {
+    return this.logisticsService.updateRepairKnowledge(id, tenantId, body)
+  }
+
+  // ═══════════════════════════════════════════
+  //  耗材库存预警 (ConsumableAlertRule) - P-30 Phase 80%
+  //  对接 P-37 inventory-alert
+  // ═══════════════════════════════════════════
+
+  @Post('consumable-alert-rules')
+  createConsumableAlertRule(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      itemId: string
+      itemName: string
+      triggerType: AlertTriggerType
+      threshold: number
+      alertLevel: 'info' | 'warning' | 'critical'
+      notifyUserIds?: string[]
+    }
+  ) {
+    return this.logisticsService.createConsumableAlertRule({ tenantId, ...body })
+  }
+
+  @Get('consumable-alert-rules')
+  listConsumableAlertRules(@Headers('x-tenant-id') tenantId: string) {
+    return this.logisticsService.listConsumableAlertRules(tenantId)
+  }
+
+  @Patch('consumable-alert-rules/:id')
+  updateConsumableAlertRule(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: any
+  ) {
+    return this.logisticsService.updateConsumableAlertRule(id, tenantId, body)
+  }
+
+  @Delete('consumable-alert-rules/:id')
+  deleteConsumableAlertRule(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
+    const result = this.logisticsService.deleteConsumableAlertRule(id, tenantId)
+    return { success: result }
+  }
+
+  @Post('consumable-alerts/check')
+  checkConsumableAlerts(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: { itemId: string; itemName: string; currentStock: number }
+  ) {
+    return this.logisticsService.checkConsumableAlerts({ tenantId, ...body })
+  }
+
+  @Get('consumable-alerts')
+  listConsumableAlerts(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('resolved') resolved?: string,
+    @Query('alertLevel') alertLevel?: string,
+    @Query('triggerType') triggerType?: string,
+  ) {
+    return this.logisticsService.listConsumableAlerts(tenantId, {
+      resolved: resolved !== undefined ? resolved === 'true' : undefined,
+      alertLevel,
+      triggerType,
+    })
+  }
+
+  @Post('consumable-alerts/:id/resolve')
+  resolveConsumableAlert(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('id') id: string,
+    @Body() body: { resolvedBy: string }
+  ) {
+    return this.logisticsService.resolveConsumableAlert(id, tenantId, body.resolvedBy)
+  }
+
+  // ═══════════════════════════════════════════
+  //  场馆巡检记录 - P-30 Phase 80%
+  // ═══════════════════════════════════════════
+
+  @Post('venue-inspections')
+  createVenueInspectionRecord(
+    @Headers('x-tenant-id') tenantId: string,
+    @Body() body: {
+      storeId: string
+      planType: 'daily' | 'weekly' | 'monthly'
+      inspectorId: string
+      inspectorName: string
+      environmentScore: number
+      equipmentScore: number
+      safetyScore: number
+      notes: string
+      issues: Array<{
+        category: string
+        description: string
+        severity: 'low' | 'medium' | 'high'
+        resolved?: boolean
+      }>
+    }
+  ) {
+    return this.logisticsService.createVenueInspectionRecord({ tenantId, ...body })
+  }
+
+  @Get('venue-inspections')
+  listVenueInspectionRecords(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('storeId') storeId?: string,
+    @Query('planType') planType?: 'daily' | 'weekly' | 'monthly',
+    @Query('inspectorId') inspectorId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.logisticsService.listVenueInspectionRecords(tenantId, {
+      storeId, planType, inspectorId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    })
+  }
+
+  @Get('venue-inspections/trend')
+  getVenueInspectionTrend(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('storeId') storeId?: string,
+    @Query('months') months?: string,
+  ) {
+    return this.logisticsService.getVenueInspectionTrendData(tenantId, storeId, months ? parseInt(months, 10) : 3)
+  }
+
+  // ═══════════════════════════════════════════
+  //  后勤报表 API - P-30 Phase 80%
+  // ═══════════════════════════════════════════
+
+  @Get('reports')
+  getLogisticsReport(@Headers('x-tenant-id') tenantId: string) {
+    return this.logisticsService.getLogisticsReport(tenantId)
   }
 }

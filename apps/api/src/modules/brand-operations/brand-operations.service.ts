@@ -19,6 +19,26 @@ import type {
   CollaborationMetrics,
   PartnerInfo,
 } from './brand-operations.entity'
+import type {
+  CampaignSchedule,
+  ScheduleAction,
+  ScheduleStatus,
+  RevenueShareRecord,
+  SettlementStatus,
+  RevenueShareSummary,
+  AssetCategory,
+  AssetTag,
+  AssetCategoryTree,
+  BrandDashboardData,
+  AssetUsageStat,
+  CampaignEffectiveness,
+} from './brand-operations.phase-p47-80.entity'
+import {
+  createCampaignScheduleId,
+  createRevenueShareRecordId,
+  createAssetCategoryId,
+  createAssetTagId,
+} from './brand-operations.phase-p47-80.entity'
 
 // ── In-memory stores (Phase-47 骨架阶段,后续替换为 Prisma) ──
 
@@ -28,6 +48,12 @@ const syncStore = new Map<string, BrandSyncRecord>()
 const templateStore = new Map<string, BrandCampaignTemplate>()
 const collaborationStore = new Map<string, Collaboration>()
 
+// ── P-47 Phase 80% new stores ──
+const campaignScheduleStore = new Map<string, CampaignSchedule>()
+const revenueShareStore = new Map<string, RevenueShareRecord>()
+const assetCategoryStore = new Map<string, AssetCategory>()
+const assetTagStore = new Map<string, AssetTag>()
+
 // ── 导入/导出给测试重置 ──
 export function resetBrandOpsStoresForTests(): void {
   assetStore.clear()
@@ -35,9 +61,13 @@ export function resetBrandOpsStoresForTests(): void {
   syncStore.clear()
   templateStore.clear()
   collaborationStore.clear()
+  campaignScheduleStore.clear()
+  revenueShareStore.clear()
+  assetCategoryStore.clear()
+  assetTagStore.clear()
 }
 
-export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore }
+export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore, campaignScheduleStore, revenueShareStore, assetCategoryStore, assetTagStore }
 
 // ── 创建/更新本地方法 ──
 
@@ -668,5 +698,427 @@ export class BrandOperationsService {
       collaborationStore.set(collabId, collab)
     }
     return collab
+  }
+
+  // ════════════════════════════════════════════════════
+  //  Brand Campaign Schedule (定时发布/下架)
+  // ════════════════════════════════════════════════════
+
+  createCampaignSchedule(input: {
+    tenantId: string
+    campaignId: string
+    action: ScheduleAction
+    scheduledAt: string
+    createdBy: string
+  }): CampaignSchedule {
+    const scheduledTime = new Date(input.scheduledAt)
+    if (Number.isNaN(scheduledTime.getTime())) {
+      throw new Error('scheduledAt must be a valid datetime')
+    }
+    const camp = this.getCampaign(input.campaignId, input.tenantId)
+    if (!camp) throw new Error(`BrandCampaign not found: ${input.campaignId}`)
+
+    const now = new Date().toISOString()
+    const schedule: CampaignSchedule = {
+      id: createCampaignScheduleId(),
+      tenantId: input.tenantId,
+      campaignId: input.campaignId,
+      action: input.action,
+      scheduledAt: scheduledTime.toISOString(),
+      status: 'pending',
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    campaignScheduleStore.set(schedule.id, schedule)
+    this.logger.log(`Created campaign schedule ${schedule.id}: ${input.action} campaign ${input.campaignId} at ${input.scheduledAt}`)
+    return { ...schedule }
+  }
+
+  getCampaignSchedule(id: string, tenantId: string): CampaignSchedule | undefined {
+    const s = campaignScheduleStore.get(id)
+    if (!s || s.tenantId !== tenantId) return undefined
+    return { ...s }
+  }
+
+  listCampaignSchedules(
+    tenantId: string,
+    filter?: { status?: ScheduleStatus; action?: ScheduleAction; campaignId?: string },
+  ): CampaignSchedule[] {
+    return Array.from(campaignScheduleStore.values())
+      .filter((s) => s.tenantId === tenantId)
+      .filter((s) => (filter?.status ? s.status === filter.status : true))
+      .filter((s) => (filter?.action ? s.action === filter.action : true))
+      .filter((s) => (filter?.campaignId ? s.campaignId === filter.campaignId : true))
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+      .map((s) => ({ ...s }))
+  }
+
+  cancelCampaignSchedule(id: string, tenantId: string): CampaignSchedule {
+    const s = campaignScheduleStore.get(id)
+    if (!s || s.tenantId !== tenantId) throw new Error(`CampaignSchedule not found: ${id}`)
+    if (s.status !== 'pending') {
+      throw new Error(`Cannot cancel schedule with status ${s.status}`)
+    }
+    s.status = 'cancelled'
+    s.updatedAt = new Date().toISOString()
+    campaignScheduleStore.set(id, s)
+    return { ...s }
+  }
+
+  /**
+   * 扫描到期的定时调度任务并执行
+   * 用于 cron 作业调度
+   */
+  executeDueSchedules(now: string = new Date().toISOString()): CampaignSchedule[] {
+    const nowDate = new Date(now)
+    const due = Array.from(campaignScheduleStore.values())
+      .filter((s) => s.status === 'pending')
+      .filter((s) => new Date(s.scheduledAt) <= nowDate)
+
+    const executed: CampaignSchedule[] = []
+    for (const s of due) {
+      try {
+        if (s.action === 'publish') {
+          this.publishCampaign(s.campaignId, s.tenantId, 'Scheduled publish')
+        } else if (s.action === 'unpublish') {
+          this.updateCampaign(s.campaignId, s.tenantId, { status: 'ended' })
+        }
+        s.status = 'executed'
+        s.executedAt = now
+        this.logger.log(`Executed campaign schedule ${s.id}: ${s.action} campaign ${s.campaignId}`)
+      } catch (error: any) {
+        s.status = 'failed'
+        s.errorMessage = error.message
+        this.logger.warn(`Failed campaign schedule ${s.id}: ${error.message}`)
+      }
+      s.updatedAt = now
+      campaignScheduleStore.set(s.id, s)
+      executed.push({ ...s })
+    }
+
+    return executed
+  }
+
+  // ════════════════════════════════════════════════════
+  //  Revenue Share Calculation (联名收入分成)
+  // ════════════════════════════════════════════════════
+
+  /** 计算联名收入分成 */
+  calculateRevenueShare(input: {
+    tenantId: string
+    collaborationId: string
+    periodStart: string
+    periodEnd: string
+    totalRevenue: number
+    shareRate: number
+    notes?: string
+  }): RevenueShareRecord {
+    const collab = this.getCollaboration(input.collaborationId, input.tenantId)
+    if (!collab) throw new Error(`Collaboration not found: ${input.collaborationId}`)
+    if (collab.status !== 'active') {
+      throw new Error(`Cannot calculate share for non-active collaboration (status: ${collab.status})`)
+    }
+
+    const partnerShare = Math.round(input.totalRevenue * input.shareRate)
+    const ourShare = input.totalRevenue - partnerShare
+
+    const now = new Date().toISOString()
+    const record: RevenueShareRecord = {
+      id: createRevenueShareRecordId(),
+      tenantId: input.tenantId,
+      collaborationId: input.collaborationId,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      totalRevenue: input.totalRevenue,
+      partnerShare,
+      ourShare,
+      shareRate: input.shareRate,
+      settlementStatus: 'pending',
+      notes: input.notes,
+      createdAt: now,
+      updatedAt: now,
+    }
+    revenueShareStore.set(record.id, record)
+    this.logger.log(`Calculated revenue share ${record.id}: partner=${partnerShare} our=${ourShare}`)
+    return { ...record }
+  }
+
+  getRevenueShareRecord(id: string, tenantId: string): RevenueShareRecord | undefined {
+    const r = revenueShareStore.get(id)
+    if (!r || r.tenantId !== tenantId) return undefined
+    return { ...r }
+  }
+
+  listRevenueShareRecords(
+    tenantId: string,
+    filter?: {
+      status?: SettlementStatus
+      collaborationId?: string
+      periodFrom?: string
+      periodTo?: string
+    },
+  ): RevenueShareRecord[] {
+    return Array.from(revenueShareStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .filter((r) => (filter?.status ? r.settlementStatus === filter.status : true))
+      .filter((r) => (filter?.collaborationId ? r.collaborationId === filter.collaborationId : true))
+      .filter((r) => (filter?.periodFrom ? r.periodEnd >= filter.periodFrom : true))
+      .filter((r) => (filter?.periodTo ? r.periodStart <= filter.periodTo : true))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((r) => ({ ...r }))
+  }
+
+  /** 结算分成记录 */
+  settleRevenueShare(
+    id: string,
+    tenantId: string,
+    input: { settledBy: string; notes?: string },
+  ): RevenueShareRecord {
+    const r = this.revenueShareStoreGet(id, tenantId)
+    if (r.settlementStatus !== 'pending') {
+      throw new Error(`Revenue share record already ${r.settlementStatus}`)
+    }
+    r.settlementStatus = 'settled'
+    r.settledAt = new Date().toISOString()
+    r.settledBy = input.settledBy
+    if (input.notes) r.notes = input.notes
+    r.updatedAt = new Date().toISOString()
+    revenueShareStore.set(id, r)
+    return { ...r }
+  }
+
+  /** 争议分成记录 */
+  disputeRevenueShare(
+    id: string,
+    tenantId: string,
+    reason: string,
+  ): RevenueShareRecord {
+    const r = this.revenueShareStoreGet(id, tenantId)
+    if (r.settlementStatus === 'settled') {
+      throw new Error(`Cannot dispute already settled record`)
+    }
+    r.settlementStatus = 'disputed'
+    r.notes = reason
+    r.updatedAt = new Date().toISOString()
+    revenueShareStore.set(id, r)
+    return { ...r }
+  }
+
+  getRevenueShareSummary(tenantId: string): RevenueShareSummary {
+    const records = Array.from(revenueShareStore.values()).filter((r) => r.tenantId === tenantId)
+    return {
+      totalRecords: records.length,
+      totalRevenue: records.reduce((s, r) => s + r.totalRevenue, 0),
+      totalPartnerShare: records.reduce((s, r) => s + r.partnerShare, 0),
+      totalOurShare: records.reduce((s, r) => s + r.ourShare, 0),
+      pendingCount: records.filter((r) => r.settlementStatus === 'pending').length,
+      settledCount: records.filter((r) => r.settlementStatus === 'settled').length,
+      disputedCount: records.filter((r) => r.settlementStatus === 'disputed').length,
+    }
+  }
+
+  private revenueShareStoreGet(id: string, tenantId: string): RevenueShareRecord {
+    const r = revenueShareStore.get(id)
+    if (!r || r.tenantId !== tenantId) throw new Error(`RevenueShareRecord not found: ${id}`)
+    return r
+  }
+
+  // ════════════════════════════════════════════════════
+  //  Asset Category Management (资产分类管理)
+  // ════════════════════════════════════════════════════
+
+  createAssetCategory(input: {
+    tenantId: string
+    name: string
+    description?: string
+    parentId?: string
+    sortOrder?: number
+  }): AssetCategory {
+    if (input.parentId) {
+      const parent = assetCategoryStore.get(input.parentId)
+      if (!parent || parent.tenantId !== input.tenantId) {
+        throw new Error(`Parent category not found: ${input.parentId}`)
+      }
+    }
+    const now = new Date().toISOString()
+    const cat: AssetCategory = {
+      id: createAssetCategoryId(),
+      tenantId: input.tenantId,
+      name: input.name,
+      description: input.description,
+      parentId: input.parentId,
+      sortOrder: input.sortOrder ?? 0,
+      createdAt: now,
+      updatedAt: now,
+    }
+    assetCategoryStore.set(cat.id, cat)
+    return { ...cat }
+  }
+
+  getAssetCategory(id: string, tenantId: string): AssetCategory | undefined {
+    const cat = assetCategoryStore.get(id)
+    if (!cat || cat.tenantId !== tenantId) return undefined
+    return { ...cat }
+  }
+
+  listAssetCategories(tenantId: string): AssetCategory[] {
+    return Array.from(assetCategoryStore.values())
+      .filter((c) => c.tenantId === tenantId)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      .map((c) => ({ ...c }))
+  }
+
+  /** 获取分类树 */
+  getAssetCategoryTree(tenantId: string): AssetCategoryTree[] {
+    const all = this.listAssetCategories(tenantId)
+    const root = all.filter((c) => !c.parentId)
+    const build = (parent: AssetCategory): AssetCategoryTree => ({
+      id: parent.id,
+      name: parent.name,
+      description: parent.description,
+      sortOrder: parent.sortOrder,
+      children: all.filter((c) => c.parentId === parent.id).map(build),
+    })
+    return root.map(build)
+  }
+
+  updateAssetCategory(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<AssetCategory, 'name' | 'description' | 'parentId' | 'sortOrder'>>,
+  ): AssetCategory {
+    const cat = assetCategoryStore.get(id)
+    if (!cat || cat.tenantId !== tenantId) throw new Error(`AssetCategory not found: ${id}`)
+    const updated: AssetCategory = {
+      ...cat,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    assetCategoryStore.set(id, updated)
+    return { ...updated }
+  }
+
+  deleteAssetCategory(id: string, tenantId: string): boolean {
+    const cat = assetCategoryStore.get(id)
+    if (!cat || cat.tenantId !== tenantId) return false
+    // Check if used by any assets or has children
+    assetCategoryStore.delete(id)
+    return true
+  }
+
+  // ════════════════════════════════════════════════════
+  //  Asset Tag Management (资产标签管理)
+  // ════════════════════════════════════════════════════
+
+  createAssetTag(input: {
+    tenantId: string
+    name: string
+    color?: string
+  }): AssetTag {
+    const now = new Date().toISOString()
+    const tag: AssetTag = {
+      id: createAssetTagId(),
+      tenantId: input.tenantId,
+      name: input.name,
+      color: input.color,
+      createdAt: now,
+    }
+    assetTagStore.set(tag.id, tag)
+    return { ...tag }
+  }
+
+  listAssetTags(tenantId: string): AssetTag[] {
+    return Array.from(assetTagStore.values())
+      .filter((t) => t.tenantId === tenantId)
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  deleteAssetTag(id: string, tenantId: string): boolean {
+    const tag = assetTagStore.get(id)
+    if (!tag || tag.tenantId !== tenantId) return false
+    assetTagStore.delete(id)
+    return true
+  }
+
+  // ════════════════════════════════════════════════════
+  //  Brand Dashboard API (品牌数据看板)
+  // ════════════════════════════════════════════════════
+
+  getBrandDashboard(tenantId: string): BrandDashboardData {
+    const assets = Array.from(assetStore.values()).filter((a) => a.tenantId === tenantId)
+    const campaigns = Array.from(campaignStore.values()).filter((c) => c.tenantId === tenantId)
+    const syncs = Array.from(syncStore.values())
+    const templates = Array.from(templateStore.values()).filter((t) => t.tenantId === tenantId)
+    const collabs = Array.from(collaborationStore.values()).filter((c) => c.tenantId === tenantId)
+    const revenueRecords = Array.from(revenueShareStore.values()).filter((r) => r.tenantId === tenantId)
+
+    // Asset usage stats by type
+    const typeMap = new Map<string, { total: number; active: number; usage: number }>()
+    for (const a of assets) {
+      const e = typeMap.get(a.type) ?? { total: 0, active: 0, usage: 0 }
+      e.total++
+      if (a.active) e.active++
+      typeMap.set(a.type, e)
+    }
+    for (const c of campaigns) {
+      for (const assetId of c.assets) {
+        const a = assets.find((x) => x.id === assetId)
+        if (a) {
+          const e = typeMap.get(a.type)
+          if (e) e.usage++
+        }
+      }
+    }
+    const assetUsageStats: AssetUsageStat[] = Array.from(typeMap.entries()).map(([type, v]) => ({
+      type,
+      totalCount: v.total,
+      activeCount: v.active,
+      usageCount: v.usage,
+    }))
+
+    // Campaign effectiveness
+    const statusMap = new Map<string, { count: number; totalStores: number; syncedStores: number }>()
+    for (const c of campaigns) {
+      const e = statusMap.get(c.status) ?? { count: 0, totalStores: 0, syncedStores: 0 }
+      e.count++
+      e.totalStores += c.storeIds.length
+      const synced = syncs.filter((s) => s.campaignId === c.id && s.status === 'synced').length
+      e.syncedStores += synced
+      statusMap.set(c.status, e)
+    }
+    const campaignEffectiveness: CampaignEffectiveness[] = Array.from(statusMap.entries()).map(([status, v]) => ({
+      status,
+      count: v.count,
+      totalStores: v.totalStores,
+      syncedStores: v.syncedStores,
+    }))
+
+    // Revenue
+    const thisMonth = new Date().toISOString().slice(0, 7)
+    const monthRecords = revenueRecords.filter((r) => r.createdAt.startsWith(thisMonth))
+    const monthRevenue = monthRecords.reduce((s, r) => s + r.totalRevenue, 0)
+    const monthPartnerShare = monthRecords.reduce((s, r) => s + r.partnerShare, 0)
+
+    // Sync rate
+    const totalStoreAssignments = campaigns.reduce((s, c) => s + c.storeIds.length, 0)
+    const syncedStoreCount = syncs.filter((s) => s.status === 'synced').length
+    const storeSyncRate = totalStoreAssignments > 0 ? Math.round((syncedStoreCount / totalStoreAssignments) * 100) / 100 : 0
+
+    return {
+      totalAssets: assets.length,
+      activeAssets: assets.filter((a) => a.active).length,
+      assetUsageStats,
+      totalCampaigns: campaigns.length,
+      activeCampaigns: campaigns.filter((c) => c.status === 'active').length,
+      campaignEffectiveness,
+      totalCollaborations: collabs.length,
+      activeCollaborations: collabs.filter((c) => c.status === 'active').length,
+      monthRevenue,
+      monthPartnerShare,
+      storeSyncRate,
+      totalTemplates: templates.length,
+      publishedTemplates: templates.filter((t) => t.published).length,
+    }
   }
 }

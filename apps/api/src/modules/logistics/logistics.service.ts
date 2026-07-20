@@ -45,6 +45,28 @@ import type {
   ScheduleTaskLog,
   SchedulePlanMetrics,
 } from './logistics.schedule.entity'
+import type {
+  RepairFeedback,
+  FeedbackScore,
+  RepairKnowledge,
+  ConsumableAlertRule,
+  ConsumableAlert,
+  AlertTriggerType,
+  VenueInspectionRecord,
+  InspectionPlanType,
+  VenueInspectionTrend,
+  ExpenseSummary,
+  WorkOrderStats,
+  SupplierRanking,
+  LogisticsReport,
+} from './logistics.phase-p30-80.entity'
+import {
+  createRepairFeedbackId,
+  createRepairKnowledgeId,
+  createConsumableAlertRuleId,
+  createConsumableAlertId,
+  createVenueInspectionRecordId,
+} from './logistics.phase-p30-80.entity'
 
 export interface CreateInspectionTaskInput {
   tenantId: string
@@ -238,6 +260,13 @@ const supplierEvaluationStore = new Map<string, SupplierEvaluation>()
 const inventoryReservationStore = new Map<string, InventoryReservation>()
 const schedulePlanStore = new Map<string, SchedulePlan>()
 const scheduleTaskLogStore = new Map<string, ScheduleTaskLog>()
+
+// ── P-30 Phase 80% new stores ──
+const repairFeedbackStore = new Map<string, RepairFeedback>()
+const repairKnowledgeStore = new Map<string, RepairKnowledge>()
+const consumableAlertRuleStore = new Map<string, ConsumableAlertRule>()
+const consumableAlertStore = new Map<string, ConsumableAlert>()
+const venueInspectionRecordStore = new Map<string, VenueInspectionRecord>()
 
 @Injectable()
 export class LogisticsService {
@@ -1121,6 +1150,11 @@ export class LogisticsService {
     inventoryReservationStore.clear()
     schedulePlanStore.clear()
     scheduleTaskLogStore.clear()
+    repairFeedbackStore.clear()
+    repairKnowledgeStore.clear()
+    consumableAlertRuleStore.clear()
+    consumableAlertStore.clear()
+    venueInspectionRecordStore.clear()
   }
 
   // ════════════════════════════════════════════════
@@ -1694,6 +1728,490 @@ export class LogisticsService {
       scanned: duePlans.length,
       triggered: logs.length,
       logs,
+    }
+  }
+
+  // ════════════════════════════════════════════════════
+  //  维修反馈闭环 (RepairFeedback + RepairKnowledge)
+  // ════════════════════════════════════════════════════
+
+  /** 创建维修工单评价反馈 */
+  createRepairFeedback(input: {
+    tenantId: string
+    repairOrderId: string
+    maintenanceOrderId?: string
+    score: FeedbackScore
+    comment: string
+    reviewerId: string
+    reviewerName: string
+    timely: boolean
+    qualitySatisfied: boolean
+  }): RepairFeedback {
+    // 验证工单存在
+    const repair = this.assertRepairOwned(input.repairOrderId, input.tenantId)
+    if (repair.status !== 'verified') {
+      throw new Error(`Cannot provide feedback: repair order status is ${repair.status}, must be verified`)
+    }
+
+    if (input.score < 1 || input.score > 5) {
+      throw new Error('Score must be between 1 and 5')
+    }
+
+    const now = new Date().toISOString()
+    const feedback: RepairFeedback = {
+      id: createRepairFeedbackId(),
+      tenantId: input.tenantId,
+      repairOrderId: input.repairOrderId,
+      maintenanceOrderId: input.maintenanceOrderId,
+      score: input.score,
+      comment: input.comment,
+      reviewerId: input.reviewerId,
+      reviewerName: input.reviewerName,
+      timely: input.timely,
+      qualitySatisfied: input.qualitySatisfied,
+      reviewedAt: now,
+      createdAt: now,
+    }
+    repairFeedbackStore.set(feedback.id, feedback)
+    return { ...feedback }
+  }
+
+  getRepairFeedback(id: string, tenantId: string): RepairFeedback | undefined {
+    const fb = repairFeedbackStore.get(id)
+    if (!fb || fb.tenantId !== tenantId) return undefined
+    return { ...fb }
+  }
+
+  listRepairFeedbacks(
+    tenantId: string,
+    filter?: { score?: FeedbackScore; repairOrderId?: string },
+  ): RepairFeedback[] {
+    return Array.from(repairFeedbackStore.values())
+      .filter((f) => f.tenantId === tenantId)
+      .filter((f) => (filter?.score ? f.score === filter.score : true))
+      .filter((f) => (filter?.repairOrderId ? f.repairOrderId === filter.repairOrderId : true))
+      .sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt))
+      .map((f) => ({ ...f }))
+  }
+
+  /** 创建维修知识沉淀 */
+  createRepairKnowledge(input: {
+    tenantId: string
+    repairOrderId: string
+    maintenanceOrderId?: string
+    equipmentId: string
+    equipmentName: string
+    issueType: string
+    issueDescription: string
+    rootCause: string
+    solution: string
+    partsUsed?: string[]
+    repairHours?: number
+    technicianId: string
+    technicianName: string
+    isCommonCase?: boolean
+    tags?: string[]
+  }): RepairKnowledge {
+    const now = new Date().toISOString()
+    const knowledge: RepairKnowledge = {
+      id: createRepairKnowledgeId(),
+      tenantId: input.tenantId,
+      repairOrderId: input.repairOrderId,
+      maintenanceOrderId: input.maintenanceOrderId,
+      equipmentId: input.equipmentId,
+      equipmentName: input.equipmentName,
+      issueType: input.issueType,
+      issueDescription: input.issueDescription,
+      rootCause: input.rootCause,
+      solution: input.solution,
+      partsUsed: input.partsUsed,
+      repairHours: input.repairHours,
+      technicianId: input.technicianId,
+      technicianName: input.technicianName,
+      isCommonCase: input.isCommonCase ?? false,
+      tags: input.tags ?? [],
+      createdAt: now,
+      updatedAt: now,
+    }
+    repairKnowledgeStore.set(knowledge.id, knowledge)
+    return { ...knowledge }
+  }
+
+  getRepairKnowledge(id: string, tenantId: string): RepairKnowledge | undefined {
+    const k = repairKnowledgeStore.get(id)
+    if (!k || k.tenantId !== tenantId) return undefined
+    return { ...k }
+  }
+
+  listRepairKnowledge(
+    tenantId: string,
+    filter?: { equipmentId?: string; issueType?: string; tag?: string; search?: string },
+  ): RepairKnowledge[] {
+    return Array.from(repairKnowledgeStore.values())
+      .filter((k) => k.tenantId === tenantId)
+      .filter((k) => (filter?.equipmentId ? k.equipmentId === filter.equipmentId : true))
+      .filter((k) => (filter?.issueType ? k.issueType === filter.issueType : true))
+      .filter((k) => (filter?.tag ? k.tags.includes(filter.tag) : true))
+      .filter((k) =>
+        filter?.search
+          ? k.issueDescription.toLowerCase().includes(filter.search.toLowerCase()) ||
+            k.solution.toLowerCase().includes(filter.search.toLowerCase()) ||
+            k.rootCause.toLowerCase().includes(filter.search.toLowerCase())
+          : true,
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((k) => ({ ...k }))
+  }
+
+  updateRepairKnowledge(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<RepairKnowledge, 'rootCause' | 'solution' | 'partsUsed' | 'repairHours' | 'isCommonCase' | 'tags'>>,
+  ): RepairKnowledge {
+    const k = repairKnowledgeStore.get(id)
+    if (!k || k.tenantId !== tenantId) throw new Error(`RepairKnowledge not found: ${id}`)
+    const updated: RepairKnowledge = {
+      ...k,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    repairKnowledgeStore.set(id, updated)
+    return { ...updated }
+  }
+
+  // ════════════════════════════════════════════════════
+  //  耗材库存预警 (对接 P-37 inventory-alert)
+  // ════════════════════════════════════════════════════
+
+  createConsumableAlertRule(input: {
+    tenantId: string
+    itemId: string
+    itemName: string
+    triggerType: AlertTriggerType
+    threshold: number
+    alertLevel: 'info' | 'warning' | 'critical'
+    notifyUserIds?: string[]
+  }): ConsumableAlertRule {
+    const now = new Date().toISOString()
+    const rule: ConsumableAlertRule = {
+      id: createConsumableAlertRuleId(),
+      tenantId: input.tenantId,
+      itemId: input.itemId,
+      itemName: input.itemName,
+      triggerType: input.triggerType,
+      threshold: input.threshold,
+      alertLevel: input.alertLevel,
+      enabled: true,
+      notifyUserIds: input.notifyUserIds ?? [],
+      createdAt: now,
+      updatedAt: now,
+    }
+    consumableAlertRuleStore.set(rule.id, rule)
+    return { ...rule }
+  }
+
+  listConsumableAlertRules(tenantId: string): ConsumableAlertRule[] {
+    return Array.from(consumableAlertRuleStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .sort((a, b) => a.itemName.localeCompare(b.itemName))
+      .map((r) => ({ ...r }))
+  }
+
+  updateConsumableAlertRule(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<ConsumableAlertRule, 'threshold' | 'alertLevel' | 'enabled' | 'notifyUserIds'>>,
+  ): ConsumableAlertRule {
+    const rule = consumableAlertRuleStore.get(id)
+    if (!rule || rule.tenantId !== tenantId) throw new Error(`ConsumableAlertRule not found: ${id}`)
+    const updated: ConsumableAlertRule = {
+      ...rule,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    consumableAlertRuleStore.set(id, updated)
+    return { ...updated }
+  }
+
+  deleteConsumableAlertRule(id: string, tenantId: string): boolean {
+    const rule = consumableAlertRuleStore.get(id)
+    if (!rule || rule.tenantId !== tenantId) return false
+    consumableAlertRuleStore.delete(id)
+    return true
+  }
+
+  /** 根据库存数值检查是否触发预警 */
+  checkConsumableAlerts(input: {
+    tenantId: string
+    itemId: string
+    itemName: string
+    currentStock: number
+  }): ConsumableAlert[] {
+    const rules = Array.from(consumableAlertRuleStore.values())
+      .filter((r) => r.tenantId === input.tenantId)
+      .filter((r) => r.itemId === input.itemId)
+      .filter((r) => r.enabled)
+
+    const alerts: ConsumableAlert[] = []
+    for (const rule of rules) {
+      const triggered =
+        (rule.triggerType === 'low_stock' && input.currentStock <= rule.threshold) ||
+        (rule.triggerType === 'over_stock' && input.currentStock >= rule.threshold)
+
+      if (triggered) {
+        const now = new Date().toISOString()
+        const alert: ConsumableAlert = {
+          id: createConsumableAlertId(),
+          tenantId: input.tenantId,
+          ruleId: rule.id,
+          itemId: input.itemId,
+          itemName: input.itemName,
+          currentStock: input.currentStock,
+          threshold: rule.threshold,
+          triggerType: rule.triggerType,
+          alertLevel: rule.alertLevel,
+          message: `${input.itemName} ${rule.triggerType === 'low_stock' ? '库存过低' : '库存过高'}：当前${input.currentStock}，阈值${rule.threshold}`,
+          resolved: false,
+          createdAt: now,
+        }
+        consumableAlertStore.set(alert.id, alert)
+        alerts.push({ ...alert })
+      }
+    }
+
+    return alerts
+  }
+
+  listConsumableAlerts(
+    tenantId: string,
+    filter?: { resolved?: boolean; alertLevel?: string; triggerType?: string },
+  ): ConsumableAlert[] {
+    return Array.from(consumableAlertStore.values())
+      .filter((a) => a.tenantId === tenantId)
+      .filter((a) => (filter?.resolved !== undefined ? a.resolved === filter.resolved : true))
+      .filter((a) => (filter?.alertLevel ? a.alertLevel === filter.alertLevel : true))
+      .filter((a) => (filter?.triggerType ? a.triggerType === filter.triggerType : true))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((a) => ({ ...a }))
+  }
+
+  resolveConsumableAlert(id: string, tenantId: string, resolvedBy: string): ConsumableAlert {
+    const alert = consumableAlertStore.get(id)
+    if (!alert || alert.tenantId !== tenantId) throw new Error(`ConsumableAlert not found: ${id}`)
+    alert.resolved = true
+    alert.resolvedAt = new Date().toISOString()
+    alert.resolvedBy = resolvedBy
+    consumableAlertStore.set(id, alert)
+    return { ...alert }
+  }
+
+  // ════════════════════════════════════════════════════
+  //  场馆巡检记录管理
+  // ════════════════════════════════════════════════════
+
+  createVenueInspectionRecord(input: {
+    tenantId: string
+    storeId: string
+    planType: InspectionPlanType
+    inspectorId: string
+    inspectorName: string
+    environmentScore: number
+    equipmentScore: number
+    safetyScore: number
+    notes: string
+    issues: Array<{
+      category: string
+      description: string
+      severity: 'low' | 'medium' | 'high'
+      resolved?: boolean
+    }>
+  }): VenueInspectionRecord {
+    const totalScore = Math.round((input.environmentScore + input.equipmentScore + input.safetyScore) / 3 * 10) / 10
+    const now = new Date().toISOString()
+    const record: VenueInspectionRecord = {
+      id: createVenueInspectionRecordId(),
+      tenantId: input.tenantId,
+      storeId: input.storeId,
+      planType: input.planType,
+      inspectorId: input.inspectorId,
+      inspectorName: input.inspectorName,
+      inspectedAt: now,
+      environmentScore: input.environmentScore,
+      equipmentScore: input.equipmentScore,
+      safetyScore: input.safetyScore,
+      totalScore,
+      notes: input.notes,
+      issues: input.issues.map((i) => ({ ...i, resolved: i.resolved ?? false })),
+      createdAt: now,
+    }
+    venueInspectionRecordStore.set(record.id, record)
+    return {
+      ...record,
+      issues: record.issues.map((i) => ({ ...i })),
+    }
+  }
+
+  listVenueInspectionRecords(
+    tenantId: string,
+    filter?: { storeId?: string; planType?: InspectionPlanType; inspectorId?: string; limit?: number },
+  ): VenueInspectionRecord[] {
+    let records = Array.from(venueInspectionRecordStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .filter((r) => (filter?.storeId ? r.storeId === filter.storeId : true))
+      .filter((r) => (filter?.planType ? r.planType === filter.planType : true))
+      .filter((r) => (filter?.inspectorId ? r.inspectorId === filter.inspectorId : true))
+      .sort((a, b) => b.inspectedAt.localeCompare(a.inspectedAt))
+
+    const limit = filter?.limit ?? 50
+    records = records.slice(0, limit)
+
+    return records.map((r) => ({ ...r, issues: r.issues.map((i) => ({ ...i })) }))
+  }
+
+  getVenueInspectionTrendData(
+    tenantId: string,
+    storeId?: string,
+    months = 3,
+  ): VenueInspectionTrend[] {
+    let records = Array.from(venueInspectionRecordStore.values())
+      .filter((r) => r.tenantId === tenantId)
+      .filter((r) => (storeId ? r.storeId === storeId : true))
+
+    // Group by month
+    const byMonth = new Map<string, { env: number[]; eq: number[]; saf: number[]; total: number[] }>()
+    for (const r of records) {
+      const monthKey = r.inspectedAt.slice(0, 7)
+      const group = byMonth.get(monthKey) ?? { env: [], eq: [], saf: [], total: [] }
+      group.env.push(r.environmentScore)
+      group.eq.push(r.equipmentScore)
+      group.saf.push(r.safetyScore)
+      group.total.push(r.totalScore)
+      byMonth.set(monthKey, group)
+    }
+
+    const now = new Date()
+    const trends: VenueInspectionTrend[] = []
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const group = byMonth.get(key)
+      if (group && group.total.length > 0) {
+        const avg = (arr: number[]) => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 10) / 10
+        trends.push({
+          period: key,
+          environmentAvg: avg(group.env),
+          equipmentAvg: avg(group.eq),
+          safetyAvg: avg(group.saf),
+          totalAvg: avg(group.total),
+          recordCount: group.total.length,
+        })
+      }
+    }
+
+    return trends
+  }
+
+  // ════════════════════════════════════════════════════
+  //  后勤报表 API
+  // ════════════════════════════════════════════════════
+
+  getLogisticsReport(tenantId: string): LogisticsReport {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+
+    // ── Expense Summary ──
+    // Simple: count completed maintenance + procurement + material this month
+    const maintenanceOrders = Array.from(maintenanceOrderStore.values())
+      .filter((o) => o.tenantId === tenantId && o.status === 'completed' && o.completedAt! >= monthStart)
+    const procurementRequests = Array.from(procurementRequestStore.values())
+      .filter((r) => r.tenantId === tenantId && r.status === 'received' && r.createdAt >= monthStart)
+    const materialRequests = Array.from(materialRequestStore.values())
+      .filter((r) => r.tenantId === tenantId && r.status === 'outbound' && r.createdAt >= monthStart)
+
+    const totalMaintenance = maintenanceOrders.length * 50000 // estimated 500 yuan per job
+    const totalProcurement = procurementRequests.length * 300000 // estimated 3000 yuan per procurement
+    const totalMaterial = materialRequests.reduce((s, r) => s + r.totalQuantity * 1000, 0) // estimated 10 yuan per unit
+
+    const byCategory: Record<string, number> = {
+      maintenance: totalMaintenance,
+      procurement: totalProcurement,
+      material: totalMaterial,
+    }
+
+    const expenseSummary: ExpenseSummary = {
+      totalMaintenance,
+      totalProcurement,
+      totalMaterial,
+      totalExpense: totalMaintenance + totalProcurement + totalMaterial,
+      periodStart: monthStart,
+      periodEnd: monthEnd,
+      byCategory,
+    }
+
+    // ── Work Order Stats ──
+    const repairs = Array.from(repairOrderStore.values()).filter((o) => o.tenantId === tenantId)
+    const availableRepairs = repairs.filter((r) => r.completedAt && r.createdAt)
+    const avgCompletionHours =
+      availableRepairs.length > 0
+        ? Math.round(
+            availableRepairs.reduce((s, r) => {
+              const diff = new Date(r.completedAt!).getTime() - new Date(r.createdAt).getTime()
+              return s + diff / (1000 * 60 * 60)
+            }, 0) / availableRepairs.length * 10,
+          ) / 10
+        : 0
+
+    const workOrderStats: WorkOrderStats = {
+      totalRepairs: repairs.length,
+      openRepairs: repairs.filter((r) => r.status === 'open' || r.status === 'assigned' || r.status === 'in_progress').length,
+      completedRepairs: repairs.filter((r) => r.status === 'completed').length,
+      verifiedRepairs: repairs.filter((r) => r.status === 'verified').length,
+      avgCompletionHours,
+      totalMaintenance: maintenanceOrders.length,
+      inProgressMaintenance: Array.from(maintenanceOrderStore.values()).filter((o) => o.tenantId === tenantId && o.status === 'in_progress').length,
+      completedMaintenance: maintenanceOrders.length,
+    }
+
+    // ── Supplier Rankings ──
+    const suppliers = Array.from(supplierStore.values()).filter((s) => s.tenantId === tenantId && s.evaluationCount > 0)
+    const supplierRankings: SupplierRanking[] = suppliers
+      .map((s) => {
+        const contracts = Array.from(supplierContractStore.values()).filter((c) => c.supplierId === s.id)
+        return {
+          supplierId: s.id,
+          supplierName: s.name,
+          avgScore: s.averageScore,
+          evaluationCount: s.evaluationCount,
+          contractCount: contracts.length,
+          totalContractAmount: contracts.reduce((sum, c) => sum + c.amount, 0),
+        }
+      })
+      .sort((a, b) => b.avgScore - a.avgScore)
+
+    // ── Inspection Stats ──
+    const inspections = Array.from(venueInspectionRecordStore.values()).filter((r) => r.tenantId === tenantId)
+    const avgInspectionScore =
+      inspections.length > 0
+        ? Math.round(inspections.reduce((s, r) => s + r.totalScore, 0) / inspections.length * 10) / 10
+        : 0
+
+    const inspectionStats = {
+      totalInspections: inspections.length,
+      avgScore: avgInspectionScore,
+      pendingInspectionTasks: Array.from(inspectionTaskStore.values()).filter(
+        (t) => t.tenantId === tenantId && (t.status === 'scheduled' || t.status === 'reminded'),
+      ).length,
+      totalSchedulePlans: Array.from(schedulePlanStore.values()).filter(
+        (p) => p.tenantId === tenantId,
+      ).length,
+    }
+
+    return {
+      expenseSummary,
+      workOrderStats,
+      supplierRankings,
+      inspectionStats,
     }
   }
 
