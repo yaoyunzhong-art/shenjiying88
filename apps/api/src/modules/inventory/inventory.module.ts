@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { InventoryController } from './inventory.controller'
 import { InventoryPurchaseController } from './inventory-purchase.controller'
+import { PurchaseOrderController } from './purchase-order.controller'
 import { InventoryService } from './inventory.service'
 import { InventoryPurchaseService } from './inventory-purchase.service'
 import { PurchaseOrderService } from './purchase-order.service'
@@ -11,12 +12,13 @@ import { PurchaseOrderService } from './purchase-order.service'
  * 包含:
  *  - InventoryController / InventoryService: 基础库存管理 CRUD (Products/Stock/Suppliers)
  *  - InventoryPurchaseController / InventoryPurchaseService: 采购单增强 (审批流/付款/退货)
- *  - PurchaseOrderService: 采购订单状态流转 + 历史追踪
+ *  - PurchaseOrderController / PurchaseOrderService: 采购订单流转 (历史/时间线/批量操作)
  */
 @Module({
   controllers: [
     InventoryController,
-    InventoryPurchaseController
+    InventoryPurchaseController,
+    PurchaseOrderController
   ],
   providers: [
     InventoryService,
