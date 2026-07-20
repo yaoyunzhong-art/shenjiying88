@@ -2,6 +2,8 @@ import type {
   TransactionRefundStatus,
   TransactionRefundRecord,
   TransactionAggregate,
+  TransactionOrderListItem,
+  TransactionOrderListPage,
   LytOrderSnapshot,
   LytPaymentSnapshot,
   MemberTransactionTimelineEntry,
@@ -54,6 +56,33 @@ export interface TransactionAggregateContract {
   blindboxPlanId?: string
   createdAt: string
   updatedAt: string
+}
+
+/** External contract for order list item used by app order list */
+export interface TransactionOrderListItemContract {
+  orderId: string
+  orderNo: string
+  memberId: string
+  status: string
+  itemCount: number
+  totalAmount: number
+  paidAmount: number
+  refundedAmount: number
+  refundRequestedAt?: string
+  refundCompletedAt?: string
+  paymentChannel?: string
+  currency: string
+  createdAt: string
+  updatedAt: string
+  paidAt?: string
+}
+
+/** External contract for paginated order list used by app order list */
+export interface TransactionOrderListPageContract {
+  items: TransactionOrderListItemContract[]
+  total: number
+  page: number
+  pageSize: number
 }
 
 /** External contract for LYT order snapshot */
@@ -119,7 +148,7 @@ export function toTransactionRefundContract(
 ): TransactionRefundContract {
   return {
     refundId: refund.refundId,
-    tenantId: refund.tenantContext.tenantId,
+    tenantId: refund.tenantContext.tenantId ?? '',
     orderId: refund.orderId,
     paymentId: refund.paymentId,
     memberId: refund.memberId,
@@ -150,9 +179,9 @@ export function toTransactionAggregateContract(
 
   return {
     orderId: aggregate.order.orderId,
-    orderNo: aggregate.order.orderNo,
-    tenantId: aggregate.order.tenantContext.tenantId,
-    memberId: aggregate.order.memberId,
+    orderNo: aggregate.order.orderNo ?? '',
+    tenantId: aggregate.order.tenantContext.tenantId ?? '',
+    memberId: aggregate.order.memberId ?? '',
     memberNickname: aggregate.memberNickname,
     orderStatus: aggregate.order.status,
     paymentStatus: aggregate.payment?.status,
@@ -174,13 +203,48 @@ export function toTransactionAggregateContract(
   }
 }
 
+/** Convert internal TransactionOrderListItem to cross-module contract */
+export function toTransactionOrderListItemContract(
+  item: TransactionOrderListItem,
+): TransactionOrderListItemContract {
+  return {
+    orderId: item.orderId,
+    orderNo: item.orderNo,
+    memberId: item.memberId,
+    status: item.status,
+    itemCount: item.itemCount,
+    totalAmount: item.totalAmount,
+    paidAmount: item.paidAmount,
+    refundedAmount: item.refundedAmount,
+    refundRequestedAt: item.refundRequestedAt,
+    refundCompletedAt: item.refundCompletedAt,
+    paymentChannel: item.paymentChannel,
+    currency: item.currency,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    paidAt: item.paidAt,
+  }
+}
+
+/** Convert internal TransactionOrderListPage to cross-module contract */
+export function toTransactionOrderListPageContract(
+  page: TransactionOrderListPage,
+): TransactionOrderListPageContract {
+  return {
+    items: page.items.map((item) => toTransactionOrderListItemContract(item)),
+    total: page.total,
+    page: page.page,
+    pageSize: page.pageSize,
+  }
+}
+
 /** Convert internal LytOrderSnapshot to cross-module contract */
 export function toLytOrderSnapshotContract(
   snapshot: LytOrderSnapshot,
 ): LytOrderSnapshotContract {
   return {
     snapshotId: snapshot.snapshotId,
-    tenantId: snapshot.tenantContext.tenantId,
+    tenantId: snapshot.tenantContext.tenantId ?? '',
     externalOrderId: snapshot.externalOrderId,
     orderNo: snapshot.orderNo,
     memberId: snapshot.memberId,
@@ -202,7 +266,7 @@ export function toLytPaymentSnapshotContract(
 ): LytPaymentSnapshotContract {
   return {
     snapshotId: snapshot.snapshotId,
-    tenantId: snapshot.tenantContext.tenantId,
+    tenantId: snapshot.tenantContext.tenantId ?? '',
     externalPaymentId: snapshot.externalPaymentId,
     externalOrderId: snapshot.externalOrderId,
     paymentChannel: snapshot.paymentChannel,

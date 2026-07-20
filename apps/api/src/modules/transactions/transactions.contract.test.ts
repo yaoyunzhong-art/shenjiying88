@@ -6,6 +6,8 @@ import { BlindboxFulfillmentStatus } from '../loyalty/loyalty.entity'
 import {
   toTransactionRefundContract,
   toTransactionAggregateContract,
+  toTransactionOrderListItemContract,
+  toTransactionOrderListPageContract,
   toLytOrderSnapshotContract,
   toLytPaymentSnapshotContract,
   toMemberTransactionTimelineContract,
@@ -138,7 +140,7 @@ it('toTransactionAggregateContract maps paid order without refunds', () => {
     order: order as any,
     memberNickname: '测试会员1',
     payment: payment as any,
-    settlement: { awardedPoints: 99 },
+    settlement: { settlementId: "st-1", tenantContext: { tenantId: "t-1" }, orderId: "order-1", paymentId: "pay-1", memberId: "mem-1", status: "completed" as any, awardedPoints: 99, createdAt: "2026-07-20T00:00:00Z", updatedAt: "2026-07-20T00:00:00Z" },
     pointsLedger: [],
     couponRedemptions: [],
     blindboxFulfillments: [],
@@ -216,7 +218,7 @@ it('toTransactionAggregateContract maps order with completed refund', () => {
     order: order as any,
     memberNickname: '测试会员2',
     payment: payment as any,
-    settlement: { awardedPoints: 100 },
+    settlement: { settlementId: "st-2", tenantContext: { tenantId: "t-1" }, orderId: "order-2", paymentId: "pay-2", memberId: "mem-2", status: "completed" as any, awardedPoints: 100, createdAt: "2026-07-20T00:00:00Z", updatedAt: "2026-07-20T00:00:00Z" },
     pointsLedger: [],
     couponRedemptions: [],
     blindboxFulfillments: [],
@@ -376,7 +378,7 @@ it('toTransactionAggregateContract prefers latest refund by timestamp instead of
       updatedAt: '2026-06-23T10:05:00.000Z',
       completedAt: '2026-06-23T10:05:00.000Z',
     } as any,
-    settlement: { awardedPoints: 80 },
+    settlement: { settlementId: "st-3", tenantContext: { tenantId: "t-1" }, orderId: "order-3", paymentId: "pay-3", memberId: "mem-3", status: "completed" as any, awardedPoints: 80, createdAt: "2026-07-20T00:00:00Z", updatedAt: "2026-07-20T00:00:00Z" },
     pointsLedger: [],
     couponRedemptions: [],
     blindboxFulfillments: [],
@@ -413,6 +415,135 @@ it('toTransactionAggregateContract prefers latest refund by timestamp instead of
   assert.equal(contract.refundRequestedAt, '2026-06-23T10:15:00.000Z')
   assert.equal(contract.refundCompletedAt, '2026-06-23T10:18:00.000Z')
   assert.equal(contract.refundedAmount, 40)
+})
+
+// ---------------------------------------------------------------------------
+// toTransactionOrderListItemContract / toTransactionOrderListPageContract
+// ---------------------------------------------------------------------------
+
+it('toTransactionOrderListItemContract maps paid order item with refund timestamps', () => {
+  const item = {
+    orderId: 'order-list-1',
+    orderNo: 'ORD20260623005',
+    memberId: 'member-list-1',
+    status: 'REFUNDED',
+    itemCount: 3,
+    totalAmount: 168,
+    paidAmount: 168,
+    refundedAmount: 68,
+    refundRequestedAt: '2026-06-23T11:10:00.000Z',
+    refundCompletedAt: '2026-06-23T11:18:00.000Z',
+    paymentChannel: 'wechat',
+    currency: 'CNY',
+    createdAt: '2026-06-23T11:00:00.000Z',
+    updatedAt: '2026-06-23T11:20:00.000Z',
+    paidAt: '2026-06-23T11:05:00.000Z',
+  }
+
+  const contract = toTransactionOrderListItemContract(item as any)
+
+  assert.equal(contract.orderId, 'order-list-1')
+  assert.equal(contract.orderNo, 'ORD20260623005')
+  assert.equal(contract.memberId, 'member-list-1')
+  assert.equal(contract.status, 'REFUNDED')
+  assert.equal(contract.itemCount, 3)
+  assert.equal(contract.totalAmount, 168)
+  assert.equal(contract.paidAmount, 168)
+  assert.equal(contract.refundedAmount, 68)
+  assert.equal(contract.refundRequestedAt, '2026-06-23T11:10:00.000Z')
+  assert.equal(contract.refundCompletedAt, '2026-06-23T11:18:00.000Z')
+  assert.equal(contract.paymentChannel, 'wechat')
+  assert.equal(contract.currency, 'CNY')
+  assert.equal(contract.createdAt, '2026-06-23T11:00:00.000Z')
+  assert.equal(contract.updatedAt, '2026-06-23T11:20:00.000Z')
+  assert.equal(contract.paidAt, '2026-06-23T11:05:00.000Z')
+})
+
+it('toTransactionOrderListItemContract keeps optional refund fields undefined', () => {
+  const item = {
+    orderId: 'order-list-2',
+    orderNo: 'ORD20260623006',
+    memberId: 'member-list-2',
+    status: 'PAID',
+    itemCount: 1,
+    totalAmount: 88,
+    paidAmount: 88,
+    refundedAmount: 0,
+    refundRequestedAt: undefined,
+    refundCompletedAt: undefined,
+    paymentChannel: 'alipay',
+    currency: 'CNY',
+    createdAt: '2026-06-23T12:00:00.000Z',
+    updatedAt: '2026-06-23T12:05:00.000Z',
+    paidAt: '2026-06-23T12:03:00.000Z',
+  }
+
+  const contract = toTransactionOrderListItemContract(item as any)
+
+  assert.equal(contract.status, 'PAID')
+  assert.equal(contract.itemCount, 1)
+  assert.equal(contract.refundedAmount, 0)
+  assert.equal(contract.refundRequestedAt, undefined)
+  assert.equal(contract.refundCompletedAt, undefined)
+  assert.equal(contract.paymentChannel, 'alipay')
+  assert.equal(contract.paidAt, '2026-06-23T12:03:00.000Z')
+})
+
+it('toTransactionOrderListPageContract maps items and pagination metadata', () => {
+  const page = {
+    items: [
+      {
+        orderId: 'order-list-1',
+        orderNo: 'ORD20260623005',
+        memberId: 'member-list-1',
+        status: 'REFUND_PENDING',
+        itemCount: 2,
+        totalAmount: 168,
+        paidAmount: 168,
+        refundedAmount: 0,
+        refundRequestedAt: '2026-06-23T11:10:00.000Z',
+        refundCompletedAt: undefined,
+        paymentChannel: 'wechat',
+        currency: 'CNY',
+        createdAt: '2026-06-23T11:00:00.000Z',
+        updatedAt: '2026-06-23T11:12:00.000Z',
+        paidAt: '2026-06-23T11:05:00.000Z',
+      },
+      {
+        orderId: 'order-list-2',
+        orderNo: 'ORD20260623006',
+        memberId: 'member-list-2',
+        status: 'PAID',
+        itemCount: 1,
+        totalAmount: 88,
+        paidAmount: 88,
+        refundedAmount: 0,
+        refundRequestedAt: undefined,
+        refundCompletedAt: undefined,
+        paymentChannel: 'member-card',
+        currency: 'CNY',
+        createdAt: '2026-06-23T12:00:00.000Z',
+        updatedAt: '2026-06-23T12:05:00.000Z',
+        paidAt: '2026-06-23T12:03:00.000Z',
+      },
+    ],
+    total: 23,
+    page: 2,
+    pageSize: 10,
+  }
+
+  const contract = toTransactionOrderListPageContract(page as any)
+
+  assert.equal(contract.items.length, 2)
+  assert.equal(contract.items[0]?.itemCount, 2)
+  assert.equal(contract.items[0]?.refundRequestedAt, '2026-06-23T11:10:00.000Z')
+  assert.equal(contract.items[0]?.refundCompletedAt, undefined)
+  assert.equal(contract.items[0]?.paymentChannel, 'wechat')
+  assert.equal(contract.items[0]?.paidAt, '2026-06-23T11:05:00.000Z')
+  assert.equal(contract.items[1]?.paymentChannel, 'member-card')
+  assert.equal(contract.total, 23)
+  assert.equal(contract.page, 2)
+  assert.equal(contract.pageSize, 10)
 })
 
 // ---------------------------------------------------------------------------
