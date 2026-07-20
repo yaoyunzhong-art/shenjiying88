@@ -22,6 +22,7 @@ export interface NoticeContract {
   storeId?: string
   scheduledAt?: string
   publishedAt?: string
+  archivedAt?: string
   expireAt?: string
   stickyOrder: number
   readCount: number
@@ -51,6 +52,7 @@ export function toNoticeContract(
     storeId: notice.storeId,
     scheduledAt: notice.scheduledAt,
     publishedAt: notice.publishedAt,
+    archivedAt: notice.archivedAt,
     expireAt: notice.expireAt,
     stickyOrder: notice.stickyOrder,
     readCount: notice.readCount,

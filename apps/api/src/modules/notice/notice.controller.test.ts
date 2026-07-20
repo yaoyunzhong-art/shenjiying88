@@ -13,9 +13,7 @@ import {
   NoticeScope,
   NoticeStatus,
   toNotice,
-  resetNoticeServiceTestState,
 } from './notice.entity'
-import { resetNoticeServiceTestState as resetService } from './notice.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
 const sampleCtx: RequestTenantContext = {
@@ -152,17 +150,17 @@ describe('NoticeController 路由 metadata', () => {
 
 describe('NoticeController - create()', () => {
   it('创建公告返回 contract（含 code/status=draft）', () => {
+    const notice = toNotice({
+      title: '系统升级通知',
+      content: '# 系统升级\n7月25日凌晨维护',
+      scope: NoticeScope.Tenant,
+      priority: NoticePriority.High,
+      authorId: 'u-1',
+      authorName: '管理员',
+      tenantId: 't-1',
+    })
     const mockService: Partial<NoticeService> = {
-      create: () =>
-        toNotice({
-          title: '系统升级通知',
-          content: '# 系统升级\n7月25日凌晨维护',
-          scope: NoticeScope.Tenant,
-          priority: NoticePriority.High,
-          authorId: 'u-1',
-          authorName: '管理员',
-          tenantId: 't-1',
-        }),
+      create: () => ({ ...notice, readBy: ['u-1'], readCount: 1 }),
     }
     const ctrl = new NoticeController(
       mockService as unknown as NoticeService,
@@ -180,7 +178,7 @@ describe('NoticeController - create()', () => {
     assert.ok(result.code.startsWith('NOT-'))
     assert.equal(result.status, 'DRAFT')
     assert.equal(result.read, true) // currentUserId = body.authorId
-    assert.equal(result.readCount, 0)
+    assert.equal(result.readCount, 1)
   })
 
   it('body 中的 tenantId 覆盖 tenantContext', () => {
@@ -331,7 +329,7 @@ describe('NoticeController - getById()', () => {
       authorName: '店长',
     })
     const mockService: Partial<NoticeService> = {
-      getById: () => n,
+      getById: () => ({ ...n, readBy: ['u-1'], readCount: 1 }),
     }
     const ctrl = new NoticeController(
       mockService as unknown as NoticeService,
