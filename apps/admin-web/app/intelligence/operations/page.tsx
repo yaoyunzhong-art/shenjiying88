@@ -117,6 +117,13 @@ const MOCK_HISTORICAL_CASES: HistoricalCase[] = [
 ]
 
 export default function OperationsPage() {
+  // 三态条件渲染
+  const [loading, _setLoading] = useState(false)
+  const [error, _setError] = useState<string | null>(null)
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!MOCK_QUESTIONS || MOCK_QUESTIONS.length === 0) return <div>暂无数据</div>;
+
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
   const [questions] = useState(MOCK_QUESTIONS)

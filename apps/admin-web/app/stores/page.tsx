@@ -151,6 +151,13 @@ function buildColumns(
 // ---- 页面组件 ----
 
 export default function StoresPage() {
+  // 三态条件渲染
+  const [loading, _setLoading] = useState(false)
+  const [error, _setError] = useState<string | null>(null)
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!MOCK_STORES || MOCK_STORES.length === 0) return <div>暂无数据</div>;
+
   // 搜索过滤
   const searchFields = useMemo<(keyof StoreItem)[]>(() => ['code', 'name', 'marketCode'], []);
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(MOCK_STORES, searchFields);

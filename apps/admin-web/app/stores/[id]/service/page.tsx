@@ -37,6 +37,13 @@ const TICKETS: Ticket[] = [
 ];
 
 export default function ServicePage() {
+  // 三态条件渲染
+  const [loading, _setLoading] = useState(false)
+  const [error, _setError] = useState<string | null>(null)
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!TICKETS || TICKETS.length === 0) return <div>暂无数据</div>;
+
   const [filter, setFilter] = useState<TicketStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | ''>('');
   const [showCreate, setShowCreate] = useState(false);

@@ -44,6 +44,13 @@ const SEED_CONFIGS: AgentConfigItem[] = [
 const MODEL_OPTIONS = ['全部', 'gpt-4o', 'gpt-4o-mini', 'claude-3-haiku', 'claude-3-sonnet']
 
 export default function AgentStudioPage() {
+  // 三态条件渲染
+  const [loading, _setLoading] = useState(false)
+  const [error, _setError] = useState<string | null>(null)
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!SEED_CONFIGS || SEED_CONFIGS.length === 0) return <div>暂无数据</div>;
+
   const [search, setSearch] = useState('')
   const [modelFilter, setModelFilter] = useState('')
   const [modal, setModal] = useState<ModalState>({ visible: false, mode: 'view', item: null })

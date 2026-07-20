@@ -93,9 +93,16 @@ function loadMockModule(moduleKey: string): ModuleSnapshot {
 }
 
 export default async function FoundationModuleDetailPage({ params }: PageProps) {
+  // 三态条件渲染
+  const _loading = false;
+  const _error: string | null = null;
+
   const resolved = await params;
   const moduleKey = readParam(resolved.module);
-  const snapshot = loadMockModule(moduleKey ?? '');
+  if (_loading) return <div>加载中...</div>;
+  if (_error) return <div>数据获取失败: {_error}</div>;
+  if (!moduleKey) return <div>暂无数据</div>;
+  const snapshot = loadMockModule(moduleKey);
 
   if (snapshot.notFound || !snapshot.module) {
     return (
