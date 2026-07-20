@@ -13,6 +13,11 @@ const SUPPLIERS: Supplier[] = [
 ];
 
 export default function InventoryPage() {
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (SUPPLIERS.length === 0) return <div>暂无供应商数据</div>;
   const [showAdd, setShowAdd] = useState(false);
   return (
     <PageShell title="库存采购">

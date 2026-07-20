@@ -60,6 +60,11 @@ const SHIPMENT_COLUMNS = [
 ];
 
 export default function LogisticsPage() {
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (RESERVATIONS.length === 0) return <div>暂无预约数据</div>;
   const [showCreate, setShowCreate] = useState(false);
   const [shipmentFilter, setShipmentFilter] = useState<string>('all');
 

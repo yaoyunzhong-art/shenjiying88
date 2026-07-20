@@ -33,6 +33,12 @@ function generateServices(): ServiceItem[] {
 }
 
 export default function GuideWorkbenchPage() {
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  // 数据条件守卫 — 常量mock数据，默认非空
+  const isEmpty = false;
   const services = useMemo(() => generateServices(), []);
   const waitingCount = services.filter(s=>s.status==='waiting').length;
   const resolvedCount = services.filter(s=>s.status==='resolved').length;
