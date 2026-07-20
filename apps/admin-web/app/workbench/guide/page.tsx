@@ -6,7 +6,7 @@
  * 功能: 今日接待、游戏指导、设备巡检、客户服务、活动推荐
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageShell, StatCard, StatusBadge, Tabs, DataTable, type DataTableColumn } from '@m5/ui';
 
 type ServiceType = 'device_help' | 'game_instruction' | 'member_register' | 'complaint' | 'general';
