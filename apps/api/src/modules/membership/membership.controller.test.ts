@@ -343,7 +343,7 @@ describe('MembershipController', () => {
       svc.earnPoints(reg.data.id, 10000)
       svc.earnPoints(reg.data.id, 20000)
 
-      const result = controller.pointsHistory(reg.data.id, {})
+      const result = controller.pointsHistory(reg.data.id, undefined)
       assert.equal(result.success, true)
       ok(result.data)
       assert.equal(result.data.total, 2)
