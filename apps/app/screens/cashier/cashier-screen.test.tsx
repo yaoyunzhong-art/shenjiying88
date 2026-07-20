@@ -633,6 +633,208 @@ test('RefundScreen: renders order info with N/A when no params', () => {
   assert.ok(NALabel, '无参数时订单号显示 N/A');
 });
 
+test('RefundScreen: missing order context shows hint and keeps submit disabled', () => {
+  const root = createRefundComponent({ reason: '顾客取消' });
+
+  assert.ok(findByText(root.root, '缺少订单信息，请返回订单详情后重试'), '缺少订单上下文时应给出明确提示');
+  const refundBtn = findTouchableByText(root.root, '确认退款');
+  assert.equal(refundBtn?.props.disabled, true, '缺少订单上下文时确认退款按钮应禁用');
+});
+
+test('RefundScreen: hydrates real order info and payment channel when fetch is enabled', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (!url.endsWith('/transactions/orders/order-002')) {
+      throw new Error(`unexpected request: ${url}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'OK',
+        data: {
+          order: {
+            orderId: 'order-002',
+            orderNo: 'ORDAPI20260720002',
+            memberId: 'member-002',
+            currency: 'CNY',
+            totalAmount: 108.8,
+            status: 'PAID',
+            latestPaymentId: 'payment-order-002',
+            createdAt: '2026-06-12T11:15:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+            paidAt: '2026-07-20T04:10:00.000Z',
+          },
+          payment: {
+            paymentId: 'payment-order-002',
+            orderId: 'order-002',
+            channel: 'alipay',
+            amount: 108.8,
+            status: 'SUCCEEDED',
+            createdAt: '2026-06-12T11:15:00.000Z',
+            updatedAt: '2026-07-20T04:10:00.000Z',
+            completedAt: '2026-07-20T04:10:00.000Z',
+          },
+          pointsLedger: [],
+          couponRedemptions: [],
+          blindboxFulfillments: [],
+          refunds: [],
+        },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createRefundComponent({ orderId: 'order-002', reason: '顾客取消' });
+      await Promise.resolve();
+    });
+
+    assert.ok(findByText(root.root, 'ORDAPI20260720002'), '仅带 orderId 打开退款页时应补齐真实订单号');
+    assert.ok(findByText(root.root, '¥108.80'), '仅带 orderId 打开退款页时应补齐真实原订单金额');
+    assert.ok(findByText(root.root, '支付宝'), '真实渠道 alipay 应归一化展示为支付宝');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
+});
+
+test('RefundScreen: keeps route refund reason after order hydration', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({
+      success: true,
+      message: 'OK',
+      data: {
+        order: {
+          orderId: 'order-002',
+          orderNo: 'ORDAPI20260720002',
+          memberId: 'member-002',
+          currency: 'CNY',
+          totalAmount: 108.8,
+          status: 'PAID',
+          latestPaymentId: 'payment-order-002',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-20T04:10:00.000Z',
+          paidAt: '2026-07-20T04:10:00.000Z',
+        },
+        payment: {
+          paymentId: 'payment-order-002',
+          orderId: 'order-002',
+          channel: 'alipay',
+          amount: 108.8,
+          status: 'SUCCEEDED',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-20T04:10:00.000Z',
+          completedAt: '2026-07-20T04:10:00.000Z',
+        },
+        pointsLedger: [],
+        couponRedemptions: [],
+        blindboxFulfillments: [],
+        refunds: [{
+          refundId: 'refund-history-001',
+          orderId: 'order-002',
+          paymentId: 'payment-order-002',
+          memberId: 'member-002',
+          refundAmount: 10,
+          reason: '历史退款原因',
+          status: 'REJECTED',
+          requestedAt: '2026-07-19T04:10:00.000Z',
+        }],
+      },
+    }),
+    { status: 200, headers: { 'content-type': 'application/json' } },
+  )) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createRefundComponent({ orderId: 'order-002', reason: '顾客取消' });
+      await Promise.resolve();
+    });
+
+    const inputs = findAllTextInputs(root.root);
+    assert.equal(inputs[1]?.props.value, '顾客取消', '路由默认退款原因应优先于历史退款原因');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
+});
+
+test('RefundScreen: does not reuse historical refund reason when route reason is absent', async () => {
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({
+      success: true,
+      message: 'OK',
+      data: {
+        order: {
+          orderId: 'order-003',
+          orderNo: 'ORDAPI20260720003',
+          memberId: 'member-003',
+          currency: 'CNY',
+          totalAmount: 88.8,
+          status: 'PAID',
+          latestPaymentId: 'payment-order-003',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-20T04:10:00.000Z',
+          paidAt: '2026-07-20T04:10:00.000Z',
+        },
+        payment: {
+          paymentId: 'payment-order-003',
+          orderId: 'order-003',
+          channel: 'wechat-pay',
+          amount: 88.8,
+          status: 'SUCCEEDED',
+          createdAt: '2026-06-12T11:15:00.000Z',
+          updatedAt: '2026-07-20T04:10:00.000Z',
+          completedAt: '2026-07-20T04:10:00.000Z',
+        },
+        pointsLedger: [],
+        couponRedemptions: [],
+        blindboxFulfillments: [],
+        refunds: [{
+          refundId: 'refund-history-002',
+          orderId: 'order-003',
+          paymentId: 'payment-order-003',
+          memberId: 'member-003',
+          refundAmount: 20,
+          reason: '上次退款原因',
+          status: 'REJECTED',
+          requestedAt: '2026-07-19T04:10:00.000Z',
+        }],
+      },
+    }),
+    { status: 200, headers: { 'content-type': 'application/json' } },
+  )) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createRefundComponent({ orderId: 'order-003' });
+      await Promise.resolve();
+    });
+
+    const inputs = findAllTextInputs(root.root);
+    assert.equal(inputs[1]?.props.value, '', '未传入退款原因时不应自动复用历史退款原因');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
+  }
+});
+
 test('RefundScreen: tapping confirm refund with empty amount shows alert', () => {
   const root = createRefundComponent();
   const refundBtn = findTouchableByText(root.root, '确认退款');
@@ -852,6 +1054,124 @@ test('RefundScreen: confirm refund submits real api request and shows success al
     assert.ok(typeof navigateCall?.params?.refundRequestedAt === 'string');
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+test('RefundScreen: successful refund keeps hydrated orderNo and normalized payment channel', async () => {
+  const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error test flag
+  globalThis.__mockOrderFetchEnabled = true;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    fetchCalls.push({ url, init });
+
+    if (url.endsWith('/transactions/orders/order-001') && (!init?.method || init.method === 'GET')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            order: {
+              orderId: 'order-001',
+              orderNo: 'ORDAPI20260720001',
+              memberId: 'member-001',
+              currency: 'CNY',
+              totalAmount: 156,
+              status: 'PAID',
+              latestPaymentId: 'payment-order-001',
+              createdAt: '2026-06-12T10:30:00.000Z',
+              updatedAt: '2026-07-20T03:00:00.000Z',
+              paidAt: '2026-07-20T03:00:00.000Z',
+            },
+            payment: {
+              paymentId: 'payment-order-001',
+              orderId: 'order-001',
+              channel: 'wechat-pay',
+              amount: 156,
+              status: 'SUCCEEDED',
+              createdAt: '2026-06-12T10:30:00.000Z',
+              updatedAt: '2026-07-20T03:00:00.000Z',
+              completedAt: '2026-07-20T03:00:00.000Z',
+            },
+            pointsLedger: [],
+            couponRedemptions: [],
+            blindboxFulfillments: [],
+            refunds: [],
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+
+    if (url.endsWith('/transactions/orders/order-001/refunds') && init?.method === 'POST') {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: {
+            order: { orderId: 'order-001', orderNo: 'ORDAPI20260720001' },
+            payment: {
+              paymentId: 'payment-order-001',
+              orderId: 'order-001',
+              channel: 'wechat-pay',
+              amount: 156,
+              status: 'SUCCEEDED',
+              createdAt: '2026-06-12T10:30:00.000Z',
+              updatedAt: '2026-07-20T03:00:00.000Z',
+              completedAt: '2026-07-20T03:00:00.000Z',
+            },
+            refunds: [{
+              refundId: 'refund-003',
+              status: 'PENDING',
+              refundAmount: 156,
+              reason: '顾客取消',
+              requestedAt: '2026-07-20T03:10:00.000Z',
+            }],
+            pointsLedger: [],
+            couponRedemptions: [],
+            blindboxFulfillments: [],
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+
+    throw new Error(`unexpected request: ${url}`);
+  }) as typeof fetch;
+
+  try {
+    let root!: ReturnType<typeof create>;
+    await act(async () => {
+      root = createRefundComponent({ orderId: 'order-001', reason: '顾客取消' });
+      await Promise.resolve();
+    });
+
+    const refundBtn = findTouchableByText(root.root, '确认退款');
+    assert.ok(refundBtn, '确认退款按钮应在');
+    refundBtn!.props.onPress();
+
+    const confirmAlert = alertCalls.at(-1);
+    const confirmButton = confirmAlert?.buttons?.find((button) => button.text === '确认');
+    assert.ok(confirmButton?.onPress, '应弹出确认退款对话框');
+
+    await act(async () => {
+      await confirmButton!.onPress!();
+    });
+
+    assert.equal(fetchCalls.length, 2, '应先查询订单再提交退款');
+    const successAlert = alertCalls.find((item) => item.message === '退款申请已提交，请等待审核处理');
+    const successButton = successAlert?.buttons?.find((button) => button.text === '确定');
+    assert.ok(successButton?.onPress, '成功提示应包含确定按钮');
+    successButton!.onPress!();
+
+    const navigateCall = mockNavigateCalls.find((item) => item.route === 'OrderDetail');
+    assert.equal(navigateCall?.params?.orderNo, 'ORDAPI20260720001');
+    assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
+  } finally {
+    globalThis.fetch = originalFetch;
+    // @ts-expect-error cleanup
+    delete globalThis.__mockOrderFetchEnabled;
   }
 });
 

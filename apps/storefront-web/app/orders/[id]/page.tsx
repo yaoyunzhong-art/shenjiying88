@@ -5,7 +5,9 @@
  */
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
+import { useTriState } from '../../_components/useTriState';
+import { TriStateRenderer } from '../../_components/TriStateRenderer';
 import { useParams, useRouter } from 'next/navigation';
 import { OrderStatusBadge, type OrderStatus } from '../components/OrderStatusBadge';
 
@@ -123,18 +125,32 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const item = MOCK_ORDERS[id];
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [item, setItem] = useState<OrderDetailItem | null>(null);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<OrderDetailItem | null>((resolve) => {
+        setTimeout(() => resolve(MOCK_ORDERS[id] ?? null), 300);
+      }),
+    ).then((data) => {
+      setItem(data ?? null);
+      setPageReady(true);
+    });
+  }, [id]);
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(item ? item.status : 'pending');
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>('pending');
 
   // 编辑态表单
-  const [editRemark, setEditRemark] = useState(item?.remark ?? '');
-  const [editAddress, setEditAddress] = useState(item?.address ?? '');
-  const [editExpressCompany, setEditExpressCompany] = useState(item?.expressCompany ?? '');
-  const [editExpressNo, setEditExpressNo] = useState(item?.expressNo ?? '');
+  const [editRemark, setEditRemark] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editExpressCompany, setEditExpressCompany] = useState('');
+  const [editExpressNo, setEditExpressNo] = useState('');
 
   const handleStatusForward = useCallback(() => {
     const idx = FORWARD_FLOW.indexOf(currentStatus);
@@ -228,8 +244,34 @@ export default function OrderDetailPage() {
     currentStatus !== 'delivered' && currentStatus !== 'refunded';
   const canCancel = currentStatus === 'pending' || currentStatus === 'confirmed';
 
+  // 当 item 加载完成后同步表单状态
+  useEffect(() => {
+    if (item) {
+      setCurrentStatus(item.status);
+      setEditRemark(item.remark);
+      setEditAddress(item.address);
+      setEditExpressCompany(item.expressCompany);
+      setEditExpressNo(item.expressNo);
+    }
+  }, [item]);
+
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
+      <TriStateRenderer
+        loading={loading}
+        empty={!item && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<OrderDetailItem | null>((resolve) => {
+              setTimeout(() => resolve(MOCK_ORDERS[id] ?? null), 300);
+            }),
+          ).then((data) => {
+            setItem(data ?? null);
+            setPageReady(true);
+          })
+        }
+      >
       {/* ← 返回按钮 */}
       <button
         onClick={handleBack}
@@ -566,6 +608,7 @@ export default function OrderDetailPage() {
           </button>
         </div>
       )}
+      </TriStateRenderer>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   DataTable,
@@ -14,6 +14,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -105,15 +107,31 @@ const COLUMNS: Array<DataTableColumn<Customer>> = [
 // ---- 页面组件 ----
 
 export default function CustomersPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageData, setPageData] = useState<Customer[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<Customer[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_CUSTOMERS), 300);
+      }),
+    ).then((data) => {
+      if (data) setPageData(data);
+      setPageReady(true);
+    });
+  }, []);
+
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({ key: 'totalSpent', direction: 'desc' });
 
   // --- 数据 ---
   const tabFiltered = useMemo(() => {
-    if (activeTab === 'all') return MOCK_CUSTOMERS;
-    return MOCK_CUSTOMERS.filter((c) => c.status === activeTab);
-  }, [activeTab]);
+    if (activeTab === 'all') return pageData;
+    return pageData.filter((c) => c.status === activeTab);
+  }, [activeTab, pageData]);
 
   const searched = useMemo(() => {
     if (!searchTerm.trim()) return tabFiltered;
@@ -130,14 +148,29 @@ export default function CustomersPage() {
 
   // --- 统计 ---
   const stats = useMemo(() => {
-    const total = MOCK_CUSTOMERS.length;
-    const active = MOCK_CUSTOMERS.filter((c) => c.status === 'active').length;
-    const totalSpent = MOCK_CUSTOMERS.reduce((s, c) => s + c.totalSpent, 0);
+    const total = pageData.length;
+    const active = pageData.filter((c) => c.status === 'active').length;
+    const totalSpent = pageData.reduce((s, c) => s + c.totalSpent, 0);
     return { total, active, totalSpent };
-  }, []);
+  }, [pageData]);
 
   return (
     <PageShell title="客户管理">
+      <TriStateRenderer
+        loading={loading}
+        empty={pageData.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<Customer[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_CUSTOMERS), 300);
+            }),
+          ).then((data) => {
+            if (data) setPageData(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
         <div
@@ -214,6 +247,7 @@ export default function CustomersPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
       />
+      </TriStateRenderer>
     </PageShell>
   );
 }

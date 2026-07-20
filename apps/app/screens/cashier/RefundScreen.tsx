@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,20 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
-import { submitNativeAppOrderRefund } from '../../market-bootstrap';
+import type { RefundRouteParams } from '../../utils/order-route';
+import {
+  getNativeAppOrderTransaction,
+  submitNativeAppOrderRefund,
+  type NativeAppTransactionAggregate,
+} from '../../market-bootstrap';
+import {
+  getPaymentChannelLabel,
+  normalizePaymentChannel,
+  type PaymentChannel,
+} from '../../utils/payment-channel';
 
 type RefundParams = {
-  Refund: {
-    orderId?: string;
-    orderNo?: string;
-    amount?: number;
-    reason?: string;
-  };
+  Refund: RefundRouteParams;
 };
 
 export function RefundScreen() {
@@ -48,23 +53,82 @@ export function RefundScreen() {
   const routeParams = route.params && Object.keys(route.params).length > 0
     ? route.params
     : fallbackRouteParams;
+  const shouldFetchOrder = (() => {
+    const globals = globalThis as {
+      __mockRoute?: RefundParams['Refund'];
+      __mockOrderFetchEnabled?: boolean;
+    };
+    return Boolean(routeParams?.orderId) && (!globals.__mockRoute || globals.__mockOrderFetchEnabled === true);
+  })();
 
-  const { orderId, orderNo, amount: initialAmount, reason: initialReason } = routeParams ?? {};
+  const {
+    orderId,
+    orderNo,
+    amount: initialAmount,
+    reason: initialReason,
+    paymentChannel: initialPaymentChannel,
+  } = routeParams ?? {};
 
   const [refundAmount, setRefundAmount] = useState(initialAmount?.toString() ?? '');
   const [refundReason, setRefundReason] = useState(initialReason ?? '');
   const [loading, setLoading] = useState(false);
+  const [orderAggregate, setOrderAggregate] = useState<NativeAppTransactionAggregate | null>(null);
   const trimmedRefundAmount = refundAmount.trim();
   const trimmedRefundReason = refundReason.trim();
   const numAmount = Number(trimmedRefundAmount);
+  const hasOrderContext = Boolean(orderAggregate?.order.orderId ?? orderId);
+  const resolvedOriginalAmount = orderAggregate?.payment?.amount
+    ?? orderAggregate?.order.totalAmount
+    ?? initialAmount
+    ?? 0;
+  const resolvedOrderNo = orderAggregate?.order.orderNo ?? orderNo ?? 'N/A';
+  const resolvedOrderId = orderAggregate?.order.orderId ?? orderId ?? 'N/A';
+  const resolvedPaymentChannel = normalizePaymentChannel(
+    orderAggregate?.payment?.channel ?? initialPaymentChannel,
+  );
+  const resolvedPaymentChannelLabel = getPaymentChannelLabel(resolvedPaymentChannel);
   const hasValidAmountFormat = /^\d+(\.\d{1,2})?$/.test(trimmedRefundAmount);
   const canSubmitRefund =
+    hasOrderContext &&
     hasValidAmountFormat &&
     Number.isFinite(numAmount) &&
     numAmount > 0 &&
-    (typeof initialAmount !== 'number' || numAmount <= initialAmount) &&
+    resolvedOriginalAmount > 0 &&
+    numAmount <= resolvedOriginalAmount &&
     trimmedRefundReason.length > 0;
-  const isFullRefund = typeof initialAmount === 'number' && Math.abs(numAmount - initialAmount) < 0.00001;
+  const isFullRefund = resolvedOriginalAmount > 0 && Math.abs(numAmount - resolvedOriginalAmount) < 0.00001;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!orderId || !shouldFetchOrder) {
+      setOrderAggregate(null);
+      return;
+    }
+
+    getNativeAppOrderTransaction(orderId)
+      .then((aggregate) => {
+        if (cancelled) {
+          return;
+        }
+
+        setOrderAggregate(aggregate);
+        setRefundAmount((previousAmount) => (
+          previousAmount.trim().length === 0
+            ? String(aggregate.payment?.amount ?? aggregate.order.totalAmount)
+            : previousAmount
+        ));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOrderAggregate(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, shouldFetchOrder]);
 
   const handleRefund = async () => {
     if (!hasValidAmountFormat || !Number.isFinite(numAmount) || numAmount <= 0) {
@@ -75,11 +139,11 @@ export function RefundScreen() {
       Alert.alert('提示', '请输入退款原因');
       return;
     }
-    if (!orderId) {
+    if (!hasOrderContext || !orderId) {
       Alert.alert('提示', '缺少订单信息，无法提交退款');
       return;
     }
-    if (typeof initialAmount === 'number' && numAmount > initialAmount) {
+    if (numAmount > resolvedOriginalAmount) {
       Alert.alert('提示', '退款金额不能超过原订单金额');
       return;
     }
@@ -119,7 +183,8 @@ export function RefundScreen() {
                   text: '确定',
                   onPress: () => navigation.navigate?.('OrderDetail', {
                     orderId,
-                    orderNo: aggregate.order.orderNo ?? orderNo,
+                    orderNo: aggregate.order.orderNo ?? orderAggregate?.order.orderNo ?? orderNo,
+                    paymentChannel: normalizePaymentChannel(aggregate.payment?.channel) ?? resolvedPaymentChannel,
                     refundStatus,
                     refundRequestedAmount: numAmount,
                     refundReason: trimmedRefundReason,
@@ -149,18 +214,27 @@ export function RefundScreen() {
           <Text style={styles.orderLabel}>订单信息</Text>
           <View style={styles.orderRow}>
             <Text style={styles.orderKey}>订单号</Text>
-            <Text style={styles.orderValue}>{orderNo ?? 'N/A'}</Text>
+            <Text style={styles.orderValue}>{resolvedOrderNo}</Text>
           </View>
           <View style={styles.orderRow}>
             <Text style={styles.orderKey}>订单ID</Text>
-            <Text style={styles.orderValue}>{orderId ?? 'N/A'}</Text>
+            <Text style={styles.orderValue}>{resolvedOrderId}</Text>
           </View>
           <View style={styles.orderRow}>
             <Text style={styles.orderKey}>原订单金额</Text>
             <Text style={styles.orderValue}>
-              ¥{initialAmount?.toFixed(2) ?? '0.00'}
+              ¥{resolvedOriginalAmount.toFixed(2)}
             </Text>
           </View>
+          {resolvedPaymentChannelLabel && (
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>原支付渠道</Text>
+              <Text style={styles.orderValue}>{resolvedPaymentChannelLabel}</Text>
+            </View>
+          )}
+          {!hasOrderContext && (
+            <Text style={styles.orderHint}>缺少订单信息，请返回订单详情后重试</Text>
+          )}
         </Card>
 
         <View style={styles.section}>
@@ -235,6 +309,11 @@ const styles = StyleSheet.create({
   orderValue: {
     fontSize: 14,
     color: '#333333',
+  },
+  orderHint: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#FF3B30',
   },
   section: {
     paddingHorizontal: 16,

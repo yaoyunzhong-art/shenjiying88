@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   DataTable,
@@ -15,6 +15,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -183,13 +185,29 @@ function StatBadge({ label, value, accent }: { label: string; value: string; acc
 // ---- 页面 ----
 
 export default function MembersListPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageData, setPageData] = useState<Member[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<Member[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_MEMBERS), 300);
+      }),
+    ).then((data) => {
+      if (data) setPageData(data);
+      setPageReady(true);
+    });
+  }, []);
+
   // 搜索
   const searchFields = useMemo<(keyof Member)[]>(
     () => ['name', 'phone', 'tier', 'storeName'],
     [],
   );
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
-    MOCK_MEMBERS,
+    pageData.length > 0 ? pageData : MOCK_MEMBERS,
     searchFields,
   );
 
@@ -226,22 +244,37 @@ export default function MembersListPage() {
 
   // 统计
   const stats = useMemo(() => {
-    const active = MOCK_MEMBERS.filter((m) => m.status === 'active').length;
-    const diamond = MOCK_MEMBERS.filter((m) => m.tier === 'diamond').length;
-    const totalPoints = MOCK_MEMBERS.reduce((sum, m) => sum + m.points, 0);
+    const active = pageData.filter((m) => m.status === 'active').length;
+    const diamond = pageData.filter((m) => m.tier === 'diamond').length;
+    const totalPoints = pageData.reduce((sum, m) => sum + m.points, 0);
     return {
-      total: MOCK_MEMBERS.length,
+      total: pageData.length,
       active,
       diamond,
-      avgPoints: Math.round(totalPoints / MOCK_MEMBERS.length),
+      avgPoints: pageData.length > 0 ? Math.round(totalPoints / pageData.length) : 0,
     };
-  }, []);
+  }, [pageData]);
 
   return (
     <PageShell
       title="会员管理"
       description="管理门店会员信息，查看等级分布、积分情况及活跃度。"
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={pageData.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<Member[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_MEMBERS), 300);
+            }),
+          ).then((data) => {
+            if (data) setPageData(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div
         style={{
@@ -345,6 +378,7 @@ export default function MembersListPage() {
           />
         </div>
       )}
+      </TriStateRenderer>
     </PageShell>
   );
 }

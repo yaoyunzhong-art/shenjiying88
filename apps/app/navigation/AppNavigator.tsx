@@ -33,6 +33,12 @@ import { TicketWorkplaceScreen } from '../screens/cs/TicketWorkplaceScreen';
 import { KnowledgeBaseScreen } from '../screens/cs/KnowledgeBaseScreen';
 import { CustomerFeedbackScreen } from '../screens/cs/CustomerFeedbackScreen';
 import { OfflineIndicator } from '../components/OfflineIndicator';
+import type {
+  OrderDetailRouteParams,
+  OrderRuntimeRouteParams,
+  PaymentRouteParams,
+  RefundRouteParams,
+} from '../utils/order-route';
 
 // Settings stack types
 export type SettingsStackParamList = {
@@ -55,38 +61,10 @@ export type RootTabParamList = {
 // Work stack types
 export type WorkStackParamList = {
   WorkHome: undefined;
-  Payment: {
-    orderId?: string;
-    orderNo?: string;
-    amount?: number;
-    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
-  } | undefined;
-  Refund: { orderId?: string; orderNo?: string; amount?: number; reason?: string };
-  Orders: {
-    orderId?: string;
-    paymentStatus?: 'PAID';
-    paymentAmount?: number;
-    paymentPaidAt?: string;
-    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
-    refundStatus?: 'PENDING' | 'REFUNDED';
-    refundRequestedAmount?: number;
-    refundReason?: string;
-    refundRequestedAt?: string;
-    refundCompletedAt?: string;
-  } | undefined;
-  OrderDetail: {
-    orderId: string;
-    orderNo?: string;
-    paymentStatus?: 'PAID';
-    paymentAmount?: number;
-    paymentPaidAt?: string;
-    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
-    refundStatus?: 'PENDING' | 'REFUNDED';
-    refundRequestedAmount?: number;
-    refundReason?: string;
-    refundRequestedAt?: string;
-    refundCompletedAt?: string;
-  };
+  Payment: PaymentRouteParams | undefined;
+  Refund: RefundRouteParams | undefined;
+  Orders: OrderRuntimeRouteParams | undefined;
+  OrderDetail: OrderDetailRouteParams;
   Inventory: undefined;
   InventoryScan: undefined;
   Scan: undefined;

@@ -15,36 +15,18 @@ import {
   type NativeAppOrderListItem,
   type NativeAppOrderListQuery,
 } from '../../market-bootstrap';
-
-type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+import type {
+  OrderDetailRouteParams,
+  OrderRuntimeRouteParams,
+} from '../../utils/order-route';
+import {
+  normalizePaymentChannel,
+  type PaymentChannel,
+} from '../../utils/payment-channel';
 
 type OrderStackParamList = {
-  OrderList: {
-    orderId?: string;
-    orderNo?: string;
-    paymentStatus?: 'PAID';
-    paymentAmount?: number;
-    paymentPaidAt?: string;
-    paymentChannel?: PaymentChannel;
-    refundStatus?: 'PENDING' | 'REFUNDED';
-    refundRequestedAmount?: number;
-    refundReason?: string;
-    refundRequestedAt?: string;
-    refundCompletedAt?: string;
-  } | undefined;
-  OrderDetail: {
-    orderId: string;
-    orderNo?: string;
-    paymentStatus?: 'PAID';
-    paymentAmount?: number;
-    paymentPaidAt?: string;
-    paymentChannel?: PaymentChannel;
-    refundStatus?: 'PENDING' | 'REFUNDED';
-    refundRequestedAmount?: number;
-    refundReason?: string;
-    refundRequestedAt?: string;
-    refundCompletedAt?: string;
-  };
+  OrderList: OrderRuntimeRouteParams | undefined;
+  OrderDetail: OrderDetailRouteParams;
 };
 
 type OrderListNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderList'>;
@@ -156,28 +138,6 @@ function resolveOrderStatus(
       return 'CANCELLED';
     default:
       return fallbackStatus;
-  }
-}
-
-function normalizePaymentChannel(channel?: string): PaymentChannel | undefined {
-  switch (channel) {
-    case 'WECHAT_PAY':
-    case 'wechat':
-    case 'wechat-pay':
-      return 'WECHAT_PAY';
-    case 'ALIPAY':
-    case 'alipay':
-    case 'ali-pay':
-      return 'ALIPAY';
-    case 'CASH':
-    case 'cash':
-      return 'CASH';
-    case 'MEMBER_CARD':
-    case 'member-card':
-    case 'member_card':
-      return 'MEMBER_CARD';
-    default:
-      return undefined;
   }
 }
 

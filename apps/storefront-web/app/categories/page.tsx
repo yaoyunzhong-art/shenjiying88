@@ -6,7 +6,7 @@
  */
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   DataTable,
   PageShell,
@@ -16,6 +16,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -153,11 +155,25 @@ function CategoryDetailModal({
 // ── Category Page Component ───────────────────────────────────────────────
 
 export default function CategoriesPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageReady, setPageReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [page, setPage] = useState(1);
   const [detailCategory, setDetailCategory] = useState<ProductCategory | null>(null);
-  const [categories, setCategories] = useState(MOCK_CATEGORIES);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<ProductCategory[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_CATEGORIES), 300);
+      }),
+    ).then((data) => {
+      if (data) setCategories(data);
+      setPageReady(true);
+    });
+  }, []);
 
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({
     key: 'sortOrder',
@@ -294,6 +310,21 @@ export default function CategoriesPage() {
 
   return (
     <PageShell title="分类管理" description="管理门店商品、课程、服务的分类体系">
+      <TriStateRenderer
+        loading={loading}
+        empty={categories.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<ProductCategory[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_CATEGORIES), 300);
+            }),
+          ).then((data) => {
+            if (data) setCategories(data);
+            setPageReady(true);
+          })
+        }
+      >
       <div style={{ padding: 24 }}>
         {/* 页面标题 */}
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px' }}>📂 分类管理</h1>
@@ -407,6 +438,7 @@ export default function CategoriesPage() {
           />
         )}
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

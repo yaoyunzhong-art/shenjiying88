@@ -5,31 +5,23 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { getNativeAppOrderTransaction, type NativeAppTransactionAggregate } from '../../market-bootstrap';
+import type { OrderDetailRouteParams } from '../../utils/order-route';
+import {
+  getPaymentChannelLabel,
+  normalizePaymentChannel,
+  type PaymentChannel,
+} from '../../utils/payment-channel';
 
 type OrderDetailParams = {
-  OrderDetail: {
-    orderId: string;
-    orderNo?: string;
-    paymentStatus?: 'PAID';
-    paymentAmount?: number;
-    paymentPaidAt?: string;
-    paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
-    refundStatus?: 'PENDING' | 'REFUNDED';
-    refundRequestedAmount?: number;
-    refundReason?: string;
-    refundRequestedAt?: string;
-    refundCompletedAt?: string;
-  };
+  OrderDetail: OrderDetailRouteParams;
 };
 
 type OrderStatus = 'PENDING' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED';
-type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
 
 type MockOrderDetail = {
   orderId: string;
@@ -126,35 +118,6 @@ const statusLabels: Record<string, string> = {
   REFUNDED: '已退款',
   CANCELLED: '已取消',
 };
-
-const channelLabels: Record<string, string> = {
-  WECHAT_PAY: '微信支付',
-  ALIPAY: '支付宝',
-  CASH: '现金',
-  MEMBER_CARD: '会员卡',
-};
-
-function normalizePaymentChannel(channel?: string): PaymentChannel | undefined {
-  switch (channel) {
-    case 'WECHAT_PAY':
-    case 'wechat':
-    case 'wechat-pay':
-      return 'WECHAT_PAY';
-    case 'ALIPAY':
-    case 'alipay':
-    case 'ali-pay':
-      return 'ALIPAY';
-    case 'CASH':
-    case 'cash':
-      return 'CASH';
-    case 'MEMBER_CARD':
-    case 'member-card':
-    case 'member_card':
-      return 'MEMBER_CARD';
-    default:
-      return undefined;
-  }
-}
 
 function createFallbackOrderDetail(params?: OrderDetailParams['OrderDetail']): MockOrderDetail {
   const matchedMockOrder = params?.orderId ? mockOrderDetails[params.orderId] : undefined;
@@ -330,6 +293,7 @@ export function OrderDetailScreen() {
       orderNo: order.orderNo,
       amount: order.totalAmount,
       reason: routeParams?.refundReason,
+      paymentChannel: order.paymentChannel,
     } as never);
   };
 
@@ -490,7 +454,7 @@ export function OrderDetailScreen() {
             <View style={styles.paymentRow}>
               <Text style={styles.paymentKey}>支付方式</Text>
               <Text style={styles.paymentValue}>
-                {channelLabels[order.paymentChannel]}
+                {getPaymentChannelLabel(order.paymentChannel) ?? '未知渠道'}
               </Text>
             </View>
             <View style={styles.paymentRow}>

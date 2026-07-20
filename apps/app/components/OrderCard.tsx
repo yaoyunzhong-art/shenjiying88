@@ -1,6 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Card } from './common/Card';
+import {
+  getPaymentChannelLabel,
+  type PaymentChannel,
+} from '../utils/payment-channel';
 
 interface OrderCardProps {
   orderId: string;
@@ -14,7 +18,7 @@ interface OrderCardProps {
   paidAt?: string;
   refundRequestedAt?: string;
   refundCompletedAt?: string;
-  paymentChannel?: 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+  paymentChannel?: PaymentChannel;
   itemCount: number;
   onPress?: () => void;
 }
@@ -33,13 +37,6 @@ const statusColors: Record<string, string> = {
   REFUND_PENDING: '#5856D6',
   REFUNDED: '#5856D6',
   CANCELLED: '#999999',
-};
-
-const channelLabels: Record<string, string> = {
-  WECHAT_PAY: '微信支付',
-  ALIPAY: '支付宝',
-  CASH: '现金',
-  MEMBER_CARD: '会员卡',
 };
 
 export function OrderCard({
@@ -143,7 +140,7 @@ export function OrderCard({
           {paymentChannel ? (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>支付方式</Text>
-              <Text style={styles.infoValue}>{channelLabels[paymentChannel]}</Text>
+              <Text style={styles.infoValue}>{getPaymentChannelLabel(paymentChannel)}</Text>
             </View>
           ) : null}
           {status === 'REFUND_PENDING' && refundRequestedAt ? (

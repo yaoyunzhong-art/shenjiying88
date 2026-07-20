@@ -39,6 +39,18 @@ import {
   CreateAssetTagDto,
   ScheduleActionEnum,
 } from './brand-operations.phase-p47-80.dto'
+import {
+  CreateExportRecordDto,
+  QueryExportRecordDto,
+  CreateCollaborationContractDto,
+  UpdateCollaborationContractDto,
+  QueryCollaborationContractDto,
+  CreateCampaignABTestDto,
+  RecordVariantMetricsDto,
+  DecideABTestWinnerDto,
+  QueryCalendarTimelineDto,
+  QueryRecycleBinDto,
+} from './brand-operations.phase-p47-100.dto'
 import type {
   BrandAsset,
   BrandCampaign,
@@ -59,6 +71,13 @@ import type {
   BrandDashboardData,
   ScheduleAction,
 } from './brand-operations.phase-p47-80.entity'
+import type {
+  ExportRecord,
+  CollaborationContract,
+  CampaignABTest,
+  CalendarTimeline,
+  RecycleBinItem,
+} from './brand-operations.phase-p47-100.entity'
 
 // 当前 Phase-47 骨架阶段使用硬编码 tenant/brand; 上线后替换为真实租户上下文
 const MOCK_TENANT_ID = 'tenant-1'
@@ -573,5 +592,207 @@ export class BrandOperationsController {
   @Get('dashboard')
   getDashboard(): BrandDashboardData {
     return this.service.getBrandDashboard(MOCK_TENANT_ID)
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  品牌活动数据导出 (Export) - P-47 100%
+  // ════════════════════════════════════════════════════════
+
+  @Post('exports')
+  requestExport(@Body() body: CreateExportRecordDto): ExportRecord {
+    return this.service.requestExport({
+      tenantId: MOCK_TENANT_ID,
+      format: body.format,
+      scope: body.scope,
+      filters: body.filters,
+      requestedBy: body.requestedBy,
+    })
+  }
+
+  @Get('exports')
+  listExportRecords(@Query() query: QueryExportRecordDto): ExportRecord[] {
+    return this.service.listExportRecords(MOCK_TENANT_ID, {
+      scope: query.scope,
+      format: query.format,
+    })
+  }
+
+  @Get('exports/:id')
+  getExportRecord(@Param('id') id: string): ExportRecord | undefined {
+    return this.service.getExportRecord(id, MOCK_TENANT_ID)
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  联名合作合同管理 (Collaboration Contract) - P-47 100%
+  // ════════════════════════════════════════════════════════
+
+  @Post('collaboration-contracts')
+  createCollaborationContract(@Body() body: CreateCollaborationContractDto): CollaborationContract {
+    return this.service.createCollaborationContract({
+      tenantId: MOCK_TENANT_ID,
+      collaborationId: body.collaborationId,
+      contractNumber: body.contractNumber,
+      title: body.title,
+      filePath: body.filePath,
+      signedAt: body.signedAt,
+      effectiveDate: body.effectiveDate,
+      expiryDate: body.expiryDate,
+      status: body.status,
+      amount: body.amount,
+      parties: body.parties,
+      termsSummary: body.termsSummary,
+      autoRenew: body.autoRenew,
+      createdBy: MOCK_TENANT_ID,
+    })
+  }
+
+  @Get('collaboration-contracts')
+  listCollaborationContracts(@Query() query: QueryCollaborationContractDto): CollaborationContract[] {
+    return this.service.listCollaborationContracts(MOCK_TENANT_ID, {
+      collaborationId: query.collaborationId,
+      status: query.status,
+    })
+  }
+
+  @Get('collaboration-contracts/:id')
+  getCollaborationContract(@Param('id') id: string): CollaborationContract | undefined {
+    return this.service.getCollaborationContract(id, MOCK_TENANT_ID)
+  }
+
+  @Patch('collaboration-contracts/:id')
+  updateCollaborationContract(
+    @Param('id') id: string,
+    @Body() body: UpdateCollaborationContractDto,
+  ): CollaborationContract {
+    return this.service.updateCollaborationContract(id, MOCK_TENANT_ID, body)
+  }
+
+  @Delete('collaboration-contracts/:id')
+  deleteCollaborationContract(@Param('id') id: string): { success: boolean } {
+    const result = this.service.deleteCollaborationContract(id, MOCK_TENANT_ID)
+    return { success: result }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  品牌活动A/B测试 (AB Test) - P-47 100%
+  // ════════════════════════════════════════════════════════
+
+  @Post('campaign-ab-tests')
+  createCampaignABTest(@Body() body: CreateCampaignABTestDto): CampaignABTest {
+    return this.service.createCampaignABTest({
+      tenantId: MOCK_TENANT_ID,
+      campaignId: body.campaignId,
+      name: body.name,
+      description: body.description,
+      variants: body.variants.map((v) => ({
+        name: v.name,
+        description: v.description,
+        variantTitle: v.variantTitle,
+        variantDescription: v.variantDescription,
+        variantAssets: v.variantAssets,
+        variantCoverImageUrl: v.variantCoverImageUrl,
+        storeIds: v.storeIds,
+      })),
+      createdBy: MOCK_TENANT_ID,
+    })
+  }
+
+  @Get('campaign-ab-tests')
+  listCampaignABTests(
+    @Query('campaignId') campaignId?: string,
+  ): CampaignABTest[] {
+    return this.service.listCampaignABTests(MOCK_TENANT_ID, campaignId)
+  }
+
+  @Get('campaign-ab-tests/:id')
+  getCampaignABTest(@Param('id') id: string): CampaignABTest | undefined {
+    return this.service.getCampaignABTest(id, MOCK_TENANT_ID)
+  }
+
+  @Post('campaign-ab-tests/:id/start')
+  startCampaignABTest(@Param('id') id: string): CampaignABTest {
+    return this.service.startCampaignABTest(id, MOCK_TENANT_ID)
+  }
+
+  @Post('campaign-ab-tests/:id/pause')
+  pauseCampaignABTest(@Param('id') id: string): CampaignABTest {
+    return this.service.pauseCampaignABTest(id, MOCK_TENANT_ID)
+  }
+
+  @Post('campaign-ab-tests/:id/resume')
+  resumeCampaignABTest(@Param('id') id: string): CampaignABTest {
+    return this.service.resumeCampaignABTest(id, MOCK_TENANT_ID)
+  }
+
+  @Post('campaign-ab-tests/:id/variants/:variantId/metrics')
+  recordVariantMetrics(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+    @Body() body: RecordVariantMetricsDto,
+  ): CampaignABTest {
+    return this.service.recordVariantMetrics(id, variantId, MOCK_TENANT_ID, body)
+  }
+
+  @Post('campaign-ab-tests/:id/decide-winner')
+  decideABTestWinner(
+    @Param('id') id: string,
+    @Body() body: DecideABTestWinnerDto,
+  ): CampaignABTest {
+    return this.service.decideABTestWinner(id, body.variantId, MOCK_TENANT_ID)
+  }
+
+  @Get('campaign-ab-tests/:id/comparison')
+  getABTestComparison(@Param('id') id: string) {
+    return this.service.getABTestComparison(id, MOCK_TENANT_ID)
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  品牌运营日历 (Calendar) - P-47 100%
+  // ════════════════════════════════════════════════════════
+
+  @Get('calendar')
+  getCalendarTimeline(@Query() query: QueryCalendarTimelineDto): CalendarTimeline {
+    return this.service.getCalendarTimeline(MOCK_TENANT_ID, query.startDate, query.endDate, query.type)
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  品牌资产回收站 (Recycle Bin) - P-47 100%
+  // ════════════════════════════════════════════════════════
+
+  @Post('recycle-bin/soft-delete')
+  softDeleteEntity(@Body() body: { entityType: string; entityId: string; deletedBy: string }): RecycleBinItem {
+    return this.service.softDeleteEntity({
+      tenantId: MOCK_TENANT_ID,
+      entityType: body.entityType as any,
+      entityId: body.entityId,
+      deletedBy: body.deletedBy,
+    })
+  }
+
+  @Post('recycle-bin/:id/restore')
+  restoreFromRecycleBin(@Param('id') id: string): RecycleBinItem {
+    return this.service.restoreFromRecycleBin(id, MOCK_TENANT_ID)
+  }
+
+  @Delete('recycle-bin/:id')
+  permanentlyDeleteFromRecycleBin(@Param('id') id: string): { success: boolean } {
+    const result = this.service.permanentlyDeleteFromRecycleBin(id, MOCK_TENANT_ID)
+    return { success: result }
+  }
+
+  @Get('recycle-bin')
+  listRecycleBinItems(
+    @Query() query: QueryRecycleBinDto,
+  ): RecycleBinItem[] {
+    return this.service.listRecycleBinItems(MOCK_TENANT_ID, {
+      entityType: query.entityType,
+      search: query.search,
+    })
+  }
+
+  @Post('recycle-bin/clean-expired')
+  cleanExpiredRecycleBinItems(@Body() body: { now?: string }): { deleted: number } {
+    const deleted = this.service.cleanExpiredRecycleBinItems(body.now)
+    return { deleted }
   }
 }

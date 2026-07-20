@@ -830,7 +830,7 @@ function createNativeAppTransactionFallbackSnapshot(
     aggregate: {
       order: {
         orderId,
-        orderNo: `ON${now.replace(/[-:TZ]/g, '').slice(0,14)}`,
+        orderNo: `ORD${now.slice(0, 10).replaceAll('-', '')}001`,
         memberId: checkoutPayload.memberId,
         currency: checkoutPayload.currency ?? 'USD',
         totalAmount: checkoutPayload.amount ?? computeNativeAppCheckoutAmount(checkoutPayload.items),
@@ -954,6 +954,14 @@ export async function requestNativeAppRefundToApi(
   }
 
   const refundPayload = createNativeAppRefundPayload(runtime.aggregate)
+
+  if (refundPayload.refundAmount === undefined || refundPayload.refundAmount <= 0) {
+    return {
+      ...runtime,
+      refundPayload,
+      note: `当前订单 ${runtime.aggregate.order.orderId} 已无可退款金额，跳过退款申请。`
+    }
+  }
 
   try {
     const refundedAggregate = await submitNativeAppOrderRefund(

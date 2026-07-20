@@ -729,6 +729,142 @@ test('native app bootstrap: builds checkout and refund payloads for real commerc
   assert.equal(refund.reason, 'app-native-refund-rehearsal');
 });
 
+test('native app bootstrap: refund payload ignores rejected refunds and keeps remaining refundable amount', () => {
+  const refund = createNativeAppRefundPayload({
+    order: {
+      orderId: 'order-002',
+      orderNo: 'ORD20260720002',
+      memberId: 'app-member-002',
+      currency: 'CNY',
+      totalAmount: 120,
+      status: 'PAID',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z'
+    },
+    payment: {
+      paymentId: 'payment-002',
+      orderId: 'order-002',
+      channel: 'WECHAT_PAY',
+      amount: 120,
+      status: 'SUCCEEDED',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z'
+    },
+    settlement: undefined,
+    pointsLedger: [],
+    couponRedemptions: [],
+    blindboxFulfillments: [],
+    refunds: [
+      {
+        refundId: 'refund-pending-001',
+        orderId: 'order-002',
+        paymentId: 'payment-002',
+        memberId: 'app-member-002',
+        refundAmount: 30,
+        reason: '部分退款',
+        status: 'PENDING',
+        requestedAt: '2026-07-20T00:10:00.000Z'
+      },
+      {
+        refundId: 'refund-rejected-001',
+        orderId: 'order-002',
+        paymentId: 'payment-002',
+        memberId: 'app-member-002',
+        refundAmount: 20,
+        reason: '驳回退款',
+        status: 'REJECTED',
+        requestedAt: '2026-07-20T00:11:00.000Z'
+      },
+      {
+        refundId: 'refund-completed-001',
+        orderId: 'order-002',
+        paymentId: 'payment-002',
+        memberId: 'app-member-002',
+        refundAmount: 40,
+        reason: '已退款',
+        status: 'COMPLETED',
+        requestedAt: '2026-07-20T00:12:00.000Z',
+        completedAt: '2026-07-20T00:13:00.000Z'
+      }
+    ]
+  });
+
+  assert.equal(refund.refundAmount, 50);
+  assert.equal(refund.reason, 'app-native-refund-rehearsal');
+});
+
+test('native app bootstrap: skips refund api when aggregate has no refundable amount left', async () => {
+  let fetchCalled = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    fetchCalled = true;
+    throw new Error('should not call refund api');
+  }) as typeof fetch;
+
+  try {
+    const runtime = await requestNativeAppRefundToApi({
+      deliveryMode: 'api',
+      aggregate: {
+        order: {
+          orderId: 'order-fully-refunded',
+          orderNo: 'ORD20260720003',
+          memberId: 'member-003',
+          currency: 'CNY',
+          totalAmount: 100,
+          status: 'PAID',
+          latestPaymentId: 'payment-003',
+          createdAt: '2026-07-20T00:00:00.000Z',
+          updatedAt: '2026-07-20T00:00:00.000Z',
+          paidAt: '2026-07-20T00:01:00.000Z'
+        },
+        payment: {
+          paymentId: 'payment-003',
+          orderId: 'order-fully-refunded',
+          channel: 'WECHAT_PAY',
+          amount: 100,
+          status: 'SUCCEEDED',
+          createdAt: '2026-07-20T00:00:00.000Z',
+          updatedAt: '2026-07-20T00:01:00.000Z',
+          completedAt: '2026-07-20T00:01:00.000Z'
+        },
+        settlement: undefined,
+        pointsLedger: [],
+        couponRedemptions: [],
+        blindboxFulfillments: [],
+        refunds: [
+          {
+            refundId: 'refund-fully-001',
+            orderId: 'order-fully-refunded',
+            paymentId: 'payment-003',
+            memberId: 'member-003',
+            refundAmount: 100,
+            reason: '全额退款',
+            status: 'COMPLETED',
+            requestedAt: '2026-07-20T00:05:00.000Z',
+            completedAt: '2026-07-20T00:06:00.000Z'
+          }
+        ]
+      },
+      checkoutPayload: {
+        memberId: 'member-003',
+        items: [],
+        paymentChannel: 'WECHAT_PAY',
+        currency: 'CNY',
+        amount: 100
+      },
+      note: 'already refunded'
+    });
+
+    assert.equal(fetchCalled, false);
+    assert.equal(runtime.deliveryMode, 'api');
+    assert.equal(runtime.aggregate?.refunds.length, 1);
+    assert.equal(runtime.refundPayload?.refundAmount, undefined);
+    assert.match(runtime.note, /已无可退款金额/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('native app bootstrap: executes real transaction flow and requests refund from api', async () => {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -934,6 +1070,23 @@ test('native app bootstrap: executes real transaction flow and requests refund f
   assert.equal(refunded.deliveryMode, 'api');
   assert.equal(refunded.aggregate?.refunds[0]?.status, 'PENDING');
   assert.equal(refunded.refundPayload?.reason, 'app-native-refund-rehearsal');
+});
+
+test('native app bootstrap: fallback transaction snapshot keeps ORD orderNo format', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  try {
+    const snapshot = toNativeAppBootstrapSnapshot(createPortalBootstrapFixture());
+    const transaction = await executeNativeAppTransactionFlow(snapshot, createNativeSession());
+
+    assert.equal(transaction.deliveryMode, 'fallback');
+    assert.match(transaction.aggregate?.order.orderNo ?? '', /^ORD\d{11}$/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('native app bootstrap: refreshes and replays runtime receipt with fallback support', async () => {

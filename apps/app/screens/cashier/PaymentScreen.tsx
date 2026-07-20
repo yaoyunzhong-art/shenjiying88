@@ -13,24 +13,16 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { submitNativeAppOrderPayment } from '../../market-bootstrap';
-
-type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+import type { PaymentRouteParams } from '../../utils/order-route';
+import {
+  normalizePaymentChannel,
+  PAYMENT_CHANNEL_OPTIONS,
+  type PaymentChannel,
+} from '../../utils/payment-channel';
 
 type PaymentParams = {
-  Payment: {
-    orderId?: string;
-    orderNo?: string;
-    amount?: number;
-    paymentChannel?: PaymentChannel;
-  };
+  Payment: PaymentRouteParams;
 };
-
-const paymentChannels: { id: PaymentChannel; name: string; icon: string }[] = [
-  { id: 'WECHAT_PAY', name: '微信支付', icon: '💚' },
-  { id: 'ALIPAY', name: '支付宝', icon: '💙' },
-  { id: 'CASH', name: '现金', icon: '💵' },
-  { id: 'MEMBER_CARD', name: '会员卡', icon: '💳' },
-];
 
 const MAX_PAYMENT_AMOUNT = 999999.99;
 
@@ -156,7 +148,7 @@ export function PaymentScreen() {
                 paymentStatus: 'PAID',
                 paymentAmount: aggregate?.payment?.amount ?? numericAmount,
                 paymentPaidAt: aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? paymentPaidAt,
-                paymentChannel: (aggregate?.payment?.channel as PaymentChannel | undefined) ?? selectedChannel,
+                paymentChannel: normalizePaymentChannel(aggregate?.payment?.channel) ?? selectedChannel,
               });
               return;
             }
@@ -229,7 +221,7 @@ export function PaymentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>支付方式</Text>
           <View style={styles.channelsGrid}>
-            {paymentChannels.map((channel) => (
+            {PAYMENT_CHANNEL_OPTIONS.map((channel) => (
               <TouchableOpacity
                 key={channel.id}
                 style={[
@@ -289,7 +281,7 @@ export function PaymentScreen() {
               ¥{parseFloat(amount || '0').toFixed(2)}
             </Text>
             <Text style={styles.modalChannel}>
-              支付方式：{paymentChannels.find((c) => c.id === selectedChannel)?.name}
+              支付方式：{PAYMENT_CHANNEL_OPTIONS.find((c) => c.id === selectedChannel)?.name}
             </Text>
             <View style={styles.modalButtons}>
               <Button

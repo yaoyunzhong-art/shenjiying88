@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   DataTable,
@@ -15,6 +15,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -190,13 +192,29 @@ function StatBadge({ label, value, accent }: { label: string; value: string; acc
 // ---- 页面 ----
 
 export default function CampaignsListPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageData, setPageData] = useState<Campaign[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<Campaign[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_CAMPAIGNS), 300);
+      }),
+    ).then((data) => {
+      if (data) setPageData(data);
+      setPageReady(true);
+    });
+  }, []);
+
   // 搜索
   const searchFields = useMemo<(keyof Campaign)[]>(
     () => ['name', 'channel', 'description', 'targetAudience'],
     [],
   );
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
-    MOCK_CAMPAIGNS,
+    pageData.length > 0 ? pageData : MOCK_CAMPAIGNS,
     searchFields,
   );
 
@@ -233,24 +251,24 @@ export default function CampaignsListPage() {
 
   // 统计
   const stats = useMemo(() => {
-    const active = MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length;
-    const totalBudget = MOCK_CAMPAIGNS.reduce((sum, c) => sum + c.budget, 0);
-    const totalSpent = MOCK_CAMPAIGNS.reduce((sum, c) => sum + c.spent, 0);
-    const totalConversions = MOCK_CAMPAIGNS.reduce((sum, c) => sum + c.conversions, 0);
+    const active = pageData.filter((c) => c.status === 'active').length;
+    const totalBudget = pageData.reduce((sum, c) => sum + c.budget, 0);
+    const totalSpent = pageData.reduce((sum, c) => sum + c.spent, 0);
+    const totalConversions = pageData.reduce((sum, c) => sum + c.conversions, 0);
     return {
-      total: MOCK_CAMPAIGNS.length,
+      total: pageData.length,
       active,
       totalBudget,
       totalSpent,
       totalConversions,
       avgRoi: totalSpent > 0 ? ((totalConversions / totalSpent) * 100).toFixed(1) : '-',
     };
-  }, []);
+  }, [pageData]);
 
   // 去重渠道列表
   const channelOptions = useMemo<CampaignChannel[]>(
-    () => [...new Set(MOCK_CAMPAIGNS.map((c) => c.channel))],
-    [],
+    () => [...new Set(pageData.map((c) => c.channel))],
+    [pageData],
   );
 
   return (
@@ -258,6 +276,21 @@ export default function CampaignsListPage() {
       title="营销活动"
       description="管理门店营销活动，追踪投放效果与 ROI。"
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={pageData.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<Campaign[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_CAMPAIGNS), 300);
+            }),
+          ).then((data) => {
+            if (data) setPageData(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div
         style={{
@@ -356,6 +389,7 @@ export default function CampaignsListPage() {
           />
         </div>
       )}
+      </TriStateRenderer>
     </PageShell>
   );
 }

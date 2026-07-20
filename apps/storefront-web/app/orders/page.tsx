@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 
 import {
   DataTable,
@@ -19,6 +19,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -392,6 +394,22 @@ function OrderDetailDialog({ order, onClose }: { order: OrderItem | null; onClos
 // ---- 页面 ----
 
 export default function OrdersListPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageData, setPageData] = useState<OrderItem[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<OrderItem[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_ORDERS), 300);
+      }),
+    ).then((data) => {
+      if (data) setPageData(data);
+      setPageReady(true);
+    });
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<PaymentMethod | 'ALL'>('ALL');
@@ -400,9 +418,9 @@ export default function OrdersListPage() {
 
   // 搜索过滤
   const searched = useMemo(() => {
-    if (!searchTerm.trim()) return MOCK_ORDERS;
+    if (!searchTerm.trim()) return pageData;
     const lower = searchTerm.toLowerCase();
-    return MOCK_ORDERS.filter(
+    return pageData.filter(
       (o) =>
         o.orderNo.toLowerCase().includes(lower) ||
         o.memberName.toLowerCase().includes(lower) ||
@@ -440,13 +458,13 @@ export default function OrdersListPage() {
 
   // 统计
   const stats = useMemo(() => {
-    const pending = MOCK_ORDERS.filter((o) => o.status === 'pending_payment').length;
-    const completed = MOCK_ORDERS.filter((o) => o.status === 'completed').length;
-    const cancelled = MOCK_ORDERS.filter((o) => o.status === 'cancelled').length;
-    const revenue = MOCK_ORDERS
+    const pending = pageData.filter((o) => o.status === 'pending_payment').length;
+    const completed = pageData.filter((o) => o.status === 'completed').length;
+    const cancelled = pageData.filter((o) => o.status === 'cancelled').length;
+    const revenue = pageData
       .filter((o) => !['cancelled', 'refunded', 'pending_payment'].includes(o.status))
       .reduce((s, o) => s + o.actualAmount, 0);
-    return { total: MOCK_ORDERS.length, pending, completed, cancelled, revenue };
+    return { total: pageData.length, pending, completed, cancelled, revenue };
   }, []);
 
   return (
@@ -454,6 +472,21 @@ export default function OrdersListPage() {
       title="订单管理"
       description="查看门店所有订单记录，支持搜索、多维筛选、排序及订单详情查看。"
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={pageData.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<OrderItem[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_ORDERS), 300);
+            }),
+          ).then((data) => {
+            if (data) setPageData(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div
         style={{
@@ -550,6 +583,7 @@ export default function OrdersListPage() {
 
       {/* 订单详情弹窗 */}
       <OrderDetailDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      </TriStateRenderer>
     </PageShell>
   );
 }

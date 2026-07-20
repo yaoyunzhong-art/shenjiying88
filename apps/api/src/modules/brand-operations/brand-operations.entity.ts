@@ -67,6 +67,7 @@ export interface BrandSyncRecord {
   id: string
   campaignId: string
   storeId: string
+  tenantId: string
   status: SyncStatus
   errorMessage?: string
   syncedAt?: string
