@@ -2,6 +2,8 @@ import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
 import { InventoryPurchaseController } from './inventory-purchase.controller'
 
+type MockServiceResult<K extends string = string> = { kind: K; args: unknown[] }
+
 function createController(mockPurchaseService?: Record<string, unknown>, mockOrderService?: Record<string, unknown>) {
   const purchaseService = mockPurchaseService ?? {
     addNote: (...args: unknown[]) => ({ kind: 'addNote', args }),
@@ -72,7 +74,7 @@ describe('InventoryPurchaseController', () => {
           items: [{ productId: 'prod-1', productName: '测试商品', sku: 'SKU-1', quantity: 2, unitPrice: 10 }],
           createdBy: 'body-user'
         }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal((result.args[1] as { createdBy: string }).createdBy, '采购审批员')
     })
@@ -84,7 +86,7 @@ describe('InventoryPurchaseController', () => {
         tenantContext,
         actorContext,
         { approverId: 'body-approver', approverName: 'body-name', comment: 'ok' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.deepEqual(result.args[2], {
         approverId: 'actor-001',
@@ -100,7 +102,7 @@ describe('InventoryPurchaseController', () => {
         tenantContext,
         actorContext,
         { content: '补记一条备注', authorId: 'body-author', authorName: 'body-name' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.deepEqual(result.args[2], {
         content: '补记一条备注',
@@ -116,7 +118,7 @@ describe('InventoryPurchaseController', () => {
         tenantContext,
         undefined,
         { operatorId: 'body-operator', operatorName: 'body-name', comment: 'manual refund' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.deepEqual(result.args[2], {
         operatorId: 'body-operator',
@@ -132,7 +134,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.listPurchaseOrders(
         tenantContext,
         { status: 'DRAFT', limit: 10 }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'listPurchaseOrders')
       assert.deepEqual(result.args[0], tenantContext)
@@ -140,7 +142,7 @@ describe('InventoryPurchaseController', () => {
 
     it('getPurchaseOrder 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.getPurchaseOrder('po-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getPurchaseOrder('po-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getPurchaseOrder')
       assert.equal(result.args[0], 'po-1')
@@ -151,7 +153,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.updatePurchaseOrder('po-1', tenantContext, {
         supplierName: '新供应商',
         paymentPlan: 'NET30'
-      }) as unknown as { args: unknown[] }
+      }) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'updatePurchaseOrder')
       assert.equal(result.args[1], tenantContext)
@@ -170,7 +172,7 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.submitForApproval(
         'po-1', tenantContext, actorContext, {}
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'submitWithHistory')
       assert.equal(result.args[0], 'po-1')
@@ -181,7 +183,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.rejectOrder(
         'po-1', tenantContext, actorContext,
         { approverId: 'body-id', approverName: 'body-name', comment: '价格过高' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'rejectWithHistory')
       assert.deepEqual(result.args[2], {
@@ -195,7 +197,7 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.placeOrder(
         'po-1', tenantContext, actorContext, { placedBy: 'body-user' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'placeWithHistory')
     })
@@ -204,7 +206,7 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.cancelOrder(
         'po-1', tenantContext, actorContext, { cancelledBy: 'user', reason: '取消' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'cancelWithHistory')
     })
@@ -216,14 +218,14 @@ describe('InventoryPurchaseController', () => {
       const result = controller.recordPayment(
         tenantContext, actorContext,
         { purchaseOrderId: 'po-1', amount: 1000, paymentMethod: 'BANK_TRANSFER' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'recordPayment')
     })
 
     it('getPayments 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.getPayments('po-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getPayments('po-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getPayments')
       assert.equal(result.args[0], 'po-1')
@@ -233,7 +235,7 @@ describe('InventoryPurchaseController', () => {
   describe('notes routing', () => {
     it('getNotes 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.getNotes('po-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getNotes('po-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getNotes')
     })
@@ -245,7 +247,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.createReturn(
         tenantContext, actorContext,
         { purchaseOrderId: 'po-1', items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'createReturn')
     })
@@ -255,7 +257,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.approveReturn(
         'ret-1', tenantContext, actorContext,
         { approverId: 'body-id', approverName: 'body-name' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'approveReturn')
     })
@@ -265,7 +267,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.inspectReturn(
         'ret-1', tenantContext, actorContext,
         { inspectorId: 'body-id', inspectorName: 'body-name' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'inspectReturn')
     })
@@ -275,7 +277,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.rejectReturn(
         'ret-1', tenantContext, actorContext,
         { reviewerId: 'body-id', reviewerName: 'body-name', comment: '不符合条件' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'rejectReturn')
     })
@@ -284,7 +286,7 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.exchangeReturn(
         'ret-1', tenantContext, actorContext, { operatorName: 'ops' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'exchangeReturn')
     })
@@ -293,14 +295,14 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.closeReturn(
         'ret-1', tenantContext, actorContext, {}
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'closeReturn')
     })
 
     it('completeReturn 转发到 purchaseService.closeReturn', () => {
       const controller = createController()
-      const result = controller.completeReturn('ret-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.completeReturn('ret-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'completeReturn')
     })
@@ -312,21 +314,21 @@ describe('InventoryPurchaseController', () => {
       const result = controller.createSupplier(
         tenantContext,
         { code: 'SUP001', name: '供应商' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'createSupplier')
     })
 
     it('listSuppliers 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.listSuppliers(tenantContext, {}) as unknown as { args: unknown[] }
+      const result = controller.listSuppliers(tenantContext, {}) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'listSuppliers')
     })
 
     it('getSupplier 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.getSupplier('supp-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getSupplier('supp-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getSupplier')
     })
@@ -335,7 +337,7 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.updateSupplier(
         'supp-1', tenantContext, { name: '新名称', status: 'INACTIVE' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'updateSupplier')
     })
@@ -344,14 +346,14 @@ describe('InventoryPurchaseController', () => {
   describe('stats & alerts', () => {
     it('getStats 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.getStats(tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getStats(tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getPurchaseStats')
     })
 
     it('getAlerts 转发到 purchaseService', () => {
       const controller = createController()
-      const result = controller.getAlerts(tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getAlerts(tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getAlerts')
     })
@@ -360,14 +362,14 @@ describe('InventoryPurchaseController', () => {
   describe('order history & timeline', () => {
     it('getOrderHistory 转发到 orderService', () => {
       const controller = createController()
-      const result = controller.getOrderHistory('po-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getOrderHistory('po-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getOrderHistory')
     })
 
     it('getOrderTimeline 转发到 orderService', () => {
       const controller = createController()
-      const result = controller.getOrderTimeline('po-1', tenantContext) as unknown as { args: unknown[] }
+      const result = controller.getOrderTimeline('po-1', tenantContext) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getTimeline')
     })
@@ -376,7 +378,7 @@ describe('InventoryPurchaseController', () => {
       const controller = createController()
       const result = controller.getBatchSummary(
         tenantContext, { orderIds: ['po-1', 'po-2'] }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'getBatchSummary')
     })
@@ -386,7 +388,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.batchApprove(
         tenantContext, actorContext,
         { orderIds: ['po-1', 'po-2'], approverId: 'body-id', approverName: 'body-name' }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'batchApprove')
     })
@@ -398,7 +400,7 @@ describe('InventoryPurchaseController', () => {
       const result = controller.receiveOrder(
         'po-1', tenantContext, actorContext,
         { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] }
-      ) as unknown as { args: unknown[] }
+      ) as unknown as MockServiceResult
 
       assert.equal(result.kind, 'receiveWithHistory')
     })
