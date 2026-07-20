@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { CSEngine } from './cs.engine'
 import { SessionService } from './session.service'
 import { IntentService } from './intent.service'
@@ -12,6 +12,7 @@ import type {
   ConversationChannel,
   Knowledge
 } from './ai-cs.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * Phase-41 T171: AI 客服 Controller
@@ -27,6 +28,7 @@ import type {
  */
 
 @Controller('ai-cs')
+@UseGuards(TenantGuard)
 export class AiCsController {
   constructor(
     private readonly engine: CSEngine,

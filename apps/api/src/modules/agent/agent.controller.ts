@@ -11,7 +11,8 @@ import {
   UsePipes,
   ValidationPipe,
   Sse,
-  HttpException
+  HttpException,
+  UseGuards,
 } from '@nestjs/common'
 import { Observable, Subject } from 'rxjs'
 import { AgentService } from './agent.service'
@@ -31,6 +32,7 @@ import type {
   AgentStats,
   AgentSessionEvent
 } from './agent.entity'
+import { TenantGuard } from './tenant.guard'
 
 /**
  * Phase-32: SSE 消息事件类型 (与 SDK 解析对齐)
@@ -45,6 +47,7 @@ interface SseMessageEvent {
 
 @Controller('agent')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AgentController {
   constructor(
     private readonly agentService: AgentService,

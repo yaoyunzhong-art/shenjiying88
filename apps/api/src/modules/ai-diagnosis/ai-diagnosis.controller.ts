@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common'
+import { Controller, Post, Get, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus, NotFoundException, UseGuards } from '@nestjs/common'
 import { AiDiagnosisService } from './ai-diagnosis.service'
 import type { DiagnosisBatch } from './ai-diagnosis.entity'
 import {
@@ -11,8 +11,10 @@ import {
   DiagnosisBatchResponse,
   DiagnosisRiskReportResponse
 } from './ai-diagnosis.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-diagnosis')
+@UseGuards(TenantGuard)
 export class AiDiagnosisController {
   constructor(private readonly diagnosisService: AiDiagnosisService) {}
 

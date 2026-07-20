@@ -9,6 +9,7 @@ import {
   ValidationPipe,
   NotFoundException,
   BadRequestException,
+UseGuards,
 } from '@nestjs/common'
 import {
   ChaosExperimentService,
@@ -28,9 +29,11 @@ import type {
   HealthStatus,
   SystemMetrics,
 } from './chaos-engineering.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('chaos')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class ChaosEngineeringController {
   constructor(
     private readonly experimentService: ChaosExperimentService,

@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Query, Body, BadRequestException } from '@nestjs/common'
+import { Controller, Get, Post, Query, Body, BadRequestException, UseGuards } from '@nestjs/common'
 import type { RecommendationRequest, StrategyType } from './recommend.entity'
 import { RecommendationEngine } from './recommendation.engine'
 import { RecommendCacheService } from './recommend-cache.service'
 import { ProductAdapter } from './datasources/product.adapter'
 import { PurchaseHistoryAdapter } from './datasources/purchase-history.adapter'
 import { MemberPreferenceAdapter } from './datasources/member-preference.adapter'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * Phase-40 T170: RecommendController
@@ -25,6 +26,7 @@ import { MemberPreferenceAdapter } from './datasources/member-preference.adapter
  */
 
 @Controller('api/recommend')
+@UseGuards(TenantGuard)
 export class RecommendController {
   constructor(
     private readonly engine: RecommendationEngine,

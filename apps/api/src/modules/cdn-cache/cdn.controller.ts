@@ -4,6 +4,7 @@
 
 import {
   Controller, Get, Post, Patch, Delete, Param, Body, HttpCode, HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { CdnCacheService } from './cdn.service'
 import type {
@@ -11,8 +12,10 @@ import type {
   RuleListResponse, NodeListResponse, MatchRuleResponse,
   InvalidationListResponse, EdgeNodeStatsResponse,
 } from './cdn.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('cdn')
+@UseGuards(TenantGuard)
 export class CdnCacheController {
   /** @internal exposed as public for testing */
   constructor(readonly service: CdnCacheService) {}

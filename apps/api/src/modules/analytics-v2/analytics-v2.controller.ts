@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, Injectable } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query, Param, Injectable, UseGuards } from '@nestjs/common'
 import { EventCollector } from './event-collector'
 import { CDCStream } from './cdc-stream'
 import { CohortService } from './services/cohort.service'
@@ -11,6 +11,7 @@ import type {
   CohortPeriod,
   FunnelStep
 } from './analytics-v2.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * Phase-43 T173: AnalyticsV2Controller (数据分析 API)
@@ -39,6 +40,7 @@ import type {
 
 @Controller('analytics-v2')
 @Injectable()
+@UseGuards(TenantGuard)
 export class AnalyticsV2Controller {
   constructor(
     private readonly eventCollector: EventCollector,

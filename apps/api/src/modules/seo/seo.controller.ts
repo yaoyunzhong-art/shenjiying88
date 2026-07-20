@@ -14,13 +14,16 @@ import {
   Post,
   Put,
   Query,
+UseGuards,
 } from '@nestjs/common'
 import { SeoService } from './seo.service'
 import { GeoSearchService } from './geo-search.service'
 import { SeoHealthService } from './seo-health.service'
 import type { ChangeFreq } from './seo.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('seo')
+@UseGuards(TenantGuard)
 export class SeoController {
   constructor(
     private readonly seoService: SeoService,

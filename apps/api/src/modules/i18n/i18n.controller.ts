@@ -20,6 +20,7 @@ import {
   Post,
   Put,
   Query,
+UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -33,8 +34,10 @@ import {
   UpdateLocaleConfigDto,
   ValidateTranslationsDto,
 } from './i18n.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('i18n')
+@UseGuards(TenantGuard)
 export class I18nController {
   constructor(private readonly i18nService: I18nService) {}
 

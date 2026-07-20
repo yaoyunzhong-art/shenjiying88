@@ -1,6 +1,6 @@
 // aiops.controller.ts - 自动补全
 // 用途: AIOps 控制器 - POST /aiops/detect /predict /attack /heal + GET /status, /health
-import { Controller, Post, Get, Body, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Post, Get, Body, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { AIOpsService } from './aiops.service'
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
 import {
@@ -14,9 +14,11 @@ import {
   HealingActionResultDto,
   AIOpsEngineStatusDto,
 } from './aiops.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('aiops')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AIOpsController {
   constructor(
     private readonly aiopsService: AIOpsService,

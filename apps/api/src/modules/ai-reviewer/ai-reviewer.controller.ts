@@ -7,6 +7,7 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+UseGuards,
 } from '@nestjs/common'
 import { AIReviewerService } from './ai-reviewer.service'
 import {
@@ -16,9 +17,11 @@ import {
   type ReviewResponse,
 } from './ai-reviewer.dto'
 import type { ReviewRule, ReviewStats } from './ai-reviewer.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-reviewer')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AIReviewerController {
   constructor(private readonly aiReviewerService: AIReviewerService) {}
 

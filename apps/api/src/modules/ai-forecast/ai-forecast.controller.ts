@@ -5,7 +5,8 @@ import {
   Query,
   Body,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
 import { DemandForecastService, InventoryOptimizer, TransferRecommendationService } from './ai-forecast.service'
 import {
@@ -29,9 +30,11 @@ import type {
   TransferRecommendation,
   GlobalAllocation
 } from './ai-forecast.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-forecast')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiForecastController {
   constructor(
     private readonly demandForecastService: DemandForecastService,

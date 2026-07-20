@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { AiRuleEngineService } from './ai-rule-engine.service'
 import {
   MemberLevelInputDto,
@@ -23,6 +23,7 @@ import type {
   Simulator,
   EngineDetail
 } from './ai-rule-engine.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 interface EvaluateRequest {
   type: 'member-level' | 'device-anomaly'
@@ -37,6 +38,7 @@ interface EvaluateResponse {
 
 @Controller('ai-rule-engine')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiRuleEngineController {
   constructor(private readonly aiRuleEngineService: AiRuleEngineService) {}
 

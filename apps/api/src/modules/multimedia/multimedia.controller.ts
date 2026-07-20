@@ -4,6 +4,7 @@
 
 import {
   Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus, Query,
+UseGuards,
 } from '@nestjs/common'
 import { MultimediaService } from './multimedia.service'
 import type {
@@ -31,8 +32,10 @@ import type {
   StorageBackendListResponseContract,
   StorageStatsContract,
 } from './multimedia.contract'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('multimedia')
+@UseGuards(TenantGuard)
 export class MultimediaController {
   constructor(private readonly service: MultimediaService) {}
 

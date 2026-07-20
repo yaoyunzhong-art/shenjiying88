@@ -27,6 +27,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import type { Request } from 'express'
 import { AiModelConfigService, type StoreConfigResponse } from './ai-model-config.service'
@@ -37,8 +38,10 @@ import {
   QueryAiModelPresetDto,
 } from './ai-model-config.dto'
 import type { TenantContext } from '../../common/context/tenant-context'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-model-config')
+@UseGuards(TenantGuard)
 export class AiModelConfigController {
   constructor(private readonly service: AiModelConfigService) {}
 

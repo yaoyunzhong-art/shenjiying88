@@ -1,6 +1,6 @@
 // perf-monitor.controller.ts - Phase-19 T27 auto
 // 用途: 性能监控控制器 - GET/POST /perf-monitor
-import { Controller, Get, Post, Body, Query, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { PerfMonitorService } from './perf-monitor.service'
 import {
   RecordSampleDto,
@@ -13,9 +13,11 @@ import {
   SlaViolationDto,
 } from './perf-monitor.dto'
 import type { PerfSample, SlaConfig, PerfStats, PerfSummary, SlaViolation } from './perf-monitor.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('perf-monitor')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class PerfMonitorController {
   constructor(private readonly perfMonitorService: PerfMonitorService) {}
 

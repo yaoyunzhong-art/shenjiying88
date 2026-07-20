@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Param, BadRequestException } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, BadRequestException, UseGuards } from '@nestjs/common'
 import { CanaryService } from './canary.service'
 import type { CanaryExperiment, CanaryEvaluationResponse } from './canary.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('canary')
+@UseGuards(TenantGuard)
 export class CanaryController {
   constructor(private readonly service: CanaryService) {}
 

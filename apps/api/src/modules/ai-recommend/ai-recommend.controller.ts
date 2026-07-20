@@ -8,7 +8,8 @@ import {
   Param,
   Query,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
 import { AiRecommendService } from './ai-recommend.service'
 import {
@@ -29,9 +30,11 @@ import type {
   RecommendationStrategy,
   GenerateRecommendationsOutput
 } from './ai-recommend.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-recommend')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiRecommendController {
   constructor(private readonly aiRecommendService: AiRecommendService) {}
 

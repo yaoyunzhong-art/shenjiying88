@@ -6,7 +6,8 @@ import {
   Param,
   Query,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
 import {
   ProductRecommendationEngine,
@@ -36,9 +37,11 @@ import type {
   ObjectionType,
   ConversationSimulation
 } from './ai-sales.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-sales')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiSalesController {
   constructor(
     private readonly recommendationEngine: ProductRecommendationEngine,

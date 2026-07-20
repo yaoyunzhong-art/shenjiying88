@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
+import { TenantGuard } from '../../agent/tenant.guard'
 
 @Controller('ai/feedback')
+@UseGuards(TenantGuard)
 export class FeedbackController {
   constructor(private readonly svc: FeedbackService) {}
 

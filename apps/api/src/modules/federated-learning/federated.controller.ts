@@ -10,6 +10,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { FederatedLearningService } from './federated.service'
 import type {
@@ -17,8 +18,10 @@ import type {
   StartRoundDto,
   SubmitGradientDto,
 } from './federated.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('federated')
+@UseGuards(TenantGuard)
 export class FederatedLearningController {
   constructor(private readonly service: FederatedLearningService) {}
 

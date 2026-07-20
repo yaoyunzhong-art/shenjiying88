@@ -1,7 +1,7 @@
 // time-series.controller.ts - Phase-19 T27 auto
 // 用途: 时序指标控制器 - POST /time-series/record, /query, /batch, /seasonality, GET /keys, /status
 // 新增: 告警规则管理, 时序摘要, 跨窗口对比
-import { Controller, Post, Get, Delete, Body, Param, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Post, Get, Delete, Body, Param, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { TimeSeriesCollectorService } from './time-series-collector.service'
 import { TimeSeriesService } from './time-series.service'
 import {
@@ -20,9 +20,11 @@ import type {
   TimeSeriesMetricEntity,
   TimeSeriesCollectorStatus,
 } from './time-series.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('time-series')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class TimeSeriesController {
   private readonly startedAt = Date.now()
 

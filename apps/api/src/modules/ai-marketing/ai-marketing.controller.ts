@@ -7,6 +7,7 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+UseGuards,
 } from '@nestjs/common'
 import {
   MarketingROIService,
@@ -40,9 +41,11 @@ import {
   BudgetPacingDto,
   CPADto,
 } from './ai-marketing.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-marketing')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiMarketingController {
   constructor(
     private readonly roiService: MarketingROIService,

@@ -24,6 +24,7 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+UseGuards,
 } from '@nestjs/common'
 import type { Request } from 'express'
 import {
@@ -36,8 +37,10 @@ import {
   TimeSyncService,
 } from './edge-computing.service'
 import { runWithTenant, type TenantContext } from '../../common/context/tenant-context'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('edge')
+@UseGuards(TenantGuard)
 export class EdgeController {
   constructor(
     private readonly nodeService: EdgeNodeService,

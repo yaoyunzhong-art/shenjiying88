@@ -7,6 +7,7 @@ import {
   Param,
   UsePipes,
   ValidationPipe,
+UseGuards,
 } from '@nestjs/common'
 import { RecommenderService } from './recommender.service'
 import { PersonalizedRecommenderService, type RecommendResponse } from './personalized-recommender.service'
@@ -18,9 +19,11 @@ import {
   RecommendStatsQueryDto,
 } from './recommender.dto'
 import type { RecommendationItem, RecommendationLog } from './recommender.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('recommender')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class RecommenderController {
   constructor(
     private readonly personalizedRecommender: PersonalizedRecommenderService,
