@@ -265,7 +265,7 @@ describe('E2E-51: 门店管理全链', () => {
     assert.ok(updated.updatedAt !== null)
 
     // 验证持久化
-    const fetched = getStoreById('store-e2e-51-002')
+    const fetched = getStoreById('store-e2e-51-002')!
     assert.equal(fetched.status, STORE_STATUS.INACTIVE)
   })
 
@@ -297,7 +297,7 @@ describe('E2E-51: 门店管理全链', () => {
   })
 
   it('边界: 更新门店信息不修改 ID 和创建时间', () => {
-    const original = getStoreById('store-e2e-51-001')
+    const original = getStoreById('store-e2e-51-001')!
     const updated = updateStore('store-e2e-51-001', { name: '边界测试门店' })
 
     assert.equal(updated.id, original.id, 'ID 不变')
@@ -306,7 +306,7 @@ describe('E2E-51: 门店管理全链', () => {
 
   it('边界: 门店信息空字段更新（保留原有值）', () => {
     // 模拟部分更新：只传需要修改的字段，原始字段不变
-    const original = getStoreById('store-e2e-51-001')
+    const original = getStoreById('store-e2e-51-001')!
     const updated = updateStore('store-e2e-51-001', { phone: '020-00001111' })
 
     // 未更新的字段保持不变
