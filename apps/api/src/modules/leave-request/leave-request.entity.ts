@@ -33,3 +33,23 @@ export interface LeaveRequest {
   tenantId: string
   createdAt: string
 }
+
+// ── Leave Statistics ──
+
+export interface LeaveStats {
+  total: number
+  byStatus: Record<LeaveStatus, number>
+  byType: Record<LeaveType, number>
+  totalDays: number
+  approvedDays: number
+  pendingDays: number
+  rejectionRate: number
+  monthlyTrend: Array<{ month: string; count: number; days: number }>
+  employeeStats: Array<{
+    employeeId: string
+    employeeName: string
+    totalLeaves: number
+    totalDays: number
+    approvedLeaves: number
+  }>
+}

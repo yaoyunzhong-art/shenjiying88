@@ -1,6 +1,8 @@
 import { describe, it, beforeEach, afterEach } from 'vitest'
 /**
  * 🐜 自动: [leave-request] controller 测试
+ *
+ * 覆盖: CRUD + 审批流 + 统计 + mock种子
  */
 
 import 'reflect-metadata'
@@ -154,6 +156,109 @@ describe('LeaveRequestController', () => {
       const result = controller.seedMockData(TENANT)
       assert.deepStrictEqual(result, { message: 'Mock leave request data seeded' })
       assert.equal(controller.listLeaves(TENANT, {}).length, 21)
+    })
+  })
+
+  // ── Statistics ──
+
+  describe('getStats', () => {
+    it('should return empty stats when no leaves', () => {
+      const stats = controller.getStats(TENANT)
+      assert.equal(stats.total, 0)
+      assert.equal(stats.totalDays, 0)
+      assert.equal(stats.approvedDays, 0)
+      assert.equal(stats.rejectionRate, 0)
+      assert.deepStrictEqual(stats.monthlyTrend, [])
+      assert.deepStrictEqual(stats.employeeStats, [])
+    })
+
+    it('should return correct stats after seeding', () => {
+      controller.seedMockData(TENANT)
+      const stats = controller.getStats(TENANT)
+
+      // total
+      assert.equal(stats.total, 21)
+
+      // byStatus
+      assert.ok(stats.byStatus[LeaveStatus.Pending] >= 1)
+      assert.ok(stats.byStatus[LeaveStatus.Approved] >= 1)
+      assert.ok(stats.byStatus[LeaveStatus.Rejected] >= 1)
+      assert.ok(stats.byStatus[LeaveStatus.Cancelled] >= 1)
+
+      // byType
+      assert.ok(stats.byType[LeaveType.Annual] >= 1)
+      assert.ok(stats.byType[LeaveType.Sick] >= 1)
+      assert.ok(stats.byType[LeaveType.Personal] >= 1)
+      assert.ok(stats.byType[LeaveType.Maternity] >= 1)
+      assert.ok(stats.byType[LeaveType.Marriage] >= 1)
+      assert.ok(stats.byType[LeaveType.Bereavement] >= 1)
+      assert.ok(stats.byType[LeaveType.Other] >= 1)
+
+      // totalDays > 0
+      assert.ok(stats.totalDays > 0)
+      assert.ok(stats.approvedDays > 0)
+
+      // monthlyTrend
+      assert.ok(stats.monthlyTrend.length >= 1)
+      assert.ok(stats.monthlyTrend.every((m) => m.count > 0 && m.days > 0))
+
+      // employeeStats
+      assert.ok(stats.employeeStats.length >= 2)
+      assert.ok(stats.employeeStats.every((e) => e.totalDays > 0))
+    })
+
+    it('should track rejection rate correctly', () => {
+      service.resetLeaveStoresForTests()
+
+      // 2 approved, 1 rejected = 33.3%
+      const l1 = controller.createLeave(TENANT, {
+        employeeId: 'E1', employeeName: 'A', type: LeaveType.Annual,
+        startDate: '2026-07-01', endDate: '2026-07-02', days: 2,
+        reason: 'R', approver: 'M',
+      })
+      const l2 = controller.createLeave(TENANT, {
+        employeeId: 'E1', employeeName: 'A', type: LeaveType.Sick,
+        startDate: '2026-07-03', endDate: '2026-07-03', days: 1,
+        reason: 'R', approver: 'M',
+      })
+      const l3 = controller.createLeave(TENANT, {
+        employeeId: 'E2', employeeName: 'B', type: LeaveType.Personal,
+        startDate: '2026-07-05', endDate: '2026-07-05', days: 1,
+        reason: 'R', approver: 'M',
+      })
+
+      controller.approveLeave(TENANT, l1.id, { status: LeaveStatus.Approved })
+      controller.approveLeave(TENANT, l2.id, { status: LeaveStatus.Approved })
+      controller.approveLeave(TENANT, l3.id, { status: LeaveStatus.Rejected, remark: '驳回' })
+
+      const stats = controller.getStats(TENANT)
+      assert.equal(stats.total, 3)
+      assert.equal(stats.byStatus[LeaveStatus.Approved], 2)
+      assert.equal(stats.byStatus[LeaveStatus.Rejected], 1)
+      assert.equal(stats.rejectionRate, 1 / 3) // 33.3%
+    })
+
+    it('should return stats per tenant isolated', () => {
+      const T2 = { tenantId: 'tenant-002' }
+
+      controller.createLeave(TENANT, {
+        employeeId: 'E1', employeeName: 'A', type: LeaveType.Annual,
+        startDate: '2026-07-01', endDate: '2026-07-02', days: 2,
+        reason: 'R', approver: 'M',
+      })
+      controller.createLeave(T2, {
+        employeeId: 'E2', employeeName: 'B', type: LeaveType.Sick,
+        startDate: '2026-08-01', endDate: '2026-08-03', days: 3,
+        reason: 'R', approver: 'M',
+      })
+
+      const stats1 = controller.getStats(TENANT)
+      const stats2 = controller.getStats(T2)
+
+      assert.equal(stats1.total, 1)
+      assert.equal(stats2.total, 1)
+      assert.equal(stats1.totalDays, 2)
+      assert.equal(stats2.totalDays, 3)
     })
   })
 })

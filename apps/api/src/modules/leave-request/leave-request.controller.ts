@@ -9,6 +9,7 @@ import {
 import { LeaveRequestService } from './leave-request.service'
 import { LeaveStatus } from './leave-request.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { type LeaveStats } from './leave-request.entity'
 
 @Controller('leave-requests')
 @UseGuards(TenantGuard)
@@ -85,6 +86,15 @@ export class LeaveRequestController {
     @Param('leaveId') leaveId: string,
   ) {
     return this.leaveService.cancelLeave(leaveId, tenantContext.tenantId)
+  }
+
+  // ── Statistics ──
+
+  @Get('stats')
+  getStats(
+    @TenantContext() tenantContext: RequestTenantContext,
+  ): LeaveStats {
+    return this.leaveService.getStats(tenantContext.tenantId)
   }
 
   // ── Mock Seed ──
