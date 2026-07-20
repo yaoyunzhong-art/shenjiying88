@@ -27,6 +27,8 @@ export interface MemberPrediction {
   riskLevel: RiskLevel
   churnProbability: number
   predictedChurnDate: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   mainReason: string
   suggestedAction: string
   lastActiveDate: string

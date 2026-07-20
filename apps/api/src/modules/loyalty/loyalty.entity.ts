@@ -80,6 +80,8 @@ export enum LoyaltyPlanStatus {
 export interface CouponPlan {
   planId: string
   tenantContext: RequestTenantContext
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   code: string
   title: string
   description?: string
@@ -99,6 +101,8 @@ export interface CouponPlan {
 export interface BlindboxPlan {
   planId: string
   tenantContext: RequestTenantContext
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   blindboxPlanId: string
   title: string
   description?: string
@@ -159,6 +163,8 @@ export interface BlindboxRewardResult {
 export interface PointsLedgerEntry {
   entryId: string
   tenantContext: RequestTenantContext
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   memberId: string
   orderId: string
   paymentId: string
@@ -170,6 +176,8 @@ export interface PointsLedgerEntry {
 export interface CouponRedemption {
   redemptionId: string
   tenantContext: RequestTenantContext
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   orderId: string
   paymentId: string
   memberId: string
@@ -181,6 +189,8 @@ export interface CouponRedemption {
 export interface BlindboxFulfillment {
   fulfillmentId: string
   tenantContext: RequestTenantContext
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   orderId: string
   paymentId: string
   memberId: string
@@ -213,6 +223,8 @@ export interface BlindboxMemberOverview {
 export interface LoyaltyOrderSettlement {
   settlementId: string
   tenantContext: RequestTenantContext
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   orderId: string
   paymentId: string
   memberId: string

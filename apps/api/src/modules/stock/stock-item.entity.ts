@@ -60,6 +60,11 @@ export class StockItem {
   @Column({ type: 'varchar', length: 20, default: StockItemStatus.ACTIVE })
   status!: StockItemStatus;
 
+  @Column({ type: 'varchar', name: 'tenant_id', length: 128, nullable: true })
+  @Index()
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId?: string;
+
   @Column({ type: 'varchar' })
   storeId!: string;
 

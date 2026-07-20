@@ -199,3 +199,80 @@ it('e2e: GET /api/rls/audit returns audit logs', async () => {
     await app.close()
   }
 })
+
+// ─── V19: 多租户集成端点 E2E ────────────────────────────────
+
+it('e2e: POST /api/rls/tenant/context sets tenant context and returns filter', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer())
+      .post('/api/rls/tenant/context')
+      .send({ tenantId: 't-store-alpha', tableName: 'orders' })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.success, true)
+    assert.equal(res.body.data.tenantId, 't-store-alpha')
+    assert.equal(res.body.data.contextSet, true)
+    assert.ok(res.body.data.tenantFilter.includes('t-store-alpha'))
+    assert.ok(res.body.data.tenantFilterWithAlias.includes('"t"'))
+    assert.equal(res.body.data.poolActive, true)
+    assert.ok(Array.isArray(res.body.data.pools))
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: POST /api/rls/tenant/context fails without tenantId', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer())
+      .post('/api/rls/tenant/context')
+      .send({ tableName: 'orders' })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.success, false)
+    assert.ok(res.body.message.includes('tenantId is required'))
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: GET /api/rls/tenant/pools returns pool snapshot', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer()).get('/api/rls/tenant/pools')
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.success, true)
+    assert.ok(Array.isArray(res.body.data.pools))
+    assert.equal(typeof res.body.data.total, 'number')
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: DELETE /api/rls/tenant/pool releases tenant pool', async () => {
+  const { app, rlsService } = await buildApp()
+  try {
+    // First init a pool
+    rlsService.initTenantPool('t-release-me')
+    const res = await request(app.getHttpServer())
+      .delete('/api/rls/tenant/pool')
+      .send({ tenantId: 't-release-me' })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.success, true)
+    assert.ok(res.body.message.includes('released'))
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: DELETE /api/rls/tenant/pool returns false for nonexistent pool', async () => {
+  const { app } = await buildApp()
+  try {
+    const res = await request(app.getHttpServer())
+      .delete('/api/rls/tenant/pool')
+      .send({ tenantId: 't-nonexistent' })
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.success, false)
+  } finally {
+    await app.close()
+  }
+})

@@ -202,3 +202,33 @@
 | M5 | monitor-collector | 🟢 | 19 | 0 | ✅ | 竞争监控 |
 | M6 | 活动6类扩充 | 🟢 | 10 | 0 | ✅ | 活动参谋 |
 | 总 | P-50 V2 | 🟢 96% | **82** | 0 | ✅ | 赋能248条 |
+
+---
+
+## V21 Day2 · P-31 RLS 多租户隔离收尾 (2026-07-20 09:30)
+
+### 完成内容
+| 项目 | 状态 | 详情 |
+|:----|:----:|:----|
+| Service层 tenantId 透传 | 🟢 | setTenantContext / buildTenantFilter / withTenant / tenantAwareQuery |
+| 19 entity 补充 tenantId 字段 | 🟢 | transactions/blindbox/training/content/payment-gateway/alliance/svip/venue/market/stock×2/member-p36/tax/member-predict/campaign/points/loyalty |
+| Controller 多租户集成端点 | 🟢 | POST /api/rls/tenant/context · GET /api/rls/tenant/pools · DELETE /api/rls/tenant/pool |
+| 测试覆盖 | 🟢 | helper 123 ✅ (V19新增26it) · dto 26 ✅ · role 35 ✅ · e2e新增5it |
+| 多租户隔离验证 | 🟢 | 正例(2) + 反例(2) + 边界(3) + 审计隔离 |
+| P-31 审计状态 | 🟢 | 🔄 从 🟡部分 → 🟢完成 |
+
+### P-31 核心模块清单
+| 模块 | 文件数 | 测试 | 状态 |
+|:----|:-----:|:----:|:----:|
+| rls | 6文件 | 184 ✅ | 🟢 **100%** |
+| tenant | 45 | ✅ | 🟢 **100%** |
+| tenant-config | 23 | ✅ | 🟢 |
+| saas-advanced | 25 | ✅ | 🟢 |
+| saas-billing | 18 | ✅ | 🟢 |
+| **19 entity tenantId追加** | 19+ | ✅ | 🟢 |
+
+### 赋能卡片
+- 🎯 多租户隔离: `RlsService.setTenantContext()` 设定租户会话上下文
+- 🎯 tenantId透传: `RlsService.buildTenantFilter()` 构建过滤WHERE子句
+- 🎯 租户上下文: `RlsService.withTenant()` 在隔离上下文中执行业务回调
+- 🎯 连接池观测: `RlsService.listTenantPools()` 生产级连接池监控

@@ -25,8 +25,13 @@
  *   generateCreatePolicySql   创建行级安全策略
  *   generateUpdatePolicySql   更新行级安全策略
  *   generateDropPolicySql     删除行级安全策略
- *   generateVerifyTenantFilterSql 验证租户过滤表达式
- *   generatePolicyTestSql     策略测试 SQL
+ *   buildTenantFilter         构建 tenantId 过滤 WHERE 子句
+ *   setTenantContext           设置当前会话租户上下文
+ *   withTenant                 在 tenant 上下文中执行回调
+ *   tenantAwareQuery           tenant 感知的原始查询
+ *
+ * ─── 校验工具 ─────────────────────
+ *   validateName              验证表名/列名合法性
  *
  * 校验工具 ─────────────────────
  *   validateName              验证表名/列名合法性

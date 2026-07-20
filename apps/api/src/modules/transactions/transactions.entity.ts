@@ -51,6 +51,8 @@ export enum TransactionRefundAssignmentAction {
 
 export interface TransactionRefundRecord {
   refundId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   tenantContext: CashierOrder['tenantContext']
   orderId: string
   paymentId: string
@@ -83,6 +85,8 @@ export interface TransactionAggregate {
 
 export interface LytOrderSnapshot {
   snapshotId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   tenantContext: CashierOrder['tenantContext']
   externalOrderId: string
   orderNo?: string
@@ -104,6 +108,8 @@ export interface LytOrderSnapshot {
 
 export interface LytPaymentSnapshot {
   snapshotId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   tenantContext: CashierOrder['tenantContext']
   externalPaymentId: string
   externalOrderId: string

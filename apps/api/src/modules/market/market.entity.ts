@@ -113,6 +113,9 @@ export class MarketProfile {
   /** ISO 3166-1 alpha-2 country code */
   countryCode!: CountryCode
 
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId!: string
+
   /** Locale configuration */
   locale!: MarketLocale
 

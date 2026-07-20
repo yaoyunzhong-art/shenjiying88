@@ -74,6 +74,11 @@ export class ContentEntity {
   @Index()
   publishedAt?: Date;
 
+  @Column({ name: 'tenant_id', type: 'varchar', length: 128, nullable: true })
+  @Index()
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

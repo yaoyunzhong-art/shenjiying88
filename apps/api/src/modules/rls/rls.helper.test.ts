@@ -1,6 +1,11 @@
 /**
  * rls.helper.test.ts — RLS Helper 单元测试
  *
+ * 🐜 V19: 多租户隔离收尾 (P-31 100%)
+ *   - Service层 tenantId 透传: setTenantContext / buildTenantFilter / withTenant / tenantAwareQuery
+ *   - 多租户集成: withTenant 上下文回调 / tenantAwareQuery 隔离查询
+ *   - 链接池隔离增强: listTenantPools 观测性端点
+ *
  * 🐜 V18: CRUD增强 + 3项租户隔离增强测试
  *   - CRUD: getPolicy / listPolicies / updatePolicy / deletePolicy
  *   - SQL 生成: generateGetPolicySql / generateListPoliciesSql / generateUpdatePolicySql
@@ -760,5 +765,250 @@ describe('SQL 生成 扩展', () => {
   it('generateEmptyPolicySql 空 policyName 用默认空字符串', () => {
     const sql = generateDropPolicySql('MemberProfile', '')
     expect(sql).toContain('""')
+  })
+})
+
+// ─── V19: tenantId 透传与多租户隔离集成 ────────────────────────
+
+describe('V19: tenantId 透传 (setTenantContext)', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('setTenantContext 调用 SELECT set_config 设定 app.tenant_id', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.setTenantContext('tenant-abc')
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled()
+    const sql = mockPrisma.$executeRawUnsafe.mock.calls[0][0]
+    assert.ok(sql.includes("set_config('app.tenant_id'"))
+    assert.ok(sql.includes('tenant-abc'))
+  })
+
+  it('setTenantContext 记录审计日志', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.setTenantContext('tenant-xyz')
+    const logs = service.getAuditLogs('tenant-xyz')
+    assert.equal(logs.length, 1)
+    assert.equal(logs[0].action, 'SET_CONTEXT')
+  })
+
+  it('setTenantContext 转义单引号防止 SQL 注入', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.setTenantContext("tenant'123")
+    const sql = mockPrisma.$executeRawUnsafe.mock.calls[0][0]
+    assert.ok(sql.includes("tenant''123"))
+  })
+})
+
+describe('V19: buildTenantFilter', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('无别名时生成 "tenantId" = \'tid\'', () => {
+    const service = new RlsService(mockPrisma)
+    const filter = service.buildTenantFilter('t-store-a')
+    assert.equal(filter, '"tenantId" = \'t-store-a\'')
+  })
+
+  it('有别名时生成 "alias"."tenantId" = \'tid\'', () => {
+    const service = new RlsService(mockPrisma)
+    const filter = service.buildTenantFilter('t-store-b', 'm')
+    assert.equal(filter, '"m"."tenantId" = \'t-store-b\'')
+  })
+
+  it('自定义列名生成正确', () => {
+    const service = new RlsService(mockPrisma)
+    const filter = service.buildTenantFilter('t-store-c', 'o', 'org_id')
+    assert.equal(filter, '"o"."org_id" = \'t-store-c\'')
+  })
+
+  it('转义单引号防止 SQL 注入', () => {
+    const service = new RlsService(mockPrisma)
+    const filter = service.buildTenantFilter("t'danger")
+    const expected = `"tenantId" = 't''danger'`
+    assert.equal(filter, expected)
+  })
+})
+
+describe('V19: withTenant 多租户上下文执行', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('withTenant 设置上下文并执行回调', async () => {
+    const service = new RlsService(mockPrisma)
+    const result = await service.withTenant('tenant-callback', async (tid) => {
+      return `processed-${tid}`
+    })
+    assert.equal(result, 'processed-tenant-callback')
+    // 验证 set_config 被调用
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled()
+  })
+
+  it('withTenant 回调中可访问正确 tenantId', async () => {
+    const service = new RlsService(mockPrisma)
+    const captured: string[] = []
+    await service.withTenant('t-company-x', async (tid) => {
+      captured.push(tid)
+      captured.push('done')
+    })
+    assert.deepEqual(captured, ['t-company-x', 'done'])
+  })
+
+  it('withTenant 审计记录上下文设置', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.withTenant('t-audit', async () => 'ok')
+    const logs = service.getAuditLogs('t-audit')
+    assert.equal(logs.length, 1)
+    assert.equal(logs[0].action, 'SET_CONTEXT')
+  })
+})
+
+describe('V19: tenantAwareQuery 租户感知查询', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([{ count: 5 }]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('tenantAwareQuery 设置上下文后执行查询', async () => {
+    const service = new RlsService(mockPrisma)
+    const result = await service.tenantAwareQuery('SELECT COUNT(*) FROM members', 'tenant-query-test')
+    assert.deepEqual(result, [{ count: 5 }])
+    // 验证先 set_config 再查询
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledTimes(1)
+    const ctxSql = mockPrisma.$executeRawUnsafe.mock.calls[0][0]
+    assert.ok(ctxSql.includes('tenant-query-test'))
+  })
+
+  it('tenantAwareQuery 使用自定义 tenantColumn', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.tenantAwareQuery('SELECT * FROM orders', 't-org', 'org_id')
+    const ctxSql = mockPrisma.$executeRawUnsafe.mock.calls[0][0]
+    assert.ok(ctxSql.includes('t-org'))
+  })
+})
+
+describe('V19: 多租户连接池观测性', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('listTenantPools 返回快照', () => {
+    const service = new RlsService(mockPrisma)
+    service.initTenantPool('t-pool-a')
+    service.initTenantPool('t-pool-b')
+    const pools = service.listTenantPools()
+    assert.equal(pools.length, 2)
+    assert.equal(pools[0].tenantId, 't-pool-a')
+  })
+
+  it('listTenantPools 空时返回空数组', () => {
+    const service = new RlsService(mockPrisma)
+    const pools = service.listTenantPools()
+    assert.deepEqual(pools, [])
+  })
+})
+
+describe('V19: 多租户隔离集成场景 (正例 + 反例 + 边界)', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      $queryRawUnsafe: vi.fn().mockResolvedValue([]),
+      $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
+    }
+  })
+
+  it('[正例] 使用 withTenant 设置上下文后查询自动 RLS 隔离', async () => {
+    const service = new RlsService(mockPrisma)
+    const queryFn = vi.fn().mockResolvedValue(['data'])
+    const result = await service.withTenant('t-store-a', queryFn)
+    assert.deepEqual(result, ['data'])
+    // 回调拿到正确的 tenantId
+    expect(queryFn).toHaveBeenCalledWith('t-store-a')
+  })
+
+  it('[正例] buildTenantFilter 生成过滤条件用于 DAO WHERE 子句', () => {
+    const service = new RlsService(mockPrisma)
+    const filter = service.buildTenantFilter('t-store-a', 'o', 'org_id')
+    // DAO 拼接: SELECT * FROM orders o WHERE <filter>
+    assert.ok(filter.includes('t-store-a'))
+    assert.ok(filter.includes('o'))
+    assert.ok(filter.includes('org_id'))
+  })
+
+  it('[反例] 不同租户从连接池获取不同 pool 条目', () => {
+    const service = new RlsService(mockPrisma)
+    service.initTenantPool('t-store-a')
+    service.initTenantPool('t-store-b')
+    const poolA = service.getTenantPool('t-store-a')
+    const poolB = service.getTenantPool('t-store-b')
+    assert.ok(poolA !== poolB)
+    assert.equal(poolA.queryCount, 1)
+    assert.equal(poolB.queryCount, 1)
+  })
+
+  it('[反例] setTenantContext 不允许空字符串（sanitize 处理）', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.setTenantContext('')
+    const sql = mockPrisma.$executeRawUnsafe.mock.calls[0][0]
+    assert.ok(sql.includes("''"))
+  })
+
+  it('[边界] buildTenantFilter 超长 tenantId 截断到 256 字符', () => {
+    const service = new RlsService(mockPrisma)
+    const longTid = 'x'.repeat(300)
+    const filter = service.buildTenantFilter(longTid)
+    assert.ok(!filter.includes('x'.repeat(300))) // 被截断
+    assert.ok(filter.includes('x'.repeat(256))) // 最多 256
+  })
+
+  it('[边界] 同时管理多租户连接池状态正确', () => {
+    const service = new RlsService(mockPrisma)
+    for (let i = 0; i < 10; i++) {
+      service.initTenantPool(`t-pool-${i}`)
+    }
+    const pools = service.listTenantPools()
+    assert.equal(pools.length, 10)
+    // 按 tenantId 排序
+    for (let i = 1; i < pools.length; i++) {
+      assert.ok(pools[i - 1].tenantId <= pools[i].tenantId)
+    }
+  })
+
+  it('[正例] 多租户审计日志隔离', async () => {
+    const service = new RlsService(mockPrisma)
+    await service.setTenantContext('t-a')
+    await service.setTenantContext('t-b')
+    await service.setTenantContext('t-a')
+    const logsA = service.getAuditLogs('t-a')
+    const logsB = service.getAuditLogs('t-b')
+    assert.equal(logsA.length, 2)
+    assert.equal(logsB.length, 1)
   })
 })

@@ -32,6 +32,8 @@ export type {
  * 联盟伙伴注册请求
  */
 export interface AllianceRegisterRequest {
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   name: string
   businessType: BusinessType
   contact: string
@@ -55,6 +57,8 @@ export interface AllianceListFilter {
   businessType?: BusinessType
   status?: PartnerStatus
   grade?: Grade
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId?: string
 }
 
 /**

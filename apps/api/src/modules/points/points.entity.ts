@@ -17,6 +17,8 @@ import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier
 export interface PointsRecord {
   id: string
   memberId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   /** 变动类型：award(奖励) / redeem(兑换) / transfer_in(转入) / transfer_out(转出) / expire(过期) / adjust(调整) */
   type: 'award' | 'redeem' | 'transfer_in' | 'transfer_out' | 'expire' | 'adjust'
   /** 变动数量（正数增加，负数减少） */
@@ -36,6 +38,8 @@ export interface PointsRecord {
 /** 积分账户 */
 export interface PointsAccount {
   memberId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId: string
   /** 当前可用积分 */
   balance: number
   /** 累计获得积分 */
