@@ -1,4 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { PushRecordEntity } from './push.entity'
 
 /**
  * Phase-32/33: 推送服务
@@ -7,6 +10,8 @@ import { Injectable, Logger } from '@nestjs/common'
  * - APNsService: iOS 推送 (P1-8 iOS 推送优先级)
  * - WebSocketService: WebSocket 连接管理 (P1-1 WebSocket 重连)
  * - PushNotificationScheduler: 定时推送调度
+ *
+ * Gate5-C1: deviceToken 持久化存储 (TypeORM + DB fallback)
  */
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -55,11 +60,17 @@ export interface WSMessage {
 export class APNsService {
   private readonly logger = new Logger(APNsService.name)
 
-  /** deviceToken → PushRecord[] */
-  private pushHistory = new Map<string, PushRecord[]>()
+  /** 内存 fallback (注入失败或测试环境时使用) */
+  private memoryStore = new Map<string, PushRecord[]>()
 
   /** APNs 生产环境配置 (实际应从配置中心注入) */
   private readonly APNS_ENDPOINT = 'https://api.push.apple.com/3/device/'
+
+  constructor(
+    @Optional()
+    @InjectRepository(PushRecordEntity)
+    private pushRecordRepo?: Repository<PushRecordEntity>,
+  ) {}
 
   /**
    * 发送 iOS 推送
@@ -82,8 +93,8 @@ export class APNsService {
       status: 'sent'
     }
 
-    // 记录历史
-    this.addToHistory(deviceToken, record)
+    // 持久化存储 (TypeORM repository)
+    await this.persistRecord(record)
 
     // 模拟 APNs 请求 (实际使用 node-apn / @parse/node-apn)
     const topic = payload.extra?.topic as string ?? 'com.shenjiying.app'
@@ -106,7 +117,6 @@ export class APNsService {
    * 吊销设备 Token (用户退出/注销时调用)
    */
   async revokeToken(deviceToken: string): Promise<void> {
-    const history = this.pushHistory.get(deviceToken) ?? []
     const revokedRecord: PushRecord = {
       id: `revoke_${Date.now()}`,
       deviceToken,
@@ -115,26 +125,83 @@ export class APNsService {
       sentAt: new Date().toISOString(),
       status: 'revoked'
     }
-    history.push(revokedRecord)
-    this.pushHistory.set(deviceToken, history)
+
+    // 持久化吊销记录
+    await this.persistRecord(revokedRecord)
+
     this.logger.log(`[APNs] Token revoked: ${deviceToken.slice(0, 8)}...`)
   }
 
   /**
-   * 获取推送历史
+   * 获取推送历史 (按 deviceToken)
    */
-  getPushHistory(deviceToken: string): PushRecord[] {
-    return this.pushHistory.get(deviceToken) ?? []
+  async getPushHistory(deviceToken: string): Promise<PushRecord[]> {
+    // 优先从 DB 读取
+    if (this.pushRecordRepo) {
+      try {
+        const entities = await this.pushRecordRepo.find({
+          where: { deviceToken },
+          order: { sentAt: 'DESC' },
+          take: 100,
+        })
+        return entities.map((e) => this.entityToRecord(e))
+      } catch {
+        // DB 不可用时降级到内存
+        this.logger.warn('DB read failed, falling back to memory store')
+      }
+    }
+
+    return this.memoryStore.get(deviceToken) ?? []
   }
 
-  private addToHistory(deviceToken: string, record: PushRecord): void {
-    const history = this.pushHistory.get(deviceToken) ?? []
+  private async persistRecord(record: PushRecord): Promise<void> {
+    // 写入 DB (优先)
+    if (this.pushRecordRepo) {
+      try {
+        const entity = PushRecordEntity.fromContract({
+          id: record.id,
+          deviceToken: record.deviceToken,
+          platform: 'iOS' as any,
+          payload: record.payload,
+          priority: record.priority === 'high' ? ('HIGH' as any) : ('NORMAL' as any),
+          status: record.status === 'sent' ? ('SENT' as any)
+            : record.status === 'failed' ? ('FAILED' as any)
+            : ('REVOKED' as any),
+          sentAt: record.sentAt,
+        })
+        await this.pushRecordRepo.save(entity)
+        return
+      } catch (err) {
+        this.logger.warn(`DB write failed, falling back to memory store: ${err}`)
+      }
+    }
+
+    // 内存 fallback
+    this.addToMemoryHistory(record.deviceToken, record)
+  }
+
+  private entityToRecord(entity: PushRecordEntity): PushRecord {
+    const payload = (entity.payload as unknown as iOSPayload) ?? { alert: '' }
+    return {
+      id: entity.id,
+      deviceToken: entity.deviceToken,
+      payload,
+      priority: entity.priority === 'HIGH' ? 'high' as const : 'normal' as const,
+      sentAt: entity.sentAt?.toISOString() ?? new Date().toISOString(),
+      status: entity.status === 'SENT' ? 'sent' as const
+        : entity.status === 'FAILED' ? 'failed' as const
+        : 'revoked' as const,
+    }
+  }
+
+  private addToMemoryHistory(deviceToken: string, record: PushRecord): void {
+    const history = this.memoryStore.get(deviceToken) ?? []
     history.push(record)
     // 保留最近 100 条
     if (history.length > 100) {
       history.shift()
     }
-    this.pushHistory.set(deviceToken, history)
+    this.memoryStore.set(deviceToken, history)
   }
 }
 

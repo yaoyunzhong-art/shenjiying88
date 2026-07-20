@@ -35,7 +35,7 @@ describe('APNsService', () => {
   it('should revoke token and record in history', async () => {
     const token = 'c'.repeat(64)
     await service.revokeToken(token)
-    const history = service.getPushHistory(token)
+    const history = await service.getPushHistory(token)
     assert.ok(history.length > 0)
     assert.equal(history[history.length - 1].status, 'revoked')
   })
@@ -43,7 +43,7 @@ describe('APNsService', () => {
   it('should record push in history', async () => {
     const token = 'd'.repeat(64)
     await service.pushToiOS(token, { alert: 'Test alert' }, 'high')
-    const history = service.getPushHistory(token)
+    const history = await service.getPushHistory(token)
     assert.ok(history.length > 0)
     assert.equal(history[0].payload.alert, 'Test alert')
   })
@@ -53,7 +53,7 @@ describe('APNsService', () => {
     for (let i = 0; i < 105; i++) {
       await service.pushToiOS(token, { alert: `Message ${i}` }, 'normal')
     }
-    const history = service.getPushHistory(token)
+    const history = await service.getPushHistory(token)
     assert.ok(history.length <= 100)
   })
 })

@@ -302,8 +302,8 @@ describe('PushController', () => {
   // ─── 统计与查询 ──────────────────────────────────────────
 
   describe('getStats', () => {
-    it('PUSH-CTRL-21 正例: 获取推送统计应包含所有字段', () => {
-      const stats = controller.getStats()
+    it('PUSH-CTRL-21 正例: 获取推送统计应包含所有字段', async () => {
+      const stats = await controller.getStats()
 
       expect(stats).toHaveProperty('totalSent')
       expect(stats).toHaveProperty('totalFailed')
@@ -330,7 +330,7 @@ describe('PushController', () => {
         alert: '历史消息2',
       })
 
-      const history = controller.getPushHistory(token)
+      const history = await controller.getPushHistory(token)
       expect(history.length).toBeGreaterThanOrEqual(2)
       expect(history[0].deviceToken).toBe(token)
       expect(history[0].status).toBe('SENT')

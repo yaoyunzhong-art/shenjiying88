@@ -94,7 +94,7 @@ describe(`${ROLES.Marketing} push 推送营销消息角色测试`, () => {
       priority: PushPriority.Normal,
     })
 
-    const history = ctrl.getPushHistory(deviceToken)
+    const history = await ctrl.getPushHistory(deviceToken)
     assert.ok(history.length >= 1)
     assert.equal(history[0].payload.alert, '周末特惠：充值满200送100！')
   })
@@ -195,7 +195,7 @@ describe(`${ROLES.Ops} push 系统通知推送角色测试`, () => {
       alert: '统计测试推送',
     })
 
-    const stats = ctrl.getStats()
+    const stats = await ctrl.getStats()
     // totalSent 在单次运行中取决于 APNsService 的 push 历史查询（按 deviceToken='*' 无匹配）
     // 这里仅验证 stat 结构完整性
     assert.ok(typeof stats.totalSent === 'number')
@@ -252,8 +252,8 @@ describe(`${ROLES.TenantAdmin} push 门店推送管理角色测试`, () => {
     assert.equal(result.success, true)
   })
 
-  it('店长可以查看门店推送统计效果（正常流程）', () => {
-    const stats = ctrl.getStats()
+  it('店长可以查看门店推送统计效果（正常流程）', async () => {
+    const stats = await ctrl.getStats()
     assert.ok(stats.totalSent >= 0)
     assert.ok(typeof stats.activeConnections === 'number')
   })
@@ -271,7 +271,7 @@ describe(`${ROLES.TenantAdmin} push 门店推送管理角色测试`, () => {
       alert: '会员提醒',
     })
 
-    const history = ctrl.getPushHistory(deviceToken)
+    const history = await ctrl.getPushHistory(deviceToken)
     assert.ok(history.length >= 2)
   })
 
@@ -281,7 +281,7 @@ describe(`${ROLES.TenantAdmin} push 门店推送管理角色测试`, () => {
     })
     assert.equal(result.success, true)
 
-    const history = ctrl.getPushHistory('device_token_to_revoke_abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890')
+    const history = await ctrl.getPushHistory('device_token_to_revoke_abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890')
     const revokedRecords = history.filter((r) => r.status === PushStatus.Revoked)
     assert.ok(revokedRecords.length >= 1)
   })

@@ -259,7 +259,7 @@ it('e2e: revoke token changes status', async () => {
   const { app, apnsService } = await buildApp()
   try {
     const deviceToken = 'dev_revoke_' + 'd'.repeat(58)
-    await apnsService.pushToiOS(deviceToken, { alert: 'before revoke' }, 'normal')
+    await apnsService.pushToiOS(deviceToken, { alert: 'before revoke' }, 'normal' as const)
 
     const res = await request(app.getHttpServer())
       .post('/push/revoke-token')
@@ -267,7 +267,7 @@ it('e2e: revoke token changes status', async () => {
     assert.equal(res.statusCode, 201)
     assert.equal(res.body.success, true)
 
-    const history = apnsService.getPushHistory(deviceToken)
+    const history = await apnsService.getPushHistory(deviceToken)
     assert.ok(history.some((r) => r.status === 'revoked'))
   } finally {
     await app.close()

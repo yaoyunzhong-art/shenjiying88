@@ -81,7 +81,7 @@ describe(`${ROLES.HR} push 人力推送管理角色测试`, () => {
       alert: '培训通知：本周五下午有安全培训',
     })
 
-    const history = ctrl.getPushHistory(deviceToken)
+    const history = await ctrl.getPushHistory(deviceToken)
     assert.ok(history.length >= 1)
     assert.equal(history[0].payload.alert, '培训通知：本周五下午有安全培训')
   })
@@ -119,7 +119,7 @@ describe(`${ROLES.Security} push 安全监控警报推送角色测试`, () => {
     assert.equal(result.success, true)
 
     // 验证推送历史中标记为 Revoked
-    const history = ctrl.getPushHistory(deviceToken)
+    const history = await ctrl.getPushHistory(deviceToken)
     assert.ok(history.some((r) => r.status === PushStatus.Revoked))
   })
 
@@ -318,7 +318,7 @@ describe(`${ROLES.TeamBuilding} push 团建活动推送角色测试`, () => {
       alert: '团建活动提醒：明早 8 点集合',
     })
 
-    const history = ctrl.getPushHistory(deviceToken)
+    const history = await ctrl.getPushHistory(deviceToken)
     assert.ok(history.length >= 1)
     assert.ok(history[0].id)
     assert.ok(history[0].status)

@@ -90,7 +90,7 @@ describe('APNsService', () => {
       const token = 'e'.repeat(64)
       await svc.pushToiOS(token, { alert: 'before revoke' }, 'normal')
       await svc.revokeToken(token)
-      const history = svc.getPushHistory(token)
+      const history = await svc.getPushHistory(token)
       const last = history[history.length - 1]
       expect(last.status).toBe('revoked')
     })
@@ -98,7 +98,7 @@ describe('APNsService', () => {
     it('PUSH-APNS-010 正例: 吊销不存在历史记录的 token 也应成功（无副作用）', async () => {
       const token = 'f'.repeat(64)
       await expect(svc.revokeToken(token)).resolves.toBeUndefined()
-      const history = svc.getPushHistory(token)
+      const history = await svc.getPushHistory(token)
       expect(history).toHaveLength(1)
       expect(history[0].status).toBe('revoked')
     })
@@ -111,14 +111,14 @@ describe('APNsService', () => {
       const token = 'g'.repeat(64)
       await svc.pushToiOS(token, { alert: 'first' }, 'high')
       await svc.pushToiOS(token, { alert: 'second' }, 'normal')
-      const history = svc.getPushHistory(token)
+      const history = await svc.getPushHistory(token)
       expect(history).toHaveLength(2)
       expect(history[0].status).toBe('sent')
       expect(history[1].status).toBe('sent')
     })
 
-    it('PUSH-APNS-012 边界: 无推送历史的 token 应返回空数组', () => {
-      const history = svc.getPushHistory('nonexistent_token_xxx'.repeat(4))
+    it('PUSH-APNS-012 边界: 无推送历史的 token 应返回空数组', async () => {
+      const history = await svc.getPushHistory('nonexistent_token_xxx'.repeat(4))
       expect(history).toEqual([])
     })
 
@@ -127,7 +127,7 @@ describe('APNsService', () => {
       for (let i = 0; i < 110; i++) {
         await svc.pushToiOS(token, { alert: `msg-${i}` }, 'normal')
       }
-      const history = svc.getPushHistory(token)
+      const history = await svc.getPushHistory(token)
       expect(history.length).toBeLessThanOrEqual(100)
     })
   })

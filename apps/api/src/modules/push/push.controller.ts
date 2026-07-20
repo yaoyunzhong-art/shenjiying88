@@ -65,7 +65,8 @@ function toEntityPushRecord(
     deviceToken: s.deviceToken,
     platform,
     payload: s.payload,
-    priority: s.priority === 'high' ? PushPriority.High : PushPriority.Normal,
+    // s.priority is 'high'|'normal' from service; PushPriority enum has 'HIGH'|'NORMAL'
+    priority: (s.priority as string) === 'high' ? PushPriority.High : PushPriority.Normal,
     status,
     sentAt: s.sentAt
   }
@@ -148,11 +149,11 @@ export class PushController {
           sound: body.sound,
           extra: { ...body.extra, tenantId: body.tenantId ?? tenantContext.tenantId }
         },
-        priority === PushPriority.High ? 'high' : 'normal'
+        priority === PushPriority.High ? 'high' as const : 'normal' as const
       )
 
       if (success) {
-        const history = this.apnsService.getPushHistory(body.deviceToken)
+        const history = await this.apnsService.getPushHistory(body.deviceToken)
         const record = history[history.length - 1]
         return { success, recordId: record.id }
       }
@@ -298,8 +299,8 @@ export class PushController {
    * 🎯 运行专员: 监控推送服务运行状态
    */
   @Get('stats')
-  getStats(): PushStats {
-    const history = this.apnsService.getPushHistory('*')
+  async getStats(): Promise<PushStats> {
+    const history = await this.apnsService.getPushHistory('*')
     const sentCount = history.filter((r) => r.status === 'sent').length
     const failedCount = history.filter((r) => r.status === 'failed').length
 
@@ -320,10 +321,10 @@ export class PushController {
    * 查询设备推送历史
    */
   @Get('history/:deviceToken')
-  getPushHistory(
+  async getPushHistory(
     @Param('deviceToken') deviceToken: string
-  ): PushRecord[] {
-    const records = this.apnsService.getPushHistory(deviceToken)
+  ): Promise<PushRecord[]> {
+    const records = await this.apnsService.getPushHistory(deviceToken)
     return records.map((r) => toEntityPushRecord(r))
   }
 

@@ -94,7 +94,7 @@ describe(`${ROLES.HR} push 人事通知推送角色测试`, () => {
       alert: '社保公积金缴纳提醒',
     })
 
-    const history = ctrl.getPushHistory(token)
+    const history = await ctrl.getPushHistory(token)
     assert.ok(history.length >= 2)
     assert.equal(history[0].payload.alert, '入职培训通知')
     assert.equal(history[1].payload.alert, '社保公积金缴纳提醒')
@@ -137,7 +137,7 @@ describe(`${ROLES.Safety} push 安全告警推送角色测试`, () => {
     const revokeResult = await ctrl.revokeToken({ deviceToken: token })
     assert.equal(revokeResult.success, true)
 
-    const history = ctrl.getPushHistory(token)
+    const history = await ctrl.getPushHistory(token)
     const revoked = history.filter((r) => r.status === PushStatus.Revoked)
     assert.ok(revoked.length >= 1)
   })
@@ -161,7 +161,7 @@ describe(`${ROLES.Safety} push 安全告警推送角色测试`, () => {
     assert.equal(result.success, true)
 
     // revokeToken 会创建一条 revoked 记录
-    const history = ctrl.getPushHistory('nonexistent_token_short')
+    const history = await ctrl.getPushHistory('nonexistent_token_short')
     assert.ok(history.length >= 1)
     assert.equal(history[0].status, PushStatus.Revoked)
   })
