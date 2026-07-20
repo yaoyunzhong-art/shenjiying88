@@ -58,7 +58,7 @@ const PAYMENT_LABELS: Record<PaymentMethodValue, string> = {
   member_card: '会员卡支付',
 };
 
-const DELIVERY_METHODS = ['express', 'self_pickup', 'dine_in'];
+const DELIVERY_METHODS = ['standard', 'express', 'pickup'];
 
 /* ── 辅助函数 ── */
 
@@ -70,9 +70,11 @@ function calcQuantity(cart: CartItem[]): number {
   return cart.reduce((sum, item) => sum + item.quantity, 0);
 }
 
-function calcDeliveryFee(subtotal: number): number {
-  if (subtotal >= 99) return 0;
-  if (subtotal >= 50) return 8;
+function calcDeliveryFee(subtotal: number, method: string = 'standard'): number {
+  // 与 page.tsx shippingFee 一致
+  if (method === 'pickup') return 0;
+  if (method === 'express') return 10; // EXPRESS_FEE
+  if (subtotal >= 199) return 0; // FREE_SHIPPING_THRESHOLD
   return 15;
 }
 
@@ -82,15 +84,15 @@ function calcTotal(subtotal: number, deliveryFee: number, discount: number = 0):
 
 function validateForm(data: CheckoutFormData): Record<string, string> {
   const errors: Record<string, string> = {};
-  if (!data.name.trim()) errors.name = '请填写收件人姓名';
-  if (!data.phone.trim()) errors.phone = '请填写手机号';
-  else if (!/^1\d{10}$/.test(data.phone.replace(/\s/g, ''))) errors.phone = '手机号格式不正确';
+  if (!data.name.trim()) errors.name = '请输入收件人姓名';
+  if (!data.phone.trim()) errors.phone = '请输入手机号';
+  else if (!/^1\d{10}$/.test(data.phone.trim())) errors.phone = '手机号格式不正确（11位数字）';
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = '邮箱格式不正确';
-  if (!data.address.trim()) errors.address = '请填写收货地址';
+  if (!data.address.trim()) errors.address = '请输入收货地址';
   if (!data.city.trim()) errors.city = '请输入所在城市';
   if (!data.deliveryMethod) errors.deliveryMethod = '请选择配送方式';
   if (!data.paymentMethod) errors.paymentMethod = '请选择支付方式';
-  if (!data.agreeTerms) errors.agreeTerms = '请同意服务条款';
+  if (!data.agreeTerms) errors.agreeTerms = '请先同意服务条款';
   return errors;
 }
 
@@ -186,30 +188,33 @@ describe('checkout — CartItem 数据', () => {
    ══════════════════════════════════════════════════════════ */
 
 describe('checkout — 配送费计算', () => {
-  it('14. 满 99 免运费', () => {
-    assert.equal(calcDeliveryFee(99), 0);
-    assert.equal(calcDeliveryFee(100), 0);
+  it('14. 满 199 免运费 (standard)', () => {
+    assert.equal(calcDeliveryFee(199), 0);
+    assert.equal(calcDeliveryFee(200), 0);
     assert.equal(calcDeliveryFee(999), 0);
   });
 
-  it('15. 满 50 不足 99 运费 8 元', () => {
-    assert.equal(calcDeliveryFee(50), 8);
-    assert.equal(calcDeliveryFee(89), 8);
-    assert.equal(calcDeliveryFee(98.99), 8);
-  });
-
-  it('16. 不足 50 运费 15 元', () => {
+  it('15. 不足 199 运费 15 元 (standard)', () => {
     assert.equal(calcDeliveryFee(0), 15);
-    assert.equal(calcDeliveryFee(30), 15);
-    assert.equal(calcDeliveryFee(49.99), 15);
+    assert.equal(calcDeliveryFee(50), 15);
+    assert.equal(calcDeliveryFee(100), 15);
+    assert.equal(calcDeliveryFee(198.99), 15);
   });
 
-  it('17. 边界值: 恰好 99', () => {
-    assert.equal(calcDeliveryFee(99), 0);
+  it('16. 加急配送运费固定 10 元', () => {
+    assert.equal(calcDeliveryFee(0, 'express'), 10);
+    assert.equal(calcDeliveryFee(100, 'express'), 10);
+    assert.equal(calcDeliveryFee(999, 'express'), 10);
   });
 
-  it('18. 边界值: 恰好 50', () => {
-    assert.equal(calcDeliveryFee(50), 8);
+  it('17. 门店自提免运费', () => {
+    assert.equal(calcDeliveryFee(0, 'pickup'), 0);
+    assert.equal(calcDeliveryFee(100, 'pickup'), 0);
+    assert.equal(calcDeliveryFee(999, 'pickup'), 0);
+  });
+
+  it('18. 边界值: 恰好 199 免运费', () => {
+    assert.equal(calcDeliveryFee(199), 0);
   });
 
   it('19. 负数金额也返回 15', () => {
@@ -279,9 +284,9 @@ describe('checkout — 表单验证', () => {
     remark: '', couponCode: '',
   };
 
-  it('29. 空表单返回 5 个错误', () => {
+  it('29. 空表单返回 7 个错误', () => {
     const errors = validateForm(EMPTY_FORM);
-    assert.ok(Object.keys(errors).length >= 5, '空表单应返回至少5个错误，实际: ' + Object.keys(errors).length);
+    assert.equal(Object.keys(errors).length, 7, '空表单应返回恰好7个错误，实际: ' + Object.keys(errors).length);
   });
 
   it('30. 姓名必填', () => {
@@ -291,12 +296,12 @@ describe('checkout — 表单验证', () => {
 
   it('31. 手机号必填', () => {
     const errors = validateForm(EMPTY_FORM);
-    assert.equal(errors.phone, '请填写手机号');
+    assert.equal(errors.phone, '请输入手机号');
   });
 
   it('32. 手机号格式验证', () => {
     const errors = validateForm({ ...EMPTY_FORM, phone: '12345' });
-    assert.equal(errors.phone, '手机号格式不正确');
+    assert.equal(errors.phone, '手机号格式不正确（11位数字）');
   });
 
   it('33. 有效手机号通过', () => {
@@ -307,7 +312,7 @@ describe('checkout — 表单验证', () => {
 
   it('34. 地址必填', () => {
     const errors = validateForm(EMPTY_FORM);
-    assert.equal(errors.address, '请填写收货地址');
+    assert.equal(errors.address, '请输入收货地址');
   });
 
   it('35. 配送方式必选', () => {
@@ -322,7 +327,7 @@ describe('checkout — 表单验证', () => {
 
   it('37. 必须同意服务条款', () => {
     const errors = validateForm(EMPTY_FORM);
-    assert.equal(errors.agreeTerms, '请同意服务条款');
+    assert.equal(errors.agreeTerms, '请先同意服务条款');
   });
 
   it('38. 完整表单通过验证', () => {
@@ -421,8 +426,8 @@ describe('checkout — 优惠券验证逻辑', () => {
 
   /* ── 配送费计算（真实逻辑） ── */
 
-  it('56. 门店自提(shippingFee:total) = 0', () => {
-    // 模拟: deliveryMethod === 'pickup' → 0
+  it('56. 门店自提免运费', () => {
+    // 与 page.tsx: deliveryMethod === 'pickup' → 0
     const subtotal = 50;
     const deliveryMethod = 'pickup';
     const fee = deliveryMethod === 'pickup' ? 0 : deliveryMethod === 'express' ? EXPRESS_FEE : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 15;
@@ -546,10 +551,8 @@ describe('checkout — 表单深层验证', () => {
 
   it('69. 非空邮箱格式错误应检测', () => {
     const errors = validateForm({ ...EMPTY_FORM, email: 'bademail', name: '张三', phone: '13800138000', address: '朝阳', city: '北京', deliveryMethod: 'express', paymentMethod: 'wechat', agreeTerms: true });
-    // validateForm 中: data.email && !/^…/.test(data.email) → email='bademail' 是truthy且格式错误
     assert.ok(errors.email, 'should detect bad email');
     assert.equal(errors.email, '邮箱格式不正确');
-    // 其他字段均有效
     assert.equal(Object.keys(errors).length, 1, 'should have exactly 1 error');
   });
 
@@ -559,9 +562,10 @@ describe('checkout — 表单深层验证', () => {
     assert.equal(Object.keys(errors).length, 0);
   });
 
-  it('71. 手机号带空格也应该通过', () => {
+  it('71. 手机号带空格不应该通过（page.trim不处理空格）', () => {
     const errors = validateForm({ ...EMPTY_FORM, phone: '138 0013 8000', name: '张三', address: '朝阳', city: '北京', deliveryMethod: 'express', paymentMethod: 'wechat', agreeTerms: true });
-    assert.equal(errors.phone, undefined, 'phone with spaces should be valid after strict test');
+    assert.ok(errors.phone, 'phone with spaces should be invalid because page uses trim() not replace(/\s/g, "")');
+    assert.equal(errors.phone, '手机号格式不正确（11位数字）');
   });
 
   it('72. 姓名纯空格应触发错误（trim后为空）', () => {
