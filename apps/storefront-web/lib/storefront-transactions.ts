@@ -192,7 +192,24 @@ function isDuplicateMemberError(error: unknown) {
 }
 
 function buildPaymentExpireAt(createdAt: string) {
-  return new Date(new Date(createdAt).getTime() + PAYMENT_TIMEOUT_MS).toISOString();
+  const createdAtMs = parseTimestampMs(createdAt);
+  if (createdAtMs === undefined) {
+    return undefined;
+  }
+  return new Date(createdAtMs + PAYMENT_TIMEOUT_MS).toISOString();
+}
+
+function parseTimestampMs(value?: string) {
+  if (!value) return undefined;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+function resolveExpireAt(expireAt?: string, createdAt?: string) {
+  if (parseTimestampMs(expireAt) !== undefined) {
+    return expireAt;
+  }
+  return createdAt ? buildPaymentExpireAt(createdAt) : undefined;
 }
 
 export function getRuntimePaymentStatus(
@@ -212,10 +229,11 @@ export function getRuntimePaymentStatus(
     return 'failed';
   }
 
+  const orderCreatedAtMs = parseTimestampMs(aggregate.order.createdAt);
   if (
     aggregate.order.closeReason === 'PAYMENT_TIMEOUT' ||
     aggregate.order.status === 'CLOSED' ||
-    new Date(aggregate.order.createdAt).getTime() + PAYMENT_TIMEOUT_MS <= nowMs
+    (orderCreatedAtMs !== undefined && orderCreatedAtMs + PAYMENT_TIMEOUT_MS <= nowMs)
   ) {
     return 'expired';
   }
@@ -231,12 +249,8 @@ export function mapAggregateToPaymentView(
   const status = getRuntimePaymentStatus(aggregate);
   const amount = aggregate.payment?.amount ?? aggregate.order.totalAmount;
   const createdAt = aggregate.payment?.createdAt ?? aggregate.order.createdAt;
-
-  const paymentRecord = aggregate.payment as (typeof aggregate.payment & {
-    qrCodeUrl?: string;
-    qrCode?: string;
-    paymentUrl?: string;
-  }) | undefined;
+  const paymentRecord = aggregate.payment;
+  const expireAt = status === 'pending' ? resolveExpireAt(paymentRecord?.expiresAt, createdAt) : undefined;
 
   return {
     orderId: aggregate.order.orderId,
@@ -246,9 +260,9 @@ export function mapAggregateToPaymentView(
     method,
     qrCode:
       status === 'pending'
-        ? paymentRecord?.qrCodeUrl ?? paymentRecord?.qrCode ?? paymentRecord?.paymentUrl
+        ? paymentRecord?.qrCodeUrl ?? paymentRecord?.paymentUrl
         : undefined,
-    expireAt: status === 'pending' ? buildPaymentExpireAt(createdAt) : undefined,
+    expireAt,
     paidAt: aggregate.payment?.completedAt ?? aggregate.order.paidAt,
     createdAt,
     storeId: DEFAULT_STOREFRONT_SCOPE.storeId,

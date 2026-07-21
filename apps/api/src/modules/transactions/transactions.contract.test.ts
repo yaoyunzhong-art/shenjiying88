@@ -132,6 +132,9 @@ it('toTransactionAggregateContract maps paid order without refunds', () => {
     channel: 'wechat',
     amount: 99,
     status: 'SUCCEEDED',
+    qrCodeUrl: 'https://pay.example.com/qrcode/order-1.png',
+    paymentUrl: 'https://pay.example.com/pay/order-1',
+    expiresAt: '2026-06-23T08:20:00.000Z',
     createdAt: '2026-06-23T08:02:00.000Z',
     updatedAt: '2026-06-23T08:03:00.000Z',
   }
@@ -160,6 +163,9 @@ it('toTransactionAggregateContract maps paid order without refunds', () => {
   assert.equal(contract.currency, 'CNY')
   assert.equal(contract.paidAmount, 99)
   assert.equal(contract.paymentChannel, 'wechat')
+  assert.equal(contract.paymentQrCodeUrl, 'https://pay.example.com/qrcode/order-1.png')
+  assert.equal(contract.paymentUrl, 'https://pay.example.com/pay/order-1')
+  assert.equal(contract.paymentExpiresAt, '2026-06-23T08:20:00.000Z')
   assert.equal(contract.paidAt, '2026-06-23T08:03:00.000Z')
   assert.equal(contract.refundedAmount, 0)
   assert.equal(contract.refundStatus, undefined)

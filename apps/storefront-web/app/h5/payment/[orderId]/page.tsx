@@ -85,6 +85,10 @@ export default function PaymentPage() {
     }
 
     const expireTime = new Date(payment.expireAt).getTime();
+    if (!Number.isFinite(expireTime)) {
+      setCountdown(0);
+      return;
+    }
     const updateCountdown = () => {
       const remaining = Math.max(0, Math.floor((expireTime - Date.now()) / 1000));
       setCountdown(remaining);

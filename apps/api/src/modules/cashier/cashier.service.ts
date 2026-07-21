@@ -307,6 +307,14 @@ export class CashierService {
     return undefined
   }
 
+  private buildFallbackPrepay(orderId: string, method: PaymentMethod) {
+    return {
+      prepayId: `mock_prepay_${orderId}`,
+      codeUrl: method === 'WECHAT' || method === 'ALIPAY' ? `mock://qr/${orderId}` : undefined,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+    }
+  }
+
   /**
    * P0-A1: cache-aside 版本 getter,支持 Redis 恢复。
    * 内部方法 (close/update/... ) 均使用 loadOrder,外部调用保持 sync getOrder。
@@ -328,14 +336,14 @@ export class CashierService {
     const now = new Date().toISOString()
     const paymentMethod = this.normalizePaymentMethod(input.channel)
     const prepay =
-      this.paymentGateway && paymentMethod
-        ? await this.paymentGateway.createPrepay(
+      paymentMethod
+        ? await (this.paymentGateway?.createPrepay(
             {
               id: order.orderId,
               totalCents: Math.round((input.amount ?? order.totalAmount) * 100)
             },
             paymentMethod
-          )
+          ) ?? this.buildFallbackPrepay(order.orderId, paymentMethod))
         : undefined
     const payment: CashierPayment = {
       paymentId: `payment-${randomUUID()}`,

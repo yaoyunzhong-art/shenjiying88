@@ -113,6 +113,9 @@ describe('TransactionsService', () => {
     assert.equal(aggregate.order.totalAmount, 100)
     assert.ok(aggregate.payment)
     assert.equal(aggregate.payment?.channel, 'wechat-pay')
+    assert.equal(aggregate.payment?.qrCodeUrl, `mock://qr/${aggregate.order.orderId}`)
+    assert.equal(aggregate.payment?.paymentUrl, `mock://qr/${aggregate.order.orderId}`)
+    assert.match(aggregate.payment?.expiresAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
   })
 
   it('getOrderTransaction returns aggregate for existing order', async () => {

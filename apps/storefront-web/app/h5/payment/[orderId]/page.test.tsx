@@ -138,17 +138,70 @@ describe('PaymentPage helper - 视图模型', () => {
     assert.equal(view.storeId, DEFAULT_STOREFRONT_SCOPE.storeId);
   });
 
+  it('后端已提供 expiresAt 时应优先使用后端有效期', () => {
+    const aggregate = createAggregate({
+      payment: {
+        ...createAggregate().payment!,
+        expiresAt: '2026-07-20T10:12:34.000Z',
+      },
+    });
+
+    const view = mapAggregateToPaymentView(aggregate, 'wechat');
+    assert.equal(view.expireAt, '2026-07-20T10:12:34.000Z');
+  });
+
+  it('后端提供非法 expiresAt 时应回退到 createdAt 推导有效期', () => {
+    const aggregate = createAggregate({
+      payment: {
+        ...createAggregate().payment!,
+        expiresAt: 'not-a-valid-time',
+      },
+    });
+
+    const view = mapAggregateToPaymentView(aggregate, 'wechat');
+    assert.equal(view.expireAt, '2026-07-20T10:15:00.000Z');
+  });
+
   it('后端已提供二维码字段时应直接透传展示', () => {
     const aggregate = createAggregate({
       payment: {
         ...createAggregate().payment!,
         qrCodeUrl: 'https://pay.example.com/qrcode/order-001.png',
-      } as typeof createAggregate().payment & { qrCodeUrl: string },
+      },
     });
 
     const view = mapAggregateToPaymentView(aggregate, 'wechat');
     assert.equal(view.qrCode, 'https://pay.example.com/qrcode/order-001.png');
     assert.equal(view.status, 'pending');
+  });
+
+  it('后端未提供 qrCodeUrl 时应回退到 paymentUrl', () => {
+    const aggregate = createAggregate({
+      payment: {
+        ...createAggregate().payment!,
+        paymentUrl: 'https://pay.example.com/pay/order-001',
+      },
+    });
+
+    const view = mapAggregateToPaymentView(aggregate, 'wechat');
+    assert.equal(view.qrCode, 'https://pay.example.com/pay/order-001');
+  });
+
+  it('createdAt 非法时不应生成无效 expireAt，状态也不应误判为 expired', () => {
+    const aggregate = createAggregate({
+      order: {
+        ...createAggregate().order,
+        createdAt: 'invalid-created-at',
+      },
+      payment: {
+        ...createAggregate().payment!,
+        createdAt: 'invalid-created-at',
+      },
+    });
+
+    const view = mapAggregateToPaymentView(aggregate, 'wechat');
+    assert.equal(view.expireAt, undefined);
+    assert.equal(getRuntimePaymentStatus(aggregate, new Date('2026-07-20T12:00:00.000Z').getTime()), 'pending');
   });
 
   it('paid 订单不再携带二维码', () => {

@@ -55,6 +55,9 @@ describe('CashierService', () => {
     assert.equal(payment.status, CashierPaymentStatus.Pending)
     assert.equal(storedOrder?.status, CashierOrderStatus.PendingPayment)
     assert.equal(storedOrder?.latestPaymentId, payment.paymentId)
+    assert.equal(payment.qrCodeUrl, `mock://qr/${order.orderId}`)
+    assert.equal(payment.paymentUrl, `mock://qr/${order.orderId}`)
+    assert.match(payment.expiresAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
   })
   it('applyPaymentCallback marks payment succeeded and order paid', async () => {
     const memberService = new MemberService()
