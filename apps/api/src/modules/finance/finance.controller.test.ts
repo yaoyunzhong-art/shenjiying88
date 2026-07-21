@@ -744,6 +744,38 @@ describe('[finance] GET /finance/revenue/summary — 营收汇总', () => {
     await ctrl.getRevenueSummary(CTX, { storeId: 'store-bj', startDate: '2026-01-01T00:00:00.000Z' })
     assert.equal(capturedQuery?.storeId, 'store-bj')
   })
+
+  it('优先走 getRevenueSummaryResolved 持久化读链', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getRevenueSummary: () => {
+        throw new Error('should not use sync getRevenueSummary')
+      },
+      getRevenueSummaryResolved: async (_ctx, query) => {
+        resolvedCalled = query?.storeId === 'store-bj'
+        return {
+          storeId: query?.storeId,
+          totalRevenue: 0,
+          totalExpense: 0,
+          totalRefund: 0,
+          netRevenue: 0,
+          transactionCount: 0,
+          periodStart: '',
+          periodEnd: ''
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      getRevenueSummaryResolved: (
+        ctx: RequestTenantContext,
+        query?: RevenueSummaryQueryDto
+      ) => Promise<RevenueSummary>
+    })
+
+    const result = await ctrl.getRevenueSummary(CTX, { storeId: 'store-bj' })
+
+    assert.equal(result.storeId, 'store-bj')
+    assert.equal(resolvedCalled, true)
+  })
 })
 
 describe('[finance] GET /finance/revenue/daily — 日营收', () => {
@@ -754,6 +786,38 @@ describe('[finance] GET /finance/revenue/daily — 日营收', () => {
     assert.equal(result.date, '2026-06-15')
     assert.equal(result.revenue, 1500)
     assert.equal(result.netRevenue, 1100)
+  })
+
+  it('优先走 getDailyRevenueResolved 持久化读链', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getDailyRevenue: () => {
+        throw new Error('should not use sync getDailyRevenue')
+      },
+      getDailyRevenueResolved: async (_ctx, query) => {
+        resolvedCalled = query.date === '2026-06-16'
+        return {
+          date: query.date,
+          storeId: 'store-default',
+          revenue: 0,
+          expense: 0,
+          refund: 0,
+          netRevenue: 0,
+          transactionCount: 0
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      getDailyRevenueResolved: (
+        ctx: RequestTenantContext,
+        query: DailyRevenueQueryDto
+      ) => Promise<DailyRevenue>
+    })
+
+    const dto = Object.assign(new DailyRevenueQueryDto(), { date: '2026-06-16' })
+    const result = await ctrl.getDailyRevenue(CTX, dto)
+
+    assert.equal(result.date, '2026-06-16')
+    assert.equal(resolvedCalled, true)
   })
 })
 
