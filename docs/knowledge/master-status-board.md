@@ -1,8 +1,16 @@
 # 神机营 SaaS 主状态表
 
-> 最后更新: 2026-07-21
+> 最后更新: 2026-07-21 21:22
 > 口径: 以当前代码现状为准，PRD / 任务 / 验收文档为辅助对照
 > 当前聚焦: 下一批最该补的 5 项
+
+## 今日 V23 审计条件关闭（2026-07-21 21:22）
+
+| 条件 | 类型 | 验证结果 |
+|------|------|----------|
+| ✅ Gate5-C1: deviceToken持久化 | code+DB | PushRecordEntity (TypeORM @Entity) + push_records 表 — 已验证 |
+| ✅ Gate6-C1: 恶化熔断机制 | 脚本 | scripts/fail-safe-meltdown.sh — 存在+语法通过 |
+| ✅ G11#5: 知识退化机制 | 脚本+数据 | scripts/knowledge-decay.sh + decay-report-2026-07-21.md (297卡片, 6引用) — 已验证 |
 
 ## 状态口径
 
