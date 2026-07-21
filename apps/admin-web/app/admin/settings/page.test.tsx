@@ -62,8 +62,10 @@ function getProviderStatus(provider: { enabled: boolean; balance?: number; daily
   return 'healthy';
 }
 
-function checkQuotaRemaining(provider: { dailyCap: number; dailyUsed: number }): number {
-  return Math.max(0, provider.dailyCap - provider.dailyUsed);
+function checkQuotaRemaining(provider: { dailyCap?: number; dailyUsed?: number; dailyLimit?: number; dailySent?: number }): number {
+  const cap = provider.dailyCap ?? provider.dailyLimit ?? 0;
+  const used = provider.dailyUsed ?? provider.dailySent ?? 0;
+  return Math.max(0, cap - used);
 }
 
 // ===================================================================

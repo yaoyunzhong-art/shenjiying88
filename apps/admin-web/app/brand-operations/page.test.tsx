@@ -85,7 +85,7 @@ function getAssetTypeLabel(type: AssetType): string {
 
 function getCampaignStatusInfo(status: CampaignStatus): { label: string; variant: string } {
   const info = CAMPAIGN_STATUS[status];
-  return info ?? { label: status, variant: 'default' };
+  return info ? { label: info.l, variant: info.v } : { label: status, variant: 'default' };
 }
 
 function getCollabStatusLabel(status: CollabStatus): string {
