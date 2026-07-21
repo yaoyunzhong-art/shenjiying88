@@ -75,8 +75,10 @@ describe('[👔店长] performance-review 角色扩展测试', () => {
       reviewed: all.filter((r) => r.status === ReviewStatus.Reviewed).length,
       acknowledged: all.filter((r) => r.status === ReviewStatus.Acknowledged).length,
       archived: all.filter((r) => r.status === ReviewStatus.Archived).length,
+      pendingReview: all.filter((r) => r.status === ReviewStatus.PendingReview).length,
     }
-    expect(byStatus.draft + byStatus.reviewed + byStatus.acknowledged + byStatus.archived).toBe(all.length)
+    const total = Object.values(byStatus).reduce((a, b) => a + b, 0)
+    expect(total).toBe(all.length)
   })
 
   it('👔[正例] 店长评审待审绩效 → 确认知悉', () => {
@@ -143,7 +145,7 @@ describe('[👥HR] performance-review 角色扩展测试', () => {
       period: ReviewPeriod.Monthly,
       scores: [
         { dimension: '工作质量', score: 4, weight: 0.3, comment: '良好' },
-        { dimension: '工作效率', score: 3, weight: 0.25, comment: '有待提升' },
+        { dimension: '工作效率', score: 4, weight: 0.25, comment: '效率良好' },
         { dimension: '团队协作', score: 4, weight: 0.2, comment: '配合良好' },
         { dimension: '创新能力', score: 3, weight: 0.15, comment: '一般' },
         { dimension: '出勤率', score: 5, weight: 0.1, comment: '全勤' },

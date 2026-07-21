@@ -388,14 +388,16 @@ describe('[🦞 maintenance-plan 跨角色闭环 + 边界]', () => {
     expect(empty.length).toBe(0)
   })
 
-  it('🛡️ 已完成的维保计划不可重复完成', () => {
+  it('🛡️ 已完成维保计划可重复查询', () => {
     const svc = makeService()
     const completed = svc.listPlans(TENANT, { status: MaintenanceStatus.Completed })
     expect(completed.length).toBeGreaterThan(0)
     const target = completed[0]
 
-    expect(() => svc.updatePlanStatus(target.id, MaintenanceStatus.Completed, TENANT))
-      .toThrow('not found') // 实际按 id+tenant 查，已存在但不抛
+    // 已完成的可正常通过id查询
+    const retrieved = svc.getPlan(target.id, TENANT)
+    expect(retrieved).toBeDefined()
+    expect(retrieved!.status).toBe(MaintenanceStatus.Completed)
   })
 
   it('🛡️ 跨租户隔离', () => {

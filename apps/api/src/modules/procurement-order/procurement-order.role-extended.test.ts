@@ -280,6 +280,7 @@ describe('[🎯运行专员] procurement-order 角色扩展测试', () => {
       orderedAt: '2026-07-21T00:00:00.000Z',
       expectedAt: '2026-07-28T00:00:00.000Z',
     })
+    svc.updateOrderStatus(order.id, ProcurementStatus.PendingApproval, TENANT)
     svc.updateOrderStatus(order.id, ProcurementStatus.Approved, TENANT)
     svc.updateOrderStatus(order.id, ProcurementStatus.Shipped, TENANT)
 
@@ -300,7 +301,7 @@ describe('[🎯运行专员] procurement-order 角色扩展测试', () => {
     const svc = makeService()
     const approved = svc.listOrders(TENANT, { status: ProcurementStatus.Approved })
     if (approved.length > 0) {
-      expect(() => svc.deleteOrder(approved[0].id, TENANT)).toThrow('only draft or cancelled')
+      expect(() => svc.deleteOrder(approved[0].id, TENANT)).toThrow('Only draft or cancelled')
     }
   })
 
