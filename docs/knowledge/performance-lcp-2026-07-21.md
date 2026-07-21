@@ -1,6 +1,6 @@
 # ⚡ LCP 性能优化报告 (LCP Performance Optimization Report)
 
-> 生成日期: 2026-07-21 09:17:48 +08:00
+> 生成日期: 2026-07-21 09:25:06 +08:00
 > 来源: `scripts/performance-lcp-check.sh`
 
 ---
@@ -13,18 +13,18 @@
 | 总页面数 | 439 |
 | admin-web 页面 | 268 个 |
 | storefront-web 页面 | 171 个 |
-| 已配置 loading.tsx | 0 页 |
-| **缺少 loading.tsx** | **439 页** |
+| 已配置 loading.tsx | 186 页 |
+| **缺少 loading.tsx** | **253 页** |
 | 大 bundle 引用 | 6 处 |
-| LCP 门禁通过 | 0 页 |
-| LCP 门禁未通过 | 439 页 |
+| LCP 门禁通过 | 186 页 |
+| LCP 门禁未通过 | 253 页 |
 
 ### G4 LCP 门禁判定
 
 | 标准 | 判定 |
 |------|------|
 | LCP < 2000ms (功能基线) | ⚠️ 需要优化 |
-| loading.tsx 覆盖率 | ⚠️ 0% |
+| loading.tsx 覆盖率 | ⚠️ 42% |
 | 大 bundle 引用 | ⚠️ 6 处 |
 
 ---
@@ -33,9 +33,9 @@
 
 ### 页面列表 (268 页)
 
-- ⚠️ app/admin/dashboard/page.tsx (loading.tsx 缺失)
-- ⚠️ app/admin/settings/page.tsx (loading.tsx 缺失)
-- ⚠️ app/admin/tenants/page.tsx (loading.tsx 缺失)
+- ✅ app/admin/dashboard/page.tsx (loading.tsx 已配置)
+- ✅ app/admin/settings/page.tsx (loading.tsx 已配置)
+- ✅ app/admin/tenants/page.tsx (loading.tsx 已配置)
 - ⚠️ app/agents/configs/page.tsx (loading.tsx 缺失)
 - ⚠️ app/agents/dashboard/page.tsx (loading.tsx 缺失)
 - ⚠️ app/agents/evaluations/page.tsx (loading.tsx 缺失)
@@ -62,12 +62,12 @@
 - ⚠️ app/audit-trail/page.tsx (loading.tsx 缺失)
 - ⚠️ app/audit-trail/records/[auditId]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/brand-operations/page.tsx (loading.tsx 缺失)
-- ⚠️ app/brands/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/brands/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/brands/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaign-rules/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaign-rules/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaigns/page.tsx (loading.tsx 缺失)
+- ✅ app/brands/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/brands/new/page.tsx (loading.tsx 已配置)
+- ✅ app/brands/page.tsx (loading.tsx 已配置)
+- ✅ app/campaign-rules/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/campaign-rules/page.tsx (loading.tsx 已配置)
+- ✅ app/campaigns/page.tsx (loading.tsx 已配置)
 - ⚠️ app/categories/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/categories/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/categories/page.tsx (loading.tsx 缺失)
@@ -79,16 +79,16 @@
 - ⚠️ app/configuration/page.tsx (loading.tsx 缺失)
 - ⚠️ app/configuration/secrets/[name]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/configuration/three-level/page.tsx (loading.tsx 缺失)
-- ⚠️ app/contracts/page.tsx (loading.tsx 缺失)
+- ✅ app/contracts/page.tsx (loading.tsx 已配置)
 - ⚠️ app/coupon-templates/page.tsx (loading.tsx 缺失)
-- ⚠️ app/coupons/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/coupons/form/page.tsx (loading.tsx 缺失)
-- ⚠️ app/coupons/page.tsx (loading.tsx 缺失)
+- ✅ app/coupons/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/coupons/form/page.tsx (loading.tsx 已配置)
+- ✅ app/coupons/page.tsx (loading.tsx 已配置)
 - ⚠️ app/crm/page.tsx (loading.tsx 缺失)
 - ⚠️ app/customer-tags/page.tsx (loading.tsx 缺失)
 - ⚠️ app/customers/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/customers/page.tsx (loading.tsx 缺失)
-- ⚠️ app/dashboard/page.tsx (loading.tsx 缺失)
+- ✅ app/dashboard/page.tsx (loading.tsx 已配置)
 - ⚠️ app/dev-tools/brand/campaigns/page.tsx (loading.tsx 缺失)
 - ⚠️ app/dev-tools/brand/dashboard/page.tsx (loading.tsx 缺失)
 - ⚠️ app/dev-tools/brand/page.tsx (loading.tsx 缺失)
@@ -102,17 +102,17 @@
 - ⚠️ app/equipment/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/equipment/page.tsx (loading.tsx 缺失)
 - ⚠️ app/feedback/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/budget/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/dashboard/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/invoices/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/payouts/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/profit-loss/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/reconciliation/discrepancies/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/reconciliation/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/reconciliation/rules/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/rules/page.tsx (loading.tsx 缺失)
+- ✅ app/finance/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/budget/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/dashboard/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/invoices/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/payouts/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/profit-loss/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/reconciliation/discrepancies/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/reconciliation/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/reconciliation/rules/page.tsx (loading.tsx 已配置)
+- ✅ app/finance/rules/page.tsx (loading.tsx 已配置)
 - ⚠️ app/fire-prevention/page.tsx (loading.tsx 缺失)
 - ⚠️ app/foundation/modules/[module]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/foundation/page.tsx (loading.tsx 缺失)
@@ -132,9 +132,9 @@
 - ⚠️ app/intelligence/monitor/page.tsx (loading.tsx 缺失)
 - ⚠️ app/intelligence/operations/page.tsx (loading.tsx 缺失)
 - ⚠️ app/intelligence/page.tsx (loading.tsx 缺失)
-- ⚠️ app/inventory/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/inventory/page.tsx (loading.tsx 缺失)
-- ⚠️ app/inventory/rules/page.tsx (loading.tsx 缺失)
+- ✅ app/inventory/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/inventory/page.tsx (loading.tsx 已配置)
+- ✅ app/inventory/rules/page.tsx (loading.tsx 已配置)
 - ⚠️ app/knowledge/page.tsx (loading.tsx 缺失)
 - ⚠️ app/license-renewal/page.tsx (loading.tsx 缺失)
 - ⚠️ app/llm-config/page.tsx (loading.tsx 缺失)
@@ -143,44 +143,44 @@
 - ⚠️ app/logistics/repairs/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/logistics/repairs/page.tsx (loading.tsx 缺失)
 - ⚠️ app/maintenance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/marketing/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/marketing/[id]/performance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/marketing/page.tsx (loading.tsx 缺失)
+- ✅ app/marketing/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/marketing/[id]/performance/page.tsx (loading.tsx 已配置)
+- ✅ app/marketing/page.tsx (loading.tsx 已配置)
 - ⚠️ app/markets/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/markets/page.tsx (loading.tsx 缺失)
 - ⚠️ app/member/activities/page.tsx (loading.tsx 缺失)
 - ⚠️ app/member/config/page.tsx (loading.tsx 缺失)
 - ⚠️ app/member/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/[id]/edit/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/[id]/receipts/[executionId]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/[id]/sources/[kind]/[sourceId]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/[id]/tasks/[taskId]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/cards/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/cards/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/create/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/form/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/import/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/levels/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/levels/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/reports/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/tiers/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/tiers/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/tiers/page.tsx (loading.tsx 缺失)
-- ⚠️ app/notifications/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/notifications/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/notifications/page.tsx (loading.tsx 缺失)
+- ✅ app/members/[id]/edit/page.tsx (loading.tsx 已配置)
+- ✅ app/members/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/[id]/receipts/[executionId]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/[id]/sources/[kind]/[sourceId]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/[id]/tasks/[taskId]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/cards/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/cards/page.tsx (loading.tsx 已配置)
+- ✅ app/members/create/page.tsx (loading.tsx 已配置)
+- ✅ app/members/form/page.tsx (loading.tsx 已配置)
+- ✅ app/members/import/page.tsx (loading.tsx 已配置)
+- ✅ app/members/levels/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/levels/page.tsx (loading.tsx 已配置)
+- ✅ app/members/page.tsx (loading.tsx 已配置)
+- ✅ app/members/reports/page.tsx (loading.tsx 已配置)
+- ✅ app/members/tiers/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/tiers/new/page.tsx (loading.tsx 已配置)
+- ✅ app/members/tiers/page.tsx (loading.tsx 已配置)
+- ✅ app/notifications/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/notifications/new/page.tsx (loading.tsx 已配置)
+- ✅ app/notifications/page.tsx (loading.tsx 已配置)
 - ⚠️ app/openapi/page.tsx (loading.tsx 缺失)
 - ⚠️ app/operations/sla/page.tsx (loading.tsx 缺失)
-- ⚠️ app/orders/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/orders/page.tsx (loading.tsx 缺失)
+- ✅ app/orders/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/orders/page.tsx (loading.tsx 已配置)
 - ⚠️ app/pad/[role]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/pad/page.tsx (loading.tsx 缺失)
-- ⚠️ app/page.tsx (loading.tsx 缺失)
+- ✅ app/page.tsx (loading.tsx 已配置)
 - ⚠️ app/payment-channels/page.tsx (loading.tsx 缺失)
 - ⚠️ app/points-rules/page.tsx (loading.tsx 缺失)
-- ⚠️ app/procurement/page.tsx (loading.tsx 缺失)
+- ✅ app/procurement/page.tsx (loading.tsx 已配置)
 - ⚠️ app/products/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/products/page.tsx (loading.tsx 缺失)
 - ⚠️ app/purchase-orders/[id]/page.tsx (loading.tsx 缺失)
@@ -193,55 +193,55 @@
 - ⚠️ app/recommendations/page.tsx (loading.tsx 缺失)
 - ⚠️ app/refunds/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/refunds/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/promotions-adjustments/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/revenue/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/sales-comparison/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/sales-summary/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/settlement-reconciliation/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/store-summary/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/tax-report/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/user-activity/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/user-portrait/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/venue-ranking/page.tsx (loading.tsx 缺失)
+- ✅ app/reports/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/promotions-adjustments/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/revenue/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/sales-comparison/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/sales-summary/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/settlement-reconciliation/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/store-summary/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/tax-report/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/user-activity/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/user-portrait/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/venue-ranking/page.tsx (loading.tsx 已配置)
 - ⚠️ app/resilience/page.tsx (loading.tsx 缺失)
 - ⚠️ app/resilience/recovery/[resource]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/resilience/retries/[key]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/resilience/signals/[signal]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/returns/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/returns/page.tsx (loading.tsx 缺失)
-- ⚠️ app/rules/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/rules/ai-decisions/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/rules/executions/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/rules/executions/page.tsx (loading.tsx 缺失)
-- ⚠️ app/rules/page.tsx (loading.tsx 缺失)
-- ⚠️ app/safety/page.tsx (loading.tsx 缺失)
+- ✅ app/rules/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/rules/ai-decisions/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/rules/executions/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/rules/executions/page.tsx (loading.tsx 已配置)
+- ✅ app/rules/page.tsx (loading.tsx 已配置)
+- ✅ app/safety/page.tsx (loading.tsx 已配置)
 - ⚠️ app/seo/geo-locations/page.tsx (loading.tsx 缺失)
 - ⚠️ app/seo/health/page.tsx (loading.tsx 缺失)
 - ⚠️ app/seo/metadata/page.tsx (loading.tsx 缺失)
 - ⚠️ app/seo/page.tsx (loading.tsx 缺失)
 - ⚠️ app/seo/sitemap/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/custom-fields/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/membership-levels/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/notification-templates/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/notifications/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/payment-config/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/permissions/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/promotion-rules/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/security/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/system-config/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/tax-rates/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/venue-config/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/workflow/page.tsx (loading.tsx 缺失)
+- ✅ app/settings/custom-fields/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/membership-levels/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/notification-templates/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/notifications/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/payment-config/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/permissions/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/promotion-rules/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/security/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/system-config/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/tax-rates/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/venue-config/page.tsx (loading.tsx 已配置)
+- ✅ app/settings/workflow/page.tsx (loading.tsx 已配置)
 - ⚠️ app/shop/analytics/page.tsx (loading.tsx 缺失)
 - ⚠️ app/shop/discount-rules/page.tsx (loading.tsx 缺失)
 - ⚠️ app/shop/fulfillment/page.tsx (loading.tsx 缺失)
 - ⚠️ app/shop/inventory/page.tsx (loading.tsx 缺失)
 - ⚠️ app/shop/order-reviews/page.tsx (loading.tsx 缺失)
-- ⚠️ app/staff/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/staff/page.tsx (loading.tsx 缺失)
+- ✅ app/staff/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/staff/page.tsx (loading.tsx 已配置)
 - ⚠️ app/stock-operations/page.tsx (loading.tsx 缺失)
 - ⚠️ app/stock-transfer/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/stock-transfer/form/page.tsx (loading.tsx 缺失)
@@ -251,39 +251,39 @@
 - ⚠️ app/stores/%5Bid%5D/logistics/page.tsx (loading.tsx 缺失)
 - ⚠️ app/stores/%5Bid%5D/platform/page.tsx (loading.tsx 缺失)
 - ⚠️ app/stores/%5Bid%5D/purchasing/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/analytics/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/audit/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/capability-access/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/cashier/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/devices/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/events/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/finance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/health-score/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/inspection/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/inventory/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/logistics/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/marketing/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/members/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/operations/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/orders/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/promotions/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/purchasing/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/reconciliation/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/reports/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/reservations/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/scheduling/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/security/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/service/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/settings/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/shift-handover/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/staff/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/tenant/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/[id]/training/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/form/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/page.tsx (loading.tsx 缺失)
-- ⚠️ app/stores/reports/page.tsx (loading.tsx 缺失)
+- ✅ app/stores/[id]/analytics/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/audit/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/capability-access/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/cashier/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/devices/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/events/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/finance/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/health-score/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/inspection/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/inventory/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/logistics/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/marketing/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/members/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/operations/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/orders/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/promotions/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/purchasing/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/reconciliation/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/reports/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/reservations/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/scheduling/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/security/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/service/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/settings/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/shift-handover/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/staff/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/tenant/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/[id]/training/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/form/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/new/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/page.tsx (loading.tsx 已配置)
+- ✅ app/stores/reports/page.tsx (loading.tsx 已配置)
 - ⚠️ app/suppliers/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/suppliers/form/page.tsx (loading.tsx 缺失)
 - ⚠️ app/suppliers/page.tsx (loading.tsx 缺失)
@@ -304,9 +304,6 @@
 
 ### 缺少 loading.tsx 的页面
 ⚠️ 以下页面缺失 loading.tsx:
-  - app/admin/dashboard/page.tsx
-  - app/admin/settings/page.tsx
-  - app/admin/tenants/page.tsx
   - app/agents/configs/page.tsx
   - app/agents/dashboard/page.tsx
   - app/agents/evaluations/page.tsx
@@ -333,12 +330,6 @@
   - app/audit-trail/page.tsx
   - app/audit-trail/records/[auditId]/page.tsx
   - app/brand-operations/page.tsx
-  - app/brands/[id]/page.tsx
-  - app/brands/new/page.tsx
-  - app/brands/page.tsx
-  - app/campaign-rules/[id]/page.tsx
-  - app/campaign-rules/page.tsx
-  - app/campaigns/page.tsx
   - app/categories/[id]/page.tsx
   - app/categories/new/page.tsx
   - app/categories/page.tsx
@@ -350,16 +341,11 @@
   - app/configuration/page.tsx
   - app/configuration/secrets/[name]/page.tsx
   - app/configuration/three-level/page.tsx
-  - app/contracts/page.tsx
   - app/coupon-templates/page.tsx
-  - app/coupons/[id]/page.tsx
-  - app/coupons/form/page.tsx
-  - app/coupons/page.tsx
   - app/crm/page.tsx
   - app/customer-tags/page.tsx
   - app/customers/new/page.tsx
   - app/customers/page.tsx
-  - app/dashboard/page.tsx
   - app/dev-tools/brand/campaigns/page.tsx
   - app/dev-tools/brand/dashboard/page.tsx
   - app/dev-tools/brand/page.tsx
@@ -373,17 +359,6 @@
   - app/equipment/[id]/page.tsx
   - app/equipment/page.tsx
   - app/feedback/page.tsx
-  - app/finance/[id]/page.tsx
-  - app/finance/budget/page.tsx
-  - app/finance/dashboard/page.tsx
-  - app/finance/invoices/page.tsx
-  - app/finance/page.tsx
-  - app/finance/payouts/page.tsx
-  - app/finance/profit-loss/page.tsx
-  - app/finance/reconciliation/discrepancies/[id]/page.tsx
-  - app/finance/reconciliation/page.tsx
-  - app/finance/reconciliation/rules/page.tsx
-  - app/finance/rules/page.tsx
   - app/fire-prevention/page.tsx
   - app/foundation/modules/[module]/page.tsx
   - app/foundation/page.tsx
@@ -403,9 +378,6 @@
   - app/intelligence/monitor/page.tsx
   - app/intelligence/operations/page.tsx
   - app/intelligence/page.tsx
-  - app/inventory/[id]/page.tsx
-  - app/inventory/page.tsx
-  - app/inventory/rules/page.tsx
   - app/knowledge/page.tsx
   - app/license-renewal/page.tsx
   - app/llm-config/page.tsx
@@ -414,44 +386,17 @@
   - app/logistics/repairs/[id]/page.tsx
   - app/logistics/repairs/page.tsx
   - app/maintenance/page.tsx
-  - app/marketing/[id]/page.tsx
-  - app/marketing/[id]/performance/page.tsx
-  - app/marketing/page.tsx
   - app/markets/[id]/page.tsx
   - app/markets/page.tsx
   - app/member/activities/page.tsx
   - app/member/config/page.tsx
   - app/member/page.tsx
-  - app/members/[id]/edit/page.tsx
-  - app/members/[id]/page.tsx
-  - app/members/[id]/receipts/[executionId]/page.tsx
-  - app/members/[id]/sources/[kind]/[sourceId]/page.tsx
-  - app/members/[id]/tasks/[taskId]/page.tsx
-  - app/members/cards/[id]/page.tsx
-  - app/members/cards/page.tsx
-  - app/members/create/page.tsx
-  - app/members/form/page.tsx
-  - app/members/import/page.tsx
-  - app/members/levels/[id]/page.tsx
-  - app/members/levels/page.tsx
-  - app/members/page.tsx
-  - app/members/reports/page.tsx
-  - app/members/tiers/[id]/page.tsx
-  - app/members/tiers/new/page.tsx
-  - app/members/tiers/page.tsx
-  - app/notifications/[id]/page.tsx
-  - app/notifications/new/page.tsx
-  - app/notifications/page.tsx
   - app/openapi/page.tsx
   - app/operations/sla/page.tsx
-  - app/orders/[id]/page.tsx
-  - app/orders/page.tsx
   - app/pad/[role]/page.tsx
   - app/pad/page.tsx
-  - app/page.tsx
   - app/payment-channels/page.tsx
   - app/points-rules/page.tsx
-  - app/procurement/page.tsx
   - app/products/[id]/page.tsx
   - app/products/page.tsx
   - app/purchase-orders/[id]/page.tsx
@@ -464,55 +409,22 @@
   - app/recommendations/page.tsx
   - app/refunds/[id]/page.tsx
   - app/refunds/page.tsx
-  - app/reports/[id]/page.tsx
-  - app/reports/page.tsx
-  - app/reports/promotions-adjustments/page.tsx
-  - app/reports/revenue/page.tsx
-  - app/reports/sales-comparison/page.tsx
-  - app/reports/sales-summary/page.tsx
-  - app/reports/settlement-reconciliation/page.tsx
-  - app/reports/store-summary/page.tsx
-  - app/reports/tax-report/page.tsx
-  - app/reports/user-activity/page.tsx
-  - app/reports/user-portrait/page.tsx
-  - app/reports/venue-ranking/page.tsx
   - app/resilience/page.tsx
   - app/resilience/recovery/[resource]/page.tsx
   - app/resilience/retries/[key]/page.tsx
   - app/resilience/signals/[signal]/page.tsx
   - app/returns/[id]/page.tsx
   - app/returns/page.tsx
-  - app/rules/[id]/page.tsx
-  - app/rules/ai-decisions/[id]/page.tsx
-  - app/rules/executions/[id]/page.tsx
-  - app/rules/executions/page.tsx
-  - app/rules/page.tsx
-  - app/safety/page.tsx
   - app/seo/geo-locations/page.tsx
   - app/seo/health/page.tsx
   - app/seo/metadata/page.tsx
   - app/seo/page.tsx
   - app/seo/sitemap/page.tsx
-  - app/settings/custom-fields/page.tsx
-  - app/settings/membership-levels/page.tsx
-  - app/settings/notification-templates/page.tsx
-  - app/settings/notifications/page.tsx
-  - app/settings/page.tsx
-  - app/settings/payment-config/page.tsx
-  - app/settings/permissions/page.tsx
-  - app/settings/promotion-rules/page.tsx
-  - app/settings/security/page.tsx
-  - app/settings/system-config/page.tsx
-  - app/settings/tax-rates/page.tsx
-  - app/settings/venue-config/page.tsx
-  - app/settings/workflow/page.tsx
   - app/shop/analytics/page.tsx
   - app/shop/discount-rules/page.tsx
   - app/shop/fulfillment/page.tsx
   - app/shop/inventory/page.tsx
   - app/shop/order-reviews/page.tsx
-  - app/staff/[id]/page.tsx
-  - app/staff/page.tsx
   - app/stock-operations/page.tsx
   - app/stock-transfer/[id]/page.tsx
   - app/stock-transfer/form/page.tsx
@@ -522,39 +434,6 @@
   - app/stores/%5Bid%5D/logistics/page.tsx
   - app/stores/%5Bid%5D/platform/page.tsx
   - app/stores/%5Bid%5D/purchasing/page.tsx
-  - app/stores/[id]/analytics/page.tsx
-  - app/stores/[id]/audit/page.tsx
-  - app/stores/[id]/capability-access/page.tsx
-  - app/stores/[id]/cashier/page.tsx
-  - app/stores/[id]/devices/page.tsx
-  - app/stores/[id]/events/page.tsx
-  - app/stores/[id]/finance/page.tsx
-  - app/stores/[id]/health-score/page.tsx
-  - app/stores/[id]/inspection/page.tsx
-  - app/stores/[id]/inventory/page.tsx
-  - app/stores/[id]/logistics/page.tsx
-  - app/stores/[id]/marketing/page.tsx
-  - app/stores/[id]/members/page.tsx
-  - app/stores/[id]/operations/page.tsx
-  - app/stores/[id]/orders/page.tsx
-  - app/stores/[id]/page.tsx
-  - app/stores/[id]/promotions/page.tsx
-  - app/stores/[id]/purchasing/page.tsx
-  - app/stores/[id]/reconciliation/page.tsx
-  - app/stores/[id]/reports/page.tsx
-  - app/stores/[id]/reservations/page.tsx
-  - app/stores/[id]/scheduling/page.tsx
-  - app/stores/[id]/security/page.tsx
-  - app/stores/[id]/service/page.tsx
-  - app/stores/[id]/settings/page.tsx
-  - app/stores/[id]/shift-handover/page.tsx
-  - app/stores/[id]/staff/page.tsx
-  - app/stores/[id]/tenant/page.tsx
-  - app/stores/[id]/training/page.tsx
-  - app/stores/form/page.tsx
-  - app/stores/new/page.tsx
-  - app/stores/page.tsx
-  - app/stores/reports/page.tsx
   - app/suppliers/[id]/page.tsx
   - app/suppliers/form/page.tsx
   - app/suppliers/page.tsx
@@ -591,7 +470,7 @@
 
 ### 页面列表 (171 页)
 
-- ⚠️ app/[...storeScope]/page.tsx (loading.tsx 缺失)
+- ✅ app/[...storeScope]/page.tsx (loading.tsx 已配置)
 - ⚠️ app/account/notifications/page.tsx (loading.tsx 缺失)
 - ⚠️ app/account/page.tsx (loading.tsx 缺失)
 - ⚠️ app/ai-decisions/[id]/page.tsx (loading.tsx 缺失)
@@ -601,34 +480,34 @@
 - ⚠️ app/ai-experiments/page.tsx (loading.tsx 缺失)
 - ⚠️ app/alerts/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/alerts/page.tsx (loading.tsx 缺失)
-- ⚠️ app/analytics/page.tsx (loading.tsx 缺失)
+- ✅ app/analytics/page.tsx (loading.tsx 已配置)
 - ⚠️ app/announcements/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/announcements/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/announcements/page.tsx (loading.tsx 缺失)
 - ⚠️ app/anomaly-frequency/page.tsx (loading.tsx 缺失)
-- ⚠️ app/appointments/page.tsx (loading.tsx 缺失)
-- ⚠️ app/booking/page.tsx (loading.tsx 缺失)
+- ✅ app/appointments/page.tsx (loading.tsx 已配置)
+- ✅ app/booking/page.tsx (loading.tsx 已配置)
 - ⚠️ app/bookshelf/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaigns/[id]/edit/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaigns/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaigns/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/campaigns/page.tsx (loading.tsx 缺失)
-- ⚠️ app/cashier/page.tsx (loading.tsx 缺失)
+- ✅ app/campaigns/[id]/edit/page.tsx (loading.tsx 已配置)
+- ✅ app/campaigns/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/campaigns/new/page.tsx (loading.tsx 已配置)
+- ✅ app/campaigns/page.tsx (loading.tsx 已配置)
+- ✅ app/cashier/page.tsx (loading.tsx 已配置)
 - ⚠️ app/categories/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/categories/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/categories/page.tsx (loading.tsx 缺失)
-- ⚠️ app/checkout/page.tsx (loading.tsx 缺失)
+- ✅ app/checkout/page.tsx (loading.tsx 已配置)
 - ⚠️ app/coach/page.tsx (loading.tsx 缺失)
-- ⚠️ app/coupons/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/coupons/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/coupons/page.tsx (loading.tsx 缺失)
+- ✅ app/coupons/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/coupons/new/page.tsx (loading.tsx 已配置)
+- ✅ app/coupons/page.tsx (loading.tsx 已配置)
 - ⚠️ app/customer-service/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/customer-service/page.tsx (loading.tsx 缺失)
 - ⚠️ app/customers/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/customers/page.tsx (loading.tsx 缺失)
-- ⚠️ app/dashboard/inventory/page.tsx (loading.tsx 缺失)
-- ⚠️ app/dashboard/page.tsx (loading.tsx 缺失)
-- ⚠️ app/dashboard/team/page.tsx (loading.tsx 缺失)
+- ✅ app/dashboard/inventory/page.tsx (loading.tsx 已配置)
+- ✅ app/dashboard/page.tsx (loading.tsx 已配置)
+- ✅ app/dashboard/team/page.tsx (loading.tsx 已配置)
 - ⚠️ app/delivery-tracking/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/delivery-tracking/page.tsx (loading.tsx 缺失)
 - ⚠️ app/departments/page.tsx (loading.tsx 缺失)
@@ -636,16 +515,16 @@
 - ⚠️ app/device-inspection/page.tsx (loading.tsx 缺失)
 - ⚠️ app/device-monitoring/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/device-monitoring/page.tsx (loading.tsx 缺失)
-- ⚠️ app/device-reservation/page.tsx (loading.tsx 缺失)
+- ✅ app/device-reservation/page.tsx (loading.tsx 已配置)
 - ⚠️ app/employee/performance/page.tsx (loading.tsx 缺失)
 - ⚠️ app/employee/schedule/page.tsx (loading.tsx 缺失)
 - ⚠️ app/employee/training/page.tsx (loading.tsx 缺失)
-- ⚠️ app/events/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/events/page.tsx (loading.tsx 缺失)
+- ✅ app/events/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/events/page.tsx (loading.tsx 已配置)
 - ⚠️ app/feedback/page.tsx (loading.tsx 缺失)
-- ⚠️ app/finance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/frontdesk/page.tsx (loading.tsx 缺失)
-- ⚠️ app/group-booking/page.tsx (loading.tsx 缺失)
+- ✅ app/finance/page.tsx (loading.tsx 已配置)
+- ✅ app/frontdesk/page.tsx (loading.tsx 已配置)
+- ✅ app/group-booking/page.tsx (loading.tsx 已配置)
 - ⚠️ app/h5/campaigns/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/h5/campaigns/page.tsx (loading.tsx 缺失)
 - ⚠️ app/h5/contact/page.tsx (loading.tsx 缺失)
@@ -659,62 +538,62 @@
 - ⚠️ app/help/contact/page.tsx (loading.tsx 缺失)
 - ⚠️ app/help/faq/page.tsx (loading.tsx 缺失)
 - ⚠️ app/help/page.tsx (loading.tsx 缺失)
-- ⚠️ app/insights/page.tsx (loading.tsx 缺失)
+- ✅ app/insights/page.tsx (loading.tsx 已配置)
 - ⚠️ app/inventory-keeper/page.tsx (loading.tsx 缺失)
 - ⚠️ app/inventory/page.tsx (loading.tsx 缺失)
 - ⚠️ app/maintenance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-card/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-center/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-churn/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-login/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-recharge/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-recharge/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-register/page.tsx (loading.tsx 缺失)
-- ⚠️ app/member-upgrade-path/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/growth/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/loyalty/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/payment/page.tsx (loading.tsx 缺失)
-- ⚠️ app/members/tier-distribution/page.tsx (loading.tsx 缺失)
+- ✅ app/member-card/page.tsx (loading.tsx 已配置)
+- ✅ app/member-center/page.tsx (loading.tsx 已配置)
+- ✅ app/member-churn/page.tsx (loading.tsx 已配置)
+- ✅ app/member-login/page.tsx (loading.tsx 已配置)
+- ✅ app/member-recharge/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/member-recharge/page.tsx (loading.tsx 已配置)
+- ✅ app/member-register/page.tsx (loading.tsx 已配置)
+- ✅ app/member-upgrade-path/page.tsx (loading.tsx 已配置)
+- ✅ app/members/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/members/growth/page.tsx (loading.tsx 已配置)
+- ✅ app/members/loyalty/page.tsx (loading.tsx 已配置)
+- ✅ app/members/new/page.tsx (loading.tsx 已配置)
+- ✅ app/members/page.tsx (loading.tsx 已配置)
+- ✅ app/members/payment/page.tsx (loading.tsx 已配置)
+- ✅ app/members/tier-distribution/page.tsx (loading.tsx 已配置)
 - ⚠️ app/messages/page.tsx (loading.tsx 缺失)
 - ⚠️ app/operations/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/operations/page.tsx (loading.tsx 缺失)
 - ⚠️ app/ops-manager/page.tsx (loading.tsx 缺失)
-- ⚠️ app/orders/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/orders/page.tsx (loading.tsx 缺失)
-- ⚠️ app/page.tsx (loading.tsx 缺失)
+- ✅ app/orders/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/orders/page.tsx (loading.tsx 已配置)
+- ✅ app/page.tsx (loading.tsx 已配置)
 - ⚠️ app/performance/page.tsx (loading.tsx 缺失)
 - ⚠️ app/point-history/page.tsx (loading.tsx 缺失)
-- ⚠️ app/products/[id]/edit/page.tsx (loading.tsx 缺失)
-- ⚠️ app/products/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/products/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/products/page.tsx (loading.tsx 缺失)
-- ⚠️ app/products/setmeal/page.tsx (loading.tsx 缺失)
-- ⚠️ app/promotions/[id]/edit/page.tsx (loading.tsx 缺失)
-- ⚠️ app/promotions/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/promotions/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/promotions/page.tsx (loading.tsx 缺失)
+- ✅ app/products/[id]/edit/page.tsx (loading.tsx 已配置)
+- ✅ app/products/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/products/new/page.tsx (loading.tsx 已配置)
+- ✅ app/products/page.tsx (loading.tsx 已配置)
+- ✅ app/products/setmeal/page.tsx (loading.tsx 已配置)
+- ✅ app/promotions/[id]/edit/page.tsx (loading.tsx 已配置)
+- ✅ app/promotions/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/promotions/new/page.tsx (loading.tsx 已配置)
+- ✅ app/promotions/page.tsx (loading.tsx 已配置)
 - ⚠️ app/purchase-orders/[id]/edit/page.tsx (loading.tsx 缺失)
 - ⚠️ app/purchase-orders/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/purchase-orders/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/purchase-orders/page.tsx (loading.tsx 缺失)
 - ⚠️ app/recommendations/page.tsx (loading.tsx 缺失)
-- ⚠️ app/refunds/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/refunds/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/refunds/page.tsx (loading.tsx 缺失)
+- ✅ app/refunds/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/refunds/new/page.tsx (loading.tsx 已配置)
+- ✅ app/refunds/page.tsx (loading.tsx 已配置)
 - ⚠️ app/replenishment/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/replenishment/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/replenishment/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/[id]/edit/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/new/page.tsx (loading.tsx 缺失)
-- ⚠️ app/reports/page.tsx (loading.tsx 缺失)
-- ⚠️ app/return-orders/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/return-orders/page.tsx (loading.tsx 缺失)
-- ⚠️ app/returns/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/returns/page.tsx (loading.tsx 缺失)
+- ✅ app/reports/[id]/edit/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/new/page.tsx (loading.tsx 已配置)
+- ✅ app/reports/page.tsx (loading.tsx 已配置)
+- ✅ app/return-orders/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/return-orders/page.tsx (loading.tsx 已配置)
+- ✅ app/returns/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/returns/page.tsx (loading.tsx 已配置)
 - ⚠️ app/reviews/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/reviews/page.tsx (loading.tsx 缺失)
 - ⚠️ app/sales-clerk/page.tsx (loading.tsx 缺失)
@@ -723,10 +602,10 @@
 - ⚠️ app/sales-guide/page.tsx (loading.tsx 缺失)
 - ⚠️ app/sales-performance/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/sales-performance/page.tsx (loading.tsx 缺失)
-- ⚠️ app/scheduling/[id]/page.tsx (loading.tsx 缺失)
-- ⚠️ app/scheduling/page.tsx (loading.tsx 缺失)
+- ✅ app/scheduling/[id]/page.tsx (loading.tsx 已配置)
+- ✅ app/scheduling/page.tsx (loading.tsx 已配置)
 - ⚠️ app/self-recharge/page.tsx (loading.tsx 缺失)
-- ⚠️ app/settings/page.tsx (loading.tsx 缺失)
+- ✅ app/settings/page.tsx (loading.tsx 已配置)
 - ⚠️ app/shift-handover/page.tsx (loading.tsx 缺失)
 - ⚠️ app/staff-performance/page.tsx (loading.tsx 缺失)
 - ⚠️ app/staff/page.tsx (loading.tsx 缺失)
@@ -761,11 +640,10 @@
 - ⚠️ app/task-center/[id]/page.tsx (loading.tsx 缺失)
 - ⚠️ app/task-center/new/page.tsx (loading.tsx 缺失)
 - ⚠️ app/task-center/page.tsx (loading.tsx 缺失)
-- ⚠️ app/team-building/[id]/page.tsx (loading.tsx 缺失)
+- ✅ app/team-building/[id]/page.tsx (loading.tsx 已配置)
 
 ### 缺少 loading.tsx 的页面
 ⚠️ 以下页面缺失 loading.tsx:
-  - app/[...storeScope]/page.tsx
   - app/account/notifications/page.tsx
   - app/account/page.tsx
   - app/ai-decisions/[id]/page.tsx
@@ -775,34 +653,19 @@
   - app/ai-experiments/page.tsx
   - app/alerts/[id]/page.tsx
   - app/alerts/page.tsx
-  - app/analytics/page.tsx
   - app/announcements/[id]/page.tsx
   - app/announcements/new/page.tsx
   - app/announcements/page.tsx
   - app/anomaly-frequency/page.tsx
-  - app/appointments/page.tsx
-  - app/booking/page.tsx
   - app/bookshelf/page.tsx
-  - app/campaigns/[id]/edit/page.tsx
-  - app/campaigns/[id]/page.tsx
-  - app/campaigns/new/page.tsx
-  - app/campaigns/page.tsx
-  - app/cashier/page.tsx
   - app/categories/[id]/page.tsx
   - app/categories/new/page.tsx
   - app/categories/page.tsx
-  - app/checkout/page.tsx
   - app/coach/page.tsx
-  - app/coupons/[id]/page.tsx
-  - app/coupons/new/page.tsx
-  - app/coupons/page.tsx
   - app/customer-service/[id]/page.tsx
   - app/customer-service/page.tsx
   - app/customers/[id]/page.tsx
   - app/customers/page.tsx
-  - app/dashboard/inventory/page.tsx
-  - app/dashboard/page.tsx
-  - app/dashboard/team/page.tsx
   - app/delivery-tracking/[id]/page.tsx
   - app/delivery-tracking/page.tsx
   - app/departments/page.tsx
@@ -810,16 +673,10 @@
   - app/device-inspection/page.tsx
   - app/device-monitoring/[id]/page.tsx
   - app/device-monitoring/page.tsx
-  - app/device-reservation/page.tsx
   - app/employee/performance/page.tsx
   - app/employee/schedule/page.tsx
   - app/employee/training/page.tsx
-  - app/events/[id]/page.tsx
-  - app/events/page.tsx
   - app/feedback/page.tsx
-  - app/finance/page.tsx
-  - app/frontdesk/page.tsx
-  - app/group-booking/page.tsx
   - app/h5/campaigns/[id]/page.tsx
   - app/h5/campaigns/page.tsx
   - app/h5/contact/page.tsx
@@ -833,62 +690,23 @@
   - app/help/contact/page.tsx
   - app/help/faq/page.tsx
   - app/help/page.tsx
-  - app/insights/page.tsx
   - app/inventory-keeper/page.tsx
   - app/inventory/page.tsx
   - app/maintenance/page.tsx
-  - app/member-card/page.tsx
-  - app/member-center/page.tsx
-  - app/member-churn/page.tsx
-  - app/member-login/page.tsx
-  - app/member-recharge/[id]/page.tsx
-  - app/member-recharge/page.tsx
-  - app/member-register/page.tsx
-  - app/member-upgrade-path/page.tsx
-  - app/members/[id]/page.tsx
-  - app/members/growth/page.tsx
-  - app/members/loyalty/page.tsx
-  - app/members/new/page.tsx
-  - app/members/page.tsx
-  - app/members/payment/page.tsx
-  - app/members/tier-distribution/page.tsx
   - app/messages/page.tsx
   - app/operations/[id]/page.tsx
   - app/operations/page.tsx
   - app/ops-manager/page.tsx
-  - app/orders/[id]/page.tsx
-  - app/orders/page.tsx
-  - app/page.tsx
   - app/performance/page.tsx
   - app/point-history/page.tsx
-  - app/products/[id]/edit/page.tsx
-  - app/products/[id]/page.tsx
-  - app/products/new/page.tsx
-  - app/products/page.tsx
-  - app/products/setmeal/page.tsx
-  - app/promotions/[id]/edit/page.tsx
-  - app/promotions/[id]/page.tsx
-  - app/promotions/new/page.tsx
-  - app/promotions/page.tsx
   - app/purchase-orders/[id]/edit/page.tsx
   - app/purchase-orders/[id]/page.tsx
   - app/purchase-orders/new/page.tsx
   - app/purchase-orders/page.tsx
   - app/recommendations/page.tsx
-  - app/refunds/[id]/page.tsx
-  - app/refunds/new/page.tsx
-  - app/refunds/page.tsx
   - app/replenishment/[id]/page.tsx
   - app/replenishment/new/page.tsx
   - app/replenishment/page.tsx
-  - app/reports/[id]/edit/page.tsx
-  - app/reports/[id]/page.tsx
-  - app/reports/new/page.tsx
-  - app/reports/page.tsx
-  - app/return-orders/[id]/page.tsx
-  - app/return-orders/page.tsx
-  - app/returns/[id]/page.tsx
-  - app/returns/page.tsx
   - app/reviews/[id]/page.tsx
   - app/reviews/page.tsx
   - app/sales-clerk/page.tsx
@@ -897,10 +715,7 @@
   - app/sales-guide/page.tsx
   - app/sales-performance/[id]/page.tsx
   - app/sales-performance/page.tsx
-  - app/scheduling/[id]/page.tsx
-  - app/scheduling/page.tsx
   - app/self-recharge/page.tsx
-  - app/settings/page.tsx
   - app/shift-handover/page.tsx
   - app/staff-performance/page.tsx
   - app/staff/page.tsx
@@ -935,7 +750,6 @@
   - app/task-center/[id]/page.tsx
   - app/task-center/new/page.tsx
   - app/task-center/page.tsx
-  - app/team-building/[id]/page.tsx
 
 ### 大 Bundle 引用
   page: app/member-center/page.tsx
@@ -981,7 +795,7 @@ export default function Loading() {
 | 指标 | 目标 | 当前状态 |
 |------|------|----------|
 | LCP (Largest Contentful Paint) | ≤2000ms | ⚠️ 待优化 |
-| loading.tsx 覆盖率 | 100% | 0% |
+| loading.tsx 覆盖率 | 100% | 42% |
 | 大 bundle 引用数 | 0 | 6 |
 
 ---
