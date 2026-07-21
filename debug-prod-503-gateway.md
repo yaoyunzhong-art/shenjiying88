@@ -1,7 +1,7 @@
 # Debug Session: prod-503-gateway
 
 ## Status
-- [OPEN]
+- [RESOLVED]
 
 ## Symptom
 - `https://admin.sportsant.net/` 返回 `503 Service Temporarily Unavailable`
@@ -69,6 +69,16 @@
 - 仓库已提供专门的恢复脚本 `scripts/refresh-acr-regcred.sh`，用途注明为：
   - `一键刷新 acr-regcred 避免 ImagePullBackOff`
 
+## Resolution
+
+- 已确认根因是 `m5/acr-regcred` 的 ACR 鉴权身份错误，而非 DNS、Ingress 或应用代码故障。
+- 临时密码路径已完成一次止血，证明刷新 `acr-regcred` 后 4 个正式工作负载可恢复拉镜像。
+- 固定密码路径首次失败后，进一步确认 Docker 登录用户名必须使用阿里云账户全名邮箱，不能使用数字 `userId`。
+- 仅修正 `acr-regcred.username` 后，再次重启 `m5-api / m5-admin-web / m5-storefront-web / m5-tob-web`，新 Pod 已恢复正常拉镜像并进入 `Running`。
+- `admin/store/tob/api.sportsant.net` 已恢复可访问，`api` 健康检查返回 `success: true`。
+- 结案与证据归档见：
+  - [2026-07-22-prod-503-acr-regcred-closeout.md](file:///Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/docs/knowledge/acceptance/2026-07-22-prod-503-acr-regcred-closeout.md)
+
 ## Rejected Hypotheses
 - 域名解析整体丢失
   - 当前证据：已排除
@@ -80,11 +90,7 @@
   - 当前证据：基本排除；当前更直接的上游故障是 4 个正式工作负载均未拉起
 
 ## Next Step
-- 继续在 ACK `容器组` / `查看事件` 中确认 `ImagePullBackOff` 的精确报错文案，区分：
-  - `acr-regcred` 缺失或过期
-  - ACR 仓库权限拒绝
-  - 镜像 digest/tag 不存在
-- 若事件文案印证凭据失效，则进入修复动作：
-  - 刷新 `m5/acr-regcred`
-  - 重启 `m5` namespace 下正式 Deployment
-  - 复核公网 `api/admin/store/tob.sportsant.net`
+- 将本次正确口径固化到发布前检查：
+  - `acr-regcred` 存在且位于 `m5`
+  - ACR Docker 登录用户名使用阿里云账户全名邮箱
+  - 发布后复核 4 个公网域名与新 Pod 拉镜像事件
