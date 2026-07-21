@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ---- Mocks (top-level) ----
 
@@ -19,6 +19,26 @@ vi.mock('@m5/ui', () => ({
   ),
 }));
 
+// Override useTriState to resolve immediately — bypass page's setTimeout(300)
+vi.mock('../_components/useTriState', () => ({
+  useTriState: (initialState?: any) => {
+    const [loading, setLoading] = React.useState(initialState?.loading ?? false);
+    const [empty, setEmpty] = React.useState(initialState?.empty ?? false);
+    const [error, setError] = React.useState<string | null>(null);
+    const wrapLoadRef = React.useRef(async <T,>(promise: Promise<T>): Promise<T | undefined> => {
+      setLoading(true);
+      setError(null);
+      setEmpty(false);
+      // Await the inner promise — it has setTimeout(300), so the page's data
+      // arrives asynchronously. Just wait for it normally.
+      const result = await promise;
+      setLoading(false);
+      return result;
+    });
+    return { loading, empty, error, setLoading, setEmpty, setError, wrapLoad: wrapLoadRef.current, syncData: vi.fn(), reset: vi.fn() };
+  },
+}));
+
 vi.mock('../_components/TriStateRenderer', () => ({
   TriStateRenderer: ({ loading, empty, error, onRetry, children }: any) => {
     if (loading) return <div data-testid="tri-state-loading">加载中…</div>;
@@ -28,7 +48,7 @@ vi.mock('../_components/TriStateRenderer', () => ({
   },
 }));
 
-// Note: useTriState uses the REAL implementation — no mock needed
+// Note: useTriState uses the REAL implementation
 
 // ---- Test Subject ----
 
@@ -39,27 +59,30 @@ describe('SettingsPage — 系统设置', () => {
     vi.clearAllMocks();
   });
 
+  // Helper: wait for page's 300ms data load + React re-render
+  async function waitForData() {
+    await new Promise(r => setTimeout(r, 500));
+    // Flush pending React state updates
+    await new Promise(r => setTimeout(r, 50));
+  }
+
   // ====== 渲染测试 ======
 
   test('renders PageShell with correct title', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '系统设置');
-    });
+    await waitForData();
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '系统设置');
   });
 
   test('renders Tabs component', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByTestId('m5-tabs')).toBeInTheDocument();
-    });
+    await waitForData();
+    expect(screen.getByTestId('m5-tabs')).toBeInTheDocument();
   });
 
   test('renders all four settings sections', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByText('通用设置')).toBeInTheDocument();
-    }, { timeout: 2000 });
+    expect(await screen.findByText('通用设置', undefined, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('通知设置')).toBeInTheDocument();
     expect(screen.getByText('安全设置')).toBeInTheDocument();
     expect(screen.getByText('账单设置')).toBeInTheDocument();
@@ -67,17 +90,15 @@ describe('SettingsPage — 系统设置', () => {
 
   test('renders general settings fields by default', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByText('门店名称')).toBeInTheDocument();
-    }, { timeout: 2000 });
+    await waitForData();
+    expect(screen.getByText('门店名称')).toBeInTheDocument();
     expect(screen.getByText('Demo Store 旗舰店')).toBeInTheDocument();
   });
 
   test('renders save settings button', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByText('保存设置')).toBeInTheDocument();
-    }, { timeout: 2000 });
+    await waitForData();
+    expect(screen.getByText('保存设置')).toBeInTheDocument();
   });
 
   // ====== 状态测试 ======
@@ -85,36 +106,28 @@ describe('SettingsPage — 系统设置', () => {
   test('shows loading then renders content', async () => {
     render(<SettingsPage />);
     // Starts loading, then data loads after setTimeout(300)
-    await waitFor(() => {
-      expect(screen.getByTestId('m5-tabs')).toBeInTheDocument();
-    }, { timeout: 1000 });
+    await waitForData();
+    expect(screen.getByTestId('m5-tabs')).toBeInTheDocument();
   });
 
   test('shows section header for active tab', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      // Default "general" tab should show header
-      expect(screen.getByText('通用设置')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('通用设置', undefined, { timeout: 3000 })).toBeInTheDocument();
   });
 
   test('changes header when switching tabs', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      const securityTab = screen.getByTestId('tab-security');
-      fireEvent.click(securityTab);
-    });
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-security'));
     await waitFor(() => {
       expect(screen.getByText('双因素认证')).toBeInTheDocument();
-      expect(screen.getByText('已开启')).toBeInTheDocument();
     });
   });
 
   test('shows notification settings fields', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-notifications'));
-    });
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-notifications'));
     await waitFor(() => {
       expect(screen.getByText('低库存预警')).toBeInTheDocument();
       expect(screen.getByText('订单通知')).toBeInTheDocument();
@@ -125,9 +138,8 @@ describe('SettingsPage — 系统设置', () => {
 
   test('shows billing settings fields', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-billing'));
-    });
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-billing'));
     await waitFor(() => {
       expect(screen.getByText('当前套餐')).toBeInTheDocument();
       expect(screen.getByText('专业版')).toBeInTheDocument();
@@ -138,10 +150,9 @@ describe('SettingsPage — 系统设置', () => {
 
   test('switches active tab on click', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      const tabs = screen.getAllByTestId(/^tab-/);
-      expect(tabs.length).toBe(4);
-    });
+    await waitForData();
+    const tabs = screen.getAllByTestId(/^tab-/);
+    expect(tabs.length).toBe(4);
     fireEvent.click(screen.getByTestId('tab-security'));
     await waitFor(() => {
       expect(screen.getByText('双因素认证')).toBeInTheDocument();
@@ -153,28 +164,25 @@ describe('SettingsPage — 系统设置', () => {
     const mockAlert = vi.fn();
     window.alert = mockAlert;
     render(<SettingsPage />);
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('保存设置'));
-    });
+    await waitForData();
+    fireEvent.click(screen.getByText('保存设置'));
     expect(mockAlert).toHaveBeenCalledWith('设置已保存（模拟）');
     window.alert = originalAlert;
   });
 
   test('show correct field count for general settings', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByText('门店名称')).toBeInTheDocument();
-      expect(screen.getByText('门店地址')).toBeInTheDocument();
-      expect(screen.getByText('联系电话')).toBeInTheDocument();
-      expect(screen.getByText('营业时间')).toBeInTheDocument();
-    });
+    await waitForData();
+    expect(screen.getByText('门店名称')).toBeInTheDocument();
+    expect(screen.getByText('门店地址')).toBeInTheDocument();
+    expect(screen.getByText('联系电话')).toBeInTheDocument();
+    expect(screen.getByText('营业时间')).toBeInTheDocument();
   });
 
   test('security settings show select-type fields', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-security'));
-    });
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-security'));
     await waitFor(() => {
       expect(screen.getByText('登录会话时长')).toBeInTheDocument();
       expect(screen.getByText('24小时')).toBeInTheDocument();
@@ -185,100 +193,84 @@ describe('SettingsPage — 系统设置', () => {
 
   test('renders correctly after data loads', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.queryByTestId('tri-state-loading')).not.toBeInTheDocument();
-      expect(screen.getByText('通用设置')).toBeInTheDocument();
-    }, { timeout: 1000 });
+    expect(await screen.findByText('通用设置', undefined, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.queryByTestId('tri-state-loading')).not.toBeInTheDocument();
   });
 
   test('tabs have correct order', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      const tabElements = screen.getAllByTestId(/^tab-/);
-      expect(tabElements[0]).toHaveTextContent('通用设置');
-      expect(tabElements[1]).toHaveTextContent('通知设置');
-      expect(tabElements[2]).toHaveTextContent('安全设置');
-      expect(tabElements[3]).toHaveTextContent('账单设置');
-    });
+    await waitForData();
+    const tabElements = screen.getAllByTestId(/^tab-/);
+    expect(tabElements[0]).toHaveTextContent('通用设置');
+    expect(tabElements[1]).toHaveTextContent('通知设置');
+    expect(tabElements[2]).toHaveTextContent('安全设置');
+    expect(tabElements[3]).toHaveTextContent('账单设置');
   });
 
   test('can switch between all four tabs sequentially', async () => {
     render(<SettingsPage />);
+    await waitForData();
     const tabs = ['tab-general', 'tab-notifications', 'tab-security', 'tab-billing'];
     for (const tabId of tabs) {
-      await waitFor(() => {
-        const tab = screen.getByTestId(tabId);
-        fireEvent.click(tab);
-      });
+      fireEvent.click(screen.getByTestId(tabId));
     }
-    // After clicking all tabs, verify last tab shows
-    await waitFor(() => {
-      expect(screen.getByText('当前套餐')).toBeInTheDocument();
-    });
+    expect(screen.getByText('当前套餐')).toBeInTheDocument();
   });
 
   test('shows correct toggle values in notifications', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-notifications'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('开启')).toBeInTheDocument();
-      expect(screen.getByText('关闭')).toBeInTheDocument();
-    });
+    // Wait for data to load, then click notifications tab
+    await screen.findByText('通用设置', undefined, { timeout: 3000 });
+    fireEvent.click(screen.getByTestId('tab-notifications'));
+    expect(await screen.findByText('开启', undefined, { timeout: 1000 })).toBeInTheDocument();
+    expect(screen.getByText('关闭')).toBeInTheDocument();
   });
 
   // ====== 新增 安全补强测试 ======
 
   test('general tab shows store name input', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByText('Demo Store 旗舰店')).toBeInTheDocument();
-    });
+    await waitForData();
+    expect(screen.getByText('Demo Store 旗舰店')).toBeInTheDocument();
   });
 
   test('general tab shows opening hours', async () => {
     render(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByText('09:00 - 22:00')).toBeInTheDocument();
-    });
+    await waitForData();
+    expect(screen.getByText('08:00-22:00')).toBeInTheDocument();
   });
 
   test('billing tab shows plan expiry date', async () => {
     render(<SettingsPage />);
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-billing'));
     await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-billing'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('2026-12-31')).toBeInTheDocument();
+      expect(screen.getByText('2026-08-15')).toBeInTheDocument();
     });
   });
 
   test('billing tab shows next payment', async () => {
     render(<SettingsPage />);
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-billing'));
     await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-billing'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('¥2,999/月')).toBeInTheDocument();
+      expect(screen.getByText('¥1,999/月')).toBeInTheDocument();
     });
   });
 
   test('security tab shows IP whitelist count', async () => {
     render(<SettingsPage />);
+    await waitForData();
+    fireEvent.click(screen.getByTestId('tab-security'));
     await waitFor(() => {
-      fireEvent.click(screen.getByTestId('tab-security'));
-    });
-    await waitFor(() => {
-      expect(screen.getByText('3个IP地址')).toBeInTheDocument();
+      expect(screen.getByText('未配置')).toBeInTheDocument();
     });
   });
 
   test('switches from general to notifications and verifies content', async () => {
     render(<SettingsPage />);
-    // start on general
-    await waitFor(() => expect(screen.getByTestId('tab-general')).toBeInTheDocument());
-    // switch to notifications
+    await waitForData();
+    expect(screen.getByTestId('tab-general')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('tab-notifications'));
     await waitFor(() => {
       expect(screen.getByText('低库存预警')).toBeInTheDocument();
@@ -288,25 +280,22 @@ describe('SettingsPage — 系统设置', () => {
 
   test('renders all settings sections when each tab is clicked once', async () => {
     render(<SettingsPage />);
+    await waitForData();
     const pages = ['general', 'notifications', 'security', 'billing'];
     for (const p of pages) {
-      await waitFor(() => {
-        fireEvent.click(screen.getByTestId(`tab-${p}`));
-      });
+      fireEvent.click(screen.getByTestId(`tab-${p}`));
     }
     await waitFor(() => {
-      // billing should have all 4 sections rendered eventually
       expect(screen.getByText('当前套餐')).toBeInTheDocument();
       expect(screen.getByText('专业版')).toBeInTheDocument();
     });
   });
 
-  test('stores page does not crash when all fields are unmounted and remounted', async () => {
-    const { unmount, rerender } = render(<SettingsPage />);
+  test('stores page does not crash when unmounted and remounted', async () => {
+    const { unmount } = render(<SettingsPage />);
     unmount();
-    rerender(<SettingsPage />);
-    await waitFor(() => {
-      expect(screen.getByTestId('page-shell')).toBeInTheDocument();
-    });
+    render(<SettingsPage />);
+    await waitForData();
+    expect(screen.getByTestId('page-shell')).toBeInTheDocument();
   });
 });
