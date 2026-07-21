@@ -13,6 +13,22 @@
 15:05 团队审计x3: P-35/P-38/P-49/P-47
 ```
 
+## V23 新增
+
+| 圈梁条目 | 日期 | 状态 |
+|:-----|:----:|:----:|
+| G5-C1 数据库层Prisma RLS自动拦截 | 2026-07-21 | ✅ 五道箍完成 |
+
+### G5-C1 五道箍验证
+
+| 箍 | 状态 | 证据 |
+|:--|:----:|------|
+| ① TSC通过 | ✅ | `npx tsc --noEmit -p apps/api/tsconfig.json` 0 errors |
+| ② 测试存在(0 fail·无skip) | ✅ | `rls.middleware-prisma.test.ts` 33 tests, 33 passed (正例+反例+边界) |
+| ③ 圈梁表更新 | ✅ | 本文档已更新 |
+| ④ PRD标记 | ✅ | `rls.middleware-prisma.ts` V20 安全基线标记 |
+| ⑤ 知识赋能 | ✅ | `scripts/check-prisma-rls.sh` 验证脚本 |
+
 ## 真实状态
 
 | 箍 | 覆盖率 | 状态 |
