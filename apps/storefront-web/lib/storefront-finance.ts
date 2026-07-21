@@ -1,32 +1,17 @@
-import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import {
+  createBusinessClient,
+  getDefaultApiBaseUrl,
+  type BusinessFinanceLedgerRecord,
+  type BusinessRevenueSummary,
+} from '@m5/sdk';
 import { DEFAULT_STOREFRONT_SCOPE, formatCurrency, type StorefrontScope } from './storefront-transactions';
 
 export type FinanceRange = 'all' | 'week' | 'month';
 export type FinanceRecordType = 'income' | 'expense' | 'refund' | 'adjustment';
 
-export interface StorefrontLedgerRecord {
-  id: string;
-  type: 'REVENUE' | 'EXPENSE' | 'REFUND' | 'ADJUSTMENT';
-  amount: number;
-  balance: number;
-  orderId?: string;
-  transactionId?: string;
-  description: string;
-  category?: string;
-  recordedAt: string;
-  createdAt: string;
-}
+export type StorefrontLedgerRecord = BusinessFinanceLedgerRecord;
 
-export interface StorefrontRevenueSummary {
-  storeId?: string;
-  totalRevenue: number;
-  totalExpense: number;
-  totalRefund: number;
-  netRevenue: number;
-  transactionCount: number;
-  periodStart: string;
-  periodEnd: string;
-}
+export type StorefrontRevenueSummary = BusinessRevenueSummary;
 
 export interface FinanceOverviewCard {
   label: string;
@@ -68,13 +53,38 @@ export interface StorefrontFinanceDashboard {
 }
 
 function createStorefrontFinanceClient(scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE) {
-  return new ApiClient({
-    baseUrl: getDefaultApiBaseUrl(),
-    tenantId: scope.tenantId,
-    brandId: scope.brandId,
-    storeId: scope.storeId,
-    marketCode: scope.marketCode,
-  });
+  const client = createBusinessClient(getDefaultApiBaseUrl());
+  const init: RequestInit = {
+    cache: 'no-store',
+    headers: {
+      'x-tenant-id': scope.tenantId,
+      'x-brand-id': scope.brandId,
+      'x-store-id': scope.storeId,
+      'x-market-code': scope.marketCode,
+    },
+  };
+
+  return {
+    getRevenueSummary: (query: { startDate: string; endDate: string }) =>
+      client.finance.getRevenueSummary(
+        {
+          storeId: scope.storeId,
+          startDate: query.startDate,
+          endDate: query.endDate,
+        },
+        init,
+      ),
+    listLedgers: (query: { recordedAfter: string; recordedBefore: string; limit: number }) =>
+      client.finance.listLedgers(
+        {
+          storeId: scope.storeId,
+          recordedAfter: query.recordedAfter,
+          recordedBefore: query.recordedBefore,
+          limit: query.limit,
+        },
+        init,
+      ),
+  };
 }
 
 export function getFinanceTypeLabel(type: FinanceRecordType) {
@@ -272,10 +282,7 @@ export async function getStorefrontRevenueSummary(
 ) {
   const client = createStorefrontFinanceClient(scope);
   const { startDate, endDate } = buildFinanceQueryWindow(range);
-  return client.getData<StorefrontRevenueSummary>(
-    `/finance/revenue/summary?storeId=${encodeURIComponent(scope.storeId)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
-    { cache: 'no-store' },
-  );
+  return client.getRevenueSummary({ startDate, endDate });
 }
 
 export async function listStorefrontLedgerRecords(
@@ -284,10 +291,11 @@ export async function listStorefrontLedgerRecords(
 ) {
   const client = createStorefrontFinanceClient(scope);
   const { startDate, endDate } = buildFinanceQueryWindow(range);
-  return client.getData<StorefrontLedgerRecord[]>(
-    `/finance/ledgers?storeId=${encodeURIComponent(scope.storeId)}&recordedAfter=${encodeURIComponent(startDate)}&recordedBefore=${encodeURIComponent(endDate)}&limit=200`,
-    { cache: 'no-store' },
-  );
+  return client.listLedgers({
+    recordedAfter: startDate,
+    recordedBefore: endDate,
+    limit: 200,
+  });
 }
 
 export async function loadStorefrontFinanceDashboard(

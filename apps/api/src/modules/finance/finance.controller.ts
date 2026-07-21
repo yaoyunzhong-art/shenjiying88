@@ -30,6 +30,31 @@ import { FinanceService } from './finance.service'
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 
+  private get resolvedFinanceService() {
+    return this.financeService as FinanceService & {
+      listLedgersResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: LedgerQueryDto
+      ) => Promise<ReturnType<FinanceService['listLedgers']>>
+      getLedgerResolved?: (
+        ledgerId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['getLedger']>>
+      getSettlementDetailResolved?: (
+        settlementId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['getSettlementDetail']>>
+      getRevenueSummaryResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: RevenueSummaryQueryDto
+      ) => Promise<ReturnType<FinanceService['getRevenueSummary']>>
+      getDailyRevenueResolved?: (
+        tenantContext: RequestTenantContext,
+        query: DailyRevenueQueryDto
+      ) => Promise<ReturnType<FinanceService['getDailyRevenue']>>
+    }
+  }
+
   // ── Ledger ──
 
   @Post('ledgers')
@@ -45,6 +70,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: LedgerQueryDto = {} as LedgerQueryDto
   ) {
+    if (this.resolvedFinanceService.listLedgersResolved) {
+      return this.resolvedFinanceService.listLedgersResolved(tenantContext, query)
+    }
     return this.financeService.listLedgers(tenantContext, query)
   }
 
@@ -53,6 +81,9 @@ export class FinanceController {
     @Param('ledgerId') ledgerId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.getLedgerResolved) {
+      return this.resolvedFinanceService.getLedgerResolved(ledgerId, tenantContext)
+    }
     return this.financeService.getLedger(ledgerId, tenantContext)
   }
 
@@ -137,6 +168,9 @@ export class FinanceController {
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.getSettlementDetailResolved) {
+      return this.resolvedFinanceService.getSettlementDetailResolved(settlementId, tenantContext)
+    }
     return this.financeService.getSettlementDetail(settlementId, tenantContext)
   }
 
@@ -205,6 +239,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: RevenueSummaryQueryDto = {} as RevenueSummaryQueryDto
   ) {
+    if (this.resolvedFinanceService.getRevenueSummaryResolved) {
+      return this.resolvedFinanceService.getRevenueSummaryResolved(tenantContext, query)
+    }
     return this.financeService.getRevenueSummary(tenantContext, query)
   }
 
@@ -213,6 +250,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: DailyRevenueQueryDto = {} as DailyRevenueQueryDto
   ) {
+    if (this.resolvedFinanceService.getDailyRevenueResolved) {
+      return this.resolvedFinanceService.getDailyRevenueResolved(tenantContext, query)
+    }
     return this.financeService.getDailyRevenue(tenantContext, query)
   }
 

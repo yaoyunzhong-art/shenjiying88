@@ -1,8 +1,5 @@
 /**
- * orders/page.test.tsx — 订单列表页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·边界·防御
- * 
- * page.tsx 使用完整内联实现（mock数据+逻辑+弹窗），不依赖 external components/OrdersPage
+ * orders/page.test.tsx — 订单列表页真实接口版结构护栏
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -23,9 +20,12 @@ describe('orders — 正例', () => {
     assert.ok(src.includes('export default function OrdersListPage'), '缺少默认导出');
   });
 
-  it('应包含订单数据 mock 生成逻辑', () => {
+  it('应接入真实订单 helper 与三态渲染', () => {
     const src = readSource();
-    assert.ok(src.includes('generateMockOrders'), '缺少 mock 数据生成');
+    assert.ok(src.includes('loadStorefrontOrders'), '应接入真实订单列表 helper');
+    assert.ok(src.includes('useTriState'), '应使用 useTriState');
+    assert.ok(src.includes('TriStateRenderer'), '应使用 TriStateRenderer');
+    assert.ok(src.includes('loadOrdersPage'), '应存在真实拉单函数');
   });
 
   it('应包含统计信息和 StatCard', () => {
@@ -44,11 +44,14 @@ describe('orders — 正例', () => {
     const src = readSource();
     assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
     assert.ok(src.includes('searchTerm'), '缺少搜索状态');
+    assert.ok(src.includes('statusFilter'), '缺少状态筛选');
+    assert.ok(src.includes('paymentFilter'), '缺少支付方式筛选');
   });
 
-  it('应包含订单金额渲染', () => {
+  it('应包含真实订单金额渲染', () => {
     const src = readSource();
-    assert.ok(src.includes('totalAmount') || src.includes('amount'), '缺少金额字段');
+    assert.ok(src.includes('totalAmount'), '缺少金额字段');
+    assert.ok(src.includes('paidAmount'), '缺少实付金额字段');
   });
 
   it('应包含订单号渲染', () => {
@@ -56,14 +59,9 @@ describe('orders — 正例', () => {
     assert.ok(src.includes('orderNo') || src.includes('orderId'), '缺少订单号');
   });
 
-  it('应包含会员/订户姓名渲染', () => {
+  it('应包含会员 ID 渲染', () => {
     const src = readSource();
-    assert.ok(src.includes('memberName') || src.includes('人姓名') || src.includes('姓名'), '缺少姓名字段');
-  });
-
-  it('应包含商品明细', () => {
-    const src = readSource();
-    assert.ok(src.includes('items') || src.includes('qty') || src.includes('price'), '缺少商品明细');
+    assert.ok(src.includes('memberId'), '缺少会员字段');
   });
 });
 
@@ -71,7 +69,7 @@ describe('orders — 边界', () => {
   it('应支持分页', () => {
     const src = readSource();
     assert.ok(src.includes('Pagination'), '缺少 Pagination');
-    assert.ok(src.includes('pageItems'), '缺少分页数据切片');
+    assert.ok(src.includes('pagedData'), '缺少分页数据切片');
   });
 
   it('应包含 EmptyState 空数据兜底', () => {
@@ -84,21 +82,19 @@ describe('orders — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('statusFilter'), '缺少状态筛选');
     assert.ok(src.includes('paymentFilter'), '缺少支付方式筛选');
+    assert.ok(src.includes('matchesStorefrontOrderStatusFilter'), '应使用共享状态过滤 helper');
+    assert.ok(src.includes('matchesStorefrontOrderPaymentFilter'), '应使用共享支付过滤 helper');
   });
 
-  it('应支持按时间排序', () => {
+  it('应支持按真实时间字段排序展示', () => {
     const src = readSource();
-    assert.ok(src.includes('orderTime') || src.includes('createdAt'), '缺少时间排序');
+    assert.ok(src.includes('createdAt'), '缺少时间字段');
   });
 
-  it('分页使用 page 变量', () => {
+  it('应点击行跳转真实详情页', () => {
     const src = readSource();
-    assert.ok(src.includes('pageItems') || src.includes('Pagination'), '缺少分页');
-  });
-
-  it('mock 数据应包含多种状态', () => {
-    const src = readSource();
-    assert.ok(src.includes('pending') || src.includes('delivered') || src.includes('cancelled'), '多种状态');
+    assert.ok(src.includes('router.push(`/orders/${item.id}`)'), '应跳转真实详情页');
+    assert.ok(src.includes('onRowClick={handleRowClick}'), '应支持行点击');
   });
 });
 
@@ -108,15 +104,16 @@ describe('orders — 防御', () => {
     assert.ok(src.includes('import React'), '缺少 React 导入');
   });
 
-  it('订单详情弹窗应支持 null 防御', () => {
+  it('不应再保留 mock 页面遗留结构', () => {
     const src = readSource();
-    assert.ok(src.includes('if (!order) return null'), '缺少 null 防御');
+    assert.equal(src.includes('generateMockOrders'), false, '不应继续保留随机 mock 订单');
+    assert.equal(src.includes('MOCK_ORDERS'), false, '不应继续保留 MOCK_ORDERS');
+    assert.equal(src.includes('OrderDetailDialog'), false, '不应继续保留假详情弹窗');
   });
 
-  it('包含时间线渲染', () => {
+  it('应包含统计卡片中的真实收入口径', () => {
     const src = readSource();
-    assert.ok(src.includes('创建订单'), '缺少时间线');
-    assert.ok(src.includes('formatDateTime'), '缺少时间格式化');
+    assert.ok(src.includes('实收金额'), '应展示真实收入统计');
   });
 
   it('应包含 use client 指令', () => {

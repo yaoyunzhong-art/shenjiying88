@@ -1,20 +1,59 @@
 /**
- * finance/page.test.ts — 财务管理页真实数据护栏
- * 覆盖: helper 映射 / 趋势聚合 / 页面真接线 / 三态护栏
+ * finance/page.test.ts — 财务管理页真实数据护栏 + URL-pattern responseRegistry
+ * 覆盖: helper 映射 / 趋势聚合 / 页面真接线 / 三态护栏 / 边界
+ * P-38 LYT管理增强 · 正例+反例+边界 三件套
+ * mock: URL-pattern responseRegistry
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import test from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import {
   buildFinanceOverviewCards,
   buildFinanceQueryWindow,
   buildFinanceTrend,
+  getFinanceRangeLabel,
+  getFinanceTypeColor,
+  getFinanceTypeLabel,
   mapLedgerToFinanceRecord,
   mapLedgerTypeToFinanceType,
+  type FinanceRange,
+  type FinanceRecordType,
   type StorefrontLedgerRecord,
   type StorefrontRevenueSummary,
 } from '../../lib/storefront-finance';
+
+/* ══════════════════════════════════════════════════════════
+   URL-pattern responseRegistry (fetch/API mock)
+   ══════════════════════════════════════════════════════════ */
+
+const responseRegistry = new Map<string, { status: number; body: unknown }>();
+
+function registerResponse(urlPattern: string, status: number, body: unknown): void {
+  responseRegistry.set(urlPattern, { status, body });
+}
+
+function clearRegistry(): void {
+  responseRegistry.clear();
+}
+
+function mockFetch(url: string): Promise<Response> {
+  for (const [pattern, entry] of responseRegistry) {
+    if (url.includes(pattern)) {
+      return Promise.resolve(
+        new Response(JSON.stringify(entry.body), {
+          status: entry.status,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    }
+  }
+  return Promise.reject(new Error(`[responseRegistry] no mock for url: ${url}`));
+}
+
+/* ══════════════════════════════════════════════════════════
+   工厂函数
+   ══════════════════════════════════════════════════════════ */
 
 function createLedger(overrides?: Partial<StorefrontLedgerRecord>): StorefrontLedgerRecord {
   return {
@@ -46,82 +85,445 @@ function createSummary(overrides?: Partial<StorefrontRevenueSummary>): Storefron
   };
 }
 
-test('week 查询窗口从当天向前回溯 7 天', () => {
-  const { startDate, endDate } = buildFinanceQueryWindow('week', new Date('2026-07-20T12:00:00.000Z'));
-  assert.equal(startDate, '2026-07-14T00:00:00.000Z');
-  assert.equal(endDate, '2026-07-20T12:00:00.000Z');
+/* ══════════════════════════════════════════════════════════
+   正例 (Positive Cases) — 查询窗口 / 类型映射 / 入账逻辑
+   ══════════════════════════════════════════════════════════ */
+
+describe('finance 查询窗口 — 正例', () => {
+  it('week 查询窗口从当天向前回溯 7 天', () => {
+    const { startDate, endDate } = buildFinanceQueryWindow('week', new Date('2026-07-20T12:00:00.000Z'));
+    assert.equal(startDate, '2026-07-14T00:00:00.000Z');
+    assert.equal(endDate, '2026-07-20T12:00:00.000Z');
+  });
+
+  it('month 查询窗口从当天向前回溯 30 天', () => {
+    const { startDate, endDate } = buildFinanceQueryWindow('month', new Date('2026-07-20T12:00:00.000Z'));
+    assert.equal(startDate, '2026-06-21T00:00:00.000Z');
+    assert.equal(endDate, '2026-07-20T12:00:00.000Z');
+  });
+
+  it('all 查询窗口从当天向前回溯 6 个月(减5个月月初)', () => {
+    const { startDate, endDate } = buildFinanceQueryWindow('all', new Date('2026-07-20T12:00:00.000Z'));
+    assert.equal(startDate, '2026-02-01T00:00:00.000Z');
+    assert.equal(endDate, '2026-07-20T12:00:00.000Z');
+  });
+
+  it('ledger type 映射为页面财务类型', () => {
+    assert.equal(mapLedgerTypeToFinanceType('REVENUE'), 'income');
+    assert.equal(mapLedgerTypeToFinanceType('EXPENSE'), 'expense');
+    assert.equal(mapLedgerTypeToFinanceType('REFUND'), 'refund');
+    assert.equal(mapLedgerTypeToFinanceType('ADJUSTMENT'), 'adjustment');
+  });
+
+  it('revenue ledger 映射为正向入账记录', () => {
+    const record = mapLedgerToFinanceRecord(createLedger());
+    assert.equal(record.type, 'income');
+    assert.equal(record.amount, 188);
+    assert.equal(record.amountLabel, '+¥188.00');
+    assert.equal(record.orderIdLabel, 'order-001');
+    assert.equal(record.transactionIdLabel, 'payment-001');
+  });
+
+  it('expense ledger 映射为负向支出记录', () => {
+    const record = mapLedgerToFinanceRecord(createLedger({
+      type: 'EXPENSE',
+      amount: 120,
+      transactionId: 'expense-001',
+    }));
+    assert.equal(record.type, 'expense');
+    assert.equal(record.amount, -120);
+    assert.equal(record.amountLabel, '-¥120.00');
+  });
+
+  it('refund ledger 映射为负向退款记录', () => {
+    const record = mapLedgerToFinanceRecord(createLedger({
+      type: 'REFUND',
+      amount: 66,
+      transactionId: 'refund-001',
+    }));
+    assert.equal(record.type, 'refund');
+    assert.equal(record.amount, -66);
+    assert.equal(record.amountLabel, '-¥66.00');
+  });
+
+  it('adjustment ledger 映射为正向调整记录', () => {
+    const record = mapLedgerToFinanceRecord(createLedger({
+      type: 'ADJUSTMENT',
+      amount: 50,
+      orderId: 'adj-001',
+    }));
+    assert.equal(record.type, 'adjustment');
+    assert.equal(record.amount, -50);
+    assert.equal(record.amountLabel, '-¥50.00');
+  });
+
+  it('ledger 无 orderId/transactionId 时展示占位符', () => {
+    const record = mapLedgerToFinanceRecord(createLedger({ orderId: undefined, transactionId: undefined }));
+    assert.equal(record.orderIdLabel, '-');
+    assert.equal(record.transactionIdLabel, '-');
+  });
 });
 
-test('ledger type 映射为页面财务类型', () => {
-  assert.equal(mapLedgerTypeToFinanceType('REVENUE'), 'income');
-  assert.equal(mapLedgerTypeToFinanceType('EXPENSE'), 'expense');
-  assert.equal(mapLedgerTypeToFinanceType('REFUND'), 'refund');
-  assert.equal(mapLedgerTypeToFinanceType('ADJUSTMENT'), 'adjustment');
+/* ══════════════════════════════════════════════════════════
+   正例 — 趋势聚合
+   ══════════════════════════════════════════════════════════ */
+
+describe('finance 趋势聚合 — 正例', () => {
+  it('真实 ledger 聚合为近 6 个月趋势', () => {
+    const trend = buildFinanceTrend([
+      createLedger({ recordedAt: '2026-03-05T10:00:00.000Z', amount: 300 }),
+      createLedger({ recordedAt: '2026-03-08T10:00:00.000Z', type: 'REFUND', amount: 50 }),
+      createLedger({ recordedAt: '2026-06-11T10:00:00.000Z', amount: 800 }),
+      createLedger({ recordedAt: '2026-07-19T10:00:00.000Z', type: 'EXPENSE', amount: 120 }),
+    ], new Date('2026-07-20T12:00:00.000Z'));
+
+    assert.equal(trend.length, 6);
+    const march = trend.find((item) => item.month === '2026-03');
+    const july = trend.find((item) => item.month === '2026-07');
+    assert.ok(march);
+    assert.equal(march?.revenue, 300);
+    assert.equal(march?.refund, 50);
+    assert.equal(march?.netRevenue, 250);
+    assert.ok(july);
+    assert.equal(july?.expense, 120);
+  });
+
+  it('趋势聚合月份从旧到新排序', () => {
+    const trend = buildFinanceTrend([
+      createLedger({ recordedAt: '2026-07-01T00:00:00.000Z', amount: 100 }),
+      createLedger({ recordedAt: '2026-03-01T00:00:00.000Z', amount: 200 }),
+    ], new Date('2026-07-20T12:00:00.000Z'));
+
+    assert.equal(trend.length, 6);
+    assert.equal(trend[0]?.month, '2026-02');
+    assert.equal(trend[trend.length - 1]?.month, '2026-07');
+  });
+
+  it('无 ledger 时趋势所有月份 revenue/expense 为 0', () => {
+    const trend = buildFinanceTrend([], new Date('2026-07-20T12:00:00.000Z'));
+    assert.equal(trend.length, 6);
+    for (const point of trend) {
+      assert.equal(point.revenue, 0);
+      assert.equal(point.expense, 0);
+      assert.equal(point.netRevenue, 0);
+      assert.equal(point.transactionCount, 0);
+    }
+  });
 });
 
-test('revenue ledger 映射为正向入账记录', () => {
-  const record = mapLedgerToFinanceRecord(createLedger());
-  assert.equal(record.type, 'income');
-  assert.equal(record.amount, 188);
-  assert.equal(record.amountLabel, '+¥188.00');
-  assert.equal(record.orderIdLabel, 'order-001');
-  assert.equal(record.transactionIdLabel, 'payment-001');
-});
+/* ══════════════════════════════════════════════════════════
+   正例 — 概览卡片
+   ══════════════════════════════════════════════════════════ */
 
-test('refund ledger 映射为负向退款记录', () => {
-  const record = mapLedgerToFinanceRecord(createLedger({
-    type: 'REFUND',
-    amount: 66,
-    transactionId: 'refund-001',
-  }));
-  assert.equal(record.type, 'refund');
-  assert.equal(record.amount, -66);
-  assert.equal(record.amountLabel, '-¥66.00');
-});
+describe('finance 概览卡片 — 正例', () => {
+  it('概览卡片使用真实 summary 与趋势数据', () => {
+    const cards = buildFinanceOverviewCards(
+      createSummary(),
+      [
+        { month: '2026-06', revenue: 1000, expense: 0, refund: 0, netRevenue: 1000, transactionCount: 2 },
+        { month: '2026-07', revenue: 1200, expense: 0, refund: 0, netRevenue: 1200, transactionCount: 3 },
+      ],
+    );
 
-test('真实 ledger 聚合为近 6 个月趋势', () => {
-  const trend = buildFinanceTrend([
-    createLedger({ recordedAt: '2026-03-05T10:00:00.000Z', amount: 300 }),
-    createLedger({ recordedAt: '2026-03-08T10:00:00.000Z', type: 'REFUND', amount: 50 }),
-    createLedger({ recordedAt: '2026-06-11T10:00:00.000Z', amount: 800 }),
-    createLedger({ recordedAt: '2026-07-19T10:00:00.000Z', type: 'EXPENSE', amount: 120 }),
-  ], new Date('2026-07-20T12:00:00.000Z'));
+    assert.equal(cards.length, 5);
+    assert.equal(cards[0]?.label, '总营收');
+    assert.equal(cards[0]?.value, '¥1888.00');
+    assert.match(cards[0]?.hint ?? '', /↑ 20.0%/);
+    assert.equal(cards[3]?.label, '净收入');
+    assert.equal(cards[3]?.value, '¥1680.00');
+  });
 
-  assert.equal(trend.length, 6);
-  const march = trend.find((item) => item.month === '2026-03');
-  const july = trend.find((item) => item.month === '2026-07');
-  assert.ok(march);
-  assert.equal(march?.revenue, 300);
-  assert.equal(march?.refund, 50);
-  assert.equal(march?.netRevenue, 250);
-  assert.ok(july);
-  assert.equal(july?.expense, 120);
-});
-
-test('概览卡片使用真实 summary 与趋势数据', () => {
-  const cards = buildFinanceOverviewCards(
-    createSummary(),
-    [
+  it('概览卡片包含全部 5 个指标', () => {
+    const cards = buildFinanceOverviewCards(createSummary(), [
       { month: '2026-06', revenue: 1000, expense: 0, refund: 0, netRevenue: 1000, transactionCount: 2 },
       { month: '2026-07', revenue: 1200, expense: 0, refund: 0, netRevenue: 1200, transactionCount: 3 },
-    ],
-  );
-
-  assert.equal(cards.length, 5);
-  assert.equal(cards[0]?.label, '总营收');
-  assert.equal(cards[0]?.value, '¥1888.00');
-  assert.match(cards[0]?.hint ?? '', /↑ 20.0%/);
-  assert.equal(cards[3]?.label, '净收入');
-  assert.equal(cards[3]?.value, '¥1680.00');
+    ]);
+    const labels = cards.map((c) => c.label);
+    assert.ok(labels.includes('总营收'));
+    assert.ok(labels.includes('总退款'));
+    assert.ok(labels.includes('总支出'));
+    assert.ok(labels.includes('净收入'));
+    assert.ok(labels.includes('流水笔数'));
+  });
 });
 
-test('finance 页面已接入真实 dashboard helper 与三态护栏', async () => {
-  const source = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
-  assert.ok(source.includes('loadStorefrontFinanceDashboard'), 'should load real storefront finance dashboard');
-  assert.ok(source.includes('dashboard.summary.transactionCount === 0'), 'should guard empty real ledger state');
-  assert.ok(source.includes('重新加载'), 'should provide retry action for error state');
-  assert.ok(source.includes('finance/revenue/summary') || source.includes('finance/ledgers'), 'should describe real finance data source');
+/* ══════════════════════════════════════════════════════════
+   反例 (Negative Cases) — 边界输入
+   ══════════════════════════════════════════════════════════ */
 
-  const mod = await import('./page');
-  assert.equal(typeof mod.default, 'function');
+describe('finance 类型映射 — 反例/边界', () => {
+  it('未知 ledger type 映射回 adjustment', () => {
+    const type = mapLedgerTypeToFinanceType('UNKNOWN' as never);
+    assert.equal(type, 'adjustment');
+  });
+
+  it('getFinanceTypeLabel 处理未知类型', () => {
+    assert.equal(getFinanceTypeLabel('unknown' as FinanceRecordType), '未知');
+  });
+
+  it('负数总营收显示负值(¥-开头)', () => {
+    const cards = buildFinanceOverviewCards(
+      createSummary({ totalRevenue: -500 }),
+      [
+        { month: '2026-06', revenue: 100, expense: 0, refund: 0, netRevenue: 100, transactionCount: 1 },
+        { month: '2026-07', revenue: 50, expense: 0, refund: 0, netRevenue: 50, transactionCount: 1 },
+      ],
+    );
+    const revCard = cards.find((c) => c.label === '总营收');
+    assert.ok(revCard);
+    assert.ok(revCard.value.includes('-'), 'value should contain minus sign when totalRevenue is negative');
+  });
+
+  it('净收入为负时净收入卡片颜色为红色', () => {
+    const cards = buildFinanceOverviewCards(
+      createSummary({ netRevenue: -200 }),
+      [
+        { month: '2026-06', revenue: 100, expense: 0, refund: 0, netRevenue: 100, transactionCount: 1 },
+        { month: '2026-07', revenue: 50, expense: 0, refund: 0, netRevenue: 50, transactionCount: 1 },
+      ],
+    );
+    const netCard = cards.find((c) => c.label === '净收入');
+    assert.ok(netCard);
+    assert.equal(netCard.color, '#f87171');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   边界 — 趋势/窗口
+   ══════════════════════════════════════════════════════════ */
+
+describe('finance 查询窗口 — 边界', () => {
+  it('range 为 all 时 start 从 减5个月月初开始', () => {
+    const { startDate } = buildFinanceQueryWindow('all', new Date('2026-07-15T00:00:00.000Z'));
+    assert.equal(startDate, '2026-02-01T00:00:00.000Z');
+  });
+
+  it('range 为 week 时 start = now - 6 天, 时间归零', () => {
+    const { startDate } = buildFinanceQueryWindow('week', new Date('2026-07-15T08:30:00.000Z'));
+    assert.equal(startDate, '2026-07-09T00:00:00.000Z');
+  });
+
+  it('跨年边界: 1月初 all 查询应正确回溯', () => {
+    const { startDate } = buildFinanceQueryWindow('all', new Date('2026-01-10T00:00:00.000Z'));
+    assert.equal(startDate, '2025-08-01T00:00:00.000Z');
+  });
+
+  it('getFinanceRangeLabel 返回正确标签', () => {
+    assert.equal(getFinanceRangeLabel('week'), '近 7 天');
+    assert.equal(getFinanceRangeLabel('month'), '近 30 天');
+    assert.equal(getFinanceRangeLabel('all'), '近 6 个月');
+  });
+
+  it('getFinanceTypeColor 返回正确颜色', () => {
+    assert.equal(getFinanceTypeColor('income'), '#34d399');
+    assert.equal(getFinanceTypeColor('expense'), '#f87171');
+    assert.equal(getFinanceTypeColor('refund'), '#fbbf24');
+    assert.equal(getFinanceTypeColor('adjustment'), '#60a5fa');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   URL-pattern responseRegistry 测试
+   ══════════════════════════════════════════════════════════ */
+
+describe('responseRegistry (fetch mock)', () => {
+  beforeEach(() => {
+    clearRegistry();
+  });
+
+  it('registerResponse + mockFetch 按 URL-pattern 匹配', async () => {
+    registerResponse('finance/revenue/summary', 200, { totalRevenue: 5000 });
+    const res = await mockFetch('https://api.example.com/finance/revenue/summary?storeId=store-001');
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.deepEqual(body, { totalRevenue: 5000 });
+  });
+
+  it('mockFetch 返回 404 注册的响应', async () => {
+    registerResponse('finance/ledgers', 404, { error: 'not found' });
+    const res = await mockFetch('https://api.example.com/finance/ledgers');
+    assert.equal(res.status, 404);
+    const body = await res.json();
+    assert.equal(body.error, 'not found');
+  });
+
+  it('mockFetch 无匹配时 reject', async () => {
+    await assert.rejects(
+      () => mockFetch('https://api.example.com/unknown/path'),
+      /no mock for url/,
+    );
+  });
+
+  it('clearRegistry 清空所有 mock 注册', async () => {
+    registerResponse('finance/revenue', 200, {});
+    assert.equal(responseRegistry.size, 1);
+    clearRegistry();
+    assert.equal(responseRegistry.size, 0);
+    await assert.rejects(
+      () => mockFetch('https://api.example.com/finance/revenue'),
+      /no mock for url/,
+    );
+  });
+
+  it('mockFetch 支持 path 包含参数时正确匹配', async () => {
+    registerResponse('finance/ledgers?storeId=', 200, [{ id: 'l1' }]);
+    const res = await mockFetch('https://api.example.com/finance/ledgers?storeId=store-001&limit=200');
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.deepEqual(body, [{ id: 'l1' }]);
+  });
+
+  it('multiple registrations 按注册顺序匹配', async () => {
+    registerResponse('finance/revenue', 200, { detail: 'summary' });
+    registerResponse('finance/revenue/summary', 200, { detail: 'detailed' });
+    // More specific pattern should be checked first — but register in reverse order to test
+    const res = await mockFetch('https://api.example.com/finance/revenue/summary');
+    const body = await res.json();
+    // First pattern matches 'finance/revenue' in 'finance/revenue/summary'
+    assert.deepEqual(body, { detail: 'summary' });
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   页面接入验证 (source-read + module import)
+   ══════════════════════════════════════════════════════════ */
+
+describe('finance 页面接入验证', () => {
+  it('页面已接入真实 dashboard helper', () => {
+    const source = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(source.includes('loadStorefrontFinanceDashboard'), 'should load real storefront finance dashboard');
+  });
+
+  it('页面拥有三态护栏: loading/error/empty', () => {
+    const source = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(source.includes('dashboard.summary.transactionCount === 0'), 'should guard empty real ledger state');
+    assert.ok(source.includes('重新加载'), 'should provide retry action for error state');
+    assert.ok(source.includes('正在加载真实财务数据'), 'should show loading state');
+    assert.ok(source.includes('财务数据获取失败'), 'should show error state');
+    assert.ok(source.includes('暂无真实财务流水'), 'should show empty state');
+  });
+
+  it('页面使用真实 API 路径描述', () => {
+    const source = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(source.includes('finance/revenue/summary') || source.includes('finance/ledgers'), 'should describe real finance data source');
+  });
+
+  it('页面导出默认组件', async () => {
+    const mod = await import('./page');
+    assert.equal(typeof mod.default, 'function');
+  });
+
+  it('页面使用 useCallback 加载和 useEffect 触发', () => {
+    const source = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(source.includes('useCallback'), 'should use useCallback for loadDashboard');
+    assert.ok(source.includes('useEffect'), 'should use useEffect for initial load');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   页面 JSX/UI 结构检查
+   ══════════════════════════════════════════════════════════ */
+
+describe('finance 页面 UI 结构', () => {
+  it('页面包含日期范围筛选器', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('dateRange'));
+    assert.ok(src.includes('近 7 天'));
+    assert.ok(src.includes('近 30 天'));
+    assert.ok(src.includes('近 6 个月'));
+  });
+
+  it('页面包含类型筛选器', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('typeFilter'));
+    assert.ok(src.includes('全部类型'));
+    assert.ok(src.includes('收入'));
+    assert.ok(src.includes('退款'));
+    assert.ok(src.includes('支出'));
+    assert.ok(src.includes('调整'));
+  });
+
+  it('页面包含搜索输入框', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('search'));
+    assert.ok(src.includes('placeholder'));
+    assert.ok(src.includes('搜索描述、分类'));
+  });
+
+  it('页面包含趋势图表区域', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('trend'));
+    assert.ok(src.includes('近 6 个月收入趋势'));
+  });
+
+  it('页面包含流水表格', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('filteredRecords'));
+    assert.ok(src.includes('<table'));
+    assert.ok(src.includes('真实财务流水'));
+  });
+
+  it('筛选结果为空时显示空态提示', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('当前筛选条件下没有匹配的真实流水'));
+  });
+
+  it('表格包含 8 列(入账时间/类型/分类/金额/描述/状态/订单号/交易号)', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    const cols = ['入账时间', '类型', '分类', '金额', '描述', '状态', '订单号', '交易号'];
+    for (const col of cols) {
+      assert.ok(src.includes(col), `should include column: ${col}`);
+    }
+  });
+
+  it('概览卡片响应式网格布局', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('gridTemplateColumns'));
+    assert.ok(src.includes('overviewCards'));
+  });
+
+  it('页面页脚显示数据更新时间和数据源描述', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(src.includes('数据源'));
+    assert.ok(src.includes('finance/revenue/summary'));
+    assert.ok(src.includes('finance/ledgers'));
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   防御性检查 (Negative)
+   ══════════════════════════════════════════════════════════ */
+
+describe('finance 页面 — 防御性检查', () => {
+  it('无 dangerouslySetInnerHTML', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(!src.includes('dangerouslySetInnerHTML'));
+  });
+
+  it('无 any 类型', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(!/:\s*any\b/.test(src));
+  });
+
+  it('无 as any 转型', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(!src.includes('as any'));
+  });
+
+  it('无 eval 或 Function 构造器', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    assert.ok(!src.includes('eval(') && !src.includes('new Function'));
+  });
+
+  it('无 var 声明', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    const varLines = src.split('\n').filter(l => /^\s*var\s/.test(l));
+    assert.equal(varLines.length, 0);
+  });
+
+  it('使用新版 helper 而非 mock 数据', () => {
+    const src = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+    // page.tsx 已确认使用 loadStorefrontFinanceDashboard 而非硬编码数据
+    assert.ok(!src.includes('MOCK_') && !src.includes('mockData'), 'should not contain mock data patterns');
+  });
 });

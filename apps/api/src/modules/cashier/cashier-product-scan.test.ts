@@ -168,15 +168,45 @@ describe('CashierController.lookupProduct — POS 商品扫码查询', () => {
     assert.equal(result, null)
   })
 
-  it('正例: 不存在的 SKU 回落 mock 商品', async () => {
+  it('反例: 不再回落本地 mock 商品', async () => {
     const h = new TestHarness()
 
     const result = await h.controller.lookupProduct(TENANT_ID, 'SKU-001')
 
-    // SKU-001 是内置 mock 商品
-    assert.ok(result, '应返回 mock 商品对象')
-    assert.equal(result!.sku, 'SKU-001')
-    assert.equal(result!.name, '经典T恤')
-    assert.equal(result!.price, 129)
+    assert.equal(result, null)
+  })
+})
+
+describe('CashierController.listProducts — POS 商品目录列表', () => {
+  beforeEach(() => {
+    resetMemberServiceTestState()
+  })
+
+  it('正例: 返回真实库存商品目录', async () => {
+    const h = new TestHarness()
+    h.addInventoryItem('SKU-TEST-A', '测试商品A', 12900)
+    h.addInventoryItem('SKU-TEST-B', '测试商品B', 8800)
+
+    const result = await h.controller.listProducts(TENANT_ID)
+
+    assert.equal(result.total, 2)
+    assert.deepEqual(
+      result.items.map((item) => item.sku),
+      ['SKU-TEST-A', 'SKU-TEST-B'],
+    )
+    assert.equal(result.items[0]?.price, 129)
+    assert.equal(result.items[0]?.stock, 100)
+  })
+
+  it('边界: 支持 limit / offset 分页参数', async () => {
+    const h = new TestHarness()
+    h.addInventoryItem('SKU-TEST-A', '测试商品A', 12900)
+    h.addInventoryItem('SKU-TEST-B', '测试商品B', 8800)
+
+    const result = await h.controller.listProducts(TENANT_ID, '1', '1')
+
+    assert.equal(result.total, 2)
+    assert.equal(result.items.length, 1)
+    assert.equal(result.items[0]?.sku, 'SKU-TEST-B')
   })
 })

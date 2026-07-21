@@ -143,6 +143,18 @@ describe('[finance] 合约: Ledger 记账', () => {
     assert.equal(result[0].amount, 200)
   })
 
+  it('listLedgersResolved 在无 Prisma 时回退到当前内存账本', async () => {
+    const svc = makeService()
+    await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 120, description: 'real-ledger' })
+    await svc.recordLedger(CTX_A, { type: LedgerType.Expense, amount: 20, description: 'cost-ledger' })
+
+    const resolved = await svc.listLedgersResolved(CTX_A, { type: LedgerType.Revenue })
+
+    assert.equal(resolved.length, 1)
+    assert.equal(resolved[0].type, LedgerType.Revenue)
+    assert.equal(resolved[0].amount, 120)
+  })
+
   it('getLedger 不存在 → throw', async () => {
     const svc = makeService()
     assert.throws(() => svc.getLedger('non-existent', CTX_A))
@@ -356,6 +368,22 @@ describe('[finance] 合约: 营收汇总', () => {
     const daily = svc.getDailyRevenue(CTX_A, { date: '2026-06-15' })
     assert.equal(daily.revenue, 500)
     assert.equal(daily.transactionCount, 1)
+  })
+
+  it('getRevenueSummaryResolved 在无 Prisma 时沿用当前 ledger 汇总口径', async () => {
+    const svc = makeService()
+    await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 900, description: 'summary-revenue' })
+    await svc.recordLedger(CTX_A, { type: LedgerType.Refund, amount: 100, description: 'summary-refund' })
+
+    const summary = await svc.getRevenueSummaryResolved(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+
+    assert.equal(summary.totalRevenue, 900)
+    assert.equal(summary.totalRefund, 100)
+    assert.equal(summary.netRevenue, 800)
+    assert.equal(summary.transactionCount, 2)
   })
 })
 

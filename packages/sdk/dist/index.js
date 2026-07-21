@@ -1310,7 +1310,10 @@ function createBusinessClient(baseUrl) {
     // ── Cashier (GET/POST /api/v1/cashier/*) ──
     cashier: {
       /** 会员查找 (手机号/卡号) */
-      lookupMember: (query, init) => api.getData(`/cashier/members/lookup?q=${encodeURIComponent(query)}`, init),
+      lookupMember: (query, init) => api.getData(
+        `/cashier/members/lookup?q=${encodeURIComponent(query)}`,
+        init
+      ),
       /** 会员消费记录 (走 transactions 模块) */
       listMemberTransactions: (memberId, init) => api.getData(`/transactions/members/${memberId}`, init),
       /** 商品扫码查询 */
@@ -1318,6 +1321,17 @@ function createBusinessClient(baseUrl) {
         `/cashier/products/${encodeURIComponent(sku)}`,
         init
       ),
+      /** 商品目录列表 */
+      listProducts: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.limit !== void 0) params.set("limit", String(query.limit));
+        if (query?.offset !== void 0) params.set("offset", String(query.offset));
+        const search = params.toString();
+        return api.getData(
+          search ? `/cashier/products?${search}` : "/cashier/products",
+          init
+        );
+      },
       /** 支付渠道统计 */
       getChannelStats: (init) => api.getData("/cashier/stats/channels", init),
       /** 创建订单 (POS) */

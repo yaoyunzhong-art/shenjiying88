@@ -289,6 +289,41 @@ export class CashierController {
     return null
   }
 
+  @Get('products')
+  @ApiOperation({ summary: 'POS 商品目录列表' })
+  async listProducts(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string
+  ): Promise<{
+    items: Array<{
+      sku: string
+      name: string
+      price: number
+      category: string
+      stock: number
+    }>
+    total: number
+  }> {
+    const payload = this.inventoryItemService.list({
+      tenantId,
+      status: 'ACTIVE',
+      limit: limit ? parseInt(limit, 10) : 100,
+      offset: offset ? parseInt(offset, 10) : 0,
+    })
+
+    return {
+      total: payload.total,
+      items: payload.items.map((item) => ({
+        sku: item.sku,
+        name: item.name,
+        price: item.unitPriceCents / 100,
+        category: 'default',
+        stock: item.availableQty,
+      })),
+    }
+  }
+
   @Get('stats/channels')
   @ApiOperation({ summary: 'POS 支付渠道统计' })
   async getChannelStats(

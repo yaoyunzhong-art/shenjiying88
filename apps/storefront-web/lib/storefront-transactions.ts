@@ -1,4 +1,12 @@
-import { ApiClient, ApiError, getDefaultApiBaseUrl } from '@m5/sdk';
+import {
+  ApiClient,
+  ApiError,
+  createBusinessClient,
+  getDefaultApiBaseUrl,
+  type BusinessCashierMemberLookupResult,
+  type BusinessCashierProductItem,
+  type BusinessTransactionAggregate,
+} from '@m5/sdk';
 
 export type CheckoutPaymentMethod = 'wechat' | 'alipay' | 'cash' | 'member_card';
 export type H5PaymentMethod = 'wechat' | 'alipay' | 'bankcard' | 'points';
@@ -12,50 +20,10 @@ export interface StorefrontScope {
   storeId: string;
 }
 
-export interface StorefrontTransactionAggregate {
-  order: {
-    orderId: string;
-    orderNo?: string;
-    memberId: string;
-    currency: string;
-    totalAmount: number;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-    paidAt?: string;
-    closedAt?: string;
-    closeReason?: string;
-    items?: Array<{
-      skuId: string;
-      title?: string;
-      quantity: number;
-      price: number;
-    }>;
-  };
-  payment?: {
-    paymentId: string;
-    orderId: string;
-    externalPaymentId?: string;
-    channel?: string;
-    amount: number;
-    status: string;
-    transactionNo?: string;
-    createdAt: string;
-    updatedAt: string;
-    completedAt?: string;
-  };
-  memberNickname?: string;
-  refunds: Array<{
-    refundId: string;
-    orderId: string;
-    paymentId: string;
-    memberId: string;
-    refundAmount: number;
-    reason: string;
-    status: string;
-    requestedAt: string;
-    completedAt?: string;
-  }>;
+export type StorefrontTransactionAggregate = BusinessTransactionAggregate;
+
+export interface StorefrontCashierProduct extends BusinessCashierProductItem {
+  id: string;
 }
 
 export interface CheckoutLineItem {
@@ -363,21 +331,44 @@ export function getCashierClient() {
 export async function lookupStorefrontMember(
   query: string,
   scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
-) {
-  const client = getCashierClient();
+): Promise<BusinessCashierMemberLookupResult | null> {
+  const client = createBusinessClient(getDefaultApiBaseUrl());
   try {
-    return await client.getData<{
-      id: string;
-      name: string;
-      phone: string;
-      memberNo: string;
-      tier: string;
-      points: number;
-      discountRate: number;
-    } | null>(`/cashier/members/lookup?q=${encodeURIComponent(query)}`, { cache: 'no-store' });
+    return await client.cashier.lookupMember(query, {
+      cache: 'no-store',
+      headers: {
+        'x-tenant-id': scope.tenantId,
+        'x-brand-id': scope.brandId,
+        'x-store-id': scope.storeId,
+        'x-market-code': scope.marketCode,
+      },
+    });
   } catch {
     return null;
   }
+}
+
+export async function listStorefrontCashierProducts(
+  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+): Promise<StorefrontCashierProduct[]> {
+  const client = createBusinessClient(getDefaultApiBaseUrl());
+  const payload = await client.cashier.listProducts(
+    { limit: 100 },
+    {
+      cache: 'no-store',
+      headers: {
+        'x-tenant-id': scope.tenantId,
+        'x-brand-id': scope.brandId,
+        'x-store-id': scope.storeId,
+        'x-market-code': scope.marketCode,
+      },
+    },
+  );
+
+  return payload.items.map((item) => ({
+    ...item,
+    id: item.sku,
+  }));
 }
 
 export async function ensureStorefrontMemberRegistered(
@@ -423,10 +414,15 @@ export async function getStorefrontOrderTransaction(
   orderId: string,
   scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
 ) {
-  return createStorefrontTransactionsClient(scope).getData<StorefrontTransactionAggregate>(
-    `/transactions/orders/${orderId}`,
-    { cache: 'no-store' },
-  );
+  return createBusinessClient(getDefaultApiBaseUrl()).orders.get(orderId, {
+    cache: 'no-store',
+    headers: {
+      'x-tenant-id': scope.tenantId,
+      'x-brand-id': scope.brandId,
+      'x-store-id': scope.storeId,
+      'x-market-code': scope.marketCode,
+    },
+  });
 }
 
 export async function submitStorefrontPaymentSuccess(

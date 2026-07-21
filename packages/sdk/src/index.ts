@@ -1897,6 +1897,110 @@ export interface BusinessOrderListPage {
   pageSize: number;
 }
 
+export interface BusinessTransactionOrderItem {
+  skuId: string;
+  title?: string;
+  quantity: number;
+  price: number;
+}
+
+export interface BusinessTransactionOrder {
+  orderId: string;
+  orderNo?: string;
+  memberId: string;
+  currency: string;
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string;
+  closedAt?: string;
+  closeReason?: string;
+  items?: BusinessTransactionOrderItem[];
+}
+
+export interface BusinessTransactionPayment {
+  paymentId: string;
+  orderId: string;
+  externalPaymentId?: string;
+  channel?: string;
+  amount: number;
+  status: string;
+  transactionNo?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
+export interface BusinessTransactionRefund {
+  refundId: string;
+  orderId: string;
+  paymentId: string;
+  memberId: string;
+  refundAmount: number;
+  reason: string;
+  status: string;
+  requestedAt: string;
+  completedAt?: string;
+}
+
+export interface BusinessTransactionAggregate {
+  order: BusinessTransactionOrder;
+  payment?: BusinessTransactionPayment;
+  memberNickname?: string;
+  refunds: BusinessTransactionRefund[];
+}
+
+export interface BusinessCashierMemberLookupResult {
+  id: string;
+  name: string;
+  phone: string;
+  memberNo: string;
+  tier: string;
+  points: number;
+  discountRate: number;
+}
+
+export interface BusinessCashierProductItem {
+  sku: string;
+  name: string;
+  price: number;
+  category: string;
+  stock: number;
+}
+
+export interface BusinessCashierProductListPage {
+  items: BusinessCashierProductItem[];
+  total: number;
+}
+
+export interface BusinessFinanceLedgerRecord {
+  id: string;
+  tenantId: string;
+  brandId?: string;
+  storeId?: string;
+  type: 'REVENUE' | 'EXPENSE' | 'REFUND' | 'ADJUSTMENT';
+  amount: number;
+  balance: number;
+  orderId?: string;
+  transactionId?: string;
+  description: string;
+  category?: string;
+  recordedAt: string;
+  createdAt: string;
+}
+
+export interface BusinessRevenueSummary {
+  storeId?: string;
+  totalRevenue: number;
+  totalExpense: number;
+  totalRefund: number;
+  netRevenue: number;
+  transactionCount: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
 function buildBusinessOrderListPath(query?: {
   memberId?: string;
   status?: string;
@@ -1999,19 +2103,7 @@ export function createBusinessClient(baseUrl?: string) {
 
       /** 订单详情 */
       get: (orderId: string, init?: RequestInit) =>
-        api.getData<{
-          orderId: string;
-          orderNo: string;
-          memberId: string;
-          status: string;
-          totalAmount: number;
-          paidAmount: number;
-          refundedAmount: number;
-          currency: string;
-          items?: Array<{ productId: string; productName: string; quantity: number; unitPriceCents: number }>;
-          createdAt: string;
-          updatedAt: string;
-        }>(`/transactions/orders/${orderId}`, init),
+        api.getData<BusinessTransactionAggregate>(`/transactions/orders/${orderId}`, init),
 
       /** 订单退款记录 */
       listRefunds: (orderId: string, init?: RequestInit) =>
@@ -2028,15 +2120,10 @@ export function createBusinessClient(baseUrl?: string) {
     cashier: {
       /** 会员查找 (手机号/卡号) */
       lookupMember: (query: string, init?: RequestInit) =>
-        api.getData<{
-          id: string;
-          name: string;
-          phone: string;
-          memberNo: string;
-          tier: string;
-          points: number;
-          discountRate: number;
-        } | null>(`/cashier/members/lookup?q=${encodeURIComponent(query)}`, init),
+        api.getData<BusinessCashierMemberLookupResult | null>(
+          `/cashier/members/lookup?q=${encodeURIComponent(query)}`,
+          init,
+        ),
 
       /** 会员消费记录 (走 transactions 模块) */
       listMemberTransactions: (memberId: string, init?: RequestInit) =>
@@ -2052,9 +2139,21 @@ export function createBusinessClient(baseUrl?: string) {
 
       /** 商品扫码查询 */
       lookupProduct: (sku: string, init?: RequestInit) =>
-        api.getData<{ sku: string; name: string; price: number; category: string } | null>(
+        api.getData<BusinessCashierProductItem | null>(
           `/cashier/products/${encodeURIComponent(sku)}`, init,
         ),
+
+      /** 商品目录列表 */
+      listProducts: (query?: { limit?: number; offset?: number }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.limit !== undefined) params.set('limit', String(query.limit));
+        if (query?.offset !== undefined) params.set('offset', String(query.offset));
+        const search = params.toString();
+        return api.getData<BusinessCashierProductListPage>(
+          search ? `/cashier/products?${search}` : '/cashier/products',
+          init,
+        );
+      },
 
       /** 支付渠道统计 */
       getChannelStats: (init?: RequestInit) =>
@@ -2161,6 +2260,52 @@ export function createBusinessClient(baseUrl?: string) {
       /** 拒绝退款 */
       reject: (refundId: string, body: { operator?: string; note?: string }, init?: RequestInit) =>
         api.postData(`/transactions/refunds/${refundId}/reject`, body, init),
+    },
+
+    // ── Finance (GET /api/v1/finance/*) ──
+    finance: {
+      /** 营收汇总 */
+      getRevenueSummary: (query: {
+        storeId?: string;
+        startDate: string;
+        endDate: string;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set('storeId', query.storeId);
+        params.set('startDate', query.startDate);
+        params.set('endDate', query.endDate);
+        return api.getData<BusinessRevenueSummary>(
+          `/finance/revenue/summary?${params.toString()}`,
+          init,
+        );
+      },
+
+      /** 财务流水 */
+      listLedgers: (query?: {
+        storeId?: string;
+        type?: BusinessFinanceLedgerRecord['type'];
+        orderId?: string;
+        transactionId?: string;
+        category?: string;
+        recordedAfter?: string;
+        recordedBefore?: string;
+        limit?: number;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        if (query?.type) params.set('type', query.type);
+        if (query?.orderId) params.set('orderId', query.orderId);
+        if (query?.transactionId) params.set('transactionId', query.transactionId);
+        if (query?.category) params.set('category', query.category);
+        if (query?.recordedAfter) params.set('recordedAfter', query.recordedAfter);
+        if (query?.recordedBefore) params.set('recordedBefore', query.recordedBefore);
+        if (query?.limit !== undefined) params.set('limit', String(query.limit));
+        const search = params.toString();
+        return api.getData<BusinessFinanceLedgerRecord[]>(
+          search ? `/finance/ledgers?${search}` : '/finance/ledgers',
+          init,
+        );
+      },
     },
 
     // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──

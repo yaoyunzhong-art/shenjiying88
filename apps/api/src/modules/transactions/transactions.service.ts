@@ -87,13 +87,36 @@ export class TransactionsService {
       return
     }
 
-    const existingLedger = this.financeService.listLedgers(tenantContext, {
-      type: LedgerType.Revenue,
-      orderId: aggregate.order.orderId,
-      transactionId: aggregate.payment.paymentId,
-      category: 'transaction',
-      limit: 1
-    })[0]
+    const financeService = this.financeService as FinanceService & {
+      listLedgersResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: {
+          type?: LedgerType
+          orderId?: string
+          transactionId?: string
+          category?: string
+          limit?: number
+        }
+      ) => Promise<ReturnType<FinanceService['listLedgers']>>
+    }
+
+    const existingLedger = (
+      financeService.listLedgersResolved
+        ? await financeService.listLedgersResolved(tenantContext, {
+            type: LedgerType.Revenue,
+            orderId: aggregate.order.orderId,
+            transactionId: aggregate.payment.paymentId,
+            category: 'transaction',
+            limit: 1
+          })
+        : this.financeService.listLedgers(tenantContext, {
+            type: LedgerType.Revenue,
+            orderId: aggregate.order.orderId,
+            transactionId: aggregate.payment.paymentId,
+            category: 'transaction',
+            limit: 1
+          })
+    )[0]
 
     if (existingLedger) {
       return
@@ -117,13 +140,36 @@ export class TransactionsService {
       return
     }
 
-    const existingLedger = this.financeService.listLedgers(tenantContext, {
-      type: LedgerType.Refund,
-      orderId: refund.orderId,
-      transactionId: refund.refundId,
-      category: 'refund',
-      limit: 1
-    })[0]
+    const financeService = this.financeService as FinanceService & {
+      listLedgersResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: {
+          type?: LedgerType
+          orderId?: string
+          transactionId?: string
+          category?: string
+          limit?: number
+        }
+      ) => Promise<ReturnType<FinanceService['listLedgers']>>
+    }
+
+    const existingLedger = (
+      financeService.listLedgersResolved
+        ? await financeService.listLedgersResolved(tenantContext, {
+            type: LedgerType.Refund,
+            orderId: refund.orderId,
+            transactionId: refund.refundId,
+            category: 'refund',
+            limit: 1
+          })
+        : this.financeService.listLedgers(tenantContext, {
+            type: LedgerType.Refund,
+            orderId: refund.orderId,
+            transactionId: refund.refundId,
+            category: 'refund',
+            limit: 1
+          })
+    )[0]
 
     if (existingLedger) {
       return

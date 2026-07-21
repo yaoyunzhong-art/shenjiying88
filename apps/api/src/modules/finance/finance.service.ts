@@ -18,7 +18,6 @@ import {
   AccountStatus,
   SettlementStatus,
   InvoiceStatus,
-  InvoiceType,
   type Ledger,
   type Account,
   type Settlement,
@@ -45,6 +44,255 @@ export class FinanceService {
     @Optional() private readonly prisma?: PrismaService
   ) {}
 
+  private getLedgerModel():
+    | {
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+        findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      }
+    | undefined {
+    const prisma = this.prisma as unknown as Record<string, unknown> | undefined
+    const model = prisma?.financeLedger
+    if (!model || typeof model !== 'object') {
+      return undefined
+    }
+    return model as {
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+      findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    }
+  }
+
+  private normalizeLedgerOptionalString(value: unknown): string | undefined {
+    if (typeof value !== 'string') {
+      return undefined
+    }
+    const normalized = value.trim()
+    return normalized.length ? normalized : undefined
+  }
+
+  private normalizeLedgerDate(value: unknown): string {
+    if (value instanceof Date) {
+      return value.toISOString()
+    }
+    if (typeof value === 'string') {
+      return value
+    }
+    return new Date().toISOString()
+  }
+
+  private toLedgerEntity(record: Record<string, unknown>): Ledger {
+    return {
+      id: String(record.id),
+      tenantId: String(record.tenantId),
+      brandId: this.normalizeLedgerOptionalString(record.brandId),
+      storeId: this.normalizeLedgerOptionalString(record.storeId),
+      type: String(record.type) as LedgerType,
+      amount: Number(record.amount ?? 0),
+      balance: Number(record.balance ?? 0),
+      orderId: this.normalizeLedgerOptionalString(record.orderId),
+      transactionId: this.normalizeLedgerOptionalString(record.transactionId),
+      description: this.normalizeLedgerOptionalString(record.description) ?? '',
+      category: this.normalizeLedgerOptionalString(record.category),
+      recordedAt: this.normalizeLedgerDate(record.recordedAt),
+      createdAt: this.normalizeLedgerDate(record.createdAt)
+    }
+  }
+
+  private calculateLedgerBalance(entries: Ledger[], input: CreateLedgerDto) {
+    const currentBalance = entries.reduce((sum, ledger) => {
+      if (ledger.type === LedgerType.Revenue || ledger.type === LedgerType.Adjustment) {
+        return sum + ledger.amount
+      }
+      return sum - ledger.amount
+    }, 0)
+
+    return input.type === LedgerType.Revenue || input.type === LedgerType.Adjustment
+      ? currentBalance + input.amount
+      : currentBalance - input.amount
+  }
+
+  private filterLedgers(
+    ledgers: Ledger[],
+    tenantContext: RequestTenantContext,
+    query?: LedgerQueryDto
+  ): Ledger[] {
+    const limit = query?.limit && query.limit > 0 ? query.limit : undefined
+
+    const filtered = ledgers
+      .filter((ledger) => ledger.tenantId === tenantContext.tenantId)
+      .filter((ledger) => !query?.type || ledger.type === query.type)
+      .filter((ledger) => !query?.storeId || ledger.storeId === query.storeId)
+      .filter((ledger) => !query?.orderId || ledger.orderId === query.orderId)
+      .filter((ledger) => !query?.transactionId || ledger.transactionId === query.transactionId)
+      .filter((ledger) => !query?.category || ledger.category === query.category)
+      .filter((ledger) => !query?.recordedAfter || ledger.recordedAt >= query.recordedAfter)
+      .filter((ledger) => !query?.recordedBefore || ledger.recordedAt <= query.recordedBefore)
+      .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
+
+    return typeof limit === 'number' ? filtered.slice(0, limit) : filtered
+  }
+
+  async listLedgersResolved(
+    tenantContext: RequestTenantContext,
+    query?: LedgerQueryDto
+  ): Promise<Ledger[]> {
+    const ledgerModel = this.getLedgerModel()
+    if (!ledgerModel?.findMany) {
+      return this.listLedgers(tenantContext, query)
+    }
+
+    const where: Record<string, unknown> = {
+      tenantId: tenantContext.tenantId
+    }
+    if (query?.type) {
+      where.type = query.type
+    }
+    if (query?.storeId) {
+      where.storeId = query.storeId
+    }
+    if (query?.orderId) {
+      where.orderId = query.orderId
+    }
+    if (query?.transactionId) {
+      where.transactionId = query.transactionId
+    }
+    if (query?.category) {
+      where.category = query.category
+    }
+    if (query?.recordedAfter || query?.recordedBefore) {
+      where.recordedAt = {
+        ...(query?.recordedAfter ? { gte: new Date(query.recordedAfter) } : {}),
+        ...(query?.recordedBefore ? { lte: new Date(query.recordedBefore) } : {})
+      }
+    }
+
+    const records = await ledgerModel.findMany({
+      where,
+      orderBy: [{ recordedAt: 'desc' }],
+      ...(query?.limit && query.limit > 0 ? { take: query.limit } : {})
+    })
+    const ledgers = records.map((record) => this.toLedgerEntity(record))
+    for (const ledger of ledgers) {
+      ledgerStore.set(ledger.id, ledger)
+    }
+    return ledgers
+  }
+
+  async getLedgerResolved(
+    ledgerId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Ledger> {
+    const ledgerModel = this.getLedgerModel()
+    if (!ledgerModel?.findUnique) {
+      return this.getLedger(ledgerId, tenantContext)
+    }
+
+    const record = await ledgerModel.findUnique({
+      where: { id: ledgerId }
+    })
+    if (!record) {
+      throw new Error(`Ledger ${ledgerId} not found`)
+    }
+
+    const ledger = this.toLedgerEntity(record)
+    if (ledger.tenantId !== tenantContext.tenantId) {
+      throw new Error(`Ledger ${ledgerId} not found`)
+    }
+
+    ledgerStore.set(ledger.id, ledger)
+    return ledger
+  }
+
+  async getSettlementDetailResolved(
+    settlementId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<{ settlement: Settlement; ledgers: Ledger[] }> {
+    const settlement = this.getSettlement(settlementId, tenantContext)
+    const ledgers = await this.listLedgersResolved(tenantContext, {
+      storeId: settlement.storeId,
+      recordedAfter: settlement.startDate,
+      recordedBefore: settlement.endDate
+    })
+    return { settlement, ledgers }
+  }
+
+  async getRevenueSummaryResolved(
+    tenantContext: RequestTenantContext,
+    query?: RevenueSummaryQueryDto
+  ): Promise<RevenueSummary> {
+    const storeId = query?.storeId ?? tenantContext.storeId
+    const startDate = query?.startDate ?? this.getDefaultStartDate()
+    const endDate = query?.endDate ?? new Date().toISOString()
+
+    const ledgers = await this.listLedgersResolved(tenantContext, {
+      storeId,
+      recordedAfter: startDate,
+      recordedBefore: endDate
+    })
+
+    const totalRevenue = ledgers
+      .filter((ledger) => ledger.type === LedgerType.Revenue)
+      .reduce((sum, ledger) => sum + ledger.amount, 0)
+
+    const totalExpense = ledgers
+      .filter((ledger) => ledger.type === LedgerType.Expense)
+      .reduce((sum, ledger) => sum + ledger.amount, 0)
+
+    const totalRefund = ledgers
+      .filter((ledger) => ledger.type === LedgerType.Refund)
+      .reduce((sum, ledger) => sum + ledger.amount, 0)
+
+    return {
+      storeId,
+      totalRevenue,
+      totalExpense,
+      totalRefund,
+      netRevenue: totalRevenue - totalExpense - totalRefund,
+      transactionCount: ledgers.length,
+      periodStart: startDate,
+      periodEnd: endDate
+    }
+  }
+
+  async getDailyRevenueResolved(
+    tenantContext: RequestTenantContext,
+    query: DailyRevenueQueryDto
+  ): Promise<DailyRevenue> {
+    const storeId = query.storeId ?? tenantContext.storeId
+    const date = query.date
+    const dayStart = `${date}T00:00:00.000Z`
+    const dayEnd = `${date}T23:59:59.999Z`
+
+    const ledgers = await this.listLedgersResolved(tenantContext, {
+      storeId,
+      recordedAfter: dayStart,
+      recordedBefore: dayEnd
+    })
+
+    const revenue = ledgers
+      .filter((ledger) => ledger.type === LedgerType.Revenue)
+      .reduce((sum, ledger) => sum + ledger.amount, 0)
+
+    const expense = ledgers
+      .filter((ledger) => ledger.type === LedgerType.Expense)
+      .reduce((sum, ledger) => sum + ledger.amount, 0)
+
+    const refund = ledgers
+      .filter((ledger) => ledger.type === LedgerType.Refund)
+      .reduce((sum, ledger) => sum + ledger.amount, 0)
+
+    return {
+      date,
+      storeId,
+      revenue,
+      expense,
+      refund,
+      netRevenue: revenue - expense - refund,
+      transactionCount: ledgers.length
+    }
+  }
+
   // ═══════════════════════════════════════════════════
   // 记账 (Ledger)
   // ═══════════════════════════════════════════════════
@@ -54,23 +302,8 @@ export class FinanceService {
     input: CreateLedgerDto
   ): Promise<Ledger> {
     const now = new Date().toISOString()
-    const tenantEntries = Array.from(ledgerStore.values())
-      .filter((l) => l.tenantId === tenantContext.tenantId)
-
-    const currentBalance = tenantEntries.reduce(
-      (sum, l) => {
-        if (l.type === LedgerType.Revenue || l.type === LedgerType.Adjustment) {
-          return sum + l.amount
-        }
-        return sum - l.amount
-      },
-      0
-    )
-
-    const balance =
-      input.type === LedgerType.Revenue || input.type === LedgerType.Adjustment
-        ? currentBalance + input.amount
-        : currentBalance - input.amount
+    const tenantEntries = await this.listLedgersResolved(tenantContext)
+    const balance = this.calculateLedgerBalance(tenantEntries, input)
 
     const ledger: Ledger = {
       id: `ledger-${randomUUID()}`,
@@ -88,6 +321,30 @@ export class FinanceService {
       createdAt: now
     }
 
+    const ledgerModel = this.getLedgerModel()
+    if (ledgerModel?.create) {
+      const record = await ledgerModel.create({
+        data: {
+          id: ledger.id,
+          tenantId: ledger.tenantId,
+          brandId: ledger.brandId ?? null,
+          storeId: ledger.storeId ?? null,
+          type: ledger.type,
+          amount: ledger.amount,
+          balance: ledger.balance,
+          orderId: ledger.orderId ?? null,
+          transactionId: ledger.transactionId ?? null,
+          description: ledger.description,
+          category: ledger.category ?? null,
+          recordedAt: new Date(ledger.recordedAt),
+          createdAt: new Date(ledger.createdAt)
+        }
+      })
+      const persistedLedger = this.toLedgerEntity(record)
+      ledgerStore.set(persistedLedger.id, persistedLedger)
+      return persistedLedger
+    }
+
     ledgerStore.set(ledger.id, ledger)
     return ledger
   }
@@ -96,20 +353,7 @@ export class FinanceService {
     tenantContext: RequestTenantContext,
     query?: LedgerQueryDto
   ): Ledger[] {
-    const limit = query?.limit && query.limit > 0 ? query.limit : undefined
-
-    const ledgers = Array.from(ledgerStore.values())
-      .filter((l) => l.tenantId === tenantContext.tenantId)
-      .filter((l) => !query?.type || l.type === query.type)
-      .filter((l) => !query?.storeId || l.storeId === query.storeId)
-      .filter((l) => !query?.orderId || l.orderId === query.orderId)
-      .filter((l) => !query?.transactionId || l.transactionId === query.transactionId)
-      .filter((l) => !query?.category || l.category === query.category)
-      .filter((l) => !query?.recordedAfter || l.recordedAt >= query.recordedAfter)
-      .filter((l) => !query?.recordedBefore || l.recordedAt <= query.recordedBefore)
-      .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
-
-    return typeof limit === 'number' ? ledgers.slice(0, limit) : ledgers
+    return this.filterLedgers(Array.from(ledgerStore.values()), tenantContext, query)
   }
 
   getLedger(
@@ -127,7 +371,7 @@ export class FinanceService {
     ledgerId: string,
     tenantContext: RequestTenantContext
   ): { success: boolean } {
-    const ledger = this.getLedger(ledgerId, tenantContext)
+    this.getLedger(ledgerId, tenantContext)
     ledgerStore.delete(ledgerId)
     return { success: true }
   }

@@ -41,11 +41,10 @@ describe('AC-35-01: 商品搜索', () => {
     assert.ok(src.includes('.filter('), '使用 filter 实现过滤');
   });
 
-  it('搜索"射击"应匹配到射击体验商品数据', () => {
+  it('搜索应同时匹配商品名称和分类字段', () => {
     const src = readSource();
-    // 模拟搜索场景: 数据中应有"射击体验"
-    assert.ok(src.includes('射击体验'), '商品数据包含射击体验');
-    // 过滤使用 toLowerCase + includes
+    assert.ok(src.includes('p.name.toLowerCase().includes(q)'), '商品名称应参与过滤');
+    assert.ok(src.includes('p.category.toLowerCase().includes(q)'), '商品分类应参与过滤');
     assert.ok(src.includes('toLowerCase()'), '大小写不敏感搜索');
     assert.ok(src.includes('.includes(q)'), '使用 includes 模糊匹配');
   });
@@ -55,10 +54,11 @@ describe('AC-35-01: 商品搜索', () => {
     assert.ok(src.includes('未找到匹配商品'), '空结果提示');
   });
 
-  it('MOCK_PRODUCTS 应包含 ≥10 个商品', () => {
+  it('商品目录应通过真实 helper 加载', () => {
     const src = readSource();
-    const count = (src.match(/{ id:/g) || []).length;
-    assert.ok(count >= 10, `Mock 商品数不足: ${count}`);
+    assert.ok(src.includes('listStorefrontCashierProducts'), '应接入真实商品目录 helper');
+    assert.ok(src.includes('const loadProductCatalog = useCallback(async () => {'), '应存在真实商品目录加载函数');
+    assert.ok(src.includes('useEffect(() => {'), '应在页面初始化时拉取商品目录');
   });
 });
 
@@ -322,11 +322,13 @@ describe('cashier — 真实交易接线诊断 [P0-E1]', () => {
     assert.ok(src.includes('订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建'), '应展示真实订单创建提示');
   });
 
-  it('[MIGRATED] 会员数据已接入真实 API，商品数据仍为本地 Mock', () => {
+  it('[MIGRATED] 会员与商品数据均已接入真实 API', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_PRODUCTS'), '商品数据仍为内联 Mock');
+    assert.ok(!src.includes('MOCK_PRODUCTS'), '商品数据不应再使用内联 Mock');
     assert.ok(!src.includes('MOCK_MEMBER_DB'), '会员数据不再使用内联 Mock');
     assert.ok(src.includes('lookupStorefrontMember(trimmed)'), '会员查询走真实 API');
+    assert.ok(src.includes('await listStorefrontCashierProducts()'), '商品目录应走真实 API');
+    assert.ok(src.includes('商品目录加载中...'), '应提供真实商品目录加载态');
     assert.ok(src.includes('setTimeout(() => setMessageText('), '当前仍保留消息自动消失定时器');
     assert.ok(!src.includes('支付成功！金额 ${fm(finalTotal)}'), '不应继续使用本地假支付成功文案');
   });

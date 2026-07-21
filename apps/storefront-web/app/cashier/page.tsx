@@ -16,7 +16,7 @@
  */
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PageShell,
@@ -28,7 +28,9 @@ import {
 import {
   buildStorefrontMemberId,
   ensureStorefrontMemberRegistered,
+  listStorefrontCashierProducts,
   startStorefrontCheckout,
+  type StorefrontCashierProduct,
   lookupStorefrontMember,
   type CheckoutPaymentMethod,
 } from '../../lib/storefront-transactions';
@@ -37,13 +39,7 @@ import {
 // 类型定义 （PRD §6 数据模型对齐）
 // ============================================================
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  stock: number;
-}
+type Product = StorefrontCashierProduct;
 
 interface CartItem extends Product {
   quantity: number;
@@ -59,23 +55,6 @@ interface MemberInfo {
 }
 
 type PaymentMethod = 'wechat' | 'balance' | 'cash';
-
-// ============================================================
-// 本地商品目录（前台收银快捷选择用，会员查询走真实 API）
-// ============================================================
-
-const MOCK_PRODUCTS: Product[] = [
-  { id: 'p1', name: '射击体验', price: 30, category: '射击类', stock: 999 },
-  { id: 'p2', name: '赛车竞速', price: 40, category: '竞速类', stock: 999 },
-  { id: 'p3', name: '跳舞机', price: 25, category: '音乐类', stock: 999 },
-  { id: 'p4', name: '夹娃娃 (3次)', price: 15, category: '娱乐类', stock: 999 },
-  { id: 'p5', name: 'VR体验', price: 50, category: '虚拟现实', stock: 999 },
-  { id: 'p6', name: '篮球机', price: 20, category: '运动类', stock: 999 },
-  { id: 'p7', name: '电竞套餐(单人)', price: 88, category: '套餐', stock: 999 },
-  { id: 'p8', name: '电竞套餐(双人)', price: 158, category: '套餐', stock: 999 },
-  { id: 'p9', name: '射击体验x5', price: 125, category: '射击类', stock: 999 },
-  { id: 'p10', name: '不限时畅玩券', price: 199, category: '套餐', stock: 999 },
-];
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string }[] = [
   { value: 'wechat', label: '微信扫码', icon: '💳' },
@@ -127,6 +106,9 @@ export default function CashierPage() {
   const router = useRouter();
   // ── 核心状态 ──
   const [searchText, setSearchText] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [memberPhone, setMemberPhone] = useState('');
   const [member, setMember] = useState<MemberInfo | null>(null);
@@ -136,14 +118,32 @@ export default function CashierPage() {
   const [messageText, setMessageText] = useState('');
   const [paymentCodeUrl, setPaymentCodeUrl] = useState('');
 
+  const loadProductCatalog = useCallback(async () => {
+    setProductsLoading(true);
+    setProductsError(null);
+    try {
+      const nextProducts = await listStorefrontCashierProducts();
+      setProducts(nextProducts);
+    } catch (error) {
+      setProducts([]);
+      setProductsError(error instanceof Error ? error.message : '商品目录加载失败，请稍后重试');
+    } finally {
+      setProductsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProductCatalog();
+  }, [loadProductCatalog]);
+
   // ── 商品过滤 ──
   const filteredProducts = useMemo(() => {
-    return MOCK_PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       if (!searchText.trim()) return true;
       const q = searchText.toLowerCase();
       return p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     });
-  }, [searchText]);
+  }, [products, searchText]);
 
   // ── 购物车统计 ──
   const rawTotal = useMemo(() => {
@@ -399,7 +399,38 @@ export default function CashierPage() {
               overflowY: 'auto',
             }}
           >
-            {filteredProducts.length === 0 ? (
+            {productsLoading ? (
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  textAlign: 'center',
+                  padding: '48px 0',
+                  color: '#94a3b8',
+                  fontSize: 14,
+                }}
+              >
+                商品目录加载中...
+              </div>
+            ) : productsError ? (
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  display: 'grid',
+                  gap: 12,
+                  textAlign: 'center',
+                  padding: '40px 0',
+                }}
+              >
+                <div style={{ color: '#fca5a5', fontSize: 14 }}>
+                  ⚠️ {productsError}
+                </div>
+                <div>
+                  <Button variant="outline" size="sm" onClick={() => void loadProductCatalog()}>
+                    重试加载商品
+                  </Button>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div
                 style={{
                   gridColumn: '1 / -1',
@@ -447,6 +478,15 @@ export default function CashierPage() {
                         }}
                       >
                         {product.category}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: '#64748b',
+                          marginBottom: 8,
+                        }}
+                      >
+                        库存 {product.stock}
                       </div>
                       <div
                         style={{

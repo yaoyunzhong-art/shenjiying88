@@ -566,6 +566,75 @@ interface BusinessOrderListPage {
     page: number;
     pageSize: number;
 }
+interface BusinessTransactionOrderItem {
+    skuId: string;
+    title?: string;
+    quantity: number;
+    price: number;
+}
+interface BusinessTransactionOrder {
+    orderId: string;
+    orderNo?: string;
+    memberId: string;
+    currency: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    paidAt?: string;
+    closedAt?: string;
+    closeReason?: string;
+    items?: BusinessTransactionOrderItem[];
+}
+interface BusinessTransactionPayment {
+    paymentId: string;
+    orderId: string;
+    externalPaymentId?: string;
+    channel?: string;
+    amount: number;
+    status: string;
+    transactionNo?: string;
+    createdAt: string;
+    updatedAt: string;
+    completedAt?: string;
+}
+interface BusinessTransactionRefund {
+    refundId: string;
+    orderId: string;
+    paymentId: string;
+    memberId: string;
+    refundAmount: number;
+    reason: string;
+    status: string;
+    requestedAt: string;
+    completedAt?: string;
+}
+interface BusinessTransactionAggregate {
+    order: BusinessTransactionOrder;
+    payment?: BusinessTransactionPayment;
+    memberNickname?: string;
+    refunds: BusinessTransactionRefund[];
+}
+interface BusinessCashierMemberLookupResult {
+    id: string;
+    name: string;
+    phone: string;
+    memberNo: string;
+    tier: string;
+    points: number;
+    discountRate: number;
+}
+interface BusinessCashierProductItem {
+    sku: string;
+    name: string;
+    price: number;
+    category: string;
+    stock: number;
+}
+interface BusinessCashierProductListPage {
+    items: BusinessCashierProductItem[];
+    total: number;
+}
 /**
  * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
  *
@@ -618,24 +687,7 @@ declare function createBusinessClient(baseUrl?: string): {
             pageSize?: number;
         }, init?: RequestInit) => Promise<BusinessOrderListPage>;
         /** 订单详情 */
-        get: (orderId: string, init?: RequestInit) => Promise<{
-            orderId: string;
-            orderNo: string;
-            memberId: string;
-            status: string;
-            totalAmount: number;
-            paidAmount: number;
-            refundedAmount: number;
-            currency: string;
-            items?: Array<{
-                productId: string;
-                productName: string;
-                quantity: number;
-                unitPriceCents: number;
-            }>;
-            createdAt: string;
-            updatedAt: string;
-        }>;
+        get: (orderId: string, init?: RequestInit) => Promise<BusinessTransactionAggregate>;
         /** 订单退款记录 */
         listRefunds: (orderId: string, init?: RequestInit) => Promise<{
             refundId: string;
@@ -647,15 +699,7 @@ declare function createBusinessClient(baseUrl?: string): {
     };
     cashier: {
         /** 会员查找 (手机号/卡号) */
-        lookupMember: (query: string, init?: RequestInit) => Promise<{
-            id: string;
-            name: string;
-            phone: string;
-            memberNo: string;
-            tier: string;
-            points: number;
-            discountRate: number;
-        } | null>;
+        lookupMember: (query: string, init?: RequestInit) => Promise<BusinessCashierMemberLookupResult | null>;
         /** 会员消费记录 (走 transactions 模块) */
         listMemberTransactions: (memberId: string, init?: RequestInit) => Promise<{
             orderId: string;
@@ -667,12 +711,12 @@ declare function createBusinessClient(baseUrl?: string): {
             createdAt: string;
         }[]>;
         /** 商品扫码查询 */
-        lookupProduct: (sku: string, init?: RequestInit) => Promise<{
-            sku: string;
-            name: string;
-            price: number;
-            category: string;
-        } | null>;
+        lookupProduct: (sku: string, init?: RequestInit) => Promise<BusinessCashierProductItem | null>;
+        /** 商品目录列表 */
+        listProducts: (query?: {
+            limit?: number;
+            offset?: number;
+        }, init?: RequestInit) => Promise<BusinessCashierProductListPage>;
         /** 支付渠道统计 */
         getChannelStats: (init?: RequestInit) => Promise<{
             channel: string;
@@ -935,4 +979,4 @@ type BusinessClient = ReturnType<typeof createBusinessClient>;
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessClient, type BusinessOrderListItem, type BusinessOrderListPage, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessCashierMemberLookupResult, type BusinessCashierProductItem, type BusinessCashierProductListPage, type BusinessClient, type BusinessOrderListItem, type BusinessOrderListPage, type BusinessTransactionAggregate, type BusinessTransactionOrder, type BusinessTransactionOrderItem, type BusinessTransactionPayment, type BusinessTransactionRefund, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
