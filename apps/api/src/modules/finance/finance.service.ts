@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable, Optional } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -370,12 +376,12 @@ export class FinanceService {
       where: { id: ledgerId }
     })
     if (!record) {
-      throw new Error(`Ledger ${ledgerId} not found`)
+      throw new NotFoundException(`Ledger ${ledgerId} not found`)
     }
 
     const ledger = this.toLedgerEntity(record)
     if (ledger.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Ledger ${ledgerId} not found`)
+      throw new NotFoundException(`Ledger ${ledgerId} not found`)
     }
 
     ledgerStore.set(ledger.id, ledger)
@@ -507,12 +513,12 @@ export class FinanceService {
       where: { id: accountId }
     })
     if (!record) {
-      throw new Error(`Account ${accountId} not found`)
+      throw new NotFoundException(`Account ${accountId} not found`)
     }
 
     const account = this.toAccountEntity(record)
     if (account.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Account ${accountId} not found`)
+      throw new NotFoundException(`Account ${accountId} not found`)
     }
 
     accountStore.set(account.id, account)
@@ -538,7 +544,7 @@ export class FinanceService {
   ): Promise<Account> {
     const account = await this.getAccountResolved(accountId, tenantContext)
     if (account.status !== AccountStatus.Active) {
-      throw new Error(`Account ${accountId} is not active`)
+      throw new ConflictException(`Account ${accountId} is not active`)
     }
 
     const accountModel = this.getAccountModel()
@@ -564,7 +570,7 @@ export class FinanceService {
   ): Promise<Account> {
     const account = await this.getAccountResolved(accountId, tenantContext)
     if (account.status === AccountStatus.Closed) {
-      throw new Error(`Account ${accountId} is already closed`)
+      throw new ConflictException(`Account ${accountId} is already closed`)
     }
 
     const accountModel = this.getAccountModel()
@@ -634,12 +640,12 @@ export class FinanceService {
       where: { id: settlementId }
     })
     if (!record) {
-      throw new Error(`Settlement ${settlementId} not found`)
+      throw new NotFoundException(`Settlement ${settlementId} not found`)
     }
 
     const settlement = this.toSettlementEntity(record)
     if (settlement.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Settlement ${settlementId} not found`)
+      throw new NotFoundException(`Settlement ${settlementId} not found`)
     }
 
     settlementStore.set(settlement.id, settlement)
@@ -652,7 +658,7 @@ export class FinanceService {
   ): Promise<Settlement> {
     const settlement = await this.getSettlementResolved(settlementId, tenantContext)
     if (settlement.settlementStatus !== SettlementStatus.Pending) {
-      throw new Error(`Settlement ${settlementId} is not pending confirmation`)
+      throw new ConflictException(`Settlement ${settlementId} is not pending confirmation`)
     }
 
     const settlementModel = this.getSettlementModel()
@@ -678,7 +684,7 @@ export class FinanceService {
   ): Promise<Settlement> {
     const settlement = await this.getSettlementResolved(settlementId, tenantContext)
     if (settlement.settlementStatus !== SettlementStatus.Pending) {
-      throw new Error(`Settlement ${settlementId} is not pending`)
+      throw new ConflictException(`Settlement ${settlementId} is not pending`)
     }
 
     const settlementModel = this.getSettlementModel()
@@ -766,7 +772,7 @@ export class FinanceService {
   ): Ledger {
     const ledger = ledgerStore.get(ledgerId)
     if (!ledger || ledger.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Ledger ${ledgerId} not found`)
+      throw new NotFoundException(`Ledger ${ledgerId} not found`)
     }
     return ledger
   }
