@@ -200,6 +200,12 @@ describe('🛒前台 会员预测扩展测试', () => {
     assert.equal(member.churnProbability, 0.75)
     assert.equal(member.suggestedAction, '立即发送专属优惠券+电话回访')
   })
+
+  it('前台查询不存在会员返回null（边界）', async () => {
+    const svc = freshService()
+    const result = await svc.findById('nonexistent-member')
+    assert.equal(result, null)
+  })
 })
 
 // ════════════════════════════════════════════════
@@ -262,6 +268,16 @@ describe('🔧安监 会员预测扩展测试', () => {
     const complaintRelated = complaintRisk.filter(m => m.mainReason.includes('投诉'))
     assert.equal(complaintRelated.length, 1)
     assert.equal(complaintRelated[0].memberId, 'm-002')
+  })
+
+  it('安监查看指定门店的流失风险分布（正常）', async () => {
+    const svc = freshService()
+    const store1 = await svc.findAll('store-001')
+    const store1High = store1.filter(m => m.riskLevel === RiskLevel.HIGH)
+    assert.equal(store1High.length, 2) // m-001, m-002
+    const store3 = await svc.findAll('store-003')
+    const store3High = store3.filter(m => m.riskLevel === RiskLevel.HIGH)
+    assert.equal(store3High.length, 0)
   })
 })
 

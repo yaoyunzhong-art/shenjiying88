@@ -243,6 +243,14 @@ describe('🎮导玩员 消费分析扩展测试', () => {
     const regAvg = regularMembers.reduce((s, m) => s + m.totalAmount, 0) / regularMembers.length
     assert.ok(svipAvg > regAvg) // SVIP spend more than REGULAR
   })
+
+  it('导玩员查看指定会员的消费次数以便设计互动（正常）', async () => {
+    const svc = freshService()
+    const member = await svc.getMemberSpending('m004')
+    assert.equal(member.totalCount, 98)
+    assert.equal(member.spendingFrequency, 1.8)
+    assert.equal(member.lastSpendDate, '2026-07-16')
+  })
 })
 
 // ════════════════════════════════════════════════
@@ -311,6 +319,14 @@ describe('🤝团建 消费分析扩展测试', () => {
     )
     assert.equal(teamBuildingCompatible.length, 1) // 仅包厢畅饮套餐含'套餐'关键词
     assert.ok(teamBuildingCompatible.includes('包厢畅饮套餐'))
+  })
+
+  it('团建查看周末活跃会员以策划团建排期（正常）', async () => {
+    const svc = freshService()
+    const analysis = await svc.getAnalysis('m001')
+    assert.ok(analysis.favoriteDays.includes('星期六'))
+    assert.ok(analysis.favoriteDays.includes('星期五'))
+    assert.ok(analysis.peakHours.includes(20))
   })
 })
 

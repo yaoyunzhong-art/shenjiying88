@@ -222,6 +222,20 @@ describe('👥HR 设备故障扩展测试', () => {
     const acList = svc.list(ctx, { equipmentType: '空调设备' })
     assert.equal(acList.total, 2)
   })
+
+  it('HR 查看已解决故障数量用于培训评估（正常）', async () => {
+    const svc = freshService()
+    const ctx = makeTenantContext()
+    const f = svc.create(ctx, { equipmentId: 'eq-h6', equipmentName: '复印机-01', equipmentType: '办公设备', faultDescription: '卡纸', severity: FaultSeverity.Minor, reporterName: 'HR', occurredAt: new Date().toISOString() })
+    const summary = svc.getSummary(ctx)
+    assert.equal(summary.total, 1)
+    assert.equal(summary.pending, 1)
+    assert.equal(summary.resolved, 0)
+    svc.assign(f.id, ctx, '维修-赵')
+    svc.resolve(f.id, ctx, '清理卡纸')
+    const summaryAfter = svc.getSummary(ctx)
+    assert.equal(summaryAfter.resolved, 1)
+  })
 })
 
 // ════════════════════════════════════════════════
@@ -380,6 +394,14 @@ describe('🤝团建 设备故障扩展测试', () => {
     assert.equal(deleted, true)
     assert.equal(svc.getById(f.id, ctx), undefined)
   })
+
+  it('团建按设备类型查看团建场地设备状态（正常）', async () => {
+    const svc = freshService()
+    const ctx = makeTenantContext()
+    svc.create(ctx, { equipmentId: 'eq-t4', equipmentName: '无线麦克-02', equipmentType: '音频设备', faultDescription: '断频', severity: FaultSeverity.Major, reporterName: '团建领队', occurredAt: new Date().toISOString() })
+    const audioFaults = svc.list(ctx, { equipmentType: '音频设备' })
+    assert.equal(audioFaults.total, 1)
+  })
 })
 
 // ════════════════════════════════════════════════
@@ -402,6 +424,7 @@ describe('📢营销 设备故障扩展测试', () => {
     const svc = freshService()
     const ctx = makeTenantContext()
     const f1 = svc.create(ctx, { equipmentId: 'eq-m3', equipmentName: '灯光-01', equipmentType: '灯光设备', faultDescription: '灯泡不亮', severity: FaultSeverity.Major, reporterName: '营销小赵', occurredAt: new Date().toISOString() })
+    const f3 = svc.create(ctx, { equipmentId: 'eq-m5', equipmentName: '投影仪-02', equipmentType: '显示设备', faultDescription: '画面偏色', severity: FaultSeverity.Minor, reporterName: '营销小赵', occurredAt: new Date().toISOString() })
     const f2 = svc.create(ctx, { equipmentId: 'eq-m4', equipmentName: 'LED屏-01', equipmentType: '显示设备', faultDescription: '花屏', severity: FaultSeverity.Critical, reporterName: '营销小赵', occurredAt: new Date().toISOString() })
     svc.assign(f1.id, ctx, '电工-张')
     svc.resolve(f1.id, ctx, '更换灯泡')
