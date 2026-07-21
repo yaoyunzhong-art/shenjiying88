@@ -203,8 +203,6 @@ describe('🔧安监 消费分析扩展测试', () => {
     assert.equal(top3[0].totalAmount, 285000)
   })
 
-  it('安监按维度筛选查看日消费数据（正常：审计不同维度)') // comment left
-  // actually assert follows:
   it('安监按维度筛选查看日消费数据（正常：审计不同维度）', async () => {
     const svc = freshService()
     const daily = await svc.query({ page: 1, pageSize: 20, dimension: 'daily' })
@@ -311,7 +309,7 @@ describe('🤝团建 消费分析扩展测试', () => {
     const teamBuildingCompatible = member.preferredItems.filter((item: string) =>
       item.includes('套餐') || item.includes('包厢')
     )
-    assert.equal(teamBuildingCompatible.length, 2) // 包厢畅饮套餐, 果盘拼盘
+    assert.equal(teamBuildingCompatible.length, 1) // 仅包厢畅饮套餐含'套餐'关键词
     assert.ok(teamBuildingCompatible.includes('包厢畅饮套餐'))
   })
 })

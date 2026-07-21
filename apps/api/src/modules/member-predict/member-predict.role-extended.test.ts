@@ -401,7 +401,7 @@ describe('📢营销 会员预测扩展测试', () => {
     const highValueHighRisk = highValueMembers.filter(m => m.riskLevel === RiskLevel.HIGH)
     assert.equal(highValueHighRisk.length, 0) // 高价值会员无高风险
     const regularMembers = all.filter(m => m.memberLevel.startsWith('REGULAR'))
-    assert.equal(regularMembers.length, 4)
+    assert.equal(regularMembers.length, 3) // m-001 REGULAR_L1, m-003 REGULAR_L2, m-006 REGULAR_L3
     const regularHighRisk = regularMembers.filter(m => m.riskLevel === RiskLevel.HIGH)
     assert.equal(regularHighRisk.length, 2) // m-001, m-003
   })
