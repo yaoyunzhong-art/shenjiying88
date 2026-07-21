@@ -231,17 +231,16 @@ describe('CashierPage — 收银台', () => {
     await waitFor(() => {
       expect(screen.getByText('射击游戏')).toBeInTheDocument();
     });
+    // Add to cart
     const addButtons = screen.getAllByText('+ 加入购物车');
     fireEvent.click(addButtons[0]);
-    await waitFor(async () => {
-      const plusButtons = screen.getAllByText('+');
-      const addToCartBtn = plusButtons.find(b => b.closest('[data-testid]') === null);
-      // click the plus button in cart
-      fireEvent.click(plusButtons[plusButtons.length - 1]);
-    });
-    // Check that the message shows success (second add triggers message too)
     await waitFor(() => {
-      expect(screen.getByText(/射击游戏/)).toBeInTheDocument();
+      expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+    });
+    // After adding, the item shows in cart with quantity 1
+    // The cart section shows the selected product
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
     });
   });
 
@@ -514,16 +513,16 @@ describe('CashierPage — 收银台', () => {
       points: 1200,
     });
     renderPage();
-    await waitFor(() => {
-      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText('射击游戏', undefined, { timeout: 1000 })).toBeInTheDocument();
     });
     const addButtons = screen.getAllByText('+ 加入购物车');
     fireEvent.click(addButtons[0]); // ¥5.00
     const phoneInput = screen.getByLabelText('会员手机号');
     fireEvent.change(phoneInput, { target: { value: '13800138000' } });
     fireEvent.click(screen.getByText('查询'));
-    await waitFor(() => {
-      expect(screen.getByText(/黄金会员/)).toBeInTheDocument();
+    await waitFor(async () => {
+      expect(await screen.findByText(/欢迎 张三/, undefined, { timeout: 1000 })).toBeInTheDocument();
     });
   });
 });

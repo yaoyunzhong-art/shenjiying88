@@ -207,12 +207,12 @@ describe('CheckoutPage — 结算页', () => {
 
   // ====== 交互测试 ======
 
-  test('quantity adjuster minus button decreases quantity', () => {
+  test('quantity adjuster minus button decreases quantity', async () => {
     render(<CheckoutPage />);
     const minusBtn = screen.getByTestId('qty-minus-p1');
     fireEvent.click(minusBtn);
     // p1 quantity was 1, decreased to 0 → item removed
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.queryByText('基础护肤套装')).not.toBeInTheDocument();
     });
   });
@@ -226,10 +226,10 @@ describe('CheckoutPage — 结算页', () => {
     expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥764.00');
   });
 
-  test('selects payment method via card click', () => {
+  test('selects payment method via card click', async () => {
     render(<CheckoutPage />);
     fireEvent.click(screen.getByTestId('payment-wechat'));
-    waitFor(() => {
+    await waitFor(() => {
       // Payment method selected indicator
       expect(screen.getByTestId('payment-wechat')).toBeInTheDocument();
     });
@@ -244,43 +244,43 @@ describe('CheckoutPage — 结算页', () => {
     expect(input.checked).toBe(true);
   });
 
-  test('applies valid coupon WELCOME10', () => {
+  test('applies valid coupon WELCOME10', async () => {
     render(<CheckoutPage />);
     const couponInput = screen.getByTestId('input-coupon');
     fireEvent.change(couponInput, { target: { value: 'WELCOME10' } });
     fireEvent.click(screen.getByTestId('btn-apply-coupon'));
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByTestId('coupon-status')).toHaveTextContent(/新客首单立减/);
       expect(screen.getByTestId('coupon-discount')).toHaveTextContent('-¥10.00');
     });
   });
 
-  test('shows error for invalid coupon', () => {
+  test('shows error for invalid coupon', async () => {
     render(<CheckoutPage />);
     const couponInput = screen.getByTestId('input-coupon');
     fireEvent.change(couponInput, { target: { value: 'INVALID' } });
     fireEvent.click(screen.getByTestId('btn-apply-coupon'));
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByTestId('coupon-status')).toHaveTextContent(/无效的优惠券码/);
     });
   });
 
-  test('applies valid coupon SAVE20', () => {
+  test('applies valid coupon SAVE20', async () => {
     render(<CheckoutPage />);
     const couponInput = screen.getByTestId('input-coupon');
     fireEvent.change(couponInput, { target: { value: 'SAVE20' } });
     fireEvent.click(screen.getByTestId('btn-apply-coupon'));
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByTestId('coupon-status')).toHaveTextContent(/满200减20/);
     });
   });
 
-  test('removes applied coupon', () => {
+  test('removes applied coupon', async () => {
     render(<CheckoutPage />);
     const couponInput = screen.getByTestId('input-coupon');
     fireEvent.change(couponInput, { target: { value: 'WELCOME10' } });
     fireEvent.click(screen.getByTestId('btn-apply-coupon'));
-    waitFor(() => {
+    await waitFor(() => {
       const removeBtn = screen.getByTestId('btn-remove-coupon');
       fireEvent.click(removeBtn);
       expect(screen.queryByTestId('coupon-status')).not.toBeInTheDocument();

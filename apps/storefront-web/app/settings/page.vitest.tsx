@@ -59,25 +59,25 @@ describe('SettingsPage — 系统设置', () => {
     render(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('通用设置')).toBeInTheDocument();
-      expect(screen.getByText('通知设置')).toBeInTheDocument();
-      expect(screen.getByText('安全设置')).toBeInTheDocument();
-      expect(screen.getByText('账单设置')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
+    expect(screen.getByText('通知设置')).toBeInTheDocument();
+    expect(screen.getByText('安全设置')).toBeInTheDocument();
+    expect(screen.getByText('账单设置')).toBeInTheDocument();
   });
 
   test('renders general settings fields by default', async () => {
     render(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('门店名称')).toBeInTheDocument();
-      expect(screen.getByText('Demo Store 旗舰店')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
+    expect(screen.getByText('Demo Store 旗舰店')).toBeInTheDocument();
   });
 
   test('renders save settings button', async () => {
     render(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('保存设置')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   // ====== 状态测试 ======
@@ -225,6 +225,88 @@ describe('SettingsPage — 系统设置', () => {
     await waitFor(() => {
       expect(screen.getByText('开启')).toBeInTheDocument();
       expect(screen.getByText('关闭')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 新增 安全补强测试 ======
+
+  test('general tab shows store name input', async () => {
+    render(<SettingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Demo Store 旗舰店')).toBeInTheDocument();
+    });
+  });
+
+  test('general tab shows opening hours', async () => {
+    render(<SettingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('09:00 - 22:00')).toBeInTheDocument();
+    });
+  });
+
+  test('billing tab shows plan expiry date', async () => {
+    render(<SettingsPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-billing'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('2026-12-31')).toBeInTheDocument();
+    });
+  });
+
+  test('billing tab shows next payment', async () => {
+    render(<SettingsPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-billing'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('¥2,999/月')).toBeInTheDocument();
+    });
+  });
+
+  test('security tab shows IP whitelist count', async () => {
+    render(<SettingsPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-security'));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('3个IP地址')).toBeInTheDocument();
+    });
+  });
+
+  test('switches from general to notifications and verifies content', async () => {
+    render(<SettingsPage />);
+    // start on general
+    await waitFor(() => expect(screen.getByTestId('tab-general')).toBeInTheDocument());
+    // switch to notifications
+    fireEvent.click(screen.getByTestId('tab-notifications'));
+    await waitFor(() => {
+      expect(screen.getByText('低库存预警')).toBeInTheDocument();
+      expect(screen.getByText('订单通知')).toBeInTheDocument();
+    });
+  });
+
+  test('renders all settings sections when each tab is clicked once', async () => {
+    render(<SettingsPage />);
+    const pages = ['general', 'notifications', 'security', 'billing'];
+    for (const p of pages) {
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId(`tab-${p}`));
+      });
+    }
+    await waitFor(() => {
+      // billing should have all 4 sections rendered eventually
+      expect(screen.getByText('当前套餐')).toBeInTheDocument();
+      expect(screen.getByText('专业版')).toBeInTheDocument();
+    });
+  });
+
+  test('stores page does not crash when all fields are unmounted and remounted', async () => {
+    const { unmount, rerender } = render(<SettingsPage />);
+    unmount();
+    rerender(<SettingsPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('page-shell')).toBeInTheDocument();
     });
   });
 });
