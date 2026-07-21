@@ -45,6 +45,37 @@ import {
   AiModelConfig,
   AiPromptTemplate,
   AiExecutionRecord,
+  SecretAsset,
+  CertificateAsset,
+  EdgeNode,
+  EdgeSyncTask,
+  FeatureFlag,
+  BackupSnapshot,
+  RestoreRun,
+  PiiPolicy,
+  NotificationTemplate,
+  NotificationDispatch,
+  RateLimitPolicy,
+  QuotaLedger,
+  FileAsset,
+  OpenPlatformApp,
+  ConfigValueType,
+  SecretKind,
+  SecretProvider,
+  CertificateFormat,
+  EdgeNodeStatus,
+  EdgeSyncDirection,
+  FeatureFlagStatus,
+  RolloutStrategy,
+  BackupStatus,
+  RestoreStatus,
+  PiiLevel,
+  RolloutStrategy,
+  QuotaPeriod,
+  NotificationChannelType,
+  NotificationStatus,
+  OpenPlatformAppType,
+  FileAssetKind,
 } from './index';
 
 // ─── 1. Enum Integrity Tests ─────────────────────────────────────────
@@ -599,5 +630,278 @@ describe('Cross-Module Contracts', () => {
     };
     assert.ok(typeof executionOutput.summary === 'string');
     assert.ok(Array.isArray(executionOutput.keyPoints));
+  });
+
+  it('SecretAsset ↔ CertificateAsset ↔ EdgeNode infrastructure assets', () => {
+    // 1. Secret asset
+    const secret: SecretAsset = {
+      id: 'sec-001',
+      kind: SecretKind.ApiKey,
+      provider: SecretProvider.AwsSecretsManager,
+      name: 'production-api-key',
+      key: 'prod/api/v1/key',
+      version: 3,
+      encrypted: true,
+      algorithm: 'AES-256',
+      rotatedAt: new Date().toISOString(),
+      expiresAt: '2027-01-01T00:00:00Z',
+      metadata: { environment: 'production' },
+      tags: ['api', 'production'],
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    };
+    assert.strictEqual(secret.kind, SecretKind.ApiKey);
+    assert.strictEqual(secret.provider, SecretProvider.AwsSecretsManager);
+    assert.strictEqual(secret.version, 3);
+    assert.strictEqual(secret.encrypted, true);
+
+    // 2. Certificate asset
+    const cert: CertificateAsset = {
+      id: 'cert-001',
+      name: 'wildcard-m5-local',
+      format: CertificateFormat.PEM,
+      issuer: 'LetsEncrypt',
+      subjectCN: '*.m5.local',
+      issuedAt: '2026-01-01T00:00:00Z',
+      expiresAt: '2027-01-01T00:00:00Z',
+      fingerPrint: 'AB:CD:EF:01:23:45',
+      serialNumber: '1234567890',
+      autoRenew: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    };
+    assert.strictEqual(cert.format, CertificateFormat.PEM);
+    assert.strictEqual(cert.autoRenew, true);
+    assert.ok(new Date(cert.expiresAt) > new Date(cert.issuedAt));
+
+    // 3. Edge node references secrets
+    const edgeNode: EdgeNode = {
+      id: 'edge-001',
+      name: 'cn-east-1',
+      region: 'cn-east',
+      status: EdgeNodeStatus.Online,
+      lastSeenAt: new Date().toISOString(),
+      ipAddress: '10.0.1.1',
+      version: '2.1.0',
+      capabilities: ['compute', 'cache'],
+      secretRef: secret.id,
+      certificateRef: cert.id,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-15T00:00:00Z',
+    };
+    assert.strictEqual(edgeNode.status, EdgeNodeStatus.Online);
+    assert.strictEqual(edgeNode.secretRef, secret.id);
+    assert.strictEqual(edgeNode.certificateRef, cert.id);
+  });
+
+  it('FeatureFlag ↔ BackupSnapshot ↔ RestoreRun disaster recovery chain', () => {
+    // 1. Feature flag controls backup feature
+    const flag: FeatureFlag = {
+      id: 'flag-001',
+      key: 'enable-auto-backup',
+      enabled: true,
+      strategy: RolloutStrategy.All,
+      status: FeatureFlagStatus.Active,
+      description: 'Enable automatic daily backup',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    };
+    assert.strictEqual(flag.enabled, true);
+    assert.strictEqual(flag.strategy, RolloutStrategy.All);
+    assert.strictEqual(flag.status, FeatureFlagStatus.Active);
+
+    // 2. Backup snapshot created
+    const snapshot: BackupSnapshot = {
+      id: 'bkp-001',
+      name: 'daily-20260715',
+      sourceResource: 'tenant-demo-db',
+      status: BackupStatus.Completed,
+      sizeBytes: 1073741824,
+      checksum: 'sha256-a1b2c3d4',
+      storageLocation: 's3://m5-backups/daily/',
+      retentionDays: 30,
+      metadata: { triggeredBy: 'scheduler' },
+      startedAt: '2026-07-15T02:00:00Z',
+      completedAt: '2026-07-15T02:15:00Z',
+      createdAt: '2026-07-15T02:00:00Z',
+      updatedAt: '2026-07-15T02:15:00Z',
+    };
+    assert.strictEqual(snapshot.status, BackupStatus.Completed);
+    assert.strictEqual(snapshot.sizeBytes, 1073741824);
+    assert.ok(snapshot.completedAt! > snapshot.startedAt);
+
+    // 3. Restore run from backup
+    const restoreRun: RestoreRun = {
+      id: 'rest-001',
+      backupId: snapshot.id,
+      targetResource: 'tenant-demo-db-restore',
+      status: RestoreStatus.Completed,
+      startedAt: '2026-07-15T03:00:00Z',
+      completedAt: '2026-07-15T03:12:00Z',
+      createdAt: '2026-07-15T03:00:00Z',
+      updatedAt: '2026-07-15T03:12:00Z',
+    };
+    assert.strictEqual(restoreRun.backupId, snapshot.id);
+    assert.strictEqual(restoreRun.status, RestoreStatus.Completed);
+    assert.ok(restoreRun.completedAt! > restoreRun.startedAt);
+  });
+
+  it('NotificationTemplate ↔ NotificationDispatch notification pipeline', () => {
+    // 1. Template
+    const template: NotificationTemplate = {
+      id: 'tpl-001',
+      code: 'order-confirmation',
+      name: '订单确认通知',
+      channelType: NotificationChannelType.SMS,
+      content: '您的订单 {{orderNo}} 已确认，预计 {{deliveryDate}} 送达。',
+      variables: ['orderNo', 'deliveryDate'],
+      version: 2,
+      locale: 'zh-CN',
+      enabled: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    };
+    assert.strictEqual(template.code, 'order-confirmation');
+    assert.strictEqual(template.channelType, NotificationChannelType.SMS);
+    assert.ok(template.variables.includes('orderNo'));
+    assert.strictEqual(template.enabled, true);
+
+    // 2. Dispatched notification
+    const dispatch: NotificationDispatch = {
+      id: 'disp-001',
+      templateId: template.id,
+      channel: NotificationChannelType.SMS,
+      scope: { scopeType: FoundationScopeType.Tenant, scopeId: 'T001' },
+      recipient: '13800138001',
+      payload: { rendered: '您的订单 ORD-001 已确认，预计 2026-07-20 送达。' },
+      status: NotificationStatus.Sent,
+      sentAt: '2026-07-15T10:00:00Z',
+      scheduledAt: '2026-07-15T10:00:00Z',
+    };
+    assert.strictEqual(dispatch.templateId, template.id);
+    assert.strictEqual(dispatch.status, NotificationStatus.Sent);
+    assert.strictEqual(dispatch.channel, NotificationChannelType.SMS);
+  });
+
+  it('RateLimitPolicy ↔ QuotaLedger rate limiting data model', () => {
+    const policy: RateLimitPolicy = {
+      id: 'rl-001',
+      name: 'API 速率限制',
+      scope: { scopeType: FoundationScopeType.Tenant, scopeId: 'T001' },
+      quotaPeriod: QuotaPeriod.Minute,
+      maxRequests: 1000,
+      burstLimit: 2000,
+      violationAction: 'throttle',
+      enabled: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    };
+    assert.strictEqual(policy.maxRequests, 1000);
+    assert.strictEqual(policy.quotaPeriod, QuotaPeriod.Minute);
+    assert.strictEqual(policy.enabled, true);
+
+    const ledger: QuotaLedger = {
+      id: 'ql-001',
+      policyId: policy.id,
+      subjectId: 'tenant-demo',
+      periodStart: '2026-07-15T10:00:00Z',
+      periodEnd: '2026-07-15T11:00:00Z',
+      used: 250,
+      remaining: 750,
+      exceeded: false,
+      lastRequestAt: '2026-07-15T10:30:00Z',
+      createdAt: '2026-07-15T10:00:00Z',
+      updatedAt: '2026-07-15T10:30:00Z',
+    };
+    assert.strictEqual(ledger.policyId, policy.id);
+    assert.strictEqual(ledger.used, 250);
+    assert.strictEqual(ledger.remaining, 750);
+    assert.strictEqual(ledger.exceeded, false);
+  });
+
+  it('EdgeNodeStatus / EdgeSyncDirection / FileAssetKind enum integrity', () => {
+    const statuses = Object.values(EdgeNodeStatus);
+    assert.ok(statuses.includes('ONLINE'));
+    assert.ok(statuses.includes('OFFLINE'));
+    assert.ok(statuses.includes('DEGRADED'));
+    assert.ok(statuses.includes('MAINTENANCE'));
+
+    const directions = Object.values(EdgeSyncDirection);
+    assert.ok(directions.includes('UPSTREAM'));
+    assert.ok(directions.includes('DOWNSTREAM'));
+    assert.ok(directions.includes('BIDIRECTIONAL'));
+
+    const kinds = Object.values(EdgeNodeStatus);
+    assert.strictEqual(new Set(kinds).size, kinds.length);
+  });
+
+  it('PiiPolicy covers all required data governance fields', () => {
+    const policy: PiiPolicy = {
+      id: 'pii-001',
+      name: 'Customer PII Protection',
+      piiLevel: PiiLevel.Restricted,
+      scope: { scopeType: FoundationScopeType.Tenant, scopeId: 'T001' },
+      dataCategories: ['phone', 'email', 'idNumber'],
+      retentionDays: 365,
+      maskingRules: {
+        phone: 'mask_middle_4',
+        email: 'mask_before_at',
+      },
+      encryptionRequired: true,
+      accessAuditRequired: true,
+      enabled: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    };
+    assert.strictEqual(policy.piiLevel, PiiLevel.Restricted);
+    assert.strictEqual(policy.retentionDays, 365);
+    assert.strictEqual(policy.encryptionRequired, true);
+    assert.strictEqual(policy.accessAuditRequired, true);
+    assert.ok(policy.dataCategories.includes('phone'));
+  });
+
+  it('OpenPlatformApp ↔ FileAsset ↔ EdgeSyncTask integration contract', () => {
+    const app: OpenPlatformApp = {
+      id: 'app-001',
+      appId: 'wx-app-001',
+      name: 'MiniApp',
+      appType: OpenPlatformAppType.MiniApp,
+      scope: { scopeType: FoundationScopeType.Tenant, scopeId: 'T001' },
+      enabled: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    };
+    assert.strictEqual(app.enabled, true);
+    assert.strictEqual(app.appType, OpenPlatformAppType.MiniApp);
+
+    const asset: FileAsset = {
+      id: 'file-001',
+      kind: FileAssetKind.Image,
+      name: 'logo.png',
+      mimeType: 'image/png',
+      sizeBytes: 204800,
+      storageKey: 'assets/logo.png',
+      checksum: 'md5-aabbcc',
+      tags: ['logo', 'brand'],
+      uploadedBy: 'admin',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    };
+    assert.strictEqual(asset.kind, FileAssetKind.Image);
+    assert.strictEqual(asset.mimeType, 'image/png');
+
+    const syncTask: EdgeSyncTask = {
+      id: 'sync-001',
+      edgeNodeId: 'edge-001',
+      direction: EdgeSyncDirection.Upstream,
+      resourceType: 'file',
+      resourceIds: [asset.id],
+      status: 'pending',
+      priority: 1,
+      createdAt: '2026-07-15T00:00:00Z',
+      updatedAt: '2026-07-15T00:00:00Z',
+    };
+    assert.strictEqual(syncTask.direction, EdgeSyncDirection.Upstream);
+    assert.ok(syncTask.resourceIds.includes(asset.id));
   });
 });

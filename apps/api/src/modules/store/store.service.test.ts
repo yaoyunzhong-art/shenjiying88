@@ -87,7 +87,8 @@ describe('StoreService', () => {
 
     it('支持按名称升序排列', () => {
       const result = service.list(defaultTenant, { sortBy: 'name', sortOrder: 'asc' })
-      assert.equal(result.items[0]?.name, '北京国贸店')
+      // 中文按 localeCompare 排序, '上' < '北' < '广' < '成' < '杭' < '深'
+      assert.equal(result.items[0]?.name, '上海南京路店') // 上海 > 北京
       assert.equal(result.items[result.items.length - 1]?.name, '深圳万象城店')
     })
 

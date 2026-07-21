@@ -26,7 +26,9 @@ import {
   fallbackPortalConsumerDescriptor,
   getDefaultApiBaseUrl,
   loadFoundationConsumerDescriptor,
-  loadFoundationGovernanceReadModel
+  loadFoundationGovernanceReadModel,
+  computeBackoffDelay,
+  createBusinessClient
 } from './index';
 
 test('sdk: builds bootstrap headers from tenant context options', async () => {
@@ -1191,4 +1193,224 @@ test('sdk: deleteData sends DELETE request without body', async () => {
   assert.equal(requests[0]?.url, 'http://localhost:3001/api/v1/identity-access/credentials/cred-001');
   assert.equal(requests[0]?.method, 'DELETE');
   assert.equal(requests[0]?.body, undefined);
+});
+
+test('sdk: computeBackoffDelay attempt=1 returns initialDelayMs', () => {
+  assert.equal(computeBackoffDelay(1, 1000, 2), 1000);
+  assert.equal(computeBackoffDelay(1, 500, 3), 500);
+});
+
+test('sdk: computeBackoffDelay attempt=2 doubles delay', () => {
+  assert.equal(computeBackoffDelay(2, 1000, 2), 2000);
+  assert.equal(computeBackoffDelay(2, 500, 3), 1500);
+});
+
+test('sdk: computeBackoffDelay attempt=0 treated as attempt=1', () => {
+  assert.equal(computeBackoffDelay(0, 1000, 2), 1000);
+});
+
+test('sdk: computeBackoffDelay attempt=5 exponential growth', () => {
+  assert.equal(computeBackoffDelay(5, 100, 2), 1600); // 100*2^4
+});
+
+test('sdk: ApiClient sends tenant config batch via POST /tenant-config/batch', async () => {
+  let requestUrl = '';
+  let requestBody = '';
+  globalThis.fetch = (async (input, init) => {
+    requestUrl = String(input);
+    requestBody = typeof init?.body === 'string' ? init.body : '';
+    return new Response(
+      JSON.stringify({ success: true, data: { items: [{ key: 'test-key', value: 'test' }], total: 1 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', tenantId: 't1' });
+  const result = await client.setTenantConfigBatch([
+    { key: 'test-key', value: 'test', scope: 'store', scopeCode: 's1', sensitivity: 'internal' }
+  ]);
+
+  assert.equal(result.total, 1);
+  assert.equal(requestUrl, 'http://localhost:3001/api/v1/tenant-config/batch');
+  assert.match(requestBody, /test-key/);
+});
+
+test('sdk: ApiClient fetches workbench configs by code', async () => {
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ success: true, data: { workbench: 'W-S', items: [{ key: 'theme', value: 'dark' }], total: 1 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', tenantId: 't1' });
+  const result = await client.getTenantWorkbenchConfigs('W-S');
+  assert.equal(result.workbench, 'W-S');
+  assert.equal(result.total, 1);
+});
+
+test('sdk: ApiClient gets tenant config meta definitions', async () => {
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ success: true, data: { items: [{ key: 'theme', type: 'string', description: 'UI theme' }], total: 1 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', tenantId: 't1' });
+  const result = await client.getTenantConfigMeta();
+  assert.equal(result.total, 1);
+  assert.equal(result.items[0]?.key, 'theme');
+});
+
+test('sdk: ApiClient rollbacks tenant config', async () => {
+  let requestBody = '';
+  globalThis.fetch = (async (_input, init) => {
+    requestBody = typeof init?.body === 'string' ? init.body : '';
+    return new Response(
+      JSON.stringify({ success: true, data: { key: 'theme', value: 'light', version: 2 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', tenantId: 't1' });
+  const result = await client.rollbackTenantConfig(1, 'theme');
+  assert.equal(result.version, 2);
+  assert.match(requestBody, /targetVersion/);
+  assert.match(requestBody, /configId/);
+});
+
+test('sdk: ApiClient lists tenant config audit logs', async () => {
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ success: true, data: [{ id: 'log-1', action: 'UPDATE', key: 'theme' }], timestamp: '2026-07-22T00:00:00.000Z' }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )) as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', tenantId: 't1' });
+  const logs = await client.listTenantConfigAuditLogs('tenant-demo', 50);
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0]?.action, 'UPDATE');
+});
+
+test('sdk: createBusinessClient returns typed client with checkout/orders/cashier', () => {
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  assert.ok(biz.checkout);
+  assert.ok(biz.checkout.start);
+  assert.ok(biz.orders);
+  assert.ok(biz.orders.list);
+  assert.ok(biz.orders.get);
+  assert.ok(biz.cashier);
+  assert.ok(biz.cashier.lookupMember);
+  assert.ok(biz.cashier.lookupProduct);
+  assert.ok(biz.cashier.createOrder);
+  assert.ok(biz.cashier.createPayment);
+  assert.ok(biz.cashier.createRefund);
+  assert.ok(biz.refunds);
+  assert.ok(biz.finance);
+  assert.ok(biz.paymentGateway);
+  assert.ok(biz.budget);
+  assert.ok(biz.promotions);
+  assert.ok(biz.raw);
+  assert.equal(typeof biz.checkout.start, 'function');
+});
+
+test('sdk: createBusinessClient checkout.start makes POST request', async () => {
+  let requestUrl = '';
+  let requestMethod = '';
+  globalThis.fetch = (async (input, init) => {
+    requestUrl = String(input);
+    requestMethod = String(init?.method ?? '');
+    return new Response(
+      JSON.stringify({ success: true, data: { orderId: 'ord-001', transactionId: 'tx-001', totalCents: 2999 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  const result = await biz.checkout.start({
+    memberId: 'mem-001',
+    items: [{ productId: 'p1', quantity: 1, unitPriceCents: 2999 }],
+    paymentChannel: 'WECHAT',
+  });
+  assert.equal(result.orderId, 'ord-001');
+  assert.equal(result.totalCents, 2999);
+  assert.match(requestUrl, /transactions\/checkout/);
+  assert.equal(requestMethod, 'POST');
+});
+
+test('sdk: createBusinessClient cashier.lookupMember encodes query', async () => {
+  let requestUrl = '';
+  globalThis.fetch = (async (input) => {
+    requestUrl = String(input);
+    return new Response(
+      JSON.stringify({ success: true, data: { memberId: 'mem-001', name: '张三', phone: '13800138001' }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  const result = await biz.cashier.lookupMember('13800138001');
+  assert.equal(result?.memberId, 'mem-001');
+  assert.match(requestUrl, /13800138001/);
+});
+
+test('sdk: createBusinessClient cashier.listProducts builds URL params', async () => {
+  let requestUrl = '';
+  globalThis.fetch = (async (input) => {
+    requestUrl = String(input);
+    return new Response(
+      JSON.stringify({ success: true, data: { items: [], total: 0 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  await biz.cashier.listProducts({ limit: 20, offset: 0 });
+  assert.match(requestUrl, /limit=20/);
+  assert.match(requestUrl, /offset=0/);
+});
+
+test('sdk: createBusinessClient orders.listPage returns paginated response', async () => {
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ success: true, data: { items: [{ orderId: 'o1' }], total: 1, page: 1, pageSize: 20 }, timestamp: '2026-07-22T00:00:00.000Z' }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )) as typeof fetch;
+
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  const result = await biz.orders.listPage({ page: 1, pageSize: 20 });
+  assert.equal(result.total, 1);
+  assert.ok(Array.isArray(result.items));
+});
+
+test('sdk: createBusinessClient finance accounts and revenue summary', async () => {
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ success: true, data: [{ accountId: 'acct-001', balance: 10000 }], timestamp: '2026-07-22T00:00:00.000Z' }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )) as typeof fetch;
+
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  const accounts = await biz.finance.listAccounts();
+  assert.equal(accounts.length, 1);
+  assert.equal(accounts[0]?.accountId, 'acct-001');
+});
+
+test('sdk: createBusinessClient paymentGateway.pay sends POST', async () => {
+  let requestUrl = '';
+  globalThis.fetch = (async (input) => {
+    requestUrl = String(input);
+    return new Response(
+      JSON.stringify({ success: true, data: { transactionId: 'pay-001', status: 'pending' }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const biz = createBusinessClient('http://localhost:3002/api/v1');
+  const result = await biz.paymentGateway.pay({
+    orderId: 'ord-001', amount: 2999, currency: 'CNY', provider: 'WECHAT',
+  });
+  assert.equal(result.transactionId, 'pay-001');
+  assert.match(requestUrl, /payment-gateway\/pay/);
+});
+
+test('sdk: computeBackoffDelay large number of attempts', () => {
+  // 10th attempt: 1000 * 2^9 = 512000
+  assert.equal(computeBackoffDelay(10, 1000, 2), 512000);
+  // 7th attempt with multiplier 3: 1000 * 3^6 = 729000
+  assert.equal(computeBackoffDelay(7, 1000, 3), 729000);
 });
