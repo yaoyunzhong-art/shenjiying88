@@ -547,3 +547,221 @@ describe('[finance] 合约: 跨租户隔离', () => {
     )
   })
 })
+
+// ─── Invoice 查询合约 ────────────────────────────────────
+
+describe('[finance] 合约: Invoice 查询 (listInvoices / getInvoice)', () => {
+  it('getInvoice 返回创建的发票', async () => {
+    const svc = makeService()
+    const inv = await svc.createInvoice(CTX_A, {
+      amount: 666,
+      type: InvoiceType.Regular,
+      orderId: 'O-1'
+    })
+    const fetched = svc.getInvoice(inv.id, CTX_A)
+    assert.equal(fetched.id, inv.id)
+    assert.equal(fetched.amount, 666)
+  })
+
+  it('getInvoice 不存在抛出异常', async () => {
+    const svc = makeService()
+    assert.throws(() => svc.getInvoice('non-existent-invoice', CTX_A))
+  })
+
+  it('getInvoice 跨租户隔离', async () => {
+    const svc = makeService()
+    const inv = await svc.createInvoice(CTX_A, {
+      amount: 100,
+      type: InvoiceType.Regular,
+      orderId: 'O-1'
+    })
+    assert.throws(() => svc.getInvoice(inv.id, CTX_B))
+  })
+
+  it('listInvoices 列出所有发票', async () => {
+    const svc = makeService()
+    await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    await svc.createInvoice(CTX_A, { amount: 200, type: InvoiceType.Vat, orderId: 'O-2' })
+    const list = svc.listInvoices(CTX_A)
+    assert.equal(list.length, 2)
+  })
+
+  it('listInvoices 按 type 过滤', async () => {
+    const svc = makeService()
+    let inv = await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    svc.issueInvoice(inv.id, CTX_A)
+    await svc.createInvoice(CTX_A, { amount: 200, type: InvoiceType.Vat, orderId: 'O-2' })
+    const list = svc.listInvoices(CTX_A, { type: InvoiceType.Vat })
+    assert.equal(list.length, 1)
+    assert.equal(list[0].type, InvoiceType.Vat)
+  })
+
+  it('listInvoices 按 status 过滤', async () => {
+    const svc = makeService()
+    let inv = await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    svc.issueInvoice(inv.id, CTX_A)
+    await svc.createInvoice(CTX_A, { amount: 200, type: InvoiceType.Vat, orderId: 'O-2' })
+    const list = svc.listInvoices(CTX_A, { status: InvoiceStatus.Issued })
+    assert.equal(list.length, 1)
+    assert.equal(list[0].status, InvoiceStatus.Issued)
+  })
+
+  it('listInvoices 按 orderId 过滤', async () => {
+    const svc = makeService()
+    await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    await svc.createInvoice(CTX_A, { amount: 200, type: InvoiceType.Vat, orderId: 'O-2' })
+    const list = svc.listInvoices(CTX_A, { orderId: 'O-1' })
+    assert.equal(list.length, 1)
+  })
+
+  it('listInvoices limit 限制', async () => {
+    const svc = makeService()
+    for (let i = 0; i < 5; i++) {
+      await svc.createInvoice(CTX_A, {
+        amount: 100 + i,
+        type: InvoiceType.Regular,
+        orderId: `O-${i}`
+      })
+    }
+    const list = svc.listInvoices(CTX_A, { limit: 3 })
+    assert.equal(list.length, 3)
+  })
+
+  it('listInvoices 跨租户隔离', async () => {
+    const svc = makeService()
+    await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    const list = svc.listInvoices(CTX_B)
+    assert.equal(list.length, 0)
+  })
+
+  it('listInvoices 按 storeId 过滤', async () => {
+    const svc = makeService()
+    // 通过 CTX_A 创建发票 (storeId = store-A)，模拟不同 storeId
+    await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    // CTX_A.storeId is 'store-A', so filtering by different storeId yields 0
+    const list = svc.listInvoices(CTX_A, { storeId: 'other-store' })
+    assert.equal(list.length, 0)
+  })
+})
+
+// ───deleteLedger 合约 ────────────────────────────────────
+
+describe('[finance] 合约: deleteLedger', () => {
+  it('deleteLedger 删除成功', async () => {
+    const svc = makeService()
+    const l = await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: 'del-test' })
+    const result = svc.deleteLedger(l.id, CTX_A)
+    assert.equal(result.success, true)
+    assert.throws(() => svc.getLedger(l.id, CTX_A))
+  })
+
+  it('deleteLedger 不存在的 ID 抛出异常', async () => {
+    const svc = makeService()
+    assert.throws(() => svc.deleteLedger('non-existent', CTX_A))
+  })
+
+  it('deleteLedger 跨租户隔离', async () => {
+    const svc = makeService()
+    const l = await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: 'del-test' })
+    assert.throws(() => svc.deleteLedger(l.id, CTX_B))
+  })
+})
+
+// ─── Resolved 方法补全合约 ──────────────────────────────
+
+describe('[finance] 合约: *Resolved 方法补全 (无 Prisma 回退)', () => {
+  it('getLedgerResolved 无 Prisma 时回退到 getLedger', async () => {
+    const svc = makeService()
+    const l = await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 500, description: 'resolved-test' })
+    const resolved = await svc.getLedgerResolved(l.id, CTX_A)
+    assert.equal(resolved.id, l.id)
+    assert.equal(resolved.amount, 500)
+  })
+
+  it('getLedgerResolved 不存在的 ID 抛出异常', async () => {
+    const svc = makeService()
+    await assert.rejects(
+      () => svc.getLedgerResolved('non-existent', CTX_A),
+      /not found/
+    )
+  })
+
+  it('getAccountResolved 无 Prisma 时回退到 getAccount', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'Resolved Account', type: AccountType.Cash })
+    const resolved = await svc.getAccountResolved(a.id, CTX_A)
+    assert.equal(resolved.id, a.id)
+    assert.equal(resolved.name, 'Resolved Account')
+  })
+
+  it('getAccountResolved 不存在的 ID 抛出异常', async () => {
+    const svc = makeService()
+    await assert.rejects(
+      () => svc.getAccountResolved('non-existent', CTX_A),
+      /not found/
+    )
+  })
+
+  it('getSettlementResolved 无 Prisma 时回退到 getSettlement', async () => {
+    const svc = makeService()
+    const s = await svc.createSettlement(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+    const resolved = await svc.getSettlementResolved(s.id, CTX_A)
+    assert.equal(resolved.id, s.id)
+    assert.equal(resolved.settlementStatus, SettlementStatus.Pending)
+  })
+
+  it('getSettlementResolved 不存在的 ID 抛出异常', async () => {
+    const svc = makeService()
+    await assert.rejects(
+      () => svc.getSettlementResolved('non-existent', CTX_A),
+      /not found/
+    )
+  })
+
+  it('freezeAccountResolved 无 Prisma 时回退到 freezeAccount', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'Frozen Resolved', type: AccountType.Cash })
+    const frozen = await svc.freezeAccountResolved(a.id, CTX_A)
+    assert.equal(frozen.status, AccountStatus.Frozen)
+  })
+
+  it('closeAccountResolved 无 Prisma 时回退到 closeAccount', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'Closed Resolved', type: AccountType.Cash })
+    const closed = await svc.closeAccountResolved(a.id, CTX_A)
+    assert.equal(closed.status, AccountStatus.Closed)
+  })
+
+  it('disputeSettlementResolved 无 Prisma 时回退到 disputeSettlement', async () => {
+    const svc = makeService()
+    const s = await svc.createSettlement(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+    const disputed = await svc.disputeSettlementResolved(s.id, CTX_A)
+    assert.equal(disputed.settlementStatus, SettlementStatus.Disputed)
+  })
+
+  it('getAccountBalanceResolved 无 Prisma 时回退到 getAccountBalance 口径', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'Bal', type: AccountType.Cash, initialBalance: 999 })
+    const bal = await svc.getAccountBalanceResolved(a.id, CTX_A)
+    assert.equal(bal.balance, 999)
+    assert.equal(bal.name, 'Bal')
+  })
+
+  it('getSettlementDetailResolved 无 Prisma 时回退', async () => {
+    const svc = makeService()
+    await svc.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: 'detail-test' })
+    const s = await svc.createSettlement(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+    const detail = await svc.getSettlementDetailResolved(s.id, CTX_A)
+    assert.ok(detail.settlement)
+    assert.ok(Array.isArray(detail.ledgers))
+  })
+})

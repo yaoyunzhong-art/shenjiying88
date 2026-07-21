@@ -80,6 +80,26 @@ export class FinanceController {
         settlementId: string,
         tenantContext: RequestTenantContext
       ) => Promise<ReturnType<FinanceService['disputeSettlement']>>
+      createInvoiceResolved?: (
+        tenantContext: RequestTenantContext,
+        body: CreateInvoiceDto
+      ) => Promise<Awaited<ReturnType<FinanceService['createInvoice']>>>
+      listInvoicesResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: InvoiceQueryDto
+      ) => Promise<ReturnType<FinanceService['listInvoices']>>
+      getInvoiceResolved?: (
+        invoiceId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['getInvoice']>>
+      issueInvoiceResolved?: (
+        invoiceId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['issueInvoice']>>
+      cancelInvoiceResolved?: (
+        invoiceId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['cancelInvoice']>>
       getRevenueSummaryResolved?: (
         tenantContext: RequestTenantContext,
         query?: RevenueSummaryQueryDto
@@ -260,6 +280,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateInvoiceDto
   ) {
+    if (this.resolvedFinanceService.createInvoiceResolved) {
+      return this.resolvedFinanceService.createInvoiceResolved(tenantContext, body)
+    }
     return this.financeService.createInvoice(tenantContext, body)
   }
 
@@ -268,6 +291,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: InvoiceQueryDto = {} as InvoiceQueryDto
   ) {
+    if (this.resolvedFinanceService.listInvoicesResolved) {
+      return this.resolvedFinanceService.listInvoicesResolved(tenantContext, query)
+    }
     return this.financeService.listInvoices(tenantContext, query)
   }
 
@@ -276,6 +302,9 @@ export class FinanceController {
     @Param('invoiceId') invoiceId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.getInvoiceResolved) {
+      return this.resolvedFinanceService.getInvoiceResolved(invoiceId, tenantContext)
+    }
     return this.financeService.getInvoice(invoiceId, tenantContext)
   }
 
@@ -284,6 +313,9 @@ export class FinanceController {
     @Param('invoiceId') invoiceId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.issueInvoiceResolved) {
+      return this.resolvedFinanceService.issueInvoiceResolved(invoiceId, tenantContext)
+    }
     return this.financeService.issueInvoice(invoiceId, tenantContext)
   }
 
@@ -292,6 +324,9 @@ export class FinanceController {
     @Param('invoiceId') invoiceId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.cancelInvoiceResolved) {
+      return this.resolvedFinanceService.cancelInvoiceResolved(invoiceId, tenantContext)
+    }
     return this.financeService.cancelInvoice(invoiceId, tenantContext)
   }
 

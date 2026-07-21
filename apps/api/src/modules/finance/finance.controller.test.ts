@@ -892,3 +892,281 @@ describe('异常与边界场景', () => {
     assert.ok(Array.isArray(result))
   })
 })
+
+// ── Resolved 读链补全: Controller 层委托 ──
+
+describe('[finance] Resolved 读链 — Controller 委托', () => {
+  it('listLedgers 优先走 listLedgersResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      listLedgers: () => {
+        throw new Error('should not use sync listLedgers')
+      },
+      listLedgersResolved: async (_ctx: RequestTenantContext, _query?: LedgerQueryDto) => {
+        resolvedCalled = true
+        return []
+      }
+    } as Partial<MockFinanceService> & {
+      listLedgersResolved: (
+        ctx: RequestTenantContext,
+        query?: LedgerQueryDto
+      ) => Promise<Ledger[]>
+    })
+
+    const result = await ctrl.listLedgers(CTX)
+    assert.ok(Array.isArray(result))
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('getLedger 优先走 getLedgerResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getLedger: () => {
+        throw new Error('should not use sync getLedger')
+      },
+      getLedgerResolved: async (ledgerId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = ledgerId === 'ledger-resolved-1'
+        return {
+          id: 'ledger-resolved-1',
+          tenantId: 't',
+          type: LedgerType.Revenue,
+          amount: 100,
+          balance: 100,
+          description: 'resolved',
+          createdAt: new Date().toISOString(),
+          recordedAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      getLedgerResolved: (ledgerId: string, ctx: RequestTenantContext) => Promise<Ledger>
+    })
+
+    const result = await ctrl.getLedger('ledger-resolved-1', CTX)
+    assert.equal(result.id, 'ledger-resolved-1')
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('getAccount 优先走 getAccountResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getAccount: () => {
+        throw new Error('should not use sync getAccount')
+      },
+      getAccountResolved: async (accountId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = accountId === 'acct-resolved-1'
+        return {
+          id: 'acct-resolved-1',
+          tenantId: 't',
+          name: 'Resolved Account',
+          type: AccountType.Cash,
+          balance: 5000,
+          status: AccountStatus.Active,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      getAccountResolved: (accountId: string, ctx: RequestTenantContext) => Promise<Account>
+    })
+
+    const result = await ctrl.getAccount('acct-resolved-1', CTX)
+    assert.equal(result.id, 'acct-resolved-1')
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('getAccountBalance 优先走 getAccountBalanceResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getAccountBalance: () => {
+        throw new Error('should not use sync getAccountBalance')
+      },
+      getAccountBalanceResolved: async (accountId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = accountId === 'acct-bal-resolved'
+        return { id: 'acct-bal-resolved', name: 'X', balance: 123, status: AccountStatus.Active }
+      }
+    } as Partial<MockFinanceService> & {
+      getAccountBalanceResolved: (accountId: string, ctx: RequestTenantContext) => Promise<Pick<Account, 'id' | 'name' | 'balance' | 'status'>>
+    })
+
+    const result = await ctrl.getAccountBalance('acct-bal-resolved', CTX)
+    assert.equal(result.balance, 123)
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('freezeAccount 优先走 freezeAccountResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      freezeAccount: () => {
+        throw new Error('should not use sync freezeAccount')
+      },
+      freezeAccountResolved: async (accountId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = accountId === 'acct-freeze'
+        return {
+          id: 'acct-freeze',
+          tenantId: 't',
+          name: 'Frozen',
+          type: AccountType.Bank,
+          balance: 1000,
+          status: AccountStatus.Frozen,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      freezeAccountResolved: (accountId: string, ctx: RequestTenantContext) => Promise<Account>
+    })
+
+    const result = await ctrl.freezeAccount('acct-freeze', CTX)
+    assert.equal(result.status, AccountStatus.Frozen)
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('closeAccount 优先走 closeAccountResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      closeAccount: () => {
+        throw new Error('should not use sync closeAccount')
+      },
+      closeAccountResolved: async (accountId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = accountId === 'acct-close'
+        return {
+          id: 'acct-close',
+          tenantId: 't',
+          name: 'Closed',
+          type: AccountType.Bank,
+          balance: 0,
+          status: AccountStatus.Closed,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      closeAccountResolved: (accountId: string, ctx: RequestTenantContext) => Promise<Account>
+    })
+
+    const result = await ctrl.closeAccount('acct-close', CTX)
+    assert.equal(result.status, AccountStatus.Closed)
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('getSettlement 优先走 getSettlementResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getSettlement: () => {
+        throw new Error('should not use sync getSettlement')
+      },
+      getSettlementResolved: async (settlementId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = settlementId === 'stl-resolved'
+        return {
+          id: 'stl-resolved',
+          tenantId: 't',
+          startDate: '2020-01-01T00:00:00.000Z',
+          endDate: '2020-12-31T23:59:59.999Z',
+          totalRevenue: 5000,
+          totalExpense: 2000,
+          netProfit: 3000,
+          settlementStatus: SettlementStatus.Confirmed,
+          createdAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      getSettlementResolved: (settlementId: string, ctx: RequestTenantContext) => Promise<Settlement>
+    })
+
+    const result = await ctrl.getSettlement('stl-resolved', CTX)
+    assert.equal(result.id, 'stl-resolved')
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('getSettlementDetail 优先走 getSettlementDetailResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      getSettlementDetail: () => {
+        throw new Error('should not use sync getSettlementDetail')
+      },
+      getSettlementDetailResolved: async (settlementId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = settlementId === 'stl-detail'
+        return {
+          settlement: {
+            id: 'stl-detail',
+            tenantId: 't',
+            startDate: '2020-01-01T00:00:00.000Z',
+            endDate: '2020-12-31T23:59:59.999Z',
+            totalRevenue: 5000,
+            totalExpense: 2000,
+            netProfit: 3000,
+            settlementStatus: SettlementStatus.Pending,
+            createdAt: new Date().toISOString()
+          },
+          ledgers: []
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      getSettlementDetailResolved: (settlementId: string, ctx: RequestTenantContext) => Promise<{ settlement: Settlement; ledgers: Ledger[] }>
+    })
+
+    const result = await ctrl.getSettlementDetail('stl-detail', CTX)
+    assert.ok(result.settlement)
+    assert.ok(Array.isArray(result.ledgers))
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('confirmSettlement 优先走 confirmSettlementResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      confirmSettlement: () => {
+        throw new Error('should not use sync confirmSettlement')
+      },
+      confirmSettlementResolved: async (settlementId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = settlementId === 'stl-confirm'
+        return {
+          id: 'stl-confirm',
+          tenantId: 't',
+          startDate: '2020-01-01T00:00:00.000Z',
+          endDate: '2020-12-31T23:59:59.999Z',
+          totalRevenue: 5000,
+          totalExpense: 2000,
+          netProfit: 3000,
+          settlementStatus: SettlementStatus.Confirmed,
+          settledAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      confirmSettlementResolved: (settlementId: string, ctx: RequestTenantContext) => Promise<Settlement>
+    })
+
+    const result = await ctrl.confirmSettlement('stl-confirm', CTX)
+    assert.equal(result.settlementStatus, SettlementStatus.Confirmed)
+    assert.equal(resolvedCalled, true)
+  })
+
+  it('disputeSettlement 优先走 disputeSettlementResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      disputeSettlement: () => {
+        throw new Error('should not use sync disputeSettlement')
+      },
+      disputeSettlementResolved: async (settlementId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = settlementId === 'stl-dispute'
+        return {
+          id: 'stl-dispute',
+          tenantId: 't',
+          startDate: '2020-01-01T00:00:00.000Z',
+          endDate: '2020-12-31T23:59:59.999Z',
+          totalRevenue: 5000,
+          totalExpense: 2000,
+          netProfit: 3000,
+          settlementStatus: SettlementStatus.Disputed,
+          createdAt: new Date().toISOString()
+        }
+      }
+    } as Partial<MockFinanceService> & {
+      disputeSettlementResolved: (settlementId: string, ctx: RequestTenantContext) => Promise<Settlement>
+    })
+
+    const result = await ctrl.disputeSettlement('stl-dispute', CTX)
+    assert.equal(result.settlementStatus, SettlementStatus.Disputed)
+    assert.equal(resolvedCalled, true)
+  })
+})

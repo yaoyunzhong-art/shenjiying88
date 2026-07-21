@@ -105,6 +105,29 @@ export class FinanceService {
     }
   }
 
+  private getInvoiceModel():
+    | {
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+        findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        findFirst?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+        update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      }
+    | undefined {
+    const prisma = this.prisma as unknown as Record<string, unknown> | undefined
+    const model = prisma?.invoiceV2
+    if (!model || typeof model !== 'object') {
+      return undefined
+    }
+    return model as {
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+      findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      findFirst?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    }
+  }
+
   private normalizeLedgerOptionalString(value: unknown): string | undefined {
     if (typeof value !== 'string') {
       return undefined
@@ -167,6 +190,61 @@ export class FinanceService {
       netProfit: Number(record.netProfit ?? 0),
       settlementStatus: String(record.settlementStatus) as SettlementStatus,
       settledAt: record.settledAt ? this.normalizeLedgerDate(record.settledAt) : undefined,
+      createdAt: this.normalizeLedgerDate(record.createdAt)
+    }
+  }
+
+  private extractBuyerInfo(
+    buyerInfo?: Record<string, unknown>
+  ): {
+    buyerName?: string
+    buyerTaxId?: string
+    buyerEmail?: string
+    remark?: string
+  } {
+    if (!buyerInfo) {
+      return {}
+    }
+    const readString = (value: unknown) => this.normalizeLedgerOptionalString(value)
+    return {
+      buyerName: readString(buyerInfo.name ?? buyerInfo.buyerName),
+      buyerTaxId: readString(buyerInfo.taxId ?? buyerInfo.taxNo ?? buyerInfo.buyerTaxId),
+      buyerEmail: readString(buyerInfo.email ?? buyerInfo.buyerEmail),
+      remark: readString(buyerInfo.remark)
+    }
+  }
+
+  private toInvoiceEntity(
+    record: Record<string, unknown>,
+    storeId?: string
+  ): Invoice {
+    const buyerInfo: Record<string, unknown> = {}
+    const buyerName = this.normalizeLedgerOptionalString(record.buyerName)
+    const buyerTaxId = this.normalizeLedgerOptionalString(record.buyerTaxId)
+    const buyerEmail = this.normalizeLedgerOptionalString(record.buyerEmail)
+    const remark = this.normalizeLedgerOptionalString(record.remark)
+
+    if (buyerName) buyerInfo.name = buyerName
+    if (buyerTaxId) buyerInfo.taxId = buyerTaxId
+    if (buyerEmail) buyerInfo.email = buyerEmail
+    if (remark) buyerInfo.remark = remark
+
+    const amount = Number(record.amountCents ?? 0) / 100
+    const taxAmount = Number(record.taxAmountCents ?? 0) / 100
+
+    return {
+      id: String(record.id),
+      tenantId: String(record.tenantId),
+      storeId,
+      orderId: this.normalizeLedgerOptionalString(record.orderId),
+      invoiceNo: this.normalizeLedgerOptionalString(record.invoiceNo) ?? '',
+      amount,
+      taxAmount,
+      totalAmount: amount + taxAmount,
+      type: String(record.type) as Invoice['type'],
+      status: String(record.status) as InvoiceStatus,
+      issuedAt: record.issuedAt ? this.normalizeLedgerDate(record.issuedAt) : undefined,
+      buyerInfo: Object.keys(buyerInfo).length ? buyerInfo : undefined,
       createdAt: this.normalizeLedgerDate(record.createdAt)
     }
   }
@@ -944,6 +1022,8 @@ export class FinanceService {
     const now = new Date().toISOString()
     const taxAmount = input.taxAmount ?? 0
     const invoiceNo = `INV-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
+    const invoiceModel = this.getInvoiceModel()
+    const buyerInfo = this.extractBuyerInfo(input.buyerInfo)
 
     const invoice: Invoice = {
       id: `inv-${randomUUID()}`,
@@ -960,8 +1040,153 @@ export class FinanceService {
       createdAt: now
     }
 
+    if (invoiceModel?.create) {
+      const record = await invoiceModel.create({
+        data: {
+          tenantId: tenantContext.tenantId,
+          invoiceNo,
+          orderId: input.orderId ?? null,
+          type: input.type,
+          amountCents: Math.round(input.amount * 100),
+          taxAmountCents: Math.round(taxAmount * 100),
+          taxRate: input.amount > 0 ? taxAmount / input.amount : 0,
+          status: InvoiceStatus.Draft,
+          buyerName: buyerInfo.buyerName ?? null,
+          buyerTaxId: buyerInfo.buyerTaxId ?? null,
+          buyerEmail: buyerInfo.buyerEmail ?? null,
+          remark: buyerInfo.remark ?? null
+        }
+      })
+      const persistedInvoice = this.toInvoiceEntity(record, tenantContext.storeId)
+      invoiceStore.set(persistedInvoice.id, persistedInvoice)
+      return persistedInvoice
+    }
+
     invoiceStore.set(invoice.id, invoice)
     return invoice
+  }
+
+  async createInvoiceResolved(
+    tenantContext: RequestTenantContext,
+    input: CreateInvoiceDto
+  ): Promise<Invoice> {
+    return this.createInvoice(tenantContext, input)
+  }
+
+  async issueInvoiceResolved(
+    invoiceId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Invoice> {
+    const invoiceModel = this.getInvoiceModel()
+    if (!invoiceModel?.findUnique || !invoiceModel.update) {
+      return this.issueInvoice(invoiceId, tenantContext)
+    }
+
+    const current = await this.getInvoiceResolved(invoiceId, tenantContext)
+    if (current.status !== InvoiceStatus.Draft) {
+      throw new Error(`Invoice ${invoiceId} is not in draft status`)
+    }
+
+    const record = await invoiceModel.update({
+      where: { id: invoiceId },
+      data: {
+        status: InvoiceStatus.Issued,
+        issuedAt: new Date()
+      }
+    })
+    const persistedInvoice = this.toInvoiceEntity(record, tenantContext.storeId)
+    invoiceStore.set(persistedInvoice.id, persistedInvoice)
+    return persistedInvoice
+  }
+
+  async cancelInvoiceResolved(
+    invoiceId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Invoice> {
+    const invoiceModel = this.getInvoiceModel()
+    if (!invoiceModel?.findUnique || !invoiceModel.update) {
+      return this.cancelInvoice(invoiceId, tenantContext)
+    }
+
+    const current = await this.getInvoiceResolved(invoiceId, tenantContext)
+    if (current.status === InvoiceStatus.Cancelled) {
+      throw new Error(`Invoice ${invoiceId} is already cancelled`)
+    }
+
+    const record = await invoiceModel.update({
+      where: { id: invoiceId },
+      data: {
+        status: InvoiceStatus.Cancelled
+      }
+    })
+    const persistedInvoice = this.toInvoiceEntity(record, tenantContext.storeId)
+    invoiceStore.set(persistedInvoice.id, persistedInvoice)
+    return persistedInvoice
+  }
+
+  async getInvoiceResolved(
+    invoiceId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Invoice> {
+    const invoiceModel = this.getInvoiceModel()
+    if (!invoiceModel?.findUnique) {
+      return this.getInvoice(invoiceId, tenantContext)
+    }
+
+    const record = await invoiceModel.findUnique({
+      where: { id: invoiceId }
+    })
+    if (!record || String(record.tenantId) !== tenantContext.tenantId) {
+      throw new Error(`Invoice ${invoiceId} not found`)
+    }
+    const persistedInvoice = this.toInvoiceEntity(record, tenantContext.storeId)
+    invoiceStore.set(persistedInvoice.id, persistedInvoice)
+    return persistedInvoice
+  }
+
+  async listInvoicesResolved(
+    tenantContext: RequestTenantContext,
+    query?: InvoiceQueryDto
+  ): Promise<Invoice[]> {
+    const invoiceModel = this.getInvoiceModel()
+    if (!invoiceModel?.findMany) {
+      return this.listInvoices(tenantContext, query)
+    }
+
+    if (query?.storeId && tenantContext.storeId && query.storeId !== tenantContext.storeId) {
+      return []
+    }
+
+    const where: Record<string, unknown> = {
+      tenantId: tenantContext.tenantId
+    }
+    if (query?.orderId) {
+      where.orderId = query.orderId
+    }
+    if (query?.type) {
+      where.type = query.type
+    }
+    if (query?.status) {
+      where.status = query.status
+    }
+    if (query?.issuedAfter || query?.issuedBefore) {
+      where.issuedAt = {
+        ...(query.issuedAfter ? { gte: new Date(query.issuedAfter) } : {}),
+        ...(query.issuedBefore ? { lte: new Date(query.issuedBefore) } : {})
+      }
+    }
+
+    const records = await invoiceModel.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      ...(query?.limit && query.limit > 0 ? { take: query.limit } : {})
+    })
+
+    return records.map((record) => {
+      const invoice = this.toInvoiceEntity(record, tenantContext.storeId)
+      invoiceStore.set(invoice.id, invoice)
+      return invoice
+    })
   }
 
   issueInvoice(
