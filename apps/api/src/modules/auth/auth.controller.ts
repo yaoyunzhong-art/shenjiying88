@@ -10,9 +10,11 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common'
 import { Public } from '../foundation/identity-access/public.decorator'
 import { AuthService } from './auth.service'
+import { TenantGuard } from '../agent/tenant.guard'
 import {
   LoginBySmsDto,
   LoginByPasswordDto,
@@ -22,6 +24,7 @@ import {
 } from './auth.types'
 
 @Controller('auth')
+@UseGuards(TenantGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

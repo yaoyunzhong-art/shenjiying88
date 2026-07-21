@@ -25,7 +25,9 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
+import { TenantGuard } from '../agent/tenant.guard'
 import {
   FeedService,
   type FeedChannel,
@@ -73,6 +75,7 @@ class GetSubscriptionsQueryDto {
 }
 
 @Controller('api/feed')
+@UseGuards(TenantGuard)
 export class FeedController {
   constructor(private readonly svc: FeedService) {}
 

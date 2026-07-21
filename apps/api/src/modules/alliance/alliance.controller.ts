@@ -8,7 +8,9 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
+import { TenantGuard } from '../agent/tenant.guard'
 import { AlliancePartner, PartnerGradingService, HealthScoreService } from './alliance-grade.service'
 import {
   CrossMerchantSettlementService,
@@ -27,6 +29,7 @@ import {
 } from './alliance.dto'
 
 @Controller('alliance')
+@UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class AllianceController {
   constructor(
