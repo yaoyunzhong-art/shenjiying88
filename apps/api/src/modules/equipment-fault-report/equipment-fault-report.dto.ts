@@ -140,6 +140,23 @@ export class FaultSummaryDto {
   byEquipmentType!: Record<string, number>
 }
 
+export class UpdateFaultReportDto {
+  @ApiPropertyOptional({ description: '处理人' })
+  @IsOptional()
+  @IsString()
+  assignee?: string
+
+  @ApiPropertyOptional({ enum: FaultStatus, description: '故障状态' })
+  @IsOptional()
+  @IsEnum(FaultStatus)
+  status?: FaultStatus
+
+  @ApiPropertyOptional({ description: '处理结果' })
+  @IsOptional()
+  @IsString()
+  resolution?: string
+}
+
 export class FaultReportListDto {
   @ApiProperty({ type: [FaultReportDto], description: '故障列表' })
   items!: FaultReportDto[]
