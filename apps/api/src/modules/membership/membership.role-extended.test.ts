@@ -124,8 +124,9 @@ describe('[🛒前台] membership 角色扩展测试', () => {
     expect(tx.amount).toBeGreaterThan(0)
 
     expect(checkRoleAccess(ROLES.FrontDesk, 'mem:balance')).toBe(true)
+    const prevBalance = found!.balance
     const recharged = svc.recharge(found!.id, 5000, 'cash')
-    expect(recharged.balance).toBeGreaterThan(found!.balance)
+    expect(recharged.balance).toBe(prevBalance + 5000)
   })
 
   it('🛒[反例] 前台无权限删除/更新/查看统计', () => {
@@ -235,9 +236,10 @@ describe('[🎯运行专员] membership 角色扩展测试', () => {
     const member = svc.getById('MEM-000001')
     expect(member).not.toBeNull()
 
+    const prevBalance = member!.balance
     svc.recharge(member!.id, 20000)
     const afterRecharge = svc.getById(member!.id)
-    expect(afterRecharge!.balance).toBeGreaterThan(member!.balance)
+    expect(afterRecharge!.balance).toBe(prevBalance + 20000)
 
     expect(checkRoleAccess(ROLES.Operations, 'mem:update')).toBe(true)
     svc.update(member!.id, { level: 'diamond' })

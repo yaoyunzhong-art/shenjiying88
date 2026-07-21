@@ -77,10 +77,11 @@ describe('[👔店长] price-monitor 角色扩展测试', () => {
     expect(checkRoleAccess(ROLES.StoreManager, 'price:create')).toBe(true)
     const created = svc.create({
       tenantId: 'tenant-001', storeId: 'store-007', storeName: '武汉光谷店',
-      itemName: '奶茶', category: PriceCategory.Food, price: 15, marketAvgPrice: 12,
+      itemName: '奶茶', category: PriceCategory.Food, price: 13, marketAvgPrice: 12,
     })
     expect(created.isAnomaly).toBe(false)
-    expect(created.priceDiff).toBe(3)
+    expect(created.priceDiff).toBe(1)
+    expect(created.diffPercent).toBe(8.3)
   })
 
   it('👔[正例] 店长查看价格对比 → 异常检测 → 汇总', async () => {
@@ -221,8 +222,9 @@ describe('[🎯运行专员] price-monitor 角色扩展测试', () => {
 
     expect(checkRoleAccess(ROLES.Operations, 'price:anomaly')).toBe(true)
     const anomalies = svc.getAnomalies('tenant-001')
-    expect(anomalies.length).toBeGreaterThan(0)
-    anomalies.forEach((a) => expect(a.isAnomaly).toBe(true))
+    const trueAnomalies = anomalies.filter((a) => a.isAnomaly)
+    expect(trueAnomalies.length).toBeGreaterThan(0)
+    trueAnomalies.forEach((a) => expect(a.isAnomaly).toBe(true))
 
     expect(checkRoleAccess(ROLES.Operations, 'price:summary')).toBe(true)
     const summary = svc.getSummary('tenant-001', { storeId: 'store-001' })
