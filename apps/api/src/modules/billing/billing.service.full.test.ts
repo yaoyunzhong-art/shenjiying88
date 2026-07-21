@@ -531,8 +531,8 @@ describe('[5️⃣ 重复/并发场景] BillingService', () => {
 
     // 生成第二张发票
     const inv2 = svc.generateInvoice(bill2)
-    expect(inv2.invoiceNo).not.toBe(bill1.invoiceNo)
-    // 因为 bill1 在 generateInvoice 时没有 invoiceNo, 所以直接看 inv2
+    // bill1 (BillResult) 无 invoiceNo 属性，直接检查 inv2
+    expect(inv2.invoiceNo).toMatch(/^INV-2026-/)
     // 验证发票非空
     expect(inv2.id).toMatch(/^inv_/)
     expect(svc.listInvoices('tenant-full-001').length).toBe(2)

@@ -4,7 +4,8 @@
 
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { CategoriesService, Category } from './categories.service';
+import { CategoriesService } from './categories.service';
+import { Category } from './categories.entity';
 import { TenantGuard } from '../agent/tenant.guard';
 
 @ApiTags('商品分类')
