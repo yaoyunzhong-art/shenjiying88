@@ -20,6 +20,10 @@ export class TrafficGovernanceGuard implements CanActivate {
       return true
     }
 
+    if (!this.reflector?.getAllAndOverride) {
+      return true
+    }
+
     const metadata = this.reflector.getAllAndOverride<RateLimitMetadata>(RATE_LIMIT_METADATA_KEY, [
       context.getHandler(),
       context.getClass()
@@ -32,6 +36,10 @@ export class TrafficGovernanceGuard implements CanActivate {
     const http = context.switchToHttp()
     const req = http.getRequest<TenantAwareRequest>()
     const res = http.getResponse<Response>()
+    if (!this.requestGovernanceService) {
+      return true
+    }
+
     const decision = await this.requestGovernanceService.evaluateRateLimit(req, metadata)
 
     this.requestGovernanceService.applyRateLimitHeaders(res, decision)

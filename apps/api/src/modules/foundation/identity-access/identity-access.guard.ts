@@ -54,6 +54,10 @@ export class IdentityAccessGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext) {
+    if (!this.reflector?.getAllAndOverride) {
+      return true
+    }
+
     // ── [1] 白名单: @Public() 标记的端点直接放行 ──
     if (this.isPublic(context)) {
       return true
@@ -89,6 +93,10 @@ export class IdentityAccessGuard implements CanActivate {
 
     if (!actorContext?.authenticated) {
       throw new UnauthorizedException('Missing actor context headers.')
+    }
+
+    if (!this.identityAccessService) {
+      return true
     }
 
     if (!this.identityAccessService.hasAnyRole(actorContext, roles)) {

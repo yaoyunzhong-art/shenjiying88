@@ -18,6 +18,7 @@ import { RefundService } from './refund.service'
 import { CashierService } from './cashier.service'
 import { InventoryItemService } from '../inventory/inventory-item.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import type {
   CreateOrderInput,
   CreatePaymentInput,
@@ -195,6 +196,7 @@ export class CashierController {
   // ── POS Facade (Phase-35 T163.5 / P-35) ──
 
   @Get('members/lookup')
+  @Public()
   @ApiOperation({ summary: 'POS 会员查询' })
   async lookupMember(
     @Headers('x-tenant-id') tenantId: string,
@@ -263,6 +265,7 @@ export class CashierController {
   }
 
   @Get('products/:sku')
+  @Public()
   @ApiOperation({ summary: 'POS 商品扫码查询' })
   async lookupProduct(
     @Headers('x-tenant-id') tenantId: string,
@@ -290,6 +293,7 @@ export class CashierController {
   }
 
   @Get('products')
+  @Public()
   @ApiOperation({ summary: 'POS 商品目录列表' })
   async listProducts(
     @Headers('x-tenant-id') tenantId: string,

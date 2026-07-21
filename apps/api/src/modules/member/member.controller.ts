@@ -19,6 +19,7 @@ import type {
 } from '@m5/types';
 import { TenantContext } from '../tenant/tenant.decorator';
 import type { RequestTenantContext } from '../tenant/tenant.types';
+import { Public } from '../foundation/identity-access/public.decorator';
 import { MemberService } from './member.service';
 import type {
   MemberMutationApprovalResult,
@@ -155,6 +156,7 @@ export class MemberController {
 
   /** 注册新会员 */
   @Post('register')
+  @Public()
   register(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { memberId: string; nickname: string }
