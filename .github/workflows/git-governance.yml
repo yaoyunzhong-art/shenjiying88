@@ -45,3 +45,26 @@ jobs:
           set -euo pipefail
           TITLE='${{ github.event.pull_request.title }}'
           printf '%s\n' "$TITLE" | bash scripts/commit-lint.sh
+
+  # ── Gate6-C2: 远程推送禁令检测 ──
+  remote-push-detect:
+    name: 🔌 Gate6-C2 Remote Push Detection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect remote push
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "🟡 Gate6-C2: CI push event detected"
+          echo "  ref: ${GITHUB_REF}"
+          echo "  actor: ${GITHUB_ACTOR}"
+          echo ""
+          echo "STATUS=push_detected"
+          echo "PUSH_REF=${GITHUB_REF}"
+          echo "RUN_ID=${GITHUB_RUN_ID}"
