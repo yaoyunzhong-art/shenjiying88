@@ -695,6 +695,7 @@ describe('[finance] GET /finance/invoices — 发票列表', () => {
     ctrl.listInvoices(CTX, { status: InvoiceStatus.Issued })
     assert.equal(capturedStatus, InvoiceStatus.Issued)
   })
+
 })
 
 describe('[finance] GET /finance/invoices/:invoiceId — 单张发票', () => {
@@ -703,6 +704,8 @@ describe('[finance] GET /finance/invoices/:invoiceId — 单张发票', () => {
     const result = ctrl.getInvoice('inv-1', CTX)
     assert.equal(result.id, 'inv-1')
   })
+
+
 })
 
 describe('[finance] POST /finance/invoices/:invoiceId/issue — 开票', () => {
@@ -712,6 +715,8 @@ describe('[finance] POST /finance/invoices/:invoiceId/issue — 开票', () => {
     assert.equal(result.status, InvoiceStatus.Issued)
     assert.ok(result.issuedAt)
   })
+
+
 })
 
 describe('[finance] POST /finance/invoices/:invoiceId/cancel — 作废发票', () => {
@@ -720,6 +725,8 @@ describe('[finance] POST /finance/invoices/:invoiceId/cancel — 作废发票', 
     const result = ctrl.cancelInvoice('inv-1', CTX)
     assert.equal(result.status, InvoiceStatus.Cancelled)
   })
+
+
 })
 
 // ── Revenue ──

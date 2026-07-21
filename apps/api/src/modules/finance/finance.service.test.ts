@@ -397,6 +397,55 @@ describe('[finance] 合约: Invoice 发票', () => {
     svc.cancelInvoice(inv.id, CTX_A)
     assert.throws(() => svc.cancelInvoice(inv.id, CTX_A))
   })
+
+  it('listInvoicesResolved 在无 Prisma 时回退到当前内存发票', async () => {
+    const svc = makeService()
+    await svc.createInvoice(CTX_A, {
+      amount: 100,
+      type: InvoiceType.Regular,
+      orderId: 'O-1'
+    })
+    await svc.createInvoice(CTX_B, {
+      amount: 200,
+      type: InvoiceType.Vat,
+      orderId: 'O-2'
+    })
+
+    const invoices = await svc.listInvoicesResolved(CTX_A, {})
+
+    assert.equal(invoices.length, 1)
+    assert.equal(invoices[0].tenantId, CTX_A.tenantId)
+  })
+
+  it('getInvoiceResolved 在无 Prisma 时沿用当前查询口径', async () => {
+    const svc = makeService()
+    const inv = await svc.createInvoice(CTX_A, {
+      amount: 880,
+      taxAmount: 114.4,
+      type: InvoiceType.Vat,
+      orderId: 'O-3'
+    })
+
+    const invoice = await svc.getInvoiceResolved(inv.id, CTX_A)
+
+    assert.equal(invoice.id, inv.id)
+    assert.equal(invoice.totalAmount, 994.4)
+    assert.equal(invoice.status, InvoiceStatus.Draft)
+  })
+
+  it('issueInvoiceResolved 在无 Prisma 时沿用当前状态流转', async () => {
+    const svc = makeService()
+    const inv = await svc.createInvoice(CTX_A, {
+      amount: 100,
+      type: InvoiceType.Regular,
+      orderId: 'O-4'
+    })
+
+    const issued = await svc.issueInvoiceResolved(inv.id, CTX_A)
+
+    assert.equal(issued.status, InvoiceStatus.Issued)
+    assert.ok(issued.issuedAt)
+  })
 })
 
 // ─── Revenue Summary 合约 ──────────────────────────────

@@ -293,42 +293,27 @@ class TestFinanceController {
 
   @Post('invoices')
   createInvoice(@Req() req: Request, @Body() body: CreateInvoiceDto) {
-    return this.fs.createInvoice(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      body,
-    );
+    return this.financeController.createInvoice(getTenantContext(req), body);
   }
 
   @Get('invoices')
   listInvoices(@Req() req: Request, @Query() query: InvoiceQueryDto = {} as InvoiceQueryDto) {
-    return this.fs.listInvoices(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      query,
-    );
+    return this.financeController.listInvoices(getTenantContext(req), query);
   }
 
   @Get('invoices/:id')
   getInvoice(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getInvoice(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.getInvoice(id, getTenantContext(req));
   }
 
   @Post('invoices/:id/issue')
   issueInvoice(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.issueInvoice(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.issueInvoice(id, getTenantContext(req));
   }
 
   @Post('invoices/:id/cancel')
   cancelInvoice(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.cancelInvoice(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.cancelInvoice(id, getTenantContext(req));
   }
 
   @Get('revenue/summary')

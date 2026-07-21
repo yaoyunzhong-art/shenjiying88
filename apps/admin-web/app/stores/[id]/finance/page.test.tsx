@@ -273,7 +273,6 @@ describe('FinancePage — 财务数据完整性', () => {
 
 describe('FinancePage — Tab 切换', () => {
   it('包含三个 Tab: overview/detail/reports', () => {
-    const tabs = REGEX.escape("overview");
     assert.ok(SRC.includes("'overview'") && SRC.includes("'detail'") && SRC.includes("'reports'"));
   });
 
@@ -349,9 +348,9 @@ describe('FinancePage — 统计行', () => {
     assert.ok(stats && stats.length >= 10);
   });
 
-  it('总收入使用绿色字体', () => assert.ok(SRC.includes("valueStyle: {{ color: '#34d399' }}")));
-  it('总支出使用红色字体', () => assert.ok(SRC.includes("valueStyle: {{ color: '#f87171' }}")));
-  it('流水笔数使用蓝色字体', () => assert.ok(SRC.includes("valueStyle: {{ color: '#60a5fa' }}")));
+  it('总收入使用绿色字体', () => assert.ok(SRC.includes("valueStyle={{ color: '#34d399' }}")));
+  it('总支出使用红色字体', () => assert.ok(SRC.includes("valueStyle={{ color: '#f87171' }}")));
+  it('流水笔数使用蓝色字体', () => assert.ok(SRC.includes("valueStyle={{ color: '#60a5fa' }}")));
 });
 
 /* ══════════════════════════════════════════════════════════
