@@ -17,6 +17,7 @@ describe('TaskSchedulerService', () => {
   let service: TaskSchedulerService
 
   const TENANT = 'tenant-001'
+  const TEST_TENANT = 'tenant-test-isolated'
 
   beforeEach(() => {
     service = new TaskSchedulerService()
@@ -101,44 +102,44 @@ describe('TaskSchedulerService', () => {
 
   describe('listTasks', () => {
     it('should list all tasks for tenant', () => {
-      createTestTask({ name: 'T1' })
-      createTestTask({ name: 'T2' })
+      createTestTask({ name: 'T1', tenantId: TEST_TENANT })
+      createTestTask({ name: 'T2', tenantId: TEST_TENANT })
 
-      const list = service.listTasks(TENANT)
+      const list = service.listTasks(TEST_TENANT)
       assert.equal(list.length, 2)
     })
 
     it('should filter by status', () => {
-      createTestTask({ name: 'Pending Task' })
-      const t2 = createTestTask({ name: 'Running Task' })
-      service.updateTaskStatus(t2.id, TaskStatus.Running, TENANT)
+      createTestTask({ name: 'Pending Task', tenantId: TEST_TENANT })
+      const t2 = createTestTask({ name: 'Running Task', tenantId: TEST_TENANT })
+      service.updateTaskStatus(t2.id, TaskStatus.Running, TEST_TENANT)
 
-      const running = service.listTasks(TENANT, { status: TaskStatus.Running })
+      const running = service.listTasks(TEST_TENANT, { status: TaskStatus.Running })
       assert.equal(running.length, 1)
       assert.equal(running[0].status, TaskStatus.Running)
     })
 
     it('should filter by type', () => {
-      createTestTask({ name: 'OneTime', type: TaskType.OneTime })
-      createTestTask({ name: 'Recurring', type: TaskType.Recurring })
+      createTestTask({ name: 'OneTime', type: TaskType.OneTime, tenantId: TEST_TENANT })
+      createTestTask({ name: 'Recurring', type: TaskType.Recurring, tenantId: TEST_TENANT })
 
-      const recurring = service.listTasks(TENANT, { type: TaskType.Recurring })
+      const recurring = service.listTasks(TEST_TENANT, { type: TaskType.Recurring })
       assert.equal(recurring.length, 1)
     })
 
     it('should filter by priority', () => {
-      createTestTask({ name: 'High', priority: TaskPriority.High })
-      createTestTask({ name: 'Low', priority: TaskPriority.Low })
+      createTestTask({ name: 'High', priority: TaskPriority.High, tenantId: TEST_TENANT })
+      createTestTask({ name: 'Low', priority: TaskPriority.Low, tenantId: TEST_TENANT })
 
-      const high = service.listTasks(TENANT, { priority: TaskPriority.High })
+      const high = service.listTasks(TEST_TENANT, { priority: TaskPriority.High })
       assert.equal(high.length, 1)
     })
 
     it('should filter by assignedTo', () => {
-      createTestTask({ name: 'U1', assignedTo: 'user-001' })
-      createTestTask({ name: 'U2', assignedTo: 'user-002' })
+      createTestTask({ name: 'U1', assignedTo: 'user-001', tenantId: TEST_TENANT })
+      createTestTask({ name: 'U2', assignedTo: 'user-002', tenantId: TEST_TENANT })
 
-      const u1 = service.listTasks(TENANT, { assignedTo: 'user-001' })
+      const u1 = service.listTasks(TEST_TENANT, { assignedTo: 'user-001' })
       assert.equal(u1.length, 1)
     })
   })
@@ -310,10 +311,10 @@ describe('TaskSchedulerService', () => {
 
   describe('getRecurringTasks', () => {
     it('should return recurring tasks', () => {
-      createTestTask({ name: 'OT', type: TaskType.OneTime })
-      createTestTask({ name: 'RC', type: TaskType.Recurring, cronExpr: '0 2 * * *' })
+      createTestTask({ name: 'OT', type: TaskType.OneTime, tenantId: TEST_TENANT })
+      createTestTask({ name: 'RC', type: TaskType.Recurring, cronExpr: '0 2 * * *', tenantId: TEST_TENANT })
 
-      const recurring = service.getRecurringTasks(TENANT)
+      const recurring = service.getRecurringTasks(TEST_TENANT)
       assert.equal(recurring.length, 1)
       assert.equal(recurring[0].name, 'RC')
     })
@@ -321,10 +322,10 @@ describe('TaskSchedulerService', () => {
 
   describe('getShiftTasks', () => {
     it('should return shift tasks', () => {
-      createTestTask({ name: 'OT', type: TaskType.OneTime })
-      createTestTask({ name: 'SH', type: TaskType.Shift })
+      createTestTask({ name: 'OT', type: TaskType.OneTime, tenantId: TEST_TENANT })
+      createTestTask({ name: 'SH', type: TaskType.Shift, tenantId: TEST_TENANT })
 
-      const shifts = service.getShiftTasks(TENANT)
+      const shifts = service.getShiftTasks(TEST_TENANT)
       assert.equal(shifts.length, 1)
       assert.equal(shifts[0].name, 'SH')
     })
