@@ -19,7 +19,6 @@ import {
   getStorefrontOrderTransaction,
   mapAggregateToPaymentView,
   mapChannelToH5Method,
-  submitStorefrontPaymentSuccess,
   type H5PaymentMethod,
   type PaymentViewModel,
   type StorefrontTransactionAggregate,
@@ -42,15 +41,16 @@ export default function PaymentPage() {
   const [selectedMethod, setSelectedMethod] = useState<H5PaymentMethod>('wechat');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadOrderTransaction() {
-      setError(null);
-      setLoading(true);
+    async function loadOrderTransaction(showLoading = true) {
+      if (showLoading) {
+        setLoading(true);
+      }
       try {
         const nextAggregate = await getStorefrontOrderTransaction(orderId);
         if (cancelled) return;
@@ -60,13 +60,14 @@ export default function PaymentPage() {
         if (cancelled) return;
         setError(nextError instanceof Error ? nextError.message : '加载订单失败，请稍后重试');
       } finally {
-        if (!cancelled) {
+        if (!cancelled && showLoading) {
           setLoading(false);
         }
       }
     }
 
-    loadOrderTransaction();
+    setError(null);
+    void loadOrderTransaction();
     return () => {
       cancelled = true;
     };
@@ -94,25 +95,41 @@ export default function PaymentPage() {
     return () => clearInterval(timer);
   }, [payment?.expireAt, payment?.status]);
 
-  function handleMethodChange(method: H5PaymentMethod) {
-    setSelectedMethod(method);
-  }
-
-  async function handlePay() {
+  async function handleRefreshStatus() {
     if (!aggregate) return;
 
-    setCreating(true);
+    setRefreshing(true);
     setError(null);
     try {
-      const refreshedAggregate = await submitStorefrontPaymentSuccess(aggregate, selectedMethod);
+      const refreshedAggregate = await getStorefrontOrderTransaction(aggregate.order.orderId);
       setAggregate(refreshedAggregate);
-      router.push(`/h5/payment/${orderId}/result`);
+      setSelectedMethod(mapChannelToH5Method(refreshedAggregate.payment?.channel));
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : '支付提交失败，请稍后重试');
+      setError(nextError instanceof Error ? nextError.message : '支付状态刷新失败，请稍后重试');
     } finally {
-      setCreating(false);
+      setRefreshing(false);
     }
   }
+
+  useEffect(() => {
+    if (!aggregate || payment?.status !== 'pending') {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void getStorefrontOrderTransaction(aggregate.order.orderId)
+        .then((nextAggregate) => {
+          setAggregate(nextAggregate);
+          setSelectedMethod(mapChannelToH5Method(nextAggregate.payment?.channel));
+          setError(null);
+        })
+        .catch(() => {
+          // Keep the current state and let manual refresh expose the error.
+        });
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [aggregate, payment?.status]);
 
   function handleCancel() {
     handleBack();
@@ -132,10 +149,10 @@ export default function PaymentPage() {
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>加载失败</div>
           <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>{error}</div>
           <button
-            onClick={() => router.refresh()}
+            onClick={() => void handleRefreshStatus()}
             style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontSize: 14, cursor: 'pointer' }}
           >
-            重新加载
+            刷新状态
           </button>
         </div>
       </MobileLayout>
@@ -234,6 +251,24 @@ export default function PaymentPage() {
         </H5Card>
       )}
 
+      {/* 待接真实支付网关二维码时，只展示真实状态，不再前端伪造二维码 */}
+      {!payment.qrCode && payment.status === 'pending' && (
+        <H5Card style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 10 }}>
+            当前支付状态
+          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>
+            支付方式：{getPaymentMethodLabel(aggregate?.payment?.channel ?? selectedMethod)}
+          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>
+            支付单号：{aggregate?.payment?.paymentId ?? '待生成'}
+          </div>
+          <div style={{ fontSize: 13, color: '#64748b' }}>
+            当前页面不再前端伪造二维码，请在真实支付渠道完成支付后刷新状态。
+          </div>
+        </H5Card>
+      )}
+
       {/* 支付状态 */}
       {payment.status !== 'pending' && (
         <H5Card style={{ marginBottom: 16, textAlign: 'center' }}>
@@ -249,16 +284,15 @@ export default function PaymentPage() {
         </H5Card>
       )}
 
-      {/* 支付方式选择 */}
+      {/* 支付方式 */}
       <H5Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 12 }}>
-          选择支付方式
+          支付方式
         </div>
         <div style={{ display: 'grid', gap: 10 }}>
           {PAYMENT_METHODS.map(({ method, name, icon }) => (
             <div
               key={method}
-              onClick={() => handleMethodChange(method)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -270,7 +304,7 @@ export default function PaymentPage() {
                     ? 'rgba(102, 126, 234, 0.15)'
                     : 'rgba(15, 23, 42, 0.4)',
                 border: `1px solid ${selectedMethod === method ? 'rgba(102, 126, 234, 0.4)' : 'rgba(148, 163, 184, 0.15)'}`,
-                cursor: 'pointer',
+                cursor: 'default',
               }}
             >
               <span style={{ fontSize: 24 }}>{icon}</span>
@@ -286,11 +320,11 @@ export default function PaymentPage() {
       {/* 支付按钮 */}
       {payment.status === 'pending' && (
         <div style={{ display: 'flex', gap: 12 }}>
-          <H5Button variant="secondary" fullWidth onClick={handleCancel}>
-            取消支付
+          <H5Button variant="secondary" fullWidth onClick={() => router.push('/h5/orders')}>
+            查看订单
           </H5Button>
-          <H5Button variant="primary" fullWidth loading={creating} onClick={handlePay}>
-            确认支付 {formatCurrency(payment.amount, aggregate?.order.currency)}
+          <H5Button variant="primary" fullWidth loading={refreshing} onClick={() => void handleRefreshStatus()}>
+            刷新支付状态
           </H5Button>
         </div>
       )}

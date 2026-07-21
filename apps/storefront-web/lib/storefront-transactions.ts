@@ -184,46 +184,6 @@ export function getPaymentMethodLabel(methodOrChannel?: string) {
   return CHANNEL_LABELS[methodOrChannel] ?? METHOD_LABELS[methodOrChannel as H5PaymentMethod] ?? methodOrChannel;
 }
 
-function buildPseudoQrCodeDataUrl(orderCode: string, amount: number, method: H5PaymentMethod) {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
-      <rect width="220" height="220" fill="#ffffff" rx="16"/>
-      <rect x="18" y="18" width="184" height="184" rx="12" fill="#0f172a"/>
-      <rect x="34" y="34" width="42" height="42" fill="#ffffff"/>
-      <rect x="46" y="46" width="18" height="18" fill="#0f172a"/>
-      <rect x="144" y="34" width="42" height="42" fill="#ffffff"/>
-      <rect x="156" y="46" width="18" height="18" fill="#0f172a"/>
-      <rect x="34" y="144" width="42" height="42" fill="#ffffff"/>
-      <rect x="46" y="156" width="18" height="18" fill="#0f172a"/>
-      <g fill="#ffffff">
-        <rect x="96" y="34" width="12" height="12"/>
-        <rect x="120" y="34" width="12" height="12"/>
-        <rect x="96" y="58" width="12" height="12"/>
-        <rect x="120" y="58" width="12" height="12"/>
-        <rect x="84" y="96" width="12" height="12"/>
-        <rect x="108" y="96" width="12" height="12"/>
-        <rect x="132" y="96" width="12" height="12"/>
-        <rect x="156" y="96" width="12" height="12"/>
-        <rect x="84" y="120" width="12" height="12"/>
-        <rect x="108" y="120" width="12" height="12"/>
-        <rect x="132" y="120" width="12" height="12"/>
-        <rect x="156" y="120" width="12" height="12"/>
-        <rect x="96" y="144" width="12" height="12"/>
-        <rect x="120" y="144" width="12" height="12"/>
-        <rect x="144" y="144" width="12" height="12"/>
-        <rect x="84" y="168" width="12" height="12"/>
-        <rect x="108" y="168" width="12" height="12"/>
-        <rect x="132" y="168" width="12" height="12"/>
-      </g>
-      <text x="110" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">
-        ${orderCode} · ${METHOD_LABELS[method]} · ${formatCurrency(amount)}
-      </text>
-    </svg>
-  `.trim();
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
-
 function isDuplicateMemberError(error: unknown) {
   return (
     error instanceof ApiError &&
@@ -272,13 +232,22 @@ export function mapAggregateToPaymentView(
   const amount = aggregate.payment?.amount ?? aggregate.order.totalAmount;
   const createdAt = aggregate.payment?.createdAt ?? aggregate.order.createdAt;
 
+  const paymentRecord = aggregate.payment as (typeof aggregate.payment & {
+    qrCodeUrl?: string;
+    qrCode?: string;
+    paymentUrl?: string;
+  }) | undefined;
+
   return {
     orderId: aggregate.order.orderId,
     orderCode: aggregate.order.orderNo ?? aggregate.order.orderId,
     amount,
     status,
     method,
-    qrCode: status === 'pending' ? buildPseudoQrCodeDataUrl(aggregate.order.orderNo ?? aggregate.order.orderId, amount, method) : undefined,
+    qrCode:
+      status === 'pending'
+        ? paymentRecord?.qrCodeUrl ?? paymentRecord?.qrCode ?? paymentRecord?.paymentUrl
+        : undefined,
     expireAt: status === 'pending' ? buildPaymentExpireAt(createdAt) : undefined,
     paidAt: aggregate.payment?.completedAt ?? aggregate.order.paidAt,
     createdAt,
@@ -423,53 +392,4 @@ export async function getStorefrontOrderTransaction(
       'x-market-code': scope.marketCode,
     },
   });
-}
-
-export async function submitStorefrontPaymentSuccess(
-  aggregate: StorefrontTransactionAggregate,
-  paymentMethod: H5PaymentMethod,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
-) {
-  const paymentId = aggregate.payment?.paymentId;
-  if (!paymentId) {
-    throw new Error('当前订单尚未生成支付单，无法提交支付结果');
-  }
-
-  const channel = (() => {
-    switch (paymentMethod) {
-      case 'wechat':
-        return 'WECHAT_PAY';
-      case 'alipay':
-        return 'ALIPAY';
-      case 'points':
-        return 'MEMBER_CARD';
-      case 'bankcard':
-      default:
-        return 'CASH';
-    }
-  })();
-
-  await createStorefrontTransactionsClient(scope).postData<StorefrontTransactionAggregate>(
-    '/transactions/payments/standardized-callback',
-    {
-      standardizedEventName: 'cashier.payment-succeeded',
-      aggregateId: paymentId,
-      paymentId,
-      orderId: aggregate.order.orderId,
-      tenantId: scope.tenantId,
-      externalPaymentId: aggregate.payment?.externalPaymentId,
-      transactionNo: aggregate.payment?.transactionNo ?? `storefront-${paymentId}`,
-      channel,
-      amount: aggregate.payment?.amount ?? aggregate.order.totalAmount,
-      status: 'SUCCEEDED',
-      paidAt: new Date().toISOString(),
-      payload: {
-        source: 'storefront-h5',
-        marketCode: scope.marketCode,
-      },
-    },
-    { cache: 'no-store' },
-  );
-
-  return getStorefrontOrderTransaction(aggregate.order.orderId, scope);
 }

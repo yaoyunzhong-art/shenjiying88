@@ -126,16 +126,29 @@ describe('PaymentPage helper - 状态识别', () => {
 });
 
 describe('PaymentPage helper - 视图模型', () => {
-  it('pending 订单生成支付二维码与有效期', () => {
+  it('pending 订单默认不再前端生成伪二维码，但仍保留有效期', () => {
     const view = mapAggregateToPaymentView(createAggregate(), 'alipay');
     assert.equal(view.orderId, 'order-001');
     assert.equal(view.orderCode, 'ORD20260720001');
     assert.equal(view.amount, 99.9);
     assert.equal(view.status, 'pending');
     assert.equal(view.method, 'alipay');
-    assert.ok(view.qrCode?.startsWith('data:image/svg+xml'));
+    assert.equal(view.qrCode, undefined);
     assert.ok(view.expireAt);
     assert.equal(view.storeId, DEFAULT_STOREFRONT_SCOPE.storeId);
+  });
+
+  it('后端已提供二维码字段时应直接透传展示', () => {
+    const aggregate = createAggregate({
+      payment: {
+        ...createAggregate().payment!,
+        qrCodeUrl: 'https://pay.example.com/qrcode/order-001.png',
+      } as typeof createAggregate().payment & { qrCodeUrl: string },
+    });
+
+    const view = mapAggregateToPaymentView(aggregate, 'wechat');
+    assert.equal(view.qrCode, 'https://pay.example.com/qrcode/order-001.png');
+    assert.equal(view.status, 'pending');
   });
 
   it('paid 订单不再携带二维码', () => {

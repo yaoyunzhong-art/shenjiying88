@@ -3,15 +3,14 @@
  *
  * 守护:
  *   - STATUS_CONFIG: 5 种 status 必须有 label/color/bg + 文案与 page 层匹配
- *   - OrderService.getOrders: 请求/异常/Mock回退
+ *   - OrderService.getOrders: 请求/异常/非法响应
  *   - OrderService.getOrderDetail: 请求/异常
  *   - OrderService.cancelOrder: 请求/异常
- *   - MOCK_ORDERS: 5 条测试数据结构完整性
  */
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { OrderService, STATUS_CONFIG, type OrderStatus, type Order } from '../order-service.ts';
+import { OrderService, STATUS_CONFIG, type OrderStatus } from '../order-service.ts';
 
 // ─── STATUS_CONFIG ──────────────────────────────────────
 
@@ -112,22 +111,26 @@ describe('[order-service] OrderService.getOrders', () => {
     assert.equal(result.error?.message, '参数错误');
   });
 
-  it('fetch 抛异常 → 降级返回 Mock 数据', async () => {
+  it('fetch 抛异常 → 返回 NETWORK_ERROR', async () => {
     const fetchMock = createMockFetch(200, null, true);
     globalThis.fetch = fetchMock;
 
     const svc = new OrderService('http://test');
     const result = await svc.getOrders();
-    // 由于 catch 内降级到 mock
-    assert.equal(result.success, true);
-    assert.ok(result.data);
-    assert.equal(result.data.orders.length, 5); // MOCK_ORDERS
-    assert.equal(result.data.pendingCount, 1); // 只有 o3 是 pending
+    assert.equal(result.success, false);
+    assert.equal(result.error?.code, 'NETWORK_ERROR');
+    assert.equal(result.error?.message, '网络错误');
   });
 
-  it('MOCK 数据包含 pendingCount 正确计数', () => {
-    // 直接验证私有方法行为通过 getOrders 异常触发
-    // 已在上一条验证 total=5, pendingCount=1
+  it('缺少 orders 数组 → 返回 INVALID_RESPONSE', async () => {
+    const fetchMock = createMockFetch(200, { data: { total: 0, pendingCount: 0 } });
+    globalThis.fetch = fetchMock;
+
+    const svc = new OrderService('http://test');
+    const result = await svc.getOrders();
+    assert.equal(result.success, false);
+    assert.equal(result.error?.code, 'INVALID_RESPONSE');
+    assert.equal(result.error?.message, '订单列表响应格式不合法');
   });
 
   it('无 options 调用 → 默认 page=1, pageSize=20', async () => {
@@ -171,7 +174,7 @@ describe('[order-service] OrderService.getOrderDetail', () => {
     assert.equal(result.error?.message, '订单不存在');
   });
 
-  it('fetch 抛异常 → 返回 error 对象 (不降级)', async () => {
+  it('fetch 抛异常 → 返回 error 对象', async () => {
     const fetchMock = createMockFetch(200, null, true);
     globalThis.fetch = fetchMock;
 
@@ -217,53 +220,5 @@ describe('[order-service] OrderService.cancelOrder', () => {
     const result = await svc.cancelOrder('o1');
     assert.equal(result.success, false);
     assert.equal(result.error?.code, 'NETWORK_ERROR');
-  });
-});
-
-// ─── MOCK_ORDERS 数据完整性 ──────────────────────────────
-
-describe('[order-service] MOCK_ORDERS 数据完整性', () => {
-  // 重新构造 Service 来触发 mock 数据
-  let mockOrders: Order[] = [];
-
-  it('通过异常降级获取 MOCK_ORDERS', async () => {
-    const fetchMock = createMockFetch(200, null, true);
-    globalThis.fetch = fetchMock;
-
-    const svc = new OrderService('http://test');
-    const result = await svc.getOrders();
-    assert.equal(result.success, true);
-    assert.ok(result.data);
-    mockOrders = result.data.orders;
-    assert.equal(mockOrders.length, 5);
-  });
-
-  it('每条 MOCK 订单必须包含核心字段', () => {
-    for (const o of mockOrders) {
-      assert.ok(typeof o.id === 'string' && o.id.length > 0, 'id 必填');
-      assert.ok(typeof o.orderNo === 'string' && o.orderNo.length > 0, 'orderNo 必填');
-      assert.ok(typeof o.storeName === 'string' && o.storeName.length > 0, 'storeName 必填');
-      assert.ok(typeof o.totalAmount === 'number' && o.totalAmount > 0, 'totalAmount 必为正数');
-      assert.ok(typeof o.itemCount === 'number' && o.itemCount > 0, 'itemCount 必为正整数');
-      assert.ok(typeof o.createdAt === 'string' && o.createdAt.length > 0, 'createdAt 必填');
-      assert.ok(['pending', 'paid', 'completed', 'cancelled', 'refunded'].includes(o.status), `status 必须是合法值, 当前=${o.status}`);
-      assert.ok(Array.isArray(o.items), 'items 必须是数组');
-      assert.ok(o.items.length > 0, 'items 不能为空');
-    }
-  });
-
-  it('每条 MOCK 订单的 items 子项必须含 name/quantity/price', () => {
-    for (const o of mockOrders) {
-      for (const item of o.items) {
-        assert.ok(typeof item.name === 'string' && item.name.length > 0);
-        assert.ok(typeof item.quantity === 'number' && item.quantity >= 1);
-        assert.ok(typeof item.price === 'number' && item.price > 0);
-      }
-    }
-  });
-
-  it('5 种 status 各出现一次 (避免重复或缺失)', () => {
-    const statuses = mockOrders.map((o) => o.status).sort();
-    assert.deepEqual(statuses, ['cancelled', 'completed', 'paid', 'pending', 'refunded']);
   });
 });

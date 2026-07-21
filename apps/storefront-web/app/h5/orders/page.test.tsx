@@ -257,23 +257,24 @@ test('OrdersPage: should deduplicate order IDs', () => {
   assert.equal(uniqueIds.size, 2);
 });
 
-test('OrdersPage: order service fallback mock data should produce valid orders', () => {
-  const mockOrders = [
-    { id: 'o1', orderNo: 'SJY20260701001', storeName: '神机营旗舰店', totalAmount: 299, status: 'completed' as const, itemCount: 3, createdAt: '2026-07-01 14:30', items: [{ name: '夏季T恤', quantity: 1, price: 199 }, { name: '运动短裤', quantity: 1, price: 100 }] },
-    { id: 'o2', orderNo: 'SJY20260702002', storeName: '神机营社区店', totalAmount: 159, status: 'paid' as const, itemCount: 2, createdAt: '2026-07-02 10:15', items: [{ name: '休闲帽', quantity: 1, price: 59 }, { name: '袜子套装', quantity: 1, price: 100 }] },
+test('OrdersPage: real list view data should keep required summary fields', () => {
+  const orders = [
+    { id: 'o1', orderNo: 'SJY20260701001', memberId: 'm1', totalAmount: 299, status: 'paid', itemCount: 3, createdAt: '2026-07-01T14:30:00.000Z', currency: 'CNY', paymentChannel: 'WECHAT_PAY' },
+    { id: 'o2', orderNo: 'SJY20260702002', memberId: 'm2', totalAmount: 159, status: 'pending_payment', itemCount: 2, createdAt: '2026-07-02T10:15:00.000Z', currency: 'CNY', paymentChannel: 'ALIPAY' },
   ];
-  assert.equal(mockOrders.length, 2);
-  assert.ok(mockOrders.every(o => o.totalAmount > 0));
-  assert.ok(mockOrders.every(o => o.items.length >= 1));
+  assert.equal(orders.length, 2);
+  assert.ok(orders.every(o => o.totalAmount > 0));
+  assert.ok(orders.every(o => typeof o.memberId === 'string' && o.memberId.length > 0));
+  assert.ok(orders.every(o => typeof o.paymentChannel === 'string' && o.paymentChannel.length > 0));
 });
 
 test('OrdersPage: filter toggle state management', () => {
   let filter: string = 'ALL';
   assert.equal(filter, 'ALL');
-  filter = 'pending';
-  assert.equal(filter, 'pending');
-  filter = 'completed';
-  assert.equal(filter, 'completed');
+  filter = 'pending_payment';
+  assert.equal(filter, 'pending_payment');
+  filter = 'refunded';
+  assert.equal(filter, 'refunded');
   filter = 'ALL';
   assert.equal(filter, 'ALL');
 });

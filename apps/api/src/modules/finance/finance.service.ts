@@ -837,7 +837,7 @@ export class FinanceService {
   ): Account {
     const account = accountStore.get(accountId)
     if (!account || account.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Account ${accountId} not found`)
+      throw new NotFoundException(`Account ${accountId} not found`)
     }
     return account
   }
@@ -868,7 +868,7 @@ export class FinanceService {
   ): Account {
     const account = this.getAccount(accountId, tenantContext)
     if (account.status !== AccountStatus.Active) {
-      throw new Error(`Account ${accountId} is not active`)
+      throw new ConflictException(`Account ${accountId} is not active`)
     }
 
     account.status = AccountStatus.Frozen
@@ -882,7 +882,7 @@ export class FinanceService {
   ): Account {
     const account = this.getAccount(accountId, tenantContext)
     if (account.status === AccountStatus.Closed) {
-      throw new Error(`Account ${accountId} is already closed`)
+      throw new ConflictException(`Account ${accountId} is already closed`)
     }
 
     account.status = AccountStatus.Closed
@@ -899,7 +899,7 @@ export class FinanceService {
     input: CreateSettlementDto
   ): Promise<Settlement> {
     if (input.startDate > input.endDate) {
-      throw new Error('Settlement start date must be before or equal to end date')
+      throw new BadRequestException('Settlement start date must be before or equal to end date')
     }
     const now = new Date().toISOString()
     const storeId = input.storeId ?? tenantContext.storeId
@@ -965,7 +965,7 @@ export class FinanceService {
   ): Settlement {
     const settlement = this.getSettlement(settlementId, tenantContext)
     if (settlement.settlementStatus !== SettlementStatus.Pending) {
-      throw new Error(`Settlement ${settlementId} is not pending confirmation`)
+      throw new ConflictException(`Settlement ${settlementId} is not pending confirmation`)
     }
 
     settlement.settlementStatus = SettlementStatus.Confirmed
@@ -979,7 +979,7 @@ export class FinanceService {
   ): Settlement {
     const settlement = this.getSettlement(settlementId, tenantContext)
     if (settlement.settlementStatus !== SettlementStatus.Pending) {
-      throw new Error(`Settlement ${settlementId} is not pending`)
+      throw new ConflictException(`Settlement ${settlementId} is not pending`)
     }
 
     settlement.settlementStatus = SettlementStatus.Disputed
@@ -992,7 +992,7 @@ export class FinanceService {
   ): Settlement {
     const settlement = settlementStore.get(settlementId)
     if (!settlement || settlement.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Settlement ${settlementId} not found`)
+      throw new NotFoundException(`Settlement ${settlementId} not found`)
     }
     return settlement
   }
@@ -1090,7 +1090,7 @@ export class FinanceService {
 
     const current = await this.getInvoiceResolved(invoiceId, tenantContext)
     if (current.status !== InvoiceStatus.Draft) {
-      throw new Error(`Invoice ${invoiceId} is not in draft status`)
+      throw new ConflictException(`Invoice ${invoiceId} is not in draft status`)
     }
 
     const record = await invoiceModel.update({
@@ -1116,7 +1116,7 @@ export class FinanceService {
 
     const current = await this.getInvoiceResolved(invoiceId, tenantContext)
     if (current.status === InvoiceStatus.Cancelled) {
-      throw new Error(`Invoice ${invoiceId} is already cancelled`)
+      throw new ConflictException(`Invoice ${invoiceId} is already cancelled`)
     }
 
     const record = await invoiceModel.update({
@@ -1143,7 +1143,7 @@ export class FinanceService {
       where: { id: invoiceId }
     })
     if (!record || String(record.tenantId) !== tenantContext.tenantId) {
-      throw new Error(`Invoice ${invoiceId} not found`)
+      throw new NotFoundException(`Invoice ${invoiceId} not found`)
     }
     const persistedInvoice = this.toInvoiceEntity(record, tenantContext.storeId)
     invoiceStore.set(persistedInvoice.id, persistedInvoice)
@@ -1201,7 +1201,7 @@ export class FinanceService {
   ): Invoice {
     const invoice = this.getInvoice(invoiceId, tenantContext)
     if (invoice.status !== InvoiceStatus.Draft) {
-      throw new Error(`Invoice ${invoiceId} is not in draft status`)
+      throw new ConflictException(`Invoice ${invoiceId} is not in draft status`)
     }
 
     invoice.status = InvoiceStatus.Issued
@@ -1215,7 +1215,7 @@ export class FinanceService {
   ): Invoice {
     const invoice = this.getInvoice(invoiceId, tenantContext)
     if (invoice.status === InvoiceStatus.Cancelled) {
-      throw new Error(`Invoice ${invoiceId} is already cancelled`)
+      throw new ConflictException(`Invoice ${invoiceId} is already cancelled`)
     }
 
     invoice.status = InvoiceStatus.Cancelled
@@ -1228,7 +1228,7 @@ export class FinanceService {
   ): Invoice {
     const invoice = invoiceStore.get(invoiceId)
     if (!invoice || invoice.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Invoice ${invoiceId} not found`)
+      throw new NotFoundException(`Invoice ${invoiceId} not found`)
     }
     return invoice
   }

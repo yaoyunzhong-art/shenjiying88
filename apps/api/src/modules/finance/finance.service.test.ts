@@ -13,6 +13,11 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
 import {
   LedgerType,
@@ -812,5 +817,166 @@ describe('[finance] 合约: *Resolved 方法补全 (无 Prisma 回退)', () => {
     const detail = await svc.getSettlementDetailResolved(s.id, CTX_A)
     assert.ok(detail.settlement)
     assert.ok(Array.isArray(detail.ledgers))
+  })
+})
+
+// ═══════════════════════════════════════════════════════
+// 异常类型护栏 (Service 层标准异常收口)
+// ═══════════════════════════════════════════════════════
+
+describe('[finance] 异常类型护栏', () => {
+  it('getLedger 不存在的 ID → NotFoundException', () => {
+    const svc = makeService()
+    try {
+      svc.getLedger('non-existent', CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof NotFoundException)
+    }
+  })
+
+  it('getAccount 不存在的 ID → NotFoundException', () => {
+    const svc = makeService()
+    try {
+      svc.getAccount('non-existent', CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof NotFoundException)
+    }
+  })
+
+  it('getSettlement 不存在的 ID → NotFoundException', () => {
+    const svc = makeService()
+    try {
+      svc.getSettlement('non-existent', CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof NotFoundException)
+    }
+  })
+
+  it('getInvoice 不存在的 ID → NotFoundException', () => {
+    const svc = makeService()
+    try {
+      svc.getInvoice('non-existent', CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof NotFoundException)
+    }
+  })
+
+  it('freezeAccount 非 Active → ConflictException', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
+    svc.freezeAccount(a.id, CTX_A)
+    try {
+      svc.freezeAccount(a.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
+  })
+
+  it('closeAccount 已关闭 → ConflictException', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
+    svc.closeAccount(a.id, CTX_A)
+    try {
+      svc.closeAccount(a.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
+  })
+
+  it('confirmSettlement 已确认 → ConflictException', async () => {
+    const svc = makeService()
+    const s = await svc.createSettlement(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+    svc.confirmSettlement(s.id, CTX_A)
+    try {
+      svc.confirmSettlement(s.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
+  })
+
+  it('issueInvoice 非 Draft → ConflictException', async () => {
+    const svc = makeService()
+    const inv = await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    svc.issueInvoice(inv.id, CTX_A)
+    try {
+      svc.issueInvoice(inv.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
+  })
+
+  it('cancelInvoice 已取消 → ConflictException', async () => {
+    const svc = makeService()
+    const inv = await svc.createInvoice(CTX_A, { amount: 100, type: InvoiceType.Regular, orderId: 'O-1' })
+    svc.cancelInvoice(inv.id, CTX_A)
+    try {
+      svc.cancelInvoice(inv.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
+  })
+
+  it('createSettlement 起始>结束 → BadRequestException', async () => {
+    const svc = makeService()
+    try {
+      await svc.createSettlement(CTX_A, {
+        startDate: '2030-01-01T00:00:00Z',
+        endDate: '2020-01-01T00:00:00Z'
+      })
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof BadRequestException)
+    }
+  })
+
+  // ── Resolved methods ──
+
+  it('getLedgerResolved 不存在的 ID → NotFoundException', async () => {
+    const svc = makeService()
+    try {
+      await svc.getLedgerResolved('non-existent', CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof NotFoundException)
+    }
+  })
+
+  it('freezeAccountResolved 非 Active → ConflictException', async () => {
+    const svc = makeService()
+    const a = await svc.createAccount(CTX_A, { name: 'X', type: AccountType.Cash })
+    await svc.freezeAccountResolved(a.id, CTX_A)
+    try {
+      await svc.freezeAccountResolved(a.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
+  })
+
+  it('confirmSettlementResolved 已确认 → ConflictException', async () => {
+    const svc = makeService()
+    const s = await svc.createSettlement(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+    await svc.confirmSettlementResolved(s.id, CTX_A)
+    try {
+      await svc.confirmSettlementResolved(s.id, CTX_A)
+      assert.fail('should throw')
+    } catch (e) {
+      assert.ok(e instanceof ConflictException)
+    }
   })
 })

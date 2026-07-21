@@ -9,8 +9,6 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { orderService, type Order, type OrderStatus, STATUS_CONFIG } from '../../../lib/order-service';
 import {
   getMainContainerStyle,
   getCardStyle,
@@ -24,24 +22,54 @@ import {
   COLOR_TEXT_MUTED,
   COLOR_ACCENT,
 } from '../h5-style';
+import {
+  formatStorefrontOrderCurrency,
+  formatStorefrontOrderDateTime,
+  getStorefrontOrderPaymentLabel,
+  getStorefrontOrderStatusLabel,
+  getStorefrontOrderStatusVariant,
+  loadStorefrontOrders,
+  type StorefrontOrderListViewItem,
+  type StorefrontOrderViewStatus,
+} from '../../../lib/storefront-orders';
+
+function getStatusBadgeStyle(status: StorefrontOrderViewStatus): { color: string; bg: string } {
+  switch (getStorefrontOrderStatusVariant(status)) {
+    case 'success':
+      return { color: '#10b981', bg: '#10b98120' };
+    case 'error':
+      return { color: '#ef4444', bg: '#ef444420' };
+    case 'default':
+      return { color: '#64748b', bg: '#64748b20' };
+    case 'warning':
+    default:
+      return { color: '#f59e0b', bg: '#f59e0b20' };
+  }
+}
 
 export default function H5OrdersPage() {
   const router = useRouter();
-  const [filter, setFilter] = useState<OrderStatus | 'ALL'>('ALL');
+  const [filter, setFilter] = useState<StorefrontOrderViewStatus | 'ALL'>('ALL');
   const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<StorefrontOrderListViewItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadOrders();
+    void loadOrders();
   }, []);
 
   async function loadOrders() {
     setLoading(true);
-    const result = await orderService.getOrders();
-    if (result.success && result.data) {
-      setOrders(result.data.orders);
+    setError(null);
+    try {
+      const items = await loadStorefrontOrders();
+      setOrders(items);
+    } catch (cause) {
+      setOrders([]);
+      setError(cause instanceof Error ? cause.message : '订单加载失败，请稍后重试');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const filtered = useMemo(() => {
@@ -51,9 +79,10 @@ export default function H5OrdersPage() {
 
   const stats = useMemo(() => ({
     all: orders.length,
-    pending: orders.filter((o) => o.status === 'pending').length,
+    pending: orders.filter((o) => o.status === 'pending_payment').length,
     paid: orders.filter((o) => o.status === 'paid').length,
-    completed: orders.filter((o) => o.status === 'completed').length,
+    refunded: orders.filter((o) => o.status === 'refunded').length,
+    cancelled: orders.filter((o) => o.status === 'cancelled').length,
   }), [orders]);
 
   return (
@@ -64,13 +93,14 @@ export default function H5OrdersPage() {
         <div style={{ display: 'flex', gap: 8 }}>
           {[
             { key: 'ALL', label: '全部', count: stats.all },
-            { key: 'pending', label: '待支付', count: stats.pending },
+            { key: 'pending_payment', label: '待支付', count: stats.pending },
             { key: 'paid', label: '已支付', count: stats.paid },
-            { key: 'completed', label: '已完成', count: stats.completed },
+            { key: 'refunded', label: '已退款', count: stats.refunded },
+            { key: 'cancelled', label: '已取消', count: stats.cancelled },
           ].map((item) => (
             <button
               key={item.key}
-              onClick={() => setFilter(item.key as OrderStatus | 'ALL')}
+              onClick={() => setFilter(item.key as StorefrontOrderViewStatus | 'ALL')}
               style={getToggleChipStyle(filter === item.key, { flex: 1 })}
             >
               <div style={{ fontWeight: 600 }}>{item.count}</div>
@@ -82,7 +112,32 @@ export default function H5OrdersPage() {
 
       {/* 订单列表 */}
       <section style={{ padding: 16 }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={getEmptyStateStyle()}>
+            <div style={getEmptyStateEmojiStyle()}>⏳</div>
+            <div>订单加载中...</div>
+          </div>
+        ) : error ? (
+          <div style={getEmptyStateStyle()}>
+            <div style={getEmptyStateEmojiStyle()}>⚠️</div>
+            <div>{error}</div>
+            <button
+              onClick={() => void loadOrders()}
+              style={{
+                marginTop: 16,
+                padding: '10px 24px',
+                borderRadius: 8,
+                background: 'rgba(99,102,241,0.2)',
+                border: '1px solid rgba(99,102,241,0.4)',
+                color: COLOR_ACCENT,
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              重新加载
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={getEmptyStateStyle()}>
             <div style={getEmptyStateEmojiStyle()}>📋</div>
             <div>暂无订单</div>
@@ -104,7 +159,7 @@ export default function H5OrdersPage() {
           </div>
         ) : (
           filtered.map((order) => {
-            const statusConfig = STATUS_CONFIG[order.status];
+            const statusStyle = getStatusBadgeStyle(order.status);
 
             return (
               <div
@@ -113,42 +168,56 @@ export default function H5OrdersPage() {
               >
                 {/* 订单头部 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, color: COLOR_TEXT_SECONDARY }}>{order.storeName}</div>
+                  <div style={{ fontSize: 13, color: COLOR_TEXT_SECONDARY }}>订单号：{order.orderNo}</div>
                   <span style={{
                     padding: '4px 10px',
                     borderRadius: 12,
-                    background: statusConfig.bg,
-                    color: statusConfig.color,
+                    background: statusStyle.bg,
+                    color: statusStyle.color,
                     fontSize: 11,
                     fontWeight: 500,
                   }}>
-                    {statusConfig.label}
+                    {getStorefrontOrderStatusLabel(order.status)}
                   </span>
                 </div>
 
-                {/* 商品信息 */}
+                {/* 订单信息 */}
                 <div style={{ marginBottom: 12 }}>
-                  {order.items.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, color: '#e2e8f0' }}>{item.name} x{item.quantity}</span>
-                      <span style={{ fontSize: 14, color: COLOR_TEXT_SECONDARY }}>¥{item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, color: '#e2e8f0' }}>支付方式</span>
+                    <span style={{ fontSize: 14, color: COLOR_TEXT_SECONDARY }}>
+                      {getStorefrontOrderPaymentLabel(order.paymentChannel)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, color: '#e2e8f0' }}>件数</span>
+                    <span style={{ fontSize: 14, color: COLOR_TEXT_SECONDARY }}>{order.itemCount} 件</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 14, color: '#e2e8f0' }}>会员ID</span>
+                    <span style={{ fontSize: 14, color: COLOR_TEXT_SECONDARY }}>{order.memberId}</span>
+                  </div>
                 </div>
 
                 {/* 订单底部 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid rgba(148,163,184,0.08)' }}>
                   <div>
-                    <span style={{ fontSize: 12, color: COLOR_TEXT_MUTED }}>{order.createdAt}</span>
-                    <span style={{ fontSize: 12, color: COLOR_TEXT_MUTED, marginLeft: 8 }}>共{order.itemCount}件</span>
+                    <span style={{ fontSize: 12, color: COLOR_TEXT_MUTED }}>
+                      {formatStorefrontOrderDateTime(order.createdAt)}
+                    </span>
+                    {order.paidAt ? (
+                      <span style={{ fontSize: 12, color: COLOR_TEXT_MUTED, marginLeft: 8 }}>
+                        支付：{formatStorefrontOrderDateTime(order.paidAt)}
+                      </span>
+                    ) : null}
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: COLOR_TEXT_PRIMARY }}>
-                    ¥{order.totalAmount.toFixed(2)}
+                    {formatStorefrontOrderCurrency(order.totalAmount, order.currency)}
                   </div>
                 </div>
 
                 {/* 操作按钮 */}
-                {order.status === 'pending' && (
+                {order.status === 'pending_payment' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
                     <button
                       onClick={() => router.push(`/h5/payment/${order.id}`)}
