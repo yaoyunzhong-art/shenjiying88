@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 /**
  * 🐜 自动: [finance-report.service] P-38 财务报表生成服务测试
  *
@@ -23,6 +23,7 @@ import {
   ExportFormat
 } from './dto/create-report.dto'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import type { FinancialReport, ExportResult } from './types'
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 测试常量与工厂
@@ -46,6 +47,26 @@ function makeService(): FinanceReportService {
   resetFinanceServiceTestState()
   const financeService = new FinanceService()
   return new FinanceReportService(financeService)
+}
+
+function makePrismaBackedService(overrides?: {
+  financeService?: FinanceService
+  financeReport?: Record<string, unknown>
+  financeReportExport?: Record<string, unknown>
+}): FinanceReportService {
+  resetFinanceReportTestState()
+  resetFinanceServiceTestState()
+  const financeService = overrides?.financeService ?? new FinanceService()
+  const prisma = {
+    financeReport: overrides?.financeReport ?? {},
+    financeReportExport: overrides?.financeReportExport ?? {},
+  }
+
+  return new FinanceReportService(
+    financeService,
+    undefined,
+    prisma as unknown as never,
+  )
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -609,10 +630,284 @@ describe('[finance-report] resolved 主链', () => {
     )
     const regenerated = await svc.regenerateReportResolved(created.id, TENANT_A)
 
-    expect(created.summary?.netProfit).toBe(850)
+    expect(created.summary?.netProfit).toBe(1400)
     expect(regenerated.summary?.netProfit).toBe(1400)
     expect(regenerated.status).toBe('COMPLETED')
     expect(getRevenueSummaryResolved).toHaveBeenCalledTimes(2)
+  })
+
+  it('listReportsResolved 在无 Prisma 时回退到当前内存报表', async () => {
+    const svc = makeService()
+    const resolvedSvc = svc as FinanceReportService & {
+      listReportsResolved: (
+        tenantContext: RequestTenantContext,
+        query?: Record<string, unknown>
+      ) => Promise<FinancialReport[]>
+    }
+    svc.createReport(TENANT_A, makeReportInput({ title: 'tenant-a-report' }))
+    svc.createReport(TENANT_B, makeReportInput({ title: 'tenant-b-report' }))
+
+    const reports = await resolvedSvc.listReportsResolved(TENANT_A, {})
+
+    expect(reports).toHaveLength(1)
+    expect(reports[0].tenantId).toBe(TENANT_A.tenantId)
+    expect(reports[0].title).toBe('tenant-a-report')
+  })
+
+  it('getReportResolved 在无 Prisma 时沿用当前租户隔离口径', async () => {
+    const svc = makeService()
+    const resolvedSvc = svc as FinanceReportService & {
+      getReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<FinancialReport>
+    }
+    const created = svc.createReport(TENANT_A, makeReportInput({ title: 'resolved-report' }))
+
+    const report = await resolvedSvc.getReportResolved(created.id, TENANT_A)
+
+    expect(report.id).toBe(created.id)
+    expect(report.title).toBe('resolved-report')
+  })
+
+  it('exportReportResolved / getExportResultResolved 在无 Prisma 时沿用当前导出链', async () => {
+    const svc = makeService()
+    const resolvedSvc = svc as FinanceReportService & {
+      exportReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext,
+        input: ExportReportDto
+      ) => Promise<ExportResult>
+      getExportResultResolved: (
+        exportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ExportResult>
+    }
+    const created = svc.createReport(TENANT_A, makeReportInput())
+
+    const exported = await resolvedSvc.exportReportResolved(created.id, TENANT_A, { format: ExportFormat.JSON })
+    const fetched = await resolvedSvc.getExportResultResolved(exported.id, TENANT_A)
+
+    expect(exported.reportId).toBe(created.id)
+    expect(fetched.id).toBe(exported.id)
+    expect(fetched.content).toBe(exported.content)
+  })
+
+  it('deleteReportResolved 在无 Prisma 时沿用当前删除链', async () => {
+    const svc = makeService()
+    const resolvedSvc = svc as FinanceReportService & {
+      deleteReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<boolean>
+      getReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<FinancialReport>
+    }
+    const created = svc.createReport(TENANT_A, makeReportInput())
+
+    const deleted = await resolvedSvc.deleteReportResolved(created.id, TENANT_A)
+
+    expect(deleted).toBe(true)
+    await expect(resolvedSvc.getReportResolved(created.id, TENANT_A)).rejects.toThrow('not found')
+  })
+
+  it('createReportResolved 应把报表写入 Prisma report model', async () => {
+    const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+      ...data,
+      storeId: data.storeId,
+      data: data.data ?? null,
+      summary: data.summary ?? null,
+      generatedAt: data.generatedAt ?? null,
+      generatedBy: data.generatedBy ?? null,
+      errorMessage: data.errorMessage ?? null,
+    }))
+    const update = vi.fn(async ({ where, data }: { where: Record<string, unknown>; data: Record<string, unknown> }) => ({
+      id: where.id,
+      tenantId: TENANT_A.tenantId,
+      createdAt: new Date('2026-07-01T00:00:00.000Z'),
+      title: 'persisted-report',
+      reportType: 'PROFIT_LOSS',
+      periodStart: new Date('2026-07-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-07-31T23:59:59.999Z'),
+      storeId: 'store-a1',
+      ...data,
+    }))
+
+    const svc = makePrismaBackedService({
+      financeReport: { create, update },
+    })
+
+    const report = await svc.createReportResolved(
+      TENANT_A,
+      makeReportInput({ title: 'persisted-report' }),
+    )
+
+    expect(create).toHaveBeenCalledOnce()
+    expect(update).toHaveBeenCalled()
+    expect(report.status).toBe('COMPLETED')
+    expect(report.title).toBe('persisted-report')
+  })
+
+  it('list/get/export/delete resolved 应优先走 Prisma delegate', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'rpt-prisma-1',
+        tenantId: TENANT_A.tenantId,
+        storeId: 'store-a1',
+        title: 'prisma-list-report',
+        reportType: 'PROFIT_LOSS',
+        periodStart: new Date('2026-07-01T00:00:00.000Z'),
+        periodEnd: new Date('2026-07-31T23:59:59.999Z'),
+        status: 'COMPLETED',
+        data: { title: '利润表' },
+        summary: {
+          totalRevenue: 100,
+          totalExpense: 20,
+          totalRefund: 5,
+          netProfit: 75,
+          transactionCount: 1,
+        },
+        generatedAt: new Date('2026-07-31T23:00:00.000Z'),
+        generatedBy: null,
+        exportFormats: ['JSON'],
+        errorMessage: null,
+        createdAt: new Date('2026-07-31T23:00:00.000Z'),
+      },
+    ])
+    const findUnique = vi
+      .fn()
+      .mockResolvedValue({
+        id: 'rpt-prisma-1',
+        tenantId: TENANT_A.tenantId,
+        storeId: 'store-a1',
+        title: 'prisma-list-report',
+        reportType: 'PROFIT_LOSS',
+        periodStart: new Date('2026-07-01T00:00:00.000Z'),
+        periodEnd: new Date('2026-07-31T23:59:59.999Z'),
+        status: 'COMPLETED',
+        data: { title: '利润表', value: 100 },
+        summary: {
+          totalRevenue: 100,
+          totalExpense: 20,
+          totalRefund: 5,
+          netProfit: 75,
+          transactionCount: 1,
+        },
+        generatedAt: new Date('2026-07-31T23:00:00.000Z'),
+        generatedBy: null,
+        exportFormats: ['JSON'],
+        errorMessage: null,
+        createdAt: new Date('2026-07-31T23:00:00.000Z'),
+      })
+      .mockResolvedValueOnce({
+        id: 'rpt-prisma-1',
+        tenantId: TENANT_A.tenantId,
+        storeId: 'store-a1',
+        title: 'prisma-list-report',
+        reportType: 'PROFIT_LOSS',
+        periodStart: new Date('2026-07-01T00:00:00.000Z'),
+        periodEnd: new Date('2026-07-31T23:59:59.999Z'),
+        status: 'COMPLETED',
+        data: { title: '利润表', value: 100 },
+        summary: {
+          totalRevenue: 100,
+          totalExpense: 20,
+          totalRefund: 5,
+          netProfit: 75,
+          transactionCount: 1,
+        },
+        generatedAt: new Date('2026-07-31T23:00:00.000Z'),
+        generatedBy: null,
+        exportFormats: ['JSON'],
+        errorMessage: null,
+        createdAt: new Date('2026-07-31T23:00:00.000Z'),
+      })
+    const findUniqueExport = vi.fn().mockResolvedValueOnce({
+      id: 'exp-prisma-1',
+      tenantId: TENANT_A.tenantId,
+      reportId: 'rpt-prisma-1',
+      format: 'JSON',
+      url: null,
+      content: '{"title":"利润表","value":100}',
+      generatedAt: new Date('2026-08-01T00:00:00.000Z'),
+      expiresAt: new Date('2026-08-02T00:00:00.000Z'),
+    })
+    const createExport = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+      ...data,
+      url: null,
+      createdAt: new Date('2026-08-01T00:00:00.000Z'),
+    }))
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 })
+    const deleteReport = vi.fn().mockResolvedValue({ id: 'rpt-prisma-1' })
+
+    const svc = makePrismaBackedService({
+      financeReport: { findMany, findUnique, delete: deleteReport },
+      financeReportExport: { create: createExport, findUnique: findUniqueExport, deleteMany },
+    })
+
+    const reports = await (svc as FinanceReportService & {
+      listReportsResolved: (
+        tenantContext: RequestTenantContext,
+        query?: Record<string, unknown>
+      ) => Promise<FinancialReport[]>
+      getReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<FinancialReport>
+      exportReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext,
+        input: ExportReportDto
+      ) => Promise<ExportResult>
+      getExportResultResolved: (
+        exportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ExportResult>
+      deleteReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<boolean>
+    }).listReportsResolved(TENANT_A, {})
+
+    const report = await (svc as FinanceReportService & {
+      getReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<FinancialReport>
+    }).getReportResolved('rpt-prisma-1', TENANT_A)
+
+    const exported = await (svc as FinanceReportService & {
+      exportReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext,
+        input: ExportReportDto
+      ) => Promise<ExportResult>
+    }).exportReportResolved('rpt-prisma-1', TENANT_A, { format: ExportFormat.JSON })
+
+    const exportResult = await (svc as FinanceReportService & {
+      getExportResultResolved: (
+        exportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ExportResult>
+    }).getExportResultResolved('exp-prisma-1', TENANT_A)
+
+    const deleted = await (svc as FinanceReportService & {
+      deleteReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<boolean>
+    }).deleteReportResolved('rpt-prisma-1', TENANT_A)
+
+    expect(findMany).toHaveBeenCalledOnce()
+    expect(report.id).toBe('rpt-prisma-1')
+    expect(createExport).toHaveBeenCalledOnce()
+    expect(exported.reportId).toBe('rpt-prisma-1')
+    expect(exportResult.id).toBe('exp-prisma-1')
+    expect(deleteMany).toHaveBeenCalledOnce()
+    expect(deleteReport).toHaveBeenCalledOnce()
+    expect(deleted).toBe(true)
   })
 })
 

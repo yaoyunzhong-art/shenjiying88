@@ -438,6 +438,16 @@ class TestFinanceController {
     return this.financeReportController.regenerateReport(id, getTenantContext(req))
   }
 
+  @Post('reports/:id/export')
+  exportReport(@Req() req: Request, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.financeReportController.exportReport(id, getTenantContext(req), body as never)
+  }
+
+  @Get('reports/exports/:exportId')
+  getExportResult(@Req() req: Request, @Param('exportId') exportId: string) {
+    return this.financeReportController.getExportResult(exportId, getTenantContext(req))
+  }
+
   // ═══════════════════════════════════════════════════════
   // Reconciliation 对账 (Mock in-memory for e2e)
   // ═══════════════════════════════════════════════════════
@@ -2381,6 +2391,53 @@ it('e2e: reports — BALANCE_SHEET 真实报表应走 resolved 账户主链', as
     expect(createRes.body.data.status).toBe('COMPLETED');
     expect(createRes.body.data.data.accountDetails).toHaveLength(2);
     expect(createRes.body.data.data.assets.total).toBe(9200);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 导出与获取导出结果应走真实 report controller 主链', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 5600,
+        description: '导出报表营收',
+        recordedAt: '2026-07-18T10:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'resolved-export',
+        reportType: FinanceReportType.PROFIT_LOSS,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+
+    const reportId = createRes.body.data.id;
+    const exportRes = await request(app.getHttpServer())
+      .post(`/finance/reports/${reportId}/export`)
+      .set(TENANT_A)
+      .send({ format: 'JSON' });
+
+    expect(exportRes.status).toBe(201);
+    expect(exportRes.body.data.reportId).toBe(reportId);
+    expect(exportRes.body.data.format).toBe('JSON');
+
+    const exportId = exportRes.body.data.id;
+    const detailRes = await request(app.getHttpServer())
+      .get(`/finance/reports/exports/${exportId}`)
+      .set(TENANT_A);
+
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.data.id).toBe(exportId);
+    expect(detailRes.body.data.content).toContain('利润表');
   } finally {
     await app.close();
   }
