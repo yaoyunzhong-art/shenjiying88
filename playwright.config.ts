@@ -15,6 +15,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testDir: './apps/admin-web/app/__e2e__',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'l3-baseline',
+      testDir: './e2e',
+      testMatch: 'e2e-l3-baseline-*.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
   ],

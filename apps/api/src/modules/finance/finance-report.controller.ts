@@ -44,10 +44,31 @@ export class FinanceReportController {
         tenantContext: RequestTenantContext,
         body: CreateReportDto
       ) => Promise<ReturnType<FinanceReportService['createReport']>>
+      listReportsResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: ReportQueryDto
+      ) => Promise<ReturnType<FinanceReportService['listReports']>>
+      getReportResolved?: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceReportService['getReport']>>
       regenerateReportResolved?: (
         reportId: string,
         tenantContext: RequestTenantContext
       ) => Promise<ReturnType<FinanceReportService['regenerateReport']>>
+      exportReportResolved?: (
+        reportId: string,
+        tenantContext: RequestTenantContext,
+        body: ExportReportDto
+      ) => Promise<ReturnType<FinanceReportService['exportReport']>>
+      getExportResultResolved?: (
+        exportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceReportService['getExportResult']>>
+      deleteReportResolved?: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceReportService['deleteReport']>>
     }
   }
 
@@ -75,6 +96,9 @@ export class FinanceReportController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: ReportQueryDto = {} as ReportQueryDto
   ) {
+    if (this.resolvedReportService.listReportsResolved) {
+      return this.resolvedReportService.listReportsResolved(tenantContext, query)
+    }
     return this.reportService.listReports(tenantContext, query)
   }
 
@@ -87,6 +111,9 @@ export class FinanceReportController {
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedReportService.getReportResolved) {
+      return this.resolvedReportService.getReportResolved(reportId, tenantContext)
+    }
     return this.reportService.getReport(reportId, tenantContext)
   }
 
@@ -115,6 +142,9 @@ export class FinanceReportController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: ExportReportDto
   ) {
+    if (this.resolvedReportService.exportReportResolved) {
+      return this.resolvedReportService.exportReportResolved(reportId, tenantContext, body)
+    }
     return this.reportService.exportReport(reportId, tenantContext, body)
   }
 
@@ -127,6 +157,9 @@ export class FinanceReportController {
     @Param('exportId') exportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedReportService.getExportResultResolved) {
+      return this.resolvedReportService.getExportResultResolved(exportId, tenantContext)
+    }
     return this.reportService.getExportResult(exportId, tenantContext)
   }
 
@@ -139,6 +172,12 @@ export class FinanceReportController {
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedReportService.deleteReportResolved) {
+      return this.resolvedReportService.deleteReportResolved(reportId, tenantContext).then(() => ({
+        success: true,
+        message: `Report ${reportId} deleted`
+      }))
+    }
     this.reportService.deleteReport(reportId, tenantContext)
     return { success: true, message: `Report ${reportId} deleted` }
   }

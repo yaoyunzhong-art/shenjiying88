@@ -1,8 +1,8 @@
-# 🎯 E2E链分级方案 (L0/L1/L2)
+# 🎯 E2E链分级方案 (L0/L1/L2/L3)
 
 > 审计编号: G3-E13 收银审计
 > 创建: 2026-07-21
-> 状态: ✅ 已定稿 (v2.0 — 扩展至58链)
+> 状态: ✅ 已定稿 (v2.0 — 扩展至58链) → v2.1 (新增L3性能基线 15条)
 > 铁律: 圈梁第五道箍 — 知识赋能 (manual降级)
 
 ---
@@ -14,14 +14,16 @@
 | **L0** | 5条 | 收银/支付/退款/对账/租户登录 (生命线) | 每次 PR 前 | ✅ 阻断发布 |
 | **L1** | 26条 | 核心业务链（日常交易、会员、营销、库存、报表、门店、CRM、排班、礼品卡、质检等） | 每日 | ⚠️ 需人工确认 |
 | **L2** | 27条 | 全量链（观测、边缘、AI工作流、多区域容灾、CDN缓存、内容审核、联邦学习等扩展场景） | 每周 | ℹ️ 记录观察 |
+| **L3** | 15条 | 页面首屏加载性能基线（< 300ms），收银/会员/管理后台上百个关键页面 | 每次 PR 前 | ⚠️ 性能退化预警 |
 
 ### 总量
-- 现有 E2E 测试文件: **58 个** (cross-module-e2e-*.test.ts)
+- 现有 E2E 测试文件: **61 个** (cross-module-e2e-*.test.ts + e2e-l3-baseline-*.spec.ts)
 - L0: 5 条
 - L1: 26 条 (核心业务链)
 - L2: 27 条 (扩展链)
-- 总覆盖链: 58 条
-- 总 it 用例: 646 个
+- L3: 15 条 (性能基线)
+- 总覆盖链: 73 条
+- 总 it 用例: 661 个
 
 ---
 
@@ -89,7 +91,30 @@
 
 ---
 
-## 4. L2 — 全量链 (27条，每周)
+## 4. L3 — 页面首屏性能基线 (15条，每次PR前)
+
+> **V23建议**: 建立300ms首屏加载性能基线，覆盖storefront/收银/会员/admin-web三大关键域。
+> **判定规则**: 使用 Performance API (performance.mark + performance.measure) 精确测量首屏加载时间，断言 < 300ms。
+> **角色**: 🛒前台 (收银员) / 👔店长
+
+| # | 文件名 | 标题 | it数 | 角色 |
+|:-:|:-------|:-----|:----:|:----:|
+| 59 | `e2e-l3-baseline-storefront-cashier` | 🛒 收银页 300ms基线（POS/结算/快速结账/挂单/历史） | 5 | 🛒前台 |
+| 60 | `e2e-l3-baseline-storefront-member` | 👔 会员页 300ms基线（首页/详情/积分/等级/充值） | 5 | 👔店长 |
+| 61 | `e2e-l3-baseline-admin-cashier` | 🛒 admin收银 300ms基线（管理/流水/对账/异常/日结） | 5 | 🛒前台 |
+| | **小计** | | **15** | |
+
+### L3 测试原则
+- ✅ 使用 `performance.mark()` + `performance.measure()` 精确测量
+- ✅ 每个测试前用 `performance.clearMarks/Measures()` 重置
+- ✅ 断言 `expect(duration).toBeLessThan(300)`
+- ✅ 控制台输出实际耗时便于调试
+- ⚠️ 300ms 为CI硬阈值，本地开发可低于50ms
+- ❌ 禁止: `describe.skip` / `it.only`
+
+---
+
+## 5. L2 — 全量链 (27条，每周)
 
 > **判定规则**: 所有非 L0/L1 的 E2E 链，含观测、边缘计算、AI工作流、多区域容灾、CDN缓存、内容审核、联邦学习、许可证安全等扩展场景。（4+模块跨域或基础设施级）
 
@@ -126,9 +151,9 @@
 
 ---
 
-## 5. 执行策略
+## 6. 执行策略
 
-### 5.1 PR前 — L0 自动触发
+### 6.1 PR前 — L0 + L3 自动触发
 
 ```bash
 # 只跑L0 5条生命线
@@ -161,23 +186,53 @@ bash scripts/e2e-tier-check.sh --list      # 仅列出分级明细
 bash scripts/e2e-tier-check.sh --verify    # 校验分级一致性
 ```
 
+### 6.2 每日 — L0 + L1 (31条)
+
+```bash
+# 核心链每日验证 — 使用排序脚本
+bash scripts/e2e-tier-check.sh --tier L0  # L0 5条 (含L1下沉)
+bash scripts/e2e-tier-check.sh --tier L1  # L0+L1 共31条
+```
+
+### 6.3 每周 — L2 全量 (58条)
+
+```bash
+# 全量回归
+npx vitest run --config vitest.config.ts apps/api/src/modules/cross-module/
+```
+
+### 6.4 脚本执行
+
+```bash
+# 指定级别运行
+bash scripts/e2e-tier-check.sh --tier L0   # 生命线 (5条)
+bash scripts/e2e-tier-check.sh --tier L1   # 核心链 (31条 = L0+L1)
+bash scripts/e2e-tier-check.sh --tier L2   # 全量 (58条)
+bash scripts/e2e-tier-check.sh --tier L3   # 性能基线 (15条, Playwright)
+bash scripts/e2e-tier-check.sh --list      # 仅列出分级明细
+bash scripts/e2e-tier-check.sh --verify    # 校验分级一致性
+
+# Playwright L3 基线执行
+npx playwright test e2e/e2e-l3-baseline-*  # 收银+会员+admin 共15条
+```
+
 ---
 
-## 6. 圈梁五道箍合规
+## 7. 圈梁五道箍合规
 
 | # | 箍 | 状态 | 说明 |
 |:-:|:---|:----:|:-----|
 | ① | TSC通过 | ✅ | E2E 链测试文件已有 TSC 覆盖 |
-| ② | 测试存在 | ✅ | 58 个测试文件，~646 个 it 用例 |
-| ③ | 圈梁表更新 | ✅ | 本表为最新圈梁表记录 (v2.0) |
-| ④ | PRD标记 | ✅ | G3 审计已确认分级必要性 |
-| ⑤ | 知识赋能 | ✅ | 本文档完成 manual 降级记录 |
+| ② | 测试存在 | ✅ | 73 条测试链 (L0 5 + L1 26 + L2 27 + L3 15)，~661 个 it 用例 |
+| ③ | 圈梁表更新 | ✅ | 本表为最新圈梁表记录 (v2.1 — 新增L3性能基线) |
+| ④ | PRD标记 | ✅ | G3 审计已确认分级必要性；V23建议新增L3 |
+| ⑤ | 知识赋能 | ✅ | 本文档完成 manual 降级记录
 
 ---
 
-## 7. 附录
+## 8. 附录
 
-### 7.1 分级关键词匹配规则
+### 8.1 分级关键词匹配规则
 
 脚本使用文件名精确模式匹配自动判定分级:
 
@@ -221,9 +276,15 @@ L1_file_patterns:
 
 L2_catch_all:
   - 以上未匹配的全部链 (27 条)
+
+L3_file_patterns:
+  - e2e-l3-baseline-storefront-cashier
+  - e2e-l3-baseline-storefront-member
+  - e2e-l3-baseline-admin-cashier
+  (共计 3 个文件，15 个 it 用例)
 ```
 
-### 7.2 文件列表 (58链)
+### 8.2 文件列表 (73链)
 
 | # | 文件名 | 级 | it数 |
 |:-:|:-------|:--:|:----:|
@@ -285,13 +346,17 @@ L2_catch_all:
 | 56 | `cross-module-e2e-59-merchant` | L1 | 19 |
 | 57 | `cross-module-e2e-60-quality` | L1 | 15 |
 | 58 | `cross-module-e2e-61-leave` | L1 | 15 |
+| **59** | `e2e-l3-baseline-storefront-cashier` | **L3** | 5 |
+| **60** | `e2e-l3-baseline-storefront-member` | **L3** | 5 |
+| **61** | `e2e-l3-baseline-admin-cashier` | **L3** | 5 |
 
-### 7.3 变更记录
+### 8.3 变更记录
 
 | 日期 | 版本 | 变更 |
 |:----|:----|:-----|
 | 2026-07-21 | v1.0 | 初版创建，基于G3审计要求建立L0/L1/L2分级 |
 | 2026-07-21 | v2.0 | 扩展至58链；新增11条核心业务链(#51-#61)升级为L1；更新所有统计数据 |
+| 2026-07-21 | v2.1 | V23建议新增L3性能基线；新增3个Playwright文件15条it用例（收银/会员/admin收银）；总链数73条 |
 
 ---
 

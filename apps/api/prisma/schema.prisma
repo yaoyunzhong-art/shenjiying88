@@ -1579,3 +1579,52 @@ model FinanceSettlement {
   @@index([settlementStatus])
   @@map("finance_settlement")
 }
+
+model FinanceReport {
+  id            String   @id
+  tenantId      String
+  storeId       String?
+  title         String
+  reportType    String
+  periodStart   DateTime
+  periodEnd     DateTime
+  status        String
+  data          Json?
+  summary       Json?
+  generatedAt   DateTime?
+  generatedBy   String?
+  exportFormats Json
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  exports FinanceReportExport[]
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([storeId])
+  @@index([reportType])
+  @@index([status])
+  @@map("finance_report")
+}
+
+model FinanceReportExport {
+  id          String   @id
+  tenantId    String
+  reportId    String
+  format      String
+  url         String?
+  content     String?
+  columns     Json?
+  filters     Json?
+  generatedAt DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  report FinanceReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([reportId])
+  @@index([format])
+  @@map("finance_report_export")
+}

@@ -15,6 +15,7 @@
 
 import { randomUUID } from 'node:crypto'
 import { Injectable, Optional, Logger, Inject } from '@nestjs/common'
+import type { PrismaService } from '../../prisma/prisma.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceEventEmitter } from './finance.sse'
 import { FinanceService } from './finance.service'
@@ -52,7 +53,9 @@ export class FinanceReportService {
     private readonly financeService: FinanceService,
     @Optional()
     @Inject(FinanceEventEmitter)
-    private readonly eventEmitter?: FinanceEventEmitter
+    private readonly eventEmitter?: FinanceEventEmitter,
+    @Optional()
+    private readonly prisma?: PrismaService
   ) {}
 
   private get resolvedFinanceService() {
@@ -70,6 +73,171 @@ export class FinanceReportService {
         storeId?: string
       ) => Promise<ReturnType<FinanceService['listAccounts']>>
     }
+  }
+
+  private getReportModel():
+    | {
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+        findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+        update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+        delete?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      }
+    | undefined {
+    const prisma = this.prisma as unknown as Record<string, unknown> | undefined
+    const model = prisma?.financeReport
+    if (!model || typeof model !== 'object') {
+      return undefined
+    }
+    return model as {
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+      findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      delete?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    }
+  }
+
+  private getReportExportModel():
+    | {
+        findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+        deleteMany?: (args: Record<string, unknown>) => Promise<unknown>
+      }
+    | undefined {
+    const prisma = this.prisma as unknown as Record<string, unknown> | undefined
+    const model = prisma?.financeReportExport
+    if (!model || typeof model !== 'object') {
+      return undefined
+    }
+    return model as {
+      findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      deleteMany?: (args: Record<string, unknown>) => Promise<unknown>
+    }
+  }
+
+  private asReportSummary(value: unknown): ReportSummary | undefined {
+    if (!value || typeof value !== 'object') {
+      return undefined
+    }
+    const summary = value as Record<string, unknown>
+    return {
+      totalRevenue: Number(summary.totalRevenue ?? 0),
+      totalExpense: Number(summary.totalExpense ?? 0),
+      totalRefund: Number(summary.totalRefund ?? 0),
+      netProfit: Number(summary.netProfit ?? 0),
+      transactionCount: Number(summary.transactionCount ?? 0),
+      ...(summary.reconciliationDifference !== undefined
+        ? { reconciliationDifference: Number(summary.reconciliationDifference) }
+        : {})
+    }
+  }
+
+  private asJsonObject(value: unknown): Record<string, unknown> | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return undefined
+    }
+    return value as Record<string, unknown>
+  }
+
+  private toReportEntity(record: Record<string, unknown>): FinancialReport {
+    const exportFormatsRaw = Array.isArray(record.exportFormats) ? record.exportFormats : ['JSON']
+    const exportFormats = exportFormatsRaw
+      .map((format) => String(format))
+      .filter(Boolean) as FinancialReport['exportFormats']
+
+    return {
+      id: String(record.id),
+      tenantId: String(record.tenantId),
+      storeId: typeof record.storeId === 'string' ? record.storeId : undefined,
+      title: String(record.title ?? ''),
+      reportType: String(record.reportType ?? 'PROFIT_LOSS') as ReportType,
+      periodStart: new Date(record.periodStart as string | number | Date).toISOString(),
+      periodEnd: new Date(record.periodEnd as string | number | Date).toISOString(),
+      status: String(record.status ?? 'GENERATING') as FinancialReport['status'],
+      data: this.asJsonObject(record.data),
+      summary: this.asReportSummary(record.summary),
+      generatedAt: record.generatedAt
+        ? new Date(record.generatedAt as string | number | Date).toISOString()
+        : undefined,
+      generatedBy: typeof record.generatedBy === 'string' ? record.generatedBy : undefined,
+      exportFormats: exportFormats.length ? exportFormats : ['JSON'],
+      errorMessage: typeof record.errorMessage === 'string' ? record.errorMessage : undefined,
+      createdAt: new Date(record.createdAt as string | number | Date).toISOString()
+    }
+  }
+
+  private toExportEntity(record: Record<string, unknown>): ExportResult {
+    return {
+      id: String(record.id),
+      reportId: String(record.reportId),
+      format: String(record.format ?? 'JSON') as ExportResult['format'],
+      url: typeof record.url === 'string' ? record.url : undefined,
+      content: typeof record.content === 'string' ? record.content : undefined,
+      generatedAt: new Date(record.generatedAt as string | number | Date).toISOString(),
+      expiresAt: new Date(record.expiresAt as string | number | Date).toISOString()
+    }
+  }
+
+  private async persistReport(report: FinancialReport): Promise<FinancialReport> {
+    const reportModel = this.getReportModel()
+    if (!reportModel?.update) {
+      reportStore.set(report.id, report)
+      return report
+    }
+
+    const record = await reportModel.update({
+      where: { id: report.id },
+      data: {
+        storeId: report.storeId ?? null,
+        title: report.title,
+        reportType: report.reportType,
+        periodStart: new Date(report.periodStart),
+        periodEnd: new Date(report.periodEnd),
+        status: report.status,
+        data: report.data ?? null,
+        summary: report.summary ?? null,
+        generatedAt: report.generatedAt ? new Date(report.generatedAt) : null,
+        generatedBy: report.generatedBy ?? null,
+        exportFormats: report.exportFormats,
+        errorMessage: report.errorMessage ?? null
+      }
+    })
+    const persistedReport = this.toReportEntity(record)
+    reportStore.set(persistedReport.id, persistedReport)
+    return persistedReport
+  }
+
+  private async createPersistedReport(report: FinancialReport): Promise<FinancialReport> {
+    const reportModel = this.getReportModel()
+    if (!reportModel?.create) {
+      reportStore.set(report.id, report)
+      return report
+    }
+
+    const record = await reportModel.create({
+      data: {
+        id: report.id,
+        tenantId: report.tenantId,
+        storeId: report.storeId ?? null,
+        title: report.title,
+        reportType: report.reportType,
+        periodStart: new Date(report.periodStart),
+        periodEnd: new Date(report.periodEnd),
+        status: report.status,
+        data: report.data ?? null,
+        summary: report.summary ?? null,
+        generatedAt: report.generatedAt ? new Date(report.generatedAt) : null,
+        generatedBy: report.generatedBy ?? null,
+        exportFormats: report.exportFormats,
+        errorMessage: report.errorMessage ?? null,
+        createdAt: new Date(report.createdAt)
+      }
+    })
+    const persistedReport = this.toReportEntity(record)
+    reportStore.set(persistedReport.id, persistedReport)
+    return persistedReport
   }
 
   // ═══════════════════════════════════════════════════════
@@ -148,7 +316,7 @@ export class FinanceReportService {
       createdAt: now
     }
 
-    reportStore.set(report.id, report)
+    await this.createPersistedReport(report)
 
     this.emitEvent({
       type: 'report.generating',
@@ -160,11 +328,11 @@ export class FinanceReportService {
 
     try {
       const generated = await this.generateReportDataResolved(report, tenantContext)
-      reportStore.set(report.id, generated)
+      await this.persistReport(generated)
     } catch (err) {
       report.status = 'FAILED' as FinancialReport['status']
       report.errorMessage = (err as Error).message
-      reportStore.set(report.id, report)
+      await this.persistReport(report)
 
       this.emitEvent({
         type: 'report.failed',
@@ -190,6 +358,26 @@ export class FinanceReportService {
       throw new Error(`Report ${reportId} not found`)
     }
     return report
+  }
+
+  async getReportResolved(
+    reportId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<FinancialReport> {
+    const reportModel = this.getReportModel()
+    if (!reportModel?.findUnique) {
+      return this.getReport(reportId, tenantContext)
+    }
+
+    const record = await reportModel.findUnique({
+      where: { id: reportId }
+    })
+    if (!record || String(record.tenantId) !== tenantContext.tenantId) {
+      throw new Error(`Report ${reportId} not found`)
+    }
+    const persistedReport = this.toReportEntity(record)
+    reportStore.set(persistedReport.id, persistedReport)
+    return persistedReport
   }
 
   /**
@@ -230,6 +418,48 @@ export class FinanceReportService {
     return reports
   }
 
+  async listReportsResolved(
+    tenantContext: RequestTenantContext,
+    query?: ReportQueryDto
+  ): Promise<FinancialReport[]> {
+    const reportModel = this.getReportModel()
+    if (!reportModel?.findMany) {
+      return this.listReports(tenantContext, query)
+    }
+
+    const where: Record<string, unknown> = {
+      tenantId: tenantContext.tenantId
+    }
+    if (query?.reportType) {
+      where.reportType = query.reportType
+    }
+    if (query?.storeId) {
+      where.storeId = query.storeId
+    }
+    if (query?.status) {
+      where.status = query.status
+    }
+    if (query?.periodStart) {
+      where.periodStart = { gte: new Date(query.periodStart) }
+    }
+    if (query?.periodEnd) {
+      where.periodEnd = { lte: new Date(query.periodEnd) }
+    }
+
+    const records = await reportModel.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      ...(query?.limit && query.limit > 0 ? { take: query.limit } : {}),
+      ...(query?.offset && query.offset > 0 ? { skip: query.offset } : {})
+    })
+
+    return records.map((record) => {
+      const report = this.toReportEntity(record)
+      reportStore.set(report.id, report)
+      return report
+    })
+  }
+
   /**
    * 删除报表
    */
@@ -245,6 +475,38 @@ export class FinanceReportService {
     const exportIds = Array.from(exportStore.keys()).filter((k) => exportStore.get(k)?.reportId === reportId)
     for (const eid of exportIds) {
       exportStore.delete(eid)
+    }
+    return true
+  }
+
+  async deleteReportResolved(
+    reportId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<boolean> {
+    const reportModel = this.getReportModel()
+    const exportModel = this.getReportExportModel()
+    if (!reportModel?.delete) {
+      return this.deleteReport(reportId, tenantContext)
+    }
+
+    await this.getReportResolved(reportId, tenantContext)
+    if (exportModel?.deleteMany) {
+      await exportModel.deleteMany({
+        where: {
+          reportId,
+          tenantId: tenantContext.tenantId
+        }
+      })
+    }
+    await reportModel.delete({
+      where: { id: reportId }
+    })
+
+    reportStore.delete(reportId)
+    for (const [exportId, exportResult] of exportStore.entries()) {
+      if (exportResult.reportId === reportId) {
+        exportStore.delete(exportId)
+      }
     }
     return true
   }
@@ -279,20 +541,21 @@ export class FinanceReportService {
     reportId: string,
     tenantContext: RequestTenantContext
   ): Promise<FinancialReport> {
-    const existing = this.getReport(reportId, tenantContext)
+    const existing = await this.getReportResolved(reportId, tenantContext)
     existing.status = 'GENERATING' as FinancialReport['status']
     existing.generatedAt = undefined
     existing.data = undefined
     existing.summary = undefined
     existing.errorMessage = undefined
+    await this.persistReport(existing)
 
     try {
       const generated = await this.generateReportDataResolved(existing, tenantContext)
-      reportStore.set(reportId, generated)
+      await this.persistReport(generated)
     } catch (err) {
       existing.status = 'FAILED' as FinancialReport['status']
       existing.errorMessage = (err as Error).message
-      reportStore.set(reportId, existing)
+      await this.persistReport(existing)
     }
 
     return reportStore.get(reportId)!
@@ -897,6 +1160,50 @@ export class FinanceReportService {
     return result
   }
 
+  async exportReportResolved(
+    reportId: string,
+    tenantContext: RequestTenantContext,
+    input: ExportReportDto
+  ): Promise<ExportResult> {
+    const exportModel = this.getReportExportModel()
+    if (!exportModel?.create) {
+      return this.exportReport(reportId, tenantContext, input)
+    }
+
+    const report = await this.getReportResolved(reportId, tenantContext)
+    if (report.status !== 'COMPLETED') {
+      throw new Error(`Report ${reportId} is not completed (status: ${report.status})`)
+    }
+
+    const now = new Date().toISOString()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+    let content = ''
+    if (input.format === 'JSON' as ExportFormat) {
+      content = JSON.stringify(report.data ?? {}, null, 2)
+    } else if (input.format === 'CSV' as ExportFormat) {
+      content = this.toCsv(report.data as Record<string, unknown> | undefined, input.columns)
+    }
+
+    const record = await exportModel.create({
+      data: {
+        id: `exp-${randomUUID()}`,
+        tenantId: tenantContext.tenantId,
+        reportId: report.id,
+        format: input.format,
+        url: null,
+        content,
+        columns: input.columns ?? null,
+        filters: input.filters ?? null,
+        generatedAt: new Date(now),
+        expiresAt: new Date(expiresAt)
+      }
+    })
+    const result = this.toExportEntity(record)
+    exportStore.set(result.id, result)
+    return result
+  }
+
   /**
    * 获取导出结果
    */
@@ -908,6 +1215,26 @@ export class FinanceReportService {
     if (!result) {
       throw new Error(`Export result ${exportId} not found`)
     }
+    return result
+  }
+
+  async getExportResultResolved(
+    exportId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<ExportResult> {
+    const exportModel = this.getReportExportModel()
+    if (!exportModel?.findUnique) {
+      return this.getExportResult(exportId, tenantContext)
+    }
+
+    const record = await exportModel.findUnique({
+      where: { id: exportId }
+    })
+    if (!record || String(record.tenantId) !== tenantContext.tenantId) {
+      throw new Error(`Export result ${exportId} not found`)
+    }
+    const result = this.toExportEntity(record)
+    exportStore.set(result.id, result)
     return result
   }
 

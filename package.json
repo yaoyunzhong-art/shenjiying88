@@ -13,6 +13,8 @@
     "e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "e2e:smoke:headed": "playwright test e2e/smoke.spec.ts --headed",
     "e2e:phase49:seo-geo": "bash scripts/run-phase49-seo-geo.sh",
+    "e2e:l3": "playwright test --project=l3-baseline",
+    "e2e:l3:headed": "playwright test --project=l3-baseline --headed",
     "e2e:report": "playwright show-report",
     "cutover:drill": "bash scripts/run-cutover-drill.sh",
     "g8:gate": "pnpm g8:preflight:prod && pnpm g8:recheck && pnpm g8:status",

@@ -1,6 +1,6 @@
 # ⚡ LCP 性能优化报告 (LCP Performance Optimization Report)
 
-> 生成日期: 2026-07-21 21:08:19 +08:00
+> 生成日期: 2026-07-21 21:09:25 +08:00
 > 来源: `scripts/performance-lcp-check.sh`
 
 ---
