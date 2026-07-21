@@ -1371,6 +1371,94 @@ function createBusinessClient(baseUrl) {
       /** 拒绝退款 */
       reject: (refundId, body, init) => api.postData(`/transactions/refunds/${refundId}/reject`, body, init)
     },
+    // ── Finance (GET /api/v1/finance/*) ──
+    finance: {
+      /** 账户列表 */
+      listAccounts: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/accounts?${search}` : "/finance/accounts",
+          init
+        );
+      },
+      /** 账户详情 */
+      getAccount: (accountId, init) => api.getData(`/finance/accounts/${accountId}`, init),
+      /** 营收汇总 */
+      getRevenueSummary: (query, init) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set("storeId", query.storeId);
+        params.set("startDate", query.startDate);
+        params.set("endDate", query.endDate);
+        return api.getData(
+          `/finance/revenue/summary?${params.toString()}`,
+          init
+        );
+      },
+      /** 日营收 */
+      getDailyRevenue: (query, init) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set("storeId", query.storeId);
+        params.set("date", query.date);
+        return api.getData(
+          `/finance/revenue/daily?${params.toString()}`,
+          init
+        );
+      },
+      /** 财务流水 */
+      listLedgers: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        if (query?.type) params.set("type", query.type);
+        if (query?.orderId) params.set("orderId", query.orderId);
+        if (query?.transactionId) params.set("transactionId", query.transactionId);
+        if (query?.category) params.set("category", query.category);
+        if (query?.recordedAfter) params.set("recordedAfter", query.recordedAfter);
+        if (query?.recordedBefore) params.set("recordedBefore", query.recordedBefore);
+        if (query?.limit !== void 0) params.set("limit", String(query.limit));
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/ledgers?${search}` : "/finance/ledgers",
+          init
+        );
+      },
+      /** 结算列表 */
+      listSettlements: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        if (query?.settlementStatus) params.set("settlementStatus", query.settlementStatus);
+        if (query?.startAfter) params.set("startAfter", query.startAfter);
+        if (query?.endBefore) params.set("endBefore", query.endBefore);
+        if (query?.limit !== void 0) params.set("limit", String(query.limit));
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/settlements?${search}` : "/finance/settlements",
+          init
+        );
+      },
+      /** 结算详情 */
+      getSettlement: (settlementId, init) => api.getData(`/finance/settlements/${settlementId}`, init),
+      /** 发票列表 */
+      listInvoices: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        if (query?.orderId) params.set("orderId", query.orderId);
+        if (query?.status) params.set("status", query.status);
+        if (query?.type) params.set("type", query.type);
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/invoices?${search}` : "/finance/invoices",
+          init
+        );
+      },
+      /** 发票详情 */
+      getInvoice: (invoiceId, init) => api.getData(`/finance/invoices/${invoiceId}`, init),
+      /** 发票开具 */
+      issueInvoice: (invoiceId, init) => api.postData(`/finance/invoices/${invoiceId}/issue`, {}, init),
+      /** 发票作废 */
+      cancelInvoice: (invoiceId, init) => api.postData(`/finance/invoices/${invoiceId}/cancel`, {}, init)
+    },
     // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──
     paymentGateway: {
       /** 发起支付 */

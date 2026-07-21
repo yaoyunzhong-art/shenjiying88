@@ -203,6 +203,49 @@ describe('FinanceReportController', () => {
     expect(mockSvc.regenerateReport).toHaveBeenCalledWith('rpt-003', defaultCtx)
   })
 
+  it('FLOW-8B: createReport → 优先走 createReportResolved 主链', async () => {
+    const resolved = vi.fn().mockResolvedValue(mockCompletedReport)
+    ;(
+      mockSvc as MockFinanceReportService & {
+        createReportResolved: (
+          tenantContext: RequestTenantContext,
+          body: Record<string, unknown>
+        ) => Promise<FinancialReport>
+      }
+    ).createReportResolved = resolved
+
+    const body = {
+      title: 'resolved-create',
+      reportType: ReportType.PROFIT_LOSS,
+      periodStart: '2026-07-01',
+      periodEnd: '2026-07-31',
+    }
+
+    const result = await ctrl.createReport(defaultCtx, body)
+
+    expect(result).toEqual(mockCompletedReport)
+    expect(resolved).toHaveBeenCalledWith(defaultCtx, body)
+    expect(mockSvc.createReport).not.toHaveBeenCalled()
+  })
+
+  it('FLOW-8C: regenerateReport → 优先走 regenerateReportResolved 主链', async () => {
+    const resolved = vi.fn().mockResolvedValue(mockCompletedReport)
+    ;(
+      mockSvc as MockFinanceReportService & {
+        regenerateReportResolved: (
+          reportId: string,
+          tenantContext: RequestTenantContext
+        ) => Promise<FinancialReport>
+      }
+    ).regenerateReportResolved = resolved
+
+    const result = await ctrl.regenerateReport('rpt-001', defaultCtx)
+
+    expect(result).toEqual(mockCompletedReport)
+    expect(resolved).toHaveBeenCalledWith('rpt-001', defaultCtx)
+    expect(mockSvc.regenerateReport).not.toHaveBeenCalled()
+  })
+
   it('FLOW-9: exportReport → 成功导出 JSON', () => {
     const body = { format: ExportFormat.JSON, columns: ['revenue', 'expense'] }
     const result = ctrl.exportReport('rpt-001', defaultCtx, body)

@@ -55,6 +55,23 @@ export class FinanceReportService {
     private readonly eventEmitter?: FinanceEventEmitter
   ) {}
 
+  private get resolvedFinanceService() {
+    return this.financeService as FinanceService & {
+      getRevenueSummaryResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: {
+          storeId?: string
+          startDate?: string
+          endDate?: string
+        }
+      ) => Promise<ReturnType<FinanceService['getRevenueSummary']>>
+      listAccountsResolved?: (
+        tenantContext: RequestTenantContext,
+        storeId?: string
+      ) => Promise<ReturnType<FinanceService['listAccounts']>>
+    }
+  }
+
   // ═══════════════════════════════════════════════════════
   // 报表 CRUD
   // ═══════════════════════════════════════════════════════
@@ -94,6 +111,55 @@ export class FinanceReportService {
     // 同步生成报表数据
     try {
       const generated = this.generateReportData(report, tenantContext)
+      reportStore.set(report.id, generated)
+    } catch (err) {
+      report.status = 'FAILED' as FinancialReport['status']
+      report.errorMessage = (err as Error).message
+      reportStore.set(report.id, report)
+
+      this.emitEvent({
+        type: 'report.failed',
+        tenantId: tenantContext.tenantId,
+        reportId: report.id,
+        error: (err as Error).message,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    return reportStore.get(report.id)!
+  }
+
+  async createReportResolved(
+    tenantContext: RequestTenantContext,
+    input: CreateReportDto
+  ): Promise<FinancialReport> {
+    const now = new Date().toISOString()
+
+    const report: FinancialReport = {
+      id: `rpt-${randomUUID()}`,
+      tenantId: tenantContext.tenantId,
+      storeId: input.storeId ?? tenantContext.storeId,
+      title: input.title,
+      reportType: input.reportType as unknown as ReportType,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      status: 'GENERATING' as FinancialReport['status'],
+      exportFormats: input.exportFormats ?? ['JSON'],
+      createdAt: now
+    }
+
+    reportStore.set(report.id, report)
+
+    this.emitEvent({
+      type: 'report.generating',
+      tenantId: tenantContext.tenantId,
+      reportId: report.id,
+      reportType: report.reportType,
+      timestamp: now
+    })
+
+    try {
+      const generated = await this.generateReportDataResolved(report, tenantContext)
       reportStore.set(report.id, generated)
     } catch (err) {
       report.status = 'FAILED' as FinancialReport['status']
@@ -209,6 +275,29 @@ export class FinanceReportService {
     return reportStore.get(reportId)!
   }
 
+  async regenerateReportResolved(
+    reportId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<FinancialReport> {
+    const existing = this.getReport(reportId, tenantContext)
+    existing.status = 'GENERATING' as FinancialReport['status']
+    existing.generatedAt = undefined
+    existing.data = undefined
+    existing.summary = undefined
+    existing.errorMessage = undefined
+
+    try {
+      const generated = await this.generateReportDataResolved(existing, tenantContext)
+      reportStore.set(reportId, generated)
+    } catch (err) {
+      existing.status = 'FAILED' as FinancialReport['status']
+      existing.errorMessage = (err as Error).message
+      reportStore.set(reportId, existing)
+    }
+
+    return reportStore.get(reportId)!
+  }
+
   // ═══════════════════════════════════════════════════════
   // 报表数据生成
   // ═══════════════════════════════════════════════════════
@@ -240,6 +329,122 @@ export class FinanceReportService {
     }
   }
 
+  private async generateReportDataResolved(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext
+  ): Promise<FinancialReport> {
+    const now = new Date().toISOString()
+
+    switch (report.reportType as string) {
+      case 'PROFIT_LOSS': {
+        const summary = await this.resolveRevenueSummary(report, tenantContext)
+        return this.generateProfitLossReportWithSummary(report, tenantContext, now, summary)
+      }
+      case 'BALANCE_SHEET': {
+        const [summary, accounts] = await Promise.all([
+          this.resolveRevenueSummary(report, tenantContext),
+          this.resolveAccounts(report, tenantContext)
+        ])
+        return this.generateBalanceSheetReportWithData(report, tenantContext, now, summary, accounts)
+      }
+      case 'CASH_FLOW': {
+        const summary = await this.resolveRevenueSummary(report, tenantContext)
+        return this.generateCashFlowReportWithSummary(report, tenantContext, now, summary)
+      }
+      case 'REVENUE_ANALYSIS': {
+        const summary = await this.resolveRevenueSummary(report, tenantContext)
+        return this.generateRevenueAnalysisReportWithSummary(report, tenantContext, now, summary)
+      }
+      case 'EXPENSE_ANALYSIS': {
+        const summary = await this.resolveRevenueSummary(report, tenantContext)
+        return this.generateExpenseAnalysisReportWithSummary(report, tenantContext, now, summary)
+      }
+      case 'RECONCILIATION': {
+        const summary = await this.resolveRevenueSummary(report, tenantContext)
+        return this.generateReconciliationReportWithSummary(report, tenantContext, now, summary)
+      }
+      default:
+        throw new Error(`Unsupported report type: ${report.reportType}`)
+    }
+  }
+
+  private resolveRevenueSummary(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext
+  ) {
+    if (this.resolvedFinanceService.getRevenueSummaryResolved) {
+      return this.resolvedFinanceService.getRevenueSummaryResolved(tenantContext, {
+        storeId: report.storeId,
+        startDate: report.periodStart,
+        endDate: report.periodEnd
+      })
+    }
+
+    return Promise.resolve(
+      this.financeService.getRevenueSummary(tenantContext, {
+        storeId: report.storeId,
+        startDate: report.periodStart,
+        endDate: report.periodEnd
+      })
+    )
+  }
+
+  private resolveAccounts(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext
+  ) {
+    if (this.resolvedFinanceService.listAccountsResolved) {
+      return this.resolvedFinanceService.listAccountsResolved(tenantContext, report.storeId)
+    }
+
+    return Promise.resolve(this.financeService.listAccounts(tenantContext, report.storeId))
+  }
+
+  private toReportSummary(summary: {
+    totalRevenue: number
+    totalExpense: number
+    totalRefund: number
+    netRevenue: number
+    transactionCount: number
+  }): ReportSummary {
+    return {
+      totalRevenue: summary.totalRevenue,
+      totalExpense: summary.totalExpense,
+      totalRefund: summary.totalRefund,
+      netProfit: summary.netRevenue,
+      transactionCount: summary.transactionCount
+    }
+  }
+
+  private completeReport(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    data: Record<string, unknown>,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    }
+  ): FinancialReport {
+    report.data = data
+    report.summary = this.toReportSummary(summary)
+    report.status = 'COMPLETED' as FinancialReport['status']
+    report.generatedAt = now
+
+    this.emitEvent({
+      type: 'report.completed',
+      tenantId: tenantContext.tenantId,
+      reportId: report.id,
+      status: 'COMPLETED',
+      timestamp: now
+    })
+
+    return report
+  }
+
   /**
    * 利润/损益表
    */
@@ -253,6 +458,22 @@ export class FinanceReportService {
       startDate: report.periodStart,
       endDate: report.periodEnd
     })
+
+    return this.generateProfitLossReportWithSummary(report, tenantContext, now, summary)
+  }
+
+  private generateProfitLossReportWithSummary(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    }
+  ): FinancialReport {
 
     const data = {
       title: '利润表',
@@ -297,26 +518,7 @@ export class FinanceReportService {
       netProfit: summary.netRevenue
     }
 
-    report.data = data as unknown as Record<string, unknown>
-    report.summary = {
-      totalRevenue: summary.totalRevenue,
-      totalExpense: summary.totalExpense,
-      totalRefund: summary.totalRefund,
-      netProfit: summary.netRevenue,
-      transactionCount: summary.transactionCount
-    }
-    report.status = 'COMPLETED' as FinancialReport['status']
-    report.generatedAt = now
-
-    this.emitEvent({
-      type: 'report.completed',
-      tenantId: tenantContext.tenantId,
-      reportId: report.id,
-      status: 'COMPLETED',
-      timestamp: now
-    })
-
-    return report
+    return this.completeReport(report, tenantContext, now, data as Record<string, unknown>, summary)
   }
 
   /**
@@ -334,6 +536,28 @@ export class FinanceReportService {
     })
 
     const accounts = this.financeService.listAccounts(tenantContext, report.storeId)
+    return this.generateBalanceSheetReportWithData(report, tenantContext, now, summary, accounts)
+  }
+
+  private generateBalanceSheetReportWithData(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    },
+    accounts: Array<{
+      id: string
+      name: string
+      type: string
+      balance: number
+      status: string
+    }>
+  ): FinancialReport {
     const totalAssets = accounts.reduce((sum, a) => sum + a.balance, 0) + summary.totalRevenue
 
     const data = {
@@ -379,26 +603,7 @@ export class FinanceReportService {
       }))
     }
 
-    report.data = data as unknown as Record<string, unknown>
-    report.summary = {
-      totalRevenue: summary.totalRevenue,
-      totalExpense: summary.totalExpense,
-      totalRefund: summary.totalRefund,
-      netProfit: summary.netRevenue,
-      transactionCount: summary.transactionCount
-    }
-    report.status = 'COMPLETED' as FinancialReport['status']
-    report.generatedAt = now
-
-    this.emitEvent({
-      type: 'report.completed',
-      tenantId: tenantContext.tenantId,
-      reportId: report.id,
-      status: 'COMPLETED',
-      timestamp: now
-    })
-
-    return report
+    return this.completeReport(report, tenantContext, now, data as Record<string, unknown>, summary)
   }
 
   /**
@@ -414,6 +619,22 @@ export class FinanceReportService {
       startDate: report.periodStart,
       endDate: report.periodEnd
     })
+
+    return this.generateCashFlowReportWithSummary(report, tenantContext, now, summary)
+  }
+
+  private generateCashFlowReportWithSummary(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    }
+  ): FinancialReport {
 
     const data = {
       title: '现金流量表',
@@ -449,26 +670,7 @@ export class FinanceReportService {
       netIncrease: summary.totalRevenue - summary.totalExpense - summary.totalRefund
     }
 
-    report.data = data as unknown as Record<string, unknown>
-    report.summary = {
-      totalRevenue: summary.totalRevenue,
-      totalExpense: summary.totalExpense,
-      totalRefund: summary.totalRefund,
-      netProfit: summary.netRevenue,
-      transactionCount: summary.transactionCount
-    }
-    report.status = 'COMPLETED' as FinancialReport['status']
-    report.generatedAt = now
-
-    this.emitEvent({
-      type: 'report.completed',
-      tenantId: tenantContext.tenantId,
-      reportId: report.id,
-      status: 'COMPLETED',
-      timestamp: now
-    })
-
-    return report
+    return this.completeReport(report, tenantContext, now, data as Record<string, unknown>, summary)
   }
 
   /**
@@ -484,6 +686,22 @@ export class FinanceReportService {
       startDate: report.periodStart,
       endDate: report.periodEnd
     })
+
+    return this.generateRevenueAnalysisReportWithSummary(report, tenantContext, now, summary)
+  }
+
+  private generateRevenueAnalysisReportWithSummary(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    }
+  ): FinancialReport {
 
     // 月度分布
     const monthlyBreakdown: Array<{ month: string; revenue: number; expense: number; refund: number; net: number }> = []
@@ -529,26 +747,7 @@ export class FinanceReportService {
       }
     }
 
-    report.data = data as unknown as Record<string, unknown>
-    report.summary = {
-      totalRevenue: summary.totalRevenue,
-      totalExpense: summary.totalExpense,
-      totalRefund: summary.totalRefund,
-      netProfit: summary.netRevenue,
-      transactionCount: summary.transactionCount
-    }
-    report.status = 'COMPLETED' as FinancialReport['status']
-    report.generatedAt = now
-
-    this.emitEvent({
-      type: 'report.completed',
-      tenantId: tenantContext.tenantId,
-      reportId: report.id,
-      status: 'COMPLETED',
-      timestamp: now
-    })
-
-    return report
+    return this.completeReport(report, tenantContext, now, data as Record<string, unknown>, summary)
   }
 
   /**
@@ -564,6 +763,22 @@ export class FinanceReportService {
       startDate: report.periodStart,
       endDate: report.periodEnd
     })
+
+    return this.generateExpenseAnalysisReportWithSummary(report, tenantContext, now, summary)
+  }
+
+  private generateExpenseAnalysisReportWithSummary(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    }
+  ): FinancialReport {
 
     const data = {
       title: '费用分析报告',
@@ -591,26 +806,7 @@ export class FinanceReportService {
       }
     }
 
-    report.data = data as unknown as Record<string, unknown>
-    report.summary = {
-      totalRevenue: summary.totalRevenue,
-      totalExpense: summary.totalExpense,
-      totalRefund: summary.totalRefund,
-      netProfit: summary.netRevenue,
-      transactionCount: summary.transactionCount
-    }
-    report.status = 'COMPLETED' as FinancialReport['status']
-    report.generatedAt = now
-
-    this.emitEvent({
-      type: 'report.completed',
-      tenantId: tenantContext.tenantId,
-      reportId: report.id,
-      status: 'COMPLETED',
-      timestamp: now
-    })
-
-    return report
+    return this.completeReport(report, tenantContext, now, data as Record<string, unknown>, summary)
   }
 
   /**
@@ -627,6 +823,22 @@ export class FinanceReportService {
       endDate: report.periodEnd
     })
 
+    return this.generateReconciliationReportWithSummary(report, tenantContext, now, summary)
+  }
+
+  private generateReconciliationReportWithSummary(
+    report: FinancialReport,
+    tenantContext: RequestTenantContext,
+    now: string,
+    summary: {
+      totalRevenue: number
+      totalExpense: number
+      totalRefund: number
+      netRevenue: number
+      transactionCount: number
+    }
+  ): FinancialReport {
+
     const data = {
       title: '对账报告',
       period: { start: report.periodStart, end: report.periodEnd },
@@ -641,26 +853,7 @@ export class FinanceReportService {
       notes: '当前报表基于内存数据生成，生产环境应与第三方对账平台对接'
     }
 
-    report.data = data as unknown as Record<string, unknown>
-    report.summary = {
-      totalRevenue: summary.totalRevenue,
-      totalExpense: summary.totalExpense,
-      totalRefund: summary.totalRefund,
-      netProfit: summary.netRevenue,
-      transactionCount: summary.transactionCount
-    }
-    report.status = 'COMPLETED' as FinancialReport['status']
-    report.generatedAt = now
-
-    this.emitEvent({
-      type: 'report.completed',
-      tenantId: tenantContext.tenantId,
-      reportId: report.id,
-      status: 'COMPLETED',
-      timestamp: now
-    })
-
-    return report
+    return this.completeReport(report, tenantContext, now, data as Record<string, unknown>, summary)
   }
 
   // ═══════════════════════════════════════════════════════

@@ -399,6 +399,74 @@ describe('[finance-report-data] 复杂多 ledger 场景', () => {
   })
 })
 
+describe('[finance-report-data] resolved 聚合主链', () => {
+  it('createReportResolved 应基于 resolved 营收链生成利润表', async () => {
+    const { reportService } = await setupServiceWithLedgers()
+
+    const report = await reportService.createReportResolved(TENANT_A, makeReportInput({
+      reportType: ReportTypeEnum.PROFIT_LOSS
+    }))
+
+    expect(report.status).toBe('COMPLETED')
+    expect(report.summary!.totalRevenue).toBe(80000)
+    expect(report.summary!.totalExpense).toBe(15000)
+    expect(report.summary!.totalRefund).toBe(2000)
+    expect(report.summary!.netProfit).toBe(63000)
+    expect(report.summary!.transactionCount).toBe(6)
+  })
+
+  it('createReportResolved 应基于 resolved 账户链生成资产负债表', async () => {
+    const { financeService, reportService } = await setupServiceWithLedgers()
+
+    await financeService.createAccount(TENANT_A, {
+      name: '现金账户',
+      type: AccountType.Cash,
+      initialBalance: 500000,
+      storeId: 'store-data1'
+    })
+    await financeService.createAccount(TENANT_A, {
+      name: '微信账户',
+      type: AccountType.Wechat,
+      initialBalance: 200000,
+      storeId: 'store-data1'
+    })
+
+    const report = await reportService.createReportResolved(TENANT_A, makeReportInput({
+      reportType: ReportTypeEnum.BALANCE_SHEET
+    }))
+    const data = report.data as Record<string, unknown>
+    const details = data.accountDetails as Array<Record<string, unknown>>
+    const assets = data.assets as Record<string, unknown>
+
+    expect(report.status).toBe('COMPLETED')
+    expect(details).toHaveLength(2)
+    expect(assets.total).toBe(780000)
+  })
+
+  it('regenerateReportResolved 应复用 resolved 聚合结果重新生成', async () => {
+    const { financeService, reportService } = await setupServiceWithLedgers()
+
+    const created = await reportService.createReportResolved(TENANT_A, makeReportInput({
+      reportType: ReportTypeEnum.PROFIT_LOSS
+    }))
+    expect(created.summary!.netProfit).toBe(63000)
+
+    await financeService.recordLedger(TENANT_A, {
+      type: LedgerType.Revenue,
+      amount: 10000,
+      description: '新增收入',
+      category: 'growth'
+    })
+
+    const regenerated = await reportService.regenerateReportResolved(created.id, TENANT_A)
+
+    expect(regenerated.status).toBe('COMPLETED')
+    expect(regenerated.summary!.totalRevenue).toBe(90000)
+    expect(regenerated.summary!.netProfit).toBe(73000)
+    expect(regenerated.summary!.transactionCount).toBe(7)
+  })
+})
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 6. 报表状态流转与错误管理
 // ══════════════════════════════════════════════════════════════════════════════

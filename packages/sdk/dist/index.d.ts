@@ -635,6 +635,79 @@ interface BusinessCashierProductListPage {
     items: BusinessCashierProductItem[];
     total: number;
 }
+interface BusinessFinanceLedgerRecord {
+    id: string;
+    tenantId: string;
+    brandId?: string;
+    storeId?: string;
+    type: 'REVENUE' | 'EXPENSE' | 'REFUND' | 'ADJUSTMENT';
+    amount: number;
+    balance: number;
+    orderId?: string;
+    transactionId?: string;
+    description: string;
+    category?: string;
+    recordedAt: string;
+    createdAt: string;
+}
+interface BusinessRevenueSummary {
+    storeId?: string;
+    totalRevenue: number;
+    totalExpense: number;
+    totalRefund: number;
+    netRevenue: number;
+    transactionCount: number;
+    periodStart: string;
+    periodEnd: string;
+}
+interface BusinessFinanceAccountRecord {
+    id: string;
+    tenantId: string;
+    storeId?: string;
+    name: string;
+    type: 'CASH' | 'WECHAT' | 'ALIPAY' | 'BANK' | 'OTHER';
+    balance: number;
+    status: 'ACTIVE' | 'FROZEN' | 'CLOSED';
+    createdAt: string;
+    updatedAt: string;
+}
+interface BusinessFinanceSettlementRecord {
+    id: string;
+    tenantId: string;
+    storeId?: string;
+    startDate: string;
+    endDate: string;
+    totalRevenue: number;
+    totalExpense: number;
+    netProfit: number;
+    settlementStatus: 'PENDING' | 'CONFIRMED' | 'DISPUTED';
+    settledAt?: string;
+    createdAt: string;
+}
+interface BusinessFinanceInvoiceRecord {
+    id: string;
+    tenantId: string;
+    storeId?: string;
+    orderId?: string;
+    invoiceNo: string;
+    amount: number;
+    taxAmount: number;
+    totalAmount: number;
+    type: 'REGULAR' | 'VAT';
+    status: 'DRAFT' | 'ISSUED' | 'CANCELLED';
+    issuedAt?: string;
+    buyerInfo?: Record<string, unknown>;
+    createdAt: string;
+}
+interface BusinessDailyRevenueSummary {
+    date: string;
+    storeId?: string;
+    revenue: number;
+    expense: number;
+    refund: number;
+    netRevenue: number;
+    transactionCount: number;
+}
 /**
  * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
  *
@@ -804,6 +877,59 @@ declare function createBusinessClient(baseUrl?: string): {
             operator?: string;
             note?: string;
         }, init?: RequestInit) => Promise<unknown>;
+    };
+    finance: {
+        /** 账户列表 */
+        listAccounts: (query?: {
+            storeId?: string;
+        }, init?: RequestInit) => Promise<BusinessFinanceAccountRecord[]>;
+        /** 账户详情 */
+        getAccount: (accountId: string, init?: RequestInit) => Promise<BusinessFinanceAccountRecord>;
+        /** 营收汇总 */
+        getRevenueSummary: (query: {
+            storeId?: string;
+            startDate: string;
+            endDate: string;
+        }, init?: RequestInit) => Promise<BusinessRevenueSummary>;
+        /** 日营收 */
+        getDailyRevenue: (query: {
+            storeId?: string;
+            date: string;
+        }, init?: RequestInit) => Promise<BusinessDailyRevenueSummary>;
+        /** 财务流水 */
+        listLedgers: (query?: {
+            storeId?: string;
+            type?: BusinessFinanceLedgerRecord["type"];
+            orderId?: string;
+            transactionId?: string;
+            category?: string;
+            recordedAfter?: string;
+            recordedBefore?: string;
+            limit?: number;
+        }, init?: RequestInit) => Promise<BusinessFinanceLedgerRecord[]>;
+        /** 结算列表 */
+        listSettlements: (query?: {
+            storeId?: string;
+            settlementStatus?: BusinessFinanceSettlementRecord["settlementStatus"];
+            startAfter?: string;
+            endBefore?: string;
+            limit?: number;
+        }, init?: RequestInit) => Promise<BusinessFinanceSettlementRecord[]>;
+        /** 结算详情 */
+        getSettlement: (settlementId: string, init?: RequestInit) => Promise<BusinessFinanceSettlementRecord>;
+        /** 发票列表 */
+        listInvoices: (query?: {
+            storeId?: string;
+            orderId?: string;
+            status?: BusinessFinanceInvoiceRecord["status"];
+            type?: BusinessFinanceInvoiceRecord["type"];
+        }, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord[]>;
+        /** 发票详情 */
+        getInvoice: (invoiceId: string, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord>;
+        /** 发票开具 */
+        issueInvoice: (invoiceId: string, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord>;
+        /** 发票作废 */
+        cancelInvoice: (invoiceId: string, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord>;
     };
     paymentGateway: {
         /** 发起支付 */
@@ -979,4 +1105,4 @@ type BusinessClient = ReturnType<typeof createBusinessClient>;
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessCashierMemberLookupResult, type BusinessCashierProductItem, type BusinessCashierProductListPage, type BusinessClient, type BusinessOrderListItem, type BusinessOrderListPage, type BusinessTransactionAggregate, type BusinessTransactionOrder, type BusinessTransactionOrderItem, type BusinessTransactionPayment, type BusinessTransactionRefund, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessCashierMemberLookupResult, type BusinessCashierProductItem, type BusinessCashierProductListPage, type BusinessClient, type BusinessDailyRevenueSummary, type BusinessFinanceAccountRecord, type BusinessFinanceInvoiceRecord, type BusinessFinanceLedgerRecord, type BusinessFinanceSettlementRecord, type BusinessOrderListItem, type BusinessOrderListPage, type BusinessRevenueSummary, type BusinessTransactionAggregate, type BusinessTransactionOrder, type BusinessTransactionOrderItem, type BusinessTransactionPayment, type BusinessTransactionRefund, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };

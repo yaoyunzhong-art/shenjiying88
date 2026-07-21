@@ -454,4 +454,166 @@ describe('[finance-report] 边界条件', () => {
   })
 })
 
+describe('[finance-report] resolved 主链', () => {
+  it('createReportResolved 应优先走 getRevenueSummaryResolved', async () => {
+    const getRevenueSummaryResolved = vi.fn().mockResolvedValue({
+      storeId: 'store-resolved',
+      totalRevenue: 9200,
+      totalExpense: 1200,
+      totalRefund: 300,
+      netRevenue: 7700,
+      transactionCount: 5,
+      periodStart: '2026-07-01T00:00:00.000Z',
+      periodEnd: '2026-07-31T23:59:59.999Z',
+    })
+
+    const financeService = {
+      getRevenueSummary: vi.fn(() => {
+        throw new Error('should not use sync getRevenueSummary')
+      }),
+      listAccounts: vi.fn(() => []),
+      getRevenueSummaryResolved,
+    } as unknown as FinanceService
+
+    const svc = new FinanceReportService(financeService)
+
+    const report = await svc.createReportResolved(
+      TENANT_A,
+      makeReportInput({
+        reportType: ReportTypeEnum.PROFIT_LOSS,
+        storeId: 'store-resolved',
+      }),
+    )
+
+    expect(report.status).toBe('COMPLETED')
+    expect(report.summary).toEqual({
+      totalRevenue: 9200,
+      totalExpense: 1200,
+      totalRefund: 300,
+      netProfit: 7700,
+      transactionCount: 5,
+    })
+    expect(getRevenueSummaryResolved).toHaveBeenCalledWith(TENANT_A, {
+      storeId: 'store-resolved',
+      startDate: '2026-07-01T00:00:00.000Z',
+      endDate: '2026-07-31T23:59:59.999Z',
+    })
+  })
+
+  it('createReportResolved 生成资产负债表时应优先走 listAccountsResolved', async () => {
+    const listAccountsResolved = vi.fn().mockResolvedValue([
+      {
+        id: 'acct-1',
+        tenantId: TENANT_A.tenantId,
+        storeId: 'store-assets',
+        name: '现金账户',
+        type: 'CASH',
+        balance: 4000,
+        status: 'ACTIVE',
+        createdAt: '2026-07-01T00:00:00.000Z',
+        updatedAt: '2026-07-01T00:00:00.000Z',
+      },
+      {
+        id: 'acct-2',
+        tenantId: TENANT_A.tenantId,
+        storeId: 'store-assets',
+        name: '微信账户',
+        type: 'WECHAT',
+        balance: 6000,
+        status: 'ACTIVE',
+        createdAt: '2026-07-01T00:00:00.000Z',
+        updatedAt: '2026-07-01T00:00:00.000Z',
+      },
+    ])
+
+    const financeService = {
+      getRevenueSummary: vi.fn(() => {
+        throw new Error('should not use sync getRevenueSummary')
+      }),
+      listAccounts: vi.fn(() => {
+        throw new Error('should not use sync listAccounts')
+      }),
+      getRevenueSummaryResolved: vi.fn().mockResolvedValue({
+        storeId: 'store-assets',
+        totalRevenue: 2500,
+        totalExpense: 400,
+        totalRefund: 100,
+        netRevenue: 2000,
+        transactionCount: 3,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+      }),
+      listAccountsResolved,
+    } as unknown as FinanceService
+
+    const svc = new FinanceReportService(financeService)
+
+    const report = await svc.createReportResolved(
+      TENANT_A,
+      makeReportInput({
+        reportType: ReportTypeEnum.BALANCE_SHEET,
+        storeId: 'store-assets',
+      }),
+    )
+
+    const data = report.data as Record<string, unknown>
+    const assets = data.assets as Record<string, unknown>
+    const accountDetails = data.accountDetails as Array<Record<string, unknown>>
+
+    expect(report.status).toBe('COMPLETED')
+    expect(accountDetails).toHaveLength(2)
+    expect(assets.total).toBe(12500)
+    expect(listAccountsResolved).toHaveBeenCalledWith(TENANT_A, 'store-assets')
+  })
+
+  it('regenerateReportResolved 应复用 resolved 主链重新生成', async () => {
+    const getRevenueSummaryResolved = vi
+      .fn()
+      .mockResolvedValueOnce({
+        storeId: 'store-retry',
+        totalRevenue: 1000,
+        totalExpense: 100,
+        totalRefund: 50,
+        netRevenue: 850,
+        transactionCount: 2,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+      })
+      .mockResolvedValueOnce({
+        storeId: 'store-retry',
+        totalRevenue: 1800,
+        totalExpense: 300,
+        totalRefund: 100,
+        netRevenue: 1400,
+        transactionCount: 4,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+      })
+
+    const financeService = {
+      getRevenueSummary: vi.fn(() => {
+        throw new Error('should not use sync getRevenueSummary')
+      }),
+      listAccounts: vi.fn(() => []),
+      getRevenueSummaryResolved,
+    } as unknown as FinanceService
+
+    const svc = new FinanceReportService(financeService)
+
+    const created = await svc.createReportResolved(
+      TENANT_A,
+      makeReportInput({
+        reportType: ReportTypeEnum.PROFIT_LOSS,
+        storeId: 'store-retry',
+      }),
+    )
+    const regenerated = await svc.regenerateReportResolved(created.id, TENANT_A)
+
+    expect(created.summary?.netProfit).toBe(850)
+    expect(regenerated.summary?.netProfit).toBe(1400)
+    expect(regenerated.status).toBe('COMPLETED')
+    expect(getRevenueSummaryResolved).toHaveBeenCalledTimes(2)
+  })
+})
+
 // Total tests: 46+ (exceeds ≥35 requirement)

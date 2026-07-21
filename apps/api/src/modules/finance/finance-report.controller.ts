@@ -38,6 +38,19 @@ export class FinanceReportController {
     private readonly reportService: FinanceReportService
   ) {}
 
+  private get resolvedReportService() {
+    return this.reportService as FinanceReportService & {
+      createReportResolved?: (
+        tenantContext: RequestTenantContext,
+        body: CreateReportDto
+      ) => Promise<ReturnType<FinanceReportService['createReport']>>
+      regenerateReportResolved?: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceReportService['regenerateReport']>>
+    }
+  }
+
   /**
    * POST /api/finance/reports
    * 创建报表
@@ -47,6 +60,9 @@ export class FinanceReportController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateReportDto
   ) {
+    if (this.resolvedReportService.createReportResolved) {
+      return this.resolvedReportService.createReportResolved(tenantContext, body)
+    }
     return this.reportService.createReport(tenantContext, body)
   }
 
@@ -83,6 +99,9 @@ export class FinanceReportController {
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedReportService.regenerateReportResolved) {
+      return this.resolvedReportService.regenerateReportResolved(reportId, tenantContext)
+    }
     return this.reportService.regenerateReport(reportId, tenantContext)
   }
 

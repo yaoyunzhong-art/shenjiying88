@@ -35,6 +35,12 @@ import request from 'supertest';
 import type { NextFunction, Request, Response } from 'express';
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { FinanceService, resetFinanceServiceTestState } from './finance.service';
+import { FinanceController } from './finance.controller';
+import { FinanceReportController } from './finance-report.controller';
+import {
+  FinanceReportService,
+  resetFinanceReportTestState,
+} from './finance-report.service';
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types';
 import {
   CreateLedgerDto,
@@ -47,6 +53,11 @@ import {
   RevenueSummaryQueryDto,
   DailyRevenueQueryDto,
 } from './finance.dto';
+import {
+  type CreateReportDto,
+  type ReportQueryDto,
+  ReportType as FinanceReportType,
+} from './dto/create-report.dto';
 import {
   LedgerType,
   AccountStatus,
@@ -72,9 +83,7 @@ function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
 // ── Test Controller ──
 
 // In-memory stores for dashboard/reports/reconciliation e2e routes
-const reportStore = new Map<string, Record<string, unknown>>()
 const reconciliationBatchStore = new Map<string, Record<string, unknown>>()
-let reportSeq = 0
 let batchSeq = 0
 
 // Dashboard helper: in-memory cash-flow / cost-analysis store
@@ -87,9 +96,103 @@ function getOrInitAccount(accountId: string): { inflow: number; outflow: number;
   return inflowRecords.get(accountId)!
 }
 
+function getTenantContext(req: Request): RequestTenantContext {
+  return (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
+}
+
+function toReportType(value: unknown): FinanceReportType {
+  switch (value) {
+    case FinanceReportType.PROFIT_LOSS:
+    case 'profit-loss':
+      return FinanceReportType.PROFIT_LOSS
+    case FinanceReportType.BALANCE_SHEET:
+    case 'balance-sheet':
+      return FinanceReportType.BALANCE_SHEET
+    case FinanceReportType.CASH_FLOW:
+    case 'cash-flow':
+      return FinanceReportType.CASH_FLOW
+    case FinanceReportType.REVENUE_ANALYSIS:
+    case 'revenue':
+    case 'summary':
+      return FinanceReportType.REVENUE_ANALYSIS
+    case FinanceReportType.EXPENSE_ANALYSIS:
+    case 'expense-analysis':
+      return FinanceReportType.EXPENSE_ANALYSIS
+    case FinanceReportType.RECONCILIATION:
+    case 'reconciliation':
+      return FinanceReportType.RECONCILIATION
+    default:
+      return FinanceReportType.PROFIT_LOSS
+  }
+}
+
+function resolvePeriodRange(body: Record<string, unknown>): Pick<CreateReportDto, 'periodStart' | 'periodEnd'> {
+  if (typeof body.periodStart === 'string' && typeof body.periodEnd === 'string') {
+    return {
+      periodStart: body.periodStart,
+      periodEnd: body.periodEnd,
+    }
+  }
+
+  const period = typeof body.period === 'string' ? body.period : undefined
+  if (period && /^\d{4}-\d{2}$/.test(period)) {
+    const [yearText, monthText] = period.split('-')
+    const year = Number(yearText)
+    const month = Number(monthText)
+    const start = new Date(Date.UTC(year, month - 1, 1))
+    const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999))
+    return {
+      periodStart: start.toISOString(),
+      periodEnd: end.toISOString(),
+    }
+  }
+
+  return {
+    periodStart: '2026-07-01T00:00:00.000Z',
+    periodEnd: '2026-07-31T23:59:59.999Z',
+  }
+}
+
+function toCreateReportDto(body: Record<string, unknown>, tenantContext: RequestTenantContext): CreateReportDto {
+  const range = resolvePeriodRange(body)
+  return {
+    title: typeof body.title === 'string' ? body.title : 'report',
+    reportType: toReportType(body.reportType ?? body.type),
+    periodStart: range.periodStart,
+    periodEnd: range.periodEnd,
+    storeId:
+      typeof body.storeId === 'string'
+        ? body.storeId
+        : tenantContext.storeId,
+  }
+}
+
+function toReportQueryDto(query: Record<string, unknown>): ReportQueryDto {
+  return {
+    reportType: query.reportType || query.type ? toReportType(query.reportType ?? query.type) : undefined,
+    storeId: typeof query.storeId === 'string' ? query.storeId : undefined,
+    status: typeof query.status === 'string' ? query.status : undefined,
+    periodStart: typeof query.periodStart === 'string' ? query.periodStart : undefined,
+    periodEnd: typeof query.periodEnd === 'string' ? query.periodEnd : undefined,
+    limit: query.limit ? Number(query.limit) : undefined,
+    offset: query.offset ? Number(query.offset) : undefined,
+  }
+}
+
 @Controller('finance')
 class TestFinanceController {
-  constructor(@Inject(FinanceService) private readonly fs: FinanceService) {}
+  constructor(
+    @Inject(FinanceService) private readonly fs: FinanceService,
+    @Inject(FinanceReportService) private readonly reportService: FinanceReportService,
+  ) {}
+
+  private get financeController() {
+    return new FinanceController(this.fs)
+  }
+
+  private get financeReportController() {
+    return new FinanceReportController(this.reportService)
+  }
 
   @Post('ledgers')
   recordLedger(@Req() req: Request, @Body() body: CreateLedgerDto) {
@@ -106,15 +209,12 @@ class TestFinanceController {
       ...query,
       limit: query.limit ? Number(query.limit) : undefined,
     } as LedgerQueryDto
-    return this.fs.listLedgers(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      typedQuery,
-    );
+    return this.financeController.listLedgers(getTenantContext(req), typedQuery);
   }
 
   @Get('ledgers/:id')
   getLedger(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getLedger(id, (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext);
+    return this.financeController.getLedger(id, getTenantContext(req));
   }
 
   @Delete('ledgers/:id')
@@ -132,42 +232,27 @@ class TestFinanceController {
 
   @Get('accounts')
   listAccounts(@Req() req: Request, @Query('storeId') storeId?: string) {
-    return this.fs.listAccounts(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      storeId,
-    );
+    return this.financeController.listAccounts(getTenantContext(req), storeId);
   }
 
   @Get('accounts/:id')
   getAccount(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getAccount(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.getAccount(id, getTenantContext(req));
   }
 
   @Get('accounts/:id/balance')
   getAccountBalance(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getAccountBalance(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.getAccountBalance(id, getTenantContext(req));
   }
 
   @Post('accounts/:id/freeze')
   freezeAccount(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.freezeAccount(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.freezeAccount(id, getTenantContext(req));
   }
 
   @Post('accounts/:id/close')
   closeAccount(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.closeAccount(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.closeAccount(id, getTenantContext(req));
   }
 
   @Post('settlements')
@@ -183,42 +268,27 @@ class TestFinanceController {
     @Req() req: Request,
     @Query() query: SettlementQueryDto = {} as SettlementQueryDto,
   ) {
-    return this.fs.listSettlements(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      query,
-    );
+    return this.financeController.listSettlements(getTenantContext(req), query);
   }
 
   @Get('settlements/:id')
   getSettlement(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getSettlement(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.getSettlement(id, getTenantContext(req));
   }
 
   @Get('settlements/:id/detail')
   getSettlementDetail(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.getSettlementDetail(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.getSettlementDetail(id, getTenantContext(req));
   }
 
   @Post('settlements/:id/confirm')
   confirmSettlement(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.confirmSettlement(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.confirmSettlement(id, getTenantContext(req));
   }
 
   @Post('settlements/:id/dispute')
   disputeSettlement(@Req() req: Request, @Param('id') id: string) {
-    return this.fs.disputeSettlement(
-      id,
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-    );
+    return this.financeController.disputeSettlement(id, getTenantContext(req));
   }
 
   @Post('invoices')
@@ -266,18 +336,12 @@ class TestFinanceController {
     @Req() req: Request,
     @Query() query: RevenueSummaryQueryDto = {} as RevenueSummaryQueryDto,
   ) {
-    return this.fs.getRevenueSummary(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      query,
-    );
+    return this.financeController.getRevenueSummary(getTenantContext(req), query);
   }
 
   @Get('revenue/daily')
   getDailyRevenue(@Req() req: Request, @Query() query: DailyRevenueQueryDto) {
-    return this.fs.getDailyRevenue(
-      (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext,
-      query,
-    );
+    return this.financeController.getDailyRevenue(getTenantContext(req), query);
   }
 
   @Post('transactions/revenue')
@@ -362,58 +426,31 @@ class TestFinanceController {
     return { recorded: true, balance: acc.balance }
   }
 
-  // ═══════════════════════════════════════════════════════
-  // Reports 报表 (Mock in-memory for e2e)
-  // ═══════════════════════════════════════════════════════
-
   @Post('reports')
   createReport(@Req() req: Request, @Body() body: Record<string, unknown>) {
-    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    const id = `rpt-${++reportSeq}`
-    const report: Record<string, unknown> = {
-      id,
-      tenantId: ctx.tenantId,
-      storeId: body.storeId ?? ctx.storeId,
-      title: body.title ?? 'report',
-      type: body.type ?? 'profit-loss',
-      period: body.period ?? new Date().toISOString().slice(0, 7),
-      status: 'COMPLETED',
-      createdAt: new Date().toISOString(),
-    }
-    reportStore.set(id, report)
-    return report
+    const tenantContext = getTenantContext(req)
+    return this.financeReportController.createReport(
+      tenantContext,
+      toCreateReportDto(body, tenantContext),
+    )
   }
 
   @Get('reports')
   listReports(@Req() req: Request, @Query() query: Record<string, unknown> = {}) {
-    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    const reports = Array.from(reportStore.values()).filter((r) => r.tenantId === ctx.tenantId)
-    if (query.type) {
-      return reports.filter((r) => r.type === query.type)
-    }
-    return reports
+    return this.financeReportController.listReports(
+      getTenantContext(req),
+      toReportQueryDto(query),
+    )
   }
 
   @Get('reports/:id')
   getReport(@Req() req: Request, @Param('id') id: string) {
-    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    const report = reportStore.get(id)
-    if (!report || report.tenantId !== ctx.tenantId) {
-      throw new Error(`Report ${id} not found`)
-    }
-    return report
+    return this.financeReportController.getReport(id, getTenantContext(req))
   }
 
   @Post('reports/:id/regenerate')
   regenerateReport(@Req() req: Request, @Param('id') id: string) {
-    const ctx = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    const report = reportStore.get(id)
-    if (!report || report.tenantId !== ctx.tenantId) {
-      throw new Error(`Report ${id} not found`)
-    }
-    report.status = 'COMPLETED'
-    report.generatedAt = new Date().toISOString()
-    return report
+    return this.financeReportController.regenerateReport(id, getTenantContext(req))
   }
 
   // ═══════════════════════════════════════════════════════
@@ -475,11 +512,16 @@ const TENANT_B = {
 
 async function buildApp() {
   resetFinanceServiceTestState();
+  resetFinanceReportTestState();
   const financeService = new FinanceService();
+  const financeReportService = new FinanceReportService(financeService);
 
   const moduleRef = await Test.createTestingModule({
     controllers: [TestFinanceController],
-    providers: [{ provide: FinanceService, useValue: financeService }],
+    providers: [
+      { provide: FinanceService, useValue: financeService },
+      { provide: FinanceReportService, useValue: financeReportService },
+    ],
   }).compile();
 
   const app = moduleRef.createNestApplication();
@@ -2270,6 +2312,90 @@ it('e2e: reports — 重新生成报表', async () => {
       .post('/finance/reports/' + reportId + '/regenerate')
       .set(TENANT_A);
     expect(regen.status).toBe(201);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — PROFIT_LOSS 真实报表应走 resolved 营收主链', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 10000,
+        description: '报表营收',
+        recordedAt: '2026-07-10T10:00:00.000Z',
+      });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Expense,
+        amount: 2500,
+        description: '报表成本',
+        recordedAt: '2026-07-10T11:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'resolved-profit-loss',
+        reportType: FinanceReportType.PROFIT_LOSS,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.data.status).toBe('COMPLETED');
+    expect(createRes.body.data.summary.totalRevenue).toBe(10000);
+    expect(createRes.body.data.summary.totalExpense).toBe(2500);
+    expect(createRes.body.data.summary.netProfit).toBe(7500);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — BALANCE_SHEET 真实报表应走 resolved 账户主链', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/accounts')
+      .set(TENANT_A)
+      .send({ name: '现金账户', type: AccountType.Cash, initialBalance: 5000, storeId: 'store-001' });
+    await request(app.getHttpServer())
+      .post('/finance/accounts')
+      .set(TENANT_A)
+      .send({ name: '微信账户', type: AccountType.Wechat, initialBalance: 3000, storeId: 'store-001' });
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 1200,
+        description: '资产报表营收',
+        recordedAt: '2026-07-15T10:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'resolved-balance-sheet',
+        reportType: FinanceReportType.BALANCE_SHEET,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.data.status).toBe('COMPLETED');
+    expect(createRes.body.data.data.accountDetails).toHaveLength(2);
+    expect(createRes.body.data.data.assets.total).toBe(9200);
   } finally {
     await app.close();
   }
