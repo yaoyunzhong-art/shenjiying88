@@ -63,6 +63,48 @@ export class FinanceService {
     }
   }
 
+  private getAccountModel():
+    | {
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+        findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+        update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      }
+    | undefined {
+    const prisma = this.prisma as unknown as Record<string, unknown> | undefined
+    const model = prisma?.financeAccount
+    if (!model || typeof model !== 'object') {
+      return undefined
+    }
+    return model as {
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+      findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    }
+  }
+
+  private getSettlementModel():
+    | {
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+        findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+        update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      }
+    | undefined {
+    const prisma = this.prisma as unknown as Record<string, unknown> | undefined
+    const model = prisma?.financeSettlement
+    if (!model || typeof model !== 'object') {
+      return undefined
+    }
+    return model as {
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
+      findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      create?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+      update?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
+    }
+  }
+
   private normalizeLedgerOptionalString(value: unknown): string | undefined {
     if (typeof value !== 'string') {
       return undefined
@@ -99,6 +141,36 @@ export class FinanceService {
     }
   }
 
+  private toAccountEntity(record: Record<string, unknown>): Account {
+    return {
+      id: String(record.id),
+      tenantId: String(record.tenantId),
+      storeId: this.normalizeLedgerOptionalString(record.storeId),
+      name: this.normalizeLedgerOptionalString(record.name) ?? '',
+      type: String(record.type) as Account['type'],
+      balance: Number(record.balance ?? 0),
+      status: String(record.status) as AccountStatus,
+      createdAt: this.normalizeLedgerDate(record.createdAt),
+      updatedAt: this.normalizeLedgerDate(record.updatedAt)
+    }
+  }
+
+  private toSettlementEntity(record: Record<string, unknown>): Settlement {
+    return {
+      id: String(record.id),
+      tenantId: String(record.tenantId),
+      storeId: this.normalizeLedgerOptionalString(record.storeId),
+      startDate: this.normalizeLedgerDate(record.startDate),
+      endDate: this.normalizeLedgerDate(record.endDate),
+      totalRevenue: Number(record.totalRevenue ?? 0),
+      totalExpense: Number(record.totalExpense ?? 0),
+      netProfit: Number(record.netProfit ?? 0),
+      settlementStatus: String(record.settlementStatus) as SettlementStatus,
+      settledAt: record.settledAt ? this.normalizeLedgerDate(record.settledAt) : undefined,
+      createdAt: this.normalizeLedgerDate(record.createdAt)
+    }
+  }
+
   private calculateLedgerBalance(entries: Ledger[], input: CreateLedgerDto) {
     const currentBalance = entries.reduce((sum, ledger) => {
       if (ledger.type === LedgerType.Revenue || ledger.type === LedgerType.Adjustment) {
@@ -129,6 +201,34 @@ export class FinanceService {
       .filter((ledger) => !query?.recordedAfter || ledger.recordedAt >= query.recordedAfter)
       .filter((ledger) => !query?.recordedBefore || ledger.recordedAt <= query.recordedBefore)
       .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
+
+    return typeof limit === 'number' ? filtered.slice(0, limit) : filtered
+  }
+
+  private filterAccounts(
+    accounts: Account[],
+    tenantContext: RequestTenantContext,
+    storeId?: string
+  ): Account[] {
+    return accounts
+      .filter((account) => account.tenantId === tenantContext.tenantId)
+      .filter((account) => !storeId || account.storeId === storeId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  private filterSettlements(
+    settlements: Settlement[],
+    tenantContext: RequestTenantContext,
+    query?: SettlementQueryDto
+  ): Settlement[] {
+    const limit = query?.limit && query.limit > 0 ? query.limit : undefined
+    const filtered = settlements
+      .filter((settlement) => settlement.tenantId === tenantContext.tenantId)
+      .filter((settlement) => !query?.storeId || settlement.storeId === query.storeId)
+      .filter((settlement) => !query?.settlementStatus || settlement.settlementStatus === query.settlementStatus)
+      .filter((settlement) => !query?.startAfter || settlement.startDate >= query.startAfter)
+      .filter((settlement) => !query?.endBefore || settlement.endDate <= query.endBefore)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
     return typeof limit === 'number' ? filtered.slice(0, limit) : filtered
   }
@@ -208,7 +308,7 @@ export class FinanceService {
     settlementId: string,
     tenantContext: RequestTenantContext
   ): Promise<{ settlement: Settlement; ledgers: Ledger[] }> {
-    const settlement = this.getSettlement(settlementId, tenantContext)
+    const settlement = await this.getSettlementResolved(settlementId, tenantContext)
     const ledgers = await this.listLedgersResolved(tenantContext, {
       storeId: settlement.storeId,
       recordedAfter: settlement.startDate,
@@ -291,6 +391,232 @@ export class FinanceService {
       netRevenue: revenue - expense - refund,
       transactionCount: ledgers.length
     }
+  }
+
+  async listAccountsResolved(
+    tenantContext: RequestTenantContext,
+    storeId?: string
+  ): Promise<Account[]> {
+    const accountModel = this.getAccountModel()
+    if (!accountModel?.findMany) {
+      return this.listAccounts(tenantContext, storeId)
+    }
+
+    const records = await accountModel.findMany({
+      where: {
+        tenantId: tenantContext.tenantId,
+        ...(storeId ? { storeId } : {})
+      },
+      orderBy: [{ createdAt: 'desc' }]
+    })
+    const accounts = records.map((record) => this.toAccountEntity(record))
+    for (const account of accounts) {
+      accountStore.set(account.id, account)
+    }
+    return accounts
+  }
+
+  async getAccountResolved(
+    accountId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Account> {
+    const accountModel = this.getAccountModel()
+    if (!accountModel?.findUnique) {
+      return this.getAccount(accountId, tenantContext)
+    }
+
+    const record = await accountModel.findUnique({
+      where: { id: accountId }
+    })
+    if (!record) {
+      throw new Error(`Account ${accountId} not found`)
+    }
+
+    const account = this.toAccountEntity(record)
+    if (account.tenantId !== tenantContext.tenantId) {
+      throw new Error(`Account ${accountId} not found`)
+    }
+
+    accountStore.set(account.id, account)
+    return account
+  }
+
+  async getAccountBalanceResolved(
+    accountId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Pick<Account, 'id' | 'name' | 'balance' | 'status'>> {
+    const account = await this.getAccountResolved(accountId, tenantContext)
+    return {
+      id: account.id,
+      name: account.name,
+      balance: account.balance,
+      status: account.status
+    }
+  }
+
+  async freezeAccountResolved(
+    accountId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Account> {
+    const account = await this.getAccountResolved(accountId, tenantContext)
+    if (account.status !== AccountStatus.Active) {
+      throw new Error(`Account ${accountId} is not active`)
+    }
+
+    const accountModel = this.getAccountModel()
+    if (!accountModel?.update) {
+      return this.freezeAccount(accountId, tenantContext)
+    }
+
+    const record = await accountModel.update({
+      where: { id: accountId },
+      data: {
+        status: AccountStatus.Frozen,
+        updatedAt: new Date()
+      }
+    })
+    const frozenAccount = this.toAccountEntity(record)
+    accountStore.set(frozenAccount.id, frozenAccount)
+    return frozenAccount
+  }
+
+  async closeAccountResolved(
+    accountId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Account> {
+    const account = await this.getAccountResolved(accountId, tenantContext)
+    if (account.status === AccountStatus.Closed) {
+      throw new Error(`Account ${accountId} is already closed`)
+    }
+
+    const accountModel = this.getAccountModel()
+    if (!accountModel?.update) {
+      return this.closeAccount(accountId, tenantContext)
+    }
+
+    const record = await accountModel.update({
+      where: { id: accountId },
+      data: {
+        status: AccountStatus.Closed,
+        updatedAt: new Date()
+      }
+    })
+    const closedAccount = this.toAccountEntity(record)
+    accountStore.set(closedAccount.id, closedAccount)
+    return closedAccount
+  }
+
+  async listSettlementsResolved(
+    tenantContext: RequestTenantContext,
+    query?: SettlementQueryDto
+  ): Promise<Settlement[]> {
+    const settlementModel = this.getSettlementModel()
+    if (!settlementModel?.findMany) {
+      return this.listSettlements(tenantContext, query)
+    }
+
+    const where: Record<string, unknown> = {
+      tenantId: tenantContext.tenantId
+    }
+    if (query?.storeId) {
+      where.storeId = query.storeId
+    }
+    if (query?.settlementStatus) {
+      where.settlementStatus = query.settlementStatus
+    }
+    if (query?.startAfter) {
+      where.startDate = { gte: new Date(query.startAfter) }
+    }
+    if (query?.endBefore) {
+      where.endDate = { lte: new Date(query.endBefore) }
+    }
+
+    const records = await settlementModel.findMany({
+      where,
+      orderBy: [{ createdAt: 'desc' }],
+      ...(query?.limit && query.limit > 0 ? { take: query.limit } : {})
+    })
+    const settlements = records.map((record) => this.toSettlementEntity(record))
+    for (const settlement of settlements) {
+      settlementStore.set(settlement.id, settlement)
+    }
+    return settlements
+  }
+
+  async getSettlementResolved(
+    settlementId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Settlement> {
+    const settlementModel = this.getSettlementModel()
+    if (!settlementModel?.findUnique) {
+      return this.getSettlement(settlementId, tenantContext)
+    }
+
+    const record = await settlementModel.findUnique({
+      where: { id: settlementId }
+    })
+    if (!record) {
+      throw new Error(`Settlement ${settlementId} not found`)
+    }
+
+    const settlement = this.toSettlementEntity(record)
+    if (settlement.tenantId !== tenantContext.tenantId) {
+      throw new Error(`Settlement ${settlementId} not found`)
+    }
+
+    settlementStore.set(settlement.id, settlement)
+    return settlement
+  }
+
+  async confirmSettlementResolved(
+    settlementId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Settlement> {
+    const settlement = await this.getSettlementResolved(settlementId, tenantContext)
+    if (settlement.settlementStatus !== SettlementStatus.Pending) {
+      throw new Error(`Settlement ${settlementId} is not pending confirmation`)
+    }
+
+    const settlementModel = this.getSettlementModel()
+    if (!settlementModel?.update) {
+      return this.confirmSettlement(settlementId, tenantContext)
+    }
+
+    const record = await settlementModel.update({
+      where: { id: settlementId },
+      data: {
+        settlementStatus: SettlementStatus.Confirmed,
+        settledAt: new Date()
+      }
+    })
+    const confirmedSettlement = this.toSettlementEntity(record)
+    settlementStore.set(confirmedSettlement.id, confirmedSettlement)
+    return confirmedSettlement
+  }
+
+  async disputeSettlementResolved(
+    settlementId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<Settlement> {
+    const settlement = await this.getSettlementResolved(settlementId, tenantContext)
+    if (settlement.settlementStatus !== SettlementStatus.Pending) {
+      throw new Error(`Settlement ${settlementId} is not pending`)
+    }
+
+    const settlementModel = this.getSettlementModel()
+    if (!settlementModel?.update) {
+      return this.disputeSettlement(settlementId, tenantContext)
+    }
+
+    const record = await settlementModel.update({
+      where: { id: settlementId },
+      data: {
+        settlementStatus: SettlementStatus.Disputed
+      }
+    })
+    const disputedSettlement = this.toSettlementEntity(record)
+    settlementStore.set(disputedSettlement.id, disputedSettlement)
+    return disputedSettlement
   }
 
   // ═══════════════════════════════════════════════════
@@ -397,6 +723,26 @@ export class FinanceService {
       updatedAt: now
     }
 
+    const accountModel = this.getAccountModel()
+    if (accountModel?.create) {
+      const record = await accountModel.create({
+        data: {
+          id: account.id,
+          tenantId: account.tenantId,
+          storeId: account.storeId ?? null,
+          name: account.name,
+          type: account.type,
+          balance: account.balance,
+          status: account.status,
+          createdAt: new Date(account.createdAt),
+          updatedAt: new Date(account.updatedAt)
+        }
+      })
+      const persistedAccount = this.toAccountEntity(record)
+      accountStore.set(persistedAccount.id, persistedAccount)
+      return persistedAccount
+    }
+
     accountStore.set(account.id, account)
     return account
   }
@@ -429,10 +775,7 @@ export class FinanceService {
     tenantContext: RequestTenantContext,
     storeId?: string
   ): Account[] {
-    return Array.from(accountStore.values())
-      .filter((a) => a.tenantId === tenantContext.tenantId)
-      .filter((a) => !storeId || a.storeId === storeId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    return this.filterAccounts(Array.from(accountStore.values()), tenantContext, storeId)
   }
 
   freezeAccount(
@@ -477,11 +820,11 @@ export class FinanceService {
     const now = new Date().toISOString()
     const storeId = input.storeId ?? tenantContext.storeId
 
-    // Auto-calculate from ledgers if not provided
-    const ledgers = Array.from(ledgerStore.values())
-      .filter((l) => l.tenantId === tenantContext.tenantId)
-      .filter((l) => !storeId || l.storeId === storeId)
-      .filter((l) => l.recordedAt >= input.startDate && l.recordedAt <= input.endDate)
+    const ledgers = await this.listLedgersResolved(tenantContext, {
+      storeId,
+      recordedAfter: input.startDate,
+      recordedBefore: input.endDate
+    })
 
     const totalRevenue = input.totalRevenue ?? ledgers
       .filter((l) => l.type === LedgerType.Revenue)
@@ -504,6 +847,28 @@ export class FinanceService {
       netProfit,
       settlementStatus: SettlementStatus.Pending,
       createdAt: now
+    }
+
+    const settlementModel = this.getSettlementModel()
+    if (settlementModel?.create) {
+      const record = await settlementModel.create({
+        data: {
+          id: settlement.id,
+          tenantId: settlement.tenantId,
+          storeId: settlement.storeId ?? null,
+          startDate: new Date(settlement.startDate),
+          endDate: new Date(settlement.endDate),
+          totalRevenue: settlement.totalRevenue,
+          totalExpense: settlement.totalExpense,
+          netProfit: settlement.netProfit,
+          settlementStatus: settlement.settlementStatus,
+          settledAt: settlement.settledAt ? new Date(settlement.settledAt) : null,
+          createdAt: new Date(settlement.createdAt)
+        }
+      })
+      const persistedSettlement = this.toSettlementEntity(record)
+      settlementStore.set(persistedSettlement.id, persistedSettlement)
+      return persistedSettlement
     }
 
     settlementStore.set(settlement.id, settlement)
@@ -565,17 +930,7 @@ export class FinanceService {
     tenantContext: RequestTenantContext,
     query?: SettlementQueryDto
   ): Settlement[] {
-    const limit = query?.limit && query.limit > 0 ? query.limit : undefined
-
-    const settlements = Array.from(settlementStore.values())
-      .filter((s) => s.tenantId === tenantContext.tenantId)
-      .filter((s) => !query?.storeId || s.storeId === query.storeId)
-      .filter((s) => !query?.settlementStatus || s.settlementStatus === query.settlementStatus)
-      .filter((s) => !query?.startAfter || s.startDate >= query.startAfter)
-      .filter((s) => !query?.endBefore || s.endDate <= query.endBefore)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-
-    return typeof limit === 'number' ? settlements.slice(0, limit) : settlements
+    return this.filterSettlements(Array.from(settlementStore.values()), tenantContext, query)
   }
 
   // ═══════════════════════════════════════════════════

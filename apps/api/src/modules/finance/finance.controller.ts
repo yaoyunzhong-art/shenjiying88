@@ -40,10 +40,46 @@ export class FinanceController {
         ledgerId: string,
         tenantContext: RequestTenantContext
       ) => Promise<ReturnType<FinanceService['getLedger']>>
+      listAccountsResolved?: (
+        tenantContext: RequestTenantContext,
+        storeId?: string
+      ) => Promise<ReturnType<FinanceService['listAccounts']>>
+      getAccountResolved?: (
+        accountId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['getAccount']>>
+      getAccountBalanceResolved?: (
+        accountId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['getAccountBalance']>>
+      freezeAccountResolved?: (
+        accountId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['freezeAccount']>>
+      closeAccountResolved?: (
+        accountId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['closeAccount']>>
+      listSettlementsResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: SettlementQueryDto
+      ) => Promise<ReturnType<FinanceService['listSettlements']>>
+      getSettlementResolved?: (
+        settlementId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['getSettlement']>>
       getSettlementDetailResolved?: (
         settlementId: string,
         tenantContext: RequestTenantContext
       ) => Promise<ReturnType<FinanceService['getSettlementDetail']>>
+      confirmSettlementResolved?: (
+        settlementId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['confirmSettlement']>>
+      disputeSettlementResolved?: (
+        settlementId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['disputeSettlement']>>
       getRevenueSummaryResolved?: (
         tenantContext: RequestTenantContext,
         query?: RevenueSummaryQueryDto
@@ -102,6 +138,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query('storeId') storeId?: string
   ) {
+    if (this.resolvedFinanceService.listAccountsResolved) {
+      return this.resolvedFinanceService.listAccountsResolved(tenantContext, storeId)
+    }
     return this.financeService.listAccounts(tenantContext, storeId)
   }
 
@@ -110,6 +149,9 @@ export class FinanceController {
     @Param('accountId') accountId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.getAccountResolved) {
+      return this.resolvedFinanceService.getAccountResolved(accountId, tenantContext)
+    }
     return this.financeService.getAccount(accountId, tenantContext)
   }
 
@@ -118,6 +160,9 @@ export class FinanceController {
     @Param('accountId') accountId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.getAccountBalanceResolved) {
+      return this.resolvedFinanceService.getAccountBalanceResolved(accountId, tenantContext)
+    }
     return this.financeService.getAccountBalance(accountId, tenantContext)
   }
 
@@ -126,6 +171,9 @@ export class FinanceController {
     @Param('accountId') accountId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.freezeAccountResolved) {
+      return this.resolvedFinanceService.freezeAccountResolved(accountId, tenantContext)
+    }
     return this.financeService.freezeAccount(accountId, tenantContext)
   }
 
@@ -134,6 +182,9 @@ export class FinanceController {
     @Param('accountId') accountId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.closeAccountResolved) {
+      return this.resolvedFinanceService.closeAccountResolved(accountId, tenantContext)
+    }
     return this.financeService.closeAccount(accountId, tenantContext)
   }
 
@@ -152,6 +203,9 @@ export class FinanceController {
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: SettlementQueryDto = {} as SettlementQueryDto
   ) {
+    if (this.resolvedFinanceService.listSettlementsResolved) {
+      return this.resolvedFinanceService.listSettlementsResolved(tenantContext, query)
+    }
     return this.financeService.listSettlements(tenantContext, query)
   }
 
@@ -160,6 +214,9 @@ export class FinanceController {
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.getSettlementResolved) {
+      return this.resolvedFinanceService.getSettlementResolved(settlementId, tenantContext)
+    }
     return this.financeService.getSettlement(settlementId, tenantContext)
   }
 
@@ -179,6 +236,9 @@ export class FinanceController {
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.confirmSettlementResolved) {
+      return this.resolvedFinanceService.confirmSettlementResolved(settlementId, tenantContext)
+    }
     return this.financeService.confirmSettlement(settlementId, tenantContext)
   }
 
@@ -187,6 +247,9 @@ export class FinanceController {
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.disputeSettlementResolved) {
+      return this.resolvedFinanceService.disputeSettlementResolved(settlementId, tenantContext)
+    }
     return this.financeService.disputeSettlement(settlementId, tenantContext)
   }
 

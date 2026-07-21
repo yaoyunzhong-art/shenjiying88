@@ -2001,6 +2001,58 @@ export interface BusinessRevenueSummary {
   periodEnd: string;
 }
 
+export interface BusinessFinanceAccountRecord {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  name: string;
+  type: 'CASH' | 'WECHAT' | 'ALIPAY' | 'BANK' | 'OTHER';
+  balance: number;
+  status: 'ACTIVE' | 'FROZEN' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessFinanceSettlementRecord {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  startDate: string;
+  endDate: string;
+  totalRevenue: number;
+  totalExpense: number;
+  netProfit: number;
+  settlementStatus: 'PENDING' | 'CONFIRMED' | 'DISPUTED';
+  settledAt?: string;
+  createdAt: string;
+}
+
+export interface BusinessFinanceInvoiceRecord {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  orderId?: string;
+  invoiceNo: string;
+  amount: number;
+  taxAmount: number;
+  totalAmount: number;
+  type: 'REGULAR' | 'VAT';
+  status: 'DRAFT' | 'ISSUED' | 'CANCELLED';
+  issuedAt?: string;
+  buyerInfo?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface BusinessDailyRevenueSummary {
+  date: string;
+  storeId?: string;
+  revenue: number;
+  expense: number;
+  refund: number;
+  netRevenue: number;
+  transactionCount: number;
+}
+
 function buildBusinessOrderListPath(query?: {
   memberId?: string;
   status?: string;
@@ -2264,6 +2316,21 @@ export function createBusinessClient(baseUrl?: string) {
 
     // ── Finance (GET /api/v1/finance/*) ──
     finance: {
+      /** 账户列表 */
+      listAccounts: (query?: { storeId?: string }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        const search = params.toString();
+        return api.getData<BusinessFinanceAccountRecord[]>(
+          search ? `/finance/accounts?${search}` : '/finance/accounts',
+          init,
+        );
+      },
+
+      /** 账户详情 */
+      getAccount: (accountId: string, init?: RequestInit) =>
+        api.getData<BusinessFinanceAccountRecord>(`/finance/accounts/${accountId}`, init),
+
       /** 营收汇总 */
       getRevenueSummary: (query: {
         storeId?: string;
@@ -2276,6 +2343,20 @@ export function createBusinessClient(baseUrl?: string) {
         params.set('endDate', query.endDate);
         return api.getData<BusinessRevenueSummary>(
           `/finance/revenue/summary?${params.toString()}`,
+          init,
+        );
+      },
+
+      /** 日营收 */
+      getDailyRevenue: (query: {
+        storeId?: string;
+        date: string;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set('storeId', query.storeId);
+        params.set('date', query.date);
+        return api.getData<BusinessDailyRevenueSummary>(
+          `/finance/revenue/daily?${params.toString()}`,
           init,
         );
       },
@@ -2306,6 +2387,62 @@ export function createBusinessClient(baseUrl?: string) {
           init,
         );
       },
+
+      /** 结算列表 */
+      listSettlements: (query?: {
+        storeId?: string;
+        settlementStatus?: BusinessFinanceSettlementRecord['settlementStatus'];
+        startAfter?: string;
+        endBefore?: string;
+        limit?: number;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        if (query?.settlementStatus) params.set('settlementStatus', query.settlementStatus);
+        if (query?.startAfter) params.set('startAfter', query.startAfter);
+        if (query?.endBefore) params.set('endBefore', query.endBefore);
+        if (query?.limit !== undefined) params.set('limit', String(query.limit));
+        const search = params.toString();
+        return api.getData<BusinessFinanceSettlementRecord[]>(
+          search ? `/finance/settlements?${search}` : '/finance/settlements',
+          init,
+        );
+      },
+
+      /** 结算详情 */
+      getSettlement: (settlementId: string, init?: RequestInit) =>
+        api.getData<BusinessFinanceSettlementRecord>(`/finance/settlements/${settlementId}`, init),
+
+      /** 发票列表 */
+      listInvoices: (query?: {
+        storeId?: string;
+        orderId?: string;
+        status?: BusinessFinanceInvoiceRecord['status'];
+        type?: BusinessFinanceInvoiceRecord['type'];
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        if (query?.orderId) params.set('orderId', query.orderId);
+        if (query?.status) params.set('status', query.status);
+        if (query?.type) params.set('type', query.type);
+        const search = params.toString();
+        return api.getData<BusinessFinanceInvoiceRecord[]>(
+          search ? `/finance/invoices?${search}` : '/finance/invoices',
+          init,
+        );
+      },
+
+      /** 发票详情 */
+      getInvoice: (invoiceId: string, init?: RequestInit) =>
+        api.getData<BusinessFinanceInvoiceRecord>(`/finance/invoices/${invoiceId}`, init),
+
+      /** 发票开具 */
+      issueInvoice: (invoiceId: string, init?: RequestInit) =>
+        api.postData<BusinessFinanceInvoiceRecord>(`/finance/invoices/${invoiceId}/issue`, {}, init),
+
+      /** 发票作废 */
+      cancelInvoice: (invoiceId: string, init?: RequestInit) =>
+        api.postData<BusinessFinanceInvoiceRecord>(`/finance/invoices/${invoiceId}/cancel`, {}, init),
     },
 
     // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──

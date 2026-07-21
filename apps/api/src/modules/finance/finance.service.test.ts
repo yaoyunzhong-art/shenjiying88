@@ -212,6 +212,41 @@ describe('[finance] 合约: Account 账户', () => {
     assert.equal(bal.status, AccountStatus.Active)
     assert.equal(bal.name, '现金')
   })
+
+  it('listAccountsResolved 在无 Prisma 时回退到当前内存账户', async () => {
+    const svc = makeService()
+    await svc.createAccount(CTX_A, {
+      name: '微信账户',
+      type: AccountType.Wechat,
+      storeId: 'store-A'
+    })
+    await svc.createAccount(CTX_B, {
+      name: '其他租户账户',
+      type: AccountType.Cash,
+      storeId: 'store-B'
+    })
+
+    const accounts = await svc.listAccountsResolved(CTX_A, 'store-A')
+
+    assert.equal(accounts.length, 1)
+    assert.equal(accounts[0].tenantId, CTX_A.tenantId)
+    assert.equal(accounts[0].name, '微信账户')
+  })
+
+  it('getAccountBalanceResolved 在无 Prisma 时沿用当前账户摘要口径', async () => {
+    const svc = makeService()
+    const account = await svc.createAccount(CTX_A, {
+      name: '银行账户',
+      type: AccountType.Bank,
+      initialBalance: 880
+    })
+
+    const balance = await svc.getAccountBalanceResolved(account.id, CTX_A)
+
+    assert.equal(balance.id, account.id)
+    assert.equal(balance.balance, 880)
+    assert.equal(balance.status, AccountStatus.Active)
+  })
 })
 
 // ─── Settlement 合约 ───────────────────────────────────
@@ -273,6 +308,39 @@ describe('[finance] 合约: Settlement 结算', () => {
     assert.ok(detail.settlement)
     assert.ok(Array.isArray(detail.ledgers))
     assert.ok(detail.ledgers.length >= 1)
+  })
+
+  it('listSettlementsResolved 在无 Prisma 时回退到当前内存结算', async () => {
+    const svc = makeService()
+    await svc.createSettlement(CTX_A, {
+      storeId: 'store-A',
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+    await svc.createSettlement(CTX_B, {
+      storeId: 'store-B',
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+
+    const settlements = await svc.listSettlementsResolved(CTX_A, { storeId: 'store-A' })
+
+    assert.equal(settlements.length, 1)
+    assert.equal(settlements[0].tenantId, CTX_A.tenantId)
+    assert.equal(settlements[0].storeId, 'store-A')
+  })
+
+  it('confirmSettlementResolved 在无 Prisma 时沿用当前状态流转', async () => {
+    const svc = makeService()
+    const settlement = await svc.createSettlement(CTX_A, {
+      startDate: '2020-01-01T00:00:00Z',
+      endDate: '2030-01-01T00:00:00Z'
+    })
+
+    const confirmed = await svc.confirmSettlementResolved(settlement.id, CTX_A)
+
+    assert.equal(confirmed.settlementStatus, SettlementStatus.Confirmed)
+    assert.ok(confirmed.settledAt)
   })
 })
 

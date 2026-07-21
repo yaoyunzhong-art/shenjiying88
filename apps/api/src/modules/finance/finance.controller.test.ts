@@ -410,18 +410,18 @@ describe('[finance] GET /finance/ledgers — 列表查询', () => {
 // ── GET /finance/ledgers/:ledgerId ──
 
 describe('[finance] GET /finance/ledgers/:ledgerId — 单条查询', () => {
-  it('按 ID 获取记账记录', () => {
+  it('按 ID 获取记账记录', async () => {
     const ctrl = makeController()
-    const result = ctrl.getLedger('ledger-1', CTX)
+    const result = await ctrl.getLedger('ledger-1', CTX)
     assert.equal(result.id, 'ledger-1')
     assert.equal(result.type, LedgerType.Revenue)
   })
 
-  it('不存在的 ledgerId 抛出异常', () => {
+  it('不存在的 ledgerId 抛出异常', async () => {
     const ctrl = makeController({
       getLedger: () => { throw new Error('Ledger not-found not found') }
     })
-    assert.throws(() => ctrl.getLedger('not-found', CTX), /Ledger not-found not found/)
+    await assert.rejects(async () => ctrl.getLedger('not-found', CTX), /Ledger not-found not found/)
   })
 })
 
@@ -481,28 +481,48 @@ describe('[finance] GET /finance/accounts — 账户列表', () => {
     ctrl.listAccounts(CTX, 'store-1')
     assert.equal(capturedStoreId, 'store-1')
   })
+
+  it('优先走 listAccountsResolved 持久化读链', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      listAccounts: () => {
+        throw new Error('should not use sync listAccounts')
+      },
+      listAccountsResolved: async (_ctx, storeId) => {
+        resolvedCalled = storeId === 'store-1'
+        return []
+      }
+    } as Partial<MockFinanceService> & {
+      listAccountsResolved: (ctx: RequestTenantContext, storeId?: string) => Promise<Account[]>
+    })
+
+    const result = await ctrl.listAccounts(CTX, 'store-1')
+
+    assert.ok(Array.isArray(result))
+    assert.equal(resolvedCalled, true)
+  })
 })
 
 describe('[finance] GET /finance/accounts/:accountId — 账户详情', () => {
-  it('获取账户详情', () => {
+  it('获取账户详情', async () => {
     const ctrl = makeController()
-    const result = ctrl.getAccount('acct-1', CTX)
+    const result = await ctrl.getAccount('acct-1', CTX)
     assert.equal(result.id, 'acct-1')
     assert.equal(result.name, 'Mock Account')
   })
 
-  it('不存在的账户抛出异常', () => {
+  it('不存在的账户抛出异常', async () => {
     const ctrl = makeController({
       getAccount: () => { throw new Error('Account bad not found') }
     })
-    assert.throws(() => ctrl.getAccount('bad', CTX), /not found/)
+    await assert.rejects(async () => ctrl.getAccount('bad', CTX), /not found/)
   })
 })
 
 describe('[finance] GET /finance/accounts/:accountId/balance — 余额查询', () => {
-  it('返回摘要字段', () => {
+  it('返回摘要字段', async () => {
     const ctrl = makeController()
-    const result = ctrl.getAccountBalance('acct-1', CTX)
+    const result = await ctrl.getAccountBalance('acct-1', CTX)
     assert.equal(result.id, 'acct-1')
     assert.ok('balance' in result)
     assert.ok('status' in result)
@@ -510,17 +530,17 @@ describe('[finance] GET /finance/accounts/:accountId/balance — 余额查询', 
 })
 
 describe('[finance] POST /finance/accounts/:accountId/freeze — 冻结', () => {
-  it('成功冻结变为 Frozen', () => {
+  it('成功冻结变为 Frozen', async () => {
     const ctrl = makeController()
-    const result = ctrl.freezeAccount('acct-1', CTX)
+    const result = await ctrl.freezeAccount('acct-1', CTX)
     assert.equal(result.status, AccountStatus.Frozen)
   })
 })
 
 describe('[finance] POST /finance/accounts/:accountId/close — 关闭', () => {
-  it('成功关闭变为 Closed', () => {
+  it('成功关闭变为 Closed', async () => {
     const ctrl = makeController()
-    const result = ctrl.closeAccount('acct-1', CTX)
+    const result = await ctrl.closeAccount('acct-1', CTX)
     assert.equal(result.status, AccountStatus.Closed)
   })
 })
@@ -568,45 +588,68 @@ describe('[finance] GET /finance/settlements — 结算列表', () => {
     ctrl.listSettlements(CTX, { settlementStatus: SettlementStatus.Pending })
     assert.equal(capturedStatus, SettlementStatus.Pending)
   })
+
+  it('优先走 listSettlementsResolved 持久化读链', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      listSettlements: () => {
+        throw new Error('should not use sync listSettlements')
+      },
+      listSettlementsResolved: async (_ctx, query) => {
+        resolvedCalled = query?.settlementStatus === SettlementStatus.Pending
+        return []
+      }
+    } as Partial<MockFinanceService> & {
+      listSettlementsResolved: (
+        ctx: RequestTenantContext,
+        query?: SettlementQueryDto
+      ) => Promise<Settlement[]>
+    })
+
+    const result = await ctrl.listSettlements(CTX, { settlementStatus: SettlementStatus.Pending })
+
+    assert.ok(Array.isArray(result))
+    assert.equal(resolvedCalled, true)
+  })
 })
 
 describe('[finance] GET /finance/settlements/:settlementId — 结算详情', () => {
-  it('获取结算', () => {
+  it('获取结算', async () => {
     const ctrl = makeController()
-    const result = ctrl.getSettlement('stl-1', CTX)
+    const result = await ctrl.getSettlement('stl-1', CTX)
     assert.equal(result.id, 'stl-1')
     assert.equal(result.settlementStatus, SettlementStatus.Confirmed)
   })
 
-  it('不存在的结算抛出异常', () => {
+  it('不存在的结算抛出异常', async () => {
     const ctrl = makeController({
       getSettlement: () => { throw new Error('Settlement bad not found') }
     })
-    assert.throws(() => ctrl.getSettlement('bad', CTX), /not found/)
+    await assert.rejects(async () => ctrl.getSettlement('bad', CTX), /not found/)
   })
 })
 
 describe('[finance] GET /finance/settlements/:settlementId/detail — 结算明细', () => {
-  it('返回 settlement + ledgers', () => {
+  it('返回 settlement + ledgers', async () => {
     const ctrl = makeController()
-    const result = ctrl.getSettlementDetail('stl-1', CTX)
+    const result = await ctrl.getSettlementDetail('stl-1', CTX)
     assert.ok(result.settlement)
     assert.ok(Array.isArray(result.ledgers))
   })
 })
 
 describe('[finance] POST /finance/settlements/:settlementId/confirm — 确认结算', () => {
-  it('Pending → Confirmed', () => {
+  it('Pending → Confirmed', async () => {
     const ctrl = makeController()
-    const result = ctrl.confirmSettlement('stl-1', CTX)
+    const result = await ctrl.confirmSettlement('stl-1', CTX)
     assert.equal(result.settlementStatus, SettlementStatus.Confirmed)
   })
 })
 
 describe('[finance] POST /finance/settlements/:settlementId/dispute — 争议结算', () => {
-  it('Pending → Disputed', () => {
+  it('Pending → Disputed', async () => {
     const ctrl = makeController()
-    const result = ctrl.disputeSettlement('stl-1', CTX)
+    const result = await ctrl.disputeSettlement('stl-1', CTX)
     assert.equal(result.settlementStatus, SettlementStatus.Disputed)
   })
 })
@@ -682,15 +725,15 @@ describe('[finance] POST /finance/invoices/:invoiceId/cancel — 作废发票', 
 // ── Revenue ──
 
 describe('[finance] GET /finance/revenue/summary — 营收汇总', () => {
-  it('默认返回 30 天汇总', () => {
+  it('默认返回 30 天汇总', async () => {
     const ctrl = makeController()
-    const result = ctrl.getRevenueSummary(CTX)
+    const result = await ctrl.getRevenueSummary(CTX)
     assert.equal(result.totalRevenue, 10000)
     assert.equal(result.netRevenue, 6500)
     assert.equal(result.transactionCount, 42)
   })
 
-  it('按门店 + 时间范围过滤', () => {
+  it('按门店 + 时间范围过滤', async () => {
     let capturedQuery: RevenueSummaryQueryDto | undefined
     const ctrl = makeController({
       getRevenueSummary: (_ctx, query) => {
@@ -698,16 +741,16 @@ describe('[finance] GET /finance/revenue/summary — 营收汇总', () => {
         return { storeId: '', totalRevenue: 0, totalExpense: 0, totalRefund: 0, netRevenue: 0, transactionCount: 0, periodStart: '', periodEnd: '' }
       }
     })
-    ctrl.getRevenueSummary(CTX, { storeId: 'store-bj', startDate: '2026-01-01T00:00:00.000Z' })
+    await ctrl.getRevenueSummary(CTX, { storeId: 'store-bj', startDate: '2026-01-01T00:00:00.000Z' })
     assert.equal(capturedQuery?.storeId, 'store-bj')
   })
 })
 
 describe('[finance] GET /finance/revenue/daily — 日营收', () => {
-  it('按日期查询日营收', () => {
+  it('按日期查询日营收', async () => {
     const ctrl = makeController()
     const dto = Object.assign(new DailyRevenueQueryDto(), { date: '2026-06-15' })
-    const result = ctrl.getDailyRevenue(CTX, dto)
+    const result = await ctrl.getDailyRevenue(CTX, dto)
     assert.equal(result.date, '2026-06-15')
     assert.equal(result.revenue, 1500)
     assert.equal(result.netRevenue, 1100)
@@ -763,7 +806,7 @@ describe('异常与边界场景', () => {
   it('空 tenant 传递时仍能执行', async () => {
     const emptyCtx = {} as RequestTenantContext
     const ctrl = makeController()
-    const result = ctrl.getRevenueSummary(emptyCtx)
+    const result = await ctrl.getRevenueSummary(emptyCtx)
     assert.ok(typeof result.totalRevenue === 'number')
   })
 
