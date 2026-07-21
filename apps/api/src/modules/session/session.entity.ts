@@ -16,34 +16,34 @@ export class SessionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'session_id', unique: true, length: 64 })
+  @Column({ name: 'session_id', type: 'varchar', unique: true, length: 64 })
   sessionId!: string
 
-  @Column({ name: 'user_id', length: 64 })
+  @Column({ name: 'user_id', type: 'varchar', length: 64 })
   userId!: string
 
-  @Column({ name: 'tenant_id', length: 64 })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   tenantId!: string
 
-  @Column({ name: 'device_type', length: 20, default: 'web' })
+  @Column({ name: 'device_type', type: 'varchar', length: 20, default: 'web' })
   deviceType!: string
 
-  @Column({ name: 'device_id', length: 64, nullable: true })
+  @Column({ name: 'device_id', type: 'varchar', length: 64, nullable: true })
   deviceId?: string
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   browser?: string
 
-  @Column({ length: 64, nullable: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
   os?: string
 
-  @Column({ length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip?: string
 
-  @Column({ name: 'user_agent', length: 512, nullable: true })
+  @Column({ name: 'user_agent', type: 'varchar', length: 512, nullable: true })
   userAgent?: string
 
-  @Column({ length: 20, default: 'active' })
+  @Column({ type: 'varchar', length: 20, default: 'active' })
   status!: 'active' | 'expired' | 'revoked'
 
   @Column({ name: 'created_at', type: 'bigint' })

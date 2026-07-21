@@ -80,7 +80,7 @@ describe('🎮导玩员 — 排班查看与换班申请视角', () => {
     expect(guideShift!.startTime).toBeDefined()
     expect(guideShift!.endTime).toBeDefined()
     expect(guideShift!.shiftType).toBeDefined()
-    expect(allShifts.some(s => [s.status].includes('SCHEDULED'))).toBe(true)
+    expect(allShifts.some(s => [s.status].includes(ShiftStatus.Scheduled))).toBe(true)
   })
 })
 

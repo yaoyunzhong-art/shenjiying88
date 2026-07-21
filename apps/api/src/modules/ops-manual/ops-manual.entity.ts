@@ -22,17 +22,17 @@ export class OpsManualRecord {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   @Index()
   tenantId!: string;
 
   @Column({ name: 'role', type: 'varchar', length: 30 })
   role!: OpsManualRole;
 
-  @Column({ name: 'title' })
+  @Column({ name: 'title', type: 'varchar', length: 255 })
   title!: string;
 
-  @Column({ name: 'version', default: '1.0.0' })
+  @Column({ name: 'version', type: 'varchar', length: 32, default: '1.0.0' })
   version!: string;
 
   @Column({ name: 'export_format', type: 'varchar', length: 20, default: 'markdown' })
@@ -50,7 +50,7 @@ export class OpsManualRecord {
   @Column({ name: 'estimated_read_time', type: 'int', default: 0 })
   estimatedReadTime!: number;
 
-  @Column({ name: 'generated_by', nullable: true })
+  @Column({ name: 'generated_by', type: 'varchar', length: 64, nullable: true })
   generatedBy?: string;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -66,20 +66,20 @@ export class OpsManualSearchLog {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   @Index()
   tenantId!: string;
 
   @Column({ name: 'role', type: 'varchar', length: 30 })
   role!: OpsManualRole;
 
-  @Column({ name: 'keyword' })
+  @Column({ name: 'keyword', type: 'varchar', length: 255 })
   keyword!: string;
 
   @Column({ name: 'result_count', type: 'int', default: 0 })
   resultCount!: number;
 
-  @Column({ name: 'searched_by', nullable: true })
+  @Column({ name: 'searched_by', type: 'varchar', length: 64, nullable: true })
   searchedBy?: string;
 
   @CreateDateColumn({ name: 'created_at' })

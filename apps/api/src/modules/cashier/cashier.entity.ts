@@ -115,47 +115,47 @@ export class CashierOrderEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'order_id', length: 128, unique: true })
+  @Column({ name: 'order_id', type: 'varchar', length: 128, unique: true })
   orderId!: string
 
-  @Column({ name: 'tenant_id', length: 64 })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   tenantId!: string
 
-  @Column({ name: 'brand_id', length: 64, nullable: true })
+  @Column({ name: 'brand_id', type: 'varchar', length: 64, nullable: true })
   brandId?: string
 
-  @Column({ name: 'store_id', length: 64, nullable: true })
+  @Column({ name: 'store_id', type: 'varchar', length: 64, nullable: true })
   storeId?: string
 
-  @Column({ name: 'member_id', length: 64 })
+  @Column({ name: 'member_id', type: 'varchar', length: 64 })
   memberId!: string
 
   /** Items 以 JSON 列存储 */
   @Column({ name: 'items', type: 'jsonb', nullable: true })
   items?: CashierOrderItem[]
 
-  @Column({ length: 10, default: 'CNY' })
+  @Column({ type: 'varchar', length: 10, default: 'CNY' })
   currency!: string
 
   @Column({ name: 'total_amount', type: 'decimal', precision: 12, scale: 2, default: 0 })
   totalAmount!: number
 
-  @Column({ name: 'coupon_code', length: 64, nullable: true })
+  @Column({ name: 'coupon_code', type: 'varchar', length: 64, nullable: true })
   couponCode?: string
 
-  @Column({ name: 'blindbox_plan_id', length: 64, nullable: true })
+  @Column({ name: 'blindbox_plan_id', type: 'varchar', length: 64, nullable: true })
   blindboxPlanId?: string
 
   @Column({ name: 'blindbox_quantity', type: 'int', nullable: true })
   blindboxQuantity?: number
 
-  @Column({ length: 20, default: 'CREATED' })
+  @Column({ type: 'varchar', length: 20, default: 'CREATED' })
   status!: string
 
-  @Column({ name: 'latest_payment_id', length: 128, nullable: true })
+  @Column({ name: 'latest_payment_id', type: 'varchar', length: 128, nullable: true })
   latestPaymentId?: string
 
-  @Column({ name: 'source', length: 20, default: 'memory' })
+  @Column({ name: 'source', type: 'varchar', length: 20, default: 'memory' })
   source!: string
 
   @CreateDateColumn({ name: 'created_at' })
@@ -170,13 +170,13 @@ export class CashierOrderEntity {
   @Column({ name: 'closed_at', type: 'timestamptz', nullable: true })
   closedAt?: Date
 
-  @Column({ name: 'close_reason', length: 30, nullable: true })
+  @Column({ name: 'close_reason', type: 'varchar', length: 30, nullable: true })
   closeReason?: string
 
-  @Column({ name: 'closed_by', length: 64, nullable: true })
+  @Column({ name: 'closed_by', type: 'varchar', length: 64, nullable: true })
   closedBy?: string
 
-  @Column({ name: 'close_note', length: 255, nullable: true })
+  @Column({ name: 'close_note', type: 'varchar', length: 255, nullable: true })
   closeNote?: string
 
   /** 将 entity 转换为接口合约 */
@@ -246,40 +246,40 @@ export class CashierPaymentEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'payment_id', length: 128, unique: true })
+  @Column({ name: 'payment_id', type: 'varchar', length: 128, unique: true })
   paymentId!: string
 
-  @Column({ name: 'order_id', length: 128 })
+  @Column({ name: 'order_id', type: 'varchar', length: 128 })
   orderId!: string
 
-  @Column({ name: 'external_payment_id', length: 128, nullable: true })
+  @Column({ name: 'external_payment_id', type: 'varchar', length: 128, nullable: true })
   externalPaymentId?: string
 
-  @Column({ length: 32 })
+  @Column({ type: 'varchar', length: 32 })
   channel!: string
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount!: number
 
-  @Column({ length: 20, default: 'PENDING' })
+  @Column({ type: 'varchar', length: 20, default: 'PENDING' })
   status!: string
 
-  @Column({ name: 'qr_code_url', length: 1024, nullable: true })
+  @Column({ name: 'qr_code_url', type: 'varchar', length: 1024, nullable: true })
   qrCodeUrl?: string
 
-  @Column({ name: 'payment_url', length: 1024, nullable: true })
+  @Column({ name: 'payment_url', type: 'varchar', length: 1024, nullable: true })
   paymentUrl?: string
 
   @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
   expiresAt?: Date
 
-  @Column({ name: 'transaction_no', length: 128, nullable: true })
+  @Column({ name: 'transaction_no', type: 'varchar', length: 128, nullable: true })
   transactionNo?: string
 
-  @Column({ name: 'source_event_name', length: 64, nullable: true })
+  @Column({ name: 'source_event_name', type: 'varchar', length: 64, nullable: true })
   sourceEventName?: string
 
-  @Column({ name: 'failure_reason', length: 255, nullable: true })
+  @Column({ name: 'failure_reason', type: 'varchar', length: 255, nullable: true })
   failureReason?: string
 
   @CreateDateColumn({ name: 'created_at' })
@@ -344,19 +344,19 @@ export class CashierMemberEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'member_id', length: 64, unique: true })
+  @Column({ name: 'member_id', type: 'varchar', length: 64, unique: true })
   memberId!: string
 
-  @Column({ length: 20 })
+  @Column({ type: 'varchar', length: 20 })
   phone!: string
 
-  @Column({ length: 64 })
+  @Column({ type: 'varchar', length: 64 })
   name!: string
 
-  @Column({ name: 'member_no', length: 32, nullable: true })
+  @Column({ name: 'member_no', type: 'varchar', length: 32, nullable: true })
   memberNo?: string
 
-  @Column({ length: 20, default: 'Bronze' })
+  @Column({ type: 'varchar', length: 20, default: 'Bronze' })
   tier!: string
 
   @Column({ type: 'int', default: 0 })
@@ -383,25 +383,25 @@ export class CashierTransactionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'txn_id', length: 64, unique: true })
+  @Column({ name: 'txn_id', type: 'varchar', length: 64, unique: true })
   txnId!: string
 
-  @Column({ name: 'order_id', length: 128, nullable: true })
+  @Column({ name: 'order_id', type: 'varchar', length: 128, nullable: true })
   orderId?: string
 
-  @Column({ name: 'order_no', length: 64, nullable: true })
+  @Column({ name: 'order_no', type: 'varchar', length: 64, nullable: true })
   orderNo?: string
 
-  @Column({ name: 'member_id', length: 64 })
+  @Column({ name: 'member_id', type: 'varchar', length: 64 })
   memberId!: string
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount!: number
 
-  @Column({ length: 20 })
+  @Column({ type: 'varchar', length: 20 })
   type!: string
 
-  @Column({ length: 20 })
+  @Column({ type: 'varchar', length: 20 })
   status!: string
 
   @Column({ name: 'txn_date', type: 'timestamptz', nullable: true })
