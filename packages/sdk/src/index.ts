@@ -354,16 +354,16 @@ export function createRuntimeGovernancePanelBindings<TPreset>({
   buildSubmitRequest,
   buildReplayRequest,
   submitInit,
-  queryInit = { cache: 'no-store' },
+  queryInit = { cache: 'no-store' } as RequestInit,
   replayInit
 }: CreateRuntimeGovernancePanelBindingsOptions<TPreset>) {
   return {
     submitPreset: (preset: TPreset, nonce: string) =>
-      client.submitRuntimeGovernanceAction(buildSubmitRequest(preset, nonce), submitInit),
+      client.submitRuntimeGovernanceAction(buildSubmitRequest(preset, nonce), submitInit as RequestInit),
     queryReceipt: (receipt: RuntimeGovernanceReceipt) =>
-      client.getRuntimeGovernanceReceipt(receipt.receiptCode, queryInit),
+      client.getRuntimeGovernanceReceipt(receipt.receiptCode, queryInit as RequestInit),
     replayReceipt: (receipt: RuntimeGovernanceReceipt, nonce: string) =>
-      client.replayRuntimeGovernanceAction(receipt.receiptCode, buildReplayRequest(receipt, nonce), replayInit)
+      client.replayRuntimeGovernanceAction(receipt.receiptCode, buildReplayRequest(receipt, nonce), replayInit as RequestInit)
   };
 }
 
@@ -623,7 +623,8 @@ function normalizePath(path: string) {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-function buildHeaders(options: ApiClientOptions, headers?: HeadersInit) {
+type _HeadersInit = Record<string, string> | Array<[string, string]> | Headers
+function buildHeaders(options: ApiClientOptions, headers?: _HeadersInit) {
   return {
     ...(options.tenantId ? { 'x-tenant-id': options.tenantId } : {}),
     ...(options.brandId ? { 'x-brand-id': options.brandId } : {}),
@@ -777,7 +778,7 @@ const webFoundationAlertPanelMutationPresets: Record<
     ackNote: 'admin web auto triage',
     muteNote: 'admin web temporary mute',
     unmuteNote: 'admin web restore visibility',
-    muteInit: { cache: 'no-store' }
+    muteInit: { cache: 'no-store' as string } as RequestInit
   },
   'tob-web': {
     ackNote: 'tob web auto triage',
@@ -804,15 +805,15 @@ export function createWebFoundationAlertPanelClientAccess({
     ackNote: preset.ackNote,
     muteNote: preset.muteNote,
     unmuteNote: preset.unmuteNote,
-    drilldownInit: drilldownInit ?? { cache: 'no-store' },
-    muteInit: muteInit ?? preset.muteInit
+    drilldownInit: (drilldownInit ?? { cache: 'no-store' as string }) as RequestInit,
+    muteInit: (muteInit ?? preset.muteInit) as RequestInit
   });
 }
 
 export async function loadFoundationConsumerDescriptor(
   client: Pick<ApiClient, 'getFoundationConsumer'>,
   consumer: FoundationConsumerKey,
-  init: RequestInit = { cache: 'no-store' }
+  init: RequestInit = { cache: 'no-store' as string } as RequestInit
 ): Promise<FoundationConsumerDescriptor | null> {
   try {
     const descriptor = await client.getFoundationConsumer(consumer, init);
@@ -824,7 +825,7 @@ export async function loadFoundationConsumerDescriptor(
 
 export async function loadFoundationGovernanceReadModel(
   client: Pick<ApiClient, 'getFoundationAlertCatalog' | 'getFoundationOverview'>,
-  init: RequestInit = { cache: 'no-store' }
+  init: RequestInit = { cache: 'no-store' as string } as RequestInit
 ): Promise<FoundationGovernanceReadModel> {
   const fallbackGeneratedAt = new Date().toISOString();
   const [governanceCatalog, governanceOverview] = await Promise.all([
@@ -896,7 +897,7 @@ export class ApiClient {
   async request<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> {
     const response = await fetch(`${normalizeBaseUrl(this.options.baseUrl)}${normalizePath(path)}`, {
       ...init,
-      headers: buildHeaders(this.options, init.headers)
+      headers: buildHeaders(this.options, init.headers as _HeadersInit | undefined)
     });
 
     if (!response.ok) {
@@ -1490,7 +1491,7 @@ export class ApiClient {
     const response = await fetch(url, {
       ...init,
       method: 'POST',
-      headers: buildHeaders(this.options, init.headers),
+      headers: buildHeaders(this.options, init.headers as _HeadersInit | undefined),
       body: JSON.stringify(body)
     });
 

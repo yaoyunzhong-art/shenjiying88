@@ -1,4 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import {
+  ConflictException,
+  NotFoundException,
+  NotImplementedException,
+} from '@nestjs/common'
 /**
  * 🐜 自动: [finance-report.service] P-38 财务报表生成服务测试
  *
@@ -191,7 +196,7 @@ describe('[finance-report] 报表 CRUD', () => {
 
   it('should throw when getting non-existent report', () => {
     const svc = makeService()
-    expect(() => svc.getReport('rpt-non-existent', TENANT_A)).toThrow('not found')
+    expect(() => svc.getReport('rpt-non-existent', TENANT_A)).toThrow(NotFoundException)
   })
 
   it('should enforce tenant isolation on report retrieval', () => {
@@ -213,7 +218,7 @@ describe('[finance-report] 报表 CRUD', () => {
 
   it('should throw when deleting non-existent report', () => {
     const svc = makeService()
-    expect(() => svc.deleteReport('rpt-none', TENANT_A)).toThrow('not found')
+    expect(() => svc.deleteReport('rpt-none', TENANT_A)).toThrow(NotFoundException)
   })
 
   it('should throw when deleting another tenant report', () => {
@@ -391,6 +396,14 @@ describe('[finance-report] 报表导出', () => {
     expect(fetched.content).toBe(result.content)
   })
 
+  it('should enforce tenant isolation on export result retrieval', () => {
+    const svc = makeService()
+    const report = svc.createReport(TENANT_A, makeReportInput())
+    const result = svc.exportReport(report.id, TENANT_A, { format: ExportFormat.JSON })
+
+    expect(() => svc.getExportResult(result.id, TENANT_B)).toThrow('not found')
+  })
+
   it('CSV export result should have expiredAt (24h)', () => {
     const svc = makeService()
     const report = svc.createReport(TENANT_A, makeReportInput())
@@ -401,18 +414,36 @@ describe('[finance-report] 报表导出', () => {
     expect(diffHours).toBeCloseTo(24, 0)
   })
 
+  it('should reject unsupported export formats instead of returning empty content', () => {
+    const svc = makeService()
+    const report = svc.createReport(TENANT_A, makeReportInput())
+
+    expect(() => svc.exportReport(report.id, TENANT_A, { format: ExportFormat.EXCEL })).toThrow(NotImplementedException)
+    expect(() => svc.exportReport(report.id, TENANT_A, { format: ExportFormat.PDF })).toThrow(NotImplementedException)
+  })
+
+  it('should make export result unavailable after deleting the report', () => {
+    const svc = makeService()
+    const report = svc.createReport(TENANT_A, makeReportInput())
+    const result = svc.exportReport(report.id, TENANT_A, { format: ExportFormat.JSON })
+
+    expect(svc.deleteReport(report.id, TENANT_A)).toBe(true)
+    expect(() => svc.getExportResult(result.id, TENANT_A)).toThrow('not found')
+  })
+
   // ── 反例 ──
 
   it('should throw when exporting non-completed report', () => {
-    // We need a report that's still GENERATING or FAILED
-    // By default synchronous creation completes, but we can test edge cases
     const svc = makeService()
-    expect(() => svc.exportReport('rpt-none', TENANT_A, { format: ExportFormat.JSON })).toThrow('not found')
+    const report = svc.createReport(TENANT_A, makeReportInput())
+    ;(report as FinancialReport).status = 'GENERATING'
+
+    expect(() => svc.exportReport(report.id, TENANT_A, { format: ExportFormat.JSON })).toThrow(ConflictException)
   })
 
   it('should throw when getting non-existent export result', () => {
     const svc = makeService()
-    expect(() => svc.getExportResult('exp-none', TENANT_A)).toThrow('not found')
+    expect(() => svc.getExportResult('exp-none', TENANT_A)).toThrow(NotFoundException)
   })
 })
 
@@ -691,6 +722,45 @@ describe('[finance-report] resolved 主链', () => {
     expect(exported.reportId).toBe(created.id)
     expect(fetched.id).toBe(exported.id)
     expect(fetched.content).toBe(exported.content)
+  })
+
+  it('getExportResultResolved 在无 Prisma 时也应保持租户隔离', async () => {
+    const svc = makeService()
+    const resolvedSvc = svc as FinanceReportService & {
+      exportReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext,
+        input: ExportReportDto
+      ) => Promise<ExportResult>
+      getExportResultResolved: (
+        exportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ExportResult>
+    }
+    const created = svc.createReport(TENANT_A, makeReportInput())
+    const exported = await resolvedSvc.exportReportResolved(created.id, TENANT_A, { format: ExportFormat.JSON })
+
+    await expect(resolvedSvc.getExportResultResolved(exported.id, TENANT_B)).rejects.toThrow('not found')
+  })
+
+  it('exportReportResolved 在有 Prisma delegate 时也应拒绝未实现格式', async () => {
+    const create = vi.fn()
+    const svc = makePrismaBackedService({
+      financeReportExport: { create },
+    })
+    const resolvedSvc = svc as FinanceReportService & {
+      exportReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext,
+        input: ExportReportDto
+      ) => Promise<ExportResult>
+    }
+    const created = svc.createReport(TENANT_A, makeReportInput())
+
+    await expect(
+      resolvedSvc.exportReportResolved(created.id, TENANT_A, { format: ExportFormat.EXCEL })
+    ).rejects.toThrow(NotImplementedException)
+    expect(create).not.toHaveBeenCalled()
   })
 
   it('deleteReportResolved 在无 Prisma 时沿用当前删除链', async () => {

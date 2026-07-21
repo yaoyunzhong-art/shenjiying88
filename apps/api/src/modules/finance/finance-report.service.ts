@@ -14,7 +14,15 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { Injectable, Optional, Logger, Inject } from '@nestjs/common'
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  NotImplementedException,
+  Optional,
+} from '@nestjs/common'
 import type { PrismaService } from '../../prisma/prisma.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceEventEmitter } from './finance.sse'
@@ -39,10 +47,12 @@ import {
 
 const reportStore = new Map<string, FinancialReport>()
 const exportStore = new Map<string, ExportResult>()
+const exportTenantStore = new Map<string, string>()
 
 export function resetFinanceReportTestState(): void {
   reportStore.clear()
   exportStore.clear()
+  exportTenantStore.clear()
 }
 
 @Injectable()
@@ -178,6 +188,13 @@ export class FinanceReportService {
       generatedAt: new Date(record.generatedAt as string | number | Date).toISOString(),
       expiresAt: new Date(record.expiresAt as string | number | Date).toISOString()
     }
+  }
+
+  private ensureSupportedExportFormat(format: ExportFormat): void {
+    if (format === ExportFormat.JSON || format === ExportFormat.CSV) {
+      return
+    }
+    throw new NotImplementedException(`Export format ${format} is not implemented yet`)
   }
 
   private async persistReport(report: FinancialReport): Promise<FinancialReport> {
@@ -355,7 +372,7 @@ export class FinanceReportService {
   ): FinancialReport {
     const report = reportStore.get(reportId)
     if (!report || report.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Report ${reportId} not found`)
+      throw new NotFoundException(`Report ${reportId} not found`)
     }
     return report
   }
@@ -373,7 +390,7 @@ export class FinanceReportService {
       where: { id: reportId }
     })
     if (!record || String(record.tenantId) !== tenantContext.tenantId) {
-      throw new Error(`Report ${reportId} not found`)
+      throw new NotFoundException(`Report ${reportId} not found`)
     }
     const persistedReport = this.toReportEntity(record)
     reportStore.set(persistedReport.id, persistedReport)
@@ -469,12 +486,13 @@ export class FinanceReportService {
   ): boolean {
     const report = reportStore.get(reportId)
     if (!report || report.tenantId !== tenantContext.tenantId) {
-      throw new Error(`Report ${reportId} not found or access denied`)
+      throw new NotFoundException(`Report ${reportId} not found or access denied`)
     }
     reportStore.delete(reportId)
     const exportIds = Array.from(exportStore.keys()).filter((k) => exportStore.get(k)?.reportId === reportId)
     for (const eid of exportIds) {
       exportStore.delete(eid)
+      exportTenantStore.delete(eid)
     }
     return true
   }
@@ -506,6 +524,7 @@ export class FinanceReportService {
     for (const [exportId, exportResult] of exportStore.entries()) {
       if (exportResult.reportId === reportId) {
         exportStore.delete(exportId)
+        exportTenantStore.delete(exportId)
       }
     }
     return true
@@ -588,7 +607,7 @@ export class FinanceReportService {
       case 'RECONCILIATION':
         return this.generateReconciliationReport(report, tenantContext, now)
       default:
-        throw new Error(`Unsupported report type: ${report.reportType}`)
+        throw new NotImplementedException(`Unsupported report type: ${report.reportType}`)
     }
   }
 
@@ -627,7 +646,7 @@ export class FinanceReportService {
         return this.generateReconciliationReportWithSummary(report, tenantContext, now, summary)
       }
       default:
-        throw new Error(`Unsupported report type: ${report.reportType}`)
+        throw new NotImplementedException(`Unsupported report type: ${report.reportType}`)
     }
   }
 
@@ -1134,8 +1153,10 @@ export class FinanceReportService {
     const report = this.getReport(reportId, tenantContext)
 
     if (report.status !== 'COMPLETED') {
-      throw new Error(`Report ${reportId} is not completed (status: ${report.status})`)
+      throw new ConflictException(`Report ${reportId} is not completed (status: ${report.status})`)
     }
+
+    this.ensureSupportedExportFormat(input.format)
 
     const now = new Date().toISOString()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
@@ -1157,6 +1178,7 @@ export class FinanceReportService {
     }
 
     exportStore.set(result.id, result)
+    exportTenantStore.set(result.id, tenantContext.tenantId)
     return result
   }
 
@@ -1172,8 +1194,10 @@ export class FinanceReportService {
 
     const report = await this.getReportResolved(reportId, tenantContext)
     if (report.status !== 'COMPLETED') {
-      throw new Error(`Report ${reportId} is not completed (status: ${report.status})`)
+      throw new ConflictException(`Report ${reportId} is not completed (status: ${report.status})`)
     }
+
+    this.ensureSupportedExportFormat(input.format)
 
     const now = new Date().toISOString()
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
@@ -1201,6 +1225,7 @@ export class FinanceReportService {
     })
     const result = this.toExportEntity(record)
     exportStore.set(result.id, result)
+    exportTenantStore.set(result.id, tenantContext.tenantId)
     return result
   }
 
@@ -1212,8 +1237,9 @@ export class FinanceReportService {
     tenantContext: RequestTenantContext
   ): ExportResult {
     const result = exportStore.get(exportId)
-    if (!result) {
-      throw new Error(`Export result ${exportId} not found`)
+    const tenantId = exportTenantStore.get(exportId)
+    if (!result || tenantId !== tenantContext.tenantId) {
+      throw new NotFoundException(`Export result ${exportId} not found`)
     }
     return result
   }
@@ -1231,10 +1257,11 @@ export class FinanceReportService {
       where: { id: exportId }
     })
     if (!record || String(record.tenantId) !== tenantContext.tenantId) {
-      throw new Error(`Export result ${exportId} not found`)
+      throw new NotFoundException(`Export result ${exportId} not found`)
     }
     const result = this.toExportEntity(record)
     exportStore.set(result.id, result)
+    exportTenantStore.set(result.id, tenantContext.tenantId)
     return result
   }
 

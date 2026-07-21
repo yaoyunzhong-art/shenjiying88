@@ -8,14 +8,19 @@
  */
 
 import {
+  BadRequestException,
+  ConflictException,
   Controller,
   Get,
   Post,
   Delete,
   Body,
+  HttpException,
   Param,
   Query,
   Logger,
+  NotFoundException,
+  NotImplementedException,
   UseGuards,
 } from '@nestjs/common'
 
@@ -72,19 +77,55 @@ export class FinanceReportController {
     }
   }
 
+  private mapDomainError(error: unknown): never {
+    if (error instanceof HttpException) {
+      throw error
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+
+    if (message.includes('not found') || message.includes('access denied')) {
+      throw new NotFoundException(message)
+    }
+
+    if (message.includes('not completed')) {
+      throw new ConflictException(message)
+    }
+
+    if (message.includes('not implemented')) {
+      throw new NotImplementedException(message)
+    }
+
+    if (message.includes('invalid') || message.includes('required')) {
+      throw new BadRequestException(message)
+    }
+
+    throw error
+  }
+
+  private async runWithHttpErrorMapping<T>(operation: () => T | Promise<T>): Promise<T> {
+    try {
+      return await operation()
+    } catch (error) {
+      this.mapDomainError(error)
+    }
+  }
+
   /**
    * POST /api/finance/reports
    * 创建报表
    */
   @Post()
-  createReport(
+  async createReport(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateReportDto
   ) {
-    if (this.resolvedReportService.createReportResolved) {
-      return this.resolvedReportService.createReportResolved(tenantContext, body)
-    }
-    return this.reportService.createReport(tenantContext, body)
+    return this.runWithHttpErrorMapping(() => {
+      if (this.resolvedReportService.createReportResolved) {
+        return this.resolvedReportService.createReportResolved(tenantContext, body)
+      }
+      return this.reportService.createReport(tenantContext, body)
+    })
   }
 
   /**
@@ -92,14 +133,16 @@ export class FinanceReportController {
    * 查询报表列表
    */
   @Get()
-  listReports(
+  async listReports(
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: ReportQueryDto = {} as ReportQueryDto
   ) {
-    if (this.resolvedReportService.listReportsResolved) {
-      return this.resolvedReportService.listReportsResolved(tenantContext, query)
-    }
-    return this.reportService.listReports(tenantContext, query)
+    return this.runWithHttpErrorMapping(() => {
+      if (this.resolvedReportService.listReportsResolved) {
+        return this.resolvedReportService.listReportsResolved(tenantContext, query)
+      }
+      return this.reportService.listReports(tenantContext, query)
+    })
   }
 
   /**
@@ -107,14 +150,16 @@ export class FinanceReportController {
    * 获取报表详情
    */
   @Get(':reportId')
-  getReport(
+  async getReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
-    if (this.resolvedReportService.getReportResolved) {
-      return this.resolvedReportService.getReportResolved(reportId, tenantContext)
-    }
-    return this.reportService.getReport(reportId, tenantContext)
+    return this.runWithHttpErrorMapping(() => {
+      if (this.resolvedReportService.getReportResolved) {
+        return this.resolvedReportService.getReportResolved(reportId, tenantContext)
+      }
+      return this.reportService.getReport(reportId, tenantContext)
+    })
   }
 
   /**
@@ -122,14 +167,16 @@ export class FinanceReportController {
    * 重新生成报表
    */
   @Post(':reportId/regenerate')
-  regenerateReport(
+  async regenerateReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
-    if (this.resolvedReportService.regenerateReportResolved) {
-      return this.resolvedReportService.regenerateReportResolved(reportId, tenantContext)
-    }
-    return this.reportService.regenerateReport(reportId, tenantContext)
+    return this.runWithHttpErrorMapping(() => {
+      if (this.resolvedReportService.regenerateReportResolved) {
+        return this.resolvedReportService.regenerateReportResolved(reportId, tenantContext)
+      }
+      return this.reportService.regenerateReport(reportId, tenantContext)
+    })
   }
 
   /**
@@ -137,15 +184,17 @@ export class FinanceReportController {
    * 导出现有报表
    */
   @Post(':reportId/export')
-  exportReport(
+  async exportReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: ExportReportDto
   ) {
-    if (this.resolvedReportService.exportReportResolved) {
-      return this.resolvedReportService.exportReportResolved(reportId, tenantContext, body)
-    }
-    return this.reportService.exportReport(reportId, tenantContext, body)
+    return this.runWithHttpErrorMapping(() => {
+      if (this.resolvedReportService.exportReportResolved) {
+        return this.resolvedReportService.exportReportResolved(reportId, tenantContext, body)
+      }
+      return this.reportService.exportReport(reportId, tenantContext, body)
+    })
   }
 
   /**
@@ -153,14 +202,16 @@ export class FinanceReportController {
    * 获取导出结果
    */
   @Get('exports/:exportId')
-  getExportResult(
+  async getExportResult(
     @Param('exportId') exportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
-    if (this.resolvedReportService.getExportResultResolved) {
-      return this.resolvedReportService.getExportResultResolved(exportId, tenantContext)
-    }
-    return this.reportService.getExportResult(exportId, tenantContext)
+    return this.runWithHttpErrorMapping(() => {
+      if (this.resolvedReportService.getExportResultResolved) {
+        return this.resolvedReportService.getExportResultResolved(exportId, tenantContext)
+      }
+      return this.reportService.getExportResult(exportId, tenantContext)
+    })
   }
 
   /**
@@ -168,17 +219,20 @@ export class FinanceReportController {
    * 删除报表及关联导出
    */
   @Delete(':reportId')
-  deleteReport(
+  async deleteReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
-    if (this.resolvedReportService.deleteReportResolved) {
-      return this.resolvedReportService.deleteReportResolved(reportId, tenantContext).then(() => ({
-        success: true,
-        message: `Report ${reportId} deleted`
-      }))
-    }
-    this.reportService.deleteReport(reportId, tenantContext)
-    return { success: true, message: `Report ${reportId} deleted` }
+    return this.runWithHttpErrorMapping(async () => {
+      if (this.resolvedReportService.deleteReportResolved) {
+        await this.resolvedReportService.deleteReportResolved(reportId, tenantContext)
+        return {
+          success: true,
+          message: `Report ${reportId} deleted`
+        }
+      }
+      this.reportService.deleteReport(reportId, tenantContext)
+      return { success: true, message: `Report ${reportId} deleted` }
+    })
   }
 }

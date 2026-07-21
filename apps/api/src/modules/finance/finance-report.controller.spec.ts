@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import 'reflect-metadata'
 import { Test, type TestingModule } from '@nestjs/testing'
+import { ConflictException, NotFoundException, NotImplementedException } from '@nestjs/common'
 import { FinanceReportController } from './finance-report.controller'
 import { FinanceReportService } from './finance-report.service'
 import { FinanceService } from './finance.service'
@@ -135,7 +136,7 @@ describe('FinanceReportController', () => {
   // 正例 (happy path)
   // ═══════════════════════════════════════════════════════════════
 
-  it('FLOW-1: createReport → 成功创建报表并返回完整对象', () => {
+  it('FLOW-1: createReport → 成功创建报表并返回完整对象', async () => {
     const body = {
       title: '利润表 2026-07',
       reportType: ReportType.PROFIT_LOSS,
@@ -144,26 +145,26 @@ describe('FinanceReportController', () => {
       storeId: 's-001',
       exportFormats: [ExportFormat.JSON, ExportFormat.CSV],
     }
-    const result = ctrl.createReport(defaultCtx, body)
+    const result = await ctrl.createReport(defaultCtx, body)
     expect(result).toEqual(mockCompletedReport)
     expect(mockSvc.createReport).toHaveBeenCalledOnce()
     expect(mockSvc.createReport).toHaveBeenCalledWith(defaultCtx, body)
   })
 
-  it('FLOW-2: createReport → 最小必需参数（无 storeId/exportFormats）', () => {
+  it('FLOW-2: createReport → 最小必需参数（无 storeId/exportFormats）', async () => {
     const body = {
       title: '简易报表',
       reportType: ReportType.PROFIT_LOSS,
       periodStart: '2026-07-01',
       periodEnd: '2026-07-31',
     }
-    const result = ctrl.createReport(defaultCtx, body)
+    const result = await ctrl.createReport(defaultCtx, body)
     expect(result).toEqual(mockCompletedReport)
     expect(mockSvc.createReport).toHaveBeenCalledWith(defaultCtx, body)
   })
 
-  it('FLOW-3: getReport → 返回指定报表详情', () => {
-    const result = ctrl.getReport('rpt-001', defaultCtx)
+  it('FLOW-3: getReport → 返回指定报表详情', async () => {
+    const result = await ctrl.getReport('rpt-001', defaultCtx)
     expect(result).toEqual(mockCompletedReport)
     expect(mockSvc.getReport).toHaveBeenCalledWith('rpt-001', defaultCtx)
   })
@@ -367,7 +368,7 @@ describe('FinanceReportController', () => {
     expect(mockSvc.deleteReport).not.toHaveBeenCalled()
   })
 
-  it('FLOW-13: createReport → 批量创建不同报表类型', () => {
+  it('FLOW-13: createReport → 批量创建不同报表类型', async () => {
     const types = Object.values(ReportType)
     for (const reportType of types) {
       const body = {
@@ -376,7 +377,7 @@ describe('FinanceReportController', () => {
         periodStart: '2026-07-01',
         periodEnd: '2026-07-31',
       }
-      ctrl.createReport(defaultCtx, body)
+      await ctrl.createReport(defaultCtx, body)
     }
     expect(mockSvc.createReport).toHaveBeenCalledTimes(types.length)
   })
@@ -387,46 +388,59 @@ describe('FinanceReportController', () => {
 
   it('DEF-1: getReport → 不存在的报表抛出 404', async () => {
     mockSvc.getReport.mockImplementation(() => { throw new Error('Report not_found not found') })
-    await expect(Promise.resolve().then(() => ctrl.getReport('not_found', defaultCtx))).rejects.toThrow('Report not_found not found')
+    await expect(Promise.resolve().then(() => ctrl.getReport('not_found', defaultCtx))).rejects.toBeInstanceOf(NotFoundException)
     expect(mockSvc.getReport).toHaveBeenCalledWith('not_found', defaultCtx)
+  })
+
+  it('DEF-1B: getReport → service 已抛 HttpException 时应原样透传', async () => {
+    mockSvc.getReport.mockImplementation(() => { throw new NotFoundException('Report rpt-001 not found') })
+    await expect(Promise.resolve().then(() => ctrl.getReport('rpt-001', defaultCtx))).rejects.toBeInstanceOf(NotFoundException)
+    expect(mockSvc.getReport).toHaveBeenCalledWith('rpt-001', defaultCtx)
   })
 
   it('DEF-2: deleteReport → 不存在的报表抛出 404', async () => {
     mockSvc.deleteReport.mockImplementation(() => { throw new Error('Report not_found not found or access denied') })
-    await expect(Promise.resolve().then(() => ctrl.deleteReport('not_found', defaultCtx))).rejects.toThrow('Report not_found not found')
+    await expect(Promise.resolve().then(() => ctrl.deleteReport('not_found', defaultCtx))).rejects.toBeInstanceOf(NotFoundException)
     expect(mockSvc.deleteReport).toHaveBeenCalledWith('not_found', defaultCtx)
   })
 
   it('DEF-3: exportReport → 未完成的报表无法导出', async () => {
     mockSvc.exportReport.mockImplementation(() => { throw new Error('Report rpt-002 is not completed (status: GENERATING)') })
     const body = { format: ExportFormat.JSON }
-    await expect(Promise.resolve().then(() => ctrl.exportReport('rpt-002', defaultCtx, body))).rejects.toThrow('not completed')
+    await expect(Promise.resolve().then(() => ctrl.exportReport('rpt-002', defaultCtx, body))).rejects.toBeInstanceOf(ConflictException)
     expect(mockSvc.exportReport).toHaveBeenCalledWith('rpt-002', defaultCtx, body)
+  })
+
+  it('DEF-3B: exportReport → 未实现格式应直接向上抛错', async () => {
+    mockSvc.exportReport.mockImplementation(() => { throw new Error('Export format EXCEL is not implemented yet') })
+    const body = { format: ExportFormat.EXCEL }
+    await expect(Promise.resolve().then(() => ctrl.exportReport('rpt-001', defaultCtx, body))).rejects.toBeInstanceOf(NotImplementedException)
+    expect(mockSvc.exportReport).toHaveBeenCalledWith('rpt-001', defaultCtx, body)
   })
 
   it('DEF-4: getExportResult → 不存在的导出请求', async () => {
     mockSvc.getExportResult.mockImplementation(() => { throw new Error('Export result invalid_exp not found') })
-    await expect(Promise.resolve().then(() => ctrl.getExportResult('invalid_exp', defaultCtx))).rejects.toThrow('not found')
+    await expect(Promise.resolve().then(() => ctrl.getExportResult('invalid_exp', defaultCtx))).rejects.toBeInstanceOf(NotFoundException)
     expect(mockSvc.getExportResult).toHaveBeenCalledWith('invalid_exp', defaultCtx)
   })
 
   it('DEF-5: getReport → 不同租户无权访问', async () => {
     const otherCtx: RequestTenantContext = { tenantId: 't-other' }
     mockSvc.getReport.mockImplementation(() => { throw new Error('Report rpt-001 not found') })
-    await expect(Promise.resolve().then(() => ctrl.getReport('rpt-001', otherCtx))).rejects.toThrow('not found')
+    await expect(Promise.resolve().then(() => ctrl.getReport('rpt-001', otherCtx))).rejects.toBeInstanceOf(NotFoundException)
     expect(mockSvc.getReport).toHaveBeenCalledWith('rpt-001', otherCtx)
   })
 
   it('DEF-6: regenerateReport → 不存在的报表', async () => {
     mockSvc.regenerateReport.mockImplementation(() => { throw new Error('Report ghost not found') })
-    await expect(Promise.resolve().then(() => ctrl.regenerateReport('ghost', defaultCtx))).rejects.toThrow('not found')
+    await expect(Promise.resolve().then(() => ctrl.regenerateReport('ghost', defaultCtx))).rejects.toBeInstanceOf(NotFoundException)
     expect(mockSvc.regenerateReport).toHaveBeenCalledWith('ghost', defaultCtx)
   })
 
   it('DEF-7: deleteReport → 不同租户无权限删除', async () => {
     const otherCtx: RequestTenantContext = { tenantId: 't-other' }
     mockSvc.deleteReport.mockImplementation(() => { throw new Error('Report rpt-001 not found or access denied') })
-    await expect(Promise.resolve().then(() => ctrl.deleteReport('rpt-001', otherCtx))).rejects.toThrow('access denied')
+    await expect(Promise.resolve().then(() => ctrl.deleteReport('rpt-001', otherCtx))).rejects.toBeInstanceOf(NotFoundException)
     expect(mockSvc.deleteReport).toHaveBeenCalledWith('rpt-001', otherCtx)
   })
 

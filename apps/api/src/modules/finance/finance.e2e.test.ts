@@ -433,6 +433,11 @@ class TestFinanceController {
     return this.financeReportController.getReport(id, getTenantContext(req))
   }
 
+  @Delete('reports/:id')
+  deleteReport(@Req() req: Request, @Param('id') id: string) {
+    return this.financeReportController.deleteReport(id, getTenantContext(req))
+  }
+
   @Post('reports/:id/regenerate')
   regenerateReport(@Req() req: Request, @Param('id') id: string) {
     return this.financeReportController.regenerateReport(id, getTenantContext(req))
@@ -505,11 +510,26 @@ const TENANT_B = {
   'x-market-code': 'us-default',
 };
 
-async function buildApp() {
+type BuildAppOptions = {
+  reportPrisma?: {
+    financeReport?: Record<string, unknown>
+    financeReportExport?: Record<string, unknown>
+  }
+}
+
+async function buildApp(options: BuildAppOptions = {}) {
   resetFinanceServiceTestState();
   resetFinanceReportTestState();
   const financeService = new FinanceService();
-  const financeReportService = new FinanceReportService(financeService);
+  const prisma = options.reportPrisma
+    ? {
+        financeReport: options.reportPrisma.financeReport ?? {},
+        financeReportExport: options.reportPrisma.financeReportExport ?? {},
+      }
+    : undefined;
+  const financeReportService = prisma
+    ? new FinanceReportService(financeService, undefined, prisma as unknown as never)
+    : new FinanceReportService(financeService);
 
   const moduleRef = await Test.createTestingModule({
     controllers: [TestFinanceController],
@@ -2443,6 +2463,300 @@ it('e2e: reports — 导出与获取导出结果应走真实 report controller �
   }
 });
 
+it('e2e: reports — 导出结果详情应保持跨租户隔离', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 3400,
+        description: 'export-isolation',
+        recordedAt: '2026-07-18T10:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'tenant-a-export',
+        reportType: FinanceReportType.PROFIT_LOSS,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+
+    const exportRes = await request(app.getHttpServer())
+      .post(`/finance/reports/${createRes.body.data.id}/export`)
+      .set(TENANT_A)
+      .send({ format: 'JSON' });
+    const exportId = exportRes.body.data.id;
+
+    const forbiddenRes = await request(app.getHttpServer())
+      .get(`/finance/reports/exports/${exportId}`)
+      .set(TENANT_B);
+
+    expect(forbiddenRes.status).toBe(404);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 未实现导出格式不应假成功', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 3600,
+        description: 'unsupported-export-format',
+        recordedAt: '2026-07-18T10:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'unsupported-export',
+        reportType: FinanceReportType.PROFIT_LOSS,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+
+    const exportRes = await request(app.getHttpServer())
+      .post(`/finance/reports/${createRes.body.data.id}/export`)
+      .set(TENANT_A)
+      .send({ format: 'EXCEL' });
+
+    expect(exportRes.status).toBe(501);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — 删除报表后导出结果详情应失效', async () => {
+  const { app } = await buildApp();
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 3800,
+        description: 'delete-report-export-cleanup',
+        recordedAt: '2026-07-18T10:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'delete-export-cleanup',
+        reportType: FinanceReportType.PROFIT_LOSS,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+
+    const exportRes = await request(app.getHttpServer())
+      .post(`/finance/reports/${createRes.body.data.id}/export`)
+      .set(TENANT_A)
+      .send({ format: 'JSON' });
+    const exportId = exportRes.body.data.id;
+
+    const deleteRes = await request(app.getHttpServer())
+      .delete(`/finance/reports/${createRes.body.data.id}`)
+      .set(TENANT_A);
+    expect(deleteRes.status).toBe(200);
+
+    const exportDetailRes = await request(app.getHttpServer())
+      .get(`/finance/reports/exports/${exportId}`)
+      .set(TENANT_A);
+    expect(exportDetailRes.status).toBe(404);
+  } finally {
+    await app.close();
+  }
+});
+
+it('e2e: reports — delegate-backed 持久化链应驱动 create/list/get/export/delete', async () => {
+  const reportRecords = new Map<string, Record<string, unknown>>();
+  const exportRecords = new Map<string, Record<string, unknown>>();
+
+  const createReportRecord = vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+    const record = {
+      ...data,
+      exportFormats: Array.isArray(data.exportFormats) ? data.exportFormats : ['JSON'],
+      createdAt: data.createdAt ?? new Date('2026-07-21T00:00:00.000Z'),
+      updatedAt: new Date('2026-07-21T00:00:00.000Z'),
+    };
+    reportRecords.set(String((record as Record<string, unknown>).id), record);
+    return record;
+  });
+  const updateReportRecord = vi.fn(async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+    const current = reportRecords.get(where.id);
+    if (!current) {
+      throw new Error(`Report ${where.id} not found`);
+    }
+    const record = {
+      ...current,
+      ...data,
+      id: current.id,
+      tenantId: current.tenantId,
+      createdAt: current.createdAt,
+      updatedAt: new Date('2026-07-21T00:05:00.000Z'),
+    };
+    reportRecords.set(where.id, record);
+    return record;
+  });
+  const findManyReports = vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
+    Array.from(reportRecords.values()).filter((record) => {
+      if (where.tenantId && record.tenantId !== where.tenantId) {
+        return false;
+      }
+      if (where.reportType && record.reportType !== where.reportType) {
+        return false;
+      }
+      if (where.storeId && record.storeId !== where.storeId) {
+        return false;
+      }
+      if (where.status && record.status !== where.status) {
+        return false;
+      }
+      return true;
+    })
+  );
+  const findUniqueReport = vi.fn(async ({ where }: { where: { id: string } }) => reportRecords.get(where.id) ?? null);
+  const deleteReportRecord = vi.fn(async ({ where }: { where: { id: string } }) => {
+    const current = reportRecords.get(where.id);
+    if (!current) {
+      throw new Error(`Report ${where.id} not found`);
+    }
+    reportRecords.delete(where.id);
+    return current;
+  });
+
+  const createExportRecord = vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+    const record = {
+      ...data,
+      generatedAt: data.generatedAt ?? new Date('2026-07-21T00:10:00.000Z'),
+      createdAt: new Date('2026-07-21T00:10:00.000Z'),
+    };
+    exportRecords.set(String((record as Record<string, unknown>).id), record);
+    return record;
+  });
+  const findUniqueExport = vi.fn(async ({ where }: { where: { id: string } }) => exportRecords.get(where.id) ?? null);
+  const deleteManyExports = vi.fn(async ({ where }: { where: { reportId: string; tenantId: string } }) => {
+    let count = 0;
+    for (const [exportId, record] of exportRecords.entries()) {
+      if (record.reportId === where.reportId && record.tenantId === where.tenantId) {
+        exportRecords.delete(exportId);
+        count += 1;
+      }
+    }
+    return { count };
+  });
+
+  const { app } = await buildApp({
+    reportPrisma: {
+      financeReport: {
+        create: createReportRecord,
+        update: updateReportRecord,
+        findMany: findManyReports,
+        findUnique: findUniqueReport,
+        delete: deleteReportRecord,
+      },
+      financeReportExport: {
+        create: createExportRecord,
+        findUnique: findUniqueExport,
+        deleteMany: deleteManyExports,
+      },
+    },
+  });
+
+  try {
+    await request(app.getHttpServer())
+      .post('/finance/ledgers')
+      .set(TENANT_A)
+      .send({
+        type: LedgerType.Revenue,
+        amount: 7200,
+        description: 'delegate-backed-report',
+        recordedAt: '2026-07-18T10:00:00.000Z',
+      });
+
+    const createRes = await request(app.getHttpServer())
+      .post('/finance/reports')
+      .set(TENANT_A)
+      .send({
+        title: 'delegate-mainline',
+        reportType: FinanceReportType.PROFIT_LOSS,
+        periodStart: '2026-07-01T00:00:00.000Z',
+        periodEnd: '2026-07-31T23:59:59.999Z',
+        storeId: 'store-001',
+      });
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.data.status).toBe('COMPLETED');
+    const reportId = createRes.body.data.id as string;
+
+    const listRes = await request(app.getHttpServer())
+      .get('/finance/reports')
+      .set(TENANT_A)
+      .query({ reportType: FinanceReportType.PROFIT_LOSS });
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.data).toHaveLength(1);
+    expect(listRes.body.data[0].id).toBe(reportId);
+
+    const detailRes = await request(app.getHttpServer())
+      .get(`/finance/reports/${reportId}`)
+      .set(TENANT_A);
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.data.id).toBe(reportId);
+
+    const exportRes = await request(app.getHttpServer())
+      .post(`/finance/reports/${reportId}/export`)
+      .set(TENANT_A)
+      .send({ format: 'JSON' });
+    expect(exportRes.status).toBe(201);
+    const exportId = exportRes.body.data.id as string;
+
+    const exportDetailRes = await request(app.getHttpServer())
+      .get(`/finance/reports/exports/${exportId}`)
+      .set(TENANT_A);
+    expect(exportDetailRes.status).toBe(200);
+    expect(exportDetailRes.body.data.id).toBe(exportId);
+
+    const deleteRes = await request(app.getHttpServer())
+      .delete(`/finance/reports/${reportId}`)
+      .set(TENANT_A);
+    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body.data).toEqual({
+      success: true,
+      message: `Report ${reportId} deleted`,
+    });
+
+    const listAfterDelete = await request(app.getHttpServer())
+      .get('/finance/reports')
+      .set(TENANT_A);
+    expect(listAfterDelete.status).toBe(200);
+    expect(listAfterDelete.body.data).toHaveLength(0);
+
+    expect(createReportRecord).toHaveBeenCalledOnce();
+    expect(updateReportRecord).toHaveBeenCalled();
+    expect(findManyReports).toHaveBeenCalled();
+    expect(findUniqueReport).toHaveBeenCalled();
+    expect(createExportRecord).toHaveBeenCalledOnce();
+    expect(findUniqueExport).toHaveBeenCalledOnce();
+    expect(deleteManyExports).toHaveBeenCalledOnce();
+    expect(deleteReportRecord).toHaveBeenCalledOnce();
+  } finally {
+    await app.close();
+  }
+});
+
 it('e2e: reports — 跨租户隔离', async () => {
   const { app } = await buildApp();
   try {
@@ -2560,7 +2874,7 @@ it('e2e: reports — 不存在的reportId应返回500', async () => {
     const res = await request(app.getHttpServer())
       .get('/finance/reports/nonexistent-report')
       .set(TENANT_A);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(404);
   } finally {
     await app.close();
   }
