@@ -146,7 +146,7 @@ function makeSessions(count: number): MessageSession[] {
 }
 
 // ======================================================================
-// Tests (≥15)
+// Tests (≥25)
 // ======================================================================
 
 // ---- 1-2: 常量覆盖 ----
@@ -356,4 +356,62 @@ test('messages: 会话内 me/other 交替分布', () => {
     const expectedSender = i % 2 === 0 ? 'other' : 'me';
     assert.equal(s.messages[i].sender, expectedSender, `消息 ${i} sender 应为 ${expectedSender}`);
   }
+});
+
+// ---- 23: makeSession 默认包含高优先级会话 ----
+
+test('messages: makeSession 默认优先级为 medium', () => {
+  const s = makeSession();
+  assert.equal(s.priority, 'medium');
+});
+
+test('messages: makeSession 支持覆写 priority', () => {
+  const s = makeSession({ priority: 'high' });
+  assert.equal(s.priority, 'high');
+});
+
+test('messages: makeSession 支持覆写 contactAvatar', () => {
+  const s = makeSession({ contactAvatar: 'https://example.com/avatar.png' });
+  assert.equal(s.contactAvatar, 'https://example.com/avatar.png');
+});
+
+test('messages: filterSessions 组合类型 + 搜索', () => {
+  const sessions = makeSessions(12);
+  // chat 类型有 3 条, 搜索'张伟'只有 1 条
+  const result = filterSessions(sessions, 'chat', '张伟');
+  // 会话 1 是 chat+张伟，所以应返回 1
+  assert.ok(result.length >= 1);
+  result.forEach(s => {
+    assert.equal(s.type, 'chat');
+  });
+});
+
+test('messages: filterSessions 搜索不区分大小写', () => {
+  const sessions = makeSessions(6);
+  const result = filterSessions(sessions, 'all', 'vip');
+  assert.equal(result.length, 1);
+  assert.equal(result[0]!.contactName, '张伟（VIP会员）');
+});
+
+test('messages: formatRelativeTime 返回 7 天前的短日期格式', () => {
+  const weekAgo = new Date(Date.now() - 10 * 86400000);
+  const result = formatRelativeTime(weekAgo.toISOString());
+  // 10 天前 -> '07/11' 格式
+  assert.match(result, /^\d{2}\/\d{2}$/);
+});
+
+test('messages: 所有 makeSessions 生成的 contactName 在列表中', () => {
+  const contactNames = [
+    '张伟（VIP会员）', '李娜（普通会员）', '王强（供应商）',
+    '刘洋（门店经理）', '陈静（客服专员）', '赵明（配送员）',
+  ];
+  const sessions = makeSessions(18);
+  sessions.forEach(s => {
+    assert.ok(contactNames.includes(s.contactName), `联系名 ${s.contactName} 不在列表中`);
+  });
+});
+
+test('messages: sortSessions 空数组不抛异常', () => {
+  const result = sortSessions([]);
+  assert.equal(result.length, 0);
 });
