@@ -19,12 +19,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
     const message = exception instanceof Error ? exception.message : 'Internal server error'
 
-    this.requestGovernanceService.recordRequestFailure(
-      request,
-      status,
-      message,
-      exception instanceof Error ? exception.name : 'UnhandledException'
-    )
+    if (this.requestGovernanceService?.recordRequestFailure) {
+      this.requestGovernanceService.recordRequestFailure(
+        request,
+        status,
+        message,
+        exception instanceof Error ? exception.name : 'UnhandledException'
+      )
+    }
 
     response.status(status).json({
       success: false,

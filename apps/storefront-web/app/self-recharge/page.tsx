@@ -6,21 +6,27 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import {
-  PageShell,
   Button,
   Card,
   Tag,
   InputNumber,
 } from '@m5/ui';
+import {
+  buildStorefrontMemberId,
+  ensureStorefrontMemberRegistered,
+  startStorefrontCheckout,
+  type CheckoutPaymentMethod,
+} from '../../lib/storefront-transactions';
 
 // ============================================================
 // 类型
 // ============================================================
 
 type PaymentMethod = 'wechat' | 'alipay' | 'cash' | 'card';
-type RechargeStep = 'select' | 'payment' | 'success';
+type RechargeStep = 'select' | 'payment';
 
 interface AmountOption {
   label: string;
@@ -60,6 +66,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
 // ============================================================
 
 export default function SelfRechargePage() {
+  const router = useRouter();
   const [step, setStep] = useState<RechargeStep>('select');
   const [selectedAmount, setSelectedAmount] = useState<number>(0);
   const [customAmount, setCustomAmount] = useState<number>(0);
@@ -91,30 +98,56 @@ export default function SelfRechargePage() {
     setError(null);
   };
 
-  // 选择支付方式 → 模拟支付
-  const handlePay = (method: PaymentMethod) => {
+  function mapPaymentMethod(method: PaymentMethod): CheckoutPaymentMethod {
+    switch (method) {
+      case 'wechat':
+        return 'wechat';
+      case 'alipay':
+        return 'alipay';
+      case 'cash':
+        return 'cash';
+      case 'card':
+      default:
+        return 'member_card';
+    }
+  }
+
+  // 选择支付方式 → 创建真实订单并跳 H5 支付页
+  const handlePay = async (method: PaymentMethod) => {
     if (totalAmount <= 0) {
       setError('请选择充值金额');
       return;
     }
+
     setPaymentMethod(method);
     setProcessing(true);
     setError(null);
 
-    // 模拟支付过程
-    setTimeout(() => {
-      setProcessing(false);
-      setStep('success');
-    }, 2000);
-  };
+    try {
+      const memberId = buildStorefrontMemberId('');
+      const checkoutMethod = mapPaymentMethod(method);
 
-  // 重新充值
-  const handleRecharge = () => {
-    setStep('select');
-    setSelectedAmount(0);
-    setCustomAmount(0);
-    setPaymentMethod(null);
-    setError(null);
+      await ensureStorefrontMemberRegistered(memberId, '自助充值顾客');
+      const aggregate = await startStorefrontCheckout(
+        memberId,
+        [
+          {
+            skuId: `recharge-${totalAmount}`,
+            title: `自助充值 ¥${totalAmount}`,
+            quantity: 1,
+            price: totalAmount,
+          },
+        ],
+        checkoutMethod,
+        totalAmount,
+      );
+
+      setProcessing(false);
+      router.push(`/h5/payment/${aggregate.order.orderId}`);
+    } catch (nextError) {
+      setProcessing(false);
+      setError(nextError instanceof Error ? nextError.message : '创建充值订单失败，请稍后重试');
+    }
   };
 
   // ============================================================
@@ -386,6 +419,21 @@ export default function SelfRechargePage() {
             ))}
           </div>
 
+          {error && (
+            <div style={{
+              textAlign: 'center',
+              color: '#f87171',
+              fontSize: 13,
+              marginBottom: 16,
+              padding: '8px 12px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: 8,
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+            }}>
+              {error}
+            </div>
+          )}
+
           {/* 支付处理中 */}
           {processing && (
             <div style={{
@@ -425,103 +473,5 @@ export default function SelfRechargePage() {
     );
   }
 
-  // ============================================================
-  // Step 3: 充值成功
-  // ============================================================
-  return (
-    <main style={{
-      minHeight: '100vh',
-      padding: '32px 16px',
-      background: '#0f172a',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}>
-      <div style={{ maxWidth: 400, textAlign: 'center' }}>
-
-        {/* 成功动画 */}
-        <div style={{
-          width: 96,
-          height: 96,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #34d39940, #05966920)',
-          border: '3px solid #34d39960',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 24px',
-          fontSize: 44,
-        }}>
-          ✅
-        </div>
-
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#f8fafc', marginBottom: 8 }}>
-          充值成功！
-        </h2>
-
-        <Card
-          style={{
-            borderRadius: 16,
-            marginTop: 24,
-            background: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(148, 163, 184, 0.12)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: '#94a3b8', fontSize: 14 }}>
-            <span>支付金额</span>
-            <span style={{ color: '#fbbf24', fontWeight: 700 }}>¥{totalAmount}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: '#94a3b8', fontSize: 14 }}>
-            <span>赠送金额</span>
-            <span style={{ color: '#34d399', fontWeight: 700 }}>¥{bonusAmount}</span>
-          </div>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between',
-            padding: '12px 0', marginTop: 8,
-            borderTop: '1px solid rgba(148, 163, 184, 0.1)',
-          }}>
-            <span style={{ color: '#f8fafc', fontSize: 14, fontWeight: 600 }}>实际到账</span>
-            <span style={{ color: '#34d399', fontSize: 24, fontWeight: 700 }}>
-              ¥{totalAmount + bonusAmount}
-            </span>
-          </div>
-          <div style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>
-            支付方式：{paymentMethod ? PAYMENT_LABELS[paymentMethod] : ''}
-          </div>
-        </Card>
-
-        <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
-          <Button
-            block
-            
-            onClick={handleRecharge}
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              border: 'none',
-              color: '#0f172a',
-              height: 48,
-              borderRadius: 12,
-              fontWeight: 600,
-            }}
-          >
-            继续充值
-          </Button>
-          <Button
-            block
-            
-            variant="outline"
-            onClick={() => window.location.href = '/'}
-            style={{
-              borderColor: 'rgba(148, 163, 184, 0.2)',
-              color: '#94a3b8',
-              height: 48,
-              borderRadius: 12,
-            }}
-          >
-            返回首页
-          </Button>
-        </div>
-      </div>
-    </main>
-  );
+  return null;
 }
