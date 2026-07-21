@@ -30,6 +30,11 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
   ) {}
 
   onApplicationBootstrap(): void {
+    if (!this.mockGateway || typeof this.mockGateway.createPrepay !== 'function') {
+      this.logger.warn('Mock payment gateway unavailable, skip default mock channel bootstrap')
+      return
+    }
+
     for (const method of DEFAULT_METHODS) {
       this.registerMockChannel(DEFAULT_TENANT_ID, method, 0)
     }
@@ -46,6 +51,11 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
    *   3. 调用 registry.register(port)
    */
   registerMockChannel(tenantId: string, method: PaymentMethod, priority: number): void {
+    const gatewayName =
+      typeof this.mockGateway?.gatewayName === 'string' && this.mockGateway.gatewayName.length > 0
+        ? this.mockGateway.gatewayName
+        : 'mock'
+
     const config: PaymentChannelConfig = {
       tenantId,
       channel: method,
@@ -56,7 +66,7 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
     }
     const port: PaymentChannelPort = {
       ...config,
-      gatewayName: this.mockGateway.gatewayName,
+      gatewayName,
       tenantId,
       config,
       createPrepay: (order, m) => this.mockGateway.createPrepay(order, m),

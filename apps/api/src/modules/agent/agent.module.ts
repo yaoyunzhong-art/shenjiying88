@@ -20,6 +20,13 @@ export class AgentModule implements OnModuleInit {
    * Phase-33: 启动时把 EventStore 注入到 EventBuffer, 启用双写
    */
   onModuleInit(): void {
-    this.eventBuffer.setEventStore(this.eventStore)
+    if (!this.eventBuffer || typeof this.eventBuffer.setEventStore !== 'function') {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[agent] event buffer unavailable, skip dual-write setup')
+      }
+      return
+    }
+
+    this.eventBuffer.setEventStore(this.eventStore ?? null)
   }
 }
