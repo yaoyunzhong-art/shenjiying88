@@ -699,9 +699,9 @@ describe('[finance] GET /finance/invoices — 发票列表', () => {
 })
 
 describe('[finance] GET /finance/invoices/:invoiceId — 单张发票', () => {
-  it('获取发票', () => {
+  it('获取发票', async () => {
     const ctrl = makeController()
-    const result = ctrl.getInvoice('inv-1', CTX)
+    const result = await ctrl.getInvoice('inv-1', CTX)
     assert.equal(result.id, 'inv-1')
   })
 
@@ -709,9 +709,9 @@ describe('[finance] GET /finance/invoices/:invoiceId — 单张发票', () => {
 })
 
 describe('[finance] POST /finance/invoices/:invoiceId/issue — 开票', () => {
-  it('Draft → Issued', () => {
+  it('Draft → Issued', async () => {
     const ctrl = makeController()
-    const result = ctrl.issueInvoice('inv-1', CTX)
+    const result = await ctrl.issueInvoice('inv-1', CTX)
     assert.equal(result.status, InvoiceStatus.Issued)
     assert.ok(result.issuedAt)
   })
@@ -720,9 +720,9 @@ describe('[finance] POST /finance/invoices/:invoiceId/issue — 开票', () => {
 })
 
 describe('[finance] POST /finance/invoices/:invoiceId/cancel — 作废发票', () => {
-  it('→ Cancelled', () => {
+  it('→ Cancelled', async () => {
     const ctrl = makeController()
-    const result = ctrl.cancelInvoice('inv-1', CTX)
+    const result = await ctrl.cancelInvoice('inv-1', CTX)
     assert.equal(result.status, InvoiceStatus.Cancelled)
   })
 
