@@ -209,15 +209,15 @@ describe('CheckoutPage — 结算页', () => {
 
   test('quantity adjuster increases then decreases quantity', async () => {
     render(<CheckoutPage />);
-    // First increase p2 from 2 to 3 using quantity adjuster
+    // Increase p2 from 2 to 3 using quantity adjuster
     fireEvent.click(screen.getByTestId('qty-plus-p2'));
     await waitFor(() => {
       expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥764.00');
     });
-    // Decrease p3 from 1 to 0
-    fireEvent.click(screen.getByTestId('qty-minus-p3'));
+    // Decrease p2 from 3 back to 2
+    fireEvent.click(screen.getByTestId('qty-minus-p2'));
     await waitFor(() => {
-      expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥625.00');
+      expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥675.00');
     });
   });
 
