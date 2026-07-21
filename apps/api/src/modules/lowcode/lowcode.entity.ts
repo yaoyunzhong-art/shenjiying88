@@ -17,7 +17,7 @@ export class LowcodeTemplate {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   @Index()
   name!: string
 
@@ -33,7 +33,7 @@ export class LowcodeTemplate {
   @Column({ type: 'jsonb', default: {} })
   metadata!: Record<string, unknown>
 
-  @Column({ name: 'created_by', nullable: true })
+  @Column({ name: 'created_by', type: 'varchar', length: 64, nullable: true })
   createdBy?: string
 
   @CreateDateColumn({ name: 'created_at' })
@@ -51,7 +51,7 @@ export class LowcodePageSnapshot {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'page_id' })
+  @Column({ name: 'page_id', type: 'varchar', length: 64 })
   @Index()
   pageId!: string
 
@@ -64,7 +64,7 @@ export class LowcodePageSnapshot {
   @Column({ type: 'varchar', length: 255, nullable: true })
   changelog?: string
 
-  @Column({ name: 'published_by', nullable: true })
+  @Column({ name: 'published_by', type: 'varchar', length: 64, nullable: true })
   publishedBy?: string
 
   @CreateDateColumn({ name: 'created_at' })
@@ -79,10 +79,10 @@ export class LowcodeComponentLibrary {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   name!: string
 
-  @Column({ length: 50 })
+  @Column({ type: 'varchar', length: 50 })
   type!: string
 
   @Column({ type: 'jsonb', default: {} })
