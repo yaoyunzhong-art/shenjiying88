@@ -1,6 +1,6 @@
 # ⚡ LCP 性能优化报告 (LCP Performance Optimization Report)
 
-> 生成日期: 2026-07-21 21:09:25 +08:00
+> 生成日期: 2026-07-21 21:31:13 +08:00
 > 来源: `scripts/performance-lcp-check.sh`
 
 ---
@@ -306,15 +306,11 @@
 ✅ 全部页面均已配置 loading.tsx
 
 ### 大 Bundle 引用
-  page: app/campaigns/page.tsx
-  - antd 整库导入: from 'antd'
-  page: app/license-renewal/page.tsx
-  - antd 整库导入: from 'antd'
-  page: app/orders/[id]/page.tsx
-  - antd 整库导入: from 'antd'
-  page: app/stores/[id]/cashier/page.tsx
-  - antd 整库导入: from 'antd'
-  page: app/workbench/cashier/page.tsx
+-e   page: app/campaigns/page.tsx
+  - antd 整库导入: from 'antd'  page: app/license-renewal/page.tsx
+  - antd 整库导入: from 'antd'  page: app/orders/[id]/page.tsx
+  - antd 整库导入: from 'antd'  page: app/stores/[id]/cashier/page.tsx
+  - antd 整库导入: from 'antd'  page: app/workbench/cashier/page.tsx
   - antd 整库导入: from 'antd'
 
 ---
@@ -499,7 +495,7 @@
 ✅ 全部页面均已配置 loading.tsx
 
 ### 大 Bundle 引用
-  page: app/member-center/page.tsx
+-e   page: app/member-center/page.tsx
   - antd 整库导入: from 'antd'
 
 ---
