@@ -113,29 +113,29 @@ export class PushRecordEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'device_token', length: 256 })
+  @Column({ name: 'device_token', type: 'varchar', length: 256 })
   @Index()
   deviceToken!: string
 
-  @Column({ length: 20, default: 'iOS' })
+  @Column({ type: 'varchar', length: 20, default: 'iOS' })
   platform!: string
 
   @Column({ name: 'payload', type: 'jsonb', nullable: true })
   payload?: Record<string, unknown>
 
-  @Column({ length: 10, default: 'NORMAL' })
+  @Column({ type: 'varchar', length: 10, default: 'NORMAL' })
   priority!: string
 
-  @Column({ length: 20, default: 'SENT' })
+  @Column({ type: 'varchar', length: 20, default: 'SENT' })
   status!: string
 
   @Column({ name: 'sent_at', type: 'timestamptz', nullable: true })
   sentAt?: Date
 
-  @Column({ name: 'tenant_id', length: 64, nullable: true })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64, nullable: true })
   tenantId?: string
 
-  @Column({ name: 'member_id', length: 64, nullable: true })
+  @Column({ name: 'member_id', type: 'varchar', length: 64, nullable: true })
   memberId?: string
 
   @Column({ name: 'created_at', type: 'timestamptz', default: () => 'NOW()' })

@@ -14,11 +14,11 @@ export class RenewalNotification {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'license_id' })
+  @Column({ name: 'license_id', type: 'varchar', length: 64 })
   @Index()
   licenseId!: string;
 
-  @Column({ name: 'tenant_id' })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   @Index()
   tenantId!: string;
 

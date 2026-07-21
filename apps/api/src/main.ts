@@ -86,20 +86,25 @@ async function bootstrap() {
     ],
   });
 
-  // ─── Swagger ───
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('M5 API')
-    .setDescription('M5 multi-tenant SaaS API gateway and backbone service.')
-    .setVersion('0.1.0')
-    .build();
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[bootstrap] creating swagger document');
+  // 本地联调允许临时关闭 Swagger，避免文档反射异常阻塞业务接口启动。
+  const swaggerEnabled = process.env.DISABLE_SWAGGER !== '1';
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('M5 API')
+      .setDescription('M5 multi-tenant SaaS API gateway and backbone service.')
+      .setVersion('0.1.0')
+      .build();
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[bootstrap] creating swagger document');
+    }
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[bootstrap] swagger document created');
+    }
+    SwaggerModule.setup('docs', app, document);
+  } else if (process.env.NODE_ENV !== 'production') {
+    console.log('[bootstrap] swagger disabled by DISABLE_SWAGGER=1');
   }
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[bootstrap] swagger document created');
-  }
-  SwaggerModule.setup('docs', app, document);
 
   const port = Number(process.env.API_PORT ?? 3001);
   if (process.env.NODE_ENV !== 'production') {
@@ -114,7 +119,9 @@ async function bootstrap() {
     { url: `http://localhost:${port}/api/v1/foundation/bootstrap` },
     'foundation blueprint endpoint',
   );
-  logger.info({ url: `http://localhost:${port}/docs` }, 'swagger docs endpoint');
+  if (swaggerEnabled) {
+    logger.info({ url: `http://localhost:${port}/docs` }, 'swagger docs endpoint');
+  }
 }
 
 bootstrap().catch((err) => {
