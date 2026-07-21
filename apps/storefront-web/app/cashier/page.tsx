@@ -29,6 +29,7 @@ import {
   buildStorefrontMemberId,
   ensureStorefrontMemberRegistered,
   startStorefrontCheckout,
+  lookupStorefrontMember,
   type CheckoutPaymentMethod,
 } from '../../lib/storefront-transactions';
 
@@ -51,27 +52,16 @@ interface CartItem extends Product {
 interface MemberInfo {
   phone: string;
   name: string;
-  tier: 'gold' | 'silver' | 'regular';
+  tier: string;
+  tierLabel: string;
+  discountRate: number;
   points: number;
 }
-
-/** 会员等级折扣率 */
-const TIER_DISCOUNT: Record<MemberInfo['tier'], number> = {
-  gold: 0.9,   // 金卡9折
-  silver: 0.95, // 银卡95折
-  regular: 1.0, // 普卡无折扣
-};
-
-const TIER_LABEL: Record<MemberInfo['tier'], string> = {
-  gold: '🏅 黄金会员',
-  silver: '🥈 银卡会员',
-  regular: '🪪 普卡会员',
-};
 
 type PaymentMethod = 'wechat' | 'balance' | 'cash';
 
 // ============================================================
-// Mock 数据 — 街机/游艺厅场景
+// 本地商品目录（前台收银快捷选择用，会员查询走真实 API）
 // ============================================================
 
 const MOCK_PRODUCTS: Product[] = [
@@ -87,18 +77,13 @@ const MOCK_PRODUCTS: Product[] = [
   { id: 'p10', name: '不限时畅玩券', price: 199, category: '套餐', stock: 999 },
 ];
 
-// 已注册会员数据库（AC-35-04 会员识别用）
-const MOCK_MEMBER_DB: MemberInfo[] = [
-  { phone: '13800138001', name: '张三', tier: 'gold', points: 2560 },
-  { phone: '13900139002', name: '李四', tier: 'silver', points: 1200 },
-  { phone: '15000150003', name: '王五', tier: 'regular', points: 300 },
-];
-
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string }[] = [
   { value: 'wechat', label: '微信扫码', icon: '💳' },
   { value: 'balance', label: '会员余额', icon: '💰' },
   { value: 'cash', label: '现金', icon: '💵' },
 ];
+
+const DEFAULT_MEMBER_NAME = '门店散客';
 
 function fm(amount: number): string {
   return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
@@ -169,7 +154,7 @@ export default function CashierPage() {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  const memberDiscountRate = member ? TIER_DISCOUNT[member.tier] : 1;
+  const memberDiscountRate = member?.discountRate ?? 1;
   const discountAmount = rawTotal - Math.round(rawTotal * memberDiscountRate);
   const finalTotal = rawTotal - discountAmount;
 
@@ -211,22 +196,44 @@ export default function CashierPage() {
     );
   }, []);
 
-  // ── 会员识别 ──
-  const handleLookupMember = useCallback(() => {
+  // ── 会员识别（AC-35-04: 真实API调用）──
+  const handleLookupMember = useCallback(async () => {
     const trimmed = memberPhone.trim();
     if (!trimmed || trimmed.length < 11) {
       setMessageText('⚠️ 请输入完整的11位手机号');
       return;
     }
-    const found = MOCK_MEMBER_DB.find((m) => m.phone === trimmed);
-    if (found) {
-      setMember(found);
-      setMessageText(
-        `✅ 欢迎 ${found.name}！${TIER_LABEL[found.tier]}，积分 ${found.points} 分`
-      );
-    } else {
+    try {
+      const result = await lookupStorefrontMember(trimmed);
+      if (result) {
+        const tierLabel = (() => {
+          switch (result.tier) {
+            case 'gold': return '🏅 黄金会员';
+            case 'silver': return '🥈 银卡会员';
+            case 'diamond': return '💎 钻石会员';
+            case 'bronze': return '🥉 铜牌会员';
+            default: return '🪪 普卡会员';
+          }
+        })();
+        const info: MemberInfo = {
+          phone: result.phone,
+          name: result.name,
+          tier: result.tier,
+          tierLabel,
+          discountRate: result.discountRate,
+          points: result.points,
+        };
+        setMember(info);
+        setMessageText(
+          `✅ 欢迎 ${info.name}！${tierLabel}，积分 ${info.points} 分`
+        );
+      } else {
+        setMember(null);
+        setMessageText('ℹ️ 未找到该会员，将按非会员结算');
+      }
+    } catch {
       setMember(null);
-      setMessageText('ℹ️ 未找到该会员，将按非会员结算');
+      setMessageText('⚠️ 查询会员失败，请稍后重试');
     }
     setTimeout(() => setMessageText(''), 4000);
   }, [memberPhone]);
@@ -694,7 +701,7 @@ export default function CashierPage() {
                     }}
                   >
                     <span>
-                      会员折扣（{TIER_LABEL[member.tier]}）
+                      会员折扣（{member.tierLabel}）
                     </span>
                     <span>-{fm(discountAmount)}</span>
                   </div>
@@ -779,10 +786,10 @@ export default function CashierPage() {
                 >
                   <span style={{ color: '#94a3b8' }}>等级</span>
                   <Tag variant="warning" size="sm">
-                    {TIER_LABEL[member.tier]}
+                    {member.tierLabel}
                   </Tag>
                 </div>
-                {member.tier !== 'regular' && (
+                {(
                   <div
                     style={{
                       fontSize: 12,
@@ -793,9 +800,9 @@ export default function CashierPage() {
                       textAlign: 'center',
                     }}
                   >
-                    {member.tier === 'gold'
-                      ? '🎉 金卡会员享9折优惠'
-                      : '⭐ 银卡会员享95折优惠'}
+                    {member.discountRate < 1
+                      ? `🎉 ${member.tierLabel}享${Math.round(member.discountRate * 10)}折优惠`
+                      : `🪪 ${member.tierLabel}无额外折扣`}
                     {discountAmount > 0 && (
                       <span>（已省 {fm(discountAmount)}）</span>
                     )}

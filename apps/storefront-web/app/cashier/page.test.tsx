@@ -140,9 +140,9 @@ describe('AC-35-04: 会员识别', () => {
     assert.ok(src.includes('查询'), '查询按钮');
   });
 
-  it('应包含会员数据库（MOCK_MEMBER_DB）', () => {
+  it('会员识别应调用 lookupStorefrontMember 真实 API', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_MEMBER_DB'), '会员数据库');
+    assert.ok(src.includes('lookupStorefrontMember'), '应通过真实 API 查询会员');
   });
 
   it('手机号验证应检查11位输入', () => {
@@ -173,12 +173,11 @@ describe('AC-35-04: 会员识别', () => {
 // AC-35-05: 会员折扣应用
 // ============================================================
 describe('AC-35-05: 会员折扣应用', () => {
-  it('应定义会员等级折扣率（TIER_DISCOUNT）', () => {
+  it('折扣信息来自 API 返回的 discountRate 字段', () => {
     const src = readSource();
-    assert.ok(src.includes('TIER_DISCOUNT'), '折扣率配置');
-    assert.ok(src.includes('gold: 0.9'), '金卡9折');
-    assert.ok(src.includes('silver: 0.95'), '银卡95折');
-    assert.ok(src.includes('regular: 1.0'), '普卡无折扣');
+    assert.ok(src.includes('discountRate'), '折扣率来自 API');
+    assert.ok(!src.includes('TIER_DISCOUNT'), '不再使用本地 TIER_DISCOUNT 常量');
+    assert.ok(!src.includes('MOCK_MEMBER_DB'), '不再使用本地模拟会员数据库');
   });
 
   it('应计算折扣金额（discountAmount）', () => {
@@ -197,14 +196,10 @@ describe('AC-35-05: 会员折扣应用', () => {
     assert.ok(src.includes('已省'), '折扣金额展示');
   });
 
-  it('金卡会员应有9折提示', () => {
+  it('折扣展示使用动态 discountRate 而非硬编码等级', () => {
     const src = readSource();
-    assert.ok(src.includes('金卡会员享9折优惠'), '金卡提示');
-  });
-
-  it('银卡会员应有95折提示', () => {
-    const src = readSource();
-    assert.ok(src.includes('银卡会员享95折优惠'), '银卡提示');
+    assert.ok(src.includes('${Math.round(member.discountRate * 10)}折'), '折扣率动态渲染');
+    assert.ok(src.includes('member.tierLabel'), '等级标签动态渲染');
   });
 });
 
@@ -327,10 +322,11 @@ describe('cashier — 真实交易接线诊断 [P0-E1]', () => {
     assert.ok(src.includes('订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建'), '应展示真实订单创建提示');
   });
 
-  it('[TRANSITION] 商品和会员数据仍为本地 Mock,但不再伪造结账成功', () => {
+  it('[MIGRATED] 会员数据已接入真实 API，商品数据仍为本地 Mock', () => {
     const src = readSource();
     assert.ok(src.includes('MOCK_PRODUCTS'), '商品数据仍为内联 Mock');
-    assert.ok(src.includes('MOCK_MEMBER_DB'), '会员数据仍为内联 Mock');
+    assert.ok(!src.includes('MOCK_MEMBER_DB'), '会员数据不再使用内联 Mock');
+    assert.ok(src.includes('lookupStorefrontMember(trimmed)'), '会员查询走真实 API');
     assert.ok(src.includes('setTimeout(() => setMessageText('), '当前仍保留消息自动消失定时器');
     assert.ok(!src.includes('支付成功！金额 ${fm(finalTotal)}'), '不应继续使用本地假支付成功文案');
   });

@@ -352,6 +352,34 @@ export function getPaymentResultActions(status: PaymentResultStatus, orderId: st
   }
 }
 
+export function getCashierClient() {
+  return createStorefrontTransactionsClient();
+}
+
+/**
+ * 前台收银会员查找 — 调用 cashier/members/lookup API
+ * 返回 null 表示未找到该手机号会员
+ */
+export async function lookupStorefrontMember(
+  query: string,
+  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+) {
+  const client = getCashierClient();
+  try {
+    return await client.getData<{
+      id: string;
+      name: string;
+      phone: string;
+      memberNo: string;
+      tier: string;
+      points: number;
+      discountRate: number;
+    } | null>(`/cashier/members/lookup?q=${encodeURIComponent(query)}`, { cache: 'no-store' });
+  } catch {
+    return null;
+  }
+}
+
 export async function ensureStorefrontMemberRegistered(
   memberId: string,
   nickname: string,

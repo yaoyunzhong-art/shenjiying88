@@ -321,15 +321,28 @@ export class EmpowerCardService {
       }
     }
 
-    const statusCards = cardCount > 0 ? 'up' : cardCount === 0 ? 'down' : 'degraded'
-    const status =
-      statusCards === 'down'
-        ? 'down'
-        : matchApiReachable && quoteApiReachable
-          ? 'up'
-          : 'degraded'
+    const isOk = cardCount > 0 && matchApiReachable && quoteApiReachable
+    const timestamp = new Date().toISOString()
 
-    return { status, cardCount, matchApiReachable, quoteApiReachable, lastMatch }
+    // 最近导入时间
+    let lastImport: string | null = null
+    if (this.pool) {
+      try {
+        const importResult = await this.pool.query(
+          'SELECT created_at FROM empower_card ORDER BY created_at DESC LIMIT 1'
+        )
+        if (importResult.rows.length > 0) {
+          const val = importResult.rows[0].created_at
+          lastImport = val?.toISOString?.() ?? val ?? null
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const status = isOk ? 'ok' : cardCount === 0 ? 'down' : 'degraded'
+
+    return { status, timestamp, cardsCount: cardCount, lastImport, matchApiReachable, quoteApiReachable, lastMatch }
   }
 
 

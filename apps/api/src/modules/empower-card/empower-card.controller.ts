@@ -14,6 +14,7 @@ import { Controller, Get, Post, Body, Param, Query, Logger, UseGuards } from '@n
 import { EmpowerCardService } from './empower-card.service'
 import type { CreateEmpowerCardDto, EmpowerCardHealthResponse, EmpowerCardSearchQuery, EmpowerCardEntity } from './empower-card.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('empower-cards')
 @UseGuards(TenantGuard)
@@ -35,6 +36,13 @@ export class EmpowerCardController {
   @Get(':id')
   async getById(@Param('id') id: string): Promise<EmpowerCardEntity> {
     return this.service.getById(id)
+  }
+
+  /** 健康检查 (放在 :id 之前，避免路由冲突) */
+  @Public()
+  @Get('health')
+  async healthCheck(): Promise<EmpowerCardHealthResponse> {
+    return this.service.healthCheck()
   }
 
   /** 搜索知识卡片 (关键词/标签/模块) */
@@ -65,12 +73,6 @@ export class EmpowerCardController {
   @Post('decay')
   async applyDecay(): Promise<{ decayed: number; archived: number }> {
     return this.service.applyDecay()
-  }
-
-  /** 健康检查 */
-  @Get('health')
-  async healthCheck(): Promise<EmpowerCardHealthResponse> {
-    return this.service.healthCheck()
   }
 
   /** 今日赋能评分 */

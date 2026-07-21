@@ -155,17 +155,19 @@ describe('EmpowerCardService (降级·内存模式)', async () => {
 
   it('[正例] healthCheck 应返回正确的结构', async () => {
     const health = await service.healthCheck()
-    assert.ok(['up', 'degraded', 'down'].includes(health.status), 'status 应为 up/degraded/down')
-    assert.ok(typeof health.cardCount === 'number', 'cardCount 应为数字')
+    assert.ok(['ok', 'degraded', 'down'].includes(health.status), 'status 应为 ok/degraded/down')
+    assert.ok(typeof health.cardsCount === 'number', 'cardsCount 应为数字')
+    assert.ok(typeof health.timestamp === 'string', 'timestamp 应为字符串')
     assert.ok(typeof health.matchApiReachable === 'boolean', 'matchApiReachable 应为布尔')
     assert.ok(typeof health.quoteApiReachable === 'boolean', 'quoteApiReachable 应为布尔')
     assert.ok(health.lastMatch === null || typeof health.lastMatch === 'string', 'lastMatch 应为 null 或字符串')
+    assert.ok(health.lastImport === null || typeof health.lastImport === 'string', 'lastImport 应为 null 或字符串')
   })
 
   it('[正例] healthCheck 应反映已有卡片数量', async () => {
     const health = await service.healthCheck()
     // 前面已创建多张卡片, cardCount > 0
-    assert.ok(health.cardCount > 0, `应有卡片存在, 实际: ${health.cardCount}`)
+    assert.ok(health.cardsCount > 0, `应有卡片存在, 实际: ${health.cardsCount}`)
   })
 
   it('[正例] healthCheck matchApiReachable 应有值', async () => {

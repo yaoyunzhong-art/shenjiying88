@@ -1877,12 +1877,17 @@ export interface BusinessOrderListItem {
   orderNo: string;
   memberId: string;
   status: string;
+  itemCount?: number;
   totalAmount: number;
   paidAmount: number;
   refundedAmount: number;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
+  paymentChannel?: string;
   currency: string;
   createdAt: string;
   updatedAt: string;
+  paidAt?: string;
 }
 
 export interface BusinessOrderListPage {
