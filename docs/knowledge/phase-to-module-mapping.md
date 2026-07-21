@@ -40,9 +40,9 @@
 ### V23 Day1 凌晨新增模块绑定 (2026-07-21 01:00-02:40)
 | 模块 | 位置 | 文件 | 测试 | E2E | PRD | 审计 | 推荐Phase |
 |:-----|:-----|:---:|:----:|:---:|:----:|:----:|:---------|
-| expense 费用报销 | api/src/modules/expense/ | 8文件 | expense.controller ✅ | — | 🟢已发 | 🆕 | P-HR 费用报销 |
+| expense 费用报销 | api/src/modules/expense/ | 8文件+17 role-extended测试 | expense.controller ✅ | — | 🟢已发 | 🆕 | P-HR 费用报销 |
 | feedback 用户反馈 | api/src/modules/feedback/ | 6文件 | feedback.controller ✅ | — | 🟢已发 | 🆕 | P-38 客户反馈 |
-| leave-request 请假考勤 | api/src/modules/leave-request/ | 9文件 | controller+module 共22测试 | E2E#61 leave | 🟢已发(P2) | 🆕 | P-HR 考勤 |
+| leave-request 请假考勤 | api/src/modules/leave-request/ | 9文件+16 role-extended测试 | controller+module 共38测试 | E2E#61 leave | 🟢已发(P2) | 🆕 | P-HR 考勤 |
 | shift-scheduler 排班管理 | api/src/modules/shift-scheduler/ | 9文件 | controller+module ✅ | — | 🟢已发 | 🆕 | P-HR 排班 |
 | notice 公告通知 | api/src/modules/notice/ | 7文件 | controller ✅ | — | 🟢已发 | 🆕 | P-Admin 通知 |
 | salary 薪资管理 | api/src/modules/salary/ | 8文件 | controller+entity ✅ | — | 🟢已发 PRD | 🆕 | P-HR 薪资 |
@@ -65,7 +65,7 @@
 | HR员工管理 | admin-web/app/hr/ | 456行页面 | 31测试 | 🆕 | 🟡已发(KB-072/073/075/068) | P-HR 人事管理 |
 | HR绩效管理 | api/src/modules/hr/performance/ | 817行代码(12端点) | 已含在53测试 | 🆕 | 🟡已发 | P-HR 绩效 |
 | HR招聘管理 | api/src/modules/hr/recruitment/ | 754行代码(10端点) | 已含在53测试 | 🆕 | 🟡已发 | P-HR 招聘 |
-| HR后端API | api/src/modules/hr/ | 2,987行代码(39端点) | 53后端+31前端=84测试 | 🆕 | 🟡已发 | P-HR 人事管理 |
+| HR后端API | api/src/modules/hr/ | 2,987行代码(39端点) | 53后端+31前端+17 role-extended=101测试 | 🆕 | 🟡已发 | P-HR 人事管理 |
 
 ### V19 Day2 D段新增页面绑定 (2026-07-17)
 | 页面 | 位置 | 代码✅ | 测试✅ | 审计✅ | PRD | 推荐Phase |
@@ -398,9 +398,9 @@
 | **联盟营销** | alliance | 🟢 100% | E2E#53+PRD+圈梁表+admin前端 |
 | **礼品卡** | gift-card | 🟢 100% | 17端点+17E2E#57测试+PRD+全生命周期+状态机 |
 | **团建活动** | team-building(admin) | 🟢 100% | admin页面+36测试+PRD |
-| **费用报销** | expense | 🟢 完成 | 8文件+contract+DTO+controller+entity+测试 |
+| **费用报销** | expense | 🟢 完成 | 8文件+contract+DTO+controller+entity+role-extended测试(17项) |
 | **用户反馈** | feedback | 🟢 完成 | 6文件+controller+DTO+entity+module+测试 |
-| **请假考勤P2** | leave-request | 🟢 完成 | 9文件+22测试+E2E#61+PRD(P2) |
+| **请假考勤P2** | leave-request | 🟢 完成 | 9文件+38测试(含16 role-extended)+E2E#61+PRD(P2) |
 | **排班管理** | shift-scheduler | 🟢 完成 | 9文件+测试+PRD |
 | **公告通知** | notice | 🟢 修复完善 | 7文件+contract+DTO+修复测试 |
 | **薪资管理** | salary | 🟢 PRD | 8文件+PRD文档+contract+controller+测试中 |

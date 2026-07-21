@@ -197,6 +197,15 @@ export class FinanceReportService {
     throw new NotImplementedException(`Export format ${format} is not implemented yet`)
   }
 
+  private clearLocalExportsForReport(reportId: string): void {
+    for (const [exportId, exportResult] of exportStore.entries()) {
+      if (exportResult.reportId === reportId) {
+        exportStore.delete(exportId)
+        exportTenantStore.delete(exportId)
+      }
+    }
+  }
+
   private async persistReport(report: FinancialReport): Promise<FinancialReport> {
     const reportModel = this.getReportModel()
     if (!reportModel?.update) {
@@ -489,11 +498,7 @@ export class FinanceReportService {
       throw new NotFoundException(`Report ${reportId} not found or access denied`)
     }
     reportStore.delete(reportId)
-    const exportIds = Array.from(exportStore.keys()).filter((k) => exportStore.get(k)?.reportId === reportId)
-    for (const eid of exportIds) {
-      exportStore.delete(eid)
-      exportTenantStore.delete(eid)
-    }
+    this.clearLocalExportsForReport(reportId)
     return true
   }
 
@@ -515,18 +520,14 @@ export class FinanceReportService {
           tenantId: tenantContext.tenantId
         }
       })
+      this.clearLocalExportsForReport(reportId)
     }
     await reportModel.delete({
       where: { id: reportId }
     })
 
     reportStore.delete(reportId)
-    for (const [exportId, exportResult] of exportStore.entries()) {
-      if (exportResult.reportId === reportId) {
-        exportStore.delete(exportId)
-        exportTenantStore.delete(exportId)
-      }
-    }
+    this.clearLocalExportsForReport(reportId)
     return true
   }
 

@@ -979,6 +979,60 @@ describe('[finance-report] resolved 主链', () => {
     expect(deleteReport).toHaveBeenCalledOnce()
     expect(deleted).toBe(true)
   })
+
+  it('deleteReportResolved 在 report 落库失败时也应清掉已删除的本地 export 缓存', async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: 'rpt-prisma-stale',
+      tenantId: TENANT_A.tenantId,
+      storeId: 'store-a1',
+      title: 'stale-export-cleanup',
+      reportType: 'PROFIT_LOSS',
+      periodStart: new Date('2026-07-01T00:00:00.000Z'),
+      periodEnd: new Date('2026-07-31T23:59:59.999Z'),
+      status: 'COMPLETED',
+      data: { title: '利润表', value: 520 },
+      summary: {
+        totalRevenue: 520,
+        totalExpense: 100,
+        totalRefund: 20,
+        netProfit: 400,
+        transactionCount: 3,
+      },
+      generatedAt: new Date('2026-07-31T22:00:00.000Z'),
+      generatedBy: null,
+      exportFormats: ['JSON'],
+      errorMessage: null,
+      createdAt: new Date('2026-07-31T22:00:00.000Z'),
+    })
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 })
+    const deleteReport = vi.fn().mockRejectedValue(new Error('report delete failed'))
+
+    const svc = makePrismaBackedService({
+      financeReport: { findUnique, delete: deleteReport },
+      financeReportExport: { deleteMany },
+    })
+
+    const resolvedSvc = svc as FinanceReportService & {
+      getReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<FinancialReport>
+      deleteReportResolved: (
+        reportId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<boolean>
+    }
+
+    const report = await resolvedSvc.getReportResolved('rpt-prisma-stale', TENANT_A)
+    const exported = svc.exportReport(report.id, TENANT_A, { format: ExportFormat.JSON })
+
+    await expect(resolvedSvc.deleteReportResolved(report.id, TENANT_A)).rejects.toThrow('report delete failed')
+
+    expect(deleteMany).toHaveBeenCalledOnce()
+    expect(deleteReport).toHaveBeenCalledOnce()
+    expect(svc.getReport(report.id, TENANT_A).id).toBe(report.id)
+    expect(() => svc.getExportResult(exported.id, TENANT_A)).toThrow(NotFoundException)
+  })
 })
 
 // Total tests: 46+ (exceeds ≥35 requirement)
