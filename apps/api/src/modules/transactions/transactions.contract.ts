@@ -45,6 +45,9 @@ export interface TransactionAggregateContract {
   currency: string
   paidAmount?: number
   paymentChannel?: string
+  paymentQrCodeUrl?: string
+  paymentUrl?: string
+  paymentExpiresAt?: string
   paidAt?: string
   refundedAmount: number
   refundStatus?: TransactionRefundStatus
@@ -189,6 +192,9 @@ export function toTransactionAggregateContract(
     currency: aggregate.order.currency,
     paidAmount: aggregate.payment?.amount,
     paymentChannel: aggregate.payment?.channel,
+    paymentQrCodeUrl: aggregate.payment?.qrCodeUrl,
+    paymentUrl: aggregate.payment?.paymentUrl,
+    paymentExpiresAt: aggregate.payment?.expiresAt,
     paidAt: aggregate.order.paidAt ?? aggregate.payment?.completedAt,
     refundedAmount,
     refundStatus: latestRefund?.status,

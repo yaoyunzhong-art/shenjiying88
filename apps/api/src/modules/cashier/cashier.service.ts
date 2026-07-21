@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Optional } from '@nestjs/common'
+import type { PaymentMethod } from '@m5/types'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CACHE_SERVICE, type CacheService } from '../../infrastructure/cache/cache.module'
@@ -9,6 +10,7 @@ import { MemberService } from '../member/member.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { seedMembers } from './cashier.seed'
 import type { CashierPaymentCallbackDto, CreateCashierOrderDto, CreateCashierPaymentDto } from './cashier.dto'
+import { MockPaymentGateway } from './payment.service'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
@@ -29,6 +31,8 @@ export class CashierService {
     readonly memberService: MemberService,
     @Optional()
     private readonly loyaltyService?: LoyaltyService,
+    @Optional()
+    private readonly paymentGateway?: MockPaymentGateway,
     @Optional()
     private readonly integrationOrchestrationService?: IntegrationOrchestrationService,
     @Optional() @Inject(CACHE_SERVICE)
@@ -281,6 +285,28 @@ export class CashierService {
     return order
   }
 
+  private normalizePaymentMethod(channel: string): PaymentMethod | undefined {
+    const normalized = channel.trim().toUpperCase().replace(/[\s-]+/g, '_')
+    if (normalized === 'WECHAT' || normalized === 'WECHAT_PAY') {
+      return 'WECHAT'
+    }
+    if (normalized === 'ALIPAY') {
+      return 'ALIPAY'
+    }
+    if (normalized === 'CARD' || normalized === 'CREDIT_CARD' || normalized === 'BANKCARD') {
+      return 'CARD'
+    }
+    if (
+      normalized === 'CASH' ||
+      normalized === 'BANK_TRANSFER' ||
+      normalized === 'INTERNAL_TRANSFER' ||
+      normalized === 'CORPORATE_ACCOUNT'
+    ) {
+      return 'CASH'
+    }
+    return undefined
+  }
+
   /**
    * P0-A1: cache-aside 版本 getter,支持 Redis 恢复。
    * 内部方法 (close/update/... ) 均使用 loadOrder,外部调用保持 sync getOrder。
@@ -300,6 +326,17 @@ export class CashierService {
     }
 
     const now = new Date().toISOString()
+    const paymentMethod = this.normalizePaymentMethod(input.channel)
+    const prepay =
+      this.paymentGateway && paymentMethod
+        ? await this.paymentGateway.createPrepay(
+            {
+              id: order.orderId,
+              totalCents: Math.round((input.amount ?? order.totalAmount) * 100)
+            },
+            paymentMethod
+          )
+        : undefined
     const payment: CashierPayment = {
       paymentId: `payment-${randomUUID()}`,
       orderId,
@@ -307,6 +344,9 @@ export class CashierService {
       channel: input.channel,
       amount: input.amount ?? order.totalAmount,
       status: CashierPaymentStatus.Pending,
+      qrCodeUrl: prepay?.codeUrl,
+      paymentUrl: prepay?.codeUrl,
+      expiresAt: prepay?.expiresAt,
       createdAt: now,
       updatedAt: now
     }

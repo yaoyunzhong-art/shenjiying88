@@ -73,6 +73,9 @@ export interface CashierPayment {
   channel: string
   amount: number
   status: CashierPaymentStatus
+  qrCodeUrl?: string
+  paymentUrl?: string
+  expiresAt?: string
   transactionNo?: string
   sourceEventName?: string
   failureReason?: string
@@ -261,6 +264,15 @@ export class CashierPaymentEntity {
   @Column({ length: 20, default: 'PENDING' })
   status!: string
 
+  @Column({ name: 'qr_code_url', length: 1024, nullable: true })
+  qrCodeUrl?: string
+
+  @Column({ name: 'payment_url', length: 1024, nullable: true })
+  paymentUrl?: string
+
+  @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
+  expiresAt?: Date
+
   @Column({ name: 'transaction_no', length: 128, nullable: true })
   transactionNo?: string
 
@@ -288,6 +300,9 @@ export class CashierPaymentEntity {
       channel: this.channel,
       amount: Number(this.amount),
       status: this.status as CashierPaymentStatus,
+      qrCodeUrl: this.qrCodeUrl,
+      paymentUrl: this.paymentUrl,
+      expiresAt: this.expiresAt?.toISOString?.(),
       transactionNo: this.transactionNo,
       sourceEventName: this.sourceEventName,
       failureReason: this.failureReason,
@@ -306,6 +321,9 @@ export class CashierPaymentEntity {
     entity.channel = payment.channel
     entity.amount = payment.amount
     entity.status = payment.status
+    entity.qrCodeUrl = payment.qrCodeUrl
+    entity.paymentUrl = payment.paymentUrl
+    if (payment.expiresAt) entity.expiresAt = new Date(payment.expiresAt)
     entity.transactionNo = payment.transactionNo
     entity.sourceEventName = payment.sourceEventName
     entity.failureReason = payment.failureReason
