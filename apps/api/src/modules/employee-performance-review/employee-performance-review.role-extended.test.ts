@@ -163,6 +163,15 @@ describe('🛒前台 绩效考评扩展测试', () => {
     const result = svc.getById('nonexistent', ctx)
     assert.equal(result, undefined)
   })
+
+  it('前台查看全部员工展示正确数量（正常：列表完整性）', async () => {
+    const svc = freshService()
+    const ctx = makeTenantContext()
+    svc.create(ctx, { employeeId: 'emp-f2', name: '前台A', role: EmployeeRole.Staff, storeId: 'store-001', score: 80, completedTasks: 100, customerRating: 4.3, attendanceRate: 96, revenueContribution: 170000, month: '2026-07' })
+    svc.create(ctx, { employeeId: 'emp-f3', name: '前台B', role: EmployeeRole.Staff, storeId: 'store-001', score: 85, completedTasks: 110, customerRating: 4.5, attendanceRate: 97, revenueContribution: 200000, month: '2026-07' })
+    const list = svc.list(ctx)
+    assert.equal(list.total, 2)
+  })
 })
 
 // ════════════════════════════════════════════════
@@ -228,6 +237,24 @@ describe('🔧安监 绩效考评扩展测试', () => {
     const sorted = svc.list(ctx, { sortBy: 'revenueContribution' })
     assert.equal(sorted.items[0].name, '员工乙')
     assert.equal(sorted.items[2].name, '员工丙')
+  })
+
+  it('安监跨角色查看不同角色评分比较（正常：角色间对比）', async () => {
+    const svc = freshService()
+    const ctx = makeTenantContext()
+    svc.create(ctx, { employeeId: 'emp-sec5', name: '安监本人', role: EmployeeRole.Technician, storeId: 'store-001', score: 87, completedTasks: 75, customerRating: 4.7, attendanceRate: 99, revenueContribution: 290000, month: '2026-07' })
+    svc.create(ctx, { employeeId: 'emp-sec6', name: '经理A', role: EmployeeRole.Manager, storeId: 'store-001', score: 93, completedTasks: 150, customerRating: 4.9, attendanceRate: 100, revenueContribution: 500000, month: '2026-07' })
+    const techList = svc.list(ctx, { role: EmployeeRole.Technician })
+    assert.equal(techList.total, 1)
+    assert.equal(techList.items[0].name, '安监本人')
+  })
+
+  it('安监查看考核月份为空返回空数组（边界）', async () => {
+    const svc = freshService()
+    const ctx = makeTenantContext()
+    svc.create(ctx, { employeeId: 'emp-sec7', name: '某员工', role: EmployeeRole.Staff, storeId: 'store-001', score: 80, completedTasks: 90, customerRating: 4.2, attendanceRate: 95, revenueContribution: 160000, month: '2026-07' })
+    const result = svc.list(ctx, { month: '2025-01' })
+    assert.equal(result.total, 0)
   })
 })
 
@@ -304,6 +331,17 @@ describe('🤝团建 绩效考评扩展测试', () => {
     assert.ok(svc.getById(r.id, ctx))
     svc.delete(r.id, ctx)
     assert.equal(svc.getById(r.id, ctx), undefined)
+  })
+
+  it('团建按门店过滤查看团建参与员工的绩效（正常）', async () => {
+    const svc = freshService()
+    const ctx = makeTenantContext()
+    svc.create(ctx, { employeeId: 'emp-t4', name: '团建员工A', role: EmployeeRole.Staff, storeId: 'store-001', score: 83, completedTasks: 105, customerRating: 4.4, attendanceRate: 97, revenueContribution: 195000, month: '2026-07' })
+    svc.create(ctx, { employeeId: 'emp-t5', name: '团建员工B', role: EmployeeRole.Staff, storeId: 'store-001', score: 77, completedTasks: 92, customerRating: 4.0, attendanceRate: 94, revenueContribution: 155000, month: '2026-07' })
+    const filtered = svc.list(ctx, { storeId: 'store-001' })
+    assert.equal(filtered.total, 2)
+    const noStore = svc.list(ctx, { storeId: 'store-999' })
+    assert.equal(noStore.total, 0)
   })
 })
 
