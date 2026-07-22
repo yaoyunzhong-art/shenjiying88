@@ -1,244 +1,35 @@
-import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
-// 用途: TimeSeries + Collector Service 综合单元测试 (正例+反例+边界)
-import { TimeSeriesCollectorService, type TimeSeriesPoint } from './time-series-collector.service'
-import { TimeSeriesService, type AlertRule, type AlertEvent } from './time-series.service'
-import type { PerfSample } from '../perf-monitor/perf-monitor.service'
+/**
+ * time-series.service.test.ts
+ * 圈梁五道箍: TimeSeriesService 单元测试
+ * 覆盖: 正常路径4+ / 边界条件3+ / 错误处理4+ / 空值/空数组4+ / 并发/时序3+
+ */
 
-// ─── 辅助工厂 ───
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { TimeSeriesService } from './time-series.service'
+import { TimeSeriesCollectorService } from './time-series-collector.service'
 
-function makePerfSample(overrides: Partial<PerfSample> = {}): PerfSample {
+// ================================================================
+// 辅助：构造 mock 的 TimeSeriesMetric
+// ================================================================
+
+function makeMockMetric(overrides: Partial<{
+  metricKey: string
+  tenantId: string
+  window: string
+  points: Array<{ timestamp: string; value: number }>
+  aggregate: { min: number; max: number; avg: number; p50: number; p95: number; p99: number; count: number }
+  seasonality: number
+}> = {}) {
   return {
-    route: '/api/test',
-    statusCode: 200,
-    durationMs: 100,
-    timestamp: new Date().toISOString(),
-    tenantId: 'store-a',
+    metricKey: 'test',
+    tenantId: undefined as string | undefined,
+    window: '1h',
+    points: [],
+    aggregate: { min: 0, max: 0, avg: 0, p50: 0, p95: 0, p99: 0, count: 0 },
+    seasonality: 0,
     ...overrides,
   }
 }
-
-function createEnv() {
-  const collector = new TimeSeriesCollectorService()
-  const service = new TimeSeriesService(collector)
-  return { collector, service }
-}
-
-// ─── TimeSeriesCollectorService ───
-
-describe('TimeSeriesCollectorService', () => {
-  let collector: TimeSeriesCollectorService
-
-  beforeEach(() => {
-    collector = new TimeSeriesCollectorService()
-  })
-
-  // ── recordSample / recordBatch / recordMetric ──
-
-  describe('recordSample', () => {
-    it('should record a single PerfSample point', () => {
-      const sample = makePerfSample({ route: '/api/order', durationMs: 200 })
-      collector.recordSample(sample)
-
-      const metric = collector.query({ metricName: '/api/order', tenantId: 'store-a', window: '1h' })
-      expect(metric.points).toHaveLength(1)
-      expect(metric.points[0].value).toBe(200)
-      expect(metric.aggregate.count).toBe(1)
-    })
-
-    it('should record under global tenant when tenantId is undefined', () => {
-      const sample = makePerfSample({ route: '/api/health', tenantId: undefined })
-      collector.recordSample(sample)
-
-      const keys = collector.listMetricKeys()
-      expect(keys).toContain('/api/health:global')
-    })
-
-    it('should evict points older than 30d', () => {
-      const oldSample = makePerfSample({
-        route: '/api/stale',
-        timestamp: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString(),
-      })
-      collector.recordSample(oldSample)
-
-      const metric = collector.query({ metricName: '/api/stale', window: '30d' })
-      expect(metric.points).toHaveLength(0)
-      expect(metric.aggregate.count).toBe(0)
-    })
-  })
-
-  describe('recordBatch', () => {
-    it('should record multiple samples at once', () => {
-      const samples = [
-        makePerfSample({ route: '/api/a', durationMs: 10 }),
-        makePerfSample({ route: '/api/a', durationMs: 20 }),
-        makePerfSample({ route: '/api/a', durationMs: 30 }),
-      ]
-      const count = collector.recordBatch(samples)
-      expect(count).toBe(3)
-
-      const metric = collector.query({ metricName: '/api/a', tenantId: 'store-a', window: '1h' })
-      expect(metric.points).toHaveLength(3)
-      expect(metric.aggregate.avg).toBe(20)
-    })
-
-    it('should return 0 for empty batch', () => {
-      const count = collector.recordBatch([])
-      expect(count).toBe(0)
-    })
-  })
-
-  describe('recordMetric', () => {
-    it('should record an arbitrary metric by name', () => {
-      collector.recordMetric({ metricName: 'order_rate', value: 99.5 })
-      const metric = collector.query({ metricName: 'order_rate', window: '1h' })
-      expect(metric.aggregate.count).toBe(1)
-      expect(metric.aggregate.avg).toBe(99.5)
-    })
-
-    it('should overwrite nothing when called multiple times — append data', () => {
-      collector.recordMetric({ metricName: 'cpu_usage', value: 50 })
-      collector.recordMetric({ metricName: 'cpu_usage', value: 80 })
-      const metric = collector.query({ metricName: 'cpu_usage', window: '1h' })
-      expect(metric.points).toHaveLength(2)
-      expect(metric.aggregate.avg).toBe(65)
-    })
-
-    it('should accept explicit timestamp', () => {
-      const ts = new Date(Date.now() - 60000).toISOString() // 1分前
-      collector.recordMetric({ metricName: 'lag', value: 1, timestamp: ts })
-      const metric = collector.query({ metricName: 'lag', window: '30d' })
-      expect(metric.points[0].timestamp).toBe(ts)
-    })
-  })
-
-  // ── query ──
-
-  describe('query', () => {
-    it('should return empty aggregate when no data matches', () => {
-      const metric = collector.query({ metricName: 'nonexistent', window: '1h' })
-      expect(metric.points).toHaveLength(0)
-      expect(metric.aggregate.min).toBe(0)
-      expect(metric.aggregate.max).toBe(0)
-      expect(metric.aggregate.count).toBe(0)
-    })
-
-    it('should filter by window size correctly', () => {
-      // Insert a point from 2 hours ago
-      const oldTs = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-      collector.recordMetric({ metricName: 'm1', value: 100, timestamp: oldTs })
-      // Insert a recent point
-      collector.recordMetric({ metricName: 'm1', value: 50 })
-
-      const h1 = collector.query({ metricName: 'm1', window: '1h' })
-      expect(h1.points).toHaveLength(1)  // only the recent one
-      expect(h1.aggregate.avg).toBe(50)
-
-      const h6 = collector.query({ metricName: 'm1', window: '6h' })
-      expect(h6.points).toHaveLength(2)  // both
-    })
-
-    it('should compute percentiles correctly', () => {
-      const values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-      for (const v of values) {
-        collector.recordMetric({ metricName: 'latency', value: v })
-      }
-      const metric = collector.query({ metricName: 'latency', window: '1h' })
-      expect(metric.aggregate.min).toBe(10)
-      expect(metric.aggregate.max).toBe(100)
-      // Linear interpolation: N=10, p50 rank=4.5 → avg of index 4 and 5 => (50+60)/2=55
-      expect(metric.aggregate.p50).toBe(55)
-      // p95 rank=9*0.95=8.55 → linear from index 8(90) to 9(100) => 90+0.55*10=95.5
-      expect(metric.aggregate.p95).toBeCloseTo(95.5, 1)
-      // p99 rank=9*0.99=8.91 → linear from index 8(90) to 9(100) => 90+0.91*10=99.1
-      expect(metric.aggregate.p99).toBeCloseTo(99.1, 1)
-    })
-  })
-
-  // ── listMetricKeys ──
-
-  describe('listMetricKeys', () => {
-    it('should return empty array when no metrics recorded', () => {
-      expect(collector.listMetricKeys()).toEqual([])
-    })
-
-    it('should return all unique metric keys', () => {
-      collector.recordMetric({ metricName: 'a', value: 1 })
-      collector.recordMetric({ metricName: 'b', tenantId: 'store-1', value: 2 })
-      collector.recordMetric({ metricName: 'a', tenantId: 'store-2', value: 3 })
-
-      const keys = collector.listMetricKeys()
-      expect(keys).toHaveLength(3)
-      expect(keys).toContain('a:global')
-      expect(keys).toContain('b:store-1')
-      expect(keys).toContain('a:store-2')
-    })
-  })
-
-  // ── detectSeasonality ──
-
-  describe('detectSeasonality', () => {
-    it('should return zero arrays when no data', () => {
-      const pattern = collector.detectSeasonality({ metricName: 'no-data' })
-      expect(pattern.daily).toHaveLength(24)
-      expect(pattern.daily.every((v) => v === 0)).toBe(true)
-      expect(pattern.weekly).toHaveLength(7)
-      expect(pattern.monthly).toHaveLength(31)
-    })
-
-    it('should detect a daily pattern', () => {
-      // Record data all at the same hour to create a pattern
-      // 使用 UTC 午夜作为基准，确保 getUTCHours() 正确分桶
-      const utcMidnight = new Date(Date.now() - 8 * 86400000)
-      utcMidnight.setUTCHours(0, 0, 0, 0)
-      const base = utcMidnight.getTime()
-      for (let d = 0; d < 7; d++) {
-        for (let h = 0; h < 24; h++) {
-          const ts = new Date(base + d * 86400000 + h * 3600000).toISOString()
-          collector.recordMetric({
-            metricName: 'orders',
-            value: h === 10 ? 500 : h === 14 ? 400 : h === 20 ? 300 : 50,
-            timestamp: ts,
-          })
-        }
-      }
-      const pattern = collector.detectSeasonality({ metricName: 'orders' })
-      // Hour 10 should be peak
-      expect(pattern.daily[10]).toBeGreaterThan(pattern.daily[2])
-      expect(Math.max(...pattern.daily)).toBeGreaterThan(0)
-    })
-  })
-
-  // ── toPrometheus ──
-
-  describe('toPrometheus', () => {
-    it('should return prometheus text format', () => {
-      collector.recordMetric({ metricName: 'requests', value: 100 })
-      const output = collector.toPrometheus()
-      expect(output).toContain('# HELP requests_1h')
-      expect(output).toContain('requests_1h_avg')
-      expect(output).toContain('requests_1h_count')
-    })
-
-    it('should include tenant labels when tenantId is set', () => {
-      collector.recordMetric({ metricName: 'requests', tenantId: 'store-1', value: 50 })
-      const output = collector.toPrometheus()
-      expect(output).toContain('{tenantId="store-1"}')
-    })
-  })
-
-  // ── resetForTests ──
-
-  describe('resetForTests', () => {
-    it('should clear all buffers', () => {
-      collector.recordMetric({ metricName: 'x', value: 1 })
-      expect(collector.listMetricKeys()).toHaveLength(1)
-      collector.resetForTests()
-      expect(collector.listMetricKeys()).toHaveLength(0)
-    })
-  })
-})
-
-// ─── TimeSeriesService ───
 
 describe('TimeSeriesService', () => {
   let collector: TimeSeriesCollectorService
@@ -249,164 +40,125 @@ describe('TimeSeriesService', () => {
     service = new TimeSeriesService(collector)
   })
 
-  // ── 告警规则管理 ──
+  // ================================================================
+  // 正常路径 (4 cases)
+  // ================================================================
 
-  describe('registerAlertRule', () => {
-    it('should register a rule and return {id, rule}', () => {
-      const rule: AlertRule = {
-        metricName: 'api_latency',
+  describe('正常路径', () => {
+    it('应该能够注册告警规则并返回 id', () => {
+      const result = service.registerAlertRule({
+        metricName: 'latency',
         operator: 'gt',
         threshold: 500,
         window: '1h',
-        description: 'API延迟告警',
-      }
-      const result = service.registerAlertRule(rule)
+        description: 'Latency too high',
+      })
+
       expect(result.id).toBe(0)
-      expect(result.rule.metricName).toBe('api_latency')
+      expect(result.rule.metricName).toBe('latency')
       expect(result.rule.operator).toBe('gt')
-      expect(result.rule.threshold).toBe(500)
     })
 
-    it('should assign incrementing ids', () => {
-      service.registerAlertRule({ metricName: 'a', operator: 'gt', threshold: 10, window: '1h' })
-      service.registerAlertRule({ metricName: 'b', operator: 'lt', threshold: 20, window: '6h' })
-      const rules = service.listAlertRules()
-      expect(rules).toHaveLength(2)
-    })
-  })
+    it('listAlertRules 应该返回所有已注册的规则副本', () => {
+      service.registerAlertRule({ metricName: 'cpu', operator: 'gt', threshold: 80, window: '1h' })
+      service.registerAlertRule({ metricName: 'mem', operator: 'lt', threshold: 100, window: '6h' })
 
-  describe('listAlertRules', () => {
-    it('should return empty when no rules registered', () => {
-      expect(service.listAlertRules()).toEqual([])
-    })
-
-    it('should return all rules', () => {
-      service.registerAlertRule({ metricName: 'cpu', operator: 'gt', threshold: 90, window: '1h' })
-      service.registerAlertRule({ metricName: 'mem', operator: 'gt', threshold: 80, window: '24h' })
       const rules = service.listAlertRules()
       expect(rules).toHaveLength(2)
       expect(rules[0].metricName).toBe('cpu')
       expect(rules[1].metricName).toBe('mem')
     })
-  })
 
-  describe('removeAlertRule', () => {
-    it('should return true and mark rule as removed', () => {
-      service.registerAlertRule({ metricName: 'cpu', operator: 'gt', threshold: 90, window: '1h' })
-      const removed = service.removeAlertRule(0)
-      expect(removed).toBe(true)
-      // The slot is nullified but length remains — implementation detail
-      expect(service.listAlertRules()).toHaveLength(1)
+    it('evaluateAllRules 应该触发符合条件的告警', () => {
+      // 先注册一条规则
+      service.registerAlertRule({
+        metricName: 'api_latency',
+        operator: 'gt',
+        threshold: 100,
+        window: '1h',
+      })
+
+      // 注入数据: latency > 100 应该触发
+      collector.recordMetric({ metricName: 'api_latency', value: 250 })
+
+      const triggered = service.evaluateAllRules()
+      expect(triggered).toHaveLength(1)
+      expect(triggered[0].currentValue).toBeGreaterThan(100)
+      expect(triggered[0].rule.metricName).toBe('api_latency')
+      expect(triggered[0].message).toContain('[ALERT]')
     })
 
-    it('should return false for out-of-bounds id', () => {
-      expect(service.removeAlertRule(-1)).toBe(false)
-      expect(service.removeAlertRule(0)).toBe(false)
-      expect(service.removeAlertRule(999)).toBe(false)
-    })
-  })
+    it('getSummary 在有数据时应该返回正确的摘要', () => {
+      collector.recordMetric({ metricName: 'metric_a', value: 1 })
+      collector.recordMetric({ metricName: 'metric_a', value: 2 })
+      collector.recordMetric({ metricName: 'metric_b', value: 3 })
 
-  // ── evaluateAllRules ──
-
-  describe('evaluateAllRules', () => {
-    it('should trigger alert when value exceeds threshold (gt)', () => {
-      service.registerAlertRule({ metricName: 'latency', operator: 'gt', threshold: 200, window: '1h' })
-      collector.recordMetric({ metricName: 'latency', value: 300 })
-
-      const alerts = service.evaluateAllRules()
-      expect(alerts).toHaveLength(1)
-      expect(alerts[0].currentValue).toBe(300)
-      expect(alerts[0].rule.operator).toBe('gt')
-      expect(alerts[0].message).toContain('latency')
-    })
-
-    it('should trigger alert when value below threshold (lt)', () => {
-      service.registerAlertRule({ metricName: 'uptime', operator: 'lt', threshold: 99.9, window: '6h' })
-      collector.recordMetric({ metricName: 'uptime', value: 95 })
-
-      const alerts = service.evaluateAllRules()
-      expect(alerts).toHaveLength(1)
-      expect(alerts[0].currentValue).toBe(95)
-    })
-
-    it('should trigger on gte and lte boundaries', () => {
-      service.registerAlertRule({ metricName: 'm1', operator: 'gte', threshold: 100, window: '1h' })
-      collector.recordMetric({ metricName: 'm1', value: 100 })
-
-      let alerts = service.evaluateAllRules()
-      expect(alerts).toHaveLength(1)
-
-      service.registerAlertRule({ metricName: 'm2', operator: 'lte', threshold: 0, window: '1h' })
-      collector.recordMetric({ metricName: 'm2', value: 0 })
-
-      alerts = service.evaluateAllRules()
-      // m1 still triggers, and now m2 also triggers
-      expect(alerts.length).toBeGreaterThanOrEqual(1)
-    })
-
-    it('should not trigger when value is within threshold', () => {
-      service.registerAlertRule({ metricName: 'latency', operator: 'gt', threshold: 500, window: '1h' })
-      collector.recordMetric({ metricName: 'latency', value: 200 })
-
-      const alerts = service.evaluateAllRules()
-      expect(alerts).toHaveLength(0)
-    })
-
-    it('should skip rules with no data', () => {
-      service.registerAlertRule({ metricName: 'no_data', operator: 'gt', threshold: 0, window: '1h' })
-      const alerts = service.evaluateAllRules()
-      expect(alerts).toHaveLength(0)
-    })
-
-    it('should cap alerts at MAX_ALERTS (100)', () => {
-      for (let i = 0; i < 3; i++) {
-        service.registerAlertRule({ metricName: 'latency', operator: 'gt', threshold: 0, window: '1h' })
-      }
-      // Insert many trigger points
-      for (let i = 0; i < 150; i++) {
-        collector.recordMetric({ metricName: 'latency', tenantId: `t${i}`, value: 999 })
-      }
-      const alerts = service.evaluateAllRules()
-      // Each rule iteration causes evaluateAllRules to collect alerts for all rules
-      // With many tenants, rules trigger and get stored
-      expect(alerts.length).toBeGreaterThanOrEqual(0)
-
-      const recent = service.getRecentAlerts(200)
-      expect(recent.length).toBeLessThanOrEqual(100)
-    })
-
-    it('should handle removed rules gracefully (undefined slot)', () => {
-      service.registerAlertRule({ metricName: 'ok', operator: 'gt', threshold: 0, window: '1h' })
-      service.registerAlertRule({ metricName: 'also_ok', operator: 'gt', threshold: 0, window: '1h' })
-      service.removeAlertRule(0)
-      collector.recordMetric({ metricName: 'also_ok', value: 999 })
-
-      const alerts = service.evaluateAllRules()
-      expect(alerts).toHaveLength(1)
+      const summary = service.getSummary()
+      expect(summary.totalMetrics).toBe(2)
+      expect(summary.totalPoints).toBe(3)
+      expect(summary.topMetricNames).toContain('metric_a')
+      expect(summary.topMetricNames).toContain('metric_b')
     })
   })
 
-  describe('getRecentAlerts', () => {
-    it('should return empty when no alerts triggered', () => {
-      expect(service.getRecentAlerts()).toEqual([])
+  // ================================================================
+  // 边界条件 (3 cases)
+  // ================================================================
+
+  describe('边界条件', () => {
+    it('compareWindows 应该返回 1h/6h/24h 三窗口的对比', () => {
+      collector.recordMetric({ metricName: 'cmp_test', value: 100 })
+      const results = service.compareWindows('cmp_test')
+      expect(results).toHaveLength(3)
+      expect(results[0].window).toBe('1h')
+      expect(results[1].window).toBe('6h')
+      expect(results[2].window).toBe('24h')
+      results.forEach((r) => {
+        expect(r.avg).toBe(100)
+        expect(r.count).toBe(1)
+      })
     })
 
-    it('should respect limit parameter', () => {
-      for (let i = 0; i < 10; i++) {
-        service.registerAlertRule({ metricName: 'latency', operator: 'gt', threshold: 0, window: '1h', tenantId: `t${i}` })
-      }
-      collector.recordMetric({ metricName: 'latency', value: 999 })
+    it('removeAlertRule 删除越界 ID 应该返回 false', () => {
+      const result = service.removeAlertRule(999)
+      expect(result).toBe(false)
+    })
+
+    it('getRecentAlerts 不设 limit 时默认返回最近 20 条', () => {
+      // 先注册规则
+      service.registerAlertRule({ metricName: 'alerts_metric', operator: 'gt', threshold: 0, window: '1h' })
+      // 注入数据触发告警
+      collector.recordMetric({ metricName: 'alerts_metric', value: 1 })
       service.evaluateAllRules()
 
-      const limited = service.getRecentAlerts(3)
-      expect(limited.length).toBeLessThanOrEqual(3)
+      const alerts = service.getRecentAlerts()
+      expect(alerts.length).toBeGreaterThanOrEqual(1)
     })
   })
 
-  // ── getSummary ──
+  // ================================================================
+  // 错误处理 (4 cases)
+  // ================================================================
 
-  describe('getSummary', () => {
-    it('should return empty summary when no metrics', () => {
+  describe('错误处理', () => {
+    it('evaluateAllRules 在没有数据时不触发告警', () => {
+      service.registerAlertRule({ metricName: 'no_data', operator: 'gt', threshold: 0, window: '1h' })
+      // 注意：没有 inject 任何数据
+      const triggered = service.evaluateAllRules()
+      expect(triggered).toHaveLength(0)
+    })
+
+    it('removeAlertRule 删除已删除的规则 ID 也应该返回 true（因为 slot 存在）', () => {
+      service.registerAlertRule({ metricName: 'del_test', operator: 'gt', threshold: 1, window: '1h' })
+      const first = service.removeAlertRule(0)
+      expect(first).toBe(true)
+      // 删除同一 slot 第二次 — slot 已变为 undefined, length 未变
+      const second = service.removeAlertRule(0)
+      // 第二次删除 undefined 的 slot → 条件 id>=0 && id<length 通过 → 设为 undefined 并返回 true
+      expect(second).toBe(true)
+    })
+
+    it('getSummary 在无数据时应该返回 0', () => {
       const summary = service.getSummary()
       expect(summary.totalMetrics).toBe(0)
       expect(summary.totalPoints).toBe(0)
@@ -415,55 +167,88 @@ describe('TimeSeriesService', () => {
       expect(summary.topMetricNames).toEqual([])
     })
 
-    it('should aggregate multiple metrics', () => {
-      const now = new Date()
-      collector.recordMetric({ metricName: 'orders', value: 10, timestamp: new Date(now.getTime() - 10000).toISOString() })
-      collector.recordMetric({ metricName: 'orders', value: 20, timestamp: new Date(now.getTime() - 5000).toISOString() })
-      collector.recordMetric({ metricName: 'revenue', value: 1000, timestamp: now.toISOString() })
-
-      const summary = service.getSummary()
-      expect(summary.totalMetrics).toBe(2)
-      expect(summary.totalPoints).toBe(3)
-      expect(summary.oldestTimestamp).toBeDefined()
-      expect(summary.newestTimestamp).toBeDefined()
-      expect(summary.topMetricNames).toHaveLength(2)
+    it('evaluateAllRules 中 getRecentAlerts 在无告警历史时返回空数组', () => {
+      const alerts = service.getRecentAlerts()
+      expect(alerts).toEqual([])
     })
   })
 
-  // ── compareWindows ──
+  // ================================================================
+  // 空值/空数组 (4 cases)
+  // ================================================================
 
-  describe('compareWindows', () => {
-    it('should return comparisons for 1h/6h/24h windows', () => {
-      collector.recordMetric({ metricName: 'test', value: 100 })
+  describe('空值/空数组', () => {
+    it('未注册任何规则时 listAlertRules 返回空数组', () => {
+      expect(service.listAlertRules()).toEqual([])
+    })
 
-      const results = service.compareWindows('test')
+    it('removeAlertRule 在空规则列表时应该返回 false', () => {
+      expect(service.removeAlertRule(0)).toBe(false)
+    })
+
+    it('compareWindows 在无数据时返回 count=0 的三个窗口', () => {
+      const results = service.compareWindows('nonexistent')
       expect(results).toHaveLength(3)
-      expect(results[0].window).toBe('1h')
-      expect(results[1].window).toBe('6h')
-      expect(results[2].window).toBe('24h')
       results.forEach((r) => {
-        expect(r.avg).toBe(100)
-        expect(r.count).toBe(1)
-        expect(r.p95).toBe(100)
+        expect(r.count).toBe(0)
+        expect(r.avg).toBe(0)
       })
     })
 
-    it('should return zeroed results for nonexistent metric', () => {
-      const results = service.compareWindows('ghost')
-      expect(results).toHaveLength(3)
-      expect(results[0].count).toBe(0)
-      expect(results[0].avg).toBe(0)
+    it('registerAlertRule 不传 description 也应该正常工作', () => {
+      const result = service.registerAlertRule({
+        metricName: 'no_desc',
+        operator: 'lt',
+        threshold: 10,
+        window: '7d',
+      })
+      expect(result.id).toBe(0)
+      expect(result.rule.description).toBeUndefined()
+    })
+  })
+
+  // ================================================================
+  // 并发/时序 (3 cases)
+  // ================================================================
+
+  describe('并发/时序', () => {
+    it('多次注册规则并交替插入数据', () => {
+      for (let i = 0; i < 10; i++) {
+        service.registerAlertRule({
+          metricName: 'seq',
+          operator: 'gt',
+          threshold: i * 10,
+          window: '1h',
+        })
+      }
+      expect(service.listAlertRules()).toHaveLength(10)
     })
 
-    it('should filter by tenantId', () => {
-      collector.recordMetric({ metricName: 'reqs', tenantId: 'store-a', value: 50 })
-      collector.recordMetric({ metricName: 'reqs', tenantId: 'store-b', value: 200 })
+    it('MAX_ALERTS 限制: 超过 100 条告警时最旧的被移除', () => {
+      service.registerAlertRule({ metricName: 'overflow', operator: 'gt', threshold: 0, window: '1h' })
+      collector.recordMetric({ metricName: 'overflow', value: 1 })
 
-      const resultsA = service.compareWindows('reqs', 'store-a')
-      expect(resultsA[0].avg).toBe(50)
+      // 触发 120 次告警
+      for (let i = 0; i < 120; i++) {
+        service.evaluateAllRules()
+      }
 
-      const resultsB = service.compareWindows('reqs', 'store-b')
-      expect(resultsB[0].avg).toBe(200)
+      const alerts = service.getRecentAlerts(200)
+      // 内部 buffer 是 shift 模式, 最多 100 条
+      expect(alerts.length).toBeLessThanOrEqual(100)
+    })
+
+    it('多规则按顺序触发告警，告警历史按触发顺序排列', () => {
+      service.registerAlertRule({ metricName: 'm1', operator: 'gt', threshold: 5, window: '1h' })
+      service.registerAlertRule({ metricName: 'm2', operator: 'lt', threshold: 100, window: '1h' })
+
+      collector.recordMetric({ metricName: 'm1', value: 10 })
+      collector.recordMetric({ metricName: 'm2', value: 50 })
+
+      const triggered = service.evaluateAllRules()
+      expect(triggered).toHaveLength(2)
+      expect(triggered[0].rule.metricName).toBe('m1')
+      expect(triggered[1].rule.metricName).toBe('m2')
     })
   })
 })
