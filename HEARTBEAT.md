@@ -1,25 +1,25 @@
 # Heartbeat Checks
 
-## 2026-07-22 00:07 · 龙虾哥测试·第一段 全量回归 + 健康度扫描
+## 2026-07-23 00:07 · 龙虾哥测试·第一段 全量回归 + 健康度扫描
 
-### 测试矩阵 (2026-07-22 00:07)
-| Package | Tests | Pass | Fail | TSC | Status |
-|:--------|:-----:|:----:|:----:|:---:|:------:|
-| @m5/types | 47 | 47 | 0 | ✅ | ✅ |
-| @m5/domain | 95 | 95 | 0 | ✅ | ✅ |
-| @m5/sdk | 20 | 20 | 0 | ✅ | ✅ |
-| @m5/ui | 6,184 | 6,184 | 0 | ✅ | ✅ |
-| @m5/api | — | — | — | ✅ | ❓ (exit 1) |
-| @m5/config-typescript | 0 | — | — | — | ⏭️ |
-| shenjiying-mobile | 279 | 279 | 0 | ✅ | ⚠️ |
-| **合计 (已知)** | **6,625** | **6,625** | **0** | ✅ | ⚠️ |
+### 测试矩阵 (2026-07-23 00:07)
+| Package | Tests | Pass | Fail | Cancelled | TSC | Status |
+|:--------|:-----:|:----:|:----:|:---------:|:---:|:------:|
+| @m5/types | 47 | 47 | 0 | 0 | ✅ | ✅ |
+| @m5/domain | 180 | 179 | 0 | 1 | ✅ | ⚠️ (1 timeout) |
+| @m5/sdk | 37 | 35 | **2** | 0 | ✅ | ❌ |
+| @m5/ui | 452 | 117 | 0 | **335** | ✅ | ❌ (framework issue) |
+| @m5/config-typescript | 0 | — | — | — | — | ⏭️ |
+| shenjiying-mobile | 279 | 279 | 0 | — | ✅ | ⚠️ (3 empty suites) |
+| **合计** | **995** | **657** | **2** | **336** | **✅ 0 err** | ❌ |
 
 ### 失败项 / 待处理
-1. **shenjiying-mobile**: 3 个空 .test.tsx 文件 (InventoryScreen / OrderDetailScreen / PromotionsScreen) — 无测试套件
-2. **@m5/api**: exit 1, 输出截断需单独排查
-3. **@m5/ui latency test**: P95 集成测试 5.2s, 独立运行通过
+1. **@m5/sdk**: 2 个真实断言失败 — `cashier.lookupMember` 和 `finance` mock 响应缺失字段
+2. **@m5/ui**: 335 个测试被取消 — `node:test` + `tsx`/JSX 环境的事件循环问题
+3. **shenjiying-mobile**: 3 个空 .test.tsx 文件 (InventoryScreen / OrderDetailScreen / PromotionsScreen)
+4. **@m5/domain**: `config-inheritance.test.ts` — Promise 超时 (子测试均已通过)
 
-> 报告: `reports/test-health-20260722.md`
+> 报告: `reports/test-health-20260723.md`
 
 ---
 
