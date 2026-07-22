@@ -180,3 +180,171 @@ describe('P-38 结算 E2E — 边界', () => {
     assert.ok(full.length >= paged.length)
   })
 })
+
+describe('P-38 结算 E2E — 边界值/异常路径', () => {
+  let settlement
+
+  beforeEach(() => {
+    settlement = new FinanceSettlementCron()
+  })
+
+  it('16. 结算金额恒为正 — 每次运行返回的amountCents均>0', async () => {
+    const results = await settlement.runPeriodic({ periodicity: 'daily' })
+    assert.ok(results.length > 0)
+    for (const r of results) {
+      // 所有结算结果金额必须大于0
+      assert.ok(r.task.amountCents > 0,
+        `金额应为正: store=${r.task.storeId} amount=${r.task.amountCents}`)
+    }
+  })
+
+  it('17. 多门店并行结算 — 每次覆盖所有门店', async () => {
+    const results = await settlement.runPeriodic({ periodicity: 'daily' })
+    // cron中有4个门店: store-A1, store-A2, store-B1, store-B2
+    const storeIds = results.map(r => r.task.storeId)
+    assert.ok(storeIds.includes('store-A1'))
+    assert.ok(storeIds.includes('store-A2'))
+    assert.ok(storeIds.includes('store-B1'))
+    assert.ok(storeIds.includes('store-B2'))
+    assert.equal(results.length, 4, '应包含全部4个门店的结算记录')
+
+    // 所有门店结果状态一致
+    for (const r of results) {
+      assert.equal(r.status, 'completed')
+      assert.ok(r.settledAt)
+    }
+  })
+
+  it('18. 多次运行后Metrics累计一致', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+    await settlement.runPeriodic({ periodicity: 'weekly' })
+    await settlement.runPeriodic({ periodicity: 'monthly' })
+
+    const m = settlement.getMetrics()
+    const history = settlement.getHistory(100)
+
+    // totalSettlements == history.length
+    assert.equal(m.totalSettlements, history.length,
+      `Metrics totalSettlements ${m.totalSettlements} 与历史 ${history.length} 不一致`)
+
+    // totalCompleted + totalFailed == totalSettlements
+    assert.equal(m.totalCompleted + m.totalFailed, m.totalSettlements,
+      'completed + failed 应等于 totalSettlements')
+
+    // 最后运行时间不为空
+    assert.ok(m.lastRunAt)
+  })
+
+  it('19. getHistory随limit截断 — limit=0返回空', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+
+    const empty = settlement.getHistory(0)
+    assert.equal(empty.length, 0, 'limit=0应返回空数组')
+
+    const one = settlement.getHistory(1)
+    assert.equal(one.length, 1, 'limit=1应返回1条')
+  })
+
+  it('20. 通知内容校验 — 每条通知包含正确字段', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+
+    const notes = settlement.getUnacknowledgedNotifications()
+    assert.ok(notes.length > 0)
+
+    for (const note of notes) {
+      assert.ok(note.id, '通知应包含id')
+      assert.ok(note.title, '通知应包含title')
+      assert.ok(note.message, '通知应包含message')
+      assert.equal(note.acknowledged, false)
+      assert.ok(['settlement_completed', 'settlement_failed', 'settlement_summary'].includes(note.type))
+      assert.ok(note.details, '通知应包含details')
+      assert.ok(note.details.periodicity, 'details应包含periodicity')
+      assert.ok(note.details.storeCount !== undefined || note.details.completed !== undefined,
+        'details应包含门店统计信息')
+    }
+  })
+
+  it('21. 重复标记已读 — 第二次acknowledge返回false', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+    const notes = settlement.getUnacknowledgedNotifications()
+    const firstId = notes[0].id
+
+    const firstMark = settlement.acknowledgeNotification(firstId)
+    assert.equal(firstMark, true)
+
+    // 再次标记同一通知，应返回false（已标记过）
+    const secondMark = settlement.acknowledgeNotification(firstId)
+    assert.equal(secondMark, false)
+  })
+
+  it('22. 全量已读后metrics.unacknowledgedNotifications归零', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+    await settlement.runPeriodic({ periodicity: 'weekly' })
+
+    const m1 = settlement.getMetrics()
+    assert.ok(m1.unacknowledgedNotifications > 0, '运行后应有未读通知')
+
+    const count = settlement.acknowledgeAll()
+    assert.ok(count > 0, '应标记了多个已读')
+
+    const m2 = settlement.getMetrics()
+    assert.equal(m2.unacknowledgedNotifications, 0, '全量已读后未读应为0')
+    assert.equal(settlement.getUnacknowledgedNotifications().length, 0,
+      'getUnacknowledgedNotifications也应为空')
+  })
+
+  it('23. 不同周期不产生重复 — 幂等覆盖多种周期', async () => {
+    // 分别跑三种周期
+    const d1 = await settlement.runPeriodic({ periodicity: 'daily' })
+    const w1 = await settlement.runPeriodic({ periodicity: 'weekly' })
+    const m1 = await settlement.runPeriodic({ periodicity: 'monthly' })
+
+    const historyLen1 = settlement.getHistory(100).length
+
+    // 再次跑相同周期（幂等）
+    const d2 = await settlement.runPeriodic({ periodicity: 'daily' })
+    const w2 = await settlement.runPeriodic({ periodicity: 'weekly' })
+    const m2 = await settlement.runPeriodic({ periodicity: 'monthly' })
+
+    // 幂等: 第二次应返回空数组（不增加历史）
+    assert.equal(d2.length, 0, 'daily幂等返回空')
+    assert.equal(w2.length, 0, 'weekly幂等返回空')
+    assert.equal(m2.length, 0, 'monthly幂等返回空')
+
+    const historyLen2 = settlement.getHistory(100).length
+    assert.equal(historyLen2, historyLen1, '幂等操作不应增加历史记录')
+  })
+
+  it('24. 通知数量与结算运行次数一致', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+    await settlement.runPeriodic({ periodicity: 'weekly' })
+
+    const history = settlement.getHistory(100)
+    const notes = settlement.getUnacknowledgedNotifications()
+
+    // 每次runPeriodic产生1条通知
+    // 已跑2次（daily+weekly），应有2条未读通知
+    assert.equal(notes.length, 2,
+      `应有2条通知, 实际${notes.length}`)
+
+    assert.ok(history.length >= notes.length,
+      '历史记录数应不少于通知数')
+  })
+
+  it('25. getMetrics.lastRunAt与最新结算时间一致', async () => {
+    await settlement.runPeriodic({ periodicity: 'daily' })
+
+    const m = settlement.getMetrics()
+    const history = settlement.getHistory(1)
+
+    assert.ok(m.lastRunAt, 'lastRunAt不应为空')
+    assert.ok(history.length > 0)
+    // 最新结算时间与metrics的lastRunAt时间相近
+    const latestSettledAt = history[0].settledAt
+    assert.equal(m.lastRunAt, latestSettledAt,
+      'lastRunAt应与最新结算记录时间一致')
+
+    // lastError应为null（成功运行）
+    assert.equal(m.lastError, null)
+  })
+})
