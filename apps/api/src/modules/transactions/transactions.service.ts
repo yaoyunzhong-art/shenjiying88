@@ -233,6 +233,14 @@ export class TransactionsService {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value
     }
+    // Handle Prisma Decimal objects (DecimalJsLike)
+    if (value !== null && typeof value === 'object' && 'toNumber' in (value as Record<string, unknown>)) {
+      const decimal = value as { toNumber: () => number }
+      const parsed = decimal.toNumber()
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
     if (typeof value === 'string' && value.trim().length) {
       const parsed = Number(value)
       if (Number.isFinite(parsed)) {
