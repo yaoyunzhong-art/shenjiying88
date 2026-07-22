@@ -434,14 +434,14 @@ describe('TenantConfigCacheService', () => {
 
   // ─── getStats ────────────────────────────────────────────────────
 
-  it('F3-14 getStats 返回正确 hitRate', () => {
+  it('F3-14 getStats 返回正确 hitRate', async () => {
     // 无调用 → 0
     const empty = service.getStats()
     assert.equal(empty.hitRate, 0)
 
     // 1 miss + 1 hit → 0.5
-    service.getOrLoad('cfg', ctx, ['k'], async () => 'v', 300)
-    service.getOrLoad('cfg', ctx, ['k'], async () => 'v2', 300)
+    await service.getOrLoad('cfg', ctx, ['k'], async () => 'v', 300)
+    await service.getOrLoad('cfg', ctx, ['k'], async () => 'v2', 300)
 
     const stats = service.getStats()
     assert.equal(stats.hits, 1)
@@ -449,9 +449,9 @@ describe('TenantConfigCacheService', () => {
     assert.equal(stats.hitRate, 0.5)
   })
 
-  it('F3-15 getStats 无 tenantId 时返回全局统计', () => {
-    service.getOrLoad('cfg', { ...ctx, tenantId: 'A' }, ['k'], async () => 'a', 300)
-    service.getOrLoad('cfg', { ...ctx, tenantId: 'B' }, ['k'], async () => 'b', 300)
+  it('F3-15 getStats 无 tenantId 时返回全局统计', async () => {
+    await service.getOrLoad('cfg', { ...ctx, tenantId: 'A' }, ['k'], async () => 'a', 300)
+    await service.getOrLoad('cfg', { ...ctx, tenantId: 'B' }, ['k'], async () => 'b', 300)
 
     const globalStats = service.getStats()
     assert.equal(globalStats.misses, 2)
