@@ -21,7 +21,7 @@ export default defineConfig({
     {
       name: 'l3-baseline',
       testDir: './e2e',
-      testMatch: 'e2e-l3-baseline-*.spec.ts',
+      testMatch: /e2e-l3-baseline-.*\.(spec|test)\.ts$/,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
