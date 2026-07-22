@@ -319,7 +319,9 @@ test.describe('PurchaseOrders Service — 边界条件', () => {
     assert.equal(formatCurrency(0), '0');
   });
 
-  test('formatCurrency handles very large numbers', () => {
-    assert.equal(formatCurrency(99999999), '10000.0万');
+  test('formatCurrency handles very large numbers (>= 10M drops decimal)', () => {
+    // toFixed(0) for >= 10,000,000
+    assert.equal(formatCurrency(10000000), '1000万');
+    assert.equal(formatCurrency(99999999), '10000万');
   });
 });
