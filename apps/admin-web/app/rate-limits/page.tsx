@@ -14,7 +14,8 @@
 
 import { Suspense } from 'react';
 import { PageShell, ErrorBoundary } from '@m5/ui';
-import { loadRateLimitWorkspace } from '../../rate-limits-view-model';
+import type { QuotaLedgerStatus } from '@m5/types';
+import { loadRateLimitWorkspace } from '../rate-limits-view-model';
 import RateLimitsWorkspaceClient from './rate-limits-workspace-client';
 
 export const dynamic = 'force-dynamic';
@@ -121,7 +122,7 @@ async function RateLimitsContent({
   const tenantId = readQueryParam(params.tenantId);
   const policyCode = readQueryParam(params.policyCode);
   const subjectKey = readQueryParam(params.subjectKey);
-  const status = readQueryParam(params.status);
+  const status = readQueryParam(params.status) as QuotaLedgerStatus | 'ALL' | undefined;
 
   const { workspace } = await loadRateLimitWorkspace(
     {
