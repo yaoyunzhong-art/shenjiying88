@@ -6,7 +6,7 @@
  *
  * 功能:
  *  - 查询参数解析（tenantId/policyCode/subjectKey/status）
- *  - ALL 通配状态查询
+ *  - ALL 通配状态查询、healthy/warning/blocked 三态分桶
  *  - 数组参数 & undefined 参数防御
  *  - PageShell 外壳 + subtitle 描述
  *  - force-dynamic 动态渲染 + no-store 缓存策略
@@ -142,7 +142,7 @@ export default async function RateLimitsPage({
   return (
     <PageShell
       title="⏱️ 限流与配额管理"
-      subtitle="限流策略与配额账本 — 健康/告警/封禁三态分桶 · 支持 ALL 通配查询"
+      subtitle="限流策略与配额账本 — healthy/warning/blocked 三态分桶 · 支持 ALL 通配查询"
     >
       <ErrorBoundary
         name="RateLimitsErrorBoundary"
