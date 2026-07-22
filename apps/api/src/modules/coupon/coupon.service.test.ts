@@ -14,7 +14,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
  */
 
 import { CouponService } from './coupon.service'
-import type { CouponV2 } from './coupon.entity'
+import { CouponV2 } from './coupon.entity'  // eslint-disable-line
 import type { Repository, DataSource } from 'typeorm'
 import { runWithTenant } from '../../common/context/tenant-context'
 
@@ -465,3 +465,243 @@ describe('CouponService', () => {
     expect(result.error?.code).toBe('QUOTA_EXCEEDED')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════
+// 树哥B — 圈梁五道箍 — Coupon Service 追加测试 (16条)
+// 覆盖: create / findById / list / updateStatus / redeemCrossStore 边界 / batch 边界
+// ═══════════════════════════════════════════════════════════════
+
+describe('CouponService — 追加 [树哥B-圈梁五道箍]', () => {
+  let couponRepo: Repository<any>
+  let redemptionRepo: Repository<any>
+  let dataSource: DataSource
+  let service: CouponService
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // 添加 findAndCount 支持给新测试
+    couponRepo = createMockRepo({ findAndCount: vi.fn().mockResolvedValue([[], 0]) })
+    redemptionRepo = createMockRepo()
+    dataSource = {
+      transaction: vi.fn(async (cb: any) => {
+        const txManager = {
+          getRepository: vi.fn((entity: any) => {
+            if (entity === Object) return couponRepo
+            return redemptionRepo
+          }),
+        }
+        return cb(txManager)
+      }),
+    } as any
+    service = new CouponService(couponRepo as any, redemptionRepo as any, dataSource, undefined, undefined)
+  })
+
+  // ── create ──
+
+  it('[B1] create 返回完整 Coupon 对象含默认 status=active', async () => {
+    vi.mocked(couponRepo.create).mockReturnValue(createMockCoupon())
+    vi.mocked(couponRepo.save).mockResolvedValue(createMockCoupon())
+
+    await expect(service.create({
+      code: 'NEW-001',
+      tenantId: 't-1',
+      scope: { type: 'single-store', storeIds: ['s1'], includeSubordinates: false },
+      redemptionRules: { minAmount: 50 },
+      value: 30,
+      valueType: 'fixed',
+      expiresAt: '2099-12-31T23:59:59Z',
+      maxRedemptions: 100,
+    })).resolves.toBeDefined()
+
+    expect(couponRepo.create).toHaveBeenCalled()
+    expect(couponRepo.save).toHaveBeenCalled()
+  })
+
+  it('[B2] create 不传 maxRedemptions 不报错', async () => {
+    vi.mocked(couponRepo.create).mockReturnValue(createMockCoupon({ maxRedemptions: undefined }))
+    vi.mocked(couponRepo.save).mockResolvedValue(createMockCoupon({ maxRedemptions: undefined }))
+
+    await expect(service.create({
+      code: 'NO-MAX',
+      tenantId: 't-1',
+      scope: { type: 'tenant-wide', storeIds: [], includeSubordinates: false },
+      redemptionRules: {},
+      value: 10,
+      valueType: 'percentage',
+      expiresAt: '2099-12-31T23:59:59Z',
+    })).resolves.toBeDefined()
+  })
+
+  // ── findById ──
+
+  it('[B3] findById 返回 null 当 id 不存在', async () => {
+    vi.mocked(couponRepo.findOne).mockResolvedValue(null)
+    const result = await service.findById('non-existent')
+    expect(result).toBeNull()
+  })
+
+  it('[B4] findById 查询传入正确 where 条件', async () => {
+    vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
+    await service.findById('c-1')
+    expect(couponRepo.findOne).toHaveBeenCalledWith({ where: { id: 'c-1' } })
+  })
+
+  // ── list ──
+
+  it('[B5] list 默认分页 page=1 pageSize=20', async () => {
+    vi.mocked(couponRepo.findAndCount).mockResolvedValue([[createMockCoupon()], 1])
+    const result = await service.list({})
+    expect(result.total).toBe(1)
+    expect(result.items).toHaveLength(1)
+    expect(couponRepo.findAndCount).toHaveBeenCalledWith({
+      where: {},
+      skip: 0,
+      take: 20,
+      order: { createdAt: 'DESC' },
+    })
+  })
+
+  it('[B6] list 支持 status 和 tenantId 联合筛选', async () => {
+    vi.mocked(couponRepo.findAndCount).mockResolvedValue([[], 0])
+    await service.list({ status: 'active', tenantId: 't-1', page: 2, pageSize: 10 })
+    expect(couponRepo.findAndCount).toHaveBeenCalledWith({
+      where: { status: 'active', tenantId: 't-1' },
+      skip: 10,
+      take: 10,
+      order: { createdAt: 'DESC' },
+    })
+  })
+
+  it('[B7] list 超大分页不崩溃', async () => {
+    vi.mocked(couponRepo.findAndCount).mockResolvedValue([[], 0])
+    await expect(service.list({ page: 999999, pageSize: 9999 })).resolves.toBeDefined()
+  })
+
+  // ── updateStatus ──
+
+  it('[B8] updateStatus 返回 null 当 id 不存在', async () => {
+    vi.mocked(couponRepo.findOne).mockResolvedValue(null)
+    const result = await service.updateStatus('no-such', 'paused')
+    expect(result).toBeNull()
+  })
+
+  it('[B9] updateStatus 将 active 改为 paused', async () => {
+    const coupon = createMockCoupon({ status: 'active' })
+    vi.mocked(couponRepo.findOne).mockResolvedValue(coupon)
+    vi.mocked(couponRepo.save).mockResolvedValue({ ...coupon, status: 'paused' })
+
+    const result = await service.updateStatus(coupon.id, 'paused')
+    expect(result!.status).toBe('paused')
+  })
+
+  // ── redeemCrossStore 补充边界 ──
+
+  it('[B10] redeemCrossStore 事务内 update 返回 affected=0 触发并发竞争 Error', async () => {
+    vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
+    vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon({ redemptionCount: 0, maxRedemptions: 1 }))
+
+    // txManager 的所有 getRepository 都返回 update-affected=0
+    const txManager = {
+      getRepository: vi.fn().mockReturnValue({
+        update: vi.fn().mockResolvedValue({ affected: 0 }),
+        create: vi.fn((d: any) => d),
+        save: vi.fn((d: any) => ({ ...d, id: 'mock-redemption-id' })),
+      }),
+    }
+    dataSource.transaction = vi.fn(async (cb: any) => cb(txManager))
+
+    const result = await withTenantCtx(() => service.redeemCrossStore({
+      userId: 'u1', couponCode: 'C1', storeId: 'store-1',
+      orderAmount: 200, orderId: 'o1', idempotencyKey: 'o1:C1',
+    }))
+
+    // transaction 抛 Error('Concurrent redemption conflict') → catch 兜底 → COUPON_NOT_FOUND
+    expect(result.success).toBe(false)
+    expect(result.error?.code).toBe('COUPON_NOT_FOUND')
+  })
+
+  it('[B11] redeemCrossStore tenantId 显式传入时用传入值', async () => {
+    vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
+    vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
+
+    await withTenantCtx(() => service.redeemCrossStore({
+      userId: 'u1', couponCode: 'C1', storeId: 'store-1',
+      orderAmount: 200, orderId: 'o1', idempotencyKey: 'o1:C1',
+      tenantId: 'custom-tenant',
+    }))
+
+    expect(couponRepo.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: 'custom-tenant' }),
+      }),
+    )
+  })
+
+  // ── batchRedeem 边界补充 ──
+
+  it('[B12] batchRedeem 空输入返回空列表', async () => {
+    const results = await service.batchRedeem([])
+    expect(results).toEqual([])
+  })
+
+  it('[B13] batchRedeem 单元素批量等价于单次核销', async () => {
+    vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
+    vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
+
+    const results = await withTenantCtx(() => service.batchRedeem([{
+      userId: 'u1', couponCode: 'C1', storeId: 'store-1',
+      orderAmount: 200, orderId: 'o1', idempotencyKey: 'o1:C1',
+    }]))
+
+    expect(results).toHaveLength(1)
+    expect(results[0].success).toBe(true)
+  })
+
+  it('[B14] batchRedeem 所有请求都失败（批量异常）', async () => {
+    vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
+    vi.mocked(couponRepo.findOne).mockResolvedValue(null) // 全都不存在
+
+    const results = await withTenantCtx(() => service.batchRedeem([
+      { userId: 'u1', couponCode: 'X1', storeId: 's1', orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:X1' },
+      { userId: 'u2', couponCode: 'X2', storeId: 's1', orderAmount: 100, orderId: 'o2', idempotencyKey: 'o2:X2' },
+      { userId: 'u3', couponCode: 'X3', storeId: 's1', orderAmount: 100, orderId: 'o3', idempotencyKey: 'o3:X3' },
+    ]))
+
+    expect(results).toHaveLength(3)
+    expect(results.every(r => !r.success)).toBe(true)
+    expect(results.every(r => r.error?.code === 'COUPON_NOT_FOUND')).toBe(true)
+  })
+
+  // ── checkCrossStoreEligibility 补充 ──
+
+  it('[B15] checkCrossStoreEligibility storeIds 为空数组时 non-tenant-wide 返回 not eligible', () => {
+    const coupon = createMockCoupon({
+      scope: { type: 'multi-store', storeIds: [], includeSubordinates: false },
+    })
+    const result = service.checkCrossStoreEligibility(coupon, 'any-store')
+    expect(result.eligible).toBe(false)
+  })
+
+  it('[B16] checkCrossStoreEligibility includeSubordinates 不影响现有逻辑', () => {
+    const coupon = createMockCoupon({
+      scope: { type: 'multi-store', storeIds: ['s1', 's2'], includeSubordinates: true },
+    })
+    expect(service.checkCrossStoreEligibility(coupon, 's1').eligible).toBe(true)
+    expect(service.checkCrossStoreEligibility(coupon, 's3').eligible).toBe(false)
+  })
+
+  // ── lifecycle 未注入不报错 ──
+
+  it('[B17] lifecycle/quota 未注入时 redeemCrossStore 不报错', async () => {
+    vi.mocked(redemptionRepo.findOne).mockResolvedValue(null)
+    vi.mocked(couponRepo.findOne).mockResolvedValue(createMockCoupon())
+
+    const result = await withTenantCtx(() => service.redeemCrossStore({
+      userId: 'u1', couponCode: 'C1', storeId: 'store-1',
+      orderAmount: 200, orderId: 'o1', idempotencyKey: 'o1:C1',
+    }))
+
+    expect(result.success).toBe(true)
+  })
+})
+

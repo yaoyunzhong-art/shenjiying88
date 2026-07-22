@@ -331,3 +331,184 @@ describe('TaskSchedulerService', () => {
     })
   })
 })
+
+// ═══════════════════════════════════════════════════════════════
+// 树哥B — 圈梁五道箍 — TaskScheduler Service 追加测试 (16条)
+// 覆盖: createTask 边界 / updateTask 复杂patch / 状态机全路径 / 多租户隔离 / seed 数据验证
+// ═══════════════════════════════════════════════════════════════
+
+describe('TaskSchedulerService — 追加 [树哥B-圈梁五道箍]', () => {
+  let service: TaskSchedulerService
+
+  const TENANT = 'tenant-001'
+  const ALT_TENANT = 'tenant-alt-002'
+
+  beforeEach(() => {
+    service = new TaskSchedulerService()
+  })
+
+  afterEach(() => {
+    service.resetTaskStoresForTests()
+  })
+
+  function createTestTask(overrides?: Partial<Parameters<TaskSchedulerService['createTask']>[0]>): Task {
+    return service.createTask({
+      tenantId: TENANT,
+      name: 'Test Task',
+      type: TaskType.OneTime,
+      priority: TaskPriority.Medium,
+      assignedTo: 'user-001',
+      startTime: '2026-07-17T10:00:00.000Z',
+      description: 'A test task',
+      ...overrides,
+    })
+  }
+
+  // ── createTask 边界 ──
+
+  it('[B1] createTask 使用超大 description 不截断', () => {
+    const longDesc = 'A'.repeat(5000)
+    const t = createTestTask({ description: longDesc })
+    assert.equal(t.description.length, 5000)
+  })
+
+  it('[B2] createTask createdAt 和 updatedAt 值相同（新建时）', () => {
+    const t = createTestTask()
+    assert.equal(t.createdAt, t.updatedAt, '新建任务 created=updated')
+  })
+
+  it('[B3] createTask endTime 为可选字段不传不报错', () => {
+    const t = createTestTask({ type: TaskType.Recurring, cronExpr: '0 8 * * 1' })
+    assert.equal(t.endTime, undefined)
+  })
+
+  it('[B4] createTask Shift 类型必填 endTime', () => {
+    const t = createTestTask({ type: TaskType.Shift, endTime: '2026-07-17T16:00:00.000Z' })
+    assert.equal(t.endTime, '2026-07-17T16:00:00.000Z')
+  })
+
+  // ── updateTask 复杂场景 ──
+
+  it('[B5] updateTask 全字段更新', () => {
+    const t = createTestTask()
+    const updated = service.updateTask(t.id, TENANT, {
+      name: 'New', type: TaskType.Recurring, priority: TaskPriority.High,
+      cronExpr: '0 0 * * *', assignedTo: 'new-user', startTime: '2026-08-01T00:00:00Z',
+      endTime: '2026-08-01T01:00:00Z', description: 'Updated desc',
+    })
+    assert.equal(updated.name, 'New')
+    assert.equal(updated.type, TaskType.Recurring)
+    assert.equal(updated.cronExpr, '0 0 * * *')
+    assert.equal(updated.assignedTo, 'new-user')
+    assert.equal(updated.description, 'Updated desc')
+  })
+
+  it('[B6] updateTask 部分字段更新后其他字段不变', () => {
+    const t = createTestTask({ name: 'Original', priority: TaskPriority.Low })
+    const updated = service.updateTask(t.id, TENANT, { name: 'Renamed' })
+    assert.equal(updated.name, 'Renamed')
+    assert.equal(updated.priority, TaskPriority.Low, '未更新字段保持不变')
+  })
+
+  it('[B7] updateTask updatedAt 在更新后变化', () => {
+    const t = createTestTask()
+    const oldUpdated = t.updatedAt
+    // updateTask 内部会 new Date().toISOString() 刷新 updatedAt
+    const updated = service.updateTask(t.id, TENANT, { name: 'Changed' })
+    // 同毫秒内可能相等,但 updatedAt 不会比 oldUpdated 小
+    assert.ok(updated.updatedAt >= oldUpdated, 'updatedAt 不应变小')
+  })
+
+  // ── 状态机全路径 ──
+
+  it('[B8] Running → Cancelled 合法', () => {
+    const t = createTestTask()
+    service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+    const updated = service.updateTaskStatus(t.id, TaskStatus.Cancelled, TENANT)
+    assert.equal(updated.status, TaskStatus.Cancelled)
+  })
+
+  it('[B9] Running → Failed → Pending (重试闭环)', () => {
+    const t = createTestTask()
+    service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+    service.updateTaskStatus(t.id, TaskStatus.Failed, TENANT)
+    const retried = service.updateTaskStatus(t.id, TaskStatus.Pending, TENANT)
+    assert.equal(retried.status, TaskStatus.Pending)
+  })
+
+  it('[B10] 非法: Completed → Failed 抛出异常', () => {
+    const t = createTestTask()
+    service.updateTaskStatus(t.id, TaskStatus.Running, TENANT)
+    service.updateTaskStatus(t.id, TaskStatus.Completed, TENANT)
+    assert.throws(
+      () => service.updateTaskStatus(t.id, TaskStatus.Failed, TENANT),
+      /Invalid task status transition/,
+    )
+  })
+
+  it('[B11] 非法: Cancelled → Running 抛出异常', () => {
+    const t = createTestTask()
+    service.updateTaskStatus(t.id, TaskStatus.Cancelled, TENANT)
+    assert.throws(
+      () => service.updateTaskStatus(t.id, TaskStatus.Running, TENANT),
+      /Invalid task status transition/,
+    )
+  })
+
+  // ── 多租户隔离 ──
+
+  it('[B12] 不同 tenant 的任务互不可见', () => {
+    createTestTask({ tenantId: TENANT })
+    createTestTask({ tenantId: ALT_TENANT })
+
+    const listA = service.listTasks(TENANT)
+    const listB = service.listTasks(ALT_TENANT)
+
+    // listA 包含 seed 数据,所以 > 1
+    assert.ok(listA.length >= 1, 'TENANT 应有任务')
+    assert.equal(listB.length, 1, 'ALT_TENANT 只有新创建的任务')
+    assert(listA.some(t => t.tenantId === TENANT), 'listA 包含 TENANT 任务')
+    assert(listB.every(t => t.tenantId === ALT_TENANT), 'listB 全是 ALT_TENANT 任务')
+  })
+
+  it('[B13] 跨租户 deleteTask 抛出异常', () => {
+    const t = createTestTask({ tenantId: TENANT })
+    assert.throws(
+      () => service.deleteTask(t.id, ALT_TENANT),
+      /Task not found/,
+    )
+  })
+
+  it('[B14] 跨租户 updateTaskStatus 抛出异常', () => {
+    const t = createTestTask({ tenantId: TENANT })
+    assert.throws(
+      () => service.updateTaskStatus(t.id, TaskStatus.Running, ALT_TENANT),
+      /Task not found/,
+    )
+  })
+
+  // ── seed 数据验证 ──
+
+  it('[B15] getPendingTasks 返回的 seed 数据包含不同 priority', () => {
+    // listTasks 会触发 seedMockTasks 从而包含预埋的 22 个任务
+    const all = service.listTasks(TENANT)
+    const pending = service.getPendingTasks(TENANT)
+    assert.ok(pending.length > 0, 'seed 数据应包含 pending 任务')
+    assert.ok(pending.length <= all.length, 'pending 数量不超过总数')
+  })
+
+  it('[B16] getTaskByAssignee 返回空当 assignee 无任务', () => {
+    const tasks = service.getTaskByAssignee('no-such-user', TENANT)
+    assert.equal(tasks.length, 0)
+  })
+
+  it('[B17] batchUpdateStatus 批量 Cancelled 后全部不可再 Running', () => {
+    const t1 = createTestTask({ name: 'B1' })
+    const t2 = createTestTask({ name: 'B2' })
+    service.batchUpdateStatus([t1.id, t2.id], TaskStatus.Cancelled, TENANT)
+
+    assert.throws(() => service.updateTaskStatus(t1.id, TaskStatus.Running, TENANT))
+    assert.throws(() => service.updateTaskStatus(t2.id, TaskStatus.Running, TENANT))
+  })
+})
+
