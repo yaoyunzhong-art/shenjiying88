@@ -15,7 +15,7 @@
  *  11. 空字段搜索边界
  */
 
-import { describe, it, beforeEach, afterEach } from 'vitest'
+import { describe, it, beforeEach, afterEach, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 import { ContractManagerService } from './contract-manager.service'
 import { ContractStatus, ContractType } from './contract-manager.entity'
@@ -31,6 +31,11 @@ describe('ContractManagerService - 补充测试', () => {
   })
 
   afterEach(() => {
+    service.resetContractStoresForTests()
+  })
+
+  // 文件级最后清理: 确保共享 store 不留种子数据污染后续测试文件
+  afterAll(() => {
     service.resetContractStoresForTests()
   })
 
