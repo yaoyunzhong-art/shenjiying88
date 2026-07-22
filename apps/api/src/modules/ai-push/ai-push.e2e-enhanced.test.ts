@@ -509,7 +509,7 @@ describe('ai-push e2e 增强测试', () => {
     // 使用 PushTaskService 默认值 3
     const task = pushTaskService.createTask({
       title: '最大重试', content: '内容', channel: 'push',
-      targetMemberIds: [],
+      targetMemberIds: [], scheduledAt: Date.now(),
     })
     expect(task.maxRetries).toBe(3)
   })
@@ -517,11 +517,11 @@ describe('ai-push e2e 增强测试', () => {
   it('[M2-管理] 多个任务ID各不相同', () => {
     const t1 = pushTaskService.createTask({
       title: 'T1', content: 'C1', channel: 'push',
-      targetMemberIds: [],
+      targetMemberIds: [], scheduledAt: Date.now(),
     })
     const t2 = pushTaskService.createTask({
       title: 'T2', content: 'C2', channel: 'push',
-      targetMemberIds: [],
+      targetMemberIds: [], scheduledAt: Date.now(),
     })
     expect(t1.id).not.toBe(t2.id)
   })
@@ -537,7 +537,7 @@ describe('ai-push e2e 增强测试', () => {
 
     pushTaskService.createTask({
       title: 'T', content: 'C', channel: 'push',
-      targetMemberIds: [],
+      targetMemberIds: [], scheduledAt: Date.now(),
     })
     const after = pushTaskService.getStats()
     expect(after.totalTasks).toBe(1)

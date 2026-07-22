@@ -202,10 +202,7 @@ describe('BlindboxService — 扩展测试 (Extended)', () => {
     })
 
     it('多次十连抽后历史记录总数正确', async () => {
-      const plan = await lastValueFrom(svc.createPlan({
-        ...createPlanInput(),
-        stockPerPrize: 1000,
-      }))
+      const plan = await lastValueFrom(svc.createPlan(createPlanInput({ stockPerPrize: 1000 })))
       await lastValueFrom(svc.drawBatch10('user-multi-batch', plan.planId))
       await lastValueFrom(svc.drawBatch10('user-multi-batch', plan.planId))
       await lastValueFrom(svc.drawBatch10('user-multi-batch', plan.planId))
@@ -405,10 +402,7 @@ describe('BlindboxService — 扩展测试 (Extended)', () => {
 
   describe('压力测试', () => {
     it('连续 100 次抽取不崩溃且记录正确', async () => {
-      const plan = await lastValueFrom(svc.createPlan({
-        ...createPlanInput(),
-        stockPerPrize: 5000,
-      }))
+      const plan = await lastValueFrom(svc.createPlan(createPlanInput({ stockPerPrize: 5000 })))
 
       for (let i = 0; i < 100; i++) {
         const rec = await lastValueFrom(svc.drawSingle('user-stress', plan.planId))
@@ -420,10 +414,7 @@ describe('BlindboxService — 扩展测试 (Extended)', () => {
     })
 
     it('5 次十连抽 (50次) 不崩溃', async () => {
-      const plan = await lastValueFrom(svc.createPlan({
-        ...createPlanInput(),
-        stockPerPrize: 5000,
-      }))
+      const plan = await lastValueFrom(svc.createPlan(createPlanInput({ stockPerPrize: 5000 })))
 
       for (let i = 0; i < 5; i++) {
         const recs = await lastValueFrom(svc.drawBatch10('user-batch-stress', plan.planId))
@@ -435,10 +426,7 @@ describe('BlindboxService — 扩展测试 (Extended)', () => {
     })
 
     it('单抽 + 十连抽交替不紊乱', async () => {
-      const plan = await lastValueFrom(svc.createPlan({
-        ...createPlanInput(),
-        stockPerPrize: 200,
-      }))
+      const plan = await lastValueFrom(svc.createPlan(createPlanInput({ stockPerPrize: 200 })))
 
       for (let i = 0; i < 3; i++) {
         await lastValueFrom(svc.drawSingle('user-alternate', plan.planId))
@@ -454,10 +442,7 @@ describe('BlindboxService — 扩展测试 (Extended)', () => {
 
   describe('抽取历史 limit', () => {
     it('limit 默认返回最近 20 条', async () => {
-      const plan = await lastValueFrom(svc.createPlan({
-        ...createPlanInput(),
-        stockPerPrize: 500,
-      }))
+      const plan = await lastValueFrom(svc.createPlan(createPlanInput({ stockPerPrize: 500 })))
 
       for (let i = 0; i < 30; i++) {
         await lastValueFrom(svc.drawSingle('user-limit', plan.planId))
@@ -468,10 +453,7 @@ describe('BlindboxService — 扩展测试 (Extended)', () => {
     })
 
     it('limit=5 时只返回 5 条', async () => {
-      const plan = await lastValueFrom(svc.createPlan({
-        ...createPlanInput(),
-        stockPerPrize: 500,
-      }))
+      const plan = await lastValueFrom(svc.createPlan(createPlanInput({ stockPerPrize: 500 })))
 
       for (let i = 0; i < 15; i++) {
         await lastValueFrom(svc.drawSingle('user-limit-5', plan.planId))

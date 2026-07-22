@@ -233,8 +233,9 @@ describe('SalaryService', () => {
     it('getPayrollDetail 包含审批历史', () => {
       const detail = service.getPayrollDetail('pay-seed-001')
       assert.ok(detail)
-      assert.equal(detail!.employeeName, '张三')
-      assert.ok(detail!.approvalHistory.length >= 3)
+      assert.ok(detail.approvalHistory)
+      assert.equal(detail.employeeName, '张三')
+      assert.ok(detail.approvalHistory!.length >= 3)
     })
 
     it('getApprovalHistory 返回审批记录', () => {

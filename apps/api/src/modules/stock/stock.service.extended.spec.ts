@@ -87,7 +87,7 @@ describe('StockService — 扩展 Service 测试 (18+ 条)', () => {
   let service: StockService
   let mockStockItemRepo: Partial<Record<keyof Repository<StockItem>, ReturnType<typeof vi.fn>>>
   let mockStockTxnRepo: Partial<Record<keyof Repository<StockTransaction>, ReturnType<typeof vi.fn>>>
-  let mockDataSource: Partial<Record<keyof DataSource, ReturnType<typeof vi.fn>>>
+  let mockDataSource: { transaction: ReturnType<typeof vi.fn> }
 
   beforeEach(async () => {
     mockStockItemRepo = {

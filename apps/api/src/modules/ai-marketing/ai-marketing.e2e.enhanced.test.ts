@@ -349,9 +349,9 @@ describe('ai-marketing E2E enhanced — 30 tests', () => {
     expect(res.data.roi).toBeDefined()
     expect(res.data.roi!.campaignId).toBe('camp-001')
     expect(res.data.timeline).toBeDefined()
-    expect(res.data.timeline.length).toBeGreaterThan(0)
+    expect(res.data.timeline!.length).toBeGreaterThan(0)
     expect(res.data.reach).toBeDefined()
-    expect(res.data.reach.length).toBe(2)
+    expect(res.data.reach!.length).toBe(2)
     expect(res.data.analyzedAt).toBeDefined()
   })
 

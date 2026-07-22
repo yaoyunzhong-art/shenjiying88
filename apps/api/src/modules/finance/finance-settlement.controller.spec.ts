@@ -83,7 +83,7 @@ function createMockCron() {
     onApplicationBootstrap: vi.fn(),
     onApplicationShutdown: vi.fn(),
   }
-  return mockCron as unknown as FinanceSettlementCron
+  return mockCron
 }
 
 // ═══════════════════════════════════════════════════════════════

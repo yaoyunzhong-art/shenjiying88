@@ -31,6 +31,7 @@ function makeService() {
 }
 
 function createExpenseInput(opts?: {
+  title?: string
   category?: ExpenseCategory
   amount?: number
   applicantId?: string
