@@ -8,7 +8,7 @@ import type { PaymentMethod } from '@m5/types'
  * PaymentChannelBootstrap · 启动时注册默认 Mock 通道
  *
  * 设计目的:
- *   - 默认租户 ('default') 自动有 WECHAT/ALIPAY/CARD 3 个 mock 通道
+ *   - 仅在显式开启时,默认租户 ('default') 自动注册 WECHAT/ALIPAY/CARD 3 个 mock 通道
  *   - 真实租户在生产环境由 admin-web 配置后台 → 调 register API 注册真实通道
  *   - 当前 MVP: 所有租户 fallback 到 'default' 租户的通道
  *
@@ -30,12 +30,10 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
   ) {}
 
   onApplicationBootstrap(): void {
-    const shouldBootstrapMockChannels =
-      process.env.ENABLE_MOCK_PAYMENT_CHANNELS === 'true' ||
-      process.env.NODE_ENV !== 'production'
+    const shouldBootstrapMockChannels = process.env.ENABLE_MOCK_PAYMENT_CHANNELS === 'true'
 
     if (!shouldBootstrapMockChannels) {
-      this.logger.log('Skip default mock channel bootstrap in production mode')
+      this.logger.log('Skip default mock channel bootstrap because ENABLE_MOCK_PAYMENT_CHANNELS is not enabled')
       return
     }
 

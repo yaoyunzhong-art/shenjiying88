@@ -8,6 +8,8 @@ import {
   type BusinessTransactionAggregate,
 } from '@m5/sdk';
 
+export { ApiError };
+
 export type CheckoutPaymentMethod = 'wechat' | 'alipay' | 'cash' | 'member_card';
 export type H5PaymentMethod = 'wechat' | 'alipay' | 'cash' | 'member_card';
 export type PaymentResultStatus = 'success' | 'failed' | 'pending';
@@ -531,5 +533,61 @@ export async function validateStorefrontCoupon(
       return { valid: false, message: error.message };
     }
     return { valid: false, message: '优惠券验证失败' };
+  }
+}
+
+/** 会员余额/积分概览信息 */
+export interface MemberBalanceInfo {
+  balance: number;       // 可用余额（分）
+  points: number;        // 可用积分
+  frozenPoints: number;  // 冻结积分
+  couponCount: number;   // 可用优惠券张数
+}
+
+/**
+ * 查询会员余额/积分概览 — 调用 GET /members/:memberId/balance
+ * 返回 null 表示查询失败或会员不存在
+ */
+export async function getStorefrontMemberBalance(
+  memberId: string,
+  scope?: StorefrontScope,
+): Promise<MemberBalanceInfo | null> {
+  try {
+    const client = createStorefrontTransactionsClient(scope);
+    return await client.getData<MemberBalanceInfo>(
+      `/members/${memberId}/balance`,
+      {
+        cache: 'no-store',
+      },
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 前台发起退款请求
+ */
+export async function requestStorefrontRefund(
+  orderId: string,
+  paymentId: string,
+  amountCents: number,
+  reason: string,
+  scope?: StorefrontScope,
+): Promise<{ success: boolean; refundId?: string; error?: string }> {
+  try {
+    const client = createBusinessClient(getDefaultApiBaseUrl());
+    const result = await client.cashier.createRefund(orderId, {
+      paymentId,
+      amountCents,
+      reason,
+    }, {
+      cache: 'no-store',
+      headers: buildStorefrontScopeHeaders(resolveStorefrontScope(scope)),
+    });
+    return { success: true, refundId: result.refundId };
+  } catch (error) {
+    const message = error instanceof ApiError ? error.message : '退款请求失败';
+    return { success: false, error: message };
   }
 }

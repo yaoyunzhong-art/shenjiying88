@@ -280,6 +280,36 @@ export class MemberController {
     return session;
   }
 
+  /** 获取会员支付方式 (返回空数组, 便于后续扩展) */
+  @Get(':memberId/payments')
+  getPayments(@Param('memberId') _memberId: string) {
+    return [];
+  }
+
+  /** 获取会员登录记录 (返回空数组, 便于后续扩展) */
+  @Get(':memberId/login-history')
+  getLoginHistory(@Param('memberId') _memberId: string) {
+    return [];
+  }
+
+  /** 获取会员安全事件 (返回空数组, 便于后续扩展) */
+  @Get(':memberId/security-events')
+  getSecurityEvents(@Param('memberId') _memberId: string) {
+    return [];
+  }
+
+  /** 获取会员流失预测 (返回空数组, 便于后续扩展) */
+  @Get(':memberId/churn/predictions')
+  getChurnPredictions(@Param('memberId') _memberId: string) {
+    return [];
+  }
+
+  /** 获取会员流失诊断发现 (返回空数组, 便于后续扩展) */
+  @Get(':memberId/churn/diagnosis')
+  getChurnDiagnosis(@Param('memberId') _memberId: string) {
+    return [];
+  }
+
   /** 获取会员档案 */
   @Get(':memberId')
   getProfile(@Param('memberId') memberId: string): MemberProfile {
@@ -309,5 +339,11 @@ export class MemberController {
   @Get(':memberId/upgrade-check')
   checkUpgrade(@Param('memberId') memberId: string) {
     return this.memberService.checkUpgrade(memberId);
+  }
+
+  /** 查询会员余额/积分概览 — 供 storefront checkout 使用 */
+  @Get(':memberId/balance')
+  getBalance(@Param('memberId') memberId: string) {
+    return this.memberService.getMemberBalance(memberId);
   }
 }

@@ -18,8 +18,10 @@ import {
 import {
   buildStorefrontMemberId,
   ensureStorefrontMemberRegistered,
+  getStorefrontMemberBalance,
   startStorefrontCheckout,
   validateStorefrontCoupon,
+  type MemberBalanceInfo,
 } from '../../lib/storefront-transactions';
 
 // ==================== 类型定义 ====================
@@ -366,6 +368,25 @@ export default function CheckoutPage() {
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message?: string } | null>(null);
   const [couponStatus, setCouponStatus] = useState<{ valid: boolean; message: string; discount?: number } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [memberBalance, setMemberBalance] = useState<MemberBalanceInfo | null>(null);
+  const [memberInfo, setMemberInfo] = useState<{
+    name: string;
+    tierLabel: string;
+    discountRate: number;
+  } | null>(null);
+  const [usePoints, setUsePoints] = useState(false);
+
+  // ---- 会员权益加载 ----
+  useEffect(() => {
+    const phone = formData.phone.trim();
+    if (phone.length >= 11) {
+      getStorefrontMemberBalance(buildStorefrontMemberId(phone))
+        .then(setMemberBalance)
+        .catch(() => setMemberBalance(null));
+    } else {
+      setMemberBalance(null);
+    }
+  }, [formData.phone]);
 
   // ---- 计算金额 ----
   const activeItems = useMemo(() => cartItems.filter((i) => i.quantity > 0), [cartItems]);
@@ -872,6 +893,38 @@ export default function CheckoutPage() {
                 {couponStatus.valid ? '✓ ' : '✗ '}
                 {couponStatus.message}
               </p>
+            )}
+          </div>
+
+          {/* ---- 会员权益 ---- */}
+          <Divider style={{ margin: '8px 0 12px' }} />
+          <div data-testid="member-benefits-section" style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 8 }}>
+              🎫 会员权益
+            </div>
+            {memberBalance ? (
+              <div style={{
+                padding: 10, borderRadius: 8,
+                background: 'rgba(251,191,36,0.08)',
+                border: '1px solid rgba(251,191,36,0.15)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>
+                  <span>可用余额</span>
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>¥{(memberBalance.balance / 100).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>
+                  <span>可用积分</span>
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>{memberBalance.points} 分</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8' }}>
+                  <span>可用优惠券</span>
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>{memberBalance.couponCount} 张</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: '#64748b' }}>
+                登录后可查看会员权益
+              </div>
             )}
           </div>
 

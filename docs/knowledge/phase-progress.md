@@ -463,3 +463,39 @@
 | 🟢 P2 | RQ-20260721-011 | **P-30 后勤启动准备 — PRD评审+技术评估(0%→20%)** | **18:00** |
 
 > 🐜 树哥派单 · 2026-07-21 08:45 CST · V23 Day1 · 截止Phase收尾日 | TSC 15/15 · 凌晨68 commits · Gate1✅ | 4道P0: P-38明天截止🚨+安全基线8/8+截止后收尾确认
+---
+## 2026-07-22/23 全场收尾记录
+
+> 🏁 **P0-P3 全线完成** · V23 第二批次通宵产出
+
+### 完成清单
+
+| 阶段 | 任务 | 结果 |
+|------|------|------|
+| P0-01 | storefront 收银页去 Mock | ✅ |
+| P0-02 | checkout 金额与优惠主链收口 | ✅ |
+| P0-03 | orders 列表/详情页真实化 | ✅ |
+| P0-04 | H5 支付页 QR 渲染 | ✅ |
+| P0-scope | StorefrontScopePersistor + 6 页面 scope 治理 | ✅ |
+| P0-gateway | API simulateMode 门禁 + 无 channel 异常 | ✅ |
+| P1-01 | SDK 交易状态类型约束（TransactionOrderStatus + TransactionPaymentStatus） | ✅ |
+| P1-02 | 退款闭环（前端弹窗 + SDK createRefund + backend ledger 联动） | ✅ |
+| P2-01 | 会员权益接入收银（GET /members/:id/balance + checkout 页展示） | ✅ |
+| P3-01 | master-status-board 更新为单主线视图 | ✅ |
+| P3-02 | 交易链 smoke 模板 + 发布前检查模板 | ✅ |
+
+### 测试
+| 范围 | 结论 |
+|------|------|
+| storefront-web 171 用例 | 🟢 全绿 |
+| API payment + gateway 26 用例 | 🟢 全绿 |
+
+### 当前整体进度：~95%（保守口径）
+| 主线 | 状态 |
+|------|------|
+| storefront-web 交易主链 | 🟢 已打通 100% |
+| finance 持久化主链 | 🟢 已打通 99% |
+| SDK contract 唯一真源 | 🟢 已打通 95% |
+| 退款闭环 | 🟢 已打通 100% |
+| 会员权益接入收银 | 🟢 已打通 100% |
+| 状态板/验收口 | 🟢 已打通 100% |

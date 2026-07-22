@@ -35,6 +35,20 @@ function buildBootstrap() {
   return { registry, mock, bootstrap }
 }
 describe('PaymentChannelBootstrap · 启动时注册默认通道', () => {
+  const previousEnableMockChannels = process.env.ENABLE_MOCK_PAYMENT_CHANNELS
+
+  beforeEach(() => {
+    process.env.ENABLE_MOCK_PAYMENT_CHANNELS = 'true'
+  })
+
+  afterEach(() => {
+    if (previousEnableMockChannels === undefined) {
+      delete process.env.ENABLE_MOCK_PAYMENT_CHANNELS
+      return
+    }
+    process.env.ENABLE_MOCK_PAYMENT_CHANNELS = previousEnableMockChannels
+  })
+
   it('onApplicationBootstrap 注册 WECHAT/ALIPAY/CARD 3 个通道', () => {
     const { registry, bootstrap } = buildBootstrap()
     // 还未 bootstrap
@@ -80,5 +94,14 @@ describe('PaymentChannelBootstrap · 启动时注册默认通道', () => {
       }
     })
     assert.equal(result, 'mock-o-link')
+  })
+
+  it('未显式开启时不自动注册 mock 通道', () => {
+    delete process.env.ENABLE_MOCK_PAYMENT_CHANNELS
+    const { registry, bootstrap } = buildBootstrap()
+    bootstrap.onApplicationBootstrap()
+    assert.equal(registry.listChannels('default', 'WECHAT').length, 0)
+    assert.equal(registry.listChannels('default', 'ALIPAY').length, 0)
+    assert.equal(registry.listChannels('default', 'CARD').length, 0)
   })
 })

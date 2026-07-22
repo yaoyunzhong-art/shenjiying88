@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable, Optional } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
 import { CashierPaymentCallbackDto } from '../cashier/cashier.dto'
 import { CashierService } from '../cashier/cashier.service'
 import {
@@ -72,11 +72,11 @@ export function resetTransactionsServiceTestState() {
 @Injectable()
 export class TransactionsService {
   constructor(
-    private readonly cashierService: CashierService,
-    private readonly loyaltyService: LoyaltyService,
-    @Optional() private readonly prisma?: PrismaService,
-    @Optional() private readonly memberService?: MemberService,
-    @Optional() private readonly financeService?: FinanceService
+    @Inject(CashierService) private readonly cashierService: CashierService,
+    @Inject(LoyaltyService) private readonly loyaltyService: LoyaltyService,
+    @Optional() @Inject(PrismaService) private readonly prisma?: PrismaService,
+    @Optional() @Inject(MemberService) private readonly memberService?: MemberService,
+    @Optional() @Inject(FinanceService) private readonly financeService?: FinanceService
   ) {}
 
   private async recordRevenueLedgerIfNeeded(
@@ -1936,6 +1936,8 @@ export class TransactionsService {
       refundRequestedAt: latestRefund?.requestedAt,
       refundCompletedAt: latestRefund?.completedAt,
       paymentChannel: aggregate.payment?.channel,
+      paymentStatus: aggregate.payment?.status,
+      refundStatus: latestRefund?.status,
       currency: order.currency,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,

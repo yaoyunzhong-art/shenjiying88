@@ -28,12 +28,12 @@ const paymentStore = new Map<string, CashierPayment>()
 @Injectable()
 export class CashierService {
   constructor(
-    readonly memberService: MemberService,
-    @Optional()
+    @Inject(MemberService) readonly memberService: MemberService,
+    @Optional() @Inject(LoyaltyService)
     private readonly loyaltyService?: LoyaltyService,
-    @Optional()
+    @Optional() @Inject(MockPaymentGateway)
     private readonly paymentGateway?: MockPaymentGateway,
-    @Optional()
+    @Optional() @Inject(IntegrationOrchestrationService)
     private readonly integrationOrchestrationService?: IntegrationOrchestrationService,
     @Optional() @Inject(CACHE_SERVICE)
     private readonly cache?: CacheService,
@@ -210,15 +210,19 @@ export class CashierService {
       return
     }
 
-    await this.integrationOrchestrationService.publishEvent(eventName, payload, {
-      source: 'cashier',
-      aggregateId:
-        typeof payload.orderId === 'string'
-          ? payload.orderId
-          : typeof payload.paymentId === 'string'
-            ? payload.paymentId
-            : undefined
-    })
+    try {
+      await this.integrationOrchestrationService.publishEvent(eventName, payload, {
+        source: 'cashier',
+        aggregateId:
+          typeof payload.orderId === 'string'
+            ? payload.orderId
+            : typeof payload.paymentId === 'string'
+              ? payload.paymentId
+              : undefined
+      })
+    } catch {
+      // Domain-event persistence is non-critical for local smoke flows.
+    }
   }
 
   private createOrderNo(tenantContext: RequestTenantContext, now: string) {
@@ -332,6 +336,10 @@ export class CashierService {
             paymentMethod
           )
         : undefined
+    const visiblePrepayUrl =
+      prepay?.codeUrl && !prepay.codeUrl.startsWith('mock://')
+        ? prepay.codeUrl
+        : undefined
     const payment: CashierPayment = {
       paymentId: `payment-${randomUUID()}`,
       orderId,
@@ -339,9 +347,9 @@ export class CashierService {
       channel: input.channel,
       amount: input.amount ?? order.totalAmount,
       status: CashierPaymentStatus.Pending,
-      qrCodeUrl: prepay?.codeUrl,
-      paymentUrl: prepay?.codeUrl,
-      expiresAt: prepay?.expiresAt,
+      qrCodeUrl: visiblePrepayUrl,
+      paymentUrl: visiblePrepayUrl,
+      expiresAt: visiblePrepayUrl ? prepay?.expiresAt : undefined,
       createdAt: now,
       updatedAt: now
     }

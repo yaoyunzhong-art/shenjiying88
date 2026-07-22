@@ -21,6 +21,8 @@ import { TriStateRenderer } from '../_components/TriStateRenderer';
 import {
   formatStorefrontOrderCurrency,
   formatStorefrontOrderDateTime,
+  getStorefrontPaymentStatusLabel,
+  getStorefrontRefundStatusLabel,
   getStorefrontOrderPaymentLabel,
   getStorefrontOrderStatusLabel,
   getStorefrontOrderStatusVariant,
@@ -37,7 +39,10 @@ const STATUS_FILTERS: Array<{ key: StorefrontOrderListStatusFilter; label: strin
   { key: 'ALL', label: '全部' },
   { key: 'PENDING', label: '待支付' },
   { key: 'PAID', label: '已支付' },
+  { key: 'REFUNDING', label: '退款中' },
+  { key: 'PARTIALLY_REFUNDED', label: '部分退款' },
   { key: 'REFUNDED', label: '已退款' },
+  { key: 'CANCELLED', label: '已取消' },
 ];
 
 const PAYMENT_FILTERS: Array<{ key: StorefrontOrderPaymentFilter; label: string }> = [
@@ -90,11 +95,30 @@ const COLUMNS: DataTableColumn<StorefrontOrderListViewItem>[] = [
   },
   {
     key: 'paymentChannel',
-    header: '支付方式',
+    header: '支付信息',
     render: (item) => (
-      <span style={{ fontSize: 13, color: '#94a3b8' }}>
-        {getStorefrontOrderPaymentLabel(item.paymentChannel)}
-      </span>
+      <div>
+        <div style={{ fontSize: 13, color: '#94a3b8' }}>
+          {getStorefrontOrderPaymentLabel(item.paymentChannel)}
+        </div>
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+          {getStorefrontPaymentStatusLabel(item.paymentStatus)}
+        </div>
+      </div>
+    ),
+  },
+  {
+    key: 'refundStatus',
+    header: '退款信息',
+    render: (item) => (
+      <div>
+        <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+          {getStorefrontRefundStatusLabel(item.refundStatus)}
+        </div>
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+          {item.refundRequestedAt ? formatStorefrontOrderDateTime(item.refundRequestedAt) : '-'}
+        </div>
+      </div>
     ),
   },
   {
@@ -178,16 +202,21 @@ export default function OrdersListPage() {
   const stats = useMemo(() => {
     const pending = pageData.filter((item) => item.status === 'pending_payment').length;
     const paid = pageData.filter((item) => item.status === 'paid').length;
+    const refunding = pageData.filter((item) => item.status === 'refunding').length;
+    const partiallyRefunded = pageData.filter((item) => item.status === 'partially_refunded').length;
     const refunded = pageData.filter((item) => item.status === 'refunded').length;
+    const cancelled = pageData.filter((item) => item.status === 'cancelled').length;
     const revenue = pageData
-      .filter((item) => item.status === 'paid')
-      .reduce((sum, item) => sum + item.paidAmount, 0);
+      .reduce((sum, item) => sum + Math.max(item.paidAmount - item.refundedAmount, 0), 0);
 
     return {
       total: pageData.length,
       pending,
       paid,
+      refunding,
+      partiallyRefunded,
       refunded,
+      cancelled,
       revenue,
     };
   }, [pageData]);
@@ -216,7 +245,10 @@ export default function OrdersListPage() {
           <StatCard label="总订单数" value={stats.total} variant="info" />
           <StatCard label="待支付" value={stats.pending} variant="warning" />
           <StatCard label="已支付" value={stats.paid} variant="success" />
+          <StatCard label="退款中" value={stats.refunding} variant="info" />
+          <StatCard label="部分退款" value={stats.partiallyRefunded} variant="info" />
           <StatCard label="已退款" value={stats.refunded} variant="default" />
+          <StatCard label="已取消" value={stats.cancelled} variant="default" />
           <StatCard label="实收金额" value={formatStorefrontOrderCurrency(stats.revenue)} variant="info" />
         </div>
 

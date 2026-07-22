@@ -327,6 +327,8 @@ export interface TransactionOrderListItem {
   refundRequestedAt?: string
   refundCompletedAt?: string
   paymentChannel?: string
+  paymentStatus?: string
+  refundStatus?: string
   currency: string
   createdAt: string
   updatedAt: string

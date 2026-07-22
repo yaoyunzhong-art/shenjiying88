@@ -30,6 +30,7 @@ import {
   PercentageOutlined,
 } from '@ant-design/icons';
 import type { MemberInfo } from '../../lib/member-auth-service';
+import { createBusinessClient, getDefaultApiBaseUrl } from '@m5/sdk';
 
 const { Title, Text } = Typography;
 
@@ -150,21 +151,33 @@ const getTierProgress = (points: number, tier: MembershipTier): { percent: numbe
   };
 };
 
-// 模拟最近消费记录
-const MOCK_RECENT_ORDERS: RecentOrder[] = [
-  { id: '1', orderNo: 'ORD20260701001', amount: 128.0, status: '已完成', date: '2026-07-01', items: 3 },
-  { id: '2', orderNo: 'ORD20260628002', amount: 56.5, status: '已完成', date: '2026-06-28', items: 2 },
-  { id: '3', orderNo: 'ORD20260625003', amount: 399.0, status: '已完成', date: '2026-06-25', items: 5 },
-  { id: '4', orderNo: 'ORD20260620004', amount: 88.0, status: '已完成', date: '2026-06-20', items: 1 },
-  { id: '5', orderNo: 'ORD20260615005', amount: 215.0, status: '已完成', date: '2026-06-15', items: 4 },
-];
+// 从本地存储读取最近订单
+async function fetchRecentOrders(memberId: string): Promise<RecentOrder[]> {
+  try {
+    const client = createBusinessClient(getDefaultApiBaseUrl());
+    const raw = await client.orders.list({ memberId, limit: 5 });
+    if (Array.isArray(raw)) {
+      return raw.map((order: any) => ({
+        id: order.id || order.orderId || '',
+        orderNo: order.orderNo || '',
+        amount: order.totalAmount ?? order.amount ?? 0,
+        status: order.status === 'PAID' || order.status === 'COMPLETED' ? '已完成' : order.status || '已完成',
+        date: order.createdAt ? order.createdAt.slice(0, 10) : '',
+        items: order.itemCount ?? order.items ?? 0,
+      }));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
 
 export default function MemberCenterPage() {
   const router = useRouter();
   const [member, setMember] = useState<MemberInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState<number>(0);
-  const [recentOrders] = useState<RecentOrder[]>(MOCK_RECENT_ORDERS);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [rechargeLoading, setRechargeLoading] = useState(false);
 
   useEffect(() => {
@@ -181,6 +194,16 @@ export default function MemberCenterPage() {
       setMember(info);
       // 模拟余额
       setBalance(Math.floor(Math.random() * 500) + 50);
+
+      // 加载最近订单
+      const memberId = info.memberId;
+      if (memberId) {
+        fetchRecentOrders(memberId).then(orders => {
+          setRecentOrders(orders);
+        }).catch(() => {
+          // 静默失败，保持空数组
+        });
+      }
     } catch {
       router.push('/member-login');
     } finally {

@@ -7,9 +7,11 @@ import {
   type StorefrontTransactionAggregate,
 } from './storefront-transactions';
 
-export type StorefrontOrderListStatusFilter = 'ALL' | 'PENDING' | 'PAID' | 'REFUNDED';
+export type StorefrontOrderListStatusFilter =
+  'ALL' | 'PENDING' | 'PAID' | 'REFUNDING' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'CANCELLED';
 export type StorefrontOrderPaymentFilter = 'ALL' | 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
-export type StorefrontOrderViewStatus = 'pending_payment' | 'paid' | 'refunded' | 'cancelled';
+export type StorefrontOrderViewStatus =
+  'pending_payment' | 'paid' | 'refunding' | 'partially_refunded' | 'refunded' | 'cancelled';
 
 export interface StorefrontOrderListViewItem {
   id: string;
@@ -22,15 +24,20 @@ export interface StorefrontOrderListViewItem {
   currency: string;
   status: StorefrontOrderViewStatus;
   paymentChannel?: string;
+  paymentStatus?: string;
+  refundStatus?: string;
   createdAt: string;
   updatedAt: string;
   paidAt?: string;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
 }
 
 export interface StorefrontOrderDetailView {
   orderId: string;
   orderNo: string;
   memberId: string;
+  status: StorefrontOrderViewStatus;
   statusLabel: string;
   statusTone: 'warning' | 'info' | 'success' | 'error' | 'default';
   currency: string;
@@ -38,11 +45,15 @@ export interface StorefrontOrderDetailView {
   paidAmount: number;
   refundedAmount: number;
   paymentChannelLabel: string;
+  paymentStatusLabel: string;
   createdAt: string;
   updatedAt: string;
   paidAt?: string;
   closeReason?: string;
   memberNickname?: string;
+  refundStatusLabel?: string;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
   items: Array<{
     skuId: string;
     title: string;
@@ -50,6 +61,7 @@ export interface StorefrontOrderDetailView {
     price: number;
     subtotal: number;
   }>;
+  refundPaymentId?: string;
   refunds: Array<{
     refundId: string;
     amount: number;
@@ -62,7 +74,13 @@ export interface StorefrontOrderDetailView {
 
 function normalizeListStatus(status?: string): StorefrontOrderViewStatus {
   const normalized = (status ?? '').toUpperCase();
-  if (normalized === 'REFUNDED' || normalized === 'REFUND_PENDING') {
+  if (normalized === 'REFUNDING' || normalized === 'REFUND_PENDING' || normalized === 'PENDING_REVIEW') {
+    return 'refunding';
+  }
+  if (normalized === 'PARTIALLY_REFUNDED' || normalized === 'PARTIAL_REFUND') {
+    return 'partially_refunded';
+  }
+  if (normalized === 'REFUNDED' || normalized === 'COMPLETED') {
     return 'refunded';
   }
   if (normalized === 'PAID' || normalized === 'SUCCEEDED' || normalized === 'FULFILLED') {
@@ -80,10 +98,46 @@ function normalizeListStatus(status?: string): StorefrontOrderViewStatus {
   return 'pending_payment';
 }
 
+function deriveOrderViewStatus(input: {
+  status?: string;
+  paymentStatus?: string;
+  refundStatus?: string;
+  refundedAmount?: number;
+  paidAmount?: number;
+  totalAmount?: number;
+}): StorefrontOrderViewStatus {
+  const refundStatus = (input.refundStatus ?? '').toUpperCase();
+  const refundedAmount = Math.max(input.refundedAmount ?? 0, 0);
+  const payableAmount = Math.max(input.paidAmount ?? 0, input.totalAmount ?? 0, 0);
+
+  if (refundStatus === 'PENDING' || refundStatus === 'APPROVED') {
+    return 'refunding';
+  }
+
+  if (refundedAmount > 0 && payableAmount > 0 && refundedAmount < payableAmount) {
+    return 'partially_refunded';
+  }
+
+  if (refundedAmount > 0 && (payableAmount === 0 || refundedAmount >= payableAmount)) {
+    return 'refunded';
+  }
+
+  const paymentStatus = (input.paymentStatus ?? '').toUpperCase();
+  if (paymentStatus === 'SUCCEEDED') {
+    return 'paid';
+  }
+
+  return normalizeListStatus(input.status);
+}
+
 export function getStorefrontOrderStatusLabel(status: StorefrontOrderViewStatus): string {
   switch (status) {
     case 'paid':
       return '已支付';
+    case 'refunding':
+      return '退款处理中';
+    case 'partially_refunded':
+      return '部分退款';
     case 'refunded':
       return '已退款';
     case 'cancelled':
@@ -100,6 +154,10 @@ export function getStorefrontOrderStatusVariant(
   switch (status) {
     case 'paid':
       return 'success';
+    case 'refunding':
+      return 'info';
+    case 'partially_refunded':
+      return 'info';
     case 'refunded':
       return 'error';
     case 'cancelled':
@@ -132,6 +190,38 @@ export function getStorefrontOrderPaymentLabel(paymentChannel?: string): string 
   return getPaymentMethodLabel(paymentChannel);
 }
 
+export function getStorefrontPaymentStatusLabel(status?: string): string {
+  switch ((status ?? '').toUpperCase()) {
+    case 'SUCCEEDED':
+      return '支付成功';
+    case 'FAILED':
+      return '支付失败';
+    case 'PENDING':
+      return '支付中';
+    case 'EXPIRED':
+      return '支付已过期';
+    default:
+      return status ? `支付${status}` : '待确认';
+  }
+}
+
+export function getStorefrontRefundStatusLabel(status?: string): string {
+  switch ((status ?? '').toUpperCase()) {
+    case 'PENDING':
+      return '待审核';
+    case 'APPROVED':
+      return '已通过';
+    case 'REJECTED':
+      return '已拒绝';
+    case 'COMPLETED':
+      return '已完成';
+    case 'FAILED':
+      return '退款失败';
+    default:
+      return status ? `退款${status}` : '-';
+  }
+}
+
 export function mapBusinessOrderToListView(
   order: BusinessOrderListItem,
 ): StorefrontOrderListViewItem {
@@ -144,11 +234,22 @@ export function mapBusinessOrderToListView(
     paidAmount: order.paidAmount,
     refundedAmount: order.refundedAmount,
     currency: order.currency,
-    status: normalizeListStatus(order.status),
+    status: deriveOrderViewStatus({
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      refundStatus: order.refundStatus,
+      refundedAmount: order.refundedAmount,
+      paidAmount: order.paidAmount,
+      totalAmount: order.totalAmount,
+    }),
     paymentChannel: order.paymentChannel,
+    paymentStatus: order.paymentStatus,
+    refundStatus: order.refundStatus,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     paidAt: order.paidAt,
+    refundRequestedAt: order.refundRequestedAt,
+    refundCompletedAt: order.refundCompletedAt,
   };
 }
 
@@ -168,7 +269,19 @@ export function matchesStorefrontOrderStatusFilter(
     return order.status === 'paid';
   }
 
-  return order.status === 'refunded';
+  if (filter === 'REFUNDING') {
+    return order.status === 'refunding';
+  }
+
+  if (filter === 'PARTIALLY_REFUNDED') {
+    return order.status === 'partially_refunded';
+  }
+
+  if (filter === 'REFUNDED') {
+    return order.status === 'refunded';
+  }
+
+  return order.status === 'cancelled';
 }
 
 export function matchesStorefrontOrderPaymentFilter(
@@ -202,9 +315,16 @@ export function mapAggregateToOrderDetailView(
 ): StorefrontOrderDetailView {
   const completedRefunds = aggregate.refunds.filter((refund) => refund.status === 'COMPLETED');
   const refundedAmount = completedRefunds.reduce((sum, refund) => sum + refund.refundAmount, 0);
-  const normalizedStatus = normalizeListStatus(
-    refundedAmount > 0 ? 'REFUNDED' : aggregate.order.status,
-  );
+  const latestRefund = aggregate.refunds.at(-1);
+  const paidAmount = aggregate.payment?.amount ?? (aggregate.order.paidAt ? aggregate.order.totalAmount : 0);
+  const normalizedStatus = deriveOrderViewStatus({
+    status: aggregate.order.status,
+    paymentStatus: aggregate.payment?.status,
+    refundStatus: latestRefund?.status,
+    refundedAmount,
+    paidAmount,
+    totalAmount: aggregate.order.totalAmount,
+  });
   const items = (aggregate.order.items ?? []).map((item) => ({
     skuId: item.skuId,
     title: item.title ?? item.skuId,
@@ -217,18 +337,26 @@ export function mapAggregateToOrderDetailView(
     orderId: aggregate.order.orderId,
     orderNo: aggregate.order.orderNo ?? aggregate.order.orderId,
     memberId: aggregate.order.memberId,
+    status: normalizedStatus,
     statusLabel: getStorefrontOrderStatusLabel(normalizedStatus),
     statusTone: getStorefrontOrderStatusVariant(normalizedStatus),
     currency: aggregate.order.currency,
     totalAmount: aggregate.order.totalAmount,
-    paidAmount: aggregate.payment?.amount ?? (normalizedStatus === 'paid' ? aggregate.order.totalAmount : 0),
+    paidAmount,
     refundedAmount,
     paymentChannelLabel: getStorefrontOrderPaymentLabel(aggregate.payment?.channel),
+    paymentStatusLabel: getStorefrontPaymentStatusLabel(aggregate.payment?.status),
     createdAt: aggregate.order.createdAt,
     updatedAt: aggregate.order.updatedAt,
     paidAt: aggregate.payment?.completedAt ?? aggregate.order.paidAt,
     closeReason: aggregate.order.closeReason,
     memberNickname: aggregate.memberNickname,
+    refundPaymentId: aggregate.payment?.paymentId,
+    refundStatusLabel: completedRefunds.length > 0
+      ? getStorefrontRefundStatusLabel('COMPLETED')
+      : getStorefrontRefundStatusLabel(latestRefund?.status),
+    refundRequestedAt: latestRefund?.requestedAt,
+    refundCompletedAt: completedRefunds.at(-1)?.completedAt,
     items,
     refunds: aggregate.refunds.map((refund) => ({
       refundId: refund.refundId,

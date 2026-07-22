@@ -1,5 +1,5 @@
 import { FoundationScopeType, IdentitySubjectType, Prisma, QuotaPeriod } from '@prisma/client'
-import { Injectable, Logger } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import {
   cancelGovernanceApproval,
@@ -61,7 +61,7 @@ interface AiUsageInput {
 
 @Injectable()
 export class TrustGovernanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private readonly logger = new Logger(TrustGovernanceService.name)
   private readonly auditFallbackRecords: Array<{

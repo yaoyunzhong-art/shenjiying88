@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   Optional,
@@ -47,7 +48,7 @@ export function resetFinanceServiceTestState() {
 @Injectable()
 export class FinanceService {
   constructor(
-    @Optional() private readonly prisma?: PrismaService
+    @Optional() @Inject(PrismaService) private readonly prisma?: PrismaService
   ) {}
 
   private getLedgerModel():

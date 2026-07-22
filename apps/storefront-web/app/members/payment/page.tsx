@@ -6,7 +6,9 @@
  * 功能: 已绑定支付方式展示、添加新支付方式、交易记录
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { createBusinessClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { buildStorefrontScopeHeaders, resolveStorefrontScope } from '../../../lib/storefront-transactions';
 
 // ================================================================
 // Types
@@ -38,47 +40,73 @@ interface TransactionRecord {
 }
 
 // ================================================================
-// Mock Data
+// API 工具函数
 // ================================================================
 
-const MOCK_PAYMENTS: BoundPayment[] = [
-  {
-    id: 'pmt1',
-    type: 'wechat',
-    label: '微信支付',
-    accountName: '张伟',
-    accountNumber: 'wx****1234',
-    icon: '💚',
-    isDefault: true,
-    boundAt: '2025-03-15',
-  },
-  {
-    id: 'pmt2',
-    type: 'alipay',
-    label: '支付宝',
-    accountName: '张伟',
-    accountNumber: 'alipay****5678',
-    icon: '💙',
-    isDefault: false,
-    boundAt: '2025-04-20',
-  },
-  {
-    id: 'pmt3',
-    type: 'bankcard',
-    label: '招商银行',
-    accountName: '张伟',
-    accountNumber: '**** **** **** 8888',
-    icon: '🏦',
-    isDefault: false,
-    boundAt: '2025-06-01',
-  },
-];
+async function fetchPayments(memberId: string): Promise<BoundPayment[]> {
+  try {
+    const scope = resolveStorefrontScope();
+    const res = await fetch(`${getDefaultApiBaseUrl()}/members/${memberId}/payments`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...buildStorefrontScopeHeaders(scope),
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data as BoundPayment[] : [];
+  } catch {
+    return [];
+  }
+}
 
-const METHOD_LABELS: Record<PaymentMethodType, string> = {
-  wechat: '微信支付',
-  alipay: '支付宝',
-  bankcard: '银行卡',
-};
+async function fetchTransactions(memberId: string): Promise<TransactionRecord[]> {
+  try {
+    const scope = resolveStorefrontScope();
+    const client = createBusinessClient(getDefaultApiBaseUrl());
+    // use existing listMemberTransactions SDK
+    const raw = await client.cashier.listMemberTransactions(memberId, {
+      headers: buildStorefrontScopeHeaders(scope) as Record<string, string>,
+    });
+    if (Array.isArray(raw)) {
+      return raw.map((txn: Record<string, unknown>) => {
+        const txnType: TransactionRecord['type'] =
+          txn.type === 'recharge' || txn.type === 'payment' || txn.type === 'refund' || txn.type === 'withdraw'
+            ? txn.type
+            : 'payment';
+        const methodType: PaymentMethodType =
+          txn.paymentChannel === 'alipay' ? 'alipay' : txn.paymentChannel === 'bankcard' ? 'bankcard' : 'wechat';
+        const txnStatus: TransactionRecord['status'] =
+          txn.status === 'success' || txn.status === 'pending' || txn.status === 'failed' || txn.status === 'refunded'
+            ? txn.status
+            : 'success';
+        return {
+          id: txn.orderId || txn.id || '',
+          type: txnType,
+          amount: txn.totalAmount ?? txn.amount ?? 0,
+          method: methodType,
+          methodLabel: getMethodLabel(methodType),
+          description: txn.description || txn.orderNo || '交易记录',
+          status: txnStatus,
+          createdAt: txn.createdAt || txn.paidAt || '',
+          orderNo: txn.orderNo || '',
+        };
+      });
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function getMethodLabel(method: PaymentMethodType): string {
+  const labels: Record<PaymentMethodType, string> = { wechat: '微信支付', alipay: '支付宝', bankcard: '银行卡' };
+  return labels[method];
+}
+
+// ================================================================
+// Constants
+// ================================================================
 
 const TRANSACTION_TYPES: Record<TransactionRecord['type'], { label: string; color: string }> = {
   recharge: { label: '充值', color: '#22c55e' },
@@ -93,45 +121,6 @@ const TRANSACTION_STATUS: Record<TransactionRecord['status'], { label: string; c
   failed: { label: '失败', color: '#ef4444' },
   refunded: { label: '已退款', color: '#64748b' },
 };
-
-function generateMockTransactions(): TransactionRecord[] {
-  const records: TransactionRecord[] = [];
-  const descriptions = [
-    '会员充值 - 300元档',
-    '场地预约 - 电竞区2小时',
-    '会员充值 - 1000元档',
-    '购买套餐 - 双人畅玩券',
-    '退款 - 预约取消',
-    '会员充值 - 500元档',
-    '场地预约 - VR体验45分钟',
-    '提现 - 余额转出',
-    '会员充值 - 200元档',
-    '消费 - 射击区1小时',
-    '退款 - 设备故障',
-    '会员充值 - 800元档',
-  ];
-  const typesList: TransactionRecord['type'][] = ['recharge', 'payment', 'refund', 'withdraw'];
-
-  for (let i = 0; i < 12; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const type = typesList[i % 4]!;
-    records.push({
-      id: `txn-${1000 + i}`,
-      type,
-      amount: type === 'refund' || type === 'payment' ? -(Math.floor(Math.random() * 500) + 30) : Math.floor(Math.random() * 1000) + 100,
-      method: ['wechat', 'alipay', 'bankcard', 'wechat', 'alipay', 'wechat'][i % 6] as PaymentMethodType,
-      methodLabel: ['微信支付', '支付宝', '招商银行', '微信支付', '支付宝', '微信支付'][i % 6]!,
-      description: descriptions[i]!,
-      status: i === 3 ? 'pending' : i === 7 ? 'failed' : i === 9 ? 'refunded' : 'success',
-      createdAt: d.toISOString().split('T')[0] + ' ' + String(10 + i).padStart(2, '0') + ':' + String(30 + i).padStart(2, '0'),
-      orderNo: `ORD${20260601000 + i}`,
-    });
-  }
-  return records;
-}
-
-const MOCK_TRANSACTIONS = generateMockTransactions();
 
 // ================================================================
 // Styles
@@ -469,6 +458,12 @@ const styles = {
     color: '#64748b',
     fontSize: 14,
   },
+  loader: {
+    textAlign: 'center' as const,
+    padding: '48px 20px',
+    color: '#64748b',
+    fontSize: 14,
+  },
 };
 
 const NEW_METHODS = [
@@ -477,12 +472,20 @@ const NEW_METHODS = [
   { type: 'bankcard' as PaymentMethodType, label: '银行卡', icon: '🏦' },
 ];
 
+const METHOD_LABELS: Record<PaymentMethodType, string> = {
+  wechat: '微信支付',
+  alipay: '支付宝',
+  bankcard: '银行卡',
+};
+
 // ================================================================
 // Component
 // ================================================================
 
 export default function PaymentSettingsPage() {
-  const [payments, setPayments] = useState<BoundPayment[]>(MOCK_PAYMENTS);
+  const [payments, setPayments] = useState<BoundPayment[]>([]);
+  const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [newMethodType, setNewMethodType] = useState<PaymentMethodType>('wechat');
   const [newAccountName, setNewAccountName] = useState('');
@@ -492,7 +495,31 @@ export default function PaymentSettingsPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
-  const transactions = useMemo(() => MOCK_TRANSACTIONS, []);
+  // 从 localStorage 获取 memberId 并加载数据
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const infoStr = localStorage.getItem('member_info');
+        if (!infoStr) return;
+        const info = JSON.parse(infoStr);
+        const memberId = info.memberId || info.id;
+        if (!memberId) return;
+
+        const [pmts, txns] = await Promise.all([
+          fetchPayments(memberId),
+          fetchTransactions(memberId),
+        ]);
+        setPayments(pmts);
+        setTransactions(txns);
+      } catch {
+        // 静默失败
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const filteredTxns = useMemo(() => {
     if (txnFilter === 'all') return transactions;
@@ -541,6 +568,18 @@ export default function PaymentSettingsPage() {
     showSuccess('✅ 支付方式添加成功');
   }, [newMethodType, newAccountName, newAccountNumber, payments.length, showSuccess]);
 
+  if (loading) {
+    return (
+      <main style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.headerTitle}>💳 支付设置</h1>
+          <p style={styles.headerSub}>管理你的支付方式，查看交易记录</p>
+        </div>
+        <div style={styles.loader}>加载中...</div>
+      </main>
+    );
+  }
+
   return (
     <main style={styles.container}>
       {/* Header */}
@@ -555,41 +594,47 @@ export default function PaymentSettingsPage() {
           💰 已绑定的支付方式
           <span style={styles.sectionBadge(payments.length)}>{payments.length} 个</span>
         </div>
-        <div style={styles.paymentGrid}>
-          {payments.map(pmt => (
-            <div key={pmt.id} style={styles.paymentCard}>
-              <div style={styles.paymentLeft}>
-                <div style={styles.paymentIcon}>{pmt.icon}</div>
-                <div>
-                  <div style={styles.paymentName}>{pmt.label}</div>
-                  <div style={styles.paymentDetail}>
-                    {pmt.accountName} · {pmt.accountNumber}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>
-                    绑定于 {pmt.boundAt}
+        {payments.length > 0 ? (
+          <div style={styles.paymentGrid}>
+            {payments.map(pmt => (
+              <div key={pmt.id} style={styles.paymentCard}>
+                <div style={styles.paymentLeft}>
+                  <div style={styles.paymentIcon}>{pmt.icon}</div>
+                  <div>
+                    <div style={styles.paymentName}>{pmt.label}</div>
+                    <div style={styles.paymentDetail}>
+                      {pmt.accountName} · {pmt.accountNumber}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>
+                      绑定于 {pmt.boundAt}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div style={styles.paymentRight}>
-                {pmt.isDefault && <span style={styles.defaultBadge}>默认</span>}
-                {!pmt.isDefault && (
+                <div style={styles.paymentRight}>
+                  {pmt.isDefault && <span style={styles.defaultBadge}>默认</span>}
+                  {!pmt.isDefault && (
+                    <button
+                      style={styles.actionBtn}
+                      onClick={() => setDefaultPayment(pmt.id)}
+                    >
+                      设默认
+                    </button>
+                  )}
                   <button
-                    style={styles.actionBtn}
-                    onClick={() => setDefaultPayment(pmt.id)}
+                    style={styles.actionBtnDanger}
+                    onClick={() => removePayment(pmt.id)}
                   >
-                    设默认
+                    解绑
                   </button>
-                )}
-                <button
-                  style={styles.actionBtnDanger}
-                  onClick={() => removePayment(pmt.id)}
-                >
-                  解绑
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: 14 }}>
+            暂无绑定的支付方式
+          </div>
+        )}
 
         <button
           style={styles.addPaymentBtn}

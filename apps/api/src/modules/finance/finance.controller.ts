@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Query,
@@ -28,7 +29,7 @@ import { FinanceService } from './finance.service'
 @UseGuards(TenantGuard)
 @Controller('finance')
 export class FinanceController {
-  constructor(private readonly financeService: FinanceService) {}
+  constructor(@Inject(FinanceService) private readonly financeService: FinanceService) {}
 
   private get resolvedFinanceService() {
     return this.financeService as FinanceService & {

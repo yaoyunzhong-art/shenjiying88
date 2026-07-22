@@ -1885,6 +1885,8 @@ export interface BusinessOrderListItem {
   refundRequestedAt?: string;
   refundCompletedAt?: string;
   paymentChannel?: string;
+  paymentStatus?: string;
+  refundStatus?: string;
   currency: string;
   createdAt: string;
   updatedAt: string;
@@ -1897,6 +1899,19 @@ export interface BusinessOrderListPage {
   page: number;
   pageSize: number;
 }
+
+// ── 交易状态类型（与后端 CashierOrderStatus / CashierPaymentStatus 保持同步）──
+export type TransactionOrderStatus =
+  | 'CREATED'
+  | 'PENDING_PAYMENT'
+  | 'PAID'
+  | 'PAYMENT_FAILED'
+  | 'CLOSED';
+
+export type TransactionPaymentStatus =
+  | 'PENDING'
+  | 'SUCCEEDED'
+  | 'FAILED';
 
 export interface BusinessTransactionOrderItem {
   skuId: string;
@@ -1911,7 +1926,7 @@ export interface BusinessTransactionOrder {
   memberId: string;
   currency: string;
   totalAmount: number;
-  status: string;
+  status: TransactionOrderStatus;
   createdAt: string;
   updatedAt: string;
   paidAt?: string;
@@ -1926,7 +1941,7 @@ export interface BusinessTransactionPayment {
   externalPaymentId?: string;
   channel?: string;
   amount: number;
-  status: string;
+  status: TransactionPaymentStatus;
   qrCodeUrl?: string;
   paymentUrl?: string;
   expiresAt?: string;
@@ -2241,8 +2256,8 @@ export function createBusinessClient(baseUrl?: string) {
         paymentId: string;
         amountCents: number;
         reason: string;
-      }, init?: RequestInit) =>
-        api.postData(`/cashier/orders/${orderId}/refunds`, body, init),
+      }, init?: RequestInit): Promise<{ refundId: string }> =>
+        api.postData<{ refundId: string }>(`/cashier/orders/${orderId}/refunds`, body, init),
     },
 
     // ── Refunds (GET/POST /api/v1/transactions/refunds) ──

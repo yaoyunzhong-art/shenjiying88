@@ -555,6 +555,8 @@ interface BusinessOrderListItem {
     refundRequestedAt?: string;
     refundCompletedAt?: string;
     paymentChannel?: string;
+    paymentStatus?: string;
+    refundStatus?: string;
     currency: string;
     createdAt: string;
     updatedAt: string;
@@ -566,6 +568,8 @@ interface BusinessOrderListPage {
     page: number;
     pageSize: number;
 }
+type TransactionOrderStatus = 'CREATED' | 'PENDING_PAYMENT' | 'PAID' | 'PAYMENT_FAILED' | 'CLOSED';
+type TransactionPaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED';
 interface BusinessTransactionOrderItem {
     skuId: string;
     title?: string;
@@ -578,7 +582,7 @@ interface BusinessTransactionOrder {
     memberId: string;
     currency: string;
     totalAmount: number;
-    status: string;
+    status: TransactionOrderStatus;
     createdAt: string;
     updatedAt: string;
     paidAt?: string;
@@ -592,7 +596,7 @@ interface BusinessTransactionPayment {
     externalPaymentId?: string;
     channel?: string;
     amount: number;
-    status: string;
+    status: TransactionPaymentStatus;
     qrCodeUrl?: string;
     paymentUrl?: string;
     expiresAt?: string;
@@ -824,7 +828,9 @@ declare function createBusinessClient(baseUrl?: string): {
             paymentId: string;
             amountCents: number;
             reason: string;
-        }, init?: RequestInit) => Promise<unknown>;
+        }, init?: RequestInit) => Promise<{
+            refundId: string;
+        }>;
     };
     refunds: {
         /** 退款列表 */
@@ -1108,4 +1114,4 @@ type BusinessClient = ReturnType<typeof createBusinessClient>;
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessCashierMemberLookupResult, type BusinessCashierProductItem, type BusinessCashierProductListPage, type BusinessClient, type BusinessDailyRevenueSummary, type BusinessFinanceAccountRecord, type BusinessFinanceInvoiceRecord, type BusinessFinanceLedgerRecord, type BusinessFinanceSettlementRecord, type BusinessOrderListItem, type BusinessOrderListPage, type BusinessRevenueSummary, type BusinessTransactionAggregate, type BusinessTransactionOrder, type BusinessTransactionOrderItem, type BusinessTransactionPayment, type BusinessTransactionRefund, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessCashierMemberLookupResult, type BusinessCashierProductItem, type BusinessCashierProductListPage, type BusinessClient, type BusinessDailyRevenueSummary, type BusinessFinanceAccountRecord, type BusinessFinanceInvoiceRecord, type BusinessFinanceLedgerRecord, type BusinessFinanceSettlementRecord, type BusinessOrderListItem, type BusinessOrderListPage, type BusinessRevenueSummary, type BusinessTransactionAggregate, type BusinessTransactionOrder, type BusinessTransactionOrderItem, type BusinessTransactionPayment, type BusinessTransactionRefund, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type TransactionOrderStatus, type TransactionPaymentStatus, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };

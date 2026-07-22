@@ -86,6 +86,8 @@ const mockLoadOrders = vi.fn();
 const mockFormatCurrency = vi.fn();
 const mockFormatDateTime = vi.fn();
 const mockGetPaymentLabel = vi.fn();
+const mockGetPaymentStatusLabel = vi.fn();
+const mockGetRefundStatusLabel = vi.fn();
 const mockGetStatusLabel = vi.fn();
 const mockGetStatusVariant = vi.fn();
 const mockMatchStatus = vi.fn();
@@ -96,6 +98,8 @@ vi.mock('../../lib/storefront-orders', () => ({
   formatStorefrontOrderCurrency: (...args: any[]) => mockFormatCurrency(...args),
   formatStorefrontOrderDateTime: (...args: any[]) => mockFormatDateTime(...args),
   getStorefrontOrderPaymentLabel: (...args: any[]) => mockGetPaymentLabel(...args),
+  getStorefrontPaymentStatusLabel: (...args: any[]) => mockGetPaymentStatusLabel(...args),
+  getStorefrontRefundStatusLabel: (...args: any[]) => mockGetRefundStatusLabel(...args),
   getStorefrontOrderStatusLabel: (...args: any[]) => mockGetStatusLabel(...args),
   getStorefrontOrderStatusVariant: (...args: any[]) => mockGetStatusVariant(...args),
   matchesStorefrontOrderStatusFilter: (...args: any[]) => mockMatchStatus(...args),
@@ -117,6 +121,8 @@ function setupMocks() {
   mockFormatCurrency.mockImplementation((amt: number) => `¥${(amt / 100).toFixed(2)}`);
   mockFormatDateTime.mockImplementation((dt: string) => dt.replace('T', ' ').slice(0, 16));
   mockGetPaymentLabel.mockImplementation((ch: string) => ch?.replace('_', ' ') ?? '');
+  mockGetPaymentStatusLabel.mockImplementation((status?: string) => status ?? '待确认');
+  mockGetRefundStatusLabel.mockImplementation((status?: string) => status ?? '-');
   mockGetStatusLabel.mockImplementation((s: string) => s === 'paid' ? '已支付' : s === 'pending_payment' ? '待支付' : '已退款');
   mockGetStatusVariant.mockImplementation((s: string) => s === 'paid' ? 'success' : s === 'pending_payment' ? 'warning' : 'default');
   mockMatchStatus.mockImplementation((order: any, filter: string) => filter === 'ALL' || order.status === filter.toLowerCase());
@@ -144,7 +150,7 @@ describe('OrdersListPage — 订单管理', () => {
     render(<OrdersListPage />);
     await waitFor(() => {
       const statCards = screen.getAllByTestId('stat-card');
-      expect(statCards.length).toBe(5);
+      expect(statCards.length).toBe(8);
     });
   });
 
@@ -164,6 +170,7 @@ describe('OrdersListPage — 订单管理', () => {
       expect(statusTabLabels.some(l => l?.startsWith('全部'))).toBe(true);
       expect(statusTabLabels.some(l => l?.startsWith('待支付'))).toBe(true);
       expect(statusTabLabels.some(l => l?.startsWith('已支付'))).toBe(true);
+      expect(statusTabLabels.some(l => l?.startsWith('部分退款'))).toBe(true);
       expect(statusTabLabels.some(l => l?.startsWith('已退款'))).toBe(true);
     });
   });
@@ -303,7 +310,7 @@ describe('OrdersListPage — 订单管理', () => {
     render(<OrdersListPage />);
     await waitFor(() => {
       const statCards = screen.getAllByTestId('stat-card');
-      expect(statCards[4]).toHaveTextContent('实收金额');
+      expect(statCards.some((card) => card.textContent?.includes('实收金额'))).toBe(true);
     });
   });
 

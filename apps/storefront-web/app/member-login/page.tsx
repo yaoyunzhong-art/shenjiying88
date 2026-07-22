@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormField, useFormSubmit, FormSubmitFeedback, SubmitButton, PageShell, Modal, StatusBadge } from '@m5/ui';
 import { memberAuthService, type MemberLoginResponse } from '../../lib/member-auth-service';
+import { createBusinessClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { buildStorefrontScopeHeaders, resolveStorefrontScope } from '../../lib/storefront-transactions';
 
 // ============================================================
 // 类型定义
@@ -35,26 +37,8 @@ interface LoginSuggestion {
 }
 
 // ============================================================
-// Mock 数据
+// 静态建议数据（非 mock，是 UI 固定内容）
 // ============================================================
-
-const MOCK_LOGIN_RECORDS: LoginAttemptRecord[] = [
-  { id: 'L001', mobile: '138****8000', time: '2026-07-16 08:32', ip: '192.168.1.101', success: true, device: 'Chrome/Windows' },
-  { id: 'L002', mobile: '139****6789', time: '2026-07-16 09:12', ip: '192.168.1.102', success: false, device: 'Safari/macOS' },
-  { id: 'L003', mobile: '136****2345', time: '2026-07-15 22:45', ip: '10.0.0.50', success: true, device: 'WeChat/iOS' },
-  { id: 'L004', mobile: '137****9012', time: '2026-07-15 18:20', ip: '192.168.1.105', success: true, device: 'Chrome/Android' },
-  { id: 'L005', mobile: '150****3456', time: '2026-07-15 14:10', ip: '10.0.0.51', success: false, device: 'Safari/iOS' },
-  { id: 'L006', mobile: '151****7890', time: '2026-07-15 09:33', ip: '192.168.1.108', success: true, device: 'Edge/Windows' },
-  { id: 'L007', mobile: '152****1234', time: '2026-07-14 20:00', ip: '10.0.0.52', success: true, device: 'WeChat/Android' },
-  { id: 'L008', mobile: '153****5678', time: '2026-07-14 16:15', ip: '192.168.1.110', success: false, device: 'Firefox/Windows' },
-];
-
-const MOCK_SECURITY_EVENTS: SecurityEvent[] = [
-  { id: 'S001', type: 'failed_attempt', time: '2026-07-16 09:12', detail: '手机号 139****6789 验证码错误 3 次', severity: 'high' },
-  { id: 'S002', type: 'new_device', time: '2026-07-15 22:45', detail: '新设备登录 (WeChat/iOS) 需双因素确认', severity: 'medium' },
-  { id: 'S003', type: 'location_change', time: '2026-07-14 20:00', detail: '异地登录 (IP: 10.0.0.52) 需验证', severity: 'medium' },
-  { id: 'S004', type: 'password_change', time: '2026-07-13 10:30', detail: '密码已修改 (PC 端)', severity: 'low' },
-];
 
 const LOGIN_SUGGESTIONS: LoginSuggestion[] = [
   { id: 'SG1', text: '建议开启微信登录快捷入口', icon: '💡', priority: 1 },
@@ -127,49 +111,57 @@ function SecurityEventsPanel({ events }: { events: SecurityEvent[] }) {
           {events.length} 条
         </span>
       </div>
-      {displayEvents.map((evt) => (
-        <div key={evt.id} style={{
-          padding: '10px 14px',
-          borderBottom: '1px solid rgba(239, 68, 68, 0.06)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}>
-          <div>
-            <div style={{ fontSize: 12, color: '#e2e8f0', marginBottom: 2 }}>
-              {getEventTypeLabel(evt.type)}
-            </div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>{evt.detail}</div>
-            <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>{evt.time}</div>
-          </div>
-          <span style={{
-            fontSize: 10,
-            fontWeight: 600,
-            padding: '2px 8px',
-            borderRadius: 6,
-            background: `${getSecuritySeverityColor(evt.severity)}20`,
-            color: getSecuritySeverityColor(evt.severity),
-            whiteSpace: 'nowrap',
-          }}>
-            {getSecuritySeverityLabel(evt.severity)}
-          </span>
+      {events.length === 0 ? (
+        <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12, color: '#64748b' }}>
+          暂无安全事件记录
         </div>
-      ))}
-      {events.length > 2 && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            width: '100%',
-            padding: '8px',
-            border: 'none',
-            background: 'transparent',
-            color: '#64748b',
-            fontSize: 11,
-            cursor: 'pointer',
-          }}
-        >
-          {expanded ? '收起' : `查看全部 ${events.length} 条`}
-        </button>
+      ) : (
+        <>
+          {displayEvents.map((evt) => (
+            <div key={evt.id} style={{
+              padding: '10px 14px',
+              borderBottom: '1px solid rgba(239, 68, 68, 0.06)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+            }}>
+              <div>
+                <div style={{ fontSize: 12, color: '#e2e8f0', marginBottom: 2 }}>
+                  {getEventTypeLabel(evt.type)}
+                </div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{evt.detail}</div>
+                <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>{evt.time}</div>
+              </div>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 6,
+                background: `${getSecuritySeverityColor(evt.severity)}20`,
+                color: getSecuritySeverityColor(evt.severity),
+                whiteSpace: 'nowrap',
+              }}>
+                {getSecuritySeverityLabel(evt.severity)}
+              </span>
+            </div>
+          ))}
+          {events.length > 2 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: 'none',
+                background: 'transparent',
+                color: '#64748b',
+                fontSize: 11,
+                cursor: 'pointer',
+              }}
+            >
+              {expanded ? '收起' : `查看全部 ${events.length} 条`}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
@@ -226,43 +218,51 @@ function LoginHistoryTable({ records }: { records: LoginAttemptRecord[] }) {
         />
       </div>
       <div style={{ padding: '8px 14px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.06)' }}>
-              <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>手机号</th>
-              <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>时间</th>
-              <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>IP</th>
-              <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>设备</th>
-              <th style={{ padding: '6px 8px', textAlign: 'center', color: '#64748b', fontWeight: 600, fontSize: 11 }}>结果</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((rec) => (
-              <tr key={rec.id} style={{ borderBottom: '1px solid rgba(148,163,184,0.04)' }}>
-                <td style={{ padding: '6px 8px', color: '#e2e8f0' }}>{rec.mobile}</td>
-                <td style={{ padding: '6px 8px', color: '#94a3b8' }}>{rec.time}</td>
-                <td style={{ padding: '6px 8px', color: '#94a3b8', fontFamily: 'monospace', fontSize: 11 }}>{rec.ip}</td>
-                <td style={{ padding: '6px 8px', color: '#94a3b8' }}>{rec.device}</td>
-                <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    background: rec.success ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.15)',
-                    color: rec.success ? '#34d399' : '#f87171',
-                  }}>
-                    {rec.success ? '成功' : '失败'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
+        {records.length === 0 && filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px', color: '#64748b', fontSize: 12 }}>
-            无匹配记录
+            暂无登录记录
           </div>
+        ) : (
+          <>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.06)' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>手机号</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>时间</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>IP</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: 11 }}>设备</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', color: '#64748b', fontWeight: 600, fontSize: 11 }}>结果</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((rec) => (
+                  <tr key={rec.id} style={{ borderBottom: '1px solid rgba(148,163,184,0.04)' }}>
+                    <td style={{ padding: '6px 8px', color: '#e2e8f0' }}>{rec.mobile}</td>
+                    <td style={{ padding: '6px 8px', color: '#94a3b8' }}>{rec.time}</td>
+                    <td style={{ padding: '6px 8px', color: '#94a3b8', fontFamily: 'monospace', fontSize: 11 }}>{rec.ip}</td>
+                    <td style={{ padding: '6px 8px', color: '#94a3b8' }}>{rec.device}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        background: rec.success ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.15)',
+                        color: rec.success ? '#34d399' : '#f87171',
+                      }}>
+                        {rec.success ? '成功' : '失败'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filtered.length === 0 && records.length > 0 && (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#64748b', fontSize: 12 }}>
+                无匹配记录
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -344,6 +344,45 @@ function LoginStatsPanel() {
 }
 
 // ============================================================
+// API 工具函数
+// ============================================================
+
+async function fetchLoginRecords(memberId: string): Promise<LoginAttemptRecord[]> {
+  try {
+    const scope = resolveStorefrontScope();
+    const client = createBusinessClient(getDefaultApiBaseUrl());
+    const res = await fetch(`${getDefaultApiBaseUrl()}/members/${memberId}/login-history`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...buildStorefrontScopeHeaders(scope),
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data as LoginAttemptRecord[] : [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchSecurityEvents(memberId: string): Promise<SecurityEvent[]> {
+  try {
+    const scope = resolveStorefrontScope();
+    const res = await fetch(`${getDefaultApiBaseUrl()}/members/${memberId}/security-events`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...buildStorefrontScopeHeaders(scope),
+      },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data as SecurityEvent[] : [];
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================
 // 主页面组件
 // ============================================================
 
@@ -358,6 +397,9 @@ export default function MemberLoginPage() {
     mobile?: string;
     code?: string;
   }>({});
+  const [loginRecords, setLoginRecords] = useState<LoginAttemptRecord[]>([]);
+  const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   const { state, submit } = useFormSubmit<MemberLoginResponse>({
     onSubmit: async () => {
@@ -379,6 +421,33 @@ export default function MemberLoginPage() {
     successMessage: () => '登录成功',
     defaultErrorMessage: '登录失败，请检查验证码',
   });
+
+  // 从本地存储读取 memberId 并获取登录记录/安全事件
+  useEffect(() => {
+    const loadData = async () => {
+      setDataLoading(true);
+      try {
+        const infoStr = localStorage.getItem('member_info');
+        if (infoStr) {
+          const info = JSON.parse(infoStr);
+          const memberId = info.memberId || info.id;
+          if (memberId) {
+            const [records, events] = await Promise.all([
+              fetchLoginRecords(memberId),
+              fetchSecurityEvents(memberId),
+            ]);
+            setLoginRecords(records);
+            setSecurityEvents(events);
+          }
+        }
+      } catch {
+        // 静默失败，显示空态
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleSendCode = useCallback(async () => {
     if (!mobile || !/^1[3-9]\d{9}$/.test(mobile)) {
@@ -610,28 +679,36 @@ export default function MemberLoginPage() {
           <LoginSuggestionsPanel suggestions={LOGIN_SUGGESTIONS} />
 
           {/* 安全事件面板 */}
-          <SecurityEventsPanel events={MOCK_SECURITY_EVENTS} />
+          <SecurityEventsPanel events={securityEvents} />
 
           {/* 登录记录 */}
-          <LoginHistoryTable records={MOCK_LOGIN_RECORDS} />
+          {dataLoading ? (
+            <div style={{ marginTop: 20, textAlign: 'center', padding: '20px', color: '#64748b', fontSize: 12 }}>
+              加载中...
+            </div>
+          ) : (
+            <>
+              <LoginHistoryTable records={loginRecords} />
 
-          {/* 展开登录历史按钮 */}
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: '1px solid rgba(148,163,184,0.15)',
-                background: 'transparent',
-                color: '#64748b',
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
-              {showHistory ? '收起详情' : '查看完整登录历史'}
-            </button>
-          </div>
+              {/* 展开登录历史按钮 */}
+              <div style={{ textAlign: 'center', marginTop: 12 }}>
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(148,163,184,0.15)',
+                    background: 'transparent',
+                    color: '#64748b',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {showHistory ? '收起详情' : '查看完整登录历史'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

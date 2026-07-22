@@ -83,6 +83,7 @@ export default function H5OrdersPage() {
     all: orders.length,
     pending: orders.filter((o) => o.status === 'pending_payment').length,
     paid: orders.filter((o) => o.status === 'paid').length,
+    partialRefunded: orders.filter((o) => o.status === 'partially_refunded').length,
     refunded: orders.filter((o) => o.status === 'refunded').length,
     cancelled: orders.filter((o) => o.status === 'cancelled').length,
   }), [orders]);
@@ -97,6 +98,7 @@ export default function H5OrdersPage() {
             { key: 'ALL', label: '全部', count: stats.all },
             { key: 'pending_payment', label: '待支付', count: stats.pending },
             { key: 'paid', label: '已支付', count: stats.paid },
+            { key: 'partially_refunded', label: '部分退款', count: stats.partialRefunded },
             { key: 'refunded', label: '已退款', count: stats.refunded },
             { key: 'cancelled', label: '已取消', count: stats.cancelled },
           ].map((item) => (

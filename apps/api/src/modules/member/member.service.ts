@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { Injectable, Optional } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
 import type { RuntimeGovernanceReceipt } from '@m5/types'
 import { PrismaService } from '../../prisma/prisma.service'
 import {
@@ -55,9 +55,9 @@ export function resetMemberServiceTestState() {
 @Injectable()
 export class MemberService {
   constructor(
-    @Optional() private readonly prisma?: PrismaService,
-    @Optional() private readonly runtimeGovernanceService?: RuntimeGovernanceService,
-    @Optional() private readonly marketingMetricsService?: MarketingMetricsService
+    @Optional() @Inject(PrismaService) private readonly prisma?: PrismaService,
+    @Optional() @Inject(RuntimeGovernanceService) private readonly runtimeGovernanceService?: RuntimeGovernanceService,
+    @Optional() @Inject(MarketingMetricsService) private readonly marketingMetricsService?: MarketingMetricsService
   ) {}
 
   private getLytMemberSnapshotModel():
@@ -2157,9 +2157,18 @@ export class MemberService {
       return this.getProfile(memberId)
     }
 
-    const memberProfile = await this.prisma.memberProfile.findUnique({
-      where: { id: memberId }
-    })
+    let memberProfile
+    try {
+      memberProfile = await this.prisma.memberProfile.findUnique({
+        where: { id: memberId }
+      })
+    } catch (error) {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
+      if (code === 'P2021' || code === 'P1010' || code === 'P1001') {
+        return this.getProfile(memberId)
+      }
+      throw error
+    }
     if (!memberProfile || memberProfile.tenantId !== tenantContext.tenantId) {
       return undefined
     }
@@ -2903,5 +2912,27 @@ export class MemberService {
 
   getSession(sessionToken: string): MemberSession | undefined {
     return memberSessionStore.get(sessionToken)
+  }
+
+  /**
+   * 查询会员余额/积分概览 — 供 storefront checkout 调用
+   * 返回：可用余额（分）、可用积分、冻结积分、可用优惠券张数
+   */
+  getMemberBalance(memberId: string): {
+    balance: number
+    points: number
+    frozenPoints: number
+    couponCount: number
+  } {
+    const profile = memberStore.get(memberId)
+    if (!profile) {
+      return { balance: 0, points: 0, frozenPoints: 0, couponCount: 0 }
+    }
+    return {
+      balance: 0,          // 余额暂未接入，后续从 loyalty 模块读取
+      points: profile.points,
+      frozenPoints: 0,      // 冻结积分暂未接入
+      couponCount: 0,       // 优惠券计数暂未接入，后续从 coupon 模块读取
+    }
   }
 }
