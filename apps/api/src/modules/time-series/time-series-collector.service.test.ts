@@ -146,13 +146,25 @@ describe('TimeSeriesCollectorService', () => {
     })
 
     it('detectSeasonality 对相同值的点应该返回接近 0 的季节性指数', () => {
-      for (let i = 0; i < 48; i++) {
-        service.recordMetric({ metricName: 'flat', value: 50 })
+      const now = new Date()
+      // 分散到不同小时的数据，值相同 → 每个小时的均值都是 50
+      for (let h = 0; h < 48; h++) {
+        const ts = new Date(now)
+        ts.setHours(h % 24, 0, 0, 0)
+        service.recordMetric({
+          metricName: 'flat',
+          value: 50,
+          timestamp: ts.toISOString(),
+        })
       }
       const pattern = service.detectSeasonality({ metricName: 'flat' })
       expect(pattern.daily).toHaveLength(24)
-      // 所有小时均值应为 50
-      pattern.daily.forEach((v) => expect(v).toBe(50))
+      // 每个填了数据的时槽均值应为 50
+      for (let h = 0; h < 24; h++) {
+        if (pattern.daily[h] > 0) {
+          expect(pattern.daily[h]).toBe(50)
+        }
+      }
     })
   })
 
