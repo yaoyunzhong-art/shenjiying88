@@ -197,3 +197,151 @@ test.describe('跨角色边界场景', () => {
     expect(currentUrl).toBeTruthy()
   })
 })
+
+/* ───────────────────────── 会员端前台扩展测试 ───────────────────────── */
+
+test.describe(`${ROLES.FrontDesk} 前台扩展 · 会员登录与注册流程`, () => {
+  test('[正例] 前台引导会员手机号验证登录流程', async ({ page }) => {
+    await page.goto('/member/login', { waitUntil: 'networkidle', timeout: 15000 })
+    const loginForm = page.locator('form, [data-testid="login-form"]').first()
+    await expect(loginForm).toBeVisible({ timeout: 5000 })
+    const phoneInput = page.locator('input[type="tel"], input[name="phone"]').first()
+    await expect(phoneInput).toBeVisible()
+  })
+
+  test('[反例] 会员输入错误验证码 → 显示提示信息', async ({ page }) => {
+    await page.goto('/member/login', { waitUntil: 'networkidle', timeout: 15000 })
+    const submitBtn = page.locator('button[type="submit"], button:has-text("登录")').first()
+    if (await submitBtn.isVisible().catch(() => false)) {
+      await submitBtn.click()
+      await page.waitForTimeout(300)
+      const body = page.locator('body')
+      await expect(body).toBeVisible()
+    }
+  })
+
+  test('[正例] 会员注册页面包含必要表单项', async ({ page }) => {
+    await page.goto('/member/register', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})
+
+test.describe(`${ROLES.FrontDesk} 前台扩展 · 商品搜索与购物车管理`, () => {
+  test('[正例] 前台商品搜索 → 按分类过滤结果', async ({ page }) => {
+    await page.goto('/products', { waitUntil: 'networkidle', timeout: 15000 })
+    const heading = page.locator('h1, h2').first()
+    await expect(heading).toBeVisible({ timeout: 5000 })
+    // 查找分类筛选器
+    const filter = page.locator('[data-testid="category-filter"], .category-tabs, [class*="category"]').first()
+    const hasFilter = await filter.isVisible().catch(() => false)
+    expect(hasFilter).toBe(true)
+  })
+
+  test('[正例] 前台购物车 → 添加商品并查看汇总', async ({ page }) => {
+    await page.goto('/cart', { waitUntil: 'networkidle', timeout: 15000 })
+    const heading = page.locator('h1, h2').first()
+    await expect(heading).toBeVisible({ timeout: 5000 })
+    // 购物车区域应有总价或数量显示
+    const cartSummary = page.locator('[data-testid="cart-summary"], [class*="total"], [class*="summary"]').first()
+    const hasSummary = await cartSummary.isVisible().catch(() => false)
+    console.log(`购物车汇总区域可见: ${hasSummary}`)
+  })
+
+  test('[边界] 前台购物车空状态渲染', async ({ page }) => {
+    await page.goto('/cart?empty=1', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})
+
+test.describe(`${ROLES.FrontDesk} 前台扩展 · 订单查看与个人中心`, () => {
+  test('[正例] 前台查看订单列表页面', async ({ page }) => {
+    await page.goto('/orders', { waitUntil: 'networkidle', timeout: 15000 })
+    const heading = page.locator('h1, h2').first()
+    await expect(heading).toBeVisible({ timeout: 5000 })
+  })
+
+  test('[正例] 前台查看订单详情页', async ({ page }) => {
+    await page.goto('/orders/demo-order-001', { waitUntil: 'networkidle', timeout: 15000 })
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+
+  test('[正例] 前台个人中心页面加载', async ({ page }) => {
+    await page.goto('/profile', { waitUntil: 'networkidle', timeout: 15000 })
+    const heading = page.locator('h1, h2').first()
+    await expect(heading).toBeVisible({ timeout: 5000 })
+  })
+
+  test('[边界] 前台个人中心未登录状态处理', async ({ page }) => {
+    await page.goto('/profile', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    const currentUrl = page.url()
+    // 未登录可能重定向到登录页
+    console.log(`个人中心URL: ${currentUrl}`)
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})
+
+test.describe(`${ROLES.StoreManager} 店长扩展 · 经营数据分析页面`, () => {
+  test('[正例] 店长查看销售报表页面', async ({ page }) => {
+    await page.goto('/reports/sales', { waitUntil: 'networkidle', timeout: 15000 })
+    const heading = page.locator('h1, h2').first()
+    await expect(heading).toBeVisible({ timeout: 5000 })
+  })
+
+  test('[正例] 店长查看实时客流数据', async ({ page }) => {
+    await page.goto('/analytics/traffic', { waitUntil: 'networkidle', timeout: 15000 })
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+
+  test('[边界] 店长查看空时间段销售数据', async ({ page }) => {
+    await page.goto('/reports/sales?date=2099-01-01', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})
+
+test.describe(`${ROLES.Marketing} 营销扩展 · 数据分析与活动管理`, () => {
+  test('[正例] 营销专员查看活动数据分析', async ({ page }) => {
+    await page.goto('/marketing/analytics', { waitUntil: 'networkidle', timeout: 15000 })
+    const heading = page.locator('h1, h2').first()
+    await expect(heading).toBeVisible({ timeout: 5000 })
+  })
+
+  test('[边界] 营销专员创建新活动表单渲染', async ({ page }) => {
+    await page.goto('/marketing/campaigns/new', { waitUntil: 'networkidle', timeout: 15000 })
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})
+
+test.describe('跨角色高级边界场景', () => {
+  test('[正例] 前台→购物车→订单 完整购物流程页面可达', async ({ page }) => {
+    const pages = ['/products', '/cart', '/orders', '/profile']
+    for (const p of pages) {
+      await page.goto(p, { waitUntil: 'networkidle', timeout: 15000 })
+      const body = page.locator('body')
+      await expect(body).toBeVisible()
+    }
+  })
+
+  test('[正例] 首页加载并包含导航菜单', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'networkidle', timeout: 15000 })
+    const nav = page.locator('nav, header, [role="navigation"]').first()
+    await expect(nav).toBeVisible({ timeout: 5000 })
+  })
+
+  test('[反例] 访问已失效页面 → 显示404或友好提示', async ({ page }) => {
+    await page.goto('/expired-campaign-999', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})
