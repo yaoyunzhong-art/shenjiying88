@@ -488,7 +488,7 @@ export default function FeedbackPage() {
                   { store: '深圳南山店', total: 18, resolved: 15, rate: 83.3, avgTime: '3.5h', color: '#84cc16' },
                     { store: '成都锦江店', total: 15, resolved: 12, rate: 80.0, avgTime: '4.0h', color: '#a3e635' },
                   { store: '杭州西湖店', total: 12, resolved: 10, rate: 83.3, avgTime: '3.8h', color: '#bef264' },
-                ].map(function(st, i) {
+                ].map((st, i) => {
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #bbf7d0', fontSize: 12 }}>
                       <span style={{ fontWeight: 700, color: i < 3 ? '#166534' : '#6b7280', minWidth: 20 }}>#{i + 1}</span>
@@ -587,8 +587,8 @@ export default function FeedbackPage() {
                   { store: '广州天河店', dept: '运营部', resolved: 58, pending: 8, avgTime: '2.8h', total: 66, heat: 87.9, color: '#2dd4bf', rank: '🥉' },
                   { store: '深圳南山店', dept: '客服部', resolved: 45, pending: 12, avgTime: '3.5h', total: 57, heat: 78.9, color: '#5eead4', rank: '⭐' },
                   { store: '成都锦江店', dept: '运营部', resolved: 38, pending: 10, avgTime: '4.1h', total: 48, heat: 79.2, color: '#99f6e4', rank: '⭐' },
-                ].map(function(st, i) {
-                  var barW = Math.round(st.heat);
+                ].map((st, i) => {
+                  const barW = Math.round(st.heat);
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, background: '#fff', border: '1px solid #99f6e4', fontSize: 12 }}>
                       <span style={{ fontSize: 16, minWidth: 24 }}>{st.rank}</span>
@@ -619,7 +619,7 @@ export default function FeedbackPage() {
                   { label: '平均处理率', value: Math.round((86 + 72 + 58 + 45 + 38) / (89 + 77 + 66 + 57 + 48) * 100) + '%', detail: '5店加权', color: '#0f766e' },
                   { label: '最快响应', value: '1.2h', detail: '北京朝阳店', color: '#0d9488' },
                   { label: '待办总量', value: (3 + 5 + 8 + 12 + 10) + '条', detail: '需跟进处理', color: '#f59e0b' },
-                ].map(function(s, i) {
+                ].map((s, i) => {
                   return (
                     <div key={i} style={{ textAlign: 'center', padding: '6px 8px', borderRadius: 6, background: '#f9fafb' }}>
                       <div style={{ fontSize: 10, color: '#6b7280' }}>{s.label}</div>
@@ -638,8 +638,8 @@ export default function FeedbackPage() {
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>📈 反馈处理满意度趋势（近6个月）</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-{function() {
-                var SAT_DATA = [
+{(() => {
+                const SAT_DATA = [
                   { month: '2月', score: 82, total: 45, color: '#8b5cf6' },
                   { month: '3月', score: 78, total: 52, color: '#8b5cf6' },
                   { month: '4月', score: 85, total: 48, color: '#8b5cf6' },
@@ -647,12 +647,12 @@ export default function FeedbackPage() {
                   { month: '6月', score: 88, total: 42, color: '#8b5cf6' },
                   { month: '7月', score: 91, total: 38, color: '#059669' },
                 ];
-                return SAT_DATA.map(function(s, i) {
-                  var prev = SAT_DATA[i - 1];
-                  var prevScore = prev ? prev.score : 0;
-                  var diff = s.score - prevScore;
-                  var trendText = i === 0 ? '—' : diff > 0 ? '↑ +' + diff : diff < 0 ? ('↓ ' + diff) : '→';
-                  var trendColor = i === 0 ? '#9ca3af' : diff > 0 ? '#059669' : diff < 0 ? '#dc2626' : '#9ca3af';
+                return SAT_DATA.map((s, i) => {
+                  const prev = SAT_DATA[i - 1];
+                  const prevScore = prev ? prev.score : 0;
+                  const diff = s.score - prevScore;
+                  const trendText = i === 0 ? '—' : diff > 0 ? '↑ +' + diff : diff < 0 ? ('↓ ' + diff) : '→';
+                  const trendColor = i === 0 ? '#9ca3af' : diff > 0 ? '#059669' : diff < 0 ? '#dc2626' : '#9ca3af';
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: i === 5 ? '#f0fdf4' : '#fff', border: '1px solid ' + (i === 5 ? '#bbf7d0' : '#e5e7eb') }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#4c1d95', width: 32 }}>{s.month}</span>
@@ -665,7 +665,7 @@ export default function FeedbackPage() {
                     </div>
                   );
                 });
-              }()}
+              })()}
               </div>
               <div style={{ marginTop: 6, display: 'flex', gap: 12, justifyContent: 'center', fontSize: 10, color: '#6b7280' }}>
                 <span>📊 最高: 7月 (91分)</span>
@@ -677,8 +677,8 @@ export default function FeedbackPage() {
             {/* 门店反馈处理效率排行 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🏪 门店反馈处理效率排行</h3>
-              {function(s,i) {
-                var STORE_EFFICIENCY = [
+              {((s,i) => {
+                const STORE_EFFICIENCY = [
                   { store: '北京朝阳店', category: '旗舰店', avgTime: '1.2h', maxTime: '3.0h', resolved: 26, total: 28, satisfaction: 96, score: 94, emoji: '🥇' },
                   { store: '上海浦东店', category: '商场店', avgTime: '2.0h', maxTime: '4.5h', resolved: 31, total: 35, satisfaction: 92, score: 88, emoji: '🥈' },
                   { store: '广州天河店', category: '商场店', avgTime: '2.5h', maxTime: '5.0h', resolved: 19, total: 22, satisfaction: 90, score: 85, emoji: '🥉' },
@@ -686,7 +686,7 @@ export default function FeedbackPage() {
                   { store: '成都锦江店', category: '街边店', avgTime: '4.0h', maxTime: '8.0h', resolved: 12, total: 15, satisfaction: 82, score: 74, emoji: '⭐' },
                   { store: '杭州西湖店', category: '景区店', avgTime: '3.8h', maxTime: '7.0h', resolved: 10, total: 12, satisfaction: 85, score: 76, emoji: '⭐' },
                 ];
-                var MAX_SCORE = 94;
+                const MAX_SCORE = 94;
                 return (
                   <div>
                     {/* 排行头部总览 */}
@@ -697,7 +697,7 @@ export default function FeedbackPage() {
                       </div>
                       <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
                         <div style={{ fontSize: 10, color: '#6b7280' }}>平均处理率</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: '#059669' }}>{Math.round(STORE_EFFICIENCY.reduce(function(a, st) { return a + (st.resolved / st.total) * 100; }, 0) / STORE_EFFICIENCY.length)}%</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#059669' }}>{Math.round(STORE_EFFICIENCY.reduce((a, st) => a + (st.resolved / st.total) * 100, 0) / STORE_EFFICIENCY.length)}%</div>
                       </div>
                       <div style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd', textAlign: 'center' }}>
                         <div style={{ fontSize: 10, color: '#6b7280' }}>平均时效</div>
@@ -710,10 +710,10 @@ export default function FeedbackPage() {
                     </div>
 
                     {/* 门店排行列表 */}
-                    {STORE_EFFICIENCY.map(function(st, i) {
-                      var rate = Math.round((st.resolved / st.total) * 100);
-                      var sw = Math.round((st.score / MAX_SCORE) * 100);
-                      var barColor = st.score >= 85 ? '#22c55e' : st.score >= 75 ? '#f59e0b' : '#ef4444';
+                    {STORE_EFFICIENCY.map((st, i) => {
+                      const rate = Math.round((st.resolved / st.total) * 100);
+                      const sw = Math.round((st.score / MAX_SCORE) * 100);
+                      const barColor = st.score >= 85 ? '#22c55e' : st.score >= 75 ? '#f59e0b' : '#ef4444';
                       return (
                         <div key={i} style={{ padding: '8px 12px', borderRadius: 8, marginBottom: 5, background: '#fff', border: '1px solid ' + (i < 3 ? '#bae6fd' : '#e5e7eb'), fontSize: 12 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -745,15 +745,15 @@ export default function FeedbackPage() {
                     {/* 效率评级分布 */}
                     <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                       <div style={{ padding: '6px 8px', borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center', fontSize: 11 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{STORE_EFFICIENCY.filter(function(st) { return st.score >= 85; }).length}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{STORE_EFFICIENCY.filter(st => st.score >= 85).length}</div>
                         <div style={{ color: '#166534' }}>优秀门店 (≥85分)</div>
                       </div>
                       <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fffbeb', border: '1px solid #fde68a', textAlign: 'center', fontSize: 11 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{STORE_EFFICIENCY.filter(function(st) { return st.score >= 75 && st.score < 85; }).length}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>{STORE_EFFICIENCY.filter(st => st.score >= 75 && st.score < 85).length}</div>
                         <div style={{ color: '#92400e' }}>良好门店 (75-84分)</div>
                       </div>
                       <div style={{ padding: '6px 8px', borderRadius: 6, background: '#fef2f2', border: '1px solid #fecaca', textAlign: 'center', fontSize: 11 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>{STORE_EFFICIENCY.filter(function(st) { return st.score < 75; }).length}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>{STORE_EFFICIENCY.filter(st => st.score < 75).length}</div>
                         <div style={{ color: '#991b1b' }}>待提升 (&lt;75分)</div>
                       </div>
                     </div>
@@ -771,10 +771,10 @@ export default function FeedbackPage() {
                     <div style={{ marginTop: 10, padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd' }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#0369a1', marginBottom: 6 }}>📈 各门店月度效率趋势 (处理率%)</div>
                       <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 60, padding: '4px 0' }}>
-                        {STORE_EFFICIENCY.slice(0, 5).map(function(st, i) {
-                          var rate = Math.round((st.resolved / st.total) * 100);
-                          var barH = Math.round(rate * 0.55);
-                          var barColors = ['#22c55e', '#16a34a', '#65a30d', '#84cc16', '#a3e635'];
+                        {STORE_EFFICIENCY.slice(0, 5).map((st, i) => {
+                          const rate = Math.round((st.resolved / st.total) * 100);
+                          const barH = Math.round(rate * 0.55);
+                          const barColors = ['#22c55e', '#16a34a', '#65a30d', '#84cc16', '#a3e635'];
                           return (
                             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                               <span style={{ fontSize: 9, fontWeight: 600, color: '#16a34a' }}>{rate}%</span>
@@ -789,7 +789,7 @@ export default function FeedbackPage() {
                     </div>
                   </div>
                 );
-              }(null, null)}
+              })(null, null)}
             </div>
 
             {/* 常见反馈处理建议 */}
@@ -826,7 +826,7 @@ export default function FeedbackPage() {
                   { store: '社区店', avgTime: '2.2h', resolve: 76, volume: 28, color: '#f59e0b' },
                   { store: '街边店', avgTime: '3.5h', resolve: 62, volume: 18, color: '#f97316' },
                   { store: '校园店', avgTime: '4.1h', resolve: 55, volume: 12, color: '#ef4444' },
-                ].map(function(st, i) {
+                ].map((st, i) => {
                   return (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -847,7 +847,7 @@ export default function FeedbackPage() {
                   { label: '标杆门店', value: '旗舰店', detail: '0.8h 平均时效', color: '#059669' },
                   { label: '需提升', value: '校园店', detail: '4.1h 需优化', color: '#ef4444' },
                   { label: '平均时效', value: '2.4h', detail: '5店综合', color: '#6b7280' },
-                ].map(function(s, i) {
+                ].map((s, i) => {
                   return (
                     <div key={i} style={{ textAlign: 'center', padding: '6px 12px', borderRadius: 6, background: '#f9fafb', flex: 1 }}>
                       <div style={{ fontSize: 10, color: '#6b7280' }}>{s.label}</div>
@@ -869,7 +869,7 @@ export default function FeedbackPage() {
                   { name: '王专员', role: '客服专员', resolved: 58, pending: 8, satisfaction: 0.92, emoji: '🥉' },
                   { name: '赵助理', role: '客服专员', resolved: 45, pending: 12, satisfaction: 0.88, emoji: '⭐' },
                   { name: '陈顾问', role: '投诉专员', resolved: 38, pending: 2, satisfaction: 0.96, emoji: '⭐' },
-                ].map(function(staff, i) {
+                ].map((staff, i) => {
                   return (
                     <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -906,7 +906,7 @@ export default function FeedbackPage() {
                   { tag: '价格/套餐', count: 48, pct: 18, trend: 'stable', icon: '💰', color: '#d97706' },
                   { tag: '环境/卫生', count: 38, pct: 14, trend: 'up', icon: '🧹', color: '#3b82f6' },
                   { tag: '其他', count: 35, pct: 13, trend: 'stable', icon: '📌', color: '#6b7280' },
-                ].map(function(cat, i) {
+                ].map((cat, i) => {
                   return (
                     <div key={i} style={{ padding: 12, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', textAlign: 'center' }}>
                       <div style={{ fontSize: 22 }}>{cat.icon}</div>

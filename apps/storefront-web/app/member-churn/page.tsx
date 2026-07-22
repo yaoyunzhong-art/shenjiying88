@@ -7,7 +7,6 @@ import {
   AnomalyDiagnosisReport,
   PredictionAnalysisPanel,
   PageShell,
-  StatCard,
   QuickStats,
   StatusBadge,
   type ChurnPrediction,
@@ -16,7 +15,7 @@ import {
   type PredictionPoint,
   type PredictionSummary,
 } from '@m5/ui';
-import { createBusinessClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { getDefaultApiBaseUrl } from '@m5/sdk';
 import { buildStorefrontScopeHeaders, resolveStorefrontScope } from '../../lib/storefront-transactions';
 
 // ============================================================

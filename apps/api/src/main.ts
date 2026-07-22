@@ -52,14 +52,16 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // CORS 白名单: 逗号分隔;开发默认放行 localhost:3002/3003/3011
+  // CORS 白名单: 逗号分隔;开发默认放行 localhost:3002/3003/3011/3111
   const defaultOrigins = [
     'http://localhost:3002',
     'http://localhost:3003',
     'http://localhost:3011',
+    'http://localhost:3111',
     'http://127.0.0.1:3002',
     'http://127.0.0.1:3003',
     'http://127.0.0.1:3011',
+    'http://127.0.0.1:3111',
   ];
   const envOrigins = (process.env.CORS_ORIGIN ?? '')
     .split(',')

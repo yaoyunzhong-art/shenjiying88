@@ -554,7 +554,7 @@ export default function MaintenancePage() {
               { name: '张浩', title: '高级工程师', completed: 42, avgTime: '1.3h', praise: 96, color: '#15803d' },
               { name: '刘洋', title: '工程师', completed: 29, avgTime: '1.8h', praise: 91, color: '#65a30d' },
               { name: '陈磊', title: '初级工程师', completed: 22, avgTime: '2.1h', praise: 87, color: '#84cc16' },
-            ].map(function(e, i) {
+            ].map((e, i) => {
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #bbf7d0', fontSize: 12 }}>
                   <span style={{ fontWeight: 600, color: '#166534', width: 56 }}>{e.name}</span>
@@ -595,13 +595,13 @@ export default function MaintenancePage() {
         {/* 维护工单按优先级分布 */}
         <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#fefce8', border: '1px solid #fde68a' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#92400e' }}>🔴 维护工单按优先级分布</h3>
-          {function(orders: MaintenanceOrder[]) {
-            var urgent = orders.filter(function(o) { return o.priority === 'urgent'; }).length;
-            var high = orders.filter(function(o) { return o.priority === 'high'; }).length;
-            var medium = orders.filter(function(o) { return o.priority === 'medium'; }).length;
-            var low = orders.filter(function(o) { return o.priority === 'low'; }).length;
-            var total = orders.length;
-            var items = [
+          {((orders: MaintenanceOrder[]) => {
+            const urgent = orders.filter(o => o.priority === 'urgent').length;
+            const high = orders.filter(o => o.priority === 'high').length;
+            const medium = orders.filter(o => o.priority === 'medium').length;
+            const low = orders.filter(o => o.priority === 'low').length;
+            const total = orders.length;
+            const items = [
               { label: '紧急', count: urgent, color: '#dc2626', bg: '#fef2f2' },
               { label: '高', count: high, color: '#f97316', bg: '#fff7ed' },
               { label: '中', count: medium, color: '#eab308', bg: '#fefce8' },
@@ -609,8 +609,8 @@ export default function MaintenancePage() {
             ];
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {items.map(function(item, idx) {
-                  var pct = total > 0 ? Math.round(item.count / total * 100) : 0;
+                {items.map((item, idx) => {
+                  const pct = total > 0 ? Math.round(item.count / total * 100) : 0;
                   return (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid ' + item.color + '40' }}>
                       <span style={{ fontWeight: 600, fontSize: 13, color: item.color, minWidth: 32 }}>{item.label}</span>
@@ -624,23 +624,23 @@ export default function MaintenancePage() {
                 })}
               </div>
             );
-          }(MOCK_ORDERS)}
+          })(MOCK_ORDERS)}
         </div>
 
         {/* 设备故障类型TOP5 */}
-        {function(FaultTypePanel: void) {
+        {(() => {
           /* 设备故障类型TOP5 — 故障类型/发生次数/平均修复时长/发生趋势 */
           interface FaultType { name: string; icon: string; count: number; avgRepairMin: number; trend: string; trendDir: 'up' | 'down' | 'stable'; color: string; description: string; }
-          var faults: FaultType[] = [
+          const faults: FaultType[] = [
             { name: '打印头/墨盒故障', icon: '🖨️', count: 18, avgRepairMin: 45, trend: '+22%', trendDir: 'up', color: '#ef4444', description: '打印质量下降或卡纸，多为耗材老化' },
             { name: '摄像头无信号', icon: '📹', count: 14, avgRepairMin: 30, trend: '+8%', trendDir: 'up', color: '#f97316', description: '画面黑屏或闪烁，线缆接触不良居多' },
             { name: '收银系统卡顿', icon: '💳', count: 12, avgRepairMin: 20, trend: '-5%', trendDir: 'down', color: '#eab308', description: '系统响应慢，多为内存占用过高或缓存未清理' },
             { name: '传感器漂移', icon: '🌡️', count: 8, avgRepairMin: 35, trend: '-12%', trendDir: 'down', color: '#22c55e', description: '温湿度、烟雾传感器读数不准，校准后可恢复' },
             { name: '网络延迟/中断', icon: '🌐', count: 6, avgRepairMin: 55, trend: '+15%', trendDir: 'up', color: '#f59e0b', description: '网络波动或断连，交换机端口或线路故障' },
           ];
-          var totalFaults = faults.reduce(function(acc, f) { return acc + f.count; }, 0);
-          var avgRepair = Math.round(faults.reduce(function(acc, f) { return acc + f.avgRepairMin; }, 0) / faults.length);
-          var maxCount = Math.max.apply(null, faults.map(function(f) { return f.count; }));
+          const totalFaults = faults.reduce((acc, f) => acc + f.count, 0);
+          const avgRepair = Math.round(faults.reduce((acc, f) => acc + f.avgRepairMin, 0) / faults.length);
+          const maxCount = Math.max.apply(null, faults.map(f => f.count));
           return (
             <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#991b1b' }}>🔧 设备故障类型TOP5</h3>
@@ -648,10 +648,10 @@ export default function MaintenancePage() {
                 累计故障 <span style={{ fontWeight: 700 }}>{totalFaults}次</span> · 平均修复时长 <span style={{ fontWeight: 700 }}>{avgRepair}分钟</span> · 基于近期维护数据统计
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {faults.map(function(f, i) {
-                  var barPct = maxCount > 0 ? Math.round((f.count / maxCount) * 100) : 0;
-                  var trendIcon = f.trendDir === 'up' ? '↑' : f.trendDir === 'down' ? '↓' : '→';
-                  var trendColor = f.trendDir === 'up' ? '#ef4444' : f.trendDir === 'down' ? '#22c55e' : '#6b7280';
+                {faults.map((f, i) => {
+                  const barPct = maxCount > 0 ? Math.round((f.count / maxCount) * 100) : 0;
+                  const trendIcon = f.trendDir === 'up' ? '↑' : f.trendDir === 'down' ? '↓' : '→';
+                  const trendColor = f.trendDir === 'up' ? '#ef4444' : f.trendDir === 'down' ? '#22c55e' : '#6b7280';
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fecaca', fontSize: 12 }}>
                       <span style={{ fontWeight: 700, color: i === 0 ? '#dc2626' : '#6b7280', minWidth: 20 }}>#{i + 1}</span>
@@ -677,7 +677,7 @@ export default function MaintenancePage() {
               </div>
             </div>
           );
-        }(void 0)}
+        })()}
 
         {/* 工单按门店分布 */}
         <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
@@ -689,7 +689,7 @@ export default function MaintenancePage() {
               { store: '广州天河店', open: 1, inProgress: 6, completed: 15, total: 22 },
               { store: '深圳南山店', open: 4, inProgress: 3, completed: 12, total: 19 },
               { store: '成都锦江店', open: 2, inProgress: 2, completed: 10, total: 14 },
-            ].map(function(st, i) {
+            ].map((st, i) => {
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e9d5ff', fontSize: 12 }}>
                   <span style={{ fontWeight: 600, color: '#5b21b6', width: 90 }}>{st.store}</span>
@@ -712,15 +712,15 @@ export default function MaintenancePage() {
         <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#5b21b6' }}>🔁 设备维护周期合规率</h3>
           <p style={{ margin: '0 0 12px', fontSize: 11, color: '#6b7280' }}>各设备类型的定期维护执行率 — 按时完成维护的工单占比</p>
-          {function(deviceTypes, i) {
-            var maxRate = Math.max.apply(null, deviceTypes.map(function(d) { return d.rate; }));
+          {((deviceTypes, i) => {
+            const maxRate = Math.max.apply(null, deviceTypes.map(d => d.rate));
             return (
               <div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {deviceTypes.map(function(d, idx) {
-                    var barPct = maxRate > 0 ? Math.round((d.rate / maxRate) * 100) : 0;
-                    var statusColor = d.rate >= 90 ? '#22c55e' : d.rate >= 75 ? '#f59e0b' : '#ef4444';
-                    var statusLabel = d.rate >= 90 ? '优秀' : d.rate >= 75 ? '注意' : '告警';
+                  {deviceTypes.map((d, idx) => {
+                    const barPct = maxRate > 0 ? Math.round((d.rate / maxRate) * 100) : 0;
+                    const statusColor = d.rate >= 90 ? '#22c55e' : d.rate >= 75 ? '#f59e0b' : '#ef4444';
+                    const statusLabel = d.rate >= 90 ? '优秀' : d.rate >= 75 ? '注意' : '告警';
                     return (
                       <div key={idx} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -752,29 +752,29 @@ export default function MaintenancePage() {
                 <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                   <div style={{ padding: '8px 12px', borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}>
-                      {Math.round(deviceTypes.reduce(function(s, d) { return s + d.rate; }, 0) / deviceTypes.length)}%
+                      {Math.round(deviceTypes.reduce((s, d) => s + d.rate, 0) / deviceTypes.length)}%
                     </div>
                     <div style={{ fontSize: 10, color: '#16a34a' }}>整体合规率</div>
                   </div>
                   <div style={{ padding: '8px 12px', borderRadius: 6, background: '#fef2f2', border: '1px solid #fecaca', textAlign: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#ef4444' }}>
-                      {deviceTypes.filter(function(d) { return d.rate < 75; }).length}类
+                      {deviceTypes.filter(d => d.rate < 75).length}类
                     </div>
                     <div style={{ fontSize: 10, color: '#dc2626' }}>需改进设备</div>
                   </div>
                   <div style={{ padding: '8px 12px', borderRadius: 6, background: '#fffbeb', border: '1px solid #fde68a', textAlign: 'center' }}>
                     <div style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>
-                      {deviceTypes.reduce(function(s, d) { return s + d.overdue; }, 0)}次
+                      {deviceTypes.reduce((s, d) => s + d.overdue, 0)}次
                     </div>
                     <div style={{ fontSize: 10, color: '#d97706' }}>累计延误</div>
                   </div>
                 </div>
-                {function(types) {
+                {(types => {
                   if (types.length === 0) return <span>暂无设备数据</span>;
-                  var best: any = types[0];
-                  var worst: any = types[0];
-                  for (var j = 1; j < types.length; j++) {
-                    var t: any = types[j];
+                  const best: any = types[0];
+                  let worst: any = types[0];
+                  for (let j = 1; j < types.length; j++) {
+                    const t: any = types[j];
                     if (t.rate > best.rate) { best = t; }
                     if (t.rate < worst.rate) { worst = t; }
                   }
@@ -785,10 +785,10 @@ export default function MaintenancePage() {
                       <span>💡 建议加大空调和打印机的巡检频率</span>
                     </div>
                   );
-                }(deviceTypes)}
+                })(deviceTypes)}
               </div>
             );
-          }([
+          })([
             { name: '中央空调系统', icon: '❄️', type: '暖通', rate: 88, cycleDays: 30, completed: 22, overdue: 3, planned: 25 },
             { name: '收银POS机', icon: '💳', type: 'IT设备', rate: 96, cycleDays: 15, completed: 48, overdue: 2, planned: 50 },
             { name: '监控系统', icon: '📹', type: '安防', rate: 92, cycleDays: 45, completed: 12, overdue: 1, planned: 13 },
@@ -804,8 +804,8 @@ export default function MaintenancePage() {
         {/* 维护工程师紧急响应时效 */}
         <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca' }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#b91c1c' }}>🚨 维护工程师紧急响应时效</h3>
-          {function(s,i) { return ( <div style={{display:'flex',gap:4,alignItems:'flex-end',height:60,padding:'2px 0'}}>{[{n:'张',t:12},{n:'李',t:18},{n:'王',t:25},{n:'陈',t:8},{n:'刘',t:35}].map(function(e,idx){var h=e.t/35*48;return (<div key={idx} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}><span style={{fontSize:9,fontWeight:600,color:e.t>30?'#ef4444':e.t>15?'#f59e0b':'#22c55e'}}>{e.t}min</span><div style={{width:24,height:h,borderRadius:'3px 3px 0 0',background:e.t>30?'#ef4444':e.t>15?'#f59e0b':'#22c55e',marginTop:1}}/><span style={{fontSize:8,color:'#6b7280',marginTop:1}}>{e.n}师傅</span></div>);})}</div>); }([])}
-          <div style={{ marginTop: 2, fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>平均 {Math.round([12,18,25,8,35].reduce(function(a,b){return a+b})/5)}min · 🏆 陈师傅最快  ⚠️ 刘师傅最慢</div>
+          {((s,i) => ( <div style={{display:'flex',gap:4,alignItems:'flex-end',height:60,padding:'2px 0'}}>{[{n:'张',t:12},{n:'李',t:18},{n:'王',t:25},{n:'陈',t:8},{n:'刘',t:35}].map((e,idx) => {const h=e.t/35*48;return (<div key={idx} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}><span style={{fontSize:9,fontWeight:600,color:e.t>30?'#ef4444':e.t>15?'#f59e0b':'#22c55e'}}>{e.t}min</span><div style={{width:24,height:h,borderRadius:'3px 3px 0 0',background:e.t>30?'#ef4444':e.t>15?'#f59e0b':'#22c55e',marginTop:1}}/><span style={{fontSize:8,color:'#6b7280',marginTop:1}}>{e.n}师傅</span></div>);})}</div>))([])}
+          <div style={{ marginTop: 2, fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>平均 {Math.round([12,18,25,8,35].reduce((a,b) => a+b)/5)}min · 🏆 陈师傅最快  ⚠️ 刘师傅最慢</div>
         </div>
 
         {/* 维护工单趋势 */}
@@ -818,7 +818,7 @@ export default function MaintenancePage() {
               { month: '4月', total: 78, completed: 65, color: '#3b82f6' },
               { month: '5月', total: 110, completed: 88, color: '#3b82f6' },
               { month: '6月', total: 98, completed: 82, color: '#3b82f6' },
-            ].map(function(m, i) {
+            ].map((m, i) => {
               return (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 65 }}>
@@ -849,7 +849,7 @@ export default function MaintenancePage() {
               { name: '数据线', stock: 25, threshold: 20, unit: '条', status: '正常', color: '#22c55e' },
               { name: '保险丝', stock: 1, threshold: 12, unit: '盒', status: '告警', color: '#ef4444' },
               { name: '轴承', stock: 6, threshold: 10, unit: '个', status: '不足', color: '#f59e0b' },
-            ].map(function(item, i) {
+            ].map((item, i) => {
               return (
                 <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -877,7 +877,7 @@ export default function MaintenancePage() {
               { month: '5月', parts: 4100, labor: 2200, outsource: 1200, color: '#22c55e' },
               { month: '6月', parts: 3600, labor: 2800, outsource: 2000, color: '#22c55e' },
               { month: '本月', parts: 3850, labor: 2600, outsource: 1800, color: '#22c55e' },
-            ].map(function(m, i) {
+            ].map((m, i) => {
               const maxVal = 4100;
               return (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -901,7 +901,7 @@ export default function MaintenancePage() {
               { label: '配件采购', value: '¥3,850', pct: 42, color: '#22c55e' },
               { label: '人工费用', value: '¥2,600', pct: 28, color: '#3b82f6' },
               { label: '外包服务', value: '¥1,800', pct: 19, color: '#a855f7' },
-            ].map(function(c, i) {
+            ].map((c, i) => {
               return (
                 <div key={i} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 10, color: '#9ca3af' }}>{c.label}</div>
@@ -923,7 +923,7 @@ export default function MaintenancePage() {
               { rank: 3, name: '投篮机', incidents: 22, totalUnits: 40, rate: 55, trend: '-3%' },
               { rank: 4, name: '射击机', incidents: 12, totalUnits: 25, rate: 48, trend: '+5%' },
               { rank: 5, name: 'VR设备', incidents: 7, totalUnits: 18, rate: 39, trend: '-2%' },
-            ].map(function(d, i) {
+            ].map((d, i) => {
               const barColor = d.rate >= 70 ? '#ef4444' : d.rate >= 50 ? '#f59e0b' : '#22c55e';
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', fontSize: 12 }}>

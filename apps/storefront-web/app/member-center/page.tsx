@@ -32,7 +32,7 @@ import {
 import type { MemberInfo } from '../../lib/member-auth-service';
 import { createBusinessClient, getDefaultApiBaseUrl } from '@m5/sdk';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 type MembershipTier = 'diamond' | 'gold' | 'silver' | 'bronze' | 'basic';
 
@@ -157,13 +157,14 @@ async function fetchRecentOrders(memberId: string): Promise<RecentOrder[]> {
     const client = createBusinessClient(getDefaultApiBaseUrl());
     const raw = await client.orders.list({ memberId, limit: 5 });
     if (Array.isArray(raw)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return raw.map((order: any) => ({
-        id: order.id || order.orderId || '',
-        orderNo: order.orderNo || '',
-        amount: order.totalAmount ?? order.amount ?? 0,
-        status: order.status === 'PAID' || order.status === 'COMPLETED' ? '已完成' : order.status || '已完成',
-        date: order.createdAt ? order.createdAt.slice(0, 10) : '',
-        items: order.itemCount ?? order.items ?? 0,
+        id: `${order.id ?? order.orderId ?? ''}`,
+        orderNo: `${order.orderNo ?? ''}`,
+        amount: typeof order.totalAmount === 'number' ? order.totalAmount : typeof order.amount === 'number' ? order.amount : 0,
+        status: order.status === 'PAID' || order.status === 'COMPLETED' ? '已完成' : `${order.status ?? '已完成'}`,
+        date: typeof order.createdAt === 'string' ? order.createdAt.slice(0, 10) : '',
+        items: typeof order.itemCount === 'number' ? order.itemCount : typeof order.items === 'number' ? order.items : 0,
       }));
     }
     return [];

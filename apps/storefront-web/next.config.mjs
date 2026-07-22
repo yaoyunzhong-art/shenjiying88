@@ -19,6 +19,13 @@ const nextConfig = {
   // TODO: 将工具函数移出page.tsx到独立的analytics-data.ts等文件
   experimental: {
     strictNextPageExport: false
+  },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Avoid local ENOENT crashes from transient .next/cache pack files during repeated smoke restarts.
+      config.cache = false;
+    }
+    return config;
   }
 };
 

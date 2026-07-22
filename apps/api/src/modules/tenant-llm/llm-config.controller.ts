@@ -15,7 +15,6 @@ import {
   Headers,
 } from '@nestjs/common'
 import { TenantLLMService } from './llm-config.service'
-// @ts-ignore
 import { TenantScopeGuard } from '../../agent/tenant.guard'
 import {
   CreateLLMConfigRequest,

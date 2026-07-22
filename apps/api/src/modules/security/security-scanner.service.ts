@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
 
-// @ts-ignore
 import * as jwt from 'jsonwebtoken'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -330,7 +329,6 @@ export class SecurityScannerService {
    */
   async detectJWTWeakSecret(token: string, secrets: string[]): Promise<boolean> {
     // 使用 jsonwebtoken 的同步验证方法
-    // @ts-ignore
     const jwt = await import('jsonwebtoken')
 
     // 首先检查提供的 secrets 中是否有弱 secret 且验证成功

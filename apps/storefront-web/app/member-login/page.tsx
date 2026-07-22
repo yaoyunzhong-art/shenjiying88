@@ -3,9 +3,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormField, useFormSubmit, FormSubmitFeedback, SubmitButton, PageShell, Modal, StatusBadge } from '@m5/ui';
+import { FormField, useFormSubmit, FormSubmitFeedback, SubmitButton } from '@m5/ui';
 import { memberAuthService, type MemberLoginResponse } from '../../lib/member-auth-service';
-import { createBusinessClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { getDefaultApiBaseUrl } from '@m5/sdk';
 import { buildStorefrontScopeHeaders, resolveStorefrontScope } from '../../lib/storefront-transactions';
 
 // ============================================================
@@ -350,7 +350,6 @@ function LoginStatsPanel() {
 async function fetchLoginRecords(memberId: string): Promise<LoginAttemptRecord[]> {
   try {
     const scope = resolveStorefrontScope();
-    const client = createBusinessClient(getDefaultApiBaseUrl());
     const res = await fetch(`${getDefaultApiBaseUrl()}/members/${memberId}/login-history`, {
       headers: {
         'Content-Type': 'application/json',
@@ -390,7 +389,6 @@ export default function MemberLoginPage() {
   const router = useRouter();
   const [mobile, setMobile] = useState('');
   const [code, setCode] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
@@ -457,7 +455,6 @@ export default function MemberLoginPage() {
 
     const result = await memberAuthService.sendSmsCode(mobile);
     if (result.success) {
-      setCodeSent(true);
       setCountdown(60);
       const timer = setInterval(() => {
         setCountdown((c) => {

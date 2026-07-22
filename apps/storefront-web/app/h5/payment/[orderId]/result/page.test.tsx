@@ -12,6 +12,8 @@ import {
   type StorefrontTransactionAggregate,
 } from '../../../../../lib/storefront-transactions';
 
+const BASE_CREATED_AT = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
 function createAggregate(status: 'pending' | 'paid' | 'failed' | 'refunded' | 'expired'): StorefrontTransactionAggregate {
   const base: StorefrontTransactionAggregate = {
     order: {
@@ -21,8 +23,8 @@ function createAggregate(status: 'pending' | 'paid' | 'failed' | 'refunded' | 'e
       currency: 'CNY',
       totalAmount: 88,
       status: 'PENDING_PAYMENT',
-      createdAt: '2026-07-20T10:00:00.000Z',
-      updatedAt: '2026-07-20T10:00:00.000Z',
+      createdAt: BASE_CREATED_AT,
+      updatedAt: BASE_CREATED_AT,
     },
     payment: {
       paymentId: 'payment-001',
@@ -30,8 +32,8 @@ function createAggregate(status: 'pending' | 'paid' | 'failed' | 'refunded' | 'e
       channel: 'WECHAT_PAY',
       amount: 88,
       status: 'PENDING',
-      createdAt: '2026-07-20T10:00:00.000Z',
-      updatedAt: '2026-07-20T10:00:00.000Z',
+      createdAt: BASE_CREATED_AT,
+      updatedAt: BASE_CREATED_AT,
     },
     refunds: [],
   };

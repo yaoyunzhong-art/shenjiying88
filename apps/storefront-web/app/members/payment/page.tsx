@@ -69,7 +69,8 @@ async function fetchTransactions(memberId: string): Promise<TransactionRecord[]>
       headers: buildStorefrontScopeHeaders(scope) as Record<string, string>,
     });
     if (Array.isArray(raw)) {
-      return raw.map((txn: Record<string, unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return raw.map((txn: any) => {
         const txnType: TransactionRecord['type'] =
           txn.type === 'recharge' || txn.type === 'payment' || txn.type === 'refund' || txn.type === 'withdraw'
             ? txn.type
@@ -159,7 +160,7 @@ const styles = {
     alignItems: 'center' as const,
     gap: 8,
   },
-  sectionBadge: (count: number): React.CSSProperties => ({
+  sectionBadge: (_count: number): React.CSSProperties => ({
     fontSize: 11,
     padding: '1px 8px',
     borderRadius: 10,

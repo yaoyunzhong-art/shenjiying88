@@ -579,7 +579,7 @@ export default function LoyaltyPage() {
                   { tier: '金卡', icon: '🟡', color: '#ffd700', benefits: ['1.5x积分加速', '生日礼包', '优先排队', '专属活动', '每月3张游戏券'], stars: [5, 3, 4, 3] as const },
                   { tier: '钻石', icon: '💎', color: '#b9f2ff', benefits: ['2x积分加速', '生日大礼包', 'VIP通道', '专属活动', '年度回馈', '1v1客服'], stars: [5, 5, 5, 5] as const },
                 ].map(function(t, i) {
-                  var stars = t.stars as unknown as [number, number, number, number];
+                  const stars = t.stars as unknown as [number, number, number, number];
                   return (
                     <div key={i} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #bbf7d0' }}>
                       <div style={{ textAlign: 'center', marginBottom: 6 }}>
@@ -642,7 +642,7 @@ export default function LoyaltyPage() {
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
               <h4 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#166534' }}>✅ 会员权益履行率</h4>
               {function(data: typeof MEMBER_TIERS) {
-                var fulfillmentData = [
+                const fulfillmentData = [
                   { tier: '普通', icon: '🟤', rate: 38, used: 190, total: 500, color: '#cd7f32' },
                   { tier: '银卡', icon: '⚪', rate: 55, used: 275, total: 500, color: '#94a3b8' },
                   { tier: '金卡', icon: '🟡', rate: 72, used: 360, total: 500, color: '#f59e0b' },
@@ -710,22 +710,22 @@ export default function LoyaltyPage() {
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#92400e' }}>📊 会员活跃度评分</h4>
               {function(s,i) {
-                var DIMS = ['消费频次', '到店时间', '推荐分享', '评价互动'];
-                var ICONS = ['🛒', '⏰', '👥', '✍️'];
-                var WEIGHTS = [35, 30, 20, 15];
-                var ACTIVE_DATA = [
+                const DIMS = ['消费频次', '到店时间', '推荐分享', '评价互动'];
+                const ICONS = ['🛒', '⏰', '👥', '✍️'];
+                const WEIGHTS = [35, 30, 20, 15];
+                const ACTIVE_DATA = [
                   { level: '活跃', icon: '🔥', min: 85, max: 100, count: 320, color: '#22c55e', bg: '#f0fdf4' },
                   { level: '一般', icon: '😐', min: 60, max: 84, count: 480, color: '#f59e0b', bg: '#fffbeb' },
                   { level: '沉睡', icon: '💤', min: 30, max: 59, count: 280, color: '#f97316', bg: '#fff7ed' },
                   { level: '流失', icon: '💔', min: 0, max: 29, count: 120, color: '#ef4444', bg: '#fef2f2' },
                 ];
-                var VIBRANT_SUMMARY = [
+                const VIBRANT_SUMMARY = [
                   { label: '总会员', value: '1,200', icon: '👥', color: '#2563eb' },
                   { label: '综合活跃', value: '68%', icon: '📈', color: '#059669' },
                   { label: '上月变化', value: '+5.2%', icon: '⬆️', color: '#16a34a' },
                   { label: '预警人数', value: '120', icon: '⚠️', color: '#dc2626' },
                 ];
-                var RECENT_SCORE_TREND = [
+                const RECENT_SCORE_TREND = [
                   { month: '2月', score: 62, change: '-' },
                   { month: '3月', score: 65, change: '+3' },
                   { month: '4月', score: 64, change: '-1' },
@@ -738,7 +738,7 @@ export default function LoyaltyPage() {
                     {/* 四维度评分介绍 */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, marginBottom: 10 }}>
                       {DIMS.map(function(d, i) {
-                        var w = WEIGHTS[i];
+                        const w = WEIGHTS[i];
                         return (
                           <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fef08a', textAlign: 'center' }}>
                             <span style={{ fontSize: 18 }}>{ICONS[i]}</span>
@@ -753,7 +753,7 @@ export default function LoyaltyPage() {
                     {/* 活跃度等级分布 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
                       {ACTIVE_DATA.map(function(d, i) {
-                        var pct = Math.round((d.count / 1200) * 100);
+                        const pct = Math.round((d.count / 1200) * 100);
                         return (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 6, background: d.bg, border: '1px solid ' + d.color + '40', fontSize: 12 }}>
                             <span style={{ fontSize: 16, minWidth: 24 }}>{d.icon}</span>
@@ -786,9 +786,9 @@ export default function LoyaltyPage() {
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#713f12', marginBottom: 6 }}>📈 近6个月活跃度趋势</div>
                       <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 70, padding: '4px 0' }}>
                         {RECENT_SCORE_TREND.map(function(s, i) {
-                          var barH = Math.round(s.score * 0.7);
-                          var isUp = i > 0 && parseInt(s.change || '0') > 0;
-                          var isDown = i > 0 && parseInt(s.change || '0') < 0;
+                          const barH = Math.round(s.score * 0.7);
+                          const isUp = i > 0 && parseInt(s.change || '0') > 0;
+                          const isDown = i > 0 && parseInt(s.change || '0') < 0;
                           return (
                             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                               <span style={{ fontSize: 10, fontWeight: 600, color: isUp ? '#16a34a' : isDown ? '#dc2626' : '#6b7280' }}>{s.change !== '-' ? s.change : '—'}</span>
@@ -821,15 +821,15 @@ export default function LoyaltyPage() {
 
             {/* 会员推荐有礼效果 */}
             {function(s,i) {
-              var REFERRAL_DATA = [
+              const REFERRAL_DATA = [
                 { month: '5月', recommenders: 38, conversions: 22, rate: 57.9, rewards: 4400 },
                 { month: '6月', recommenders: 52, conversions: 31, rate: 59.6, rewards: 6200 },
                 { month: '7月', recommenders: 45, conversions: 28, rate: 62.2, rewards: 5600 },
               ];
-              var totalRecommenders = REFERRAL_DATA.reduce(function(a,b) { return a + b.recommenders; }, 0);
-              var totalConversions = REFERRAL_DATA.reduce(function(a,b) { return a + b.conversions; }, 0);
-              var totalRewards = REFERRAL_DATA.reduce(function(a,b) { return a + b.rewards; }, 0);
-              var avgRate = totalConversions / totalRecommenders * 100;
+              const totalRecommenders = REFERRAL_DATA.reduce(function(a,b) { return a + b.recommenders; }, 0);
+              const totalConversions = REFERRAL_DATA.reduce(function(a,b) { return a + b.conversions; }, 0);
+              const totalRewards = REFERRAL_DATA.reduce(function(a,b) { return a + b.rewards; }, 0);
+              const avgRate = totalConversions / totalRecommenders * 100;
               return (
                 <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fdf4ff', border: '1px solid #e9d5ff' }}>
                   <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: '#86198f' }}>👥 会员推荐有礼效果</h4>

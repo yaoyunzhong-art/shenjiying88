@@ -460,7 +460,7 @@ export default function PointHistoryPage() {
                   { label: '总消耗', value: '8,420', trend: '+12%', color: '#dc2626' },
                   { label: '当前余额', value: '248,600', change: '+4,430', color: '#2563eb' },
                   { label: '即将到期', value: '3,200', change: '30天内', color: '#d97706' },
-                ].map(function(s, i) {
+                ].map((s, i) => {
                   return (
                     <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #dcfce7', textAlign: 'center' }}>
                       <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
@@ -482,7 +482,7 @@ export default function PointHistoryPage() {
                   { month: '4月', earn: 70, spend: 62 },
                   { month: '5月', earn: 88, spend: 50 },
                   { month: '6月', earn: 95, spend: 68 },
-                ].map(function(m, i) {
+                ].map((m, i) => {
                   return (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                       <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 65 }}>
@@ -508,7 +508,7 @@ export default function PointHistoryPage() {
                   { batch: '2026年1月获得', points: 1200, expireDate: '2026-07-31', daysLeft: 14, priority: 'urgent' },
                   { batch: '2026年2月获得', points: 800, expireDate: '2026-08-31', daysLeft: 45, priority: 'warning' },
                   { batch: '2026年3月获得', points: 1200, expireDate: '2026-09-30', daysLeft: 75, priority: 'normal' },
-                ].map(function(b, i) {
+                ].map((b, i) => {
                   return (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa' }}>
                       <div>
@@ -535,8 +535,8 @@ export default function PointHistoryPage() {
                   { rank: 3, name: '王强', avatar: '👨‍🔧', tier: '金卡', points: 1880, color: '#06b6d4' },
                   { rank: 4, name: '赵敏', avatar: '👩‍🎓', tier: '金卡', points: 1560, color: '#22c55e' },
                   { rank: 5, name: '陈龙', avatar: '👨‍💻', tier: '银卡', points: 1220, color: '#f97316' },
-                ].map(function(m, i) {
-                  var medal = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][i];
+                ].map((m, i) => {
+                  const medal = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'][i];
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #fed7aa' }}>
                       <span style={{ fontSize: 16, minWidth: 24 }}>{medal}</span>
@@ -576,7 +576,7 @@ export default function PointHistoryPage() {
                   { item: '单人畅玩卡', points: 500, exchangeRate: '省¥30', hot: 85 },
                   { item: '生日派对套餐', points: 2000, exchangeRate: '省¥120', hot: 78 },
                   { item: 'VIP月卡', points: 3000, exchangeRate: '省¥200', hot: 72 },
-                ].map(function(r, i) {
+                ].map((r, i) => {
                   return (
                     <div key={i} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #a5f3fc', textAlign: 'center' }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#0e7490' }}>{r.item}</div>
@@ -600,13 +600,13 @@ export default function PointHistoryPage() {
                   { target: 500, title: '快速积累500分', desc: '适合新会员解锁基础兑换', duration: '7~50天' },
                   { target: 1000, title: '冲刺1000分', desc: '适合金卡门槛冲刺', duration: '15~90天' },
                   { target: 2000, title: '挑战2000分', desc: '适合银卡升级与权益解锁', duration: '30~180天' },
-                ].map(function(path, i) {
-                  var ways = [
+                ].map((path, i) => {
+                  const ways = [
                     { target: 500, items: ['每日签到 × 50天 (250分)', '到店消费 × ¥500 (500分)', '推荐好友 × 10人 (2000分)'], rec: '每日签到 + 小额消费' },
                     { target: 1000, items: ['签到30天 + 消费¥300 (580分)', '参与活动 × 5次 (250~2500分)', '推荐好友 × 3人 (600分)'], rec: '签到 + 消费组合' },
                     { target: 2000, items: ['升级银卡 (2000分起)', '大额充值 (¥2000=2000分)', '参与季度活动(500~3000分)'], rec: '升级银卡 + 活动参与' },
                   ];
-                  var w = ways[i];
+                  const w = ways[i];
                   if (!w) return null;
                   return (
                     <div key={i} style={{ padding: 12, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd' }}>
@@ -615,7 +615,7 @@ export default function PointHistoryPage() {
                         <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#e0f2fe', color: '#0284c7' }}>预计{path.duration}</span>
                       </div>
                       <ul style={{ margin: '0 0 6px', padding: '0 0 0 16px', fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
-                        {w.items.map(function(item, j) {
+                        {w.items.map((item, j) => {
                           return <li key={j}>{item}</li>;
                         })}
                       </ul>
@@ -636,7 +636,7 @@ export default function PointHistoryPage() {
                   { item: '免费游戏币20枚', count: 120, rate: 92 },
                   { item: '单人畅玩卡', count: 85, rate: 85 },
                   { item: '零食套餐', count: 68, rate: 72 },
-                ].map(function(t, i) {
+                ].map((t, i) => {
                   return (
                     <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #fde68a' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -667,7 +667,7 @@ export default function PointHistoryPage() {
                   { icon: '⏰', title: '积分即将到期提醒', desc: '当积分即将过期时推送通知', options: ['7天', '15天', '30天'] },
                   { icon: '📉', title: '积分余额达阈值提醒', desc: '当积分余额低于设定值时提醒', options: ['100分', '500分', '1000分'] },
                   { icon: '📈', title: '获得大额积分提醒', desc: '当单次获得积分超过设定值', options: ['100分', '500分', '1000分'] },
-                ].map(function(w, i) {
+                ].map((w, i) => {
                   return (
                     <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -676,7 +676,7 @@ export default function PointHistoryPage() {
                       </div>
                       <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6 }}>{w.desc}</div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        {w.options.map(function(opt, j) {
+                        {w.options.map((opt, j) => {
                           return (
                             <span key={j} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f3e8ff', color: '#7c3aed', border: '1px solid #d8b4fe', cursor: 'pointer' }}>
                               {opt}
@@ -694,8 +694,8 @@ export default function PointHistoryPage() {
             </div>
 
             {/* 积分过期策略说明 */}
-            {function ExpireStrategy() {
-              var expireRules = [
+            {(() => {
+              const expireRules = [
                 { icon: '📅', label: '积分有效期', desc: '获得日起 365 天' },
                 { icon: '📱', label: '过期前30天', desc: '短信提醒' },
                 { icon: '📲', label: '过期前7天', desc: 'APP推送提醒' },
@@ -703,7 +703,7 @@ export default function PointHistoryPage() {
                 { icon: '🔄', label: '可续期条件', desc: '30天内任意消费可续期全部积分' },
                 { icon: '❌', label: '无法续期', desc: '过期超过60天的积分无法恢复' },
               ];
-              var expireStats = [
+              const expireStats = [
                 { month: '4月', points: 2350, renewRate: 68 },
                 { month: '5月', points: 3120, renewRate: 72 },
                 { month: '6月', points: 4580, renewRate: 65 },
@@ -712,7 +712,7 @@ export default function PointHistoryPage() {
                 <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#fff1f2', border: '1px solid #fecdd3' }}>
                   <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9f1239' }}>🕐 积分过期策略说明</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8, marginBottom: 12 }}>
-                    {expireRules.map(function(r, i) {
+                    {expireRules.map((r, i) => {
                       return (
                         <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fecdd3', display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 18 }}>{r.icon}</span>
@@ -727,8 +727,8 @@ export default function PointHistoryPage() {
                   <div style={{ background: '#fff', borderRadius: 8, padding: 10, border: '1px solid #fecdd3' }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#9f1239', marginBottom: 8 }}>📊 近3个月过期积分统计</div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      {expireStats.map(function(s, i) {
-                        var barColor = s.renewRate >= 70 ? '#16a34a' : s.renewRate >= 65 ? '#d97706' : '#dc2626';
+                      {expireStats.map((s, i) => {
+                        const barColor = s.renewRate >= 70 ? '#16a34a' : s.renewRate >= 65 ? '#d97706' : '#dc2626';
                         return (
                           <div key={i} style={{ flex: 1, padding: 10, borderRadius: 8, background: '#fff1f2', border: '1px solid #fecdd3', textAlign: 'center' }}>
                             <div style={{ fontSize: 14, fontWeight: 700, color: '#9f1239' }}>{s.month}</div>
@@ -747,7 +747,7 @@ export default function PointHistoryPage() {
                   </div>
                 </div>
               );
-            }()}
+            })()}
 
             {/* 积分获取途径占比 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
@@ -759,7 +759,7 @@ export default function PointHistoryPage() {
                   { source: '活动赠送', icon: '🎪', pct: 15, points: 63000, color: '#a855f7' },
                   { source: '推荐好友', icon: '👥', pct: 8, points: 33600, color: '#f59e0b' },
                   { source: '其他渠道', icon: '📌', pct: 7, points: 29400, color: '#6b7280' },
-                ].map(function(s, i) {
+                ].map((s, i) => {
                   return (
                     <div key={i} style={{ flex: '1 1 140px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #bbf7d0', textAlign: 'center' }}>
                       <div style={{ fontSize: 18 }}>{s.icon}</div>
@@ -781,15 +781,15 @@ export default function PointHistoryPage() {
             {/* 积分消耗渠道分布 */}
             <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#f0f9ff', border: '1px solid #bae6fd' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#0369a1' }}>🔄 积分消耗渠道分布</h3>
-              {function(s,i) {
-                var CAT_CHANNELS = [
+              {((s,i) => {
+                const CAT_CHANNELS = [
                   { category: '游戏时长', icon: '🎮', points: 182000, pct: 38, items: ['单人畅玩卡 ×85', '游戏币20枚 ×120', '双人套餐 ×45', 'VIP体验 ×12'], color: '#22c55e' },
                   { category: '零食饮品', icon: '🍿', points: 96000, pct: 20, items: ['饮品兑换券 ×210', '零食套餐 ×68', '爆米花桶 ×55', '特调饮品 ×32'], color: '#f59e0b' },
                   { category: '周边礼品', icon: '🎁', points: 72000, pct: 15, items: ['公仔玩偶 ×38', '定制徽章 ×56', '主题T恤 ×22', '纪念手办 ×15'], color: '#a855f7' },
                   { category: '优惠券', icon: '🎟️', points: 84000, pct: 18, items: ['满减券 ×180', '折扣券 ×95', '团购券 ×65', '生日券 ×42'], color: '#3b82f6' },
                   { category: '其他渠道', icon: '📌', points: 46000, pct: 9, items: ['积分抽奖 ×120', '会员特权 ×38', '积分捐赠 ×12', '平台抵扣 ×25'], color: '#6b7280' },
                 ];
-                var TOTAL_CONSUMED = 182000 + 96000 + 72000 + 84000 + 46000;
+                const TOTAL_CONSUMED = 182000 + 96000 + 72000 + 84000 + 46000;
                 return (
                   <div>
                     {/* 消耗总览 */}
@@ -813,7 +813,7 @@ export default function PointHistoryPage() {
                     </div>
 
                     {/* 各品类消耗占比 */}
-                    {CAT_CHANNELS.map(function(ch, i) {
+                    {CAT_CHANNELS.map((ch, i) => {
                       return (
                         <div key={i} style={{ padding: '8px 10px', borderRadius: 8, marginBottom: 6, background: '#fff', border: '1px solid #e5e7eb' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -830,7 +830,7 @@ export default function PointHistoryPage() {
                             <div style={{ width: ch.pct + '%', height: '100%', borderRadius: 3, background: ch.color }} />
                           </div>
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {ch.items.map(function(item, j) {
+                            {ch.items.map((item, j) => {
                               return (
                                 <span key={j} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd' }}>
                                   {item}
@@ -845,17 +845,17 @@ export default function PointHistoryPage() {
                     {/* 消耗趋势对比 */}
                     <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #bae6fd' }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#0369a1', marginBottom: 6 }}>📊 各品类上月对比</div>
-                      {function() {
-                        var TREND_DATA = [
+                      {(() => {
+                        const TREND_DATA = [
                           { cat: '游戏时长', prev: 172000, curr: 182000, change: '+5.8%', icon: '🎮' },
                           { cat: '零食饮品', prev: 88000, curr: 96000, change: '+9.1%', icon: '🍿' },
                           { cat: '周边礼品', prev: 68000, curr: 72000, change: '+5.9%', icon: '🎁' },
                           { cat: '优惠券', prev: 78000, curr: 84000, change: '+7.7%', icon: '🎟️' },
                           { cat: '其他渠道', prev: 42000, curr: 46000, change: '+9.5%', icon: '📌' },
                         ];
-                        return TREND_DATA.map(function(t, i) {
-                          var prevPct = Math.round((t.prev / TOTAL_CONSUMED) * 100);
-                          var currPct = Math.round((t.curr / TOTAL_CONSUMED) * 100);
+                        return TREND_DATA.map((t, i) => {
+                          const prevPct = Math.round((t.prev / TOTAL_CONSUMED) * 100);
+                          const currPct = Math.round((t.curr / TOTAL_CONSUMED) * 100);
                           return (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 6, background: '#f9fafb', marginBottom: 3 }}>
                               <span style={{ fontSize: 13 }}>{t.icon}</span>
@@ -875,7 +875,7 @@ export default function PointHistoryPage() {
                             </div>
                           );
                         });
-                      }()}
+                      })()}
                       <div style={{ display: 'flex', gap: 12, justifyContent: 'center', fontSize: 10, color: '#6b7280', marginTop: 6 }}>
                         <span><span style={{ color: '#93c5fd' }}>■</span> 上月</span>
                         <span><span style={{ color: '#3b82f6' }}>■</span> 本月</span>
@@ -907,7 +907,7 @@ export default function PointHistoryPage() {
                     </div>
                   </div>
                 );
-              }(null, null)}
+              })(null, null)}
             </div>
 
             {/* 积分常见问题 */}

@@ -16,7 +16,6 @@ import {
   LLMAuditLog,
   LLMApprovalOptions,
 } from './llm-config.entity'
-// @ts-ignore
 import { TenantScopeGuard } from '../../agent/tenant.guard'
 
 /** 内存存储 (生产环境应替换为Prisma + Redis) */
