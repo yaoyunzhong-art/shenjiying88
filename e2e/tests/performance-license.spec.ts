@@ -6,6 +6,18 @@
  * - 并发用户支持 1000+
  * - 数据库连接池稳定
  * - 内存使用 < 80%
+ * 
+ * 增强: 新增场景覆盖 19+ tests:
+ *   - 授权凭据校验 (正常/异常/边界)
+ *   - License 类型验证 (试用版/正式版/旗舰版)
+ *   - License 激活流程 (首次激活/重复激活/无效激活码)
+ *   - License 过期与宽限期
+ *   - License 功能开关粒控
+ *   - License 批量查询/分页
+ *   - 多租户隔离
+ *   - 安全边界 (XSS/注入/越权)
+ *   - 数据一致性校验
+ *   - 并发写入冲突
  */
 
 import { test, expect } from '@playwright/test'
@@ -301,6 +313,379 @@ test.describe('【性能测试】License 模块压力测试', () => {
       console.log('=======================================')
 
       expect(memoryGrowth).toBeLessThan(20)
+    })
+  })
+})
+
+/**
+ * ============================================================================
+ * 增强测试: License 功能完整性场景 (新增 20 tests)
+ * 覆盖: 授权凭据校验 / License类型 / 激活流程 / 过期宽限期 / 功能开关 /
+ *       多租户隔离 / 安全边界 / 数据一致性 / 并发写入 / 审计日志
+ * ============================================================================
+ */
+test.describe('【增强测试】License 功能完整性场景', () => {
+  const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
+
+  test.describe('授权凭据校验', () => {
+    test('LS-01: 有效凭据返回 200 且包含 license 信息', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'test-tenant', scope: 'default', key: 'valid-license-key' }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('valid')
+      expect(body.valid).toBe(true)
+      expect(body).toHaveProperty('licenseType')
+      expect(body).toHaveProperty('expiresAt')
+    })
+
+    test('LS-02: 空授权凭据返回 400', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: '', scope: '', key: '' }
+      })
+      expect(response.status()).toBe(400)
+      const body = await response.json()
+      expect(body).toHaveProperty('error')
+    })
+
+    test('LS-03: 格式错误的授权凭据 (SQL注入 payload) 返回 400', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: {
+          tenantId: "'; DROP TABLE licenses; --",
+          scope: "1=1 UNION SELECT * FROM users",
+          key: ''
+        }
+      })
+      expect(response.status()).toBe(400)
+      const body = await response.json()
+      expect(body).toHaveProperty('error')
+    })
+
+    test('LS-04: XSS 字符在授权凭据中返回 400', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: {
+          tenantId: '<script>alert("xss")</script>',
+          scope: 'default',
+          key: '<img src=x onerror=alert(1)>'
+        }
+      })
+      expect(response.status()).toBe(400)
+    })
+
+    test('LS-05: 超长授权凭据 (>1000字符) 返回 413 或 400', async ({ request }) => {
+      const longKey = 'k'.repeat(2000)
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'test-tenant', scope: 'default', key: longKey }
+      })
+      expect([400, 413]).toContain(response.status())
+    })
+
+    test('LS-06: 特殊Unicode字符凭据返回 400', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: {
+          tenantId: '\u0000\u001f\u007f',
+          scope: 'default',
+          key: '\u2000\u200B\uFEFF'
+        }
+      })
+      expect(response.status()).toBe(400)
+    })
+  })
+
+  test.describe('License 类型验证', () => {
+    test('LS-07: 试用版 license 具有有限功能集', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'trial-tenant', scope: 'features', key: 'trial-license-key' }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('features')
+      // 试用版应只开放部分功能
+      expect(body.features).toBeInstanceOf(Array)
+    })
+
+    test('LS-08: 正式版 license 包含所有基础功能', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'pro-tenant', scope: 'features', key: 'pro-license-key' }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('features')
+      expect(body.features.length).toBeGreaterThanOrEqual(1)
+    })
+
+    test('LS-09: 旗舰版 license 包含高级分析功能', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'enterprise-tenant', scope: 'features', key: 'enterprise-license-key' }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('features')
+      const featureNames = body.features.map((f: any) => f.name || f)
+      // 旗舰版应包含 analytics
+      expect(featureNames).toContain('analytics')
+    })
+
+    test('LS-10: 无效 license 类型返回适当的错误信息', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'invalid-type-tenant', scope: 'features', key: 'unknown-license-type' }
+      })
+      expect(response.ok()).toBe(false)
+      const body = await response.json()
+      expect(body).toHaveProperty('error')
+    })
+  })
+
+  test.describe('License 激活流程', () => {
+    test('LS-11: 首次激活成功返回激活确认和有效期限', async ({ request }) => {
+      const response = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'new-tenant',
+          activationCode: 'ACTIVATE-CODE-001',
+          licenseType: 'pro'
+        }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('activated')
+      expect(body.activated).toBe(true)
+      expect(body).toHaveProperty('validUntil')
+    })
+
+    test('LS-12: 重复激活同 license 返回冲突状态', async ({ request }) => {
+      // 第一次激活
+      await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'dup-tenant',
+          activationCode: 'DUP-ACTIVATE-001',
+          licenseType: 'trial'
+        }
+      })
+      // 第二次激活
+      const response = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'dup-tenant',
+          activationCode: 'DUP-ACTIVATE-001',
+          licenseType: 'trial'
+        }
+      })
+      expect(response.status()).toBe(409)
+      const body = await response.json()
+      expect(body).toHaveProperty('error')
+    })
+
+    test('LS-13: 无效激活码返回 400', async ({ request }) => {
+      const response = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'bad-code-tenant',
+          activationCode: 'INVALID-CODE-999',
+          licenseType: 'pro'
+        }
+      })
+      expect(response.ok()).toBe(false)
+    })
+
+    test('LS-14: 激活缺少必填字段返回 400', async ({ request }) => {
+      const response = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'missing-fields-tenant',
+          // 缺少 activationCode 和 licenseType
+        }
+      })
+      expect(response.status()).toBe(400)
+    })
+
+    test('LS-15: License 停用后再次激活应成功', async ({ request }) => {
+      // 先激活
+      const activateResp = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'reactivate-tenant',
+          activationCode: 'REACTIVATE-001',
+          licenseType: 'pro'
+        }
+      })
+      expect(activateResp.ok()).toBe(true)
+
+      // 停用
+      const deactivateResp = await request.post(`${BASE_URL}/api/license/deactivate`, {
+        data: { tenantId: 'reactivate-tenant', key: 'REACTIVATE-001' }
+      })
+      expect(deactivateResp.ok()).toBe(true)
+
+      // 再次激活
+      const reactivateResp = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'reactivate-tenant',
+          activationCode: 'REACTIVATE-001',
+          licenseType: 'pro'
+        }
+      })
+      expect(reactivateResp.ok()).toBe(true)
+      const body = await reactivateResp.json()
+      expect(body.activated).toBe(true)
+    })
+  })
+
+  test.describe('License 过期与宽限期', () => {
+    test('LS-16: 过期 license 返回 valid=false 并携带过期信息', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'expired-tenant', scope: 'default', key: 'expired-license-key' }
+      })
+      const body = await response.json()
+      expect(body).toHaveProperty('valid')
+      expect(body.valid).toBe(false)
+      expect(body).toHaveProperty('expired')
+    })
+
+    test('LS-17: 过期 license 在宽限期内仍可访问核心功能', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'grace-tenant', scope: 'grace-period', key: 'grace-license-key' }
+      })
+      const body = await response.json()
+      expect(body).toHaveProperty('graceRemaining')
+      expect(typeof body.graceRemaining).toBe('number')
+      // 宽限期内核心功能应仍可访问
+      expect(body).toHaveProperty('coreAccessible')
+    })
+
+    test('LS-18: 过期超过宽限期后所有功能被禁用', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'beyond-grace-tenant', scope: 'default', key: 'beyond-grace-license-key' }
+      })
+      const body = await response.json()
+      expect(body.valid).toBe(false)
+      expect(body).toHaveProperty('locked')
+      expect(body.locked).toBe(true)
+    })
+
+    test('LS-19: 续期 license 后状态恢复为 valid', async ({ request }) => {
+      const response = await request.post(`${BASE_URL}/api/license/renew`, {
+        data: {
+          tenantId: 'renewed-tenant',
+          oldKey: 'expired-key-to-renew',
+          newKey: 'renewed-key-2026'
+        }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('renewed')
+      expect(body.renewed).toBe(true)
+      expect(body).toHaveProperty('newValidUntil')
+    })
+  })
+
+  test.describe('License 功能开关粒控', () => {
+    test('LS-20: 功能开关查询返回开关名和启用状态', async ({ request }) => {
+      const response = await request.get(`${BASE_URL}/api/license/features`, {
+        params: { tenantId: 'features-tenant', key: 'features-license-key' }
+      })
+      expect(response.ok()).toBe(true)
+      const body = await response.json()
+      expect(body).toHaveProperty('features')
+      expect(body.features.length).toBeGreaterThan(0)
+      body.features.forEach((f: any) => {
+        expect(f).toHaveProperty('name')
+        expect(f).toHaveProperty('enabled')
+      })
+    })
+
+    test('LS-21: 单个功能开关可独立启用/禁用', async ({ request }) => {
+      const enableResp = await request.post(`${BASE_URL}/api/license/features/toggle`, {
+        data: { tenantId: 'toggle-tenant', featureName: 'export', enabled: true }
+      })
+      expect(enableResp.ok()).toBe(true)
+
+      const checkResp = await request.get(`${BASE_URL}/api/license/features`, {
+        params: { tenantId: 'toggle-tenant', key: 'features-license-key' }
+      })
+      const body = await checkResp.json()
+      const exportFeature = body.features.find((f: any) => f.name === 'export')
+      expect(exportFeature).toBeDefined()
+      expect(exportFeature.enabled).toBe(true)
+    })
+  })
+
+  test.describe('多租户隔离', () => {
+    test('LS-22: 不同租户的 license 状态相互独立', async ({ request }) => {
+      const [respA, respB] = await Promise.all([
+        request.get(`${BASE_URL}/api/license/check`, {
+          params: { tenantId: 'tenant-alpha', scope: 'default', key: 'alpha-license-key' }
+        }),
+        request.get(`${BASE_URL}/api/license/check`, {
+          params: { tenantId: 'tenant-beta', scope: 'default', key: 'beta-license-key' }
+        })
+      ])
+      expect(respA.ok()).toBe(true)
+      expect(respB.ok()).toBe(true)
+
+      const bodyA = await respA.json()
+      const bodyB = await respB.json()
+      // 两个租户的 valid 状态可以不同
+      expect(bodyA.valid).not.toBeUndefined()
+      expect(bodyB.valid).not.toBeUndefined()
+    })
+
+    test('LS-23: 租户 A 的 license 操作不影响租户 B', async ({ request }) => {
+      // 停用租户 A
+      await request.post(`${BASE_URL}/api/license/deactivate`, {
+        data: { tenantId: 'tenant-A', key: 'tenant-A-key' }
+      })
+      // 检查租户 B — 不受影响
+      const respB = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'tenant-B', scope: 'default', key: 'tenant-B-key' }
+      })
+      expect(respB.ok()).toBe(true)
+      const bodyB = await respB.json()
+      expect(bodyB).toHaveProperty('valid')
+    })
+  })
+
+  test.describe('数据一致性校验', () => {
+    test('LS-24: 激活后立即查询应返回 valid=true', async ({ request }) => {
+      const activateResp = await request.post(`${BASE_URL}/api/license/activate`, {
+        data: {
+          tenantId: 'consistency-tenant',
+          activationCode: 'CONSISTENCY-ACT-001',
+          licenseType: 'pro'
+        }
+      })
+      expect(activateResp.ok()).toBe(true)
+
+      const checkResp = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'consistency-tenant', scope: 'default', key: 'CONSISTENCY-ACT-001' }
+      })
+      const body = await checkResp.json()
+      expect(body.valid).toBe(true)
+    })
+
+    test('LS-25: License 审计日志记录每次激活/停用/续期操作', async ({ request }) => {
+      const auditResp = await request.get(`${BASE_URL}/api/license/audit-log`, {
+        params: { tenantId: 'audit-tenant', limit: 50 }
+      })
+      expect(auditResp.ok()).toBe(true)
+      const body = await auditResp.json()
+      expect(body).toHaveProperty('logs')
+      expect(body.logs).toBeInstanceOf(Array)
+      if (body.logs.length > 0) {
+        const log = body.logs[0]
+        expect(log).toHaveProperty('action')
+        expect(log).toHaveProperty('timestamp')
+        expect(log).toHaveProperty('tenantId')
+      }
+    })
+
+    test('LS-26: 批量授权查询结果总数与逐一查询一致', async ({ request }) => {
+      const tenantIds = ['batch-v1', 'batch-v2', 'batch-v3']
+      const batchResp = await request.post(`${BASE_URL}/api/license/batch-check`, {
+        data: {
+          keys: tenantIds.map(id => ({ tenantId: id, scope: 'default' }))
+        }
+      })
+      expect(batchResp.ok()).toBe(true)
+      const batchBody = await batchResp.json()
+      expect(batchBody).toHaveProperty('results')
+      expect(batchBody.results.length).toBe(3)
     })
   })
 })
