@@ -22,18 +22,25 @@
 
 | # | 检查项 | 本地 | 生产 |
 |:-:|:-------|:----:|:----:|
+| 0 | 生产命名空间 = `m5` | N/A | 🔴 |
 | 1 | Ingress 配置 | N/A | 🔴 |
 | 2 | TLS Secret (m5-tls) | N/A | 🔴 |
 | 3 | ConfigMap (m5-config) | N/A | 🔴 |
 | 4 | Deployment 镜像版本 | ✅ | 🔴 |
 | 5 | Pod 状态 | ✅ | 🔴 |
 | 6 | API Health | ✅ | 🔴 |
-| 7 | ACR 凭据 | N/A | 🔴 |
+| 7 | `acr-regcred` 存在且位于 `m5` | N/A | 🔴 |
 | 8 | Web 首屏 | ✅ | 🔴 |
 | 9 | 阿里云余额 | N/A | 🔴 |
-| 10 | ACR 令牌过期 | N/A | 🔴 |
+| 10 | ACR 登录用户名为阿里云账户全名邮箱 | N/A | 🔴 |
 
 > N/A = 本地非生产环境不适用 · 🔴 = 需发布时在生产环境验证
+>
+> 新增硬门槛:
+> - 正式发布只允许 `namespace=m5`
+> - `acr-regcred.username` 不得是数字 `userId`
+> - `acr-regcred.username` 不得是 `cr_temp_user`
+> - 正式发布必须使用阿里云账户全名邮箱作为 ACR Docker 登录用户名
 
 ## 3. 变更清单
 
@@ -55,7 +62,7 @@
 |:-----|:-----|:-----|
 | Script | `scripts/refresh-acr-regcred.sh` | ACR 令牌自动刷新 |
 | Script | `scripts/check-acr-regcred-expiry.sh` | ACR 过期告警 |
-| Script | `scripts/pre-release-check.sh` | 发布前 10 项检查 |
+| Script | `scripts/pre-release-check.sh` | 发布前 11 项检查，含 `m5/acr-regcred` 与 ACR 用户名防呆 |
 | Script | `scripts/rollback-guide.sh` | 生产回滚全流程 |
 | Script | `scripts/check-aliyun-billing.sh` | 阿里云余额告警 |
 | Script | `scripts/cron-billing-check.sh` | 定时余额检查 |
@@ -111,7 +118,7 @@ docker compose build --parallel
 docker tag m5-api:latest shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/m5-api:latest
 
 # 4. 发布前检查
-bash scripts/pre-release-check.sh
+NAMESPACE=m5 bash scripts/pre-release-check.sh
 
 # 5. 更新 K8s 部署
 kubectl --kubeconfig="$KUBECONFIG" apply -f infra/k8s/rendered-public-preflight/

@@ -135,10 +135,27 @@ scripts/build-m5-tls-secret.sh \
 2. `kubectl apply -f infra/k8s/rendered-public/m5-tls.yaml`
 3. 执行 `scripts/verify-m5-tls-secret.sh`
 4. 再跑一次 `scripts/preflight-prod-public-cutover.sh`
-5. 再跑一次 `scripts/apply-prod-public-cutover.sh --kubectl-dry-run server`
-6. 执行真实 `scripts/apply-prod-public-cutover.sh`
-7. 验证 `api/admin/storefront/tob` 公网入口
-8. 同终端保留 `scripts/rollback-prod-public-cutover.sh`
+5. 强制执行 `KUBECONFIG="$HOME/.kube/m5-prod-config" NAMESPACE=m5 bash scripts/pre-release-check.sh`
+6. 再跑一次 `scripts/apply-prod-public-cutover.sh --kubectl-dry-run server`
+7. 执行真实 `scripts/apply-prod-public-cutover.sh`
+8. 验证 `api/admin/storefront/tob` 公网入口
+9. 同终端保留 `scripts/rollback-prod-public-cutover.sh`
+
+### 5.1 新增强制门禁
+
+- 正式发布前，`scripts/pre-release-check.sh` 必须通过。
+- 以下任一条件不满足，禁止继续执行真实 cutover：
+  - `acr-regcred` 不存在于 `m5`
+  - `acr-regcred.username` 为数字 `userId`
+  - `acr-regcred.username` 为 `cr_temp_user`
+  - `acr-regcred.username` 不是阿里云账户全名邮箱
+- 推荐执行口径：
+
+```bash
+KUBECONFIG="$HOME/.kube/m5-prod-config" \
+NAMESPACE=m5 \
+bash scripts/pre-release-check.sh
+```
 
 ## 6. 明确禁用口径
 
@@ -150,6 +167,7 @@ scripts/build-m5-tls-secret.sh \
   - `production` 主机上的应急 compose 回退或临时验证
 - 当前正式生产公网链路以以下资产为准：
   - `PROD-DEPLOY-STATUS-20260717.md`
+  - `scripts/pre-release-check.sh`
   - `PROD-INGRESS-CUTOVER-20260718.md`
   - `scripts/preflight-prod-public-cutover.sh`
   - `scripts/apply-prod-public-cutover.sh`

@@ -45,6 +45,7 @@ LOG_DIR=""
 READINESS_LOG=""
 BLOCKER_REPORT=""
 ACR_REFRESH_LOG=""
+PRE_RELEASE_LOG=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -128,6 +129,7 @@ LOG_DIR="$LOG_ROOT/$WINDOW_ID"
 READINESS_LOG="$LOG_DIR/00-formal-ready.log"
 BLOCKER_REPORT="$LOG_DIR/READINESS-BLOCKERS.md"
 ACR_REFRESH_LOG="$LOG_DIR/00-acr-refresh.log"
+PRE_RELEASE_LOG="$LOG_DIR/01-pre-release-check.log"
 mkdir -p "$LOG_DIR"
 
 if [[ -n "$CERT_FILE" && -n "$KEY_FILE" ]]; then
@@ -213,12 +215,47 @@ else
   exit 1
 fi
 
+echo "==> Running pre-release gate"
+if KUBECONFIG="${KUBECONFIG:-$HOME/.kube/m5-prod-config}" \
+   NAMESPACE="$NAMESPACE" \
+   EXPECTED_NAMESPACE="$NAMESPACE" \
+   bash "$ROOT_DIR/scripts/pre-release-check.sh" 2>&1 | tee "$PRE_RELEASE_LOG"; then
+  :
+else
+  {
+    echo "# G8 Formal Readiness Blockers"
+    echo
+    echo "- window_id: \`$WINDOW_ID\`"
+    echo "- env_file: \`$ENV_FILE\`"
+    echo "- namespace: \`$NAMESPACE\`"
+    echo "- readiness_log: \`$READINESS_LOG\`"
+    echo "- pre_release_log: \`$PRE_RELEASE_LOG\`"
+    echo
+    echo "## Blockers"
+    echo
+    echo "- pre-release-check failed; formal cutover is not allowed to continue."
+    echo "- Fix the failed checks in \`$PRE_RELEASE_LOG\`, then rerun this command."
+    echo
+    echo "## Next Action"
+    echo
+    echo "- Ensure \`acr-regcred\` exists in namespace \`$NAMESPACE\`."
+    echo "- Ensure the ACR Docker login username is the full Alibaba Cloud account email, not a numeric \`userId\`."
+    echo "- Do not run \`--execute-apply\` until \`scripts/pre-release-check.sh\` passes."
+  } > "$BLOCKER_REPORT"
+  echo
+  echo "==> Pre-release gate blocked"
+  echo "pre_release_log=$PRE_RELEASE_LOG"
+  echo "blocker_report=$BLOCKER_REPORT"
+  exit 1
+fi
+
 if [[ "$EXECUTE_APPLY" != "true" ]]; then
   echo
   echo "==> Formal readiness passed"
   echo "window_id=$WINDOW_ID"
   echo "tls_manifest=${TLS_MANIFEST:-live-secret}"
   echo "readiness_log=$READINESS_LOG"
+  echo "pre_release_log=$PRE_RELEASE_LOG"
   echo "next_command=bash scripts/run-prod-cutover-window.sh --env-file $ENV_FILE${RELEASE_ENV_FILE:+ --release-env-file $RELEASE_ENV_FILE} --window-id $WINDOW_ID --log-root $LOG_ROOT${TLS_MANIFEST:+ --tls-manifest $TLS_MANIFEST} --execute-apply"
   exit 0
 fi

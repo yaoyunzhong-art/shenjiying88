@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # pre-release-check.sh
 # 用途: 生产发布前必查项脚本
-# 使用: KUBECONFIG="$HOME/.kube/m5-prod-config" bash scripts/pre-release-check.sh
+# 使用: KUBECONFIG="$HOME/.kube/m5-prod-config" NAMESPACE=m5 bash scripts/pre-release-check.sh
 set -euo pipefail
 
-NAMESPACE="${NAMESPACE:-m5-prod}"
+EXPECTED_NAMESPACE="${EXPECTED_NAMESPACE:-m5}"
+NAMESPACE="${NAMESPACE:-$EXPECTED_NAMESPACE}"
 KUBECONFIG="${KUBECONFIG:-$HOME/.kube/m5-prod-config}"
 PASS=0
 FAIL=0
@@ -14,17 +15,98 @@ RESULTS=""
 check() {
   local name="$1" status="$2" detail="$3"
   case "$status" in
-    PASS) ((PASS++)) ;;
-    FAIL) ((FAIL++)) ;;
-    WARN) ((WARN++)) ;;
+    PASS) PASS=$((PASS + 1)) ;;
+    FAIL) FAIL=$((FAIL + 1)) ;;
+    WARN) WARN=$((WARN + 1)) ;;
   esac
   RESULTS+="$status\t$name\t$detail\n"
+}
+
+ACR_SECRET_JSON=""
+ACR_REGISTRY=""
+ACR_USERNAME=""
+ACR_AUTH=""
+
+load_acr_secret() {
+  local encoded_json
+  encoded_json="$(kubectl --kubeconfig="$KUBECONFIG" get secret acr-regcred -n "$NAMESPACE" -o jsonpath='{.data.\.dockerconfigjson}' 2>/dev/null || true)"
+  if [ -z "$encoded_json" ]; then
+    return 1
+  fi
+
+  ACR_SECRET_JSON="$(printf '%s' "$encoded_json" | base64 -d 2>/dev/null || true)"
+  if [ -z "$ACR_SECRET_JSON" ]; then
+    return 1
+  fi
+
+  ACR_REGISTRY="$(printf '%s' "$ACR_SECRET_JSON" | python3 -c "import sys, json; d = json.load(sys.stdin); auths = d.get('auths') or {}; print(next(iter(auths.keys()), ''))" 2>/dev/null || true)"
+  ACR_USERNAME="$(printf '%s' "$ACR_SECRET_JSON" | python3 -c "import sys, json; d = json.load(sys.stdin); auths = d.get('auths') or {}; first = next(iter(auths.values()), {}); print(first.get('username', ''))" 2>/dev/null || true)"
+  ACR_AUTH="$(printf '%s' "$ACR_SECRET_JSON" | python3 -c "import sys, json; d = json.load(sys.stdin); auths = d.get('auths') or {}; first = next(iter(auths.values()), {}); print(first.get('auth', ''))" 2>/dev/null || true)"
+  return 0
+}
+
+curl_failed_with_libressl() {
+  local output="$1"
+  [[ "$output" == *"LibreSSL"* ]] || [[ "$output" == *"Connection reset by peer"* ]]
+}
+
+python_https_status() {
+  local host="$1"
+  local path="$2"
+  python3 - "$host" "$path" <<'PY'
+import http.client
+import ssl
+import sys
+
+host, path = sys.argv[1:3]
+context = ssl.create_default_context()
+context.check_hostname = False
+context.verify_mode = ssl.CERT_NONE
+
+conn = http.client.HTTPSConnection(host, 443, context=context, timeout=8)
+conn.request("GET", path, headers={"Host": host, "User-Agent": "m5-pre-release/python-probe"})
+resp = conn.getresponse()
+print(resp.status)
+PY
+}
+
+probe_https_status() {
+  local host="$1"
+  local path="$2"
+  local output=""
+  local curl_exit=0
+  local url="https://$host$path"
+
+  output="$(curl -k -sS -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 10 "$url" 2>&1)" || curl_exit=$?
+  if [ "$curl_exit" -eq 0 ] && echo "$output" | grep -qE '^[0-9]{3}$'; then
+    printf '%s' "$output"
+    return 0
+  fi
+
+  if command -v python3 >/dev/null 2>&1 && curl_failed_with_libressl "$output"; then
+    output="$(python_https_status "$host" "$path" 2>/dev/null || true)"
+    if echo "$output" | grep -qE '^[0-9]{3}$'; then
+      printf '%s' "$output"
+      return 0
+    fi
+  fi
+
+  printf '000'
+  return 1
 }
 
 echo "=== 神机营 发布前检查 ==="
 echo "Namespace: $NAMESPACE"
 echo "KUBECONFIG: $KUBECONFIG"
 echo ""
+
+# 0. 正式命名空间口径检查
+echo "--- 0. Namespace ---"
+if [ "$NAMESPACE" = "$EXPECTED_NAMESPACE" ]; then
+  check "生产命名空间" "PASS" "$NAMESPACE"
+else
+  check "生产命名空间" "FAIL" "正式发布必须使用 namespace=$EXPECTED_NAMESPACE，当前为 $NAMESPACE"
+fi
 
 # 1. Ingress 域名检查
 echo "--- 1. Ingress ---"
@@ -95,21 +177,30 @@ fi
 
 # 6. 健康接口检查
 echo "--- 6. API Health ---"
-HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://api.sportsant.net/api/v1/health/ping" 2>/dev/null || echo "000")
+HEALTH_STATUS="$(probe_https_status "api.sportsant.net" "/api/v1/health/ping" || true)"
 if [ "$HEALTH_STATUS" = "200" ]; then
   check "API Health" "PASS" "200"
 else
   check "API Health" "FAIL" "HTTP $HEALTH_STATUS"
 fi
 
-# 7. ACR 凭据检查
+# 7. ACR Secret 检查
 echo "--- 7. ACR ---"
-kubectl --kubeconfig="$KUBECONFIG" get secret acr-regcred -n "$NAMESPACE" -o jsonpath='{.data.\.dockerconfigjson}' 2>/dev/null | base64 -d | python3 -c "import sys,json; d=json.load(sys.stdin); a=list(d.get('auths',{}).keys())[0] if d.get('auths') else 'none'; print('ACR地址:', a)" 2>/dev/null || check "ACR" "WARN" "无法读取 acr-regcred"
+if load_acr_secret; then
+  check "acr-regcred" "PASS" "存在于 namespace=$NAMESPACE"
+  if [ -n "$ACR_REGISTRY" ]; then
+    check "ACR Registry" "PASS" "$ACR_REGISTRY"
+  else
+    check "ACR Registry" "FAIL" "acr-regcred 中未解析到 registry"
+  fi
+else
+  check "acr-regcred" "FAIL" "namespace=$NAMESPACE 中缺失或损坏"
+fi
 
 # 8. 浏览器首屏
 echo "--- 8. Web 首屏 ---"
 for DOMAIN in admin.sportsant.net store.sportsant.net tob.sportsant.net; do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$DOMAIN" 2>/dev/null || echo "000")
+  STATUS="$(probe_https_status "$DOMAIN" "/" || true)"
   if [ "$STATUS" = "200" ]; then
     check "$DOMAIN 首屏" "PASS" "200"
   else
@@ -121,17 +212,28 @@ done
 echo "--- 9. Billing ---"
 check "阿里云余额" "WARN" "需手动检查阿里云控制台"
 
-# 10. acr-regcred 过期检查
-echo "--- 10. ACR 令牌过期 ---"
-TOKEN_JSON=$(kubectl --kubeconfig="$KUBECONFIG" get secret acr-regcred -n "$NAMESPACE" -o jsonpath='{.data.\.dockerconfigjson}' 2>/dev/null | base64 -d || echo "")
-if [ -n "$TOKEN_JSON" ]; then
-  AUTH_B64=$(echo "$TOKEN_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); a=list(d.get('auths',{}).values())[0]; print(a.get('auth',''))" 2>/dev/null || echo "")
-  if [ -n "$AUTH_B64" ]; then
-    DECODED=$(echo "$AUTH_B64" | base64 -d 2>/dev/null || echo "")
-    if echo "$DECODED" | grep -q ":"; then
-      check "ACR 凭据" "PASS" "凭据存在，格式正确"
-    fi
-  fi
+# 10. ACR 登录身份检查
+echo "--- 10. ACR 登录身份 ---"
+if [ -z "$ACR_SECRET_JSON" ] && ! load_acr_secret; then
+  check "ACR 登录用户名" "FAIL" "无法读取 acr-regcred，无法校验用户名"
+elif [ -z "$ACR_USERNAME" ]; then
+  check "ACR 登录用户名" "FAIL" "acr-regcred 中缺失 username"
+elif echo "$ACR_USERNAME" | grep -qE '^[0-9]+$'; then
+  check "ACR 登录用户名" "FAIL" "疑似误用阿里云 userId: $ACR_USERNAME"
+elif [ "$ACR_USERNAME" = "cr_temp_user" ]; then
+  check "ACR 登录用户名" "FAIL" "当前为临时用户 cr_temp_user，正式发布必须使用阿里云账户全名邮箱"
+elif echo "$ACR_USERNAME" | grep -q '\*'; then
+  check "ACR 登录用户名" "FAIL" "用户名仍为掩码值: $ACR_USERNAME"
+elif echo "$ACR_USERNAME" | grep -q '@'; then
+  check "ACR 登录用户名" "PASS" "$ACR_USERNAME"
+else
+  check "ACR 登录用户名" "FAIL" "非阿里云账户全名邮箱: $ACR_USERNAME"
+fi
+
+if [ -n "$ACR_AUTH" ]; then
+  check "ACR 凭据格式" "PASS" "auth 字段存在"
+else
+  check "ACR 凭据格式" "FAIL" "auth 字段缺失"
 fi
 
 # 输出结果

@@ -8,8 +8,12 @@ import fs from "fs";
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const SRC = fs.readFileSync('apps/admin-web/app/system-monitor/page.tsx', 'utf-8');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pagePath = resolve(__dirname, 'page.tsx');
+const SRC = fs.readFileSync(pagePath, 'utf-8');
 
 // ─── Mock fetch — URL-pattern responseRegistry ──
 const responseRegistry = new Map<string, () => unknown>();
@@ -83,8 +87,8 @@ describe('SystemMonitorPage — 数据模拟', () => {
 describe('SystemMonitorPage — 反例', () => {
   it('无 as any', () => { assert.ok(!SRC.includes('as any')) })
   it('无 describe.skip', () => {
-    const testFile = fs.readFileSync('apps/admin-web/app/system-monitor/page.test.tsx', 'utf-8')
-    const pageFs = fs.readFileSync("apps/admin-web/app/system-monitor/page.tsx", "utf-8"); assert.ok(!pageFs.includes("describe.skip("))
+    const pageFs = fs.readFileSync(pagePath, 'utf-8');
+    assert.ok(!pageFs.includes('describe.skip('))
   })
   it('非空 mock', () => { assert.ok(SRC.length > 500) })
 })
