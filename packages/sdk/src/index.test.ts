@@ -1227,7 +1227,7 @@ test('sdk: ApiClient sends tenant config batch via POST /tenant-config/batch', a
 
   const client = new ApiClient({ baseUrl: 'http://localhost:3001/api/v1', tenantId: 't1' });
   const result = await client.setTenantConfigBatch([
-    { key: 'test-key', value: 'test', scope: 'store', scopeCode: 's1', sensitivity: 'internal' }
+    { key: 'test-key', value: 'test' }
   ]);
 
   assert.equal(result.total, 1);
@@ -1346,7 +1346,7 @@ test('sdk: createBusinessClient cashier.lookupMember encodes query', async () =>
 
   const biz = createBusinessClient('http://localhost:3002/api/v1');
   const result = await biz.cashier.lookupMember('13800138001');
-  assert.equal(result?.memberId, 'mem-001');
+  assert.equal(result?.id, 'mem-001');
   assert.match(requestUrl, /13800138001/);
 });
 
@@ -1387,7 +1387,7 @@ test('sdk: createBusinessClient finance accounts and revenue summary', async () 
   const biz = createBusinessClient('http://localhost:3002/api/v1');
   const accounts = await biz.finance.listAccounts();
   assert.equal(accounts.length, 1);
-  assert.equal(accounts[0]?.accountId, 'acct-001');
+  assert.equal(accounts[0]?.id, 'acct-001');
 });
 
 test('sdk: createBusinessClient paymentGateway.pay sends POST', async () => {
@@ -1401,9 +1401,9 @@ test('sdk: createBusinessClient paymentGateway.pay sends POST', async () => {
   }) as typeof fetch;
 
   const biz = createBusinessClient('http://localhost:3002/api/v1');
-  const result = await biz.paymentGateway.pay({
+  const result = (await biz.paymentGateway.pay({
     orderId: 'ord-001', amount: 2999, currency: 'CNY', provider: 'WECHAT',
-  });
+  })) as { transactionId: string };
   assert.equal(result.transactionId, 'pay-001');
   assert.match(requestUrl, /payment-gateway\/pay/);
 });
