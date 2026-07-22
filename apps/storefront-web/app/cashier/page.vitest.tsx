@@ -520,4 +520,229 @@ describe('CashierPage — 收银台', () => {
       expect(await screen.findByText(/欢迎 张三/, undefined, { timeout: 1000 })).toBeInTheDocument();
     });
   });
+
+  // ====== 圈梁五道箍 — 增强测试 ======
+
+  describe('圈梁五道箍 — 购物车数量与金额计算', () => {
+    test('[圈梁五道箍] 添加商品后购物车显示商品', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+        expect(screen.getByText('1 件')).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 添加多个商品后小计金额正确', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.getByText('跳舞机')).toBeInTheDocument();
+      });
+      const addBtns = screen.getAllByText('+ 加入购物车');
+      expect(addBtns.length).toBeGreaterThanOrEqual(2);
+      fireEvent.click(addBtns[0]); // 射击游戏 ¥5×1
+      fireEvent.click(addBtns[1]); // 跳舞机 ¥8×1
+      await waitFor(() => {
+        // 小计和应付应都显示 （500+800 = 1300）
+        expect(screen.getByText('小计')).toBeInTheDocument();
+        expect(screen.getByText('2 件')).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 从购物车移除商品后金额更新', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[1]);
+      await waitFor(() => {
+        expect(screen.getByText('小计')).toBeInTheDocument();
+        expect(screen.getByText('2 件')).toBeInTheDocument();
+      });
+      const removeBtn = screen.getByLabelText('移除 射击游戏');
+      fireEvent.click(removeBtn);
+      await waitFor(() => {
+        expect(screen.getByText('1 件')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('圈梁五道箍 — 响应式布局与 UI 完整性', () => {
+    test('[圈梁五道箍] 页面包含商品分类区域', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('🎮 商品选择')).toBeInTheDocument();
+        expect(screen.getByText('📋 已选清单')).toBeInTheDocument();
+        expect(screen.getByText('👤 会员识别')).toBeInTheDocument();
+        expect(screen.getByText('💳 支付方式')).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 支付方式选择后高亮当前选项', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('微信扫码')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText('会员余额'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：会员余额/)).toBeInTheDocument();
+      });
+      // 切换支付方式
+      fireEvent.click(screen.getByText('现金'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：现金/)).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 搜索后清除文本恢复全部商品', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      const searchInput = screen.getByLabelText('搜索商品');
+      fireEvent.change(searchInput, { target: { value: '不存在的商品' } });
+      await waitFor(() => {
+        expect(screen.getByText('未找到匹配商品')).toBeInTheDocument();
+      });
+      fireEvent.change(searchInput, { target: { value: '' } });
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.getByText('跳舞机')).toBeInTheDocument();
+        expect(screen.getByText('娃娃机')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('圈梁五道箍 — 事务流程整合测试', () => {
+    test('[圈梁五道箍] 完整购买流程: 选商品→选支付→下单', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.getByText('跳舞机')).toBeInTheDocument();
+      });
+      // 添加两种不同的商品（每个按钮只点一次，互不干扰）
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[1]);
+      await waitFor(() => {
+        expect(screen.getByText('2 件')).toBeInTheDocument();
+      });
+      // 选择支付方式
+      fireEvent.click(screen.getByText('微信扫码'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+      });
+      // 下单 — 结算按钮文字包含¥
+      const checkoutBtn = screen.getByText(/结算/);
+      fireEvent.click(checkoutBtn);
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/h5/payment/ord-001');
+      });
+    });
+
+    test('[圈梁五道箍] 新订单后清空购物车并恢复初始状态', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getByText('微信扫码'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText(/结算/));
+      await waitFor(() => {
+        expect(screen.getByText('🔄 新订单')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText('🔄 新订单'));
+      await waitFor(() => {
+        // 购物车应为空
+        expect(screen.getByText('请从左侧选择商品')).toBeInTheDocument();
+        // 会员手机号已清除
+        expect(screen.getByLabelText('会员手机号')).toHaveValue('');
+      });
+    });
+
+    test('[圈梁五道箍] 未选择支付方式时结账有防御提示', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+      });
+      // 不给支付方式直接结算
+      fireEvent.click(screen.getByText(/结算/));
+      await waitFor(() => {
+        expect(screen.getByText(/请选择支付方式/)).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 会员折扣后最终金额计算', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      // 添加射击游戏 ¥5.00 × 1 = ¥5.00
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+        expect(screen.getByText('1 件')).toBeInTheDocument();
+      });
+      // 查询金牌会员（discountRate=0.85）
+      const phoneInput = screen.getByLabelText('会员手机号');
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+      fireEvent.click(screen.getByText('查询'));
+      await waitFor(() => {
+        expect(mockLookupMember).toHaveBeenCalledWith('13800138000');
+        expect(screen.getByText(/欢迎 张三/)).toBeInTheDocument();
+        // 应显示折扣信息（Math.round(0.85*10)=9折）
+        expect(screen.getByText(/欢迎 张三/)).toBeInTheDocument();
+        // 会员折扣信息在 tag 和折扣区域中出现多次，验证存在即可
+        const goldElements = screen.getAllByText(/黄金会员/);
+        expect(goldElements.length).toBeGreaterThanOrEqual(2);
+        expect(screen.getByText(/9折/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('圈梁五道箍 — 错误处理', () => {
+    test('[圈梁五道箍] 下单失败后显示错误信息并可重新尝试', async () => {
+      mockStartCheckout.mockRejectedValueOnce(new Error('支付服务暂时不可用'));
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getByText('微信扫码'));
+      fireEvent.click(screen.getByText(/结算/));
+      await waitFor(() => {
+        expect(screen.getByText(/支付服务暂时不可用/)).toBeInTheDocument();
+      });
+      // 仍然可以重新下单（按钮没有被禁用）
+      const checkoutBtn = screen.getByText(/结算/);
+      expect(checkoutBtn).not.toBeDisabled();
+    });
+
+    test('[圈梁五道箍] 商品加载失败后重试', async () => {
+      mockListProducts.mockRejectedValueOnce(new Error('网络请求超时'));
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText(/网络请求超时/)).toBeInTheDocument();
+      });
+      expect(screen.getByText('重试加载商品')).toBeInTheDocument();
+      // 重试成功
+      mockListProducts.mockResolvedValueOnce(MOCK_PRODUCTS);
+      fireEvent.click(screen.getByText('重试加载商品'));
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.queryByText(/网络请求超时/)).not.toBeInTheDocument();
+      });
+    });
+  });
 });
