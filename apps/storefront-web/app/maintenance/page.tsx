@@ -771,7 +771,7 @@ export default function MaintenancePage() {
                 </div>
                 {(types => {
                   if (types.length === 0) return <span>暂无设备数据</span>;
-                  const best: any = types[0];
+                  let best: any = types[0];
                   let worst: any = types[0];
                   for (let j = 1; j < types.length; j++) {
                     const t: any = types[j];

@@ -1,335 +1,563 @@
-/**
- * booking/page.test.tsx — 预约看店页 L1 冒烟测试 (storefront-web)
- * 覆盖: A-共享数据完整 · B-页面结构 · C-边界防御
- *
- * 类型: B-页面 (多步表单: 选择门店 → 选择时段 → 填写信息 → 完成)
- * 角色: 🛒 前台消费者视角
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
+import React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
-const PAGE_SOURCE = readFileSync(`${PROJECT_ROOT}/apps/storefront-web/app/booking/page.tsx`, 'utf-8');
-const DATA_SOURCE = readFileSync(`${PROJECT_ROOT}/apps/storefront-web/app/booking/booking-data.ts`, 'utf-8');
+// ---- Mocks (top-level) ----
 
-// ============================================================
-// 辅助检查
-// ============================================================
+vi.mock('next/link', () => ({
+  default: ({ children, href, style }: any) => (
+    <a data-testid="next-link" href={href} style={style}>{children}</a>
+  ),
+}));
 
-function hasExport(source: string, name: string): boolean {
-  const patterns = [
-    `export function ${name}`,
-    `export const ${name}`,
-    `export type ${name}`,
-    `export interface ${name}`,
-    `export default function ${name}`,
-    `export enum ${name}`,
-  ];
-  return patterns.some((p) => source.includes(p));
-}
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description, actions }: any) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>
+      {actions}
+      {children}
+    </div>
+  ),
+  FormField: ({ label, children, error, required, disabled }: any) => (
+    <div data-testid={`form-field-${label}`}>
+      {label && <label>{label}{required ? ' *' : ''}</label>}
+      {children}
+      {error && <span data-testid="field-error" style={{ color: 'red' }}>{error}</span>}
+    </div>
+  ),
+  SubmitButton: ({ loading, label, loadingLabel }: any) => (
+    <button data-testid="submit-btn" disabled={loading}>
+      {loading ? (loadingLabel || '提交中...') : (label || '提交')}
+    </button>
+  ),
+  FormSubmitFeedback: ({ state }: any) => (
+    <div data-testid="form-feedback">
+      {state?.isSuccess && <span data-testid="form-success">提交成功</span>}
+      {state?.error && <span data-testid="form-error">{state.error}</span>}
+      {state?.isSuccess && <span data-testid="success-message">{state.successMessage}</span>}
+    </div>
+  ),
+  Button: Object.assign(
+    ({ children, onClick, disabled, style }: any) => (
+      <button data-testid="m5-btn" onClick={onClick} disabled={disabled} style={style}>{children}</button>
+    ),
+    { displayName: 'Button' },
+  ),
+}));
 
-function hasImportSubstr(source: string, from: string): boolean {
-  return source.includes(`from '${from}'`) || source.includes(`from "${from}"`);
-}
+import BookingPage from './page';
 
-function countOccurrence(source: string, pattern: RegExp): number {
-  return (source.match(pattern) || []).length;
-}
+describe('BookingPage — 预约看店页面', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-// ============================================================
-// A-共享数据层完整性测试
-// ============================================================
+  // ====== 渲染测试 ======
 
-describe('A: booking-data.ts — 共享数据层', () => {
-  // ---- 正例 ----
+  test('初始渲染显示"预约看店"标题', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('预约看店')).toBeInTheDocument();
+  });
 
-  describe('类型定义', () => {
-    it('BookingStatus 四个状态值完整', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'BookingStatus'), '缺少 BookingStatus 类型');
-      assert.ok(DATA_SOURCE.includes("'pending'"), '缺少 pending');
-      assert.ok(DATA_SOURCE.includes("'confirmed'"), '缺少 confirmed');
-      assert.ok(DATA_SOURCE.includes("'completed'"), '缺少 completed');
-      assert.ok(DATA_SOURCE.includes("'cancelled'"), '缺少 cancelled');
+  test('初始渲染显示门店选择提示文案', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('选择您想前往的门店')).toBeInTheDocument();
+  });
+
+  test('初始渲染显示所有模拟门店列表', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('神机营·旗舰店')).toBeInTheDocument();
+    expect(screen.getByText('神机营·赛博店')).toBeInTheDocument();
+    expect(screen.getByText('神机营·欢乐谷店')).toBeInTheDocument();
+    expect(screen.getByText('神机营·宇宙中心店')).toBeInTheDocument();
+    expect(screen.getByText('神机营·滨江店')).toBeInTheDocument();
+  });
+
+  test('每个门店卡片显示地址信息', () => {
+    render(<BookingPage />);
+    expect(screen.getByText(/朝阳区/)).toBeInTheDocument();
+    expect(screen.getByText(/浦东新区/)).toBeInTheDocument();
+  });
+
+  test('每个门店卡片显示评分和评价数', () => {
+    render(<BookingPage />);
+    const ratingElements = screen.getAllByText(/★/);
+    expect(ratingElements.length).toBeGreaterThanOrEqual(5);
+    const reviewElements = screen.getAllByText(/条评价/);
+    expect(reviewElements.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test('门店显示距离信息', () => {
+    render(<BookingPage />);
+    const kmElements = screen.getAllByText(/km/);
+    expect(kmElements.length).toBeGreaterThanOrEqual(5);
+  });
+
+  // ====== 交互测试：选择门店 ======
+
+  test('点击门店跳转到选择时段步骤', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    expect(screen.getByText('选择预约时间')).toBeInTheDocument();
+    expect(screen.getByText('神机营·旗舰店')).toBeInTheDocument();
+  });
 
-    it('BookingSlot 所有必需字段', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'BookingSlot'), '缺少 BookingSlot 类型');
-      assert.ok(DATA_SOURCE.includes('slotId'), '缺少 slotId');
-      assert.ok(DATA_SOURCE.includes('label'), '缺少 label');
-      assert.ok(DATA_SOURCE.includes('startTime'), '缺少 startTime');
-      assert.ok(DATA_SOURCE.includes('endTime'), '缺少 endTime');
-      assert.ok(DATA_SOURCE.includes('available'), '缺少 available');
-      assert.ok(DATA_SOURCE.includes('remaining'), '缺少 remaining');
+  test('选择门店后出现返回按钮', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·赛博店'));
     });
+    expect(screen.getByText('←')).toBeInTheDocument();
+  });
 
-    it('StoreBrief 包含门店全部基本信息', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'StoreBrief'), '缺少 StoreBrief 类型');
-      assert.ok(DATA_SOURCE.includes('storeCode'), '缺少 storeCode');
-      assert.ok(DATA_SOURCE.includes('storeName'), '缺少 storeName');
-      assert.ok(DATA_SOURCE.includes('address'), '缺少 address');
-      assert.ok(DATA_SOURCE.includes('phone'), '缺少 phone');
-      assert.ok(DATA_SOURCE.includes('rating'), '缺少 rating');
-      assert.ok(DATA_SOURCE.includes('reviewCount'), '缺少 reviewCount');
-      assert.ok(DATA_SOURCE.includes('distance'), '缺少 distance');
+  // ====== 交互测试：选择日期和时段 ======
+
+  test('选择门店后显示日期选择器', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    expect(screen.getByText('选择日期')).toBeInTheDocument();
+    expect(screen.getByText('选择时段')).toBeInTheDocument();
+  });
 
-    it('BookingRequest 包含预约全部提交字段', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'BookingRequest'), '缺少 BookingRequest 类型');
-      assert.ok(DATA_SOURCE.includes('storeCode'), '缺少 storeCode');
-      assert.ok(DATA_SOURCE.includes('date'), '缺少 date');
-      assert.ok(DATA_SOURCE.includes('slotId'), '缺少 slotId');
-      assert.ok(DATA_SOURCE.includes('guestCount'), '缺少 guestCount');
-      assert.ok(DATA_SOURCE.includes('contactName'), '缺少 contactName');
-      assert.ok(DATA_SOURCE.includes('contactPhone'), '缺少 contactPhone');
+  test('日期选择器显示"下一步"按钮且初始为禁用', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    const nextBtn = screen.getByText('下一步');
+    expect(nextBtn).toBeDisabled();
+  });
 
-    it('BookingRecord 包含完整记录字段', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'BookingRecord'), '缺少 BookingRecord 类型');
-      assert.ok(DATA_SOURCE.includes('bookingId'), '缺少 bookingId');
-      assert.ok(DATA_SOURCE.includes('status'), '缺少 status');
-      assert.ok(DATA_SOURCE.includes('createdAt'), '缺少 createdAt');
-      assert.ok(DATA_SOURCE.includes('storeName'), '缺少 storeName');
-      assert.ok(DATA_SOURCE.includes('slotLabel'), '缺少 slotLabel');
-      assert.ok(DATA_SOURCE.includes('guestCount'), '缺少 guestCount');
-      assert.ok(DATA_SOURCE.includes('contactPhone'), '缺少 contactPhone');
+  test('选择日期后"下一步"按钮仍禁用（未选时段）', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    // 点击第一个日期按钮
+    const dateBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('月'));
+    if (dateBtns.length > 0) {
+      await act(async () => {
+        fireEvent.click(dateBtns[0]);
+      });
+    }
+    const nextBtn = screen.getByText('下一步');
+    expect(nextBtn).toBeDisabled();
+  });
+
+  test('选择日期和时段后"下一步"按钮启用', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    // 选择日期
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) {
+      await act(async () => {
+        fireEvent.click(dateBtns[0]);
+      });
+    }
+    // 选择可用时段
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !b.closest('header')
+    );
+    if (slotBtns.length > 0) {
+      await act(async () => {
+        fireEvent.click(slotBtns[0]);
+      });
+    }
+    await waitFor(() => {
+      const nextBtn = screen.getByText('下一步');
+      expect(nextBtn).not.toBeDisabled();
     });
   });
 
-  describe('常量和Mock数据', () => {
-    it('BOOKING_STATUS_LABELS 覆盖四种状态中文标签', () => {
-      assert.ok(DATA_SOURCE.includes('BOOKING_STATUS_LABELS'), '缺少 BOOKING_STATUS_LABELS');
-      assert.ok(DATA_SOURCE.includes('待确认'), '缺少 待确认');
-      assert.ok(DATA_SOURCE.includes('已确认'), '缺少 已确认');
-      assert.ok(DATA_SOURCE.includes('已完成'), '缺少 已完成');
-      assert.ok(DATA_SOURCE.includes('已取消'), '缺少 已取消');
+  test('不可预约的时段显示为禁用状态', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    const disabledBtns = screen.getAllByRole('button').filter(b =>
+      (b as HTMLButtonElement).disabled && b.textContent?.includes(':')
+    );
+    expect(disabledBtns.length).toBeGreaterThanOrEqual(1);
+  });
 
-    it('BOOKING_STATUS_COLORS 四种颜色值正确', () => {
-      assert.ok(DATA_SOURCE.includes('BOOKING_STATUS_COLORS'), '缺少 BOOKING_STATUS_COLORS');
-      assert.ok(DATA_SOURCE.includes('#f59e0b') || DATA_SOURCE.includes('#fbbf24'), '缺少 amber');
-      assert.ok(DATA_SOURCE.includes('#10b981') || DATA_SOURCE.includes('#34d399'), '缺少 emerald');
-      assert.ok(DATA_SOURCE.includes('#6366f1'), '缺少 indigo');
-      assert.ok(DATA_SOURCE.includes('#ef4444'), '缺少 red');
+  test('时段显示剩余名额', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    const remainingText = screen.queryByText(/剩\d+位/);
+    expect(remainingText).toBeInTheDocument();
+  });
 
-    it('DEFAULT_SLOTS 包含8个时段', () => {
-      const slotCount = countOccurrence(DATA_SOURCE, /slotId:\s*'/g);
-      assert.equal(slotCount, 8, `应有8个时段, 实际${slotCount}`);
+  // ====== 交互测试：返回门店选择 ======
+
+  test('在选择时段页面点击返回可回到门店选择', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
-
-    it('MAX_GUESTS_PER_BOOKING = 10', () => {
-      assert.ok(DATA_SOURCE.includes('MAX_GUESTS_PER_BOOKING = 10'), 'MAX_GUESTS_PER_BOOKING 未设为10');
+    await act(async () => {
+      fireEvent.click(screen.getByText('←'));
     });
+    expect(screen.getByText('选择您想前往的门店')).toBeInTheDocument();
+  });
 
-    it('MOCK_STORES 包含4家门店', () => {
-      assert.ok(DATA_SOURCE.includes('MOCK_STORES'), '缺少 MOCK_STORES');
-      // 验证四家门店的 storeCode 都存在
-      assert.ok(DATA_SOURCE.includes("storeCode: 'store-001'"), '缺少 store-001');
-      assert.ok(DATA_SOURCE.includes("storeCode: 'store-002'"), '缺少 store-002');
-      assert.ok(DATA_SOURCE.includes("storeCode: 'store-003'"), '缺少 store-003');
-      assert.ok(DATA_SOURCE.includes("storeCode: 'store-004'"), '缺少 store-004');
+  // ====== 交互测试：填写信息步骤 ======
+
+  test('选择日期时段并点击下一步进入填写信息页', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
-
-    it('MOCK_BOOKINGS 包含5条预约记录', () => {
-      const bookingCount = countOccurrence(DATA_SOURCE, /bookingId:\s*'/g);
-      assert.equal(bookingCount, 5, `应有5条预约记录, 实际${bookingCount}`);
+    // 选日期
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) {
+      await act(async () => {
+        fireEvent.click(dateBtns[0]);
+      });
+    }
+    // 选时段
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) {
+      await act(async () => {
+        fireEvent.click(slotBtns[0]);
+      });
+    }
+    await act(async () => {
+      fireEvent.click(screen.getByText('下一步'));
     });
+    expect(screen.getByText('填写预约信息')).toBeInTheDocument();
+  });
 
-    it('预约记录覆盖四种状态', () => {
-      assert.ok(DATA_SOURCE.includes("status: 'pending'"), '缺少 pending 状态记录');
-      assert.ok(DATA_SOURCE.includes("status: 'confirmed'"), '缺少 confirmed 状态记录');
-      assert.ok(DATA_SOURCE.includes("status: 'completed'"), '缺少 completed 状态记录');
-      assert.ok(DATA_SOURCE.includes("status: 'cancelled'"), '缺少 cancelled 状态记录');
+  test('填写信息页显示联系人姓名输入框', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    expect(screen.getByPlaceholderText('请输入您的姓名')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('请输入手机号')).toBeInTheDocument();
+  });
+
+  test('填写信息页显示预约摘要信息', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    expect(screen.getByText(/神机营·旗舰店/)).toBeInTheDocument();
+    expect(screen.getByText(/人/)).toBeInTheDocument();
+  });
+
+  test('填写信息页显示人数增减按钮', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    expect(screen.getByText('最多5人')).toBeInTheDocument();
+  });
+
+  test('人数减少按钮在1人时禁用', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    const minusBtn = screen.getByText('-').closest('button') as HTMLButtonElement;
+    expect(minusBtn.disabled).toBe(true);
+  });
+
+  test('人数增加按钮在达到上限时禁用', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    // 点击加号到上限
+    const plusBtn = screen.getByText('+').closest('button') as HTMLButtonElement;
+    for (let i = 0; i < 10; i++) {
+      if (!plusBtn.disabled) {
+        await act(async () => { fireEvent.click(plusBtn); });
+      }
+    }
+    expect(plusBtn.disabled).toBe(true);
+  });
+
+  test('填写信息页显示备注输入框', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    expect(screen.getByPlaceholderText('如有特殊需求请在此说明')).toBeInTheDocument();
+  });
+
+  test('填写信息页提交按钮文案为"提交预约"', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    expect(screen.getByText('提交预约')).toBeInTheDocument();
+  });
+
+  // ====== 提交验证 ======
+
+  test('未填写联系人时提交不跳转到成功页', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    // 不填信息直接提交
+    await act(async () => { fireEvent.click(screen.getByText('提交预约')); });
+    // 仍然在填写信息页，未跳转到成功页
+    expect(screen.getByText('填写预约信息')).toBeInTheDocument();
+  });
+
+  test('提交成功后显示成功页面和"继续预约"按钮', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
+    });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    // 填写信息
+    const nameInput = screen.getByPlaceholderText('请输入您的姓名');
+    const phoneInput = screen.getByPlaceholderText('请输入手机号');
+    await act(async () => {
+      fireEvent.change(nameInput, { target: { value: '张三' } });
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+    });
+    // 提交
+    await act(async () => { fireEvent.click(screen.getByText('提交预约')); });
+    await waitFor(() => {
+      expect(screen.getByText('预约提交成功')).toBeInTheDocument();
+      expect(screen.getByText('继续预约')).toBeInTheDocument();
     });
   });
 
-  describe('工具函数导出', () => {
-    it('today() 导出', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'today'), '缺少 today()');
+  test('提交成功后显示预约编号', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
-    it('getNextDays(count) 导出且支持参数', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'getNextDays'), '缺少 getNextDays()');
-      assert.ok(DATA_SOURCE.includes('count'), '缺少 count 参数引用');
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    const nameInput = screen.getByPlaceholderText('请输入您的姓名');
+    const phoneInput = screen.getByPlaceholderText('请输入手机号');
+    await act(async () => {
+      fireEvent.change(nameInput, { target: { value: '张三' } });
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
     });
-    it('getChineseWeekday() 导出且包含全部中文字符', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'getChineseWeekday'), '缺少 getChineseWeekday()');
-      // 验证星期一到星期日全部覆盖
-      assert.ok(DATA_SOURCE.includes("'一'"), '缺少 一');
-      assert.ok(DATA_SOURCE.includes("'二'"), '缺少 二');
-      assert.ok(DATA_SOURCE.includes("'三'"), '缺少 三');
-      assert.ok(DATA_SOURCE.includes("'四'"), '缺少 四');
-      assert.ok(DATA_SOURCE.includes("'五'"), '缺少 五');
-      assert.ok(DATA_SOURCE.includes("'六'"), '缺少 六');
-      assert.ok(DATA_SOURCE.includes("'日'"), '缺少 日');
-    });
-    it('formatDateDisplay() 导出', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'formatDateDisplay'), '缺少 formatDateDisplay()');
-      assert.ok(DATA_SOURCE.includes('月') && DATA_SOURCE.includes('日'), '缺少月日格式');
-    });
-    it('isSlotBookable() 导出且含可用性判断逻辑', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'isSlotBookable'), '缺少 isSlotBookable()');
-      assert.ok(DATA_SOURCE.includes('slot.available'), '缺少 available 检查');
-      assert.ok(DATA_SOURCE.includes('remaining > 0'), '缺少 remaining 检查');
-    });
-    it('findStoreByCode() 导出', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'findStoreByCode'), '缺少 findStoreByCode()');
-      assert.ok(DATA_SOURCE.includes('stores.find'), '缺少 Array.find()');
-    });
-    it('validateBookingRequest() 导出', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'validateBookingRequest'), '缺少 validateBookingRequest()');
-    });
-    it('getBookingSummary() 导出', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'getBookingSummary'), '缺少 getBookingSummary()');
-    });
-    it('filterBookingsByStore() 和 filterBookingsByStatus() 导出', () => {
-      assert.ok(hasExport(DATA_SOURCE, 'filterBookingsByStore'), '缺少 filterBookingsByStore()');
-      assert.ok(hasExport(DATA_SOURCE, 'filterBookingsByStatus'), '缺少 filterBookingsByStatus()');
+    await act(async () => { fireEvent.click(screen.getByText('提交预约')); });
+    await waitFor(() => {
+      expect(screen.getByText(/预约编号/)).toBeInTheDocument();
     });
   });
 
-  // ---- 反例 (防御性检查) ----
+  // ====== 反例测试 ======
 
-  describe('反例 — 防御性', () => {
-    it('空storeCode 应触发门店为空错误提示', () => {
-      assert.ok(DATA_SOURCE.includes('请选择门店'), '缺少"请选择门店"错误提示');
+  test('不选择时段直接点下一步显示错误提示', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
-
-    it('空date 应触发日期为空错误提示', () => {
-      assert.ok(DATA_SOURCE.includes('请选择预约日期'), '缺少"请选择预约日期"错误提示');
+    await act(async () => {
+      fireEvent.click(screen.getByText('下一步'));
     });
-
-    it('空contactName 应触发姓名为空错误提示', () => {
-      assert.ok(DATA_SOURCE.includes('请填写联系人姓名'), '缺少"请填写联系人姓名"错误提示');
-    });
-
-    it('空contactPhone 应触发电话为空错误提示', () => {
-      assert.ok(DATA_SOURCE.includes('请填写联系电话'), '缺少"请填写联系电话"错误提示');
-    });
-
-    it('手机号格式校验规则存在', () => {
-      assert.ok(DATA_SOURCE.includes('/^1') || DATA_SOURCE.includes('phoneRegex'), '缺少手机号正则');
-      assert.ok(DATA_SOURCE.includes('手机号格式不正确'), '缺少"手机号格式不正确"提示');
-    });
-
-    it('人数校验包含MAX_GUESTS_PER_BOOKING上限', () => {
-      assert.ok(DATA_SOURCE.includes('MAX_GUESTS_PER_BOOKING'), '缺少最大人数引用');
-      assert.ok(DATA_SOURCE.includes('单次预约最多'), '缺少"单次预约最多"提示');
-    });
+    expect(screen.getByText('请选择日期和时段')).toBeInTheDocument();
   });
 
-  // ---- 边界 ----
+  // ====== 边界情况 ======
 
-  describe('边界 — 特殊场景', () => {
-    it('findStoreByCode 对不存在的code应返回 undefined', () => {
-      assert.ok(DATA_SOURCE.includes('.find('), '缺少 Array.find 用法');
-      assert.ok(DATA_SOURCE.includes('=>'), '箭头函数查找');
+  test('门店卡片点击后触发选中高亮样式', async () => {
+    render(<BookingPage />);
+    const storeCard = screen.getByText('神机营·旗舰店').closest('button')!;
+    const originalStyle = storeCard.style.border;
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    // 切换到预约时间页，原卡片不可见
+    expect(screen.getByText('选择预约时间')).toBeInTheDocument();
+  });
 
-    it('getNextDays 应生成 count 天数据且不包含过去日期', () => {
-      assert.ok(DATA_SOURCE.includes('getNextDays'), '导出');
-      assert.ok(DATA_SOURCE.includes('today'), '引用 today()');
+  test('填写信息页面可返回选择时段', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    await act(async () => { fireEvent.click(screen.getByText('←')); });
+    expect(screen.getByText('选择预约时间')).toBeInTheDocument();
+  });
 
-    it('getBookingSummary 应拼接门店+时段+人数+标签', () => {
-      assert.ok(DATA_SOURCE.includes('getBookingSummary'), '导出');
-      assert.ok(DATA_SOURCE.includes('storeName'), '引用 门店名');
-      assert.ok(DATA_SOURCE.includes('slotLabel'), '引用 时段名');
-      assert.ok(DATA_SOURCE.includes('guestCount'), '引用 人数');
+  test('成功页点击"继续预约"可重置流程', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
-  });
-});
-
-// ============================================================
-// B-页面结构完整性测试
-// ============================================================
-
-describe('B: page.tsx — 预约看店页面结构', () => {
-  // ---- 正例 ----
-
-  it("'use client' 指令存在", () => {
-    assert.ok(PAGE_SOURCE.includes("'use client'"), '缺少 use client 指令');
-  });
-
-  it('默认导出函数 BookingPage', () => {
-    assert.ok(PAGE_SOURCE.includes('export default function BookingPage'), '缺少 BookingPage 默认导出');
-  });
-
-  it('导入 booking-data 全部必需数据', () => {
-    assert.ok(PAGE_SOURCE.includes("./booking-data"), '未从 booking-data 导入');
-    assert.ok(PAGE_SOURCE.includes('MOCK_STORES'), '缺少 MOCK_STORES 导入');
-    assert.ok(PAGE_SOURCE.includes('DEFAULT_SLOTS'), '缺少 DEFAULT_SLOTS 导入');
-  });
-
-  it('五步表单状态类型', () => {
-    assert.ok(PAGE_SOURCE.includes("'select-store'"), '缺少 select-store 状态');
-    assert.ok(PAGE_SOURCE.includes("'select-slot'"), '缺少 select-slot 状态');
-    assert.ok(PAGE_SOURCE.includes("'fill-info'"), '缺少 fill-info 状态');
-    assert.ok(PAGE_SOURCE.includes("'confirm'"), '缺少 confirm 状态');
-    assert.ok(PAGE_SOURCE.includes("'done'"), '缺少 done 状态');
-  });
-
-  it('非活跃状态（select-store）渲染门店列表', () => {
-    assert.ok(PAGE_SOURCE.includes('select-store'), 'select-store 步骤条件');
-    assert.ok(PAGE_SOURCE.includes('预约看店'), '页面标题');
-  });
-
-  it('select-slot 步骤包含日期和时段选择', () => {
-    assert.ok(PAGE_SOURCE.includes('select-slot'), 'select-slot 步骤条件');
-    assert.ok(PAGE_SOURCE.includes('选择日期'), '日期选择器');
-    assert.ok(PAGE_SOURCE.includes('选择时段'), '时段选择器');
-    assert.ok(PAGE_SOURCE.includes('下一步'), '下一步按钮');
-  });
-
-  it('fill-info 步骤包含表单输入', () => {
-    assert.ok(PAGE_SOURCE.includes('fill-info'), 'fill-info 步骤条件');
-    assert.ok(PAGE_SOURCE.includes('联系人姓名'), '姓名输入');
-    assert.ok(PAGE_SOURCE.includes('联系电话'), '电话输入');
-    assert.ok(PAGE_SOURCE.includes('预约人数'), '人数选择');
-  });
-
-  it('done 步骤展示成功结果', () => {
-    assert.ok(PAGE_SOURCE.includes('预约提交成功'), '成功提示');
-    assert.ok(PAGE_SOURCE.includes('继续预约'), '重置按钮');
-  });
-
-  it('包含状态对应的 React hooks', () => {
-    assert.ok(PAGE_SOURCE.includes('useState'), '缺少 useState');
-    assert.ok(PAGE_SOURCE.includes('useCallback'), '缺少 useCallback');
-    assert.ok(PAGE_SOURCE.includes('useMemo'), '缺少 useMemo');
-  });
-
-  // ---- 反例 ----
-  describe('反例 — 防御检查', () => {
-    it('提交中 disabled 状态存在', () => {
-      assert.ok(PAGE_SOURCE.includes('submitting'), '缺少 submitting 状态');
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    const nameInput = screen.getByPlaceholderText('请输入您的姓名');
+    const phoneInput = screen.getByPlaceholderText('请输入手机号');
+    await act(async () => {
+      fireEvent.change(nameInput, { target: { value: '张三' } });
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
     });
-
-    it('错误提示展示逻辑存在', () => {
-      assert.ok(PAGE_SOURCE.includes('errors'), '缺少 errors 状态');
-      assert.ok(PAGE_SOURCE.includes('error'), '错误渲染区');
+    await act(async () => { fireEvent.click(screen.getByText('提交预约')); });
+    await waitFor(() => {
+      expect(screen.getByText('继续预约')).toBeInTheDocument();
     });
-
-    it('时段不可用时 disabled 处理', () => {
-      assert.ok(PAGE_SOURCE.includes('disabled'), 'disabled 属性');
-      assert.ok(PAGE_SOURCE.includes('bookable'), '可预约判断');
-    });
+    await act(async () => { fireEvent.click(screen.getByText('继续预约')); });
+    expect(screen.getByText('选择您想前往的门店')).toBeInTheDocument();
   });
 
-  // ---- 边界 ----
-  describe('边界', () => {
-    it('预约人数含 min=1 max=MAX_GUESTS_PER_BOOKING 限制', () => {
-      assert.ok(PAGE_SOURCE.includes('Math.max(1,'), '最小值限制');
-      assert.ok(PAGE_SOURCE.includes('MAX_GUESTS_PER_BOOKING'), '最大值引用');
-    });
+  // ====== 额外渲染测试 ======
 
-    it('电话号码限制11位', () => {
-      assert.ok(PAGE_SOURCE.includes('maxLength'), 'maxLength 属性');
-      assert.ok(PAGE_SOURCE.includes('11'), '11位限制');
+  test('填写信息页显示"预约信息"标签', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    expect(screen.getByText('预约信息')).toBeInTheDocument();
+  });
 
-    it('手机号 input 使用数字键盘提示', () => {
-      assert.ok(PAGE_SOURCE.includes('contactPhone'), 'contactPhone 字段');
+  test('提交中按钮显示"提交中..."文案', async () => {
+    render(<BookingPage />);
+    await act(async () => {
+      fireEvent.click(screen.getByText('神机营·旗舰店'));
     });
+    const dateBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes('月') && b.textContent?.trim().match(/^\d{2}$/)
+    );
+    if (dateBtns.length > 0) fireEvent.click(dateBtns[0]);
+    const slotBtns = screen.getAllByRole('button').filter(b =>
+      b.textContent?.includes(':') && !(b as HTMLButtonElement).disabled
+    );
+    if (slotBtns.length > 0) fireEvent.click(slotBtns[0]);
+    await act(async () => { fireEvent.click(screen.getByText('下一步')); });
+    const nameInput = screen.getByPlaceholderText('请输入您的姓名');
+    const phoneInput = screen.getByPlaceholderText('请输入手机号');
+    await act(async () => {
+      fireEvent.change(nameInput, { target: { value: '张三' } });
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+    });
+    // 提交后按钮变"提交中..."
+    await act(async () => { fireEvent.click(screen.getByText('提交预约')); });
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterAll } from 'vitest';
 
 // ---- Mocks (top-level) ----
 
@@ -290,8 +290,10 @@ describe('DashboardPage — 门店仪表盘', () => {
 
   test('查看产品 button redirects', async () => {
     const originalLocation = window.location;
-    delete (window as any).location;
-    window.location = { href: '' } as any;
+    Object.defineProperty(window, 'location', {
+      value: { href: '' },
+      writable: true,
+    });
 
     render(<DashboardPage />);
     await waitFor(() => {
@@ -299,7 +301,10 @@ describe('DashboardPage — 门店仪表盘', () => {
     });
     expect(window.location.href).toBe('/products');
 
-    window.location = originalLocation;
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true,
+    });
   });
 
   test('shows StatusBadge for recent orders', async () => {
