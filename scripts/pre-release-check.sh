@@ -95,6 +95,16 @@ probe_https_status() {
   return 1
 }
 
+read_tls_secret_expiry() {
+  local encoded_cert=""
+  encoded_cert="$(kubectl --kubeconfig="$KUBECONFIG" get secret "$TLS_SECRET" -n "$NAMESPACE" -o go-template='{{index .data "tls.crt"}}' 2>/dev/null || true)"
+  if [ -z "$encoded_cert" ]; then
+    return 1
+  fi
+
+  printf '%s' "$encoded_cert" | base64 -d 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | sed 's/^notAfter=//'
+}
+
 echo "=== 神机营 发布前检查 ==="
 echo "Namespace: $NAMESPACE"
 echo "KUBECONFIG: $KUBECONFIG"
@@ -127,11 +137,16 @@ else
 fi
 
 # 证书过期检查
-CERT_EXPIRY=$(kubectl --kubeconfig="$KUBECONFIG" get certificate -n "$NAMESPACE" m5-tls -o jsonpath='{.status.notAfter}' 2>/dev/null || echo "")
+CERT_EXPIRY="$(kubectl --kubeconfig="$KUBECONFIG" get certificate -n "$NAMESPACE" "$TLS_SECRET" -o jsonpath='{.status.notAfter}' 2>/dev/null || true)"
+if [ -z "$CERT_EXPIRY" ]; then
+  CERT_EXPIRY="$(read_tls_secret_expiry || true)"
+fi
 if [ -n "$CERT_EXPIRY" ]; then
-  EXPIRY_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$CERT_EXPIRY" +%s 2>/dev/null || date -d "$CERT_EXPIRY" +%s 2>/dev/null || echo 0)
+  EXPIRY_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$CERT_EXPIRY" +%s 2>/dev/null || date -j -f "%b %e %T %Y %Z" "$CERT_EXPIRY" +%s 2>/dev/null || date -d "$CERT_EXPIRY" +%s 2>/dev/null || echo 0)
   NOW_EPOCH=$(date +%s)
-  if [ $((EXPIRY_EPOCH - NOW_EPOCH)) -gt $((30*24*3600)) ]; then
+  if [ "$EXPIRY_EPOCH" -eq 0 ]; then
+    check "证书过期" "WARN" "无法解析过期时间: $CERT_EXPIRY"
+  elif [ $((EXPIRY_EPOCH - NOW_EPOCH)) -gt $((30*24*3600)) ]; then
     check "证书过期" "PASS" "过期: $CERT_EXPIRY (>30天)"
   else
     check "证书过期" "WARN" "即将过期: $CERT_EXPIRY"
@@ -210,7 +225,24 @@ done
 
 # 9. Billing/余额检查
 echo "--- 9. Billing ---"
-check "阿里云余额" "WARN" "需手动检查阿里云控制台"
+if BILLING_OUTPUT="$(ALIYUN_BALANCE_CNY="${ALIYUN_BALANCE_CNY:-}" bash "$(dirname "$0")/check-aliyun-billing.sh" 2>&1)"; then
+  BALANCE_LINE="$(printf '%s\n' "$BILLING_OUTPUT" | awk '/^当前余额:/ {print $0}' | tail -n 1)"
+  check "阿里云余额" "PASS" "${BALANCE_LINE:-余额充足}"
+else
+  BILLING_EXIT=$?
+  BALANCE_LINE="$(printf '%s\n' "$BILLING_OUTPUT" | awk '/^当前余额:/ {print $0}' | tail -n 1)"
+  case "$BILLING_EXIT" in
+    2)
+      check "阿里云余额" "FAIL" "${BALANCE_LINE:-余额低于紧急线}"
+      ;;
+    3)
+      check "阿里云余额" "WARN" "${BALANCE_LINE:-余额低于告警线}"
+      ;;
+    *)
+      check "阿里云余额" "WARN" "$(printf '%s\n' "$BILLING_OUTPUT" | tail -n 1)"
+      ;;
+  esac
+fi
 
 # 10. ACR 登录身份检查
 echo "--- 10. ACR 登录身份 ---"
