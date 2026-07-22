@@ -14,6 +14,7 @@ import {
   type FinanceRecordType,
   type StorefrontFinanceDashboard,
 } from '../../lib/storefront-finance';
+import { resolveStorefrontScope } from '../../lib/storefront-transactions';
 
 const FILTER_OPTIONS: Array<{ value: 'all' | FinanceRecordType; label: string }> = [
   { value: 'all', label: '全部类型' },
@@ -41,7 +42,8 @@ export default function FinancePage() {
     setLoading(true);
     setError(null);
     try {
-      const nextDashboard = await loadStorefrontFinanceDashboard(dateRange);
+      const scope = resolveStorefrontScope();
+      const nextDashboard = await loadStorefrontFinanceDashboard(dateRange, scope);
       setDashboard(nextDashboard);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : '财务数据加载失败，请稍后重试');

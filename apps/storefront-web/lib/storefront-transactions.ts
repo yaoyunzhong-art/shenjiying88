@@ -9,7 +9,7 @@ import {
 } from '@m5/sdk';
 
 export type CheckoutPaymentMethod = 'wechat' | 'alipay' | 'cash' | 'member_card';
-export type H5PaymentMethod = 'wechat' | 'alipay' | 'bankcard' | 'points';
+export type H5PaymentMethod = 'wechat' | 'alipay' | 'cash' | 'member_card';
 export type PaymentResultStatus = 'success' | 'failed' | 'pending';
 export type RuntimePaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expired';
 
@@ -70,13 +70,20 @@ export const DEFAULT_STOREFRONT_SCOPE: StorefrontScope = {
   storeId: 'store-001',
 };
 
+export const STOREFRONT_SCOPE_STORAGE_KEYS = {
+  marketCode: 'storefront.marketCode',
+  tenantId: 'storefront.tenantId',
+  brandId: 'storefront.brandId',
+  storeId: 'storefront.storeId',
+} as const;
+
 const PAYMENT_TIMEOUT_MS = 15 * 60 * 1000;
 
 const METHOD_LABELS: Record<H5PaymentMethod, string> = {
   wechat: '微信支付',
   alipay: '支付宝',
-  bankcard: '银行卡',
-  points: '积分支付',
+  cash: '现金支付',
+  member_card: '会员卡支付',
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -107,13 +114,102 @@ export const RESULT_DISPLAY: Record<PaymentResultStatus, PaymentResultDisplay> =
   },
 };
 
-function createStorefrontTransactionsClient(scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE) {
+function readScopeFromEnv(): StorefrontScope | null {
+  const marketCode = process.env.NEXT_PUBLIC_STOREFRONT_MARKET_CODE?.trim();
+  const tenantId = process.env.NEXT_PUBLIC_STOREFRONT_TENANT_ID?.trim();
+  const brandId = process.env.NEXT_PUBLIC_STOREFRONT_BRAND_ID?.trim();
+  const storeId = process.env.NEXT_PUBLIC_STOREFRONT_STORE_ID?.trim();
+
+  if (!marketCode || !tenantId || !brandId || !storeId) {
+    return null;
+  }
+
+  return { marketCode, tenantId, brandId, storeId };
+}
+
+function readScopeFromBrowser(): StorefrontScope | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const marketCode =
+    searchParams.get('marketCode')?.trim() ||
+    searchParams.get('market')?.trim() ||
+    window.localStorage.getItem(STOREFRONT_SCOPE_STORAGE_KEYS.marketCode)?.trim() ||
+    '';
+  const tenantId =
+    searchParams.get('tenantId')?.trim() ||
+    searchParams.get('tenantCode')?.trim() ||
+    window.localStorage.getItem(STOREFRONT_SCOPE_STORAGE_KEYS.tenantId)?.trim() ||
+    '';
+  const brandId =
+    searchParams.get('brandId')?.trim() ||
+    searchParams.get('brandCode')?.trim() ||
+    window.localStorage.getItem(STOREFRONT_SCOPE_STORAGE_KEYS.brandId)?.trim() ||
+    '';
+  const storeId =
+    searchParams.get('storeId')?.trim() ||
+    searchParams.get('storeCode')?.trim() ||
+    window.localStorage.getItem(STOREFRONT_SCOPE_STORAGE_KEYS.storeId)?.trim() ||
+    '';
+
+  if (!marketCode || !tenantId || !brandId || !storeId) {
+    return null;
+  }
+
+  return { marketCode, tenantId, brandId, storeId };
+}
+
+function buildDefaultScope(): StorefrontScope {
+  const browserScope = readScopeFromBrowser();
+  if (browserScope) {
+    return browserScope;
+  }
+
+  const envScope = readScopeFromEnv();
+  if (envScope) {
+    return envScope;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    return DEFAULT_STOREFRONT_SCOPE;
+  }
+
+  throw new Error(
+    'Storefront scope is not configured. Please provide marketCode/tenantId/brandId/storeId via URL, localStorage, or NEXT_PUBLIC_STOREFRONT_* env vars.',
+  );
+}
+
+export function resolveStorefrontScope(scope?: StorefrontScope): StorefrontScope {
+  return scope ?? buildDefaultScope();
+}
+
+function tryResolveStorefrontScope(scope?: StorefrontScope): StorefrontScope | null {
+  try {
+    return resolveStorefrontScope(scope);
+  } catch {
+    return null;
+  }
+}
+
+export function buildStorefrontScopeHeaders(scope: StorefrontScope) {
+  return {
+    'x-tenant-id': scope.tenantId,
+    'x-brand-id': scope.brandId,
+    'x-store-id': scope.storeId,
+    'x-market-code': scope.marketCode,
+  };
+}
+
+function createStorefrontTransactionsClient(scope?: StorefrontScope) {
+  const resolvedScope = resolveStorefrontScope(scope);
   return new ApiClient({
     baseUrl: getDefaultApiBaseUrl(),
-    tenantId: scope.tenantId,
-    brandId: scope.brandId,
-    storeId: scope.storeId,
-    marketCode: scope.marketCode,
+    tenantId: resolvedScope.tenantId,
+    brandId: resolvedScope.brandId,
+    storeId: resolvedScope.storeId,
+    marketCode: resolvedScope.marketCode,
   });
 }
 
@@ -149,9 +245,9 @@ export function mapCheckoutMethodToH5Method(method: CheckoutPaymentMethod): H5Pa
     case 'alipay':
       return 'alipay';
     case 'cash':
-      return 'bankcard';
+      return 'cash';
     case 'member_card':
-      return 'points';
+      return 'member_card';
     default:
       return 'wechat';
   }
@@ -170,10 +266,10 @@ export function mapChannelToH5Method(channel?: string): H5PaymentMethod {
     case 'MEMBER_CARD':
     case 'member-card':
     case 'member_card':
-      return 'points';
+      return 'member_card';
     case 'CASH':
     case 'cash':
-      return 'bankcard';
+      return 'cash';
     default:
       return 'wechat';
   }
@@ -252,6 +348,8 @@ export function mapAggregateToPaymentView(
   const paymentRecord = aggregate.payment;
   const expireAt = status === 'pending' ? resolveExpireAt(paymentRecord?.expiresAt, createdAt) : undefined;
 
+  const resolvedScope = tryResolveStorefrontScope();
+
   return {
     orderId: aggregate.order.orderId,
     orderCode: aggregate.order.orderNo ?? aggregate.order.orderId,
@@ -265,7 +363,7 @@ export function mapAggregateToPaymentView(
     expireAt,
     paidAt: aggregate.payment?.completedAt ?? aggregate.order.paidAt,
     createdAt,
-    storeId: DEFAULT_STOREFRONT_SCOPE.storeId,
+    storeId: resolvedScope?.storeId ?? DEFAULT_STOREFRONT_SCOPE.storeId,
     description: aggregate.order.items?.map((item) => item.title ?? item.skuId).join(' / ') || '门店订单',
   };
 }
@@ -313,38 +411,33 @@ export function getCashierClient() {
  */
 export async function lookupStorefrontMember(
   query: string,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ): Promise<BusinessCashierMemberLookupResult | null> {
+  const resolvedScope = resolveStorefrontScope(scope);
   const client = createBusinessClient(getDefaultApiBaseUrl());
   try {
     return await client.cashier.lookupMember(query, {
       cache: 'no-store',
-      headers: {
-        'x-tenant-id': scope.tenantId,
-        'x-brand-id': scope.brandId,
-        'x-store-id': scope.storeId,
-        'x-market-code': scope.marketCode,
-      },
+      headers: buildStorefrontScopeHeaders(resolvedScope),
     });
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error instanceof Error ? error : new Error('会员查询失败，请稍后重试');
   }
 }
 
 export async function listStorefrontCashierProducts(
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ): Promise<StorefrontCashierProduct[]> {
+  const resolvedScope = resolveStorefrontScope(scope);
   const client = createBusinessClient(getDefaultApiBaseUrl());
   const payload = await client.cashier.listProducts(
     { limit: 100 },
     {
       cache: 'no-store',
-      headers: {
-        'x-tenant-id': scope.tenantId,
-        'x-brand-id': scope.brandId,
-        'x-store-id': scope.storeId,
-        'x-market-code': scope.marketCode,
-      },
+      headers: buildStorefrontScopeHeaders(resolvedScope),
     },
   );
 
@@ -357,7 +450,7 @@ export async function listStorefrontCashierProducts(
 export async function ensureStorefrontMemberRegistered(
   memberId: string,
   nickname: string,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ) {
   const client = createStorefrontTransactionsClient(scope);
 
@@ -377,7 +470,7 @@ export async function startStorefrontCheckout(
   paymentMethod: CheckoutPaymentMethod,
   amount?: number,
   couponCode?: string,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ) {
   return createStorefrontTransactionsClient(scope).postData<StorefrontTransactionAggregate>(
     '/transactions/checkout',
@@ -395,15 +488,48 @@ export async function startStorefrontCheckout(
 
 export async function getStorefrontOrderTransaction(
   orderId: string,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ) {
+  const resolvedScope = resolveStorefrontScope(scope);
   return createBusinessClient(getDefaultApiBaseUrl()).orders.get(orderId, {
     cache: 'no-store',
-    headers: {
-      'x-tenant-id': scope.tenantId,
-      'x-brand-id': scope.brandId,
-      'x-store-id': scope.storeId,
-      'x-market-code': scope.marketCode,
-    },
+    headers: buildStorefrontScopeHeaders(resolvedScope),
   });
+}
+
+/**
+ * 前台收银优惠券预验证 — 调用 POST /coupons/redeem
+ * 返回 null 表示验证服务不可用
+ */
+export async function validateStorefrontCoupon(
+  couponCode: string,
+  memberId: string,
+  scope?: StorefrontScope,
+): Promise<{ valid: boolean; message: string; discount?: number } | null> {
+  const resolvedScope = resolveStorefrontScope(scope);
+  const client = createStorefrontTransactionsClient(resolvedScope);
+  try {
+    const result = await client.postData<{
+      valid: boolean;
+      label?: string;
+      discount: number;
+      code?: string;
+    }>('/coupons/redeem', {
+      code: couponCode,
+      memberId,
+      amount: 0, // 预验证模式
+    }, {
+      headers: buildStorefrontScopeHeaders(resolvedScope),
+    });
+    return {
+      valid: result.valid !== false,
+      message: result.label ?? `优惠已应用 -¥${result.discount}`,
+      discount: result.discount,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { valid: false, message: error.message };
+    }
+    return { valid: false, message: '优惠券验证失败' };
+  }
 }

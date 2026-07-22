@@ -55,6 +55,16 @@ export class PaymentService {
     this.baseUrl = baseUrl ?? getDefaultApiBaseUrl();
   }
 
+  private buildNetworkErrorResult(message: string) {
+    return {
+      success: false,
+      error: {
+        code: 'PAYMENT_NETWORK_ERROR',
+        message,
+      },
+    };
+  }
+
   private getAuthHeaders(): HeadersInit {
     if (typeof window === 'undefined') {
       return {};
@@ -87,18 +97,7 @@ export class PaymentService {
       return { success: true, data: data.data };
     } catch (error) {
       console.error('Create payment error:', error);
-      // 返回Mock数据
-      const mockOrder: PaymentOrder = {
-        orderId: request.orderId,
-        orderCode: `PAY${Date.now()}`,
-        amount: request.amount,
-        status: 'pending',
-        qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=mock-pay-${request.orderId}`,
-        expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-        createdAt: new Date().toISOString(),
-        description: '神机营 SaaS 订单支付',
-      };
-      return { success: true, data: mockOrder };
+      return this.buildNetworkErrorResult('创建支付失败，请检查网络或支付网关配置');
     }
   }
 
@@ -125,16 +124,7 @@ export class PaymentService {
       return { success: true, data: data.data };
     } catch (error) {
       console.error('Get payment status error:', error);
-      return {
-        success: true,
-        data: {
-          orderId,
-          orderCode: `PAY${Date.now()}`,
-          amount: 0,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        },
-      };
+      return this.buildNetworkErrorResult('支付状态查询失败，请稍后重试');
     }
   }
 
@@ -161,11 +151,7 @@ export class PaymentService {
       return { success: true, data: data.data.qrCode };
     } catch (error) {
       console.error('Get QR code error:', error);
-      // 返回模拟二维码
-      return {
-        success: true,
-        data: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=mock-pay-${orderId}-${method}`,
-      };
+      return this.buildNetworkErrorResult('支付二维码获取失败，请检查支付网关配置');
     }
   }
 

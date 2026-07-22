@@ -1346,22 +1346,17 @@ function createBusinessClient(baseUrl) {
     // ── Refunds (GET/POST /api/v1/transactions/refunds) ──
     refunds: {
       /** 退款列表 */
-      list: (query, init) => api.getData("/transactions/refunds", {
-        ...init,
-        headers: {
-          "content-type": "application/json",
-          ...init?.headers ?? {}
-        },
-        ...query ? { body: JSON.stringify(query) } : {}
-      }),
+      list: (query, init) => (() => {
+        const searchParams = new URLSearchParams();
+        if (query?.memberId) searchParams.set("memberId", query.memberId);
+        if (query?.orderId) searchParams.set("orderId", query.orderId);
+        if (query?.status) searchParams.set("status", query.status);
+        if (typeof query?.limit === "number") searchParams.set("limit", String(query.limit));
+        const suffix = searchParams.toString();
+        return api.getData(`/transactions/refunds${suffix ? `?${suffix}` : ""}`, init);
+      })(),
       /** 待处理退款 */
-      listPending: (query, init) => api.getData("/transactions/refunds/pending", {
-        ...init,
-        headers: {
-          "content-type": "application/json",
-          ...init?.headers ?? {}
-        }
-      }),
+      listPending: (query, init) => api.getData(`/transactions/refunds/pending${typeof query?.limit === "number" ? `?limit=${query.limit}` : ""}`, init),
       /** 退款 dashboard */
       getDashboard: (init) => api.getData("/transactions/refunds/dashboard", init),
       /** 退款详情 */

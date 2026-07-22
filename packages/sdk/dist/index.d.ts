@@ -593,6 +593,9 @@ interface BusinessTransactionPayment {
     channel?: string;
     amount: number;
     status: string;
+    qrCodeUrl?: string;
+    paymentUrl?: string;
+    expiresAt?: string;
     transactionNo?: string;
     createdAt: string;
     updatedAt: string;

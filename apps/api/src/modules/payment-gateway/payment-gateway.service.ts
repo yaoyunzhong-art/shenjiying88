@@ -87,12 +87,26 @@ export class PaymentGatewayService {
   private transactions = new Map<string, TransactionRecord>()
   private walletBalances = new Map<string, Map<PaymentCurrency, number>>() // userId -> currency -> amount
   private refundRecords = new Map<string, TransactionRecord>() // refundId -> original transaction
+  private readonly simulateMode =
+    process.env.ENABLE_MOCK_PAYMENT_GATEWAY === 'true' || process.env.NODE_ENV !== 'production'
 
   // 序号生成器
   private seq = 0
   private nextId(prefix: string): string {
     this.seq = (this.seq + 1) % 100000
     return `${prefix}-${Date.now()}-${this.seq.toString().padStart(5, '0')}`
+  }
+
+  private ensureSimulationEnabled(provider: PaymentProvider): void {
+    if (this.simulateMode) {
+      return
+    }
+
+    throw new PaymentError(
+      'PAYMENT_GATEWAY_NOT_CONFIGURED',
+      `Payment gateway simulation is disabled in production (provider=${provider})`,
+      false
+    )
   }
 
   // ── 基础方法 ─────────────────────────────────────────────
@@ -289,6 +303,7 @@ export class PaymentGatewayService {
     webhookUrl?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled('paypal')
     // 模拟 PayPal Create Order
     const providerResponse = {
       orderId: `PP-${orderId}-${Date.now()}`,
@@ -407,6 +422,7 @@ export class PaymentGatewayService {
     webhookUrl?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled('stripe')
     // 模拟 Stripe PaymentIntent 创建
     const clientSecret = `pi_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`
     const paymentIntentId = `pi_${Date.now()}`
@@ -494,6 +510,7 @@ export class PaymentGatewayService {
     webhookUrl?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled('paypay')
     // PayPay 只支持 JPY
     if (currency !== 'JPY') {
       throw new PaymentError('CURRENCY_NOT_SUPPORTED', 'PayPay only supports JPY')
@@ -573,6 +590,7 @@ export class PaymentGatewayService {
     tenantId?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled(provider)
     // 微信支付的 provider 是 wechat_pay，但域名是 wechat.com
     const domain = provider === 'wechat_pay' ? 'wechat.com' : 'alipay.com'
     const providerResponse = {

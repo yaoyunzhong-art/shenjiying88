@@ -296,23 +296,10 @@ export class CashierService {
     if (normalized === 'CARD' || normalized === 'CREDIT_CARD' || normalized === 'BANKCARD') {
       return 'CARD'
     }
-    if (
-      normalized === 'CASH' ||
-      normalized === 'BANK_TRANSFER' ||
-      normalized === 'INTERNAL_TRANSFER' ||
-      normalized === 'CORPORATE_ACCOUNT'
-    ) {
+    if (normalized === 'CASH') {
       return 'CASH'
     }
     return undefined
-  }
-
-  private buildFallbackPrepay(orderId: string, method: PaymentMethod) {
-    return {
-      prepayId: `mock_prepay_${orderId}`,
-      codeUrl: method === 'WECHAT' || method === 'ALIPAY' ? `mock://qr/${orderId}` : undefined,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-    }
   }
 
   /**
@@ -336,14 +323,14 @@ export class CashierService {
     const now = new Date().toISOString()
     const paymentMethod = this.normalizePaymentMethod(input.channel)
     const prepay =
-      paymentMethod
-        ? await (this.paymentGateway?.createPrepay(
+      paymentMethod && this.paymentGateway
+        ? await this.paymentGateway.createPrepay(
             {
               id: order.orderId,
               totalCents: Math.round((input.amount ?? order.totalAmount) * 100)
             },
             paymentMethod
-          ) ?? this.buildFallbackPrepay(order.orderId, paymentMethod))
+          )
         : undefined
     const payment: CashierPayment = {
       paymentId: `payment-${randomUUID()}`,

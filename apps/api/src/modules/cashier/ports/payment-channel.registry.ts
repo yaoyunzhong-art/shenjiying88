@@ -124,17 +124,20 @@ export class PaymentChannelRegistry {
   /**
    * 记录失败 (熔断)
    */
-  recordFailure(tenantId: string, method: PaymentMethod, reason: string): void {
-    const list = this.channelStore.get(this.keyOf(tenantId, method)) ?? []
-    for (const channel of list) {
-      const cfg = this.configByKey.get(this.instanceKey(channel))
+  recordFailure(tenantId: string, method: PaymentMethod, reason: string, channel?: PaymentChannelPort): void {
+    const targets = channel
+      ? [channel]
+      : this.channelStore.get(this.keyOf(tenantId, method)) ?? []
+
+    for (const current of targets) {
+      const cfg = this.configByKey.get(this.instanceKey(current))
       if (!cfg) continue
       cfg.consecutiveFailures += 1
       cfg.lastFailureAt = new Date().toISOString()
       if (cfg.consecutiveFailures >= this.threshold) {
         cfg.isHealthy = false
         this.logger.warn(
-          `Channel ${channel.config.channel} OPENED (tenant=${tenantId}, instance=${this.instanceKey(channel)}, consecutive=${cfg.consecutiveFailures}, reason=${reason})`
+          `Channel ${current.config.channel} OPENED (tenant=${tenantId}, instance=${this.instanceKey(current)}, consecutive=${cfg.consecutiveFailures}, reason=${reason})`
         )
       }
     }
@@ -143,10 +146,13 @@ export class PaymentChannelRegistry {
   /**
    * 记录成功 (熔断恢复)
    */
-  recordSuccess(tenantId: string, method: PaymentMethod): void {
-    const list = this.channelStore.get(this.keyOf(tenantId, method)) ?? []
-    for (const channel of list) {
-      const cfg = this.configByKey.get(this.instanceKey(channel))
+  recordSuccess(tenantId: string, method: PaymentMethod, channel?: PaymentChannelPort): void {
+    const targets = channel
+      ? [channel]
+      : this.channelStore.get(this.keyOf(tenantId, method)) ?? []
+
+    for (const current of targets) {
+      const cfg = this.configByKey.get(this.instanceKey(current))
       if (!cfg) continue
       cfg.consecutiveFailures = 0
       cfg.isHealthy = true
@@ -179,12 +185,12 @@ export class PaymentChannelRegistry {
       tried.add(current)
       try {
         const result = await input.op(current)
-        this.recordSuccess(input.tenantId, input.method)
+        this.recordSuccess(input.tenantId, input.method, current)
         return result
       } catch (error) {
         const reason = (error as Error).message
         attempts.push({ channel: current.config.channel, reason })
-        this.recordFailure(input.tenantId, input.method, reason)
+        this.recordFailure(input.tenantId, input.method, reason, current)
         current = this.selectNext(input.tenantId, input.method, current)
       }
     }

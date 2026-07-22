@@ -12,6 +12,10 @@ import {
   type StorefrontTransactionAggregate,
 } from '../../../../lib/storefront-transactions';
 
+const BASE_CREATED_AT = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+const BASE_UPDATED_AT = BASE_CREATED_AT;
+const DERIVED_EXPIRE_AT = new Date(new Date(BASE_CREATED_AT).getTime() + 15 * 60 * 1000).toISOString();
+
 function createAggregate(overrides: Partial<StorefrontTransactionAggregate> = {}): StorefrontTransactionAggregate {
   return {
     order: {
@@ -21,8 +25,8 @@ function createAggregate(overrides: Partial<StorefrontTransactionAggregate> = {}
       currency: 'CNY',
       totalAmount: 99.9,
       status: 'PENDING_PAYMENT',
-      createdAt: '2026-07-20T10:00:00.000Z',
-      updatedAt: '2026-07-20T10:00:00.000Z',
+      createdAt: BASE_CREATED_AT,
+      updatedAt: BASE_UPDATED_AT,
       items: [
         { skuId: 'sku-001', title: '基础护肤套装', quantity: 1, price: 99.9 },
       ],
@@ -33,8 +37,8 @@ function createAggregate(overrides: Partial<StorefrontTransactionAggregate> = {}
       channel: 'WECHAT_PAY',
       amount: 99.9,
       status: 'PENDING',
-      createdAt: '2026-07-20T10:00:00.000Z',
-      updatedAt: '2026-07-20T10:00:00.000Z',
+      createdAt: BASE_CREATED_AT,
+      updatedAt: BASE_UPDATED_AT,
     },
     memberNickname: '张三',
     refunds: [],
@@ -59,22 +63,22 @@ describe('PaymentPage helper - 金额与渠道映射', () => {
   it('checkout 支付方式映射到 h5 支付方式', () => {
     assert.equal(mapCheckoutMethodToH5Method('wechat'), 'wechat');
     assert.equal(mapCheckoutMethodToH5Method('alipay'), 'alipay');
-    assert.equal(mapCheckoutMethodToH5Method('cash'), 'bankcard');
-    assert.equal(mapCheckoutMethodToH5Method('member_card'), 'points');
+    assert.equal(mapCheckoutMethodToH5Method('cash'), 'cash');
+    assert.equal(mapCheckoutMethodToH5Method('member_card'), 'member_card');
   });
 
   it('真实渠道可回映射到 h5 展示方式', () => {
     assert.equal(mapChannelToH5Method('WECHAT_PAY'), 'wechat');
     assert.equal(mapChannelToH5Method('ALIPAY'), 'alipay');
-    assert.equal(mapChannelToH5Method('MEMBER_CARD'), 'points');
-    assert.equal(mapChannelToH5Method('CASH'), 'bankcard');
+    assert.equal(mapChannelToH5Method('MEMBER_CARD'), 'member_card');
+    assert.equal(mapChannelToH5Method('CASH'), 'cash');
   });
 });
 
 describe('PaymentPage helper - 状态识别', () => {
   it('待支付订单识别为 pending', () => {
     const aggregate = createAggregate();
-    assert.equal(getRuntimePaymentStatus(aggregate), 'pending');
+    assert.equal(getRuntimePaymentStatus(aggregate, Date.now()), 'pending');
   });
 
   it('支付成功订单识别为 paid', () => {
@@ -134,7 +138,7 @@ describe('PaymentPage helper - 视图模型', () => {
     assert.equal(view.status, 'pending');
     assert.equal(view.method, 'alipay');
     assert.equal(view.qrCode, undefined);
-    assert.ok(view.expireAt);
+    assert.equal(view.expireAt, DERIVED_EXPIRE_AT);
     assert.equal(view.storeId, DEFAULT_STOREFRONT_SCOPE.storeId);
   });
 
@@ -142,12 +146,12 @@ describe('PaymentPage helper - 视图模型', () => {
     const aggregate = createAggregate({
       payment: {
         ...createAggregate().payment!,
-        expiresAt: '2026-07-20T10:12:34.000Z',
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       },
     });
 
     const view = mapAggregateToPaymentView(aggregate, 'wechat');
-    assert.equal(view.expireAt, '2026-07-20T10:12:34.000Z');
+    assert.equal(view.expireAt, aggregate.payment!.expiresAt);
   });
 
   it('后端提供非法 expiresAt 时应回退到 createdAt 推导有效期', () => {
@@ -159,7 +163,7 @@ describe('PaymentPage helper - 视图模型', () => {
     });
 
     const view = mapAggregateToPaymentView(aggregate, 'wechat');
-    assert.equal(view.expireAt, '2026-07-20T10:15:00.000Z');
+    assert.equal(view.expireAt, DERIVED_EXPIRE_AT);
   });
 
   it('后端已提供二维码字段时应直接透传展示', () => {
@@ -217,7 +221,7 @@ describe('PaymentPage helper - 视图模型', () => {
 
   it('支付方式标签兼容真实渠道和 h5 方式', () => {
     assert.equal(getPaymentMethodLabel('WECHAT_PAY'), '微信支付');
-    assert.equal(getPaymentMethodLabel('points'), '积分支付');
+    assert.equal(getPaymentMethodLabel('member_card'), '会员卡支付');
     assert.equal(getPaymentMethodLabel(undefined), '待确认');
   });
 });

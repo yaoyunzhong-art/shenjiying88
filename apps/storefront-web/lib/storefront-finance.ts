@@ -4,7 +4,12 @@ import {
   type BusinessFinanceLedgerRecord,
   type BusinessRevenueSummary,
 } from '@m5/sdk';
-import { DEFAULT_STOREFRONT_SCOPE, formatCurrency, type StorefrontScope } from './storefront-transactions';
+import {
+  buildStorefrontScopeHeaders,
+  formatCurrency,
+  resolveStorefrontScope,
+  type StorefrontScope,
+} from './storefront-transactions';
 
 export type FinanceRange = 'all' | 'week' | 'month';
 export type FinanceRecordType = 'income' | 'expense' | 'refund' | 'adjustment';
@@ -52,23 +57,19 @@ export interface StorefrontFinanceDashboard {
   overviewCards: FinanceOverviewCard[];
 }
 
-function createStorefrontFinanceClient(scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE) {
+function createStorefrontFinanceClient(scope?: StorefrontScope) {
+  const resolvedScope = resolveStorefrontScope(scope);
   const client = createBusinessClient(getDefaultApiBaseUrl());
   const init: RequestInit = {
     cache: 'no-store',
-    headers: {
-      'x-tenant-id': scope.tenantId,
-      'x-brand-id': scope.brandId,
-      'x-store-id': scope.storeId,
-      'x-market-code': scope.marketCode,
-    },
+    headers: buildStorefrontScopeHeaders(resolvedScope),
   };
 
   return {
     getRevenueSummary: (query: { startDate: string; endDate: string }) =>
       client.finance.getRevenueSummary(
         {
-          storeId: scope.storeId,
+          storeId: resolvedScope.storeId,
           startDate: query.startDate,
           endDate: query.endDate,
         },
@@ -77,7 +78,7 @@ function createStorefrontFinanceClient(scope: StorefrontScope = DEFAULT_STOREFRO
     listLedgers: (query: { recordedAfter: string; recordedBefore: string; limit: number }) =>
       client.finance.listLedgers(
         {
-          storeId: scope.storeId,
+          storeId: resolvedScope.storeId,
           recordedAfter: query.recordedAfter,
           recordedBefore: query.recordedBefore,
           limit: query.limit,
@@ -278,7 +279,7 @@ export function buildFinanceOverviewCards(
 
 export async function getStorefrontRevenueSummary(
   range: FinanceRange,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ) {
   const client = createStorefrontFinanceClient(scope);
   const { startDate, endDate } = buildFinanceQueryWindow(range);
@@ -287,7 +288,7 @@ export async function getStorefrontRevenueSummary(
 
 export async function listStorefrontLedgerRecords(
   range: FinanceRange,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ) {
   const client = createStorefrontFinanceClient(scope);
   const { startDate, endDate } = buildFinanceQueryWindow(range);
@@ -300,7 +301,7 @@ export async function listStorefrontLedgerRecords(
 
 export async function loadStorefrontFinanceDashboard(
   range: FinanceRange,
-  scope: StorefrontScope = DEFAULT_STOREFRONT_SCOPE,
+  scope?: StorefrontScope,
 ): Promise<StorefrontFinanceDashboard> {
   const [summary, ledgers] = await Promise.all([
     getStorefrontRevenueSummary(range, scope),

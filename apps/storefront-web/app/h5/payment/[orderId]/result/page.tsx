@@ -21,6 +21,7 @@ import {
   getPaymentResultActions,
   getStorefrontOrderTransaction,
   mapAggregateToResultStatus,
+  resolveStorefrontScope,
   type StorefrontTransactionAggregate,
 } from '../../../../../lib/storefront-transactions';
 
@@ -33,7 +34,8 @@ export default function PaymentResultPage() {
   const handleBack = useH5Back();
 
   React.useEffect(() => {
-    wrapLoad(getStorefrontOrderTransaction(orderId)).then((result) => {
+    const scope = resolveStorefrontScope();
+    wrapLoad(getStorefrontOrderTransaction(orderId, scope)).then((result) => {
       setAggregate(result);
       setReady(true);
     });
@@ -55,7 +57,7 @@ export default function PaymentResultPage() {
         empty={!aggregate && !loading && !error}
         error={error}
         onRetry={() =>
-          wrapLoad(getStorefrontOrderTransaction(orderId)).then((result) => {
+          wrapLoad(getStorefrontOrderTransaction(orderId, resolveStorefrontScope())).then((result) => {
             setAggregate(result);
             setReady(true);
           })

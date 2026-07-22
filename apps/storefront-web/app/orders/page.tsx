@@ -31,6 +31,7 @@ import {
   type StorefrontOrderListViewItem,
   type StorefrontOrderPaymentFilter,
 } from '../../lib/storefront-orders';
+import { resolveStorefrontScope } from '../../lib/storefront-transactions';
 
 const STATUS_FILTERS: Array<{ key: StorefrontOrderListStatusFilter; label: string }> = [
   { key: 'ALL', label: '全部' },
@@ -130,7 +131,8 @@ export default function OrdersListPage() {
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
 
   const loadOrdersPage = useCallback(() => {
-    return wrapLoad(loadStorefrontOrders()).then((data) => {
+    const scope = resolveStorefrontScope();
+    return wrapLoad(loadStorefrontOrders(scope)).then((data) => {
       const nextData = data ?? [];
       setPageData(nextData);
       syncData(nextData);

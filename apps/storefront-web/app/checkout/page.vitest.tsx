@@ -5,6 +5,11 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 // ---- Mocks (top-level) ----
 
 const mockPush = vi.fn();
+const mockBuildMemberId = vi.fn();
+const mockEnsureRegistered = vi.fn();
+const mockStartCheckout = vi.fn();
+const mockValidateCoupon = vi.fn();
+const mockListProducts = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -62,38 +67,62 @@ vi.mock('@m5/ui', () => ({
   Divider: ({ style }: any) => <hr data-testid="m5-divider" style={style} />,
 }));
 
-const mockBuildMemberId = vi.fn();
-const mockEnsureRegistered = vi.fn();
-const mockStartCheckout = vi.fn();
-
 vi.mock('../../lib/storefront-transactions', () => ({
   buildStorefrontMemberId: (...args: any[]) => mockBuildMemberId(...args),
   ensureStorefrontMemberRegistered: (...args: any[]) => mockEnsureRegistered(...args),
   startStorefrontCheckout: (...args: any[]) => mockStartCheckout(...args),
+  validateStorefrontCoupon: (...args: any[]) => mockValidateCoupon(...args),
+  listStorefrontCashierProducts: (...args: any[]) => mockListProducts(...args),
 }));
 
 // ---- Test Subject ----
 
 import CheckoutPage from './page';
 
+// 模拟 sessionStorage 草稿 — 供购物车加载
+const DRAFT_CART = [
+  { id: 'p1', name: '基础护肤套装', price: 299, quantity: 1, category: '护肤品' },
+  { id: 'p2', name: '深层清洁面膜（5片装）', price: 89, quantity: 2, category: '面膜' },
+  { id: 'p3', name: '防晒霜 SPF50+', price: 139, quantity: 1, category: '防晒' },
+  { id: 'p4', name: '舒缓保湿喷雾', price: 59, quantity: 1, category: '护肤品' },
+];
+
+function seedDraftCart() {
+  window.sessionStorage.setItem('storefront.checkout.draft', JSON.stringify(DRAFT_CART));
+}
+
 function fillForm() {
-  const nameInput = screen.getByTestId('input-name');
-  fireEvent.change(nameInput, { target: { value: '张三' } });
-  const phoneInput = screen.getByTestId('input-phone');
-  fireEvent.change(phoneInput, { target: { value: '13800138000' } });
-  const addressInput = screen.getByTestId('input-address');
-  fireEvent.change(addressInput, { target: { value: '深圳市南山区科技园' } });
-  const cityInput = screen.getByTestId('input-city');
-  fireEvent.change(cityInput, { target: { value: '深圳市' } });
+  fireEvent.change(screen.getByTestId('input-name'), { target: { value: '张三' } });
+  fireEvent.change(screen.getByTestId('input-phone'), { target: { value: '13800138000' } });
+  fireEvent.change(screen.getByTestId('input-address'), { target: { value: '深圳市南山区科技园' } });
+  fireEvent.change(screen.getByTestId('input-city'), { target: { value: '深圳市' } });
 }
 
 describe('CheckoutPage — 结算页', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
     mockBuildMemberId.mockReturnValue('member_id_123');
     mockEnsureRegistered.mockResolvedValue(undefined);
     mockStartCheckout.mockResolvedValue({
       order: { orderId: 'ord-001', orderNo: 'ORD202607220001' },
+    });
+    mockListProducts.mockResolvedValue([]);
+    mockValidateCoupon.mockImplementation((code: string) => {
+      const validCodes: Record<string, { discount: number; label: string }> = {
+        'WELCOME10': { discount: 10, label: '新客首单立减' },
+        'SAVE20': { discount: 20, label: '满200减20' },
+        'VIP50': { discount: 50, label: 'VIP专属满减' },
+      };
+      const match = validCodes[code.toUpperCase()];
+      if (match) {
+        return Promise.resolve({
+          valid: true,
+          message: `${match.label} -¥${match.discount}`,
+          discount: match.discount,
+        });
+      }
+      return Promise.resolve({ valid: false, message: '无效的优惠券码' });
     });
   });
 
@@ -153,14 +182,6 @@ describe('CheckoutPage — 结算页', () => {
     expect(screen.getByTestId('btn-ghost')).toBeInTheDocument();
   });
 
-  test('renders cart items', () => {
-    render(<CheckoutPage />);
-    expect(screen.getByText('基础护肤套装')).toBeInTheDocument();
-    expect(screen.getByText('深层清洁面膜（5片装）')).toBeInTheDocument();
-    expect(screen.getByText('防晒霜 SPF50+')).toBeInTheDocument();
-    expect(screen.getByText('舒缓保湿喷雾')).toBeInTheDocument();
-  });
-
   test('renders coupon section', () => {
     render(<CheckoutPage />);
     expect(screen.getByTestId('coupon-section')).toBeInTheDocument();
@@ -184,59 +205,10 @@ describe('CheckoutPage — 结算页', () => {
     expect(screen.getByTestId('payment-member_card')).toBeInTheDocument();
   });
 
-  // ====== 状态测试 ======
-
-  test('shows correct initial subtotal', () => {
-    render(<CheckoutPage />);
-    // p1: 299*1 + p2: 89*2 + p3: 139*1 + p4: 59*1 = 299 + 178 + 139 + 59 = 675
-    expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥675.00');
-  });
-
-  test('shows empty cart hint when no active items', () => {
-    // p5 has quantity 0, should be filtered out
-    render(<CheckoutPage />);
-    // Items with quantity > 0 are shown
-    expect(screen.queryByText('卸妆油（200ml）')).not.toBeInTheDocument();
-  });
-
-  test('shows shipping fee changes with delivery method', () => {
-    render(<CheckoutPage />);
-    // Default: no delivery selected, subtotal >= 199 so free shipping
-    expect(screen.getByTestId('shipping-fee')).toHaveTextContent('免运费');
-  });
-
-  // ====== 交互测试 ======
-
-  test('quantity adjuster increases then decreases quantity', async () => {
-    render(<CheckoutPage />);
-    // Increase p2 from 2 to 3 using quantity adjuster
-    fireEvent.click(screen.getByTestId('qty-plus-p2'));
-    await waitFor(() => {
-      expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥764.00');
-    });
-    // Decrease p2 from 3 back to 2
-    fireEvent.click(screen.getByTestId('qty-minus-p2'));
-    await waitFor(() => {
-      expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥675.00');
-    });
-  });
-
-  test('quantity adjuster plus button increases quantity', () => {
-    render(<CheckoutPage />);
-    const plusBtn = screen.getByTestId('qty-plus-p2');
-    fireEvent.click(plusBtn);
-    // p2 quantity was 2, now 3 → subtotal goes up
-    // 299 + 89*3 + 139 + 59 = 764
-    expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥764.00');
-  });
-
-  test('selects payment method via card click', async () => {
+  test('selects payment method via card click', () => {
     render(<CheckoutPage />);
     fireEvent.click(screen.getByTestId('payment-wechat'));
-    await waitFor(() => {
-      // Payment method selected indicator
-      expect(screen.getByTestId('payment-wechat')).toBeInTheDocument();
-    });
+    expect(screen.getByTestId('payment-wechat')).toBeInTheDocument();
   });
 
   test('terms checkbox can be checked', () => {
@@ -248,41 +220,97 @@ describe('CheckoutPage — 结算页', () => {
     expect(input.checked).toBe(true);
   });
 
-  test('applies valid coupon WELCOME10', async () => {
+  test('shows express fee with express delivery', async () => {
     render(<CheckoutPage />);
-    const couponInput = screen.getByTestId('input-coupon');
-    fireEvent.change(couponInput, { target: { value: 'WELCOME10' } });
+    const deliverySelect = screen.getByTestId('select-delivery');
+    fireEvent.change(deliverySelect, { target: { value: 'express' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('shipping-fee')).toHaveTextContent('¥10.00');
+    });
+  });
+
+  test('shows free shipping for pickup', async () => {
+    render(<CheckoutPage />);
+    const deliverySelect = screen.getByTestId('select-delivery');
+    fireEvent.change(deliverySelect, { target: { value: 'pickup' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('shipping-fee')).toHaveTextContent('免运费（自提）');
+    });
+  });
+
+  // ====== 购物车从草稿加载 ======
+
+  test('renders cart items from sessionStorage draft', () => {
+    seedDraftCart();
+    render(<CheckoutPage />);
+    // 草稿包含 4 个商品
+    expect(screen.getByText('基础护肤套装')).toBeInTheDocument();
+    expect(screen.getByText('深层清洁面膜（5片装）')).toBeInTheDocument();
+    expect(screen.getByText('防晒霜 SPF50+')).toBeInTheDocument();
+    expect(screen.getByText('舒缓保湿喷雾')).toBeInTheDocument();
+  });
+
+  test('shows correct subtotal from draft', () => {
+    seedDraftCart();
+    render(<CheckoutPage />);
+    // 299*1 + 89*2 + 139*1 + 59*1 = 675
+    expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥675.00');
+  });
+
+  test('shows empty cart hint when no draft', () => {
+    render(<CheckoutPage />);
+    expect(screen.getByTestId('cart-empty')).toBeInTheDocument();
+  });
+
+  // ====== 交互测试 ======
+
+  test('quantity adjuster increases then decreases quantity', async () => {
+    seedDraftCart();
+    render(<CheckoutPage />);
+    // Increase p1 from 1 to 2: 299*2 + 89*2 + 139 + 59 = 974
+    fireEvent.click(screen.getByTestId('qty-plus-p1'));
+    await waitFor(() => {
+      expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥974.00');
+    });
+    // Decrease p1 from 2 back to 1: 675
+    fireEvent.click(screen.getByTestId('qty-minus-p1'));
+    await waitFor(() => {
+      expect(screen.getByTestId('subtotal-amount')).toHaveTextContent('¥675.00');
+    });
+  });
+
+  test('applies valid coupon via API', async () => {
+    seedDraftCart();
+    render(<CheckoutPage />);
+    fireEvent.change(screen.getByTestId('input-phone'), { target: { value: '13800138000' } });
+
+    fireEvent.change(screen.getByTestId('input-coupon'), { target: { value: 'WELCOME10' } });
     fireEvent.click(screen.getByTestId('btn-outline'));
     await waitFor(() => {
+      expect(mockValidateCoupon).toHaveBeenCalledWith('WELCOME10', expect.any(String));
       expect(screen.getByTestId('coupon-status')).toHaveTextContent(/新客首单立减/);
       expect(screen.getByTestId('coupon-discount')).toHaveTextContent('-¥10.00');
     });
   });
 
-  test('shows error for invalid coupon', async () => {
+  test('shows error for invalid coupon via API', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
-    const couponInput = screen.getByTestId('input-coupon');
-    fireEvent.change(couponInput, { target: { value: 'INVALID' } });
+    fireEvent.change(screen.getByTestId('input-phone'), { target: { value: '13800138000' } });
+
+    fireEvent.change(screen.getByTestId('input-coupon'), { target: { value: 'INVALID' } });
     fireEvent.click(screen.getByTestId('btn-outline'));
     await waitFor(() => {
       expect(screen.getByTestId('coupon-status')).toHaveTextContent(/无效的优惠券码/);
     });
   });
 
-  test('applies valid coupon SAVE20', async () => {
-    render(<CheckoutPage />);
-    const couponInput = screen.getByTestId('input-coupon');
-    fireEvent.change(couponInput, { target: { value: 'SAVE20' } });
-    fireEvent.click(screen.getByTestId('btn-outline'));
-    await waitFor(() => {
-      expect(screen.getByTestId('coupon-status')).toHaveTextContent(/满200减20/);
-    });
-  });
-
   test('removes applied coupon', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
-    const couponInput = screen.getByTestId('input-coupon');
-    fireEvent.change(couponInput, { target: { value: 'WELCOME10' } });
+    fireEvent.change(screen.getByTestId('input-phone'), { target: { value: '13800138000' } });
+
+    fireEvent.change(screen.getByTestId('input-coupon'), { target: { value: 'WELCOME10' } });
     fireEvent.click(screen.getByTestId('btn-outline'));
     await waitFor(() => {
       const ghostBtns = screen.getAllByTestId('btn-ghost');
@@ -295,25 +323,22 @@ describe('CheckoutPage — 结算页', () => {
     });
   });
 
-  test('submit button shows validation errors when form is empty', () => {
+  test('submit button shows validation errors when form is empty', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
     fireEvent.click(screen.getByTestId('btn-submit'));
-    // Should show validation errors
-    waitFor(() => {
+    await waitFor(() => {
       const errors = screen.getAllByTestId('field-error');
       expect(errors.length).toBeGreaterThan(0);
     });
   });
 
   test('submits successfully with valid data', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
     fillForm();
-    // Select delivery
-    const deliverySelect = screen.getByTestId('select-delivery');
-    fireEvent.change(deliverySelect, { target: { value: 'standard' } });
-    // Select payment
+    fireEvent.change(screen.getByTestId('select-delivery'), { target: { value: 'standard' } });
     fireEvent.click(screen.getByTestId('payment-wechat'));
-    // Accept terms
     const checkbox = screen.getByTestId('checkbox-terms').querySelector('input')!;
     fireEvent.click(checkbox);
 
@@ -328,6 +353,7 @@ describe('CheckoutPage — 结算页', () => {
   });
 
   test('shows success message after submit', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
     fillForm();
     fireEvent.change(screen.getByTestId('select-delivery'), { target: { value: 'standard' } });
@@ -344,6 +370,7 @@ describe('CheckoutPage — 结算页', () => {
 
   test('shows error on checkout failure', async () => {
     mockStartCheckout.mockRejectedValue(new Error('支付网关超时'));
+    seedDraftCart();
     render(<CheckoutPage />);
     fillForm();
     fireEvent.change(screen.getByTestId('select-delivery'), { target: { value: 'standard' } });
@@ -356,60 +383,36 @@ describe('CheckoutPage — 结算页', () => {
     });
   });
 
-  test('reset button clears all form fields', () => {
+  test('reset button clears all form fields', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
     fillForm();
     fireEvent.click(screen.getByTestId('btn-ghost'));
-    // After reset, all inputs should be empty
-    expect(screen.getByTestId('input-name')).toHaveValue('');
-    expect(screen.getByTestId('input-phone')).toHaveValue('');
-    expect(screen.getByTestId('input-address')).toHaveValue('');
-    expect(screen.getByTestId('input-city')).toHaveValue('');
-  });
-
-  test('cannot submit when cart is empty', () => {
-    // With default items, cart is not empty
-    render(<CheckoutPage />);
-    // Remove all items by reducing quantity to 0
-    const minusBtns = [
-      screen.getByTestId('qty-minus-p1'),
-      screen.getByTestId('qty-minus-p2'),
-      screen.getByTestId('qty-minus-p3'),
-      screen.getByTestId('qty-minus-p4'),
-    ];
-    minusBtns.forEach(btn => fireEvent.click(btn));
-    waitFor(() => {
-      // Submit button should be disabled
-      expect(screen.getByTestId('btn-submit')).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.getByTestId('input-name')).toHaveValue('');
+      expect(screen.getByTestId('input-phone')).toHaveValue('');
+      expect(screen.getByTestId('input-address')).toHaveValue('');
+      expect(screen.getByTestId('input-city')).toHaveValue('');
     });
   });
 
-  test('email validation catches invalid email', () => {
+  test('cannot submit when cart is empty', () => {
     render(<CheckoutPage />);
-    const emailInput = screen.getByTestId('input-email');
-    fireEvent.change(emailInput, { target: { value: 'not-an-email' } });
-    // Submit to trigger validation
+    expect(screen.getByTestId('btn-submit')).toBeDisabled();
+  });
+
+  test('email validation catches invalid email', async () => {
+    seedDraftCart();
+    render(<CheckoutPage />);
+    fireEvent.change(screen.getByTestId('input-email'), { target: { value: 'not-an-email' } });
     fireEvent.click(screen.getByTestId('btn-submit'));
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('邮箱格式不正确')).toBeInTheDocument();
     });
   });
 
-  test('shows express fee with express delivery', () => {
-    render(<CheckoutPage />);
-    const deliverySelect = screen.getByTestId('select-delivery');
-    fireEvent.change(deliverySelect, { target: { value: 'express' } });
-    expect(screen.getByTestId('shipping-fee')).toHaveTextContent('¥10.00');
-  });
-
-  test('shows free shipping for pickup', () => {
-    render(<CheckoutPage />);
-    const deliverySelect = screen.getByTestId('select-delivery');
-    fireEvent.change(deliverySelect, { target: { value: 'pickup' } });
-    expect(screen.getByTestId('shipping-fee')).toHaveTextContent('免运费（自提）');
-  });
-
   test('shows continue shopping after success', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
     fillForm();
     fireEvent.change(screen.getByTestId('select-delivery'), { target: { value: 'standard' } });
@@ -423,6 +426,7 @@ describe('CheckoutPage — 结算页', () => {
   });
 
   test('can continue shopping after success', async () => {
+    seedDraftCart();
     render(<CheckoutPage />);
     fillForm();
     fireEvent.change(screen.getByTestId('select-delivery'), { target: { value: 'standard' } });
@@ -434,7 +438,6 @@ describe('CheckoutPage — 结算页', () => {
       const continueBtn = screen.getByText('继续购物');
       fireEvent.click(continueBtn);
     });
-    // After clicking continue shopping (which triggers reset), form fields should be empty
     await waitFor(() => {
       expect(screen.getByTestId('input-name')).toHaveValue('');
     });

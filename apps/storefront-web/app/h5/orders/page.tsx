@@ -32,6 +32,7 @@ import {
   type StorefrontOrderListViewItem,
   type StorefrontOrderViewStatus,
 } from '../../../lib/storefront-orders';
+import { resolveStorefrontScope } from '../../../lib/storefront-transactions';
 
 function getStatusBadgeStyle(status: StorefrontOrderViewStatus): { color: string; bg: string } {
   switch (getStorefrontOrderStatusVariant(status)) {
@@ -62,7 +63,8 @@ export default function H5OrdersPage() {
     setLoading(true);
     setError(null);
     try {
-      const items = await loadStorefrontOrders();
+      const scope = resolveStorefrontScope();
+      const items = await loadStorefrontOrders(scope);
       setOrders(items);
     } catch (cause) {
       setOrders([]);

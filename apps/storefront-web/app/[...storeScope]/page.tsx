@@ -6,6 +6,7 @@ import { GovernanceLinkedSection } from '../components/governance-linked-overvie
 import { RuntimeGovernancePanel } from '../components/runtime-governance-panel';
 import { resolveStoreScope } from '../store-scope';
 import { StoreShowcaseClient } from '../components/store-showcase-client';
+import { StorefrontScopePersistor } from '../_components/StorefrontScopePersistor';
 
 // ============================================================
 // 门店官网聚合页 — Store Site Portal (Server Component)
@@ -269,6 +270,12 @@ export default async function StoreSitePage({
   }
 
   const { marketCode, tenantCode, brandCode, storeCode } = resolved;
+  const storefrontScope = {
+    marketCode,
+    tenantId: tenantCode,
+    brandId: brandCode,
+    storeId: storeCode,
+  };
 
   // ============================================================
   // H5 渲染路径
@@ -277,6 +284,7 @@ export default async function StoreSitePage({
     if (storeScope.length === 4) {
       return (
         <main style={{ maxWidth: 720, margin: '0 auto', padding: 20 }}>
+          <StorefrontScopePersistor scope={storefrontScope} />
           <SiteMetadataScript storeName="门店 H5 触达中台" marketCode={marketCode} />
           <StoreInfoHeader
             marketCode={marketCode}
@@ -356,6 +364,7 @@ export default async function StoreSitePage({
 
     return (
       <main style={{ maxWidth: 720, margin: '0 auto', padding: 20 }}>
+        <StorefrontScopePersistor scope={storefrontScope} />
         <SiteMetadataScript storeName={snapshot.portal?.storeName ?? '门店 H5'} marketCode={marketCode} />
         <StoreInfoHeader
           marketCode={marketCode}
@@ -464,6 +473,7 @@ export default async function StoreSitePage({
 
     return (
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
+        <StorefrontScopePersistor scope={storefrontScope} />
         <SiteMetadataScript storeName={portal.storeName} marketCode={marketCode} />
         <StoreInfoHeader
           marketCode={marketCode}
@@ -576,6 +586,7 @@ export default async function StoreSitePage({
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
+      <StorefrontScopePersistor scope={storefrontScope} />
       <SiteMetadataScript storeName={portal.storeName} marketCode={marketCode} />
       <StoreInfoHeader
         marketCode={marketCode}

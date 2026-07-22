@@ -1,5 +1,11 @@
-import { createBusinessClient, type BusinessOrderListItem } from '@m5/sdk';
-import { getPaymentMethodLabel, type StorefrontTransactionAggregate } from './storefront-transactions';
+import { createBusinessClient, getDefaultApiBaseUrl, type BusinessOrderListItem } from '@m5/sdk';
+import {
+  buildStorefrontScopeHeaders,
+  getPaymentMethodLabel,
+  resolveStorefrontScope,
+  type StorefrontScope,
+  type StorefrontTransactionAggregate,
+} from './storefront-transactions';
 
 export type StorefrontOrderListStatusFilter = 'ALL' | 'PENDING' | 'PAID' | 'REFUNDED';
 export type StorefrontOrderPaymentFilter = 'ALL' | 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
@@ -63,6 +69,12 @@ function normalizeListStatus(status?: string): StorefrontOrderViewStatus {
     return 'paid';
   }
   if (normalized === 'CLOSED' || normalized === 'CANCELLED' || normalized === 'CANCELED') {
+    return 'cancelled';
+  }
+  if (normalized === 'PENDING' || normalized === 'CREATED' || normalized === 'PENDING_PAYMENT') {
+    return 'pending_payment';
+  }
+  if (normalized === 'PAYMENT_FAILED' || normalized === 'FAILED') {
     return 'cancelled';
   }
   return 'pending_payment';
@@ -169,11 +181,18 @@ export function matchesStorefrontOrderPaymentFilter(
   return order.paymentChannel === filter;
 }
 
-export async function loadStorefrontOrders() {
-  const payload = await createBusinessClient().orders.listPage({
-    page: 1,
-    pageSize: 100,
-  }, { cache: 'no-store' });
+export async function loadStorefrontOrders(scope?: StorefrontScope) {
+  const resolvedScope = resolveStorefrontScope(scope);
+  const payload = await createBusinessClient(getDefaultApiBaseUrl()).orders.listPage(
+    {
+      page: 1,
+      pageSize: 100,
+    },
+    {
+      cache: 'no-store',
+      headers: buildStorefrontScopeHeaders(resolvedScope),
+    },
+  );
 
   return payload.items.map(mapBusinessOrderToListView);
 }

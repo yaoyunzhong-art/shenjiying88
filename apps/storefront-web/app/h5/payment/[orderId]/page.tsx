@@ -6,7 +6,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
+
+import { QRCodeDisplay } from '@m5/ui';
 import {
   MobileLayout,
   H5Card,
@@ -19,6 +20,7 @@ import {
   getStorefrontOrderTransaction,
   mapAggregateToPaymentView,
   mapChannelToH5Method,
+  resolveStorefrontScope,
   type H5PaymentMethod,
   type PaymentViewModel,
   type StorefrontTransactionAggregate,
@@ -27,8 +29,8 @@ import {
 const PAYMENT_METHODS: { method: H5PaymentMethod; name: string; icon: string }[] = [
   { method: 'wechat', name: '微信支付', icon: '💚' },
   { method: 'alipay', name: '支付宝', icon: '💙' },
-  { method: 'bankcard', name: '银行卡', icon: '💳' },
-  { method: 'points', name: '积分支付', icon: '⭐' },
+  { method: 'cash', name: '现金支付', icon: '💵' },
+  { method: 'member_card', name: '会员卡支付', icon: '🎫' },
 ];
 
 export default function PaymentPage() {
@@ -41,6 +43,7 @@ export default function PaymentPage() {
   const [selectedMethod, setSelectedMethod] = useState<H5PaymentMethod>('wechat');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pollingWarning, setPollingWarning] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
@@ -52,7 +55,8 @@ export default function PaymentPage() {
         setLoading(true);
       }
       try {
-        const nextAggregate = await getStorefrontOrderTransaction(orderId);
+        const scope = resolveStorefrontScope();
+        const nextAggregate = await getStorefrontOrderTransaction(orderId, scope);
         if (cancelled) return;
         setAggregate(nextAggregate);
         setSelectedMethod(mapChannelToH5Method(nextAggregate.payment?.channel));
@@ -104,8 +108,10 @@ export default function PaymentPage() {
 
     setRefreshing(true);
     setError(null);
+    setPollingWarning(null);
     try {
-      const refreshedAggregate = await getStorefrontOrderTransaction(aggregate.order.orderId);
+      const scope = resolveStorefrontScope();
+      const refreshedAggregate = await getStorefrontOrderTransaction(aggregate.order.orderId, scope);
       setAggregate(refreshedAggregate);
       setSelectedMethod(mapChannelToH5Method(refreshedAggregate.payment?.channel));
     } catch (nextError) {
@@ -121,14 +127,16 @@ export default function PaymentPage() {
     }
 
     const timer = window.setInterval(() => {
-      void getStorefrontOrderTransaction(aggregate.order.orderId)
+      const scope = resolveStorefrontScope();
+      void getStorefrontOrderTransaction(aggregate.order.orderId, scope)
         .then((nextAggregate) => {
           setAggregate(nextAggregate);
           setSelectedMethod(mapChannelToH5Method(nextAggregate.payment?.channel));
           setError(null);
+          setPollingWarning(null);
         })
         .catch(() => {
-          // Keep the current state and let manual refresh expose the error.
+          setPollingWarning('自动刷新支付状态失败，请手动刷新状态');
         });
     }, 5000);
 
@@ -232,24 +240,13 @@ export default function PaymentPage() {
           <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 12 }}>
             请使用{getPaymentMethodLabel(selectedMethod)}扫码支付
           </div>
-          <div
-            style={{
-              display: 'inline-block',
-              padding: 16,
-              background: '#fff',
-              borderRadius: 12,
-              marginBottom: 12,
-            }}
-          >
-            <Image
-              src={payment.qrCode}
-              alt="支付二维码"
-              width={180}
-              height={180}
-              unoptimized
-            />
-          </div>
-          <div style={{ fontSize: 12, color: '#64748b' }}>
+          <QRCodeDisplay
+            value={payment.qrCode}
+            type="payment"
+            label={`${getPaymentMethodLabel(selectedMethod)}扫码支付`}
+            size={180}
+          />
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>
             打开{getPaymentMethodLabel(selectedMethod)}扫一扫完成支付
           </div>
         </H5Card>
@@ -288,49 +285,51 @@ export default function PaymentPage() {
         </H5Card>
       )}
 
-      {/* 支付方式 */}
+      {/* 当前支付方式 */}
       <H5Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 12 }}>
-          支付方式
+          当前支付方式
         </div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {PAYMENT_METHODS.map(({ method, name, icon }) => (
+        {(() => {
+          const currentMethod =
+            PAYMENT_METHODS.find(({ method }) => method === selectedMethod) ?? PAYMENT_METHODS[0];
+          return (
             <div
-              key={method}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 padding: 14,
                 borderRadius: 10,
-                background:
-                  selectedMethod === method
-                    ? 'rgba(102, 126, 234, 0.15)'
-                    : 'rgba(15, 23, 42, 0.4)',
-                border: `1px solid ${selectedMethod === method ? 'rgba(102, 126, 234, 0.4)' : 'rgba(148, 163, 184, 0.15)'}`,
-                cursor: 'default',
+                background: 'rgba(102, 126, 234, 0.15)',
+                border: '1px solid rgba(102, 126, 234, 0.4)',
               }}
             >
-              <span style={{ fontSize: 24 }}>{icon}</span>
-              <span style={{ flex: 1, fontSize: 14, color: '#f8fafc' }}>{name}</span>
-              {selectedMethod === method && (
-                <span style={{ color: '#667eea', fontSize: 18 }}>✓</span>
-              )}
+              <span style={{ fontSize: 24 }}>{currentMethod.icon}</span>
+              <span style={{ flex: 1, fontSize: 14, color: '#f8fafc' }}>{currentMethod.name}</span>
+              <span style={{ color: '#667eea', fontSize: 18 }}>✓</span>
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </H5Card>
 
       {/* 支付按钮 */}
       {payment.status === 'pending' && (
-        <div style={{ display: 'flex', gap: 12 }}>
-          <H5Button variant="secondary" fullWidth onClick={() => router.push('/h5/orders')}>
-            查看订单
-          </H5Button>
-          <H5Button variant="primary" fullWidth loading={refreshing} onClick={() => void handleRefreshStatus()}>
-            刷新支付状态
-          </H5Button>
-        </div>
+        <>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <H5Button variant="secondary" fullWidth onClick={() => router.push('/h5/orders')}>
+              查看订单
+            </H5Button>
+            <H5Button variant="primary" fullWidth loading={refreshing} onClick={() => void handleRefreshStatus()}>
+              刷新支付状态
+            </H5Button>
+          </div>
+          {pollingWarning && (
+            <div style={{ marginTop: 10, fontSize: 12, color: '#fbbf24', textAlign: 'center' }}>
+              {pollingWarning}
+            </div>
+          )}
+        </>
       )}
 
       {/* 底部说明 */}

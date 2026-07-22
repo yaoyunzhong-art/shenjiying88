@@ -2,6 +2,9 @@
  * checkout/page.test.ts — 购物车/结算页 L1 源码冒烟测试
  * 覆盖: 购物车计算 · 配送 · 支付 · 表单 · 优惠 · 边界 · 防御
  * 角色: 👔店长 · 🛒前台 · 👥HR · 🔧安监 · 🎮导玩员 · 🎯运行专员 · 🤝团建 · 📢营销
+ *
+ * 注意: 数据源已改为后端加载，defaultCart 和 VALID_COUPONS mock 已移除。
+ * 金额计算逻辑仍然保留前端展示用计算。
  */
 
 import assert from 'node:assert/strict';
@@ -47,28 +50,7 @@ interface PaymentOption {
   description: string;
 }
 
-// ── Mock 数据 ──
-
-const MOCK_CART: CartItem[] = [
-  { id: 'p1', name: '基础护肤套装', price: 299, quantity: 1, category: '护肤品' },
-  { id: 'p2', name: '深层清洁面膜（5片装）', price: 89, quantity: 2, category: '面膜' },
-  { id: 'p3', name: '防晒霜 SPF50+', price: 139, quantity: 1, category: '防晒' },
-  { id: 'p4', name: '舒缓保湿喷雾', price: 59, quantity: 1, category: '护肤品' },
-  { id: 'p5', name: '卸妆油（200ml）', price: 79, quantity: 0, category: '清洁' },
-];
-
-const DELIVERY_OPTIONS = [
-  { label: '标准配送（3-5天）', value: 'standard' },
-  { label: '加急配送（1-2天）', value: 'express', extra: '¥10.00' },
-  { label: '门店自提', value: 'pickup' },
-];
-
-const PAYMENT_OPTIONS: PaymentOption[] = [
-  { value: 'wechat', label: '微信支付', icon: '💳', description: '微信扫码支付' },
-  { value: 'alipay', label: '支付宝', icon: '🔵', description: '支付宝扫码支付' },
-  { value: 'cash', label: '现金', icon: '💵', description: '到店付款' },
-  { value: 'member_card', label: '会员卡', icon: '🎫', description: '余额/积分支付' },
-];
+// ── 计算公式（mirror page.tsx） ──
 
 const FREE_SHIPPING_THRESHOLD = 199;
 const EXPRESS_FEE = 10;
@@ -104,15 +86,6 @@ function validateCheckoutForm(data: Partial<CheckoutFormData>): string[] {
   return errors;
 }
 
-function applyCoupon(subtotal: number, code: string): number {
-  const COUPONS: Record<string, number> = { 'NEW10': 0.9, 'VIP20': 0.8, 'FREEBE5': 5 };
-  if (!code.trim()) return subtotal;
-  const discount = COUPONS[code.toUpperCase()];
-  if (discount === undefined) return subtotal;
-  if (discount < 1) return Math.round(subtotal * discount * 100) / 100;
-  return Math.max(0, subtotal - discount);
-}
-
 // ============================================================
 // 正例 (10+)
 // ============================================================
@@ -130,8 +103,14 @@ test('👔 店长: 源码包含关键导出', () => {
 });
 
 test('🛒 前台: 购物车小计计算正确', () => {
-  const subtotal = calcSubtotal(MOCK_CART);
-  // 299*1 + 89*2 + 139*1 + 59*1 + 79*0 = 675
+  const cart: CartItem[] = [
+    { id: 'p1', name: '商品A', price: 299, quantity: 1 },
+    { id: 'p2', name: '商品B', price: 89, quantity: 2 },
+    { id: 'p3', name: '商品C', price: 139, quantity: 1 },
+    { id: 'p4', name: '商品D', price: 59, quantity: 1 },
+  ];
+  const subtotal = calcSubtotal(cart);
+  // 299*1 + 89*2 + 139*1 + 59*1 = 675
   assert.equal(subtotal, 675, '小计应为 675');
 });
 
@@ -174,19 +153,6 @@ test('🛒 前台: 标准配送未满额收 5 元', () => {
   assert.equal(fee, 5);
 });
 
-test('📢 营销: 优惠券折扣价计算', () => {
-  const discounted = applyCoupon(200, 'NEW10');
-  assert.equal(discounted, 180, '9折应为 180');
-});
-
-test('📢 营销: VIP20 优惠券 8 折', () => {
-  assert.equal(applyCoupon(200, 'VIP20'), 160);
-});
-
-test('📢 营销: FREEBE5 直减 5 元', () => {
-  assert.equal(applyCoupon(200, 'FREEBE5'), 195);
-});
-
 test('👔 店长: 表单调证通过', () => {
   const valid: CheckoutFormData = {
     name: '张三', phone: '13800138000', email: 'a@b.com',
@@ -226,16 +192,6 @@ test('🔧 安监: 非自提且无地址应报错', () => {
   assert.ok(errors.some((e) => e.includes('地址')));
 });
 
-test('📢 营销: 不存在的优惠券码应返回原价', () => {
-  const result = applyCoupon(200, 'INVALID99');
-  assert.equal(result, 200, '无效优惠券原价');
-});
-
-test('📢 营销: 空优惠券码应返回原价', () => {
-  assert.equal(applyCoupon(200, ''), 200);
-  assert.equal(applyCoupon(200, '  '), 200);
-});
-
 test('🛒 前台: 购物车含负价商品', () => {
   const badCart = [{ id: 'x', name: '问题商品', price: -50, quantity: 1 }] as CartItem[];
   const sub = calcSubtotal(badCart);
@@ -267,22 +223,18 @@ test('🛒 前台: 加急配送未满额收 10 元', () => {
   assert.equal(fee, 10);
 });
 
-test('📢 营销: 优惠券打折后应向下舍入到分', () => {
-  const result = applyCoupon(199, 'NEW10');
-  assert.equal(result, 179.1, '199 * 0.9 = 179.1');
-});
-
-test('🔧 安监: 优惠券折扣后不应低于 0', () => {
-  const result = applyCoupon(3, 'FREEBE5');
-  assert.equal(result, 0, '不能为负数');
-});
-
-test('👔 店长: 表单调证所有字段均为空', () => {
+test('🔧 安监: 表单调证所有字段均为空', () => {
   const errors = validateCheckoutForm({} as Partial<CheckoutFormData>);
   assert.ok(errors.length >= 3, '至少有 3 个必填字段错误');
 });
 
 test('👥 HR: PAYMENT_OPTIONS 覆盖全部支付方式', () => {
+  const PAYMENT_OPTIONS: PaymentOption[] = [
+    { value: 'wechat', label: '微信支付', icon: '💳', description: '微信扫码支付' },
+    { value: 'alipay', label: '支付宝', icon: '🔵', description: '支付宝扫码支付' },
+    { value: 'cash', label: '现金', icon: '💵', description: '到店付款' },
+    { value: 'member_card', label: '会员卡', icon: '🎫', description: '余额/积分支付' },
+  ];
   assert.equal(PAYMENT_OPTIONS.length, 4);
   const values = PAYMENT_OPTIONS.map((p) => p.value);
   assert.ok(values.includes('wechat'));
@@ -292,9 +244,36 @@ test('👥 HR: PAYMENT_OPTIONS 覆盖全部支付方式', () => {
 });
 
 test('🎮 导玩员: 配送选项包含三种方式', () => {
+  const DELIVERY_OPTIONS = [
+    { label: '标准配送（3-5天）', value: 'standard' },
+    { label: '加急配送（1-2天）', value: 'express', extra: '¥10.00' },
+    { label: '门店自提', value: 'pickup' },
+  ];
   assert.equal(DELIVERY_OPTIONS.length, 3);
   const vals = DELIVERY_OPTIONS.map((d) => d.value);
   assert.ok(vals.includes('standard'));
   assert.ok(vals.includes('express'));
   assert.ok(vals.includes('pickup'));
+});
+
+// ── 新增: P0-02 后端化验证 ──
+
+test('📢 营销: 源码不再包含 defaultCart 本地 mock', () => {
+  assert.equal(SRC.includes('defaultCart'), false, 'defaultCart 应被移除');
+});
+
+test('📢 营销: 源码不再包含 VALID_COUPONS 本地 mock', () => {
+  assert.equal(SRC.includes('VALID_COUPONS'), false, 'VALID_COUPONS 应被移除');
+});
+
+test('🛒 前台: 源码引用 validateStorefrontCoupon 后端服务', () => {
+  assert.ok(SRC.includes('validateStorefrontCoupon'), '应引用后端优惠券验证');
+});
+
+test('🛒 前台: 组件从 sessionStorage 加载购物车草稿', () => {
+  assert.ok(SRC.includes('loadCheckoutDraft'), '应使用 loadCheckoutDraft 加载购物车');
+});
+
+test('🛒 前台: 组件使用 useEffect 加载数据', () => {
+  assert.ok(SRC.includes('useEffect'), '应使用 useEffect 加载数据');
 });

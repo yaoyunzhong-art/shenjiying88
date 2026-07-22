@@ -30,6 +30,15 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
   ) {}
 
   onApplicationBootstrap(): void {
+    const shouldBootstrapMockChannels =
+      process.env.ENABLE_MOCK_PAYMENT_CHANNELS === 'true' ||
+      process.env.NODE_ENV !== 'production'
+
+    if (!shouldBootstrapMockChannels) {
+      this.logger.log('Skip default mock channel bootstrap in production mode')
+      return
+    }
+
     if (!this.mockGateway || typeof this.mockGateway.createPrepay !== 'function') {
       this.logger.warn('Mock payment gateway unavailable, skip default mock channel bootstrap')
       return

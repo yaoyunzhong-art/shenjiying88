@@ -69,7 +69,10 @@ describe('orders — 边界', () => {
   it('应支持分页', () => {
     const src = readSource();
     assert.ok(src.includes('Pagination'), '缺少 Pagination');
-    assert.ok(src.includes('pagedData'), '缺少分页数据切片');
+    assert.ok(
+      src.includes('pageItems') || src.includes('.slice((pagination.page - 1)'),
+      '缺少分页数据切片'
+    );
   });
 
   it('应包含 EmptyState 空数据兜底', () => {

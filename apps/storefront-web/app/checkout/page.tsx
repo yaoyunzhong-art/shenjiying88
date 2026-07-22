@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PageShell,
@@ -19,6 +19,7 @@ import {
   buildStorefrontMemberId,
   ensureStorefrontMemberRegistered,
   startStorefrontCheckout,
+  validateStorefrontCoupon,
 } from '../../lib/storefront-transactions';
 
 // ==================== 类型定义 ====================
@@ -47,15 +48,9 @@ export interface CheckoutFormData {
 
 export type PaymentMethodValue = 'wechat' | 'alipay' | 'cash' | 'member_card';
 
-// ==================== 默认数据和常量 ====================
+// ==================== 常量 ====================
 
-const defaultCart: CartItem[] = [
-  { id: 'p1', name: '基础护肤套装', price: 299, quantity: 1, category: '护肤品' },
-  { id: 'p2', name: '深层清洁面膜（5片装）', price: 89, quantity: 2, category: '面膜' },
-  { id: 'p3', name: '防晒霜 SPF50+', price: 139, quantity: 1, category: '防晒' },
-  { id: 'p4', name: '舒缓保湿喷雾', price: 59, quantity: 1, category: '护肤品' },
-  { id: 'p5', name: '卸妆油（200ml）', price: 79, quantity: 0, category: '清洁' },
-];
+const CHECKOUT_DRAFT_STORAGE_KEY = 'storefront.checkout.draft';
 
 const deliveryOptions = [
   { label: '标准配送（3-5天）', value: 'standard' },
@@ -80,13 +75,6 @@ const paymentOptions: PaymentOption[] = [
   { value: 'member_card', label: '会员卡', icon: '🎫', description: '余额/积分支付' },
 ];
 
-// 优惠券模拟
-const VALID_COUPONS: Record<string, { label: string; discount: number; minAmount: number }> = {
-  'WELCOME10': { label: '新客首单立减', discount: 10, minAmount: 0 },
-  'SAVE20': { label: '满200减20', discount: 20, minAmount: 200 },
-  'VIP50': { label: 'VIP专属满减', discount: 50, minAmount: 500 },
-};
-
 // ==================== 验证规则 ====================
 
 function validateForm(data: CheckoutFormData): Partial<Record<keyof CheckoutFormData, string>> {
@@ -103,6 +91,65 @@ function validateForm(data: CheckoutFormData): Partial<Record<keyof CheckoutForm
   if (!data.agreeTerms) errors.agreeTerms = '请先同意服务条款';
 
   return errors;
+}
+
+function normalizeDraftItem(input: unknown): CartItem | null {
+  if (!input || typeof input !== 'object') {
+    return null;
+  }
+
+  const item = input as Partial<CartItem>;
+  if (typeof item.id !== 'string' || typeof item.name !== 'string') {
+    return null;
+  }
+  if (typeof item.price !== 'number' || !Number.isFinite(item.price) || item.price < 0) {
+    return null;
+  }
+  if (typeof item.quantity !== 'number' || !Number.isFinite(item.quantity) || item.quantity <= 0) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    quantity: Math.min(99, Math.max(1, Math.floor(item.quantity))),
+    image: typeof item.image === 'string' ? item.image : undefined,
+    category: typeof item.category === 'string' ? item.category : undefined,
+  };
+}
+
+function loadCheckoutDraft(): CartItem[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.map(normalizeDraftItem).filter((item): item is CartItem => item !== null);
+  } catch {
+    return [];
+  }
+}
+
+function persistCheckoutDraft(items: CartItem[]) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (items.length === 0) {
+    window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    return;
+  }
+
+  window.sessionStorage.setItem(CHECKOUT_DRAFT_STORAGE_KEY, JSON.stringify(items));
 }
 
 // ==================== 子组件 ====================
@@ -289,10 +336,16 @@ function CartItemRow({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  // ---- 商品列表（可编辑） ----
-  const [cartItems, setCartItems] = useState<CartItem[]>(
-    defaultCart.filter((i) => i.quantity > 0),
-  );
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // 购物车优先使用真实草稿，不再默认塞演示商品。
+  useEffect(() => {
+    setCartItems(loadCheckoutDraft());
+  }, []);
+
+  useEffect(() => {
+    persistCheckoutDraft(cartItems);
+  }, [cartItems]);
 
   // ---- 表单数据 ----
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -312,6 +365,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message?: string } | null>(null);
   const [couponStatus, setCouponStatus] = useState<{ valid: boolean; message: string; discount?: number } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   // ---- 计算金额 ----
   const activeItems = useMemo(() => cartItems.filter((i) => i.quantity > 0), [cartItems]);
@@ -386,30 +440,43 @@ export default function CheckoutPage() {
     });
   }, []);
 
-  const handleApplyCoupon = useCallback(() => {
-    const code = formData.couponCode.trim().toUpperCase();
+  const handleApplyCoupon = useCallback(async () => {
+    const code = formData.couponCode.trim();
     if (!code) {
       setCouponStatus({ valid: false, message: '请输入优惠券码' });
       return;
     }
-    const coupon = VALID_COUPONS[code];
-    if (!coupon) {
-      setCouponStatus({ valid: false, message: '无效的优惠券码' });
+    if (!formData.phone.trim()) {
+      setCouponStatus({ valid: false, message: '请先填写手机号' });
       return;
     }
-    if (subtotal < coupon.minAmount) {
-      setCouponStatus({
-        valid: false,
-        message: `需满 ¥${coupon.minAmount} 才能使用此券`,
-      });
-      return;
+
+    setCouponLoading(true);
+    setCouponStatus(null);
+
+    try {
+      const memberId = buildStorefrontMemberId(formData.phone);
+      const result = await validateStorefrontCoupon(code, memberId);
+
+      if (!result) {
+        setCouponStatus({ valid: false, message: '优惠券服务暂不可用' });
+      } else {
+        setCouponStatus({
+          ...result,
+          discount: typeof result.discount === 'number' && Number.isFinite(result.discount)
+            ? result.discount
+            : undefined,
+          message: result.discount
+            ? result.message
+            : `${result.message}，最终优惠以下单结果为准`,
+        });
+      }
+    } catch {
+      setCouponStatus({ valid: false, message: '优惠券验证失败' });
+    } finally {
+      setCouponLoading(false);
     }
-    setCouponStatus({
-      valid: true,
-      message: `${coupon.label} -¥${coupon.discount}`,
-      discount: coupon.discount,
-    });
-  }, [formData.couponCode, subtotal]);
+  }, [formData.couponCode, formData.phone]);
 
   const handleRemoveCoupon = useCallback(() => {
     setCouponStatus(null);
@@ -451,6 +518,9 @@ export default function CheckoutPage() {
         success: true,
         message: `订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建，正在跳转支付页...`,
       });
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      }
       router.push(`/h5/payment/${aggregate.order.orderId}`);
     } catch (err) {
       setSubmitResult({
@@ -475,7 +545,7 @@ export default function CheckoutPage() {
       remark: '',
       couponCode: '',
     });
-    setCartItems(defaultCart.filter((i) => i.quantity > 0));
+    setCartItems([]);
     setErrors({});
     setSubmitResult(null);
     setCouponStatus(null);
@@ -682,17 +752,21 @@ export default function CheckoutPage() {
           </div>
 
           {!canCheckout && (
-            <p
-              data-testid="empty-cart-hint"
-              style={{
-                fontSize: 12,
-                color: '#fbbf24',
-                margin: '8px 0 0',
-                textAlign: 'center',
-              }}
-            >
-              购物车为空，请先添加商品
-            </p>
+            <div style={{ marginTop: 8, textAlign: 'center' }}>
+              <p
+                data-testid="empty-cart-hint"
+                style={{
+                  fontSize: 12,
+                  color: '#fbbf24',
+                  margin: '0 0 8px',
+                }}
+              >
+                当前未发现真实结算草稿，请先从收银页选择商品后再进入结算
+              </p>
+              <Button variant="outline" size="sm" onClick={() => router.push('/cashier')}>
+                去收银页选商品
+              </Button>
+            </div>
           )}
 
           {submitResult?.success && (
@@ -738,7 +812,7 @@ export default function CheckoutPage() {
                   fontSize: 13,
                 }}
               >
-                购物车为空
+                当前没有真实商品，请从收银页带入结算草稿
               </div>
             ) : (
               activeItems.map((item) => (
@@ -779,10 +853,10 @@ export default function CheckoutPage() {
                   onClick={handleApplyCoupon}
                   variant="outline"
                   size="sm"
-                  disabled={!formData.couponCode.trim()}
+                  disabled={!formData.couponCode.trim() || couponLoading}
                   style={{ whiteSpace: 'nowrap' }}
                 >
-                  使用
+                  {couponLoading ? '验证中...' : '使用'}
                 </Button>
               )}
             </div>

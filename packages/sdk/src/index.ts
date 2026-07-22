@@ -2254,39 +2254,34 @@ export function createBusinessClient(baseUrl?: string) {
         status?: string;
         limit?: number;
       }, init?: RequestInit) =>
-        api.getData<Array<{
-          refundId: string;
-          tenantId: string;
-          orderId: string;
-          paymentId: string;
-          memberId: string;
-          refundAmount: number;
-          reason: string;
-          operator?: string;
-          status: string;
-          requestedAt: string;
-          completedAt?: string;
-          reviewedAt?: string;
-          reviewedBy?: string;
-          reviewNote?: string;
-        }>>('/transactions/refunds', {
-          ...init,
-          headers: {
-            'content-type': 'application/json',
-            ...(init?.headers ?? {}),
-          },
-          ...(query ? { body: JSON.stringify(query) } : {}),
-        }),
+        (() => {
+          const searchParams = new URLSearchParams();
+          if (query?.memberId) searchParams.set('memberId', query.memberId);
+          if (query?.orderId) searchParams.set('orderId', query.orderId);
+          if (query?.status) searchParams.set('status', query.status);
+          if (typeof query?.limit === 'number') searchParams.set('limit', String(query.limit));
+          const suffix = searchParams.toString();
+          return api.getData<Array<{
+            refundId: string;
+            tenantId: string;
+            orderId: string;
+            paymentId: string;
+            memberId: string;
+            refundAmount: number;
+            reason: string;
+            operator?: string;
+            status: string;
+            requestedAt: string;
+            completedAt?: string;
+            reviewedAt?: string;
+            reviewedBy?: string;
+            reviewNote?: string;
+          }>>(`/transactions/refunds${suffix ? `?${suffix}` : ''}`, init);
+        })(),
 
       /** 待处理退款 */
       listPending: (query?: { limit?: number }, init?: RequestInit) =>
-        api.getData('/transactions/refunds/pending', {
-          ...init,
-          headers: {
-            'content-type': 'application/json',
-            ...(init?.headers ?? {}),
-          },
-        }),
+        api.getData(`/transactions/refunds/pending${typeof query?.limit === 'number' ? `?limit=${query.limit}` : ''}`, init),
 
       /** 退款 dashboard */
       getDashboard: (init?: RequestInit) =>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { StatusBadge } from '@m5/ui';
 import { useTriState } from '../../_components/useTriState';
 import { TriStateRenderer } from '../../_components/TriStateRenderer';
-import { getStorefrontOrderTransaction } from '../../../lib/storefront-transactions';
+import { getStorefrontOrderTransaction, resolveStorefrontScope } from '../../../lib/storefront-transactions';
 import {
   formatStorefrontOrderCurrency,
   formatStorefrontOrderDateTime,
@@ -55,7 +55,8 @@ export default function OrderDetailPage() {
   const [pageReady, setPageReady] = useState(false);
 
   const loadDetail = useCallback(() => {
-    return wrapLoad(getStorefrontOrderTransaction(id)).then((aggregate) => {
+    const scope = resolveStorefrontScope();
+    return wrapLoad(getStorefrontOrderTransaction(id, scope)).then((aggregate) => {
       setOrder(aggregate ? mapAggregateToOrderDetailView(aggregate) : null);
       setPageReady(true);
     });

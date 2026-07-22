@@ -111,6 +111,10 @@ export class PaymentService {
     @Optional() private readonly billingWall?: BillingWall
   ) {}
 
+  private shouldAllowMockFallback(): boolean {
+    return process.env.ENABLE_MOCK_PAYMENT_GATEWAY === 'true' || process.env.NODE_ENV !== 'production'
+  }
+
   /**
    * 解析渠道执行点:
    *   - 优先走 registry (多通道 + 主备)
@@ -124,6 +128,12 @@ export class PaymentService {
     fallback: () => Promise<T>
   ): Promise<T> {
     if (!this.channelRegistry) {
+      if (!this.shouldAllowMockFallback()) {
+        throw new BadRequestException({
+          error: 'payment_channel_not_configured',
+          message: 'payment channel registry is required in production'
+        })
+      }
       return fallback()
     }
     try {
@@ -137,6 +147,12 @@ export class PaymentService {
         this.logger.debug(
           `No channel registered for tenant=${tenantId} method=${method}, fallback to direct gateway`
         )
+        if (!this.shouldAllowMockFallback()) {
+          throw new BadRequestException({
+            error: 'payment_channel_not_configured',
+            message: 'payment channel is not configured for current tenant'
+          })
+        }
         return fallback()
       }
       throw error

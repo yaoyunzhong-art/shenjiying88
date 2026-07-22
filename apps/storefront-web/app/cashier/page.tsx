@@ -63,6 +63,7 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string }[] =
 ];
 
 const DEFAULT_MEMBER_NAME = '门店散客';
+const CHECKOUT_DRAFT_STORAGE_KEY = 'storefront.checkout.draft';
 
 function fm(amount: number): string {
   return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
@@ -116,7 +117,6 @@ export default function CashierPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [messageText, setMessageText] = useState('');
-  const [paymentCodeUrl, setPaymentCodeUrl] = useState('');
 
   const loadProductCatalog = useCallback(async () => {
     setProductsLoading(true);
@@ -135,6 +135,30 @@ export default function CashierPage() {
   useEffect(() => {
     void loadProductCatalog();
   }, [loadProductCatalog]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (cart.length === 0) {
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      CHECKOUT_DRAFT_STORAGE_KEY,
+      JSON.stringify(
+        cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category,
+        })),
+      ),
+    );
+  }, [cart]);
 
   // ── 商品过滤 ──
   const filteredProducts = useMemo(() => {
@@ -248,11 +272,6 @@ export default function CashierPage() {
   // ── 支付选择 ──
   const handlePaymentSelect = useCallback((method: PaymentMethod) => {
     setPaymentMethod(method);
-    if (method === 'wechat') {
-      setPaymentCodeUrl('https://example.com/qr/wechat-pay-0001');
-    } else {
-      setPaymentCodeUrl('');
-    }
     const label = PAYMENT_OPTIONS.find((p) => p.value === method)?.label;
     setMessageText(`✅ 已选择：${label}`);
     setTimeout(() => setMessageText(''), 2000);
@@ -299,9 +318,11 @@ export default function CashierPage() {
       setMessageText(
         `✅ 订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建，正在跳转支付页`
       );
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      }
       setCart([]);
       setPaymentMethod(null);
-      setPaymentCodeUrl('');
       router.push(`/h5/payment/${aggregate.order.orderId}`);
     } catch (error) {
       setCheckoutStatus('error');
@@ -313,11 +334,13 @@ export default function CashierPage() {
   const resetOrder = useCallback(() => {
     setCart([]);
     setPaymentMethod(null);
-    setPaymentCodeUrl('');
     setCheckoutStatus('idle');
     setMessageText('');
     setMemberPhone('');
     setMember(null);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    }
   }, []);
 
   // ============================================================
@@ -919,43 +942,7 @@ export default function CashierPage() {
                 </button>
               ))}
             </div>
-            {paymentMethod === 'wechat' && paymentCodeUrl && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 16,
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.08)',
-                  textAlign: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    color: '#e2e8f0',
-                    fontSize: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  请使用微信扫码支付
-                </div>
-                <div
-                  style={{
-                    width: 140,
-                    height: 140,
-                    margin: '0 auto',
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    color: '#333',
-                  }}
-                >
-                  [二维码]
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* AC-35-10: 空结算防御 */}
