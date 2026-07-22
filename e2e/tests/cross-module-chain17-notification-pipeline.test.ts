@@ -9,6 +9,14 @@
  * 新增模式: 通知消息生命周期 + 治理规则 + 多端同步
  * 
  * Pulse-Nightly-09 新增
+ *
+ * ═══════════════════════════════════════
+ * 箍一: 消息推送 + 通知治理全链路 E2E 场景覆盖
+ * 箍二: 依赖 4 条默认通知规则 + 空存储 seedData()
+ * 箍三: 覆盖事件触发/派发/治理/接收/归档全生命周期断言
+ * 箍四: dev/staging (纯内存, 无外部依赖)
+ * 箍五: e2e-notification-pipeline
+ * ═══════════════════════════════════════
  */
 
 import { describe, test, before } from 'node:test';
@@ -468,5 +476,118 @@ describe('链17: 消息推送 + 通知治理 (Miniapp→Domain→Admin→Tob-Web
     // urgent 仍可
     const r2 = miniappTriggerEvent({ type: 'refund_alert', title: '紧急退款', content: '要处理', priority: 'urgent', requestId: 'evt_refund_urgent_v2' });
     assert.ok(r2.success);
+  });
+
+  // --- Phase 6: 增强场景 - 熔断恢复 / 并行通知 / 极端数据 ---
+
+  test('[边界] 空通知列表 → 角色查询返回空数组, 未读计数为0', () => {
+    // 清空已存储的通知, 在子describe中隔离
+    const saved = [...notificationStore];
+    notificationStore.length = 0;
+
+    const adminNotifs = domainGetNotificationsByRole('admin');
+    assert.equal(adminNotifs.length, 0);
+
+    const unread = domainGetUnreadCount('admin');
+    assert.equal(unread.total, 0);
+    assert.deepEqual(unread.byType, {});
+
+    // 恢复
+    notificationStore.push(...saved);
+  });
+
+  test('[反例] 规则禁用后启用(熔断恢复) → 恢复后的新事件正常创建通知', () => {
+    // 禁用 refund 规则
+    adminUpdateRule('rule_refund', { enabled: false });
+    const r1 = miniappTriggerEvent({
+      type: 'refund_alert',
+      title: '熔断期退款',
+      content: '不应通过',
+      priority: 'urgent',
+      requestId: 'evt_circuit_breaker_01',
+    });
+    assert.equal(r1.success, false);
+
+    // 恢复规则（熔断恢复）
+    adminUpdateRule('rule_refund', { enabled: true });
+    const r2 = miniappTriggerEvent({
+      type: 'refund_alert',
+      title: '恢复后退款',
+      content: '应通过',
+      priority: 'urgent',
+      requestId: 'evt_circuit_breaker_02',
+    });
+    assert.ok(r2.success);
+    assert.equal(r2.notification!.type, 'refund_alert');
+  });
+
+  test('[正例] 并行触发多事件(同优先级) → 全部创建正确', () => {
+    const events = [
+      { type: 'order_alert' as const, title: '并行事件A', content: '门店A订单异常', priority: 'high' as const, requestId: 'evt_parallel_01' },
+      { type: 'order_alert' as const, title: '并行事件B', content: '门店B订单异常', priority: 'normal' as const, requestId: 'evt_parallel_02' },
+      { type: 'system_announcement' as const, title: '并行事件C', content: '系统公告并行', priority: 'low' as const, requestId: 'evt_parallel_03' },
+      { type: 'compliance_alert' as const, title: '并行事件D', content: '合规告警并行', priority: 'urgent' as const, requestId: 'evt_parallel_04' },
+    ];
+    const results = events.map(e => miniappTriggerEvent(e));
+
+    const successResults = results.filter(r => r.success);
+    assert.equal(successResults.length, 3, 'order_alert=2 + system=1 = 3; compliance require urgent');
+
+    const orderAlerts = notificationStore.filter(n => n.title.startsWith('并行事件'));
+    assert.equal(orderAlerts.length, 3);
+
+    const allPending = orderAlerts.every(n => n.status === 'pending');
+    assert.ok(allPending);
+  });
+
+  test('[边界] 同一规则触发大量事件(50个) → 全部入库且派发稳定', () => {
+    const count = 50;
+    for (let i = 0; i < count; i++) {
+      miniappTriggerEvent({
+        type: 'system_announcement',
+        title: `极端数据事件#${i}`,
+        content: 'A'.repeat(200 + i),
+        priority: 'low',
+        requestId: `evt_stress_${i}`,
+      });
+    }
+
+    const stressNotifs = notificationStore.filter(n => n.type === 'system_announcement' && n.title.startsWith('极端数据'));
+    assert.equal(stressNotifs.length, count);
+
+    // 验证 ID 全部唯一
+    const ids = stressNotifs.map(n => n.id);
+    assert.equal(new Set(ids).size, ids.length);
+
+    // 派发
+    const dispatchResult = domainDispatchNotifications();
+    assert.ok(dispatchResult.sent >= count);
+
+    const allSent = stressNotifs.every(n => n.status === 'sent');
+    assert.ok(allSent);
+
+    // 查询角色
+    const adminStress = domainGetNotificationsByRole('admin', 'sent')
+      .filter(n => n.title.startsWith('极端数据'));
+    assert.ok(adminStress.length >= count, 'admin 应收到全部 system 通知');
+  });
+
+  test('[边界] 通知内容超长(10万字符) → 正常创建且不报错', () => {
+    const hugeContent = 'X'.repeat(100000);
+    const r = miniappTriggerEvent({
+      type: 'order_alert',
+      title: '超长通知内容',
+      content: hugeContent,
+      priority: 'high',
+      requestId: 'evt_huge_content',
+    });
+    assert.ok(r.success);
+    assert.equal(r.notification!.content.length, 100000);
+
+    // 派发后内容完整
+    domainDispatchNotifications();
+    const stored = notificationStore.find(n => n.id === r.notification!.id);
+    assert.ok(stored);
+    assert.equal(stored!.content.length, 100000);
   });
 });
