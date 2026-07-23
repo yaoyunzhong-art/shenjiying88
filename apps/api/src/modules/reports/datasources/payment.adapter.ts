@@ -19,6 +19,8 @@ export interface PaymentRow {
   createdAt: string
 }
 
+type PaymentScalar = PaymentRow[keyof PaymentRow]
+
 @Injectable()
 export class PaymentAdapter {
   private mockData: PaymentRow[] = []
@@ -44,7 +46,7 @@ export class PaymentAdapter {
   private matchFilters(row: PaymentRow, group: ReportFilterGroup): boolean {
     const results = group.conditions.map(c => {
       if ('conditions' in c) return this.matchFilters(row, c as ReportFilterGroup)
-      const v = (row as Record<string, unknown>)[c.field]
+      const v = this.getFieldValue(row, c.field)
       switch (c.op) {
         case '=': return v === c.value
         case '!=': return v !== c.value
@@ -59,5 +61,9 @@ export class PaymentAdapter {
       }
     })
     return group.op === 'AND' ? results.every(Boolean) : results.some(Boolean)
+  }
+
+  private getFieldValue(row: PaymentRow, field: string): PaymentScalar {
+    return (row as unknown as Record<string, PaymentScalar>)[field] ?? ''
   }
 }

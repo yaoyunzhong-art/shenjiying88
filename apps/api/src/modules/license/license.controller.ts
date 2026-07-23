@@ -34,7 +34,7 @@ import type { Request } from 'express'
 import { LicenseService } from './license.service'
 import { ActivationCodeService } from './services/activation-code.service'
 import { RequireLicense } from './license.guard'
-import { runWithTenant, type TenantContext } from '../../common/context/tenant-context'
+import { runWithTenant, type TenantContext, type TenantRole } from '../../common/context/tenant-context'
 import type { LicenseScope } from './license.entity'
 
 @UseGuards(TenantGuard)
@@ -182,7 +182,7 @@ export class LicenseController {
       count: codes.length,
       scope: body.scope,
       durationDays: body.durationDays,
-      generatedBy: user.id ?? user.userId,
+      generatedBy: (user.id ?? user.userId) as string,
       generatedAt: new Date().toISOString(),
     }
   }
@@ -208,14 +208,15 @@ export class LicenseController {
 
   private extractTenant(req: Request, override?: { storeId?: string }): TenantContext {
     const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
-    if (!user.tenantId) {
+    if (!(user as Record<string, unknown>).tenantId) {
       throw new Error('[controller] Missing tenantId in req.user')
     }
+    const u = user as Record<string, unknown>
     return {
-      tenantId: user.tenantId,
-      storeId: override?.storeId ?? user.storeId,
-      userId: user.id ?? user.userId,
-      role: user.role,
+      tenantId: u.tenantId as string,
+      storeId: (override?.storeId ?? u.storeId) as string | undefined,
+      userId: (u.id ?? u.userId) as string | undefined,
+      role: u.role as TenantRole,
     }
   }
 }

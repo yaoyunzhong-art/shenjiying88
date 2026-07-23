@@ -48,16 +48,17 @@ export class LicenseGuard implements CanActivate {
     if (!meta) return true // 没设置 @RequireLicense 装饰器,放行
 
     const req = context.switchToHttp().getRequest<Request>()
-    const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
-    if (!user.tenantId) {
+    const u = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
+    if (!(u as Record<string, unknown>).tenantId) {
       throw new Error('[LicenseGuard] Missing tenantId in req.user')
     }
 
+    const user = u as Record<string, unknown>
     const ctx = {
-      tenantId: user.tenantId,
-      storeId: user.storeId ?? req.query?.storeId ?? req.body?.storeId,
-      userId: user.id ?? user.userId,
-      role: user.role,
+      tenantId: user.tenantId as string,
+      storeId: (user.storeId ?? req.query?.storeId ?? req.body?.storeId) as string | undefined,
+      userId: (user.id ?? user.userId) as string | undefined,
+      role: user.role as import('../../common/context/tenant-context').TenantRole,
     }
 
     // 在 tenant context 内执行 license 检查
