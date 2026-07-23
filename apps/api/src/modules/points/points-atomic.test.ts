@@ -170,6 +170,45 @@ describe('PointsAtomicService', () => {
       expect(svc.getBalance('m3')).toBe(1100)
     })
   })
+
+  // ── BS-0264: 先更新DB再删缓存 ────────────────────────────────────────────
+
+  describe('BS-0264 先更新DB再删缓存', () => {
+    it('incrementPointsAtomic 后应清除缓存', async () => {
+      const result = await svc.incrementPointsAtomic('member-1', 100, 'test')
+      expect(result.success).toBe(true)
+      expect(svc.isCacheEvicted('member-1')).toBe(true)
+    })
+
+    it('transferPointsAtomic 后应清除双方缓存', async () => {
+      await svc.incrementPointsAtomic('member-a', 500, 'funding')
+      const result = await svc.transferPointsAtomic('member-a', 'member-b', 200)
+      expect(result.success).toBe(true)
+      expect(svc.isCacheEvicted('member-a')).toBe(true)
+      expect(svc.isCacheEvicted('member-b')).toBe(true)
+    })
+
+    it('deductForPurchaseAtomic 后应清除缓存', async () => {
+      await svc.incrementPointsAtomic('member-1', 500, 'funding')
+      const result = await svc.deductForPurchaseAtomic('member-1', 100, 'order-1')
+      expect(result.success).toBe(true)
+      expect(svc.isCacheEvicted('member-1')).toBe(true)
+    })
+
+    it('batchAwardAtomic 后应清除所有目标缓存', async () => {
+      const ids = ['member-batch-a', 'member-batch-b', 'member-batch-c']
+      const result = await svc.batchAwardAtomic(ids, 50, 'batch test')
+      expect(result.success).toBe(true)
+      for (const id of ids) {
+        expect(svc.isCacheEvicted(id)).toBe(true)
+      }
+    })
+
+    it('缓存键格式正确', () => {
+      const key = svc.getCacheKey('member-x')
+      expect(key).toBe('points:balance:member-x')
+    })
+  })
 })
 
 describe('PointsConfigValidator', () => {
@@ -242,51 +281,6 @@ describe('PointsConfigValidator', () => {
     it('预警比例为0抛出错误', () => {
       const params: InflationParams = { threshold: 10000, warningRatio: 0 }
       expect(() => validator.validateInflationParams(params)).toThrow('Warning ratio must be between 0 and 1')
-    })
-  })
-
-  // ── BS-0264: 先更新DB再删缓存 ────────────────────────────────────────────
-
-  describe('BS-0264 先更新DB再删缓存', () => {
-    it('incrementPointsAtomic 后应清除缓存', async () => {
-      const result = await svc.incrementPointsAtomic('member-1', 100, 'test')
-      expect(result.success).toBe(true)
-      // evictCache 应当在写入后清除缓存
-      expect(svc.isCacheEvicted('member-1')).toBe(true)
-    })
-
-    it('transferPointsAtomic 后应清除双方缓存', async () => {
-      await svc.incrementPointsAtomic('member-a', 500, 'funding')
-      // 清除 a 的缓存状态（上一步写入后的缓存已被清除）
-
-      const result = await svc.transferPointsAtomic('member-a', 'member-b', 200)
-      expect(result.success).toBe(true)
-      // 转账后双方缓存都应被清除
-      expect(svc.isCacheEvicted('member-a')).toBe(true)
-      expect(svc.isCacheEvicted('member-b')).toBe(true)
-    })
-
-    it('deductForPurchaseAtomic 后应清除缓存', async () => {
-      await svc.incrementPointsAtomic('member-1', 500, 'funding')
-
-      const result = await svc.deductForPurchaseAtomic('member-1', 100, 'order-1')
-      expect(result.success).toBe(true)
-      expect(svc.isCacheEvicted('member-1')).toBe(true)
-    })
-
-    it('batchAwardAtomic 后应清除所有目标缓存', async () => {
-      const ids = ['member-batch-a', 'member-batch-b', 'member-batch-c']
-      const result = await svc.batchAwardAtomic(ids, 50, 'batch test')
-      expect(result.success).toBe(true)
-
-      for (const id of ids) {
-        expect(svc.isCacheEvicted(id)).toBe(true)
-      }
-    })
-
-    it('缓存键格式正确', () => {
-      const key = svc.getCacheKey('member-x')
-      expect(key).toBe('points:balance:member-x')
     })
   })
 })

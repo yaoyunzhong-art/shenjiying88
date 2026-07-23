@@ -312,7 +312,6 @@ export class CrossMerchantSettlementService {
     this.partnerHistory.clear()
   }
 }
-}
 
 // ─── SettlementError ─────────────────────────────────────────────────────────
 

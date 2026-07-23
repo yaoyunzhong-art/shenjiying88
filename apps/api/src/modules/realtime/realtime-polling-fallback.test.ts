@@ -117,11 +117,14 @@ describe('PollingFallbackService', () => {
     })
 
     it('无消息时应等待超时后返回空', async () => {
+      // 使用短超时的临时实例来测试超时逻辑
+      const fastService = new PollingFallbackService({ shortPollIntervalMs: 3000, longPollTimeoutMs: 100, autoDegradeThreshold: 3, wsRecoveryProbeIntervalMs: 60000 })
+
       const start = Date.now()
-      const result = await service.longPoll('room-empty', 'user-1')
+      const result = await fastService.longPoll('room-empty', 'user-1')
       const elapsed = Date.now() - start
 
-      expect(elapsed).toBeGreaterThanOrEqual(0) // 超时实现正确
+      expect(elapsed).toBeGreaterThanOrEqual(50) // 等待了约 100ms 超时
       expect(result.messages.length).toBe(0)
       expect(result.mode).toBe('long')
     })
