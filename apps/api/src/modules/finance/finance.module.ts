@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { PrismaModule } from '../../prisma/prisma.module'
 import { FinanceController } from './finance.controller'
 import { FinanceService } from './finance.service'
+import { FinanceArchivalService } from './finance-archival.service'
 import { FinanceInvoiceService } from './finance-invoice.service'
 import {
   ReconciliationService as ReconService,

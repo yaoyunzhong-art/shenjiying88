@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { FinanceModule } from './finance.module';
 import { FinanceController } from './finance.controller';
 import { FinanceService } from './finance.service';
+import { FinanceArchivalService } from './finance-archival.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 describe('FinanceModule', () => {
@@ -18,7 +19,7 @@ describe('FinanceModule', () => {
     const providers: unknown[] = Reflect.getMetadata('providers', FinanceModule) || [];
 
     assert.ok(providers.includes(FinanceService), 'should register FinanceService');
-    assert.equal(providers.length, 13, 'should have exactly 13 providers');
+    assert.equal(providers.length, 14, 'should have exactly 14 providers');
   });
 
   it('imports PrismaModule', () => {
@@ -32,7 +33,7 @@ describe('FinanceModule', () => {
     const exports: unknown[] = Reflect.getMetadata('exports', FinanceModule) || [];
 
     assert.ok(exports.includes(FinanceService), 'should export FinanceService');
-    assert.equal(exports.length, 7, 'should export exactly 7 symbols (FinanceService, FinanceInvoiceService, ReconService, ReconciliationService, ReconciliationCron, FinanceReconciliationReportService, FinanceSettlementCron)');
+    assert.equal(exports.length, 8, 'should export exactly 8 symbols (FinanceService, FinanceArchivalService, FinanceInvoiceService, ReconService, ReconciliationService, ReconciliationCron, FinanceReconciliationReportService, FinanceSettlementCron)');
   });
 
   it('is a valid NestJS Module class', () => {
