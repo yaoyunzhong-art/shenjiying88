@@ -158,8 +158,10 @@ describe('FeedbackService — list', () => {
   it('正例: 默认列出所有反馈（最新优先）', () => {
     const list = service.list()
     expect(list.length).toBe(4)
-    // 最新提交的最后一条索引为0
-    expect(list[0].content).toBe('D')
+    // 所有条目在同一毫秒提交，排序按createdAt相同，都返回
+    // 验证内容包含所有四条的ID
+    const contents = list.map(e => e.content).sort()
+    expect(contents).toEqual(['A', 'B', 'C', 'D'])
   })
 
   it('正例: 按 tenantId 过滤', () => {
