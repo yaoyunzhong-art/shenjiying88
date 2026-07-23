@@ -192,7 +192,7 @@ export class CashierService {
         // 直接修改内存中的 profile 引用以补全字段
         profile.mobile = s.phone
         profile.points = s.points
-        profile.level = s.tier as any
+        profile.level = s.tier as string
       } catch {
         // 已存在则跳过
       }

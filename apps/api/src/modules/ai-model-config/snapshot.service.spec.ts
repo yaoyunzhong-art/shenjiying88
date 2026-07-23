@@ -221,6 +221,7 @@ describe('SnapshotService', () => {
 
   describe('cleanupExpiredSnapshots', () => {
     it('should return deleted count', async () => {
+      // @ts-expect-error — MockRepo intersect 见 snapshot.service.spec.ts:14
       repo.deleteHistoryBefore.mockResolvedValue(5);
 
       const result = await service.cleanupExpiredSnapshots();
@@ -230,11 +231,12 @@ describe('SnapshotService', () => {
 
     it('should call deleteHistoryBefore with a date 90 days ago', async () => {
       const mockFn = vi.fn().mockResolvedValue(0);
+      // @ts-expect-error — MockRepo intersect
       repo.deleteHistoryBefore = mockFn;
 
       await service.cleanupExpiredSnapshots();
 
-      const calledArg = mockFn.mock.calls[0][0] as Date;
+      const calledArg = (mockFn.mock.calls[0] as [Date])[0];
       const expected = new Date();
       expected.setDate(expected.getDate() - 90);
       // Allow 1s tolerance for test execution

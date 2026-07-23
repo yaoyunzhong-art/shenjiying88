@@ -63,7 +63,13 @@ export class FeedbackController {
     attachments?: string[]
     rating?: number
   }): Feedback {
-    return this.service.create(body as CreateFeedbackDto)
+    return this.service.create({
+      ...body,
+      type: body.type as FeedbackType,
+      source: body.source as FeedbackSource,
+      severity: body.severity as FeedbackSeverity,
+      tags: body.tags as FeedbackTag[],
+    })
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -159,7 +165,12 @@ export class FeedbackController {
       repliedByName?: string
     },
   ): Feedback {
-    return this.service.update(id, body as UpdateFeedbackDto)
+    return this.service.update(id, {
+      ...body,
+      status: body.status as FeedbackStatus | undefined,
+      severity: body.severity as FeedbackSeverity | undefined,
+      tags: body.tags as FeedbackTag[] | undefined,
+    })
   }
 
   // ══════════════════════════════════════════════════════════════

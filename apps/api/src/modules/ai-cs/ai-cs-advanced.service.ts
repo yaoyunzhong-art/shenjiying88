@@ -222,8 +222,8 @@ export class AdvancedCSService {
       compliance: Math.round((8 + Math.random() * 2) * 10) / 10,
     }
 
-    const weights = { greeting: 0.1, professionalism: 0.15, empathy: 0.15, accuracy: 0.2, resolution: 0.2, efficiency: 0.1, compliance: 0.1 }
-    const overall = Object.entries(dimensions).reduce((s, [k, v]) => s + v * (weights as any)[k], 0)
+    const weights: Record<string, number> = { greeting: 0.1, professionalism: 0.15, empathy: 0.15, accuracy: 0.2, resolution: 0.2, efficiency: 0.1, compliance: 0.1 }
+    const overall = Object.entries(dimensions).reduce((s, [k, v]) => s + v * weights[k], 0)
 
     return {
       conversationId,
@@ -234,8 +234,8 @@ export class AdvancedCSService {
       scoreBreakdown: Object.entries(dimensions).map(([k, v]) => ({
         criteria: k,
         score: v,
-        weight: (weights as any)[k],
-        weightedScore: Math.round(v * (weights as any)[k] * 10) / 10,
+        weight: weights[k],
+        weightedScore: Math.round(v * weights[k] * 10) / 10,
       })),
     }
   }

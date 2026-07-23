@@ -100,8 +100,8 @@ export class ScoutService {
     ])
     const summary = {
       totalVenues: venueIds.length,
-      avgPriceItems: Array.isArray(prices) ? Math.round((prices as any[]).length / venueIds.length) : 0,
-      avgDevices: Array.isArray(devices) ? Math.round((devices as any[]).length / venueIds.length) : 0,
+      avgPriceItems: Array.isArray(prices) ? Math.round(prices.length / venueIds.length) : 0,
+      avgDevices: Array.isArray(devices) ? Math.round(devices.length / venueIds.length) : 0,
     }
     return { prices, devices, memberships, summary }
   }
@@ -115,7 +115,7 @@ export class ScoutService {
   /** 批量场馆数据快照 */
   async batchSnapshot(city: string) {
     const venues = await this.getVenues(city)
-    const venueIds = (venues as any[])?.map(v => v.id).filter(Boolean) as number[] ?? []
+    const venueIds = (Array.isArray(venues) ? (venues as Array<{ id: number }>).map(v => v.id).filter(Boolean) : []) as number[]
     return this.compareVenues(venueIds)
   }
 

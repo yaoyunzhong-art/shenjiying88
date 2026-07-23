@@ -81,7 +81,7 @@ export async function withTenantSession<T>(
   const pool = getPgPool()
   if (!pool) {
     // 无 PG 配置时降级为纯 ALS (用于 dev/test)
-    return als.run(context, async () => fn(undefined as any))
+    return als.run(context, async () => fn(undefined as unknown as T))
   }
 
   const client = await pool.connect()

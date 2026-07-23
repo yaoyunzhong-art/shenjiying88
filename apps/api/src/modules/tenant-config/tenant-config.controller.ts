@@ -21,7 +21,7 @@ import {
   type ConfigResponse,
   type EffectiveConfigResponse,
 } from './tenant-config.dto'
-import type { ConfigInstance, ConfigItemDefinition, ConfigLevel } from './tenant-config.entity'
+import type { ConfigInstance, ConfigItemDefinition, ConfigLevel, WorkbenchCode } from './tenant-config.entity'
 import { BUILTIN_CONFIG_DEFINITIONS, LEVEL_TO_WORKBENCH } from './tenant-config.entity'
 import { requireTenantContext } from '../../common/context/tenant-context'
 import { TenantGuard } from '../agent/tenant.guard';
@@ -88,7 +88,7 @@ export class TenantConfigController {
     if (!['W-S', 'W-T', 'W-B'].includes(code)) {
       throw new BadRequestException(`Invalid workbench code: ${code}`)
     }
-    const items = await this.service.getWorkbenchConfigs(code as any, category)
+    const items = await this.service.getWorkbenchConfigs(code as WorkbenchConfigCode, category)
     return {
       workbench: code,
       items,

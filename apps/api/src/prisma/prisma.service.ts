@@ -61,9 +61,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private _mixinExtendedMethods(extended: any): void {
     for (const key of Object.keys(this)) {
       if (key.startsWith('$')) continue
-      const modelDelegate = (this as any)[key]
-      const extDelegate = extended[key]
-      if (!modelDelegate || !extDelegate || typeof modelDelegate !== 'object') continue
+      const modelDelegate = (this as Record<string, unknown>)[key]
+      const extDelegate = (extended as Record<string, unknown>)[key]
+      if (!modelDelegate || !extDelegate || typeof modelDelegate !== 'object' || typeof extDelegate !== 'object') continue
+      const mutableDelegate = modelDelegate as Record<string, unknown>
+      const sourceDelegate = extDelegate as Record<string, unknown>
 
       // 只替换模型操作函数
       const ops = [
@@ -74,8 +76,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         'aggregate', 'count', 'groupBy',
       ]
       for (const op of ops) {
-        if (typeof extDelegate[op] === 'function') {
-          modelDelegate[op] = extDelegate[op]
+        if (typeof sourceDelegate[op] === 'function') {
+          mutableDelegate[op] = sourceDelegate[op]
         }
       }
     }

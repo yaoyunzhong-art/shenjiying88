@@ -112,11 +112,11 @@ export class MarketingAnalyticsService {
       this.campaigns.push({
         id: c.id,
         name: c.name,
-        type: c.type as any,
+        type: c.type as string,
         revenue: c.revenue,
         cost: c.cost,
         audience: c.audience,
-        channel: c.channel as any,
+        channel: c.channel as string,
         startDate: '2026-01-01',
         endDate: '2026-01-31',
       })

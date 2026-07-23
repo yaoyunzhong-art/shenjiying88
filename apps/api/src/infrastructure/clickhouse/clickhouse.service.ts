@@ -343,7 +343,7 @@ export class PrismaToClickHouseBridge {
       ? { updatedAt: { gte: new Date(since) } }
       : {}
 
-    const records = await (model as any).findMany({
+    const records = await (model as unknown as { findMany: (args: unknown) => Promise<Record<string, unknown>[]> }).findMany({
       where,
       orderBy: { id: 'asc' },
     })
@@ -407,7 +407,7 @@ export class PrismaToClickHouseBridge {
     ]
     if (!modelNames.includes(name)) return null
     // 委托给注入的 Prisma Client
-    return (this.prisma as any)[name]
+    return (this.prisma as unknown as Record<string, unknown>)[name]
   }
 
   private prismaRowToClickHouseRow(row: any): InsertRow {

@@ -293,7 +293,7 @@ export class AgentController {
   /** 提交质量评估 */
   @Post('evaluations')
   submitEvaluation(@Body() evaluation: QualityEvaluationDto): QualityEvaluation {
-    return (this.agentService as any).submitEvaluation(evaluation)
+    return (this.agentService as unknown as { submitEvaluation: (e: QualityEvaluationDto) => QualityEvaluation }).submitEvaluation(evaluation)
   }
 
   /** 获取所有质量评估 */

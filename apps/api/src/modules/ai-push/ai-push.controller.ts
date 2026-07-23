@@ -33,7 +33,7 @@ export class AiPushController {
     return this.pushTaskService.createTask({
       title: body.title,
       content: body.content,
-      channel: body.channel as any,
+      channel: body.channel as string,
       targetMemberIds: body.targetMemberIds ?? [],
       scheduledAt: body.scheduledAt ?? Date.now(),
     })
@@ -48,7 +48,7 @@ export class AiPushController {
     const task = this.pushTaskService.createTask({
       title: body.title,
       content: body.content,
-      channel: body.channel as any,
+      channel: body.channel as string,
       targetMemberIds: [],
       scheduledAt: body.scheduledAt ?? Date.now(),
     })
