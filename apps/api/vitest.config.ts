@@ -4,7 +4,7 @@ import path from 'node:path'
 export default defineConfig({
   test: {
     globals: true,
-    include: ['src/**/*.{test,spec}.ts'],
+    include: ['src/**/*.{test,spec}.ts', 'src/**/*.e2e-spec.ts'],
     exclude: ['node_modules', 'dist'],
     testTimeout: 120_000,
     pool: 'forks',
