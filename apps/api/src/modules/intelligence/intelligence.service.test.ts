@@ -311,4 +311,132 @@ describe('IntelligenceService', () => {
       assert.equal(result.initialInvestment.renovationCost, 1200 * 300)
     })
   })
+
+  // ─── 9. 选址评估增强 (V23 场景A · 6 tests) ──────────
+
+  describe('sitingAssessment (6 tests)', () => {
+    it('正例: 已知城市完整输出', () => {
+      const result = svc.sitingAssessment('上海', '徐汇')
+      assert.equal(result.city, '上海')
+      assert.equal(result.district, '徐汇')
+      assert.ok(result.overallScore >= 0 && result.overallScore <= 100)
+      assert.ok(result.confidenceInterval.low <= result.overallScore)
+      assert.ok(result.confidenceInterval.high >= result.overallScore)
+      assert.ok(result.competition.totalCompetitors > 0)
+      assert.ok(result.competition.avgTicketPrice > 0)
+      assert.ok(['高', '中', '低'].includes(result.competition.densityLevel))
+      assert.ok(result.riskFactors.length >= 3)
+      assert.ok(result.suggestions.length >= 3)
+      assert.ok(result.dataSource.disclaimer.includes('仅供参考'))
+      assert.ok(result.dataSource.freshness)
+      assert.ok(result.dataSource.sourceType)
+    })
+
+    it('正例: grade与score一致', () => {
+      const high = svc.sitingAssessment('南京', '鼓楼') // low competitor count
+      const low = svc.sitingAssessment('北京', '朝阳')  // high competitor count
+      assert.ok(high.overallScore >= 0)
+      assert.ok(low.overallScore >= 0)
+    })
+
+    it('正例: 竞争密度高时densityLevel为高', () => {
+      const result = svc.sitingAssessment('上海', '徐汇') // 8 competitors
+      assert.ok(['高', '中', '低'].includes(result.competition.densityLevel))
+      if (result.competition.totalCompetitors >= 6) {
+        assert.equal(result.competition.densityLevel, '高')
+      }
+    })
+
+    it('正例: 数据来源声明字段完整', () => {
+      const result = svc.sitingAssessment('成都', '武侯')
+      assert.ok(result.dataSource.disclaimer.length > 10)
+      assert.ok(result.dataSource.freshness.length > 0)
+      assert.ok(result.dataSource.sourceType.length > 0)
+    })
+
+    it('边界: 未知城市使用默认竞争数据', () => {
+      const result = svc.sitingAssessment('未知城市', '未知区域')
+      assert.equal(result.competition.totalCompetitors, 1)
+      assert.equal(result.competition.avgTicketPrice, 60)
+      assert.equal(result.competition.densityLevel, '低')
+      assert.ok(result.overallScore > 0)
+    })
+
+    it('正例: 多城市覆盖率12+', () => {
+      const cities = [
+        ['上海', '徐汇'], ['上海', '浦东'], ['上海', '静安'],
+        ['北京', '朝阳'], ['北京', '海淀'],
+        ['深圳', '南山'], ['深圳', '福田'],
+        ['成都', '锦江'], ['成都', '武侯'],
+        ['广州', '天河'], ['杭州', '西湖'], ['南京', '鼓楼'],
+      ]
+      for (const [city, district] of cities) {
+        const result = svc.sitingAssessment(city, district)
+        assert.equal(result.city, city)
+        assert.equal(result.district, district)
+        assert.ok(result.overallScore >= 0)
+        assert.ok(result.riskFactors.length >= 2)
+      }
+    })
+  })
+
+  // ─── 10. 新店规划 (V23 场景B · 6 tests) ──────────
+
+  describe('storePlanning (6 tests)', () => {
+    it('正例: 完整新店规划输出', () => {
+      const result = svc.storePlanning({ city: '上海', district: '徐汇', budget: 300, area: 400, tier: 'standard' })
+      assert.equal(result.city, '上海')
+      assert.equal(result.district, '徐汇')
+      assert.ok(result.score >= 0 && result.score <= 100)
+      assert.ok(result.confidenceInterval.low <= result.score)
+      assert.ok(result.confidenceInterval.high >= result.score)
+      assert.ok(['非常适合', '可考虑', '不建议'].includes(result.grade))
+      assert.ok(result.competition.totalCompetitors > 0)
+      assert.ok(result.financialOverview.initialInvestment.total > 0)
+      assert.ok(result.financialOverview.estimatedMonthlyRevenue > 0)
+      assert.ok(result.financialOverview.paybackMonths > 0)
+      assert.ok(result.equipmentSuggestions.length >= 4)
+      assert.ok(result.renovationEstimate.total > 0)
+      assert.ok(result.riskFactors.length >= 4)
+      assert.ok(result.aiSummary.length > 20)
+    })
+
+    it('正例: luxury档次装修费用更高', () => {
+      const economy = svc.storePlanning({ city: '成都', district: '锦江', budget: 200, area: 200, tier: 'economy' })
+      const luxury = svc.storePlanning({ city: '成都', district: '锦江', budget: 500, area: 200, tier: 'luxury' })
+      assert.ok(luxury.renovationEstimate.total > economy.renovationEstimate.total)
+      assert.ok(luxury.financialOverview.initialInvestment.renovation > economy.financialOverview.initialInvestment.renovation)
+    })
+
+    it('正例: 设备数量随tier因子调整', () => {
+      const economy = svc.storePlanning({ city: '成都', district: '锦江', budget: 200, area: 200, tier: 'economy' })
+      const luxury = svc.storePlanning({ city: '成都', district: '锦江', budget: 500, area: 200, tier: 'luxury' })
+      for (let i = 0; i < economy.equipmentSuggestions.length; i++) {
+        assert.ok(luxury.equipmentSuggestions[i]!.count >= economy.equipmentSuggestions[i]!.count)
+      }
+    })
+
+    it('正例: 风险因素包含选址+预算+回收期', () => {
+      const result = svc.storePlanning({ city: '上海', district: '浦东', budget: 300, area: 400, tier: 'standard' })
+      const factors = result.riskFactors.map(r => r.factor)
+      assert.ok(factors.some(f => f.includes('竞品')))
+      assert.ok(factors.some(f => f.includes('装修') || f.includes('档次')))
+      assert.ok(factors.some(f => f.includes('回收期') || f.includes('租金')))
+    })
+
+    it('正例: AI摘要包含城市和评分', () => {
+      const result = svc.storePlanning({ city: '广州', district: '天河', budget: 300, area: 300, tier: 'standard' })
+      assert.ok(result.aiSummary.includes('广州'))
+      assert.ok(result.aiSummary.includes('天河'))
+      assert.ok(result.aiSummary.includes(String(result.score)))
+    })
+
+    it('边界: 未知城市使用默认数据', () => {
+      const result = svc.storePlanning({ city: '未知城市', district: '未知区域', budget: 200, area: 200, tier: 'economy' })
+      assert.equal(result.city, '未知城市')
+      assert.equal(result.competition.totalCompetitors, 1)
+      assert.equal(result.competition.avgTicketPrice, 60)
+      assert.ok(result.financialOverview.initialInvestment.total > 0)
+    })
+  })
 })

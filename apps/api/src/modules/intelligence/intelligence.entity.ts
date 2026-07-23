@@ -183,6 +183,365 @@ export interface CityAvgComparison {
 }
 
 /** 装修全景报告（完整版 P-50 V2） */
+// ════════════════════════════════════════════════════
+// 5. 新店规划 (V23 全场景赋能)
+// ════════════════════════════════════════════════════
+
+/** 新店规划输入 */
+export interface StorePlanningInput {
+  city: string
+  district: string
+  budget: number
+  area: number
+  tier: 'economy' | 'standard' | 'deluxe' | 'luxury'
+}
+
+/** 评级标签 */
+export type PlanningGrade = '非常适合' | '可考虑' | '不建议'
+
+/** 竞争密度等级 */
+export type DensityLevel = '高' | '中' | '低'
+
+/** 竞争分析 */
+export interface CompetitionAnalysis {
+  totalCompetitors: number
+  districtDistribution: Record<string, number>
+  avgTicketPrice: number
+  densityLevel: DensityLevel
+  topCompetitors: string[]
+}
+
+/** 财务全景表 (新店规划版) */
+export interface FinancialOverview {
+  initialInvestment: {
+    equipment: number
+    renovation: number
+    systemSoftware: number
+    deposit: number
+    total: number
+  }
+  monthlyFixedCost: {
+    rent: number
+    labor: number
+    maintenance: number
+    saas: number
+    total: number
+  }
+  monthlyVariableCost: {
+    electricity: number
+    consumables: number
+    marketing: number
+    total: number
+  }
+  estimatedMonthlyRevenue: number
+  estimatedMonthlyProfit: number
+  paybackMonths: number
+}
+
+/** 设备建议项 */
+export interface EquipmentSuggestion {
+  name: string
+  count: number
+  unitPrice: number
+  totalPrice: number
+  supplier: string
+  warrantyMonths: number
+  monthlyMaintenance: number
+}
+
+/** 风险因素 */
+export interface RiskFactorItem {
+  factor: string
+  level: 'high' | 'medium' | 'low'
+  suggestion: string
+}
+
+/** 新店规划输出 */
+export interface StorePlanningOutput {
+  city: string
+  district: string
+  score: number
+  confidenceInterval: { low: number; high: number }
+  grade: PlanningGrade
+  competition: CompetitionAnalysis
+  financialOverview: FinancialOverview
+  equipmentSuggestions: EquipmentSuggestion[]
+  renovationEstimate: {
+    baseRenovation: number
+    themedDesign: number
+    furnitureDecor: number
+    fireSafetyApproval: number
+    total: number
+  }
+  riskFactors: RiskFactorItem[]
+  aiSummary: string
+}
+
+// ════════════════════════════════════════════════════
+// 6. 设备选型推荐 (V23 全场景赋能)
+// ════════════════════════════════════════════════════
+
+export interface DeviceRecommendationInput {
+  budget: number
+  area: number
+  tier: 'economy' | 'standard' | 'deluxe' | 'luxury'
+  city: string
+  storeType: 'arcade' | 'family' | 'esports' | 'mixed'
+}
+
+/** 推荐设备详情 */
+export interface RecommendedDevice {
+  brand: string
+  model: string
+  category: string
+  count: number
+  unitPrice: number
+  totalPrice: number
+  supplier: string
+  supplierQualified: boolean
+  warrantyMonths: number
+  monthlyMaintenanceFee: number
+  reason: string
+}
+
+/** 设备推荐输出 */
+export interface DeviceRecommendationOutput {
+  budget: number
+  area: number
+  tier: string
+  city: string
+  storeType: string
+  devices: RecommendedDevice[]
+  totalCost: number
+  remainingBudget: number
+  budgetUtilizationPercent: number
+  notes: string[]
+}
+
+// ════════════════════════════════════════════════════
+// 7. 装修方案 (V23 全场景赋能)
+// ════════════════════════════════════════════════════
+
+export interface RenovationPlanInput {
+  area: number
+  tier: 'economy' | 'standard' | 'deluxe' | 'luxury'
+  city: string
+  style?: 'modern' | 'cyberpunk' | 'retro' | 'minimalist' | 'nature'
+}
+
+/** 装修分项 */
+export interface RenovationItem {
+  category: string
+  amount: number
+  percent: number
+  detail: string
+}
+
+/** 档次适配建议 */
+export interface TierAdaptationAdvice {
+  currentTier: string
+  upgrades: { name: string; cost: number; benefit: string }[]
+}
+
+/** 装修方案输出 */
+export interface RenovationPlanOutput {
+  area: number
+  tier: string
+  city: string
+  style: string
+  items: RenovationItem[]
+  subTotal: number
+  tierAdvice: TierAdaptationAdvice
+  // 按档次拆分
+  economyPlan: RenovationItem[] | null
+  standardPlan: RenovationItem[] | null
+  deluxePlan: RenovationItem[] | null
+  luxuryPlan: RenovationItem[] | null
+  recommendations: string[]
+}
+
+// ════════════════════════════════════════════════════
+// 8. 选址评估增强 (V23 全场景赋能 · 场景A)
+// ════════════════════════════════════════════════════
+
+/** 选址评估增强输出 — 带置信区间、风险因素、数据来源免责声明 */
+export interface SitingAssessmentOutput {
+  city: string
+  district: string
+  overallScore: number
+  /** 置信区间 (基于样本量) */
+  confidenceInterval: { low: number; high: number }
+  grade: PlanningGrade
+  competition: {
+    totalCompetitors: number
+    districtDistribution: Record<string, number>
+    avgTicketPrice: number
+    densityLevel: DensityLevel
+  }
+  riskFactors: SitingRiskFactor[]
+  financialEstimate: {
+    avgRent: number
+    monthlyRevenue: number
+    monthlyCost: number
+    paybackMonths: number
+  }
+  suggestions: string[]
+  /** 数据来源声明 */
+  dataSource: {
+    disclaimer: string
+    freshness: string
+    sourceType: string
+  }
+}
+
+/** 选址评估风险因素 */
+export interface SitingRiskFactor {
+  factor: string
+  level: 'high' | 'medium' | 'low'
+  suggestion: string
+}
+
+// ════════════════════════════════════════════════════
+// 9. 动态定价策略 (V23 全场景赋能)
+// ════════════════════════════════════════════════════
+
+export type PricingScenario = 'new_store' | 'competitor_change' | 'seasonal_adjustment'
+
+export interface PricingStrategyInput {
+  city: string
+  district: string
+  scenario: PricingScenario
+  currentPrice?: number
+  competitorNewPrice?: number
+  season?: 'spring' | 'summer' | 'autumn' | 'winter'
+  storeTier?: 'low' | 'mid' | 'high'
+}
+
+/** 定价建议项 */
+export interface PriceProposal {
+  strategy: string
+  description: string
+  suggestedPrice: number
+  priceRange: { min: number; max: number }
+  expectedImpact: string
+  pros: string[]
+  cons: string[]
+  riskLevel: 'low' | 'medium' | 'high'
+}
+
+/** 定价策略输出 */
+export interface PricingStrategyOutput {
+  scenario: PricingScenario
+  city: string
+  district: string
+  marketContext: {
+    avgMarketPrice: number
+    competitorCount: number
+    priceRange: { min: number; max: number }
+  }
+  proposals: PriceProposal[]
+  recommendedProposal: PriceProposal
+}
+
+// ════════════════════════════════════════════════════
+// 10. 营销活动方案 (V23 全场景赋能 · 6大类)
+// ════════════════════════════════════════════════════
+
+export type CampaignType =
+  | 'douyin_group'       // 抖音团购
+  | 'weekend_tournament' // 周末比赛
+  | 'member_day'         // 会员日
+  | 'ip_collaboration'   // IP联名
+  | 'summer_limited'     // 暑假限定
+  | 'blindbox_lottery'   // 盲盒抽奖
+
+export interface CampaignProposal {
+  type: CampaignType
+  name: string
+  description: string
+  pros: string[]
+  cons: string[]
+  estimatedEffect: string
+  applicableScenarios: string[]
+  costEstimate: number
+}
+
+export interface MarketingCampaignInput {
+  city: string
+  district: string
+  budget?: number
+  targetTypes?: CampaignType[]
+}
+
+export interface MarketingCampaignOutput {
+  city: string
+  district: string
+  campaigns: CampaignProposal[]
+  recommendedCampaign: CampaignProposal
+}
+
+// ════════════════════════════════════════════════════
+// 11. 全周期运营管理 (V23 全场景赋能)
+// ════════════════════════════════════════════════════
+
+export type StoreStage = 'early' | 'growth' | 'mature' | 'renewal'
+
+export interface OperationsPlanInput {
+  storeId: string
+  stage: StoreStage
+}
+
+/** 阶段运营要点 */
+export interface StageOperationKeyPoint {
+  area: string
+  content: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+/** 竞品应对预案 */
+export interface CompetitorContingency {
+  scenario: string
+  response: string
+  triggerCondition: string
+}
+
+/** 运营方案输出 */
+export interface OperationsPlanOutput {
+  storeId: string
+  stage: StoreStage
+  stageName: string
+  duration: string
+  keyPoints: StageOperationKeyPoint[]
+  pricingStrategy: string
+  activityRhythm: string[]
+  competitorContingencies: CompetitorContingency[]
+  riskWarnings: string[]
+  milestones: string[]
+}
+
+// ════════════════════════════════════════════════════
+// 12. 数据底座 (V23 全场景赋能)
+// ════════════════════════════════════════════════════
+
+export interface DataBaseSummary {
+  venueCount: number
+  dimensionCoverage: string[]
+  updateStatus: {
+    lastFullSync: string | null
+    lastIncrementalSync: string | null
+    overallFreshness: 'fresh' | 'stale' | 'outdated'
+  }
+  knowledgeBaseEntries: number
+  coverageByCity: Record<string, { venueCount: number; avgFreshness: number }>
+}
+
+export interface SyncKnowledgeResult {
+  synced: boolean
+  scoutDataCount: number
+  knowledgeEntriesCreated: number
+  timestamp: string
+}
+
 export interface FinancePanorama {
   // 输入参数
   budget: number

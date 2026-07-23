@@ -59,6 +59,54 @@ type OperationAdvice = {
   metrics: { revenue: number; orders: number; rating: number }
 }
 
+type PlanningGrade = '非常适合' | '可考虑' | '不建议'
+type DensityLevel = '高' | '中' | '低'
+
+type SitingAssessmentOutput = {
+  city: string
+  district: string
+  overallScore: number
+  confidenceInterval: { low: number; high: number }
+  grade: PlanningGrade
+  competition: {
+    totalCompetitors: number
+    districtDistribution: Record<string, number>
+    avgTicketPrice: number
+    densityLevel: DensityLevel
+  }
+  riskFactors: { factor: string; level: 'high' | 'medium' | 'low'; suggestion: string }[]
+  financialEstimate: { avgRent: number; monthlyRevenue: number; monthlyCost: number; paybackMonths: number }
+  suggestions: string[]
+  dataSource: { disclaimer: string; freshness: string; sourceType: string }
+}
+
+type StorePlanningOutput = {
+  city: string
+  district: string
+  score: number
+  confidenceInterval: { low: number; high: number }
+  grade: PlanningGrade
+  competition: {
+    totalCompetitors: number
+    districtDistribution: Record<string, number>
+    avgTicketPrice: number
+    densityLevel: DensityLevel
+    topCompetitors: string[]
+  }
+  financialOverview: {
+    initialInvestment: { equipment: number; renovation: number; systemSoftware: number; deposit: number; total: number }
+    monthlyFixedCost: { rent: number; labor: number; maintenance: number; saas: number; total: number }
+    monthlyVariableCost: { electricity: number; consumables: number; marketing: number; total: number }
+    estimatedMonthlyRevenue: number
+    estimatedMonthlyProfit: number
+    paybackMonths: number
+  }
+  equipmentSuggestions: { name: string; count: number; unitPrice: number; totalPrice: number; supplier: string; warrantyMonths: number; monthlyMaintenance: number }[]
+  renovationEstimate: { baseRenovation: number; themedDesign: number; furnitureDecor: number; fireSafetyApproval: number; total: number }
+  riskFactors: { factor: string; level: 'high' | 'medium' | 'low'; suggestion: string }[]
+  aiSummary: string
+}
+
 // ── Inline Mocks ────────────────────────────────────────────────
 
 function createMocks() {
@@ -126,6 +174,60 @@ function createMocks() {
       })
     },
 
+    sitingAssessment(city: string, district: string): SitingAssessmentOutput {
+      return {
+        city, district,
+        overallScore: 78,
+        confidenceInterval: { low: 68, high: 88 },
+        grade: '非常适合',
+        competition: {
+          totalCompetitors: 8,
+          districtDistribution: { [district]: 8 },
+          avgTicketPrice: 128,
+          densityLevel: '高',
+        },
+        riskFactors: [
+          { factor: '同城竞品密度', level: 'high' as const, suggestion: '建议差异化定位' },
+        ],
+        financialEstimate: { avgRent: 280, monthlyRevenue: 192000, monthlyCost: 144000, paybackMonths: 24 },
+        suggestions: ['建议差异化定位', '建议实地考察'],
+        dataSource: { disclaimer: '仅供��考', freshness: '24小时内', sourceType: '侦察兵竞品' },
+      }
+    },
+
+    storePlanning(input: { city: string; district: string; budget: number; area: number; tier: string }): StorePlanningOutput {
+      return {
+        city: input.city,
+        district: input.district,
+        score: 72,
+        confidenceInterval: { low: 62, high: 82 },
+        grade: '可考虑',
+        competition: {
+          totalCompetitors: 6,
+          districtDistribution: { [input.district]: 6 },
+          avgTicketPrice: 145,
+          densityLevel: '中',
+          topCompetitors: ['竞品1', '竞品2'],
+        },
+        financialOverview: {
+          initialInvestment: { equipment: 1350000, renovation: 480000, systemSoftware: 120000, deposit: 336000, total: 2286000 },
+          monthlyFixedCost: { rent: 112000, labor: 96000, maintenance: 11250, saas: 4200, total: 223450 },
+          monthlyVariableCost: { electricity: 8000, consumables: 4800, marketing: 9600, total: 22400 },
+          estimatedMonthlyRevenue: 192000,
+          estimatedMonthlyProfit: -53850,
+          paybackMonths: 999,
+        },
+        equipmentSuggestions: [
+          { name: '街机射击区', count: 8, unitPrice: 40000, totalPrice: 320000, supplier: '华立', warrantyMonths: 12, monthlyMaintenance: 2667 },
+        ],
+        renovationEstimate: { baseRenovation: 240000, themedDesign: 96000, furnitureDecor: 96000, fireSafetyApproval: 48000, total: 480000 },
+        riskFactors: [
+          { factor: '同城竞品密度', level: 'high', suggestion: '建议差异化定位' },
+        ],
+        aiSummary: `${input.city}选址评估72分。该区域竞争中等。`,
+      }
+    },
+
     getLatestScanResult(): Promise<any> {
       return Promise.resolve(latestScanResult)
     },
@@ -172,6 +274,24 @@ class InlineIntelligenceController {
 
   async monitorSummary() {
     return this.svc.getLatestScanResult()
+  }
+
+  sitingAssessment(city: string, district: string) {
+    if (!city?.trim() || !district?.trim()) {
+      throw Object.assign(new Error('城市和区域不能为空'), { status: 400 })
+    }
+    return this.svc.sitingAssessment(city.trim(), district.trim())
+  }
+
+  storePlanning(body: { city: string; district: string; budget: number; area: number; tier: string }) {
+    if (!body.city?.trim()) throw Object.assign(new Error('城市不能为空'), { status: 400 })
+    if (!body.district?.trim()) throw Object.assign(new Error('区域不能为空'), { status: 400 })
+    if (!body.area || body.area <= 0) throw Object.assign(new Error('面积必须大于0'), { status: 400 })
+    if (!body.budget || body.budget <= 0) throw Object.assign(new Error('预算必须大于0'), { status: 400 })
+    const validTiers = ['economy', 'standard', 'deluxe', 'luxury']
+    if (!body.tier || !validTiers.includes(body.tier)) throw Object.assign(new Error('装修档次无效'), { status: 400 })
+    const input = { city: body.city.trim(), district: body.district.trim(), budget: body.budget, area: body.area, tier: body.tier }
+    return this.svc.storePlanning(input)
   }
 
   async triggerIncremental(city?: string) {
@@ -328,6 +448,85 @@ describe('IntelligenceController', () => {
       const result = await controller.triggerFull('深圳')
       assert.ok(result.triggered)
       assert.equal(result.mode, 'full')
+    })
+  })
+
+  describe('GET /intelligence/siting-assessment (场景A)', () => {
+    it('[正例] 返回选址评估结果', () => {
+      const result = controller.sitingAssessment('上海', '徐汇')
+      assert.equal(result.city, '上海')
+      assert.equal(result.district, '徐汇')
+      assert.ok(result.overallScore >= 0)
+      assert.ok(result.confidenceInterval.low <= result.overallScore)
+      assert.ok(result.confidenceInterval.high >= result.overallScore)
+      assert.ok(['非常适合', '可考虑', '不建议'].includes(result.grade))
+      assert.ok(result.competition.totalCompetitors > 0)
+      assert.ok(result.riskFactors.length > 0)
+      assert.ok(result.dataSource.disclaimer.length > 0)
+    })
+
+    it('[反例] 空城市抛 400', () => {
+      assert.throws(
+        () => controller.sitingAssessment('', '徐汇'),
+        (err: any) => err.status === 400 && err.message.includes('不能为空'),
+      )
+    })
+
+    it('[反例] 空区域抛 400', () => {
+      assert.throws(
+        () => controller.sitingAssessment('上海', ''),
+        (err: any) => err.status === 400,
+      )
+    })
+  })
+
+  describe('POST /intelligence/store-planning (场景B)', () => {
+    it('[正例] 返回完整新店规划报告', () => {
+      const result = controller.storePlanning({ city: '上海', district: '徐汇', budget: 300, area: 400, tier: 'standard' })
+      assert.equal(result.city, '上海')
+      assert.equal(result.district, '徐汇')
+      assert.ok(result.score >= 0)
+      assert.ok(result.confidenceInterval.low <= result.score)
+      assert.ok(result.competition.totalCompetitors > 0)
+      assert.ok(result.financialOverview.initialInvestment.total > 0)
+      assert.ok(result.equipmentSuggestions.length > 0)
+      assert.ok(result.renovationEstimate.total > 0)
+      assert.ok(result.riskFactors.length > 0)
+      assert.ok(result.aiSummary.length > 0)
+    })
+
+    it('[反例] 空城市抛 400', () => {
+      assert.throws(
+        () => controller.storePlanning({ city: '', district: '徐汇', budget: 300, area: 400, tier: 'standard' }),
+        (err: any) => err.status === 400 && err.message.includes('城市不能为空'),
+      )
+    })
+
+    it('[反例] 空区域抛 400', () => {
+      assert.throws(
+        () => controller.storePlanning({ city: '上海', district: '', budget: 300, area: 400, tier: 'standard' }),
+        (err: any) => err.status === 400,
+      )
+    })
+
+    it('[反例] 面积 <= 0 抛 400', () => {
+      assert.throws(
+        () => controller.storePlanning({ city: '上海', district: '徐汇', budget: 300, area: 0, tier: 'standard' }),
+        (err: any) => err.status === 400,
+      )
+    })
+
+    it('[反例] 无效 tier 抛 400', () => {
+      assert.throws(
+        () => controller.storePlanning({ city: '上海', district: '徐汇', budget: 300, area: 400, tier: 'premium' }),
+        (err: any) => err.status === 400 && err.message.includes('装修档次无效'),
+      )
+    })
+
+    it('[正例] economy 档次可运行', () => {
+      const result = controller.storePlanning({ city: '成都', district: '锦江', budget: 200, area: 200, tier: 'economy' })
+      assert.equal(result.city, '成都')
+      assert.ok(result.financialOverview.initialInvestment.total > 0)
     })
   })
 })

@@ -1,5 +1,5 @@
 /**
- * intelligence.service.ts — 运营参谋 (P-50 V2 · AI赋能引擎)
+ * intelligence.service.ts — 运营参谋 (P-50 V2 · AI赋能引擎) + V23 全场景赋能
  *
  * 功能:
  *   1. 开业可行性报告 (基于侦察兵竞品数据)
@@ -7,6 +7,14 @@
  *   3. 运营参谋 (AI选择题模式 · 7大类)
  *   4. 竞争监控 (异步采集 · 增量/全量/去重/走势)
  *   5. AI决策引擎 (数据推理 · 含数据佐证)
+ *   [V23] 6. 新店规划 (store-planning)
+ *   [V23] 7. 设备选型推荐 (device-recommendation)
+ *   [V23] 8. 装修方案 (renovation-plan)
+ *   [V23] 9. 选址评估增强 (siting-assessment)
+ *   [V23] 10. 动态定价策略 (pricing-strategy)
+ *   [V23] 11. 营销活动6大类 (marketing-campaign)
+ *   [V23] 12. 全周期运营方案 (operations-plan)
+ *   [V23] 13. 数据底座整合 (sync-knowledge / data-base)
  */
 import { Injectable, Logger } from '@nestjs/common'
 import { IntelligenceAiService } from './intelligence-ai.service'
@@ -22,6 +30,36 @@ import type {
   RenovationTier,
   RenovationTierZh,
   TrendPoint,
+  StorePlanningInput,
+  StorePlanningOutput,
+  PlanningGrade,
+  CompetitionAnalysis,
+  FinancialOverview,
+  EquipmentSuggestion,
+  RiskFactorItem,
+  DeviceRecommendationInput,
+  DeviceRecommendationOutput,
+  RecommendedDevice,
+  RenovationPlanInput,
+  RenovationPlanOutput,
+  RenovationItem,
+  SitingAssessmentOutput,
+  SitingRiskFactor,
+  DensityLevel,
+  PricingStrategyInput,
+  PricingStrategyOutput,
+  PriceProposal,
+  CampaignProposal,
+  MarketingCampaignInput,
+  MarketingCampaignOutput,
+  CampaignType,
+  OperationsPlanInput,
+  OperationsPlanOutput,
+  StageOperationKeyPoint,
+  CompetitorContingency,
+  StoreStage,
+  DataBaseSummary,
+  SyncKnowledgeResult,
 } from './intelligence.entity'
 
 @Injectable()
@@ -100,6 +138,232 @@ export class IntelligenceService {
       marketTrend: `${city}娱乐市场年增长率约15-20%，${district}商圈流量稳定，周末高峰期明显`,
       estimatedMonthlyRevenue: avgMonthlyRevenue,
       estimatedPaybackMonths: Math.round(budget * 10000 / avgMonthlyRevenue),
+    }
+  }
+
+  // ─── 1a. 选址评估增强 (V23 场景A) ──────────────────
+
+  /**
+   * 增强的选址评估，输出含置信区间、竞争分析、风险因素和数据来源声明。
+   * 响应 GET /intelligence/siting-assessment?city=&district=
+   */
+  sitingAssessment(city: string, district: string): SitingAssessmentOutput {
+    const key = `${city}-${district}`
+    const density = this.COMPETITOR_DENSITY[key] || this.COMPETITOR_DENSITY.default!
+
+    const competitorDensity = Math.min(density.count / 10, 1)
+    const totalScore = Math.round((1 - competitorDensity * 0.4) * 60 + 25)
+    const score = Math.min(Math.max(totalScore, 0), 100)
+
+    // 置信区间: 样本量越大越窄
+    const margin = density.count <= 2 ? 15 : density.count <= 5 ? 10 : 6
+    const confidenceInterval = { low: Math.max(0, score - margin), high: Math.min(100, score + margin) }
+
+    // 等级
+    const grade: PlanningGrade = score >= 70 ? '非常适合' : score >= 45 ? '可考虑' : '不建议'
+
+    // 密度等级
+    const densityLevel: DensityLevel = density.count >= 6 ? '高' : density.count >= 3 ? '中' : '低'
+
+    // 竞争分析
+    const districtDistribution: Record<string, number> = { [district]: density.count }
+
+    // 财务预估
+    const CITY_RENT_MAP: Record<string, number> = {
+      '上海': 280, '北京': 250, '深圳': 220, '广州': 200,
+      '杭州': 180, '成都': 150, '南京': 160, '重庆': 130,
+      '武汉': 140, '西安': 120, '长沙': 130,
+    }
+    const avgRent = CITY_RENT_MAP[city] ?? 100
+    const estimatedMonthlyRevenue = Math.round(density.avgPrice * 1500)
+    const estimatedMonthlyCost = Math.round(avgRent * 300 + 60000 + estimatedMonthlyRevenue * 0.1)
+    const paybackMonths = estimatedMonthlyRevenue > estimatedMonthlyCost
+      ? Math.ceil(estimatedMonthlyRevenue * 12 / ((estimatedMonthlyRevenue - estimatedMonthlyCost) * 12))
+      : 999
+
+    // 风险因素
+    const riskFactors: SitingRiskFactor[] = [
+      {
+        factor: '同城竞品密度',
+        level: density.count >= 6 ? 'high' : density.count >= 3 ? 'medium' : 'low',
+        suggestion: density.count >= 5
+          ? '建议差异化定位，避开头部竞品主力项目'
+          : '正常竞争环境，做好本地化运营即可',
+      },
+      {
+        factor: '商圈租金水平',
+        level: avgRent >= 250 ? 'high' : avgRent >= 150 ? 'medium' : 'low',
+        suggestion: avgRent >= 200
+          ? `¥${avgRent}/㎡的租金偏高，需确保日均客流达标`
+          : '租金可控，成本压力较小',
+      },
+      {
+        factor: '竞品客单价',
+        level: density.avgPrice >= 150 ? 'medium' : 'low',
+        suggestion: density.avgPrice >= 120
+          ? `${city}区域客单价偏高，建议走中高端路线`
+          : '客单价适中，利于走量经营',
+      },
+    ]
+
+    // 建议
+    const suggestions: string[] = []
+    if (density.count >= 5) suggestions.push('竞品密集区建议差异化定位，避开主力竞品项目')
+    if (avgRent >= 200) suggestions.push('租金偏高，建议评估日客流能否支撑')
+    suggestions.push('建议实地考察人流量和周边配套')
+    suggestions.push('优先选择商场一层或负一层位置')
+    if (score >= 70) suggestions.push('该区域适合投资，建议尽快锁定优质铺位')
+
+    return {
+      city,
+      district,
+      overallScore: score,
+      confidenceInterval,
+      grade,
+      competition: {
+        totalCompetitors: density.count,
+        districtDistribution,
+        avgTicketPrice: density.avgPrice,
+        densityLevel,
+      },
+      riskFactors,
+      financialEstimate: {
+        avgRent,
+        monthlyRevenue: estimatedMonthlyRevenue,
+        monthlyCost: estimatedMonthlyCost,
+        paybackMonths,
+      },
+      suggestions,
+      dataSource: {
+        disclaimer: '本评估基于侦察兵同城竞品公开信息及行业基准数据，仅供参考，不构成投资建议。实际经营效果受多方因素影响。',
+        freshness: '数据更新于最近一次同城扫描',
+        sourceType: '侦察兵竞品数据库 + 行业基准',
+      },
+    }
+  }
+
+  // ─── 1ab. 新店开张整体规划 (V23 场景B) ──────────────
+
+  /**
+   * 新店开张整体规划 — 整合选址评估+财务全景+设备+装修+AI建议。
+   * 响应 POST /intelligence/store-planning
+   */
+  storePlanning(input: StorePlanningInput): StorePlanningOutput {
+    const { city, district, budget, area, tier } = input
+
+    // 复用选址评估
+    const siting = this.sitingAssessment(city, district)
+
+    // 财务全景（复用现有逻辑）
+    const mappedTier: RenovationTier = tier === 'deluxe' ? 'standard' : tier as RenovationTier
+    const finance = this.calculateFinancePanorama(budget, area, mappedTier, city, district)
+
+    // 竞争分析
+    const density = this.COMPETITOR_DENSITY[`${city}-${district}`] || this.COMPETITOR_DENSITY.default!
+    const densityLevel: DensityLevel = density.count >= 6 ? '高' : density.count >= 3 ? '中' : '低'
+    const competition: CompetitionAnalysis = {
+      totalCompetitors: density.count,
+      districtDistribution: { [district]: density.count },
+      avgTicketPrice: density.avgPrice,
+      densityLevel,
+      topCompetitors: density.count > 0
+        ? Array.from({ length: Math.min(density.count, 5) }, (_, i) => `${city}竞品${i + 1}`)
+        : [],
+    }
+
+    // 财务全景 (新店规划版)
+    const financialOverview: FinancialOverview = {
+      initialInvestment: {
+        equipment: finance.initialInvestment.equipmentCost,
+        renovation: finance.initialInvestment.renovationCost,
+        systemSoftware: finance.initialInvestment.softwareSystemCost,
+        deposit: finance.initialInvestment.deposit,
+        total: finance.initialInvestment.total,
+      },
+      monthlyFixedCost: {
+        rent: finance.monthlyFixedCost.rent,
+        labor: finance.monthlyFixedCost.labor,
+        maintenance: finance.monthlyFixedCost.equipmentMaintenance,
+        saas: finance.monthlyFixedCost.systemSubscription,
+        total: finance.monthlyFixedCost.total,
+      },
+      monthlyVariableCost: {
+        electricity: finance.monthlyVariableCost.electricity,
+        consumables: finance.monthlyVariableCost.consumables,
+        marketing: finance.monthlyVariableCost.marketing,
+        total: finance.monthlyVariableCost.total,
+      },
+      estimatedMonthlyRevenue: finance.revenueEstimate.estimatedMonthlyRevenue,
+      estimatedMonthlyProfit: finance.revenueEstimate.estimatedMonthlyProfit,
+      paybackMonths: finance.paybackMonths,
+    }
+
+    // 设备建议 (按tier缩放)
+    const tierFactor = tier === 'luxury' ? 1.4 : tier === 'deluxe' ? 1.2 : tier === 'standard' ? 1.0 : 0.7
+    const equipmentSuggestions: EquipmentSuggestion[] = [
+      { name: '街机射击区', count: Math.round(8 * tierFactor), unitPrice: 40000, totalPrice: Math.round(8 * tierFactor * 40000), supplier: '华立科技', warrantyMonths: 12, monthlyMaintenance: Math.round(8 * tierFactor * 40000 * 0.1 / 12) },
+      { name: 'VR体验区', count: Math.round(4 * tierFactor), unitPrice: 70000, totalPrice: Math.round(4 * tierFactor * 70000), supplier: 'Pico', warrantyMonths: 24, monthlyMaintenance: Math.round(4 * tierFactor * 70000 * 0.1 / 12) },
+      { name: '跳舞机/音游区', count: Math.round(3 * tierFactor), unitPrice: 40000, totalPrice: Math.round(3 * tierFactor * 40000), supplier: '华立科技', warrantyMonths: 12, monthlyMaintenance: Math.round(3 * tierFactor * 40000 * 0.1 / 12) },
+      { name: '夹娃娃机', count: Math.round(12 * tierFactor), unitPrice: 8000, totalPrice: Math.round(12 * tierFactor * 8000), supplier: '广州雄业', warrantyMonths: 6, monthlyMaintenance: Math.round(12 * tierFactor * 8000 * 0.1 / 12) },
+      { name: '篮球机', count: Math.round(4 * tierFactor), unitPrice: 12000, totalPrice: Math.round(4 * tierFactor * 12000), supplier: '中娱', warrantyMonths: 12, monthlyMaintenance: Math.round(4 * tierFactor * 12000 * 0.1 / 12) },
+      { name: '赛车模拟器', count: Math.round(3 * tierFactor), unitPrice: 52000, totalPrice: Math.round(3 * tierFactor * 52000), supplier: 'Playseat', warrantyMonths: 12, monthlyMaintenance: Math.round(3 * tierFactor * 52000 * 0.1 / 12) },
+    ]
+
+    // 装修预估
+    const renovationPerSqm =
+      tier === 'luxury' ? 3500 :
+      tier === 'deluxe' ? 2000 :
+      tier === 'standard' ? 1200 : 600
+    const baseRenovation = Math.round(renovationPerSqm * area * 0.5)
+    const themedDesign = Math.round(renovationPerSqm * area * 0.2)
+    const furnitureDecor = Math.round(renovationPerSqm * area * 0.2)
+    const fireSafetyApproval = Math.round(renovationPerSqm * area * 0.1)
+
+    // 风险因素
+    const riskFactors: SitingRiskFactor[] = [
+      ...siting.riskFactors,
+      {
+        factor: '装修档次与预算匹配',
+        level: budget < 200 && tier === 'luxury' ? 'high' : 'medium',
+        suggestion: budget < 200 && tier === 'luxury'
+          ? '豪华装修预算建议300万以上'
+          : '档���与预算基本匹配，可按计划执行',
+      },
+      {
+        factor: '回收期风险',
+        level: finance.paybackMonths >= 36 ? 'high' : finance.paybackMonths >= 24 ? 'medium' : 'low',
+        suggestion: finance.paybackMonths >= 24
+          ? `预计回收期${finance.paybackMonths}个月，建议做好现金流规划`
+          : '回收期合理，投资回报预期良好',
+      },
+    ]
+
+    // AI摘要
+    const grade: PlanningGrade = siting.grade
+    const aiSummary = `${city}${district}选址评估${siting.overallScore}分(${grade})。
+该区域有${density.count}家竞品，人均消费约¥${density.avgPrice}，竞争${densityLevel}。
+${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standard' ? '标准' : '经济'}档装修${area}㎡，总投资约¥${(financialOverview.initialInvestment.total / 10000).toFixed(0)}万，
+预计月营收¥${(financialOverview.estimatedMonthlyRevenue / 10000).toFixed(1)}万，回收期${finance.paybackMonths}个月。
+建议：${siting.suggestions.slice(0, 2).join('；')}`
+
+    return {
+      city,
+      district,
+      score: siting.overallScore,
+      confidenceInterval: siting.confidenceInterval,
+      grade,
+      competition,
+      financialOverview,
+      equipmentSuggestions,
+      renovationEstimate: {
+        baseRenovation,
+        themedDesign,
+        furnitureDecor,
+        fireSafetyApproval,
+        total: baseRenovation + themedDesign + furnitureDecor + fireSafetyApproval,
+      },
+      riskFactors,
+      aiSummary,
     }
   }
 
