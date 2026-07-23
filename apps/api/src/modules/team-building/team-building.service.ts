@@ -1,5 +1,20 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit, NotFoundException, BadRequestException } from '@nestjs/common'
+import type {
+  RecommendRequest,
+  RecommendResult,
+  EquipmentCheckResult,
+  EquipmentItem,
+  TeamBuildingEvent,
+  LockedEquipment,
+  TeamBuildingReport,
+  CrmSyncRecord,
+  TeamBuildingDashboard,
+  MonthlyTrend,
+  TopPlan,
+  SatisfactionBreakdown,
+  EquipmentUsage,
+} from './team-building.entity'
 
 // ── Types ──
 
@@ -70,6 +85,11 @@ const TYPE_LABELS: Record<TeamBuildingType, string> = {
 // ── In-memory store ──
 
 const planStore = new Map<string, TeamBuildingPlan>()
+const eventStore = new Map<string, TeamBuildingEvent>()
+const reportStore = new Map<string, TeamBuildingReport>()
+const syncStore = new Map<string, CrmSyncRecord>()
+/** 设备锁定: key=`${date}|${sku}|${timeSlot}` -> lockedQty */
+const equipmentLockStore = new Map<string, number>()
 let seeded = false
 
 function seedPlans(): void {
@@ -319,14 +339,508 @@ export class TeamBuildingService implements OnModuleInit {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // 方案推荐
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * 推荐方案：基于人数、预算、年龄段进行智能匹配
+   */
+  recommendPlans(tenantId: string, req: RecommendRequest): RecommendResult[] {
+    const plans = this.findAll(tenantId)
+    if (plans.length === 0) return []
+
+    const scored = plans.map((p) => {
+      let score = 0
+
+      // 人数匹配 (±30% 算合理)
+      const diff = Math.abs(p.expectedParticipants - req.participants)
+      if (diff === 0) score += 30
+      else if (diff <= Math.round(p.expectedParticipants * 0.3)) score += 20
+      else if (diff <= Math.round(p.expectedParticipants * 0.5)) score += 10
+
+      // 预算匹配（预算偏差在 ±20% 内加分）
+      const budgetRatio = req.budget / p.budget
+      if (budgetRatio >= 0.8 && budgetRatio <= 1.2) score += 30
+      else if (budgetRatio >= 0.5 && budgetRatio <= 1.5) score += 15
+
+      // 类型偏好加分
+      if (req.preferredType && p.type === req.preferredType) score += 20
+
+      // 年龄段推荐加成
+      if (req.ageGroup === 'youth' && (p.type === 'escape-room' || p.type === 'script-kill' || p.type === 'sports')) score += 10
+      if (req.ageGroup === 'adult' && (p.type === 'dinner' || p.type === 'outdoor' || p.type === 'ktv')) score += 10
+      if (req.ageGroup === 'mixed' && (p.type === 'outdoor' || p.type === 'dinner')) score += 10
+
+      // 季节适宜度加成（简化：不判断真实季节）
+      if (p.recommendedSeason && (p.recommendedSeason === '全年' || p.recommendedSeason === '春秋')) score += 5
+
+      return { plan: p, score: Math.min(score, 100) }
+    })
+
+    scored.sort((a, b) => b.score - a.score)
+
+    return scored.map((s) => ({
+      planId: s.plan.id,
+      name: s.plan.name,
+      type: s.plan.type,
+      location: s.plan.location,
+      budget: s.plan.budget,
+      score: s.score,
+      equipmentCheck: { passed: true, items: [], totalCapacityRequired: 0, totalCapacityAvailable: 0 },
+      reason: this.buildRecommendReason(s.plan, s.score),
+      recommended: s.score >= 50,
+    }))
+  }
+
+  private buildRecommendReason(plan: TeamBuildingPlan, score: number): string {
+    const label = TYPE_LABELS[plan.type]
+    if (score >= 80) return `非常适合！${label}方案完美匹配您的需求`
+    if (score >= 60) return `推荐选择！${label}方案与需求高度契合`
+    if (score >= 40) return `可以考虑，${label}方案基本满足需求`
+    return `可作参考，${label}方案与需求略有偏差`
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 设备校验
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * 校验方案设备库存可用性（仿真：基于模拟设备数据）
+   */
+  checkEquipment(planId: string, tenantId: string, date: string, participants: number): EquipmentCheckResult {
+    const plan = this.requirePlan(planId, tenantId)
+
+    // 模拟设备库（按方案类型返回不同设备需求）
+    const equipConfig: Record<string, { name: string; sku: string; capacityPerUnit: number; totalStock: number }[]> = {
+      outdoor: [
+        { name: '攀岩安全带', sku: 'EQ-CLIMB-01', capacityPerUnit: 1, totalStock: 20 },
+        { name: '户外帐篷', sku: 'EQ-TENT-01', capacityPerUnit: 4, totalStock: 10 },
+        { name: '对讲机', sku: 'EQ-RADIO-01', capacityPerUnit: 1, totalStock: 30 },
+      ],
+      'escape-room': [
+        { name: '密室对讲机', sku: 'EQ-ER-RADIO-01', capacityPerUnit: 1, totalStock: 12 },
+        { name: '密室道具包', sku: 'EQ-ER-PROP-01', capacityPerUnit: 1, totalStock: 15 },
+      ],
+      'script-kill': [
+        { name: '剧本道具箱', sku: 'EQ-SK-BOX-01', capacityPerUnit: 6, totalStock: 8 },
+        { name: '换装服装', sku: 'EQ-SK-COST-01', capacityPerUnit: 1, totalStock: 20 },
+      ],
+      dinner: [
+        { name: '投影设备', sku: 'EQ-DN-PROJ-01', capacityPerUnit: 50, totalStock: 3 },
+        { name: '音响系统', sku: 'EQ-DN-SOUND-01', capacityPerUnit: 50, totalStock: 2 },
+      ],
+      ktv: [
+        { name: '无线麦克风', sku: 'EQ-KTV-MIC-01', capacityPerUnit: 2, totalStock: 10 },
+        { name: '点歌平板', sku: 'EQ-KTV-PAD-01', capacityPerUnit: 1, totalStock: 8 },
+      ],
+      sports: [
+        { name: '羽毛球拍套装', sku: 'EQ-SPT-RACK-01', capacityPerUnit: 2, totalStock: 16 },
+        { name: '计分器', sku: 'EQ-SPT-SCORE-01', capacityPerUnit: 4, totalStock: 8 },
+        { name: '运动补给包', sku: 'EQ-SPT-SUPPLY-01', capacityPerUnit: 1, totalStock: 30 },
+      ],
+      other: [
+        { name: '导览耳机', sku: 'EQ-OTH-EAR-01', capacityPerUnit: 1, totalStock: 25 },
+      ],
+    }
+
+    const equipments = equipConfig[plan.type] ?? equipConfig.other
+
+    const items: EquipmentItem[] = []
+    let totalCapacityRequired = 0
+    let totalCapacityAvailable = 0
+    let allSatisfied = true
+
+    for (const eq of equipments) {
+      // 需求台数 = ceil(participants / capacityPerUnit)
+      const requiredUnits = Math.ceil(participants / eq.capacityPerUnit)
+
+      // 已被其他活动占用的数量
+      const lockKey = `${date}|${eq.sku}|all-day`
+      const lockedQty = equipmentLockStore.get(lockKey) ?? 0
+      const availableUnits = Math.max(0, eq.totalStock - lockedQty)
+
+      const satisfied = availableUnits >= requiredUnits
+      if (!satisfied) allSatisfied = false
+
+      totalCapacityRequired += requiredUnits * eq.capacityPerUnit
+      totalCapacityAvailable += availableUnits * eq.capacityPerUnit
+
+      items.push({
+        name: eq.name,
+        sku: eq.sku,
+        capacityPerUnit: eq.capacityPerUnit,
+        requiredUnits,
+        availableUnits,
+        satisfied,
+      })
+    }
+
+    return {
+      passed: allSatisfied && items.length > 0,
+      items,
+      totalCapacityRequired,
+      totalCapacityAvailable,
+      failReason: allSatisfied ? undefined : '部分设备库存不足，请调整参与人数或更换日期',
+    }
+  }
+
+  /**
+   * 锁定设备
+   */
+  lockEquipment(eventId: string, tenantId: string, lockedItems: LockedEquipment[]): void {
+    const event = this.requireEvent(eventId, tenantId)
+
+    for (const item of lockedItems) {
+      const lockKey = `${item.date}|${item.sku}|${item.timeSlot}`
+      const current = equipmentLockStore.get(lockKey) ?? 0
+      equipmentLockStore.set(lockKey, current + item.qty)
+    }
+
+    event.lockedEquipment = [...(event.lockedEquipment ?? []), ...lockedItems]
+    event.updatedAt = new Date().toISOString()
+    eventStore.set(eventId, event)
+  }
+
+  /**
+   * 解锁设备
+   */
+  unlockEquipment(eventId: string, tenantId: string): void {
+    const event = this.requireEvent(eventId, tenantId)
+
+    if (event.lockedEquipment) {
+      for (const item of event.lockedEquipment) {
+        const lockKey = `${item.date}|${item.sku}|${item.timeSlot}`
+        const current = equipmentLockStore.get(lockKey) ?? 0
+        const newQty = Math.max(0, current - item.qty)
+        if (newQty === 0) {
+          equipmentLockStore.delete(lockKey)
+        } else {
+          equipmentLockStore.set(lockKey, newQty)
+        }
+      }
+    }
+
+    event.lockedEquipment = []
+    event.updatedAt = new Date().toISOString()
+    eventStore.set(eventId, event)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 活动事件管理
+  // ═══════════════════════════════════════════════════════════════════
+
+  createEvent(input: {
+    tenantId: string
+    planId: string
+    name: string
+    eventDate: string
+    participants: number
+    participantMemberIds?: string[]
+    remark?: string
+  }): TeamBuildingEvent {
+    const now = new Date().toISOString()
+    const event: TeamBuildingEvent = {
+      id: `evt-${randomUUID().slice(0, 8)}`,
+      tenantId: input.tenantId,
+      planId: input.planId,
+      name: input.name,
+      eventDate: input.eventDate,
+      participants: input.participants,
+      status: 'scheduled',
+      lockedEquipment: [],
+      participantMemberIds: input.participantMemberIds ?? [],
+      remark: input.remark,
+      createdAt: now,
+      updatedAt: now,
+    }
+    eventStore.set(event.id, event)
+    return event
+  }
+
+  getEvents(tenantId: string, filter?: { status?: string; fromDate?: string; toDate?: string }): TeamBuildingEvent[] {
+    return Array.from(eventStore.values())
+      .filter((e) => e.tenantId === tenantId)
+      .filter((e) => (filter?.status ? e.status === filter.status : true))
+      .filter((e) => (filter?.fromDate ? e.eventDate >= filter.fromDate : true))
+      .filter((e) => (filter?.toDate ? e.eventDate <= filter.toDate : true))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  getEventById(id: string, tenantId: string): TeamBuildingEvent {
+    return this.requireEvent(id, tenantId)
+  }
+
+  updateEvent(
+    id: string,
+    tenantId: string,
+    input: Partial<Pick<TeamBuildingEvent, 'name' | 'eventDate' | 'participants' | 'status' | 'participantMemberIds' | 'remark'>>,
+  ): TeamBuildingEvent {
+    const event = this.requireEvent(id, tenantId)
+    const now = new Date().toISOString()
+
+    if (input.name !== undefined) event.name = input.name
+    if (input.eventDate !== undefined) event.eventDate = input.eventDate
+    if (input.participants !== undefined) event.participants = input.participants
+    if (input.status !== undefined) event.status = input.status
+    if (input.participantMemberIds !== undefined) event.participantMemberIds = input.participantMemberIds
+    if (input.remark !== undefined) event.remark = input.remark
+    event.updatedAt = now
+
+    eventStore.set(id, event)
+    return event
+  }
+
+  /**
+   * 完成活动：记录实际数据、生成满意度分布
+   */
+  completeEvent(
+    id: string,
+    tenantId: string,
+    input: { actualParticipants: number; totalSpend: number; avgSatisfaction: number; satisfactionBreakdown?: SatisfactionBreakdown },
+  ): TeamBuildingEvent {
+    const event = this.requireEvent(id, tenantId)
+
+    if (event.status === 'completed') {
+      throw new BadRequestException('活动已完成，不可重复完成')
+    }
+    if (event.status === 'cancelled') {
+      throw new BadRequestException('活动已取消，不可完成')
+    }
+
+    event.status = 'completed'
+    event.actualParticipants = input.actualParticipants
+    event.totalSpend = input.totalSpend
+    event.avgSatisfaction = input.avgSatisfaction
+    event.updatedAt = new Date().toISOString()
+
+    eventStore.set(id, event)
+    return event
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 团建报告
+  // ═══════════════════════════════════════════════════════════════════
+
+  generateReport(eventId: string, tenantId: string): TeamBuildingReport {
+    const event = this.requireEvent(eventId, tenantId)
+
+    if (event.status !== 'completed') {
+      throw new BadRequestException('只有已完成的团建活动才能生成报告')
+    }
+    if (!event.actualParticipants || !event.totalSpend || !event.avgSatisfaction) {
+      throw new BadRequestException('活动缺少实际参与人数、总消费和满意度数据')
+    }
+
+    // 检查是否已生成
+    const existing = Array.from(reportStore.values()).find((r) => r.eventId === eventId)
+    if (existing) return existing
+
+    const avgSpend = Math.round(event.totalSpend / event.actualParticipants)
+
+    const report: TeamBuildingReport = {
+      id: `rpt-${randomUUID().slice(0, 8)}`,
+      eventId,
+      tenantId,
+      title: `${event.name}团建总结报告`,
+      participantCount: event.actualParticipants,
+      totalSpend: event.totalSpend,
+      avgSpend,
+      avgSatisfaction: event.avgSatisfaction,
+      satisfactionBreakdown: {
+        count5: Math.round(event.actualParticipants * 0.4),
+        count4: Math.round(event.actualParticipants * 0.3),
+        count3: Math.round(event.actualParticipants * 0.2),
+        count2: Math.round(event.actualParticipants * 0.07),
+        count1: Math.round(event.actualParticipants * 0.03),
+      },
+      equipmentUsage: (event.lockedEquipment ?? []).map((eq) => ({
+        name: eq.equipmentName,
+        sku: eq.sku,
+        qty: eq.qty,
+        usageRate: 0.85,
+      })),
+      crmSyncStatus: 'pending',
+      createdAt: new Date().toISOString(),
+    }
+
+    reportStore.set(report.id, report)
+    return report
+  }
+
+  getReport(id: string, tenantId: string): TeamBuildingReport {
+    const report = reportStore.get(id)
+    if (!report || report.tenantId !== tenantId) {
+      throw new NotFoundException(`Report not found: ${id}`)
+    }
+    return report
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CRM 同步
+  // ═══════════════════════════════════════════════════════════════════
+
+  syncToCrm(eventId: string, tenantId: string): CrmSyncRecord {
+    const event = this.requireEvent(eventId, tenantId)
+
+    if (event.status !== 'completed') {
+      throw new BadRequestException('只有已完成的团建活动才能同步到CRM')
+    }
+
+    const existing = Array.from(syncStore.values()).find((r) => r.eventId === eventId)
+    if (existing) {
+      if (existing.syncStatus === 'synced') {
+        throw new BadRequestException('该活动已同步到CRM，请勿重复同步')
+      }
+      // 重试失败的同步
+      existing.syncStatus = 'synced'
+      existing.syncedAt = new Date().toISOString()
+      syncStore.set(existing.id, existing)
+      return existing
+    }
+
+    const record: CrmSyncRecord = {
+      id: `crm-${randomUUID().slice(0, 8)}`,
+      eventId,
+      memberIds: event.participantMemberIds,
+      totalSpend: event.totalSpend ?? 0,
+      eventName: event.name,
+      syncStatus: 'synced',
+      syncedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    }
+
+    syncStore.set(record.id, record)
+
+    // 更新报告 CRM 同步状态
+    const report = Array.from(reportStore.values()).find((r) => r.eventId === eventId)
+    if (report) {
+      report.crmSyncStatus = 'synced'
+      reportStore.set(report.id, report)
+    }
+
+    return record
+  }
+
+  getSyncStatus(eventId: string, tenantId: string): CrmSyncRecord | null {
+    const event = this.requireEvent(eventId, tenantId)
+    const record = Array.from(syncStore.values()).find((r) => r.eventId === eventId)
+    return record ?? null
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 团建看板
+  // ═══════════════════════════════════════════════════════════════════
+
+  getDashboard(tenantId: string, month?: string): TeamBuildingDashboard {
+    const allEvents = Array.from(eventStore.values()).filter((e) => e.tenantId === tenantId)
+
+    const targetMonth = month ?? new Date().toISOString().slice(0, 7) // YYYY-MM
+    const monthEvents = allEvents.filter((e) => e.eventDate.startsWith(targetMonth))
+
+    const totalParticipants = monthEvents.reduce((s, e) => s + (e.actualParticipants ?? e.participants), 0)
+    const totalSpend = monthEvents.reduce((s, e) => s + (e.totalSpend ?? 0), 0)
+
+    // 按类型分布
+    const plans = this.findAll(tenantId)
+    const planTypeMap = new Map(plans.map((p) => [p.id, p.type]))
+
+    const byType = Object.fromEntries(
+      TEAM_BUILDING_TYPES.map((t) => [t, monthEvents.filter((e) => planTypeMap.get(e.planId) === t).length]),
+    ) as Record<TeamBuildingType, number>
+
+    const spendByType: Record<string, number> = {}
+    for (const evt of monthEvents) {
+      const type = planTypeMap.get(evt.planId) ?? 'other'
+      spendByType[type] = (spendByType[type] ?? 0) + (evt.totalSpend ?? 0)
+    }
+
+    // 满意度
+    const completedEvents = monthEvents.filter((e) => e.status === 'completed' && e.avgSatisfaction !== undefined)
+    const avgSatisfaction = completedEvents.length > 0
+      ? completedEvents.reduce((s, e) => s + (e.avgSatisfaction ?? 0), 0) / completedEvents.length
+      : 0
+
+    // 方案排行
+    const planUsageCount = new Map<string, { count: number; participants: number; satisfaction: number[] }>()
+    for (const evt of monthEvents) {
+      const usage = planUsageCount.get(evt.planId) ?? { count: 0, participants: 0, satisfaction: [] }
+      usage.count++
+      usage.participants += evt.actualParticipants ?? evt.participants
+      if (evt.avgSatisfaction !== undefined) usage.satisfaction.push(evt.avgSatisfaction)
+      planUsageCount.set(evt.planId, usage)
+    }
+
+    const topPlans: TopPlan[] = Array.from(planUsageCount.entries())
+      .map(([planId, usage]) => {
+        const plan = planStore.get(planId)
+        return {
+          planId,
+          planName: plan?.name ?? '未知方案',
+          type: plan?.type ?? 'other',
+          usedCount: usage.count,
+          totalParticipants: usage.participants,
+          avgSatisfaction: usage.satisfaction.length > 0
+            ? usage.satisfaction.reduce((a, b) => a + b, 0) / usage.satisfaction.length
+            : 0,
+        }
+      })
+      .sort((a, b) => b.usedCount - a.usedCount)
+      .slice(0, 5)
+
+    // 月度趋势（近6月）
+    const monthlyTrend: MonthlyTrend[] = []
+    const [yearStr, monthStr] = targetMonth.split('-')
+    const year = Number.parseInt(yearStr, 10)
+    const monthNum = Number.parseInt(monthStr, 10)
+
+    for (let i = 5; i >= 0; i--) {
+      let y = year
+      let m = monthNum - i
+      if (m <= 0) {
+        y--
+        m += 12
+      }
+      const ym = `${y}-${String(m).padStart(2, '0')}`
+      const evts = allEvents.filter((e) => e.eventDate.startsWith(ym))
+      monthlyTrend.push({
+        month: ym,
+        eventCount: evts.length,
+        participants: evts.reduce((s, e) => s + (e.actualParticipants ?? e.participants), 0),
+        totalSpend: evts.reduce((s, e) => s + (e.totalSpend ?? 0), 0),
+      })
+    }
+
+    return {
+      month: targetMonth,
+      totalEvents: monthEvents.length,
+      totalParticipants,
+      totalSpend,
+      avgSpendPerPerson: totalParticipants > 0 ? Math.round(totalSpend / totalParticipants) : 0,
+      avgSatisfaction: Math.round(avgSatisfaction * 100) / 100,
+      byType,
+      spendByType,
+      monthlyTrend,
+      topPlans,
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // Internals
   // ═══════════════════════════════════════════════════════════════════
 
   private requirePlan(id: string, tenantId: string): TeamBuildingPlan {
     const plan = planStore.get(id)
     if (!plan || plan.tenantId !== tenantId) {
-      throw new Error(`Team-building plan not found: ${id}`)
+      throw new NotFoundException(`Team-building plan not found: ${id}`)
     }
     return plan
+  }
+
+  private requireEvent(id: string, tenantId: string): TeamBuildingEvent {
+    const event = eventStore.get(id)
+    if (!event || event.tenantId !== tenantId) {
+      throw new NotFoundException(`Team-building event not found: ${id}`)
+    }
+    return event
   }
 }

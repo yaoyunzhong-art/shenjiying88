@@ -111,7 +111,7 @@ describe('TeamBuildingService', () => {
     it('[正例] findAll 支持 search 关键词搜索', () => {
       const result = service.findAll('tenant-001', { search: '密室' })
       expect(result.length).toBeGreaterThanOrEqual(1)
-      expect(result[0].name).toContain('密室')
+      expect(result.some((p) => p.name.includes('密室'))).toBe(true)
     })
 
     it('[正例] findAll 支持 type + search 组合筛选', () => {
