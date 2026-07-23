@@ -25,7 +25,17 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { FeedbackService } from './feedback.service'
-import type { Feedback, FeedbackPage, FeedbackQuery, FeedbackTag } from './feedback.entity'
+import { CreateFeedbackDto, UpdateFeedbackDto } from './feedback.dto'
+import type {
+  Feedback,
+  FeedbackPage,
+  FeedbackQuery,
+  FeedbackTag,
+  FeedbackType,
+  FeedbackStatus,
+  FeedbackSeverity,
+  FeedbackSource,
+} from './feedback.entity'
 import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('feedback')
@@ -76,10 +86,10 @@ export class FeedbackController {
     pageSize?: string
   }): FeedbackPage {
     const q: FeedbackQuery = {}
-    if (query.type) q.type = query.type
-    if (query.status) q.status = query.status
-    if (query.severity) q.severity = query.severity
-    if (query.source) q.source = query.source
+    if (query.type) q.type = query.type as FeedbackType
+    if (query.status) q.status = query.status as FeedbackStatus
+    if (query.severity) q.severity = query.severity as FeedbackSeverity
+    if (query.source) q.source = query.source as FeedbackSource
     if (query.storeId) q.storeId = query.storeId
     if (query.userId) q.userId = query.userId
     if (query.tags) {

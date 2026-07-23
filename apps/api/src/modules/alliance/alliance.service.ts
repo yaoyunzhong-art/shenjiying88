@@ -27,7 +27,7 @@ import { AllianceDataService, type DataCallbackRecord, type CallbackDataType, ty
 import { AllianceReviewService, type AnomalyTransaction, type ReviewRecord, type ReviewStatus, type AnomalyType, type AnomalySeverity } from './alliance-review.service'
 import { AllianceDashboardService, type DashboardOverview, type GradeDistribution, type MonthlyTrend, type ActivityOverview, type PartnerRanking, type PartnerDashboard } from './alliance-dashboard.service'
 import type { TierShareConfig, TierChangeRecord } from './alliance-tier.service'
-import type { Settlement } from './alliance-settlement.service'
+import type { Settlement, SettlementParticipant } from './alliance-settlement.service'
 import type {
   AlliancePartner as AlliancePartnerType,
   PartnerInfo,
@@ -323,7 +323,7 @@ export class AllianceService {
   // ═══════════════════════════════════════════════════════════════
 
   /** 创建分账单 */
-  createSettlement(req: SettlementCreateRequest): AllianceResult<any> {
+  createSettlement(req: SettlementCreateRequest): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.createSettlement(
         req.orderId,
@@ -356,7 +356,7 @@ export class AllianceService {
   }
 
   /** 审批分账 */
-  approveSettlement(settlementId: string): AllianceResult<any> {
+  approveSettlement(settlementId: string): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.approveSettlement(settlementId)
       // 审计日志: 分账审批
@@ -379,7 +379,7 @@ export class AllianceService {
   }
 
   /** 驳回分账 */
-  rejectSettlement(settlementId: string): AllianceResult<any> {
+  rejectSettlement(settlementId: string): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.rejectSettlement(settlementId)
       this.auditService?.log({
@@ -400,7 +400,7 @@ export class AllianceService {
   }
 
   /** 取消分账（审批后撤） */
-  cancelSettlement(settlementId: string): AllianceResult<any> {
+  cancelSettlement(settlementId: string): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.cancelSettlement(settlementId)
       this.auditService?.log({
@@ -421,7 +421,7 @@ export class AllianceService {
   }
 
   /** 执行分账 */
-  executeSettlement(settlementId: string): AllianceResult<any> {
+  executeSettlement(settlementId: string): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.executeSettlement(settlementId)
       // 审计日志: 分账执行
@@ -444,7 +444,7 @@ export class AllianceService {
   }
 
   /** 查询分账 */
-  querySettlement(settlementId: string): AllianceResult<any> {
+  querySettlement(settlementId: string): AllianceResult<Settlement> {
     const settlement = this.settlementService.querySettlement(settlementId)
     if (!settlement) {
       return { success: false, message: `Settlement ${settlementId} not found` }

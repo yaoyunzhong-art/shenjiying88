@@ -50,7 +50,7 @@ export class BirthdayController {
       allowFriends?: boolean;
       friendDiscount?: number;
     },
-  ): any {
+  ): BirthdayPlan {
     return this.svc.createPlan({
       memberId: body.memberId,
       birthday: body.birthday,
@@ -70,7 +70,7 @@ export class BirthdayController {
   listPlans(
     @Query('month') month?: string,
     @Query('status') status?: BirthdayPlanStatus,
-  ): any {
+  ): { plans: BirthdayPlan[] } {
     return { plans: this.svc.listPlans({ month, status }) };
   }
 
@@ -78,7 +78,7 @@ export class BirthdayController {
    * GET /birthday/plans/:id — 方案详情
    */
   @Get('plans/:id')
-  getPlan(@Param('id') id: string): any {
+  getPlan(@Param('id') id: string): BirthdayPlan {
     return this.svc.getPlan(id);
   }
 
@@ -87,7 +87,7 @@ export class BirthdayController {
    */
   @Post('plans/:id/trigger')
   @HttpCode(HttpStatus.OK)
-  triggerPush(@Param('id') id: string): any {
+  triggerPush(@Param('id') id: string): BirthdayReward {
     return this.svc.triggerPush(id);
   }
 
@@ -96,7 +96,7 @@ export class BirthdayController {
    */
   @Post('plans/:id/claim')
   @HttpCode(HttpStatus.OK)
-  claimReward(@Param('id') id: string): any {
+  claimReward(@Param('id') id: string): BirthdayReward {
     return this.svc.claimReward(id);
   }
 
