@@ -24,6 +24,8 @@ export interface OrderRow {
   createdAt: string  // ISO
 }
 
+type OrderScalar = Exclude<OrderRow[keyof OrderRow], undefined>
+
 @Injectable()
 export class OrderAdapter {
   /** 测试/演示数据 (跨租户聚合后被过滤) */
@@ -66,7 +68,7 @@ export class OrderAdapter {
       if ('conditions' in c) {
         return this.matchFilters(row, c as ReportFilterGroup)
       }
-      const v = (row as Record<string, unknown>)[c.field]
+      const v = this.getFieldValue(row, c.field)
       switch (c.op) {
         case '=': return v === c.value
         case '!=': return v !== c.value
@@ -82,5 +84,9 @@ export class OrderAdapter {
       }
     })
     return group.op === 'AND' ? results.every(Boolean) : results.some(Boolean)
+  }
+
+  private getFieldValue(row: OrderRow, field: string): OrderScalar {
+    return (row as unknown as Record<string, OrderScalar>)[field] ?? ''
   }
 }
