@@ -86,14 +86,17 @@ describe('EmpowerCardController HTTP guard boundary', () => {
     }
   })
 
-  it('e2e: GET /empower-cards/:id still requires tenant header', async () => {
+  it('e2e: GET /empower-cards/:id remains non-public', async () => {
     const app = await buildApp()
     try {
       const res = await request(app.getHttpServer()).get('/empower-cards/card-001')
 
       assert.equal(res.statusCode, 401)
-      assert.equal(res.body.success, false)
-      assert.equal(res.body.message, 'Missing x-tenant-id header')
+      assert.equal(
+        res.body.message,
+        'This endpoint is not publicly accessible. Mark with @Public() or provide authentication.'
+      )
+      assert.equal(res.body.error, 'Unauthorized')
     } finally {
       await app.close()
     }

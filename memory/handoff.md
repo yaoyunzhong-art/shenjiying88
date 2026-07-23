@@ -266,6 +266,30 @@
     - `@TenantOptional()` 才绕过 `TenantGuard` 的租户头校验
   - 已将 `health` 与 `empower-cards/health` 标记为 `@Public() + @TenantOptional()`
   - 公开但 tenant-scoped 的业务端点（如 `auth`、`cashier`、`member/register`）保持必须显式提供 `x-tenant-id`
+  - 全仓 `health` 端点已按语义分层：
+    - 裸探活：`/api/v1/health`、`/api/v1/health/ping`、`/api/v1/empower-cards/health`
+    - 受保护模块健康检查：如 `health/readiness`、`bootstrap/health`、`docs/health`、`platform/health`、`aiops/health`
+    - 业务健康度接口：如 `alliance/health/:partnerId/*`、`analytics-v2/*/health`、`iot/devices/:deviceId/health`
+  - 后续规则应保持：
+    - 仅“裸探活”允许 `@Public() + @TenantOptional()`
+    - 模块健康检查与业务健康度接口默认保留 tenant / auth 约束，不做一刀切放开
+  - 已新增 `empower-card` 的 HTTP 回归测试，锁住 `/empower-cards/health` 不被 `:id` 路由吞掉，且确保详情端点仍保持非公开
+  - 已补 `@Public()` 但 tenant-scoped 端点的 HTTP 边界回归：
+    - `POST /auth/login/password` 无租户头 → `401 Missing x-tenant-id header`
+    - `POST /auth/login/sms` 无租户头 → `401 Missing x-tenant-id header`
+    - `POST /auth/login/wechat` 无租户头 → `401 Missing x-tenant-id header`
+    - `POST /auth/refresh` 无租户头 → `401 Missing x-tenant-id header`
+    - `POST /auth/logout` 无租户头 → `401 Missing x-tenant-id header`
+    - `GET /cashier/members/lookup` 无租户头 → `401 Missing x-tenant-id header`
+    - `GET /cashier/products/:sku` 无租户头 → `401 Missing x-tenant-id header`
+    - `POST /members/register` 无租户头 → `401 Missing x-tenant-id header`
+  - 结论：当前仓库中 `@Public()` 仅表示“绕过认证”，不表示“绕过租户域”
+  - 真实运行态抽样复验（端口 `3116`）也与自动化测试一致：
+    - `GET /api/v1/health/ping` 无租户头 → `200`
+    - `POST /api/v1/auth/login/password` 无租户头 → `401 Missing x-tenant-id header`
+    - `GET /api/v1/cashier/members/lookup?q=13800138000` 无租户头 → `401 Missing x-tenant-id header`
+    - `GET /api/v1/cashier/products/SKU-001` 无租户头 → `401 Missing x-tenant-id header`
+    - `POST /api/v1/members/register` 无租户头 → `401 Missing x-tenant-id header`
 - 基线保持：
   - 本轮修复过程中顺手补平了两个 typecheck 残点：
     - `apps/api/src/modules/tournament/tournament.contract.test.ts`

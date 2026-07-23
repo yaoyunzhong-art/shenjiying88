@@ -13,6 +13,10 @@ import { IdentityAccessService } from '../foundation/identity-access/identity-ac
 import type { TenantAwareRequest } from '../tenant/tenant.types'
 
 const PASSWORD_LOGIN_PATH = '/auth/login/password'
+const SMS_LOGIN_PATH = '/auth/login/sms'
+const WECHAT_LOGIN_PATH = '/auth/login/wechat'
+const REFRESH_PATH = '/auth/refresh'
+const LOGOUT_PATH = '/auth/logout'
 const PASSWORD_UNLOCK_PATH = '/auth/locks/password/unlock'
 const TENANT_ID = 'tenant-001'
 const USER_AGENT =
@@ -158,6 +162,58 @@ describe('Auth HTTP E2E', () => {
     const error = extractAuthError(blocked)
     assert.equal(error.code, AuthErrorCode.ACCOUNT_LOCKED)
     assert.ok(typeof error.retryAfter === 'number' && error.retryAfter > 0)
+  })
+
+  it('POST /auth/login/password 虽然 @Public() 但无租户头仍返回 Missing x-tenant-id header', async () => {
+    const res = await request(app.getHttpServer())
+      .post(PASSWORD_LOGIN_PATH)
+      .set('user-agent', USER_AGENT)
+      .send({
+        mobile: '13800138000',
+        password: 'password123',
+        loginType: LoginType.MOBILE_PASSWORD,
+      })
+
+    assert.equal(res.status, 401)
+    assert.equal(res.body.message, 'Missing x-tenant-id header')
+    assert.equal(res.body.error, 'Unauthorized')
+  })
+
+  it('其余 @Public() auth 端点在无租户头时仍保持 tenant-scoped', async () => {
+    const cases = [
+      {
+        path: SMS_LOGIN_PATH,
+        headers: { 'user-agent': USER_AGENT },
+        body: { mobile: '13800138000', code: '123456' },
+      },
+      {
+        path: WECHAT_LOGIN_PATH,
+        headers: { 'user-agent': USER_AGENT },
+        body: { code: 'wechat-code-demo' },
+      },
+      {
+        path: REFRESH_PATH,
+        headers: {},
+        body: { refreshToken: 'refresh-token-demo' },
+      },
+      {
+        path: LOGOUT_PATH,
+        headers: { authorization: 'Bearer token-demo' },
+        body: { allSessions: false },
+      },
+    ] as const
+
+    for (const testCase of cases) {
+      let req = request(app.getHttpServer()).post(testCase.path)
+      for (const [key, value] of Object.entries(testCase.headers)) {
+        req = req.set(key, value)
+      }
+      const res = await req.send(testCase.body)
+
+      assert.equal(res.status, 401)
+      assert.equal(res.body.message, 'Missing x-tenant-id header')
+      assert.equal(res.body.error, 'Unauthorized')
+    }
   })
 })
 
