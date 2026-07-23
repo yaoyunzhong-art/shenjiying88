@@ -76,7 +76,7 @@ export class CohortService {
       tableName: 'cohorts',
       recordId: cohort.id,
       eventType: 'UPDATED',
-      after: cohort as any,
+      after: cohort as unknown as Record<string, unknown>,
       eventId: `cdc-cohort-${cohort.id}-${Date.now()}`
     })
     this.cdcStream.apply(cdcEvent)
@@ -116,8 +116,8 @@ export class CohortService {
           tableName: 'cohorts',
           recordId: c.id,
           eventType: 'UPDATED',
-          before: c as any,
-          after: { ...c, lastActivity: new Date().toISOString() } as any,
+          before: c as unknown as Record<string, unknown>,
+          after: { ...c, lastActivity: new Date().toISOString() } as Record<string, unknown>,
           eventId: `cdc-cohort-activity-${c.id}-${input.memberId}-${Date.now()}`
         })
         this.cdcStream.apply(cdcEvent)

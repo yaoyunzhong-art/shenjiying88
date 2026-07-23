@@ -69,7 +69,7 @@ export class AnalyticsV2Controller {
     revenueCents?: number
     timestamp?: string
   }) {
-    const r = this.eventCollector.collect(body)
+    const r = this.eventCollector.collect(body as any)
     return r
   }
 

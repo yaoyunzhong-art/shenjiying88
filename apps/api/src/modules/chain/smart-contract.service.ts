@@ -277,8 +277,8 @@ export class PointsSettlementContract {
     return updated
   }
 
-  getContractState(contractId: string): SettlementContractData | null {
-    return settlementStore.get(contractId) ?? null
+  getContractState(contractId: string): SettlementContractData | undefined {
+    return settlementStore.get(contractId)
   }
 
   // 模拟获取 payer 余额（简化实现）
@@ -403,8 +403,8 @@ export class RevenueShareContract {
     return shareHistoryStore.get(contractId) ?? []
   }
 
-  getContractState(contractId: string): RevenueShareContractData | null {
-    return revenueShareStore.get(contractId) ?? null
+  getContractState(contractId: string): RevenueShareContractData | undefined {
+    return revenueShareStore.get(contractId)
   }
 }
 

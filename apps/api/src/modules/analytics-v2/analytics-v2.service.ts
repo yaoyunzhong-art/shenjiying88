@@ -127,7 +127,7 @@ export class AnalyticsV2Service {
       tableName: 'events',
       recordId: event.eventId,
       eventType: 'CREATED',
-      after: event as any,
+      after: event as unknown as Record<string, unknown>,
       eventId: `cdc-${event.eventId}`
     })
     this.cdcStream.apply(cdcEvent)
@@ -163,7 +163,7 @@ export class AnalyticsV2Service {
   } {
     const results = events.map(event => {
       try {
-        const accepted = this.eventCollector.collect(event as any)
+        const accepted = this.eventCollector.collect(event as unknown as Parameters<EventCollector['collect']>[0])
         if (!accepted.accepted) {
           return { eventId: event.eventId, accepted: false, reason: 'collect_rejected' }
         }
