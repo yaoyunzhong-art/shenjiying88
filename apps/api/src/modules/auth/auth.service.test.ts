@@ -345,6 +345,54 @@ describe('AuthService', () => {
       expect(unlockEvent!.metadata?.clearedFailedAttempts).toBe(2)
       expect(unlockEvent!.metadata?.resetReason).toBe('successful-login')
     })
+
+    it('should allow operator unlock for a locked password principal', async () => {
+      const auditService = new AuditService()
+      const service = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        undefined,
+        auditService,
+      )
+
+      for (let i = 0; i < 5; i++) {
+        await service.loginByPassword(
+          '13800138000',
+          undefined,
+          `wrong-password-manual-unlock-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `manual-unlock-${i}`, deviceType: 'web' },
+        )
+      }
+
+      const unlockResult = await service.unlockPasswordLogin(
+        '13800138000',
+        undefined,
+        'sec-admin-001',
+        'helpdesk-verified',
+      )
+
+      expect(unlockResult.cleared).toBe(true)
+      expect(unlockResult.clearedFailedAttempts).toBe(5)
+      expect(unlockResult.userId).toBe('admin_001')
+
+      const success = await service.loginByPassword(
+        '13800138000',
+        undefined,
+        'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'manual-unlock-success', deviceType: 'web' },
+      )
+
+      expect(success.success).toBe(true)
+
+      const logs = auditService.__getAll()
+      const overrideEvent = logs.find((log) => log.eventType === 'auth.login_unlock_override')
+      expect(overrideEvent).toBeDefined()
+      expect(overrideEvent!.actorId).toBe('sec-admin-001')
+      expect(overrideEvent!.actorType).toBe('admin')
+      expect(overrideEvent!.metadata?.resetReason).toBe('manual-unlock')
+    })
   })
 
   // ─── 微信登录 ────────────────────────────────────────────────────────

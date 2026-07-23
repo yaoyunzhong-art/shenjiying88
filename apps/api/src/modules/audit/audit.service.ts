@@ -7,7 +7,7 @@ import { Logger } from '@nestjs/common'
 
 export type AuditEventType =
   | 'auth.login' | 'auth.logout' | 'auth.register' | 'auth.password_change'
-  | 'auth.login_locked' | 'auth.login_unlocked'
+  | 'auth.login_locked' | 'auth.login_unlocked' | 'auth.login_unlock_override'
   | 'user.created' | 'user.deleted' | 'user.disabled' | 'user.enabled' | 'user.profile_update' | 'user.consent_update' | 'user.data_delete'
   | 'order.created' | 'order.paid' | 'order.refunded' | 'order.cancelled'
   | 'points.earned' | 'points.redeemed' | 'points.adjusted'

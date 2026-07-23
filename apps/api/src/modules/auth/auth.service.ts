@@ -264,6 +264,56 @@ export class AuthService {
     return this.toUserInfo(user)
   }
 
+  async unlockPasswordLogin(
+    mobile: string | undefined,
+    email: string | undefined,
+    actorId?: string,
+    reason?: string,
+  ): Promise<{
+    principal: string
+    cleared: boolean
+    userId?: string
+    tenantId?: string
+    clearedFailedAttempts: number
+    previousLockedUntil?: string
+  }> {
+    const principal = this.resolvePasswordLoginPrincipal(mobile, email)
+
+    if (!principal) {
+      throw new Error('mobile or email is required to unlock password login state')
+    }
+
+    const user = mobile
+      ? this.findUserByMobile(mobile)
+      : email
+        ? this.findUserByEmail(email)
+        : undefined
+    const principalState = await this.getPasswordAttemptState(principal)
+    const fallbackState = user && (user.failedAttempts > 0 || user.lockedUntil)
+      ? {
+          failedAttempts: user.failedAttempts,
+          lockedUntil: user.lockedUntil,
+          locked: this.isUserPasswordLocked(user),
+        }
+      : undefined
+    const previousState = principalState ?? fallbackState
+
+    await this.resetPasswordFailureState(principal, user)
+
+    if (previousState) {
+      this.logPasswordUnlockOverrideEvent(user, principal, previousState, actorId, reason)
+    }
+
+    return {
+      principal,
+      cleared: Boolean(previousState),
+      userId: user?.userId,
+      tenantId: user?.tenantId,
+      clearedFailedAttempts: previousState?.failedAttempts ?? 0,
+      previousLockedUntil: previousState?.lockedUntil?.toISOString(),
+    }
+  }
+
   // ─── 私有方法 ────────────────────────────────────────────────────────
 
   private generateAuthResult(
@@ -499,6 +549,37 @@ export class AuthService {
       },
     }).catch((error: Error) => {
       this.logger.warn(`Failed to record password unlock audit event: ${error.message}`)
+    })
+  }
+
+  private logPasswordUnlockOverrideEvent(
+    user: MockUser | undefined,
+    principal: string,
+    previousState: PasswordAttemptState,
+    actorId?: string,
+    reason?: string,
+  ): void {
+    if (!this.auditService) {
+      return
+    }
+
+    void this.auditService.log({
+      eventType: 'auth.login_unlock_override',
+      actorId: actorId?.trim() || 'system',
+      actorType: actorId ? 'admin' : 'system',
+      tenantId: user?.tenantId,
+      resourceType: 'auth-user',
+      resourceId: user?.userId ?? principal,
+      riskLevel: previousState.lockedUntil ? 'high' : 'medium',
+      metadata: {
+        principal,
+        clearedFailedAttempts: previousState.failedAttempts,
+        previousLockedUntil: previousState.lockedUntil?.toISOString() ?? null,
+        resetReason: 'manual-unlock',
+        unlockReason: reason?.trim() || null,
+      },
+    }).catch((error: Error) => {
+      this.logger.warn(`Failed to record password unlock override audit event: ${error.message}`)
     })
   }
 

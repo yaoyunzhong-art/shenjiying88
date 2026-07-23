@@ -13,8 +13,15 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  CurrentActor,
+  RequirePermissions,
+  RequireRoles,
+  type CurrentActorValue,
+} from '../foundation/identity-access/identity-access.decorator'
 import { AuthService } from './auth.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { UnlockPasswordLockDto } from './auth.dto'
 import {
   LoginBySmsDto,
   LoginByPasswordDto,
@@ -85,6 +92,27 @@ export class AuthController {
         user: result.user,
         ...result.tokens,
       },
+    }
+  }
+
+  @Post('locks/password/unlock')
+  @HttpCode(HttpStatus.OK)
+  @RequireRoles('SUPER_ADMIN', 'TENANT_ADMIN', 'OPERATIONS', 'SECURITY_ADMIN')
+  @RequirePermissions('foundation.runtime-governance.write')
+  async unlockPasswordLock(
+    @Body() body: UnlockPasswordLockDto,
+    @CurrentActor() actorContext: CurrentActorValue,
+  ) {
+    const result = await this.authService.unlockPasswordLogin(
+      body.mobile,
+      body.email,
+      actorContext?.actorId,
+      body.reason,
+    )
+
+    return {
+      success: true,
+      data: result,
     }
   }
 
