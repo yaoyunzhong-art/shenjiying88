@@ -6,6 +6,8 @@
 import { Injectable } from '@nestjs/common'
 import type {
   Campaign,
+  CampaignType,
+  Channel,
   ROIResult,
   BudgetAllocation,
 } from './ai-marketing-cmo.service'
@@ -112,11 +114,11 @@ export class MarketingAnalyticsService {
       this.campaigns.push({
         id: c.id,
         name: c.name,
-        type: c.type as string,
+        type: c.type as CampaignType,
         revenue: c.revenue,
         cost: c.cost,
         audience: c.audience,
-        channel: c.channel as string,
+        channel: c.channel as Channel,
         startDate: '2026-01-01',
         endDate: '2026-01-31',
       })

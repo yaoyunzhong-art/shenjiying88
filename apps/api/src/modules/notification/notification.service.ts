@@ -19,6 +19,7 @@ import {
   type NotificationDispatch,
   type NotificationTemplate
 } from './notification.entity'
+import { PushBusinessPriority } from '../push/push-priority.enum'
 import { MetricsService } from '../observability/metrics.service'
 
 const templateStore = new Map<string, NotificationTemplate>()
@@ -529,7 +530,7 @@ export class NotificationService implements OnModuleInit {
           body: typeof dispatch.payload.content === 'string'
             ? dispatch.payload.content
             : JSON.stringify(dispatch.payload),
-          priority: dispatch.channel === NotificationChannelType.Sms ? 10 : 5,
+          priority: dispatch.channel === NotificationChannelType.Sms ? PushBusinessPriority.P1 : PushBusinessPriority.P2,
           tenantId: dispatch.tenantId,
           subject: dispatch.payload.subject as string | undefined,
         } as import('../push/channels/push-channel.interface').PushChannelRequest,

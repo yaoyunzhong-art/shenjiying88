@@ -4,6 +4,7 @@ import type { Response } from 'express'
 import { MetricsService } from './metrics.service'
 import { ObservabilityService } from './observability.service'
 import type { CreateAlertRuleRequest, UpdateAlertRuleRequest, AlertRuleResponse } from './metrics.dto'
+import type { ChaosScope, ChaosType } from './chaos-engine'
 import { TenantGuard } from '../agent/tenant.guard'
 
 @Injectable()
@@ -151,12 +152,12 @@ export class MetricsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '启动故障演练' })
   startChaosExperiment(@Body() body: {
-    type: string; scope: string; target?: string;
+    type: ChaosType; scope: ChaosScope; target?: string;
     params?: Record<string, number | string>; description?: string; autoRevertMs?: number
   }) {
     return this.observability.startChaosExperiment({
-      type: body.type as string,
-      scope: body.scope as string,
+      type: body.type,
+      scope: body.scope,
       target: body.target,
       params: body.params,
       description: body.description,

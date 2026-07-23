@@ -172,7 +172,6 @@ export class RecommendService {
     this.cache.invalidate(tenantId)
     const pref = this.prefAdapter.query(tenantId, memberId)
     if (pref) {
-      this.cache.set(`pref:${tenantId}:${memberId}`, pref as Record<string, unknown>)
       return true
     }
     return false

@@ -5,7 +5,7 @@
 import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException, UseGuards } from '@nestjs/common'
 import { ReportService } from './report.service'
 import type {
-  ReportDefinition, ReportQueryResponse, DashboardLayout, ReportPeriod,
+  ReportDefinition, ReportMetric, ReportQueryResponse, DashboardLayout, ReportPeriod,
 } from './report.entity'
 import { TenantGuard } from '../agent/tenant.guard'
 
@@ -48,7 +48,7 @@ export class ReportController {
     @Param('metric') metric: string,
     @Param('dimension') dimension: string,
   ): { metric: string; dimension: string; totals: Record<string, number> } {
-    const totals = this.service.aggregateBy(metric as string, dimension)
+    const totals = this.service.aggregateBy(metric as ReportMetric, dimension)
     return { metric, dimension, totals: Object.fromEntries(totals) }
   }
 

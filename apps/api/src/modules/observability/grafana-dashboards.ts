@@ -190,7 +190,7 @@ export const COMPLIANCE_DASHBOARD: GrafanaDashboard = {
     {
       id: 4,
       title: '数据驻留分布',
-      type: 'piechart' as string,
+      type: 'table',
       targets: [{ expr: 'sum by (region) (compliance_data_residency_bytes)', legendFormat: '{{region}}' }],
       gridPos: { x: 18, y: 0, w: 6, h: 4 },
     },

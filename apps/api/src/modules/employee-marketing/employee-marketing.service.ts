@@ -21,6 +21,7 @@ import type {
   CirclePost,
   KolProfile,
   KolLevel,
+  PositionType,
   TaskDifficulty,
 } from './employee-marketing.entity';
 import type {

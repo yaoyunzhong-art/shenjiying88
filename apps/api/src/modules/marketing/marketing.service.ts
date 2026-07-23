@@ -141,7 +141,7 @@ export class MarketingService {
     memberIds: string[]
     variantNameA: string
     variantNameB: string
-    couponSegment: string
+    couponSegment: CouponSegment
     expiryDays: number
     costCents: number
   }): {
@@ -167,7 +167,7 @@ export class MarketingService {
         tenantId: input.tenantId,
         memberId,
         campaignId: input.campaignId,
-        couponSegment: input.couponSegment as string,
+        couponSegment: input.couponSegment as CouponSegment,
         rewardAmount: 500,
         discountPercent: 10,
         expiryDays: input.expiryDays,

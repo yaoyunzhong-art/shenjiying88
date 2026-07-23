@@ -272,7 +272,7 @@ export class OpenApiService {
     // V10 Day 5 简化: 实际从 req.headers.authorization 提取
     // 这里假定中间件已经处理并放入 tenantContext
     const ctx = requireTenantContext()
-    return (ctx as Record<string, string>).bearerToken ?? ''
+    return (ctx as unknown as Record<string, string>).bearerToken ?? ''
   }
 
   /** 种子: 2 个测试客户端 */
