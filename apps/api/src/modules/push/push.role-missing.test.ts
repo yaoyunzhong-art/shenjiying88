@@ -11,6 +11,9 @@ import assert from 'node:assert/strict'
 import { PushController } from './push.controller'
 import { APNsService, PushNotificationScheduler, WebSocketService } from './push.service'
 import { PushPlatform, PushPriority, PushScheduleStatus, PushStatus } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
 
 // ── 4 个新增角色定义 ──
 const ROLES = {
@@ -22,10 +25,18 @@ const ROLES = {
 
 // ── 辅助工厂 ──
 function makeController(): PushController {
+  const dndConfig = new DndConfigService()
+  const frequencyCap = new FrequencyCapService()
+  const priorityGuard = new PushPriorityGuard(dndConfig, frequencyCap)
+  const emailChannel = new EmailPushChannel()
+  const smsChannel = new SmsPushChannel()
+  const dualChannelRouter = new DualChannelRouter()
+  dualChannelRouter.register(emailChannel)
+  dualChannelRouter.register(smsChannel)
   const apnsService = new APNsService()
   const wsService = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apnsService)
-  return new PushController(apnsService, wsService, scheduler)
+  return new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter)
 }
 
 const tenantContext = {

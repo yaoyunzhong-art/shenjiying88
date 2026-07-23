@@ -251,3 +251,29 @@
 - 当前结论：
   - `DEV-0004` 已从“代码 + service + HTTP”推进为“代码 + service + HTTP + 跨实例共享门禁”
   - 后续若要再补强，可继续做 Redis 原子计数脚本化、审计留痕与运维解锁口径
+
+### DEV-0004 已修补 Redis 并发竞态
+
+- `apps/api/src/modules/auth/auth.service.ts`
+  - 共享态失败计数已切到 `Redis INCR + EXPIRE`
+  - 修复了并发失败请求下“未达阈值请求删掉已写锁”的竞态风险
+  - 现在更接近真实多实例场景下的稳定锁定语义
+- `apps/api/src/modules/auth/auth.service.test.ts`
+  - 已新增并发 `5` 次错误密码后，后续正确密码仍被阻断的定向验证
+- 定向验证已通过：
+  - `pnpm --dir apps/api exec vitest run src/modules/auth/auth.service.test.ts src/modules/auth/auth.http.e2e.test.ts src/modules/auth/auth.role.test.ts src/modules/auth/auth.role-collaboration.test.ts`
+  - 结果：`4` 个测试文件、`87` 条用例全部通过
+
+### DEV-0004 已补锁定/解锁审计留痕
+
+- `apps/api/src/modules/auth/auth.service.ts`
+  - 首次触发锁定时记录 `auth.login_locked`
+  - 成功登录清空失败态时记录 `auth.login_unlocked`
+  - 审计只打在关键状态跃迁点，避免把普通输错密码刷成噪音
+- `apps/api/src/modules/auth/auth.module.ts`
+  - 已补 `AuditService` provider，AuthModule 内可直接注入复用
+- `apps/api/src/modules/auth/auth.service.test.ts`
+  - 已新增锁定事件与解锁事件的定向验证
+- 定向验证已通过：
+  - `pnpm --dir apps/api exec vitest run src/modules/auth/auth.service.test.ts src/modules/auth/auth.http.e2e.test.ts src/modules/auth/auth.module.test.ts src/modules/auth/auth.role.test.ts src/modules/auth/auth.role-collaboration.test.ts`
+  - 结果：`5` 个测试文件、`98` 条用例全部通过

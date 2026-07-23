@@ -15,6 +15,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PushController } from './push.controller'
 import { APNsService, WebSocketService, PushNotificationScheduler } from './push.service'
 import { PushPlatform, PushPriority } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
 
 // ── 8 角色定义 ──
 const ROLES = {
@@ -47,10 +50,18 @@ const MOCK_TENANT = {
 
 // ── 测试工厂 ──
 function createController(): PushController {
+  const dndConfig = new DndConfigService()
+  const frequencyCap = new FrequencyCapService()
+  const priorityGuard = new PushPriorityGuard(dndConfig, frequencyCap)
+  const emailChannel = new EmailPushChannel()
+  const smsChannel = new SmsPushChannel()
+  const dualChannelRouter = new DualChannelRouter()
+  dualChannelRouter.register(emailChannel)
+  dualChannelRouter.register(smsChannel)
   const apns = new APNsService()
   const ws = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apns)
-  return new PushController(apns, ws, scheduler)
+  return new PushController(apns, ws, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter)
 }
 
 // ════════════════════════════════════════════════════════════════

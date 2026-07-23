@@ -7,6 +7,9 @@ import {
   WebSocketService
 } from './push.service'
 import { PushPlatform, PushPriority } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
 
 describe('PushController', () => {
   let controller: PushController
@@ -19,7 +22,17 @@ describe('PushController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PushController],
-      providers: [APNsService, WebSocketService, PushNotificationScheduler]
+      providers: [
+        APNsService,
+        WebSocketService,
+        PushNotificationScheduler,
+        PushPriorityGuard,
+        DndConfigService,
+        FrequencyCapService,
+        EmailPushChannel,
+        SmsPushChannel,
+        DualChannelRouter,
+      ]
     }).compile()
 
     controller = module.get(PushController)

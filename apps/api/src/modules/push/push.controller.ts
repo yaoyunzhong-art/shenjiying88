@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Patch, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -26,6 +26,10 @@ import {
   WebSocketService
 } from './push.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { PushBusinessPriority, isPushPriorityMandatory } from './push-priority.enum'
+import { DndConfigService, FrequencyCapService, DEFAULT_DND_CONFIG, DEFAULT_FREQUENCY_CAP_CONFIG } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, DEFAULT_CHANNEL_ROUTING } from './channels'
 
 /**
  * 将 service 返回的轻量 ScheduledPush 转为 entity 完整 ScheduledPush
@@ -92,7 +96,14 @@ export class PushController {
   constructor(
     private readonly apnsService: APNsService,
     private readonly wsService: WebSocketService,
-    private readonly scheduler: PushNotificationScheduler
+    private readonly scheduler: PushNotificationScheduler,
+    // WP-13A: 推送分级
+    private readonly priorityGuard: PushPriorityGuard,
+    // WP-13A: 免打扰 & 频控
+    private readonly dndConfig: DndConfigService,
+    private readonly frequencyCap: FrequencyCapService,
+    // WP-13A: 双通道
+    private readonly dualChannelRouter: DualChannelRouter,
   ) {}
 
   // ── Push Template endpoints ──
@@ -289,6 +300,256 @@ export class PushController {
     @Body() body: { clientId: string; oldSessionId: string }
   ): { restored: boolean; sessionId?: string } {
     return this.wsService.handleReconnect(body.clientId, body.oldSessionId)
+  }
+
+  // ── WP-13A: 推送分级 ──
+
+  /**
+   * 推送分级检查
+   * POST /push/priority/check
+   * 在发送前预览推送是否会被拦截
+   */
+  @Post('priority/check')
+  checkPriority(
+    @Body() body: {
+      priority: PushBusinessPriority
+      tenantId: string
+      memberId?: string
+      userSettings?: Record<string, unknown>
+    }
+  ): { allowed: boolean; reason?: string; blockedByDnd?: boolean; blockedByFrequencyCap?: boolean; blockedByPreference?: boolean } {
+    const result = this.priorityGuard.check(
+      body.priority,
+      body.tenantId,
+      body.memberId,
+      body.userSettings
+    )
+    return result
+  }
+
+  /**
+   * 获取推送分级定义
+   * GET /push/priority/levels
+   */
+  @Get('priority/levels')
+  getPriorityLevels(): Array<{
+    level: PushBusinessPriority
+    name: string
+    mandatory: boolean
+    description: string
+  }> {
+    return [
+      { level: PushBusinessPriority.P0, name: '紧急告警', mandatory: true, description: '不可关闭，系统强制发送' },
+      { level: PushBusinessPriority.P1, name: '重要通知', mandatory: false, description: '订单/结算/验证等关键业务通知' },
+      { level: PushBusinessPriority.P2, name: '一般推送', mandatory: false, description: '通用信息推送' },
+      { level: PushBusinessPriority.P3, name: '营销推送', mandatory: false, description: '促销/优惠券/新品推荐，可一键关闭' },
+    ]
+  }
+
+  // ── WP-13A: 免打扰 DND ──
+
+  /**
+   * 获取免打扰配置
+   * GET /push/dnd/:tenantId
+   */
+  @Get('dnd/:tenantId')
+  getDndConfig(
+    @Param('tenantId') tenantId: string
+  ) {
+    return this.dndConfig.getConfig(tenantId)
+  }
+
+  /**
+   * 更新免打扰配置
+   * PATCH /push/dnd/:tenantId
+   */
+  @Patch('dnd/:tenantId')
+  updateDndConfig(
+    @Param('tenantId') tenantId: string,
+    @Body() body: { enabled?: boolean; startTime?: string; endTime?: string }
+  ) {
+    return this.dndConfig.setConfig(tenantId, body)
+  }
+
+  /**
+   * 检查当前是否在免打扰时段
+   * GET /push/dnd/:tenantId/check
+   */
+  @Get('dnd/:tenantId/check')
+  checkDnd(
+    @Param('tenantId') tenantId: string
+  ): { inDndHours: boolean } {
+    return { inDndHours: this.dndConfig.isInDndHours(tenantId) }
+  }
+
+  // ── WP-13A: 频控 ──
+
+  /**
+   * 获取频控配置
+   * GET /push/frequency-cap/:tenantId
+   */
+  @Get('frequency-cap/:tenantId')
+  getFrequencyCapConfig(
+    @Param('tenantId') tenantId: string
+  ) {
+    return this.frequencyCap.getConfig(tenantId)
+  }
+
+  /**
+   * 更新频控配置
+   * PATCH /push/frequency-cap/:tenantId
+   */
+  @Patch('frequency-cap/:tenantId')
+  updateFrequencyCapConfig(
+    @Param('tenantId') tenantId: string,
+    @Body() body: { dailyMax?: number; weeklyMax?: number; perMinuteMax?: number; cooldownSeconds?: number }
+  ) {
+    return this.frequencyCap.setConfig(tenantId, body)
+  }
+
+  /**
+   * 查询频控状态
+   * GET /push/frequency-cap/:tenantId/status/:memberId
+   */
+  @Get('frequency-cap/:tenantId/status/:memberId')
+  getFrequencyCapStatus(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string
+  ) {
+    return this.frequencyCap.peek(tenantId, memberId)
+  }
+
+  /**
+   * 检查成员是否触发频控
+   * POST /push/frequency-cap/:tenantId/check/:memberId
+   */
+  @Post('frequency-cap/:tenantId/check/:memberId')
+  checkFrequencyCap(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string
+  ): { allowed: boolean; dailyCount: number; weeklyCount: number } {
+    const state = this.frequencyCap.checkAndIncrement(tenantId, memberId)
+    return {
+      allowed: !state.exceeded,
+      dailyCount: state.dailyCount,
+      weeklyCount: state.weeklyCount,
+    }
+  }
+
+  // ── WP-13A: 双通道 ──
+
+  /**
+   * 获取双通道健康状态
+   * GET /push/channels/health
+   */
+  @Get('channels/health')
+  async getChannelHealth(): Promise<Record<string, boolean>> {
+    return this.dualChannelRouter.healthCheck()
+  }
+
+  /**
+   * 发送邮件推送
+   * POST /push/channels/email
+   */
+  @Post('channels/email')
+  async sendEmail(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { recipient: string; subject: string; body: string; priority?: PushBusinessPriority }
+  ) {
+    const priority = body.priority ?? PushBusinessPriority.P1
+    const guardResult = this.priorityGuard.check(
+      priority,
+      tenantContext.tenantId,
+      undefined,
+      undefined
+    )
+    if (!guardResult.allowed) {
+      return { success: false, reason: guardResult.reason }
+    }
+
+    return this.dualChannelRouter.send(
+      {
+        recipient: body.recipient,
+        subject: body.subject,
+        body: body.body,
+        priority,
+        tenantId: tenantContext.tenantId,
+      },
+      { primary: 'email', fallback: 'sms' }
+    )
+  }
+
+  /**
+   * 发送短信推送
+   * POST /push/channels/sms
+   */
+  @Post('channels/sms')
+  async sendSms(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: { recipient: string; body: string; priority?: PushBusinessPriority }
+  ) {
+    const priority = body.priority ?? PushBusinessPriority.P1
+    const guardResult = this.priorityGuard.check(
+      priority,
+      tenantContext.tenantId,
+      undefined,
+      undefined
+    )
+    if (!guardResult.allowed) {
+      return { success: false, reason: guardResult.reason }
+    }
+
+    return this.dualChannelRouter.send(
+      {
+        recipient: body.recipient,
+        body: body.body,
+        priority,
+        tenantId: tenantContext.tenantId,
+      },
+      { primary: 'sms', fallback: 'email' }
+    )
+  }
+
+  /**
+   * 双通道发送（主邮件，备短信）
+   * POST /push/channels/send-dual
+   */
+  @Post('channels/send-dual')
+  async sendDualChannel(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: {
+      recipient: string
+      subject?: string
+      body: string
+      priority?: PushBusinessPriority
+      primary?: string
+      fallback?: string
+    }
+  ) {
+    const priority = body.priority ?? PushBusinessPriority.P1
+    const guardResult = this.priorityGuard.check(
+      priority,
+      tenantContext.tenantId,
+      undefined,
+      undefined
+    )
+    if (!guardResult.allowed) {
+      return { success: false, reason: guardResult.reason }
+    }
+
+    return this.dualChannelRouter.send(
+      {
+        recipient: body.recipient,
+        subject: body.subject,
+        body: body.body,
+        priority,
+        tenantId: tenantContext.tenantId,
+      },
+      {
+        primary: body.primary ?? DEFAULT_CHANNEL_ROUTING.primary,
+        fallback: body.fallback ?? DEFAULT_CHANNEL_ROUTING.fallback,
+      }
+    )
   }
 
   // ── Stats & Query endpoints ──

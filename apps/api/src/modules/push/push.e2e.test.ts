@@ -19,6 +19,9 @@ import { type INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { PushController } from './push.controller'
 import { APNsService, WebSocketService, PushNotificationScheduler } from './push.service'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
 
 /**
  * 在测试请求中注入 tenant 上下文到 request 对象
@@ -43,6 +46,14 @@ async function buildApp() {
   const apnsService = new APNsService()
   const wsService = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apnsService)
+  const dndConfig = new DndConfigService()
+  const frequencyCap = new FrequencyCapService()
+  const priorityGuard = new PushPriorityGuard(dndConfig, frequencyCap)
+  const emailChannel = new EmailPushChannel()
+  const smsChannel = new SmsPushChannel()
+  const dualChannelRouter = new DualChannelRouter()
+  dualChannelRouter.register(emailChannel)
+  dualChannelRouter.register(smsChannel)
 
   const moduleRef = await Test.createTestingModule({
     controllers: [PushController],
@@ -50,6 +61,12 @@ async function buildApp() {
       { provide: APNsService, useValue: apnsService },
       { provide: WebSocketService, useValue: wsService },
       { provide: PushNotificationScheduler, useValue: scheduler },
+      { provide: PushPriorityGuard, useValue: priorityGuard },
+      { provide: DndConfigService, useValue: dndConfig },
+      { provide: FrequencyCapService, useValue: frequencyCap },
+      { provide: DualChannelRouter, useValue: dualChannelRouter },
+      { provide: EmailPushChannel, useValue: emailChannel },
+      { provide: SmsPushChannel, useValue: smsChannel },
     ],
   }).compile()
 

@@ -11,6 +11,7 @@ import {
 import { TokenService } from './token.service'
 import { SessionService } from './session.service'
 import { RedisService } from '../../infrastructure/redis/redis.module'
+import { AuditService } from '../audit/audit.service'
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly sessionService: SessionService,
     @Optional() private readonly redisService?: RedisService,
+    @Optional() private readonly auditService?: AuditService,
   ) {
     // 初始化mock数据
     this.initMockUsers()
@@ -120,6 +122,9 @@ export class AuthService {
     // 2. 验证密码
     if (!this.verifyPassword(password, user.passwordHash)) {
       const failureState = await this.recordPasswordFailure(principal, principalState, user)
+      if (failureState.locked) {
+        this.logPasswordLockEvent(user, principal, failureState)
+      }
       this.logger.warn(`Failed login attempt for user ${user.userId}`)
       return {
         success: false,
@@ -135,6 +140,9 @@ export class AuthService {
       }
     }
 
+    if (principalState && (principalState.failedAttempts > 0 || principalState.lockedUntil)) {
+      this.logPasswordUnlockEvent(user, principal, principalState)
+    }
     await this.resetPasswordFailureState(principal, user)
     user.lastLoginAt = new Date()
 
@@ -264,7 +272,7 @@ export class AuthService {
     loginType: LoginType,
   ): AuthResult {
     // 1. 创建会话
-    const session = this.sessionService.createSession(user.userId, user.tenantId, deviceInfo)
+    this.sessionService.createSession(user.userId, user.tenantId, deviceInfo)
 
     // 2. 生成Token对
     const tokens = this.tokenService.generateTokenPair(
@@ -294,7 +302,7 @@ export class AuthService {
     }
   }
 
-  private verifySmsCode(mobile: string, code: string): boolean {
+  private verifySmsCode(_mobile: string, code: string): boolean {
     // 简化版验证 - 生产应验证Redis缓存的验证码
     // 这里假设 '123456' 是有效的验证码
     return code === '123456'
@@ -329,6 +337,16 @@ export class AuthService {
     currentState?: PasswordAttemptState,
     user?: MockUser,
   ): Promise<PasswordAttemptState> {
+    if (principal && this.redisService) {
+      const nextState = await this.incrementPasswordFailureStateRedis(principal)
+
+      if (user) {
+        this.syncPasswordAttemptStateToUser(user, nextState)
+      }
+
+      return nextState
+    }
+
     const nextAttempts = (currentState?.failedAttempts ?? user?.failedAttempts ?? 0) + 1
     const locked = nextAttempts >= this.PASSWORD_LOCK_THRESHOLD
     const lockedUntil = locked
@@ -348,6 +366,60 @@ export class AuthService {
       this.syncPasswordAttemptStateToUser(user, nextState)
     }
 
+    return nextState
+  }
+
+  private async incrementPasswordFailureStateRedis(principal: string): Promise<PasswordAttemptState> {
+    const attemptsKey = this.getPasswordAttemptsRedisKey(principal)
+    const lockKey = this.getPasswordLockRedisKey(principal)
+
+    try {
+      const nextAttempts = await this.redisService!.client.incr(attemptsKey)
+      await this.redisService!.client.expire(attemptsKey, this.PASSWORD_LOCK_SECONDS)
+
+      const locked = nextAttempts >= this.PASSWORD_LOCK_THRESHOLD
+      const lockedUntil = locked
+        ? new Date(Date.now() + this.PASSWORD_LOCK_SECONDS * 1000)
+        : undefined
+
+      if (locked && lockedUntil) {
+        await this.redisService!.client.set(
+          lockKey,
+          lockedUntil.toISOString(),
+          'EX',
+          this.PASSWORD_LOCK_SECONDS,
+        )
+      }
+
+      const nextState = {
+        failedAttempts: nextAttempts,
+        lockedUntil,
+        locked,
+      }
+      this.passwordAttemptLedger.set(principal, nextState)
+      return nextState
+    } catch (error) {
+      this.logger.warn(`Failed to increment password attempt state in redis: ${(error as Error).message}`)
+      const fallbackState = this.passwordAttemptLedger.get(principal)
+      return this.recordPasswordFailureWithoutRedis(principal, fallbackState)
+    }
+  }
+
+  private recordPasswordFailureWithoutRedis(
+    principal: string,
+    currentState?: PasswordAttemptState,
+  ): PasswordAttemptState {
+    const nextAttempts = (currentState?.failedAttempts ?? 0) + 1
+    const locked = nextAttempts >= this.PASSWORD_LOCK_THRESHOLD
+    const lockedUntil = locked
+      ? new Date(Date.now() + this.PASSWORD_LOCK_SECONDS * 1000)
+      : undefined
+    const nextState = {
+      failedAttempts: nextAttempts,
+      lockedUntil,
+      locked,
+    }
+    this.passwordAttemptLedger.set(principal, nextState)
     return nextState
   }
 
@@ -372,6 +444,62 @@ export class AuthService {
 
   private getUserLockRetryAfter(user: MockUser): number {
     return this.getPasswordLockRetryAfter({ lockedUntil: user.lockedUntil })
+  }
+
+  private logPasswordLockEvent(
+    user: MockUser,
+    principal: string | null,
+    state: PasswordAttemptState,
+  ): void {
+    if (!this.auditService) {
+      return
+    }
+
+    void this.auditService.log({
+      eventType: 'auth.login_locked',
+      actorId: user.userId,
+      actorType: 'user',
+      tenantId: user.tenantId,
+      resourceType: 'auth-user',
+      resourceId: user.userId,
+      riskLevel: 'high',
+      metadata: {
+        principal,
+        failedAttempts: state.failedAttempts,
+        retryAfter: this.getPasswordLockRetryAfter(state),
+        lockSeconds: this.PASSWORD_LOCK_SECONDS,
+      },
+    }).catch((error: Error) => {
+      this.logger.warn(`Failed to record password lock audit event: ${error.message}`)
+    })
+  }
+
+  private logPasswordUnlockEvent(
+    user: MockUser,
+    principal: string | null,
+    previousState: PasswordAttemptState,
+  ): void {
+    if (!this.auditService) {
+      return
+    }
+
+    void this.auditService.log({
+      eventType: 'auth.login_unlocked',
+      actorId: user.userId,
+      actorType: 'user',
+      tenantId: user.tenantId,
+      resourceType: 'auth-user',
+      resourceId: user.userId,
+      riskLevel: previousState.lockedUntil ? 'high' : 'medium',
+      metadata: {
+        principal,
+        clearedFailedAttempts: previousState.failedAttempts,
+        previousLockedUntil: previousState.lockedUntil?.toISOString() ?? null,
+        resetReason: 'successful-login',
+      },
+    }).catch((error: Error) => {
+      this.logger.warn(`Failed to record password unlock audit event: ${error.message}`)
+    })
   }
 
   private getPasswordAttemptsRedisKey(principal: string): string {
