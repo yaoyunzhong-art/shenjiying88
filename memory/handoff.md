@@ -237,6 +237,40 @@
   - `DEV-0004` 已从“仅文档/口头口径”推进为“代码 + service + HTTP”三层证据
   - 仍需后续把失败计数与锁定态从内存态升级为可持久化/跨实例共享，才能彻底消除生产级绕过风险
 
+## 16. 2026-07-23 Swagger 根因修复已收口
+
+- 根因确认：
+  - `apps/api` 原 `dev` 链路使用 `tsx watch --tsconfig tsconfig.json src/main.ts`
+  - `tsx/esbuild` 在当前项目口径下不产出 `emitDecoratorMetadata` 所需参数元数据
+  - 直接导致 `@nestjs/swagger` 在 `SwaggerModule.createDocument()` 阶段读取参数元数据崩溃
+- 代码修复：
+  - `apps/api/package.json`
+    - `dev` 已切换为 `node --watch --require ts-node/register --require tsconfig-paths/register src/main.ts`
+    - 已补 `ts-node`、`tsconfig-paths` 开发依赖
+  - `apps/api/tsconfig.json`
+    - `types` 已补为 `["node", "vitest/globals"]`
+  - `apps/api/src/main.ts`
+    - 保留 Swagger fallback：文档生成失败时不再拖垮 API 启动
+    - 仅在 Swagger 真正挂载成功时输出 `/docs` 端点日志
+- 运行态验证：
+  - 参数元数据恢复验证通过：
+    - `Reflect.getMetadata(PARAMTYPES_METADATA, SessionController.prototype, 'createSession')`
+    - 输出类型名已不再是 `null`
+  - 标准 dev 链路下 `3114` 端口验证通过：
+    - `GET http://127.0.0.1:3114/docs` → `200`
+    - `GET http://127.0.0.1:3114/api/v1/health` + 标准租户头 → `200`
+    - `GET http://127.0.0.1:3114/api/v1/health/ping` + 标准租户头 → `200`
+- 额外发现：
+  - `@Public()` 仅绕过 `IdentityAccess` 认证，不绕过 `TenantGuard`
+  - 因此健康端点若不带 `x-tenant-id`，仍会返回 `401 Missing x-tenant-id header`
+  - 这不影响 Swagger 修复结论，但后续若需要裸 `ping`，应评估是否让 `TenantGuard` 对健康端点放行
+- 基线保持：
+  - 本轮修复过程中顺手补平了两个 typecheck 残点：
+    - `apps/api/src/modules/tournament/tournament.contract.test.ts`
+    - `apps/api/src/modules/employee-marketing/employee-marketing.service.ts`
+    - `apps/api/src/modules/employee-marketing/employee-marketing.service.spec.ts`
+  - 最终 `pnpm --dir apps/api typecheck` 已再次清零
+
 ### DEV-0004 已补 Redis 共享锁定态
 
 - `apps/api/src/modules/auth/auth.service.ts`

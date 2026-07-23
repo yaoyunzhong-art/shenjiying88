@@ -1,262 +1,203 @@
 // employee-marketing.controller.ts · WP-11 全员营销与绩效
-// 日期: 2026-07-23
-// 状态: IMPLEMENTED
+// 宪法对齐: 第13章全员营销科学闭环执行机制 v2
 
 import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Query,
-  UseGuards,
+  Controller, Get, Post, Param, Body, Query, UseGuards,
 } from '@nestjs/common';
 import { EmployeeMarketingService } from './employee-marketing.service';
 import {
-  CreatePromoCodeDto,
-  TrackPromotionDto,
-  CreateKpiConfigDto,
-  SubmitKpiResultDto,
-  CreateTaskDto,
+  CreatePromoCodeDto, TrackPromotionDto,
+  CreateKpiConfigDto, SubmitKpiResultDto, CreateTaskDto,
 } from './employee-marketing.dto';
 import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('employee-marketing')
 @UseGuards(TenantGuard)
 export class EmployeeMarketingController {
-  constructor(
-    private readonly employeeMarketingService: EmployeeMarketingService,
-  ) {}
+  constructor(private readonly svc: EmployeeMarketingService) {}
 
-  // ══════════════════════════════════════════════════════════════
-  // 推广码
-  // ══════════════════════════════════════════════════════════════
+  // ═══ 宪法13.2/13.3 推广码 ════════════════════════
 
-  /**
-   * POST /employee-marketing/promo-code
-   * 生成推广码
-   */
   @Post('promo-code')
-  createPromoCode(@Body() dto: CreatePromoCodeDto) {
-    const code = this.employeeMarketingService.createPromoCode(dto);
-    return {
-      id: code.id,
-      employeeId: code.employeeId,
-      code: code.code,
-      type: code.type,
-      commissionRate: code.commissionRate,
-      validUntil: code.validUntil.toISOString(),
-      usageLimit: code.usageLimit,
-      currentUsage: code.currentUsage,
-    };
+  createPromoCode(@Body() dto: any) {
+    return this.svc.createPromoCode(dto);
   }
 
-  /**
-   * GET /employee-marketing/promo-codes?employeeId=
-   * 查询员工推广码列表
-   */
   @Get('promo-codes')
   listPromoCodes(@Query('employeeId') employeeId?: string) {
-    const codes = this.employeeMarketingService.listPromoCodes(employeeId);
-    return {
-      codes: codes.map(c => ({
-        id: c.id,
-        employeeId: c.employeeId,
-        code: c.code,
-        type: c.type,
-        commissionRate: c.commissionRate,
-        validUntil: c.validUntil.toISOString(),
-        usageLimit: c.usageLimit,
-        currentUsage: c.currentUsage,
-      })),
-    };
+    return { codes: this.svc.listPromoCodes(employeeId) };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // 推广追踪
-  // ══════════════════════════════════════════════════════════════
+  // ═══ 宪法13.8 推广追踪（透明化）═══════════════════
 
-  /**
-   * POST /employee-marketing/track
-   * 追踪推广转化
-   */
   @Post('track')
-  trackPromotion(@Body() dto: TrackPromotionDto) {
-    const tracking = this.employeeMarketingService.trackPromotion(dto);
-    return {
-      id: tracking.id,
-      promoCodeId: tracking.promoCodeId,
-      customerId: tracking.customerId,
-      orderId: tracking.orderId,
-      referredUserId: tracking.referredUserId,
-      commission: tracking.commission,
-      status: tracking.status,
-      createdAt: tracking.createdAt.toISOString(),
-      note: tracking.note,
-    };
+  trackPromotion(@Body() dto: any) {
+    return this.svc.trackPromotion(dto);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // 员工推广统计
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * GET /employee-marketing/stats/:employeeId
-   * 员工推广统计（推广数/佣金/排名）
-   */
   @Get('stats/:employeeId')
   getEmployeeStats(@Param('employeeId') employeeId: string) {
-    const stats = this.employeeMarketingService.getEmployeeStats(employeeId);
-    return stats;
+    return this.svc.getEmployeeStats(employeeId);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // KPI 配置
-  // ══════════════════════════════════════════════════════════════
+  // ═══ 宪法13.8 客户退订/解除 ═══════════════════════
 
-  /**
-   * POST /employee-marketing/kpi/config
-   * 配置 KPI（管理端）
-   */
+  @Post('customer/opt-out/:trackingId')
+  customerOptOut(@Param('trackingId') trackingId: string) {
+    return this.svc.customerOptOut(trackingId);
+  }
+
+  @Post('customer/unbind/:trackingId')
+  unbindTracking(@Param('trackingId') trackingId: string) {
+    return this.svc.unbindCustomerTracking(trackingId);
+  }
+
+  // ═══ 宪法13.4 KPI ═════════════════════════════════
+
   @Post('kpi/config')
-  createKpiConfig(@Body() dto: CreateKpiConfigDto) {
-    const config = this.employeeMarketingService.createKpiConfig(dto);
-    return {
-      id: config.id,
-      positionType: config.positionType,
-      metricName: config.metricName,
-      target: config.target,
-      weight: config.weight,
-      unit: config.unit,
-      period: config.period,
-    };
+  createKpiConfig(@Body() dto: any) {
+    return this.svc.createKpiConfig(dto);
   }
 
-  /**
-   * GET /employee-marketing/kpi/:employeeId
-   * 查询员工 KPI 结果
-   */
+  @Get('kpi/config-defaults/:positionType')
+  getKpiDefaults(@Param('positionType') positionType: string) {
+    return this.svc.getPositionKpiDefaults(positionType);
+  }
+
   @Get('kpi/:employeeId')
   getKpiResults(@Param('employeeId') employeeId: string) {
-    const results = this.employeeMarketingService.getKpiResults(employeeId);
-    return {
-      results: results.map(r => ({
-        id: r.id,
-        employeeId: r.employeeId,
-        period: r.period,
-        scores: r.scores,
-        totalScore: r.totalScore,
-        bonusAmount: r.bonusAmount,
-        createdAt: r.createdAt.toISOString(),
-      })),
-    };
+    return { results: this.svc.getKpiResults(employeeId) };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // 绩效结果提交
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * POST /employee-marketing/kpi/submit
-   * 提交绩效结果
-   */
   @Post('kpi/submit')
-  submitKpiResult(@Body() dto: SubmitKpiResultDto) {
-    const result = this.employeeMarketingService.submitKpiResult(dto);
-    return {
-      id: result.id,
-      employeeId: result.employeeId,
-      period: result.period,
-      scores: result.scores,
-      totalScore: result.totalScore,
-      bonusAmount: result.bonusAmount,
-      createdAt: result.createdAt.toISOString(),
-    };
+  submitKpiResult(@Body() dto: any) {
+    return this.svc.submitKpiResult(dto);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // 排行榜
-  // ══════════════════════════════════════════════════════════════
+  // ═══ 宪法13.5 巅峰休息期 ═════════════════════════
 
-  /**
-   * GET /employee-marketing/leaderboard
-   * 推广排行榜
-   */
+  @Get('peak-rest/:employeeId')
+  getPeakRest(@Param('employeeId') employeeId: string) {
+    return this.svc.getPeakRest(employeeId);
+  }
+
+  // ═══ 宪法13.7 排行榜 ═════════════════════════════
+
   @Get('leaderboard')
   getLeaderboard(@Query('limit') limit?: string) {
-    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
-    const entries = this.employeeMarketingService.getLeaderboard(parsedLimit);
-    return {
-      entries: entries.map(e => ({
-        employeeId: e.employeeId,
-        totalConversions: e.totalConversions,
-        totalCommission: e.totalCommission,
-        rank: e.rank,
-      })),
-      updatedAt: new Date().toISOString(),
-    };
+    const parsed = limit ? parseInt(limit, 10) : undefined;
+    return { entries: this.svc.getLeaderboard(parsed), updatedAt: new Date().toISOString() };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // 营销任务
-  // ══════════════════════════════════════════════════════════════
+  @Get('leaderboard/live')
+  getLeaderboardLive(@Query('limit') limit?: string) {
+    const parsed = limit ? parseInt(limit, 10) : undefined;
+    return { entries: this.svc.getLeaderboard(parsed), updatedAt: new Date().toISOString() };
+  }
 
-  /**
-   * POST /employee-marketing/tasks
-   * 创建营销任务
-   */
+  // ═══ 宪法13.2/13.3 任务体系 ══════════════════════
+
   @Post('tasks')
-  createTask(@Body() dto: CreateTaskDto) {
-    const task = this.employeeMarketingService.createTask(dto);
-    return {
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      points: task.points,
-      deadline: task.deadline.toISOString(),
-      status: task.status,
-      assignedTo: task.assignedTo,
-      createdAt: task.createdAt.toISOString(),
-    };
+  createTask(@Body() dto: any) {
+    return this.svc.createTask(dto);
   }
 
-  /**
-   * GET /employee-marketing/tasks/:employeeId
-   * 员工待办任务
-   */
   @Get('tasks/:employeeId')
   getEmployeeTasks(@Param('employeeId') employeeId: string) {
-    const tasks = this.employeeMarketingService.getEmployeeTasks(employeeId);
-    return {
-      tasks: tasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        points: t.points,
-        deadline: t.deadline.toISOString(),
-        status: t.status,
-        createdAt: t.createdAt.toISOString(),
-      })),
-    };
+    return { tasks: this.svc.getEmployeeTasks(employeeId) };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // 违规检测
-  // ══════════════════════════════════════════════════════════════
+  @Post('tasks/:taskId/replace')
+  replaceTask(@Param('taskId') taskId: string, @Body('employeeId') employeeId: string) {
+    return this.svc.replaceTask(taskId, employeeId);
+  }
 
-  /**
-   * POST /employee-marketing/compliance/check
-   * 检查推广行为异常
-   */
+  @Post('tasks/:taskId/appeal')
+  appealTask(@Param('taskId') taskId: string, @Body('reason') reason: string) {
+    return this.svc.appealTask(taskId, reason);
+  }
+
+  @Get('tasks/available/:employeeId')
+  getAvailableTasks(
+    @Param('employeeId') employeeId: string,
+    @Query('basicCompleted') basic?: string,
+    @Query('intermediateCompleted') intermediate?: string,
+  ) {
+    return this.svc.getAvailableTasks(employeeId, Number(basic ?? 0), Number(intermediate ?? 0));
+  }
+
+  // ═══ 宪法13.6 师徒制 ═════════════════════════════
+
+  @Post('mentor/match')
+  autoMatchMentor(@Body('employeeId') employeeId: string, @Body('storeId') storeId: string) {
+    return this.svc.autoMatchMentor(employeeId, storeId);
+  }
+
+  @Get('mentor/:employeeId')
+  getMentorRelations(@Param('employeeId') employeeId: string) {
+    return { relations: this.svc.getMentorRelations(employeeId) };
+  }
+
+  @Post('mentor/coaching-score')
+  updateCoachingScore(@Body() body: { relationId: string; score: number }) {
+    return this.svc.updateCoachingScore(body.relationId, body.score);
+  }
+
+  // ═══ 法规13.5 成就徽章 ═══════════════════════════
+
+  @Post('badges/earn')
+  earnBadge(@Body() body: { employeeId: string; badgeId: string; badgeName: string }) {
+    return this.svc.earnBadge(body.employeeId, body.badgeId, body.badgeName);
+  }
+
+  @Get('badges/:employeeId')
+  getBadges(@Param('employeeId') employeeId: string) {
+    return { badges: this.svc.getBadges(employeeId) };
+  }
+
+  @Get('badges/check-reserve/:employeeId')
+  checkReservePool(@Param('employeeId') employeeId: string) {
+    return this.svc.checkReservePool(employeeId);
+  }
+
+  // ═══ 宪法13.7 将士圈 ═════════════════════════════
+
+  @Post('circle/post')
+  postToCircle(@Body() body: { employeeId: string; content: string; tips: string }) {
+    return this.svc.postToCircle(body.employeeId, body.content, body.tips);
+  }
+
+  @Get('circle/feed')
+  getCircleFeed(@Query('limit') limit?: string) {
+    return { posts: this.svc.getCircleFeed(limit ? parseInt(limit, 10) : 20) };
+  }
+
+  @Get('morning-share')
+  getMorningShareMaterial() {
+    return this.svc.getMorningShareMaterial();
+  }
+
+  // ═══ KOL体系 ═════════════════════════════════════
+
+  @Post('kol/register')
+  registerKol(@Body() body: { name: string; level: string; followerCount: number; platforms: string[] }) {
+    return this.svc.registerKol(body as any);
+  }
+
+  @Post('kol/approve/:id')
+  approveKol(@Param('id') id: string) {
+    return this.svc.approveKol(id);
+  }
+
+  @Get('kol/leaderboard')
+  getKolLeaderboard(@Query('limit') limit?: string) {
+    return { entries: this.svc.getKolLeaderboard(limit ? parseInt(limit, 10) : 10) };
+  }
+
+  // ═══ 违规检测 ════════════════════════════════════
+
   @Post('compliance/check')
   checkCompliance(@Body('employeeId') employeeId?: string) {
-    const result = this.employeeMarketingService.checkCompliance(
-      employeeId,
-    );
-    return {
-      riskLevel: result.riskLevel,
-      suspiciousItems: result.suspiciousItems,
-      score: result.score,
-    };
+    return this.svc.checkCompliance(employeeId);
   }
 }

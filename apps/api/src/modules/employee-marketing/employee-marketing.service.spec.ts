@@ -65,7 +65,7 @@ describe('createPromoCode', () => {
     expect(result.code).toBe('EMP1-SUMMER');
     expect(result.employeeId).toBe('emp-1');
     expect(result.type).toBe('coupon');
-    expect(result.commissionRate).toBe(0.1);
+    expect(result.commissionRate).toBe(0.03); // 宪法13.5阶梯费率最低档(3%)
     expect(result.usageLimit).toBe(100);
     expect(result.currentUsage).toBe(0);
     expect(result.validUntil).toBeInstanceOf(Date);
@@ -99,7 +99,7 @@ describe('createPromoCode', () => {
       code: 'EMP1-FREE',
       commissionRate: 0,
     });
-    expect(result.commissionRate).toBe(0);
+    expect(result.commissionRate).toBe(0.03); // 阶梯费率最低档
   });
 });
 
@@ -275,7 +275,7 @@ describe('getEmployeeStats', () => {
 describe('createKpiConfig', () => {
   it('正例: 创建 KPI 配置', () => {
     const config = service.createKpiConfig({
-      positionType: '销售',
+      positionType: 'frontline',
       metricName: '月销售额',
       target: 100000,
       weight: 0.5,
@@ -283,14 +283,14 @@ describe('createKpiConfig', () => {
       period: 'monthly',
     });
     expect(config.id).toMatch(/^kpi-/);
-    expect(config.positionType).toBe('销售');
+    expect(config.positionType).toBe('frontline');
     expect(config.metricName).toBe('月销售额');
     expect(config.weight).toBe(0.5);
   });
 
   it('反例: 权重小于 0 应抛出异常', () => {
     expect(() => service.createKpiConfig({
-      positionType: '销售',
+      positionType: 'frontline',
       metricName: '销售额',
       target: 100,
       weight: -0.1,
@@ -301,7 +301,7 @@ describe('createKpiConfig', () => {
 
   it('反例: 权重大于 1 应抛出异常', () => {
     expect(() => service.createKpiConfig({
-      positionType: '销售',
+      positionType: 'frontline',
       metricName: '销售额',
       target: 100,
       weight: 1.5,
@@ -310,8 +310,8 @@ describe('createKpiConfig', () => {
     })).toThrow('权重必须为 0~1');
   });
 
-  it('正例: 支持全部 7 类岗位', () => {
-    const positionTypes = ['收银', '销售', '运营', '管理', '清洁', '安保', '客服'] as const;
+  it('正例: 支持全部 5 类岗位', () => {
+    const positionTypes = ['frontline', 'management', 'content', 'support', 'logistics'] as const;
     for (const pt of positionTypes) {
       const config = service.createKpiConfig({
         positionType: pt,
@@ -329,14 +329,14 @@ describe('createKpiConfig', () => {
 describe('listKpiConfigs', () => {
   it('正例: 按岗位过滤', () => {
     service.createKpiConfig({
-      positionType: '销售', metricName: '销售额',
+      positionType: 'frontline', metricName: '销售额',
       target: 1000, weight: 0.5, unit: '元', period: 'monthly',
     });
     service.createKpiConfig({
-      positionType: '客服', metricName: '满意度',
+      positionType: 'support', metricName: '满意度',
       target: 95, weight: 0.5, unit: '分', period: 'monthly',
     });
-    const salesConfigs = service.listKpiConfigs('销售');
+    const salesConfigs = service.listKpiConfigs('frontline');
     expect(salesConfigs.length).toBe(1);
     expect(salesConfigs[0].metricName).toBe('销售额');
   });
@@ -353,11 +353,11 @@ describe('listKpiConfigs', () => {
 describe('submitKpiResult', () => {
   it('正例: 加权计算总分和奖金', () => {
     service.createKpiConfig({
-      positionType: '销售', metricName: '销售额',
+      positionType: 'frontline', metricName: '销售额',
       target: 100000, weight: 0.6, unit: '元', period: 'monthly',
     });
     service.createKpiConfig({
-      positionType: '销售', metricName: '客户数',
+      positionType: 'frontline', metricName: '客户数',
       target: 50, weight: 0.4, unit: '个', period: 'monthly',
     });
 
@@ -384,7 +384,7 @@ describe('submitKpiResult', () => {
 describe('getKpiResults', () => {
   it('正例: 返回员工所有绩效记录', () => {
     service.createKpiConfig({
-      positionType: '销售', metricName: '销售额',
+      positionType: 'frontline', metricName: '销售额',
       target: 1000, weight: 1, unit: '元', period: 'monthly',
     });
     service.submitKpiResult({ employeeId: 'emp-1', period: '2026-06', scores: { 销售额: 80 } });

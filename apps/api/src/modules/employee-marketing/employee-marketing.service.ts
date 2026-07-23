@@ -513,7 +513,7 @@ export class EmployeeMarketingService {
     const trackings = trackingIds.map(id => this.promoTrackingStore.get(id)).filter(Boolean) as PromoTracking[];
 
     const totalConversions = trackings.filter(t => t.status === 'confirmed').length;
-    const totalCommission = trackings.reduce((s, t) => s + t.commission, 0);
+    const totalCommission = trackings.reduce((sum: number, t: any) => sum + Number(t.commission), 0);
     const confirmedCommission = trackings.filter(t => t.status === 'confirmed').reduce((s, t) => s + t.commission, 0);
     const conversionRate = codes.length > 0 ? Number((totalConversions / codes.length).toFixed(4)) : 0;
     const rank = this.calculateRank(employeeId);
@@ -560,7 +560,7 @@ export class EmployeeMarketingService {
       const trackingIds = this.employeeTrackings.get(employeeId) ?? [];
       const trackings = trackingIds.map(id => this.promoTrackingStore.get(id)).filter(Boolean) as PromoTracking[];
       const totalConversions = trackings.filter(t => t.status === 'confirmed').length;
-      const totalCommission = trackings.filter(t => t.status === 'confirmed').reduce((s, t) => s + t.commission, 0);
+      const totalCommission = trackings.filter(t => t.status === 'confirmed').reduce((sum: number, t: any) => sum + Number(t.commission), 0);
       entries.push({ employeeId, totalConversions, totalCommission, rank: 0 });
     }
     entries.sort((a, b) => b.totalCommission - a.totalCommission);

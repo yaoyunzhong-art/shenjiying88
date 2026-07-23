@@ -14,7 +14,7 @@ import 'reflect-metadata'
 // ── Entity type copies (mirror source for isolation) ─────
 
 type PromoCodeType = 'coupon' | 'discount' | 'ticket';
-type PositionType = '收银' | '销售' | '运营' | '管理' | '清洁' | '安保' | '客服';
+type PositionType = 'frontline' | 'frontline' | 'content' | 'management' | 'logistics' | 'logistics' | 'support';
 type KpiPeriod = 'daily' | 'weekly' | 'monthly';
 type TaskStatus = 'active' | 'completed' | 'expired';
 type RiskLevel = 'high' | 'medium' | 'low';
@@ -356,11 +356,11 @@ describe('POST /employee-marketing/kpi/config', () => {
   it('正例: 创建 KPI 配置', () => {
     const ctrl = createController(new InlineEmployeeMarketingService());
     const result = ctrl.createKpiConfig({
-      positionType: '销售', metricName: '月销售额', target: 100000,
+      positionType: 'frontline', metricName: '月销售额', target: 100000,
       weight: 0.5, unit: '元', period: 'monthly',
     });
     expect(result).toHaveProperty('id');
-    expect(result).toHaveProperty('positionType', '销售');
+    expect(result).toHaveProperty('positionType', 'frontline');
     expect(result).toHaveProperty('weight', 0.5);
   });
 });
