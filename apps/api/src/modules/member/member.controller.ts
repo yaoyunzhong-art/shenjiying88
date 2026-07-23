@@ -4,6 +4,7 @@ import {
   Post,
   Param,
   Body,
+  Inject,
   UseGuards,
 } from '@nestjs/common'
 
@@ -39,7 +40,7 @@ import {
 @UseGuards(TenantGuard)
 @Controller('members')
 export class MemberController {
-  constructor(private readonly memberService: MemberService) {}
+  constructor(@Inject(MemberService) private readonly memberService: MemberService) {}
 
   @Get('bootstrap')
   getBootstrap(@TenantContext() tenantContext: RequestTenantContext) {
