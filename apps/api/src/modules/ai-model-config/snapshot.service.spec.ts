@@ -3,10 +3,7 @@ import { SnapshotService } from './snapshot.service';
 import type { AiModelConfigRepository } from './ai-model-config.repository';
 import type { AiModelConfigHistory, AiModelStoreConfig } from './ai-model-config.entity';
 
-type MockRepo = Mocked<AiModelConfigRepository> & {
-  deleteHistoryBefore: ReturnType<typeof vi.fn>;
-  getHistoryStats: ReturnType<typeof vi.fn>;
-};
+type MockRepo = Mocked<AiModelConfigRepository>;
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -300,7 +297,7 @@ describe('SnapshotService', () => {
       contextWindow: 8192,
       temperature: 0.7,
       maxTokens: 2048,
-      customHeaders: null,
+      customHeaders: undefined,
       isCurrent: true,
       createdBy: 'user-1',
       createdAt: '2026-07-20T10:00:00Z',
