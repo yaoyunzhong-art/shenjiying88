@@ -22,6 +22,7 @@ export interface Settlement {
   type: SettlementType
   totalAmount: number   // 订单总金额（分）
   participants: SettlementParticipant[]
+  executedParticipants?: Array<SettlementParticipant & { executedAmount: number }>
   status: SettlementStatus
   createdAt: Date
   approvedAt?: Date
@@ -212,7 +213,7 @@ export class CrossMerchantSettlementService {
 
     settlement.status = 'executed'
     settlement.executedAt = new Date()
-    ;(settlement as AllianceSettlement).executedParticipants = executedParticipants
+    settlement.executedParticipants = executedParticipants
 
     this.logger.log(`Settlement executed: ${settlementId} participants=${executedParticipants.length}`)
     return settlement

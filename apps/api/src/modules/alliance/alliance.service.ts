@@ -19,6 +19,7 @@ import {
   CrossMerchantSettlementService,
   UnlinkedOrderDetector,
   AnomalyDetectionService,
+  type SettlementType,
 } from './alliance-settlement.service'
 import { AllianceTierService } from './alliance-tier.service'
 import { AllianceCouponService, type CouponIssueRequest, type PartnerCouponStats } from './alliance-coupon.service'
@@ -324,7 +325,7 @@ export class AllianceService {
     try {
       const settlement = this.settlementService.createSettlement(
         req.orderId,
-        req.type as AllianceType,
+        req.type as SettlementType,
         req.totalAmount,
         req.participants.map((p) => ({
           partnerId: p.partnerId,

@@ -313,6 +313,22 @@ describe('Foundation - Simulator', () => {
       assert.ok(result)
       assert.ok(result.generatedAt)
     })
+
+    it('falls back when alert acknowledgement table is unavailable', async () => {
+      ;(service as unknown as {
+        prisma: {
+          foundationAlertAcknowledgement: {
+            findMany: () => Promise<never>
+          }
+        }
+      }).prisma.foundationAlertAcknowledgement.findMany = async () => {
+        throw Object.assign(new Error('missing table'), { code: 'P2021' })
+      }
+
+      const result = await service.getOperationsOverview({ tenantId: 't-sim', brandId: 'b-sim' })
+      assert.ok(result.summary)
+      assert.ok(Array.isArray(result.alerts))
+    })
   })
 
   // ─── Alert Drilldown ───

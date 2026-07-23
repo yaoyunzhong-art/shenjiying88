@@ -1852,12 +1852,20 @@ export class FoundationService {
       return new Map<string, FoundationAlertAcknowledgement>()
     }
 
-    const acknowledgementRecords = await this.prisma.foundationAlertAcknowledgement.findMany({
-      where: {
-        tenantId,
-        code: { in: codes }
+    let acknowledgementRecords: Awaited<ReturnType<PrismaService['foundationAlertAcknowledgement']['findMany']>>
+    try {
+      acknowledgementRecords = await this.prisma.foundationAlertAcknowledgement.findMany({
+        where: {
+          tenantId,
+          code: { in: codes }
+        }
+      })
+    } catch (error) {
+      if (!this.shouldUseFoundationReadFallback(error)) {
+        throw error
       }
-    })
+      acknowledgementRecords = []
+    }
 
     return new Map<string, FoundationAlertAcknowledgement>(
       (acknowledgementRecords as Array<{
@@ -1893,12 +1901,20 @@ export class FoundationService {
 
   private async getAlertAcknowledgement(code: string, tenantContext?: RequestTenantContext) {
     const tenantId = tenantContext?.tenantId ?? 'platform'
-    const records = await this.prisma.foundationAlertAcknowledgement.findMany({
-      where: {
-        tenantId,
-        code: { in: [code] }
+    let records: Awaited<ReturnType<PrismaService['foundationAlertAcknowledgement']['findMany']>>
+    try {
+      records = await this.prisma.foundationAlertAcknowledgement.findMany({
+        where: {
+          tenantId,
+          code: { in: [code] }
+        }
+      })
+    } catch (error) {
+      if (!this.shouldUseFoundationReadFallback(error)) {
+        throw error
       }
-    })
+      records = []
+    }
     const record = (records as Array<{
       status: FoundationAlertAcknowledgementStatus
       note: string | null
@@ -1909,6 +1925,14 @@ export class FoundationService {
     }>)[0]
 
     return record ? toFoundationAlertAcknowledgement(record) : null
+  }
+
+  private shouldUseFoundationReadFallback(error: unknown) {
+    const code =
+      typeof error === 'object' && error && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
   }
 }
 

@@ -70,6 +70,7 @@ export class FinanceReconciliationService {
     const batch: ReconciliationBatch = {
       id: `rc-${randomUUID()}`,
       tenantId: tenantContext.tenantId,
+      storeId: tenantContext.storeId,
       batchNo,
       channel: input.channel,
       date: input.date,

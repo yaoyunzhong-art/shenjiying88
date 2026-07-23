@@ -536,8 +536,8 @@ export class ConfigurationGovernanceService {
         groupBy: ['operation', 'status', 'executionStatus', 'failureStatus']
       }),
       this.summarizeAuditRecords(),
-      this.prisma.configEntry.findMany(),
-      this.prisma.featureFlag.findMany(),
+      this.getConfigEntryMetadata(),
+      this.getPersistedFeatureFlagRecords(),
       this.getSecretMetadata(),
       this.getCertificateMetadata(),
       this.getSecretsCertificatePosture()
@@ -625,7 +625,7 @@ export class ConfigurationGovernanceService {
 
   async getFeatureFlags(context: RequestTenantContext, subjectKey?: string) {
     const normalizedContext = this.normalizeContext(context)
-    const persistedKeys = await this.prisma.featureFlag.findMany({
+    const persistedKeys = await this.getPersistedFeatureFlagRecords({
       select: { key: true },
       distinct: ['key']
     })
@@ -636,7 +636,7 @@ export class ConfigurationGovernanceService {
 
   async listPersistedFeatureFlags(context: RequestTenantContext, subjectKey?: string) {
     const normalizedContext = this.normalizeContext(context)
-    const records = await this.prisma.featureFlag.findMany({
+    const records = await this.getPersistedFeatureFlagRecords({
       where: {
         OR: [
           { scopeType: FoundationScopeType.PLATFORM },
@@ -672,7 +672,7 @@ export class ConfigurationGovernanceService {
 
   async evaluateFeatureFlag(flagKey: string, context: RequestTenantContext, subjectKey?: string) {
     const normalizedContext = this.normalizeContext(context)
-    const persistedFlags = await this.prisma.featureFlag.findMany({
+    const persistedFlags = await this.getPersistedFeatureFlagRecords({
       where: { key: flagKey },
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }]
     })
@@ -733,6 +733,36 @@ export class ConfigurationGovernanceService {
     }
 
     return merged
+  }
+
+  private async getConfigEntryMetadata() {
+    let persistedEntries = [] as Awaited<ReturnType<typeof this.prisma.configEntry.findMany>>
+    try {
+      persistedEntries = await this.prisma.configEntry.findMany()
+    } catch (error) {
+      if (!this.shouldUseConfigurationFallback(error)) {
+        throw error
+      }
+      persistedEntries = []
+    }
+
+    return persistedEntries
+  }
+
+  private async getPersistedFeatureFlagRecords(
+    args?: Parameters<PrismaService['featureFlag']['findMany']>[0]
+  ) {
+    let persistedFlags = [] as Awaited<ReturnType<typeof this.prisma.featureFlag.findMany>>
+    try {
+      persistedFlags = await this.prisma.featureFlag.findMany(args)
+    } catch (error) {
+      if (!this.shouldUseConfigurationFallback(error)) {
+        throw error
+      }
+      persistedFlags = []
+    }
+
+    return persistedFlags
   }
 
   private shouldUseConfigurationFallback(error: unknown) {

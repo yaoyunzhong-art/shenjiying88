@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { TenantGuard } from '../agent/tenant.guard'
-import { AlliancePartner, PartnerGradingService, HealthScoreService } from './alliance-grade.service'
+import { AlliancePartner, PartnerGradingService, HealthScoreService, type Grade } from './alliance-grade.service'
 import {
   CrossMerchantSettlementService,
   UnlinkedOrderDetector,
@@ -20,7 +20,12 @@ import {
 import { AllianceTierService } from './alliance-tier.service'
 import { AllianceCouponService } from './alliance-coupon.service'
 import { AllianceDataService, type CallbackDataType } from './alliance-data.service'
-import { AllianceReviewService } from './alliance-review.service'
+import {
+  AllianceReviewService,
+  type AnomalyType,
+  type AnomalySeverity,
+  type ReviewStatus,
+} from './alliance-review.service'
 import { AllianceDashboardService } from './alliance-dashboard.service'
 import {
   RegisterPartnerDto,
@@ -652,7 +657,7 @@ export class AllianceController {
     try {
       const anomaly = this.reviewService.reportAnomaly(
         body.partnerId, body.partnerName,
-        body.type as AllianceType, body.severity as Severity,
+        body.type as AnomalyType, body.severity as AnomalySeverity,
         body.involvedAmount, body.description, body.relatedId,
       )
       return { success: true, data: anomaly }
@@ -677,7 +682,7 @@ export class AllianceController {
   submitReview(@Body() body: SubmitReviewDto) {
     try {
       const review = this.reviewService.submitReview(
-        body.anomalyId, body.decision as ReviewDecision,
+        body.anomalyId, body.decision as ReviewStatus,
         body.reviewer, body.note,
       )
       return { success: true, data: review }

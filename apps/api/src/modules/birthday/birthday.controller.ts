@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { BirthdayService } from './birthday.service';
 import { BirthdayCountdownService } from './birthday-countdown.service';
-import { BirthdayTier, BirthdayPlanStatus } from './birthday.entity';
+import { BirthdayTier, BirthdayPlanStatus, type RewardType } from './birthday.entity';
 
 @Controller('birthday')
 export class BirthdayController {

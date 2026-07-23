@@ -629,3 +629,47 @@ it('getOperationsOverview returns combined overview', async () => {
   assert.ok(overview.configuration.certificates, 'should have certificates')
   assert.ok(overview.posture, 'should have posture')
 })
+
+it('getOperationsOverview falls back to empty config entries when prisma table is unavailable', async () => {
+  const service = createService()
+  service['prisma'].configEntry.findMany = (async () => {
+    throw Object.assign(new Error('missing table'), { code: 'P2021' })
+  }) as never
+
+  const overview = await service.getOperationsOverview() as {
+    configuration: {
+      entries: {
+        total: number
+        active: number
+        namespaces: Record<string, number>
+      }
+    }
+  }
+
+  assert.equal(overview.configuration.entries.total, 0)
+  assert.equal(overview.configuration.entries.active, 0)
+  assert.deepStrictEqual(overview.configuration.entries.namespaces, {})
+})
+
+it('getOperationsOverview falls back to in-memory feature flags when prisma table is unavailable', async () => {
+  const service = createService()
+  service['prisma'].featureFlag.findMany = (async () => {
+    throw Object.assign(new Error('missing table'), { code: 'P2021' })
+  }) as never
+
+  const overview = await service.getOperationsOverview() as {
+    configuration: {
+      featureFlags: {
+        total: number
+        enabled: number
+        active: number
+        byStrategy: Record<string, number>
+      }
+    }
+  }
+
+  assert.ok(overview.configuration.featureFlags.total >= 0)
+  assert.ok(overview.configuration.featureFlags.enabled >= 0)
+  assert.ok(overview.configuration.featureFlags.active >= 0)
+  assert.ok(typeof overview.configuration.featureFlags.byStrategy === 'object')
+})

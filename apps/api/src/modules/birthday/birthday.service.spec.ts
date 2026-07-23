@@ -3,7 +3,7 @@
 
 import { Test } from '@nestjs/testing';
 import { BirthdayService } from './birthday.service';
-import { BirthdayTier } from './birthday.entity';
+import { BirthdayTier, type RewardType } from './birthday.entity';
 
 describe('BirthdayService', () => {
   async function createSvc() {

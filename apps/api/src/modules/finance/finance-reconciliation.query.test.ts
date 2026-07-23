@@ -24,6 +24,7 @@ import 'reflect-metadata'
 interface ReconciliationBatch {
   id: string
   tenantId: string
+  storeId?: string
   batchNo: string
   channel: string
   date: string

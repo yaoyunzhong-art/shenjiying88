@@ -3,6 +3,7 @@
 
 import { Test } from '@nestjs/testing';
 import { OpenPlatformService } from './open-platform.service';
+import type { SlaContract } from './open-platform.entity';
 
 describe('OpenPlatformService', () => {
   async function createSvc() {
