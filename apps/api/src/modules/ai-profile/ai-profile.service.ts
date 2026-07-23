@@ -210,7 +210,7 @@ export class AiProfileService {
       });
     }
 
-    if (profile.activityMetrics.lastVisitDays > 20) {
+    if (profile.consumptionMetrics.lastVisitDays > 20) {
       recommendations.push({
         userId,
         contentTitle: '好久不见！送你一张回归券',

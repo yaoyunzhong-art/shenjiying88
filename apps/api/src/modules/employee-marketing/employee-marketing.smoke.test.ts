@@ -38,7 +38,7 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
       description: 'E2E',
       points: 15,
       assignedTo: ['e2e-user'],
-      deadline: new Date(Date.now() + 86400000),
+      deadline: new Date(Date.now() + 86400000).toISOString(),
     });
     expect(task.difficulty).toBe('intermediate'); // 15分=中级
     expect(['basic', 'intermediate', 'advanced']).toContain(task.difficulty);
@@ -50,7 +50,7 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
       description: '',
       points: 3,
       assignedTo: ['e2e-user'],
-      deadline: new Date(),
+      deadline: new Date().toISOString(),
     });
     expect(basicTask.difficulty).toBe('basic');
     expect(basicTask.isReplaceable).toBe(true);
@@ -61,7 +61,7 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
       description: '',
       points: 70,
       assignedTo: ['e2e-user'],
-      deadline: new Date(),
+      deadline: new Date().toISOString(),
     });
     expect(advTask.difficulty).toBe('advanced');
   });
@@ -74,7 +74,7 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
       description: '',
       points: 3,
       assignedTo: ['user-a', 'user-b'],
-      deadline: new Date(),
+      deadline: new Date().toISOString(),
     });
     expect(task.isReplaceable).toBe(true);
 
@@ -95,7 +95,8 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
       employeeId: 'emp-new',
       code: 'SMOKE01',
       type: 'coupon',
-      validUntil: new Date(Date.now() + 86400000 * 30),
+      commissionRate: 0.03,
+      validUntil: new Date(Date.now() + 86400000 * 30).toISOString(),
       usageLimit: 200,
     });
     expect(code1.commissionTier).toBeGreaterThanOrEqual(1); // 阶梯费率第1档
@@ -153,7 +154,8 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
     // 先创建推广数据模拟金牌师傅
     const mentorCode = svc.createPromoCode({
       employeeId: 'mentor-gold', code: 'MENTOR01', type: 'coupon',
-      validUntil: new Date(Date.now() + 86400000 * 30), usageLimit: 100,
+      commissionRate: 0.03,
+      validUntil: new Date(Date.now() + 86400000 * 30).toISOString(), usageLimit: 100,
     });
     for (let i = 0; i < 5; i++) {
       svc.trackPromotion({ promoCodeId: mentorCode.id, customerId: `m${i}`, orderId: `mo${i}`, commission: 100 });
@@ -194,7 +196,8 @@ describe('WP-11 全员营销 · 宪法第13章 E2E smoke', () => {
       employeeId: 'emp-trans',
       code: 'TRANS01',
       type: 'ticket',
-      validUntil: new Date(Date.now() + 86400000 * 30),
+      commissionRate: 0.03,
+      validUntil: new Date(Date.now() + 86400000 * 30).toISOString(),
       usageLimit: 10,
     });
     expect(code.isAdMarked).toBe(true);

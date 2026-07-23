@@ -540,7 +540,7 @@ export class EmployeeMarketingService {
       const trackingIds = this.employeeTrackings.get(empId) ?? [];
       const commission = trackingIds
         .map(id => this.promoTrackingStore.get(id))
-        .filter(Boolean)
+        .filter((tracking): tracking is PromoTracking => Boolean(tracking))
         .reduce((s: number, t: PromoTracking) => s + t.commission, 0);
       statsList.push({ employeeId: empId, commission });
     }

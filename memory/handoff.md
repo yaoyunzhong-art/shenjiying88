@@ -261,9 +261,11 @@
     - `GET http://127.0.0.1:3114/api/v1/health` + 标准租户头 → `200`
     - `GET http://127.0.0.1:3114/api/v1/health/ping` + 标准租户头 → `200`
 - 额外发现：
-  - `@Public()` 仅绕过 `IdentityAccess` 认证，不绕过 `TenantGuard`
-  - 因此健康端点若不带 `x-tenant-id`，仍会返回 `401 Missing x-tenant-id header`
-  - 这不影响 Swagger 修复结论，但后续若需要裸 `ping`，应评估是否让 `TenantGuard` 对健康端点放行
+  - 守卫语义已收紧为双层模型：
+    - `@Public()` 仅绕过 `IdentityAccess` 认证
+    - `@TenantOptional()` 才绕过 `TenantGuard` 的租户头校验
+  - 已将 `health` 与 `empower-cards/health` 标记为 `@Public() + @TenantOptional()`
+  - 公开但 tenant-scoped 的业务端点（如 `auth`、`cashier`、`member/register`）保持必须显式提供 `x-tenant-id`
 - 基线保持：
   - 本轮修复过程中顺手补平了两个 typecheck 残点：
     - `apps/api/src/modules/tournament/tournament.contract.test.ts`

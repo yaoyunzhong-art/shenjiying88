@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 
 import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
@@ -28,12 +29,14 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Public()
+  @TenantOptional()
   @Get()
   getHealth() {
     return this.healthService.ping()
   }
 
   @Public()
+  @TenantOptional()
   @Get('ping')
   getPing() {
     return this.healthService.ping()
