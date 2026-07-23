@@ -253,30 +253,14 @@ export default function AdminTenantsQuotaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<TenantQuota[] | null>(null);
-
-  useEffect(() => {
-    try {
-      setData(tenantQuotas);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '数据加载失败');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  if (loading) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
-  if (error) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
-  if (!data || data.length === 0) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
-
-  const
   const [tab, setTab] = useState<'quota' | 'overview'>('quota');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tierFilter, setTierFilter] = useState<string>('ALL');
 
   const searchFields = useMemo<(keyof TenantQuota)[]>(() => ['name', 'code', 'region', 'tier'], []);
-  const [searchTerm, setSearchTerm] = useState('');
   const { filteredItems } = useSearchFilter(tenantQuotas, searchFields);
 
-  const [tierFilter, setTierFilter] = useState<string>('ALL');
   const tierFiltered = useMemo(
     () => (tierFilter === 'ALL' ? filteredItems : filteredItems.filter(t => t.tier === tierFilter)),
     [filteredItems, tierFilter],
@@ -311,6 +295,20 @@ export default function AdminTenantsQuotaPage() {
       ...dimensionStats,
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      setData(tenantQuotas);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '数据加载失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
+  if (error) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
+  if (!data || data.length === 0) return <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
 
   return (
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>

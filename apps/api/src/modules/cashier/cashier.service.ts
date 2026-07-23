@@ -11,6 +11,8 @@ import type { RequestTenantContext } from '../tenant/tenant.types'
 import { seedMembers } from './cashier.seed'
 import type { CashierPaymentCallbackDto, CreateCashierOrderDto, CreateCashierPaymentDto } from './cashier.dto'
 import { MockPaymentGateway } from './payment.service'
+import type { ICashierStore } from './cashier-store.interface'
+import { CashierMemoryStore } from './cashier-memory-store'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
@@ -22,11 +24,10 @@ import {
   type CashierPayment
 } from './cashier.entity'
 
-const orderStore = new Map<string, CashierOrder>()
-const paymentStore = new Map<string, CashierPayment>()
-
 @Injectable()
 export class CashierService {
+  private readonly memoryStore: CashierMemoryStore
+
   constructor(
     @Inject(MemberService) readonly memberService: MemberService,
     @Optional() @Inject(LoyaltyService)
@@ -40,9 +41,17 @@ export class CashierService {
     @Optional() @InjectRepository(CashierOrderEntity)
     private readonly orderRepo?: Repository<CashierOrderEntity>,
     @Optional() @InjectRepository(CashierPaymentEntity)
-    private readonly paymentRepo?: Repository<CashierPaymentEntity>
+    private readonly paymentRepo?: Repository<CashierPaymentEntity>,
+    @Optional() @Inject('CASHIER_STORE')
+    private readonly store?: ICashierStore
   ) {
+    this.memoryStore = new CashierMemoryStore()
     this.seedIfNeeded()
+  }
+
+  /** 获取存储实现：优先用注入的 store，否则用本地的 MemoryStore */
+  private get storeInstance(): ICashierStore {
+    return this.store ?? this.memoryStore
   }
 
     // ── 持久化私有工具 ──────────────────────────────────────────────────
@@ -52,7 +61,7 @@ export class CashierService {
    * 保持内存 Map 作为 L1 缓存，DB 作为 L3 持久化
    */
   private async persistOrderAsync(order: CashierOrder): Promise<void> {
-    orderStore.set(order.orderId, order)
+    await this.storeInstance.saveOrder(order)
     this.cache?.set(`cashier:order:${order.orderId}`, order, 3600).catch(() => {
       // Redis 不可用时静默降级,不影响主流程
     })
@@ -74,7 +83,7 @@ export class CashierService {
    * P0-A1/RQ-20260720-011: write-through — 支付写入内存 + Redis + DB
    */
   private async persistPaymentAsync(payment: CashierPayment): Promise<void> {
-    paymentStore.set(payment.paymentId, payment)
+    await this.storeInstance.savePayment(payment)
     this.cache?.set(`cashier:payment:${payment.paymentId}`, payment, 3600).catch(() => {})
     await this.persistPaymentToDb(payment)
   }
@@ -95,7 +104,7 @@ export class CashierService {
    * L1: Memory → L2: Redis → L3: DB
    */
   private async loadOrder(orderId: string): Promise<CashierOrder | undefined> {
-    const fromMemory = orderStore.get(orderId)
+    const fromMemory = await this.storeInstance.getOrder(orderId, '')
     if (fromMemory) return fromMemory
 
     // 尝试 Redis
@@ -103,7 +112,7 @@ export class CashierService {
       try {
         const fromRedis = await this.cache.get<CashierOrder>(`cashier:order:${orderId}`)
         if (fromRedis) {
-          orderStore.set(orderId, fromRedis)
+          await this.storeInstance.saveOrder(fromRedis)
           return fromRedis
         }
       } catch {
@@ -117,7 +126,7 @@ export class CashierService {
         const fromDb = await this.orderRepo.findOne({ where: { orderId } })
         if (fromDb) {
           const contract = fromDb.toContract()
-          orderStore.set(orderId, contract)
+          await this.storeInstance.saveOrder(contract)
           return contract
         }
       } catch {
@@ -132,14 +141,14 @@ export class CashierService {
    * P0-A1/RQ-20260720-011: cache-aside — 查支付,先内存后 Redis 再 DB
    */
   private async loadPayment(paymentId: string): Promise<CashierPayment | undefined> {
-    const fromMemory = paymentStore.get(paymentId)
+    const fromMemory = this.memoryStore.getPaymentSync(paymentId)
     if (fromMemory) return fromMemory
 
     if (this.cache) {
       try {
         const fromRedis = await this.cache.get<CashierPayment>(`cashier:payment:${paymentId}`)
         if (fromRedis) {
-          paymentStore.set(paymentId, fromRedis)
+          await this.storeInstance.savePayment(fromRedis)
           return fromRedis
         }
       } catch {
@@ -152,7 +161,7 @@ export class CashierService {
         const fromDb = await this.paymentRepo.findOne({ where: { paymentId } })
         if (fromDb) {
           const contract = fromDb.toContract()
-          paymentStore.set(paymentId, contract)
+          await this.storeInstance.savePayment(contract)
           return contract
         }
       } catch {
@@ -227,9 +236,8 @@ export class CashierService {
 
   private createOrderNo(tenantContext: RequestTenantContext, now: string) {
     const datePart = now.slice(0, 10).replaceAll('-', '')
-    const currentDayCount = Array.from(orderStore.values()).filter(
+    const currentDayCount = this.memoryStore.listOrdersSync(tenantContext.tenantId).filter(
       (order) =>
-        order.tenantContext.tenantId === tenantContext.tenantId &&
         order.createdAt.startsWith(now.slice(0, 10))
     ).length
 
@@ -276,13 +284,11 @@ export class CashierService {
   }
 
   listOrders(tenantContext: RequestTenantContext): CashierOrder[] {
-    return Array.from(orderStore.values()).filter(
-      (order) => order.tenantContext.tenantId === tenantContext.tenantId
-    )
+    return this.memoryStore.listOrdersSync(tenantContext.tenantId)
   }
 
   getOrder(orderId: string, tenantContext: RequestTenantContext): CashierOrder | undefined {
-    const order = orderStore.get(orderId)
+    const order = this.memoryStore.getOrderSync(orderId)
     if (!order || order.tenantContext.tenantId !== tenantContext.tenantId) {
       return undefined
     }
@@ -370,19 +376,16 @@ export class CashierService {
   }
 
   listPayments(tenantContext: RequestTenantContext): CashierPayment[] {
-    return Array.from(paymentStore.values()).filter((payment) => {
-      const order = orderStore.get(payment.orderId)
-      return order?.tenantContext.tenantId === tenantContext.tenantId
-    })
+    return this.memoryStore.listPaymentsByTenantSync(tenantContext.tenantId)
   }
 
   listOrderPayments(orderId: string, tenantContext: RequestTenantContext): CashierPayment[] {
-    const order = orderStore.get(orderId)
+    const order = this.memoryStore.getOrderSync(orderId)
     if (!order || order.tenantContext.tenantId !== tenantContext.tenantId) {
       return []
     }
 
-    return Array.from(paymentStore.values()).filter((payment) => payment.orderId === orderId)
+    return this.memoryStore.listPaymentsByOrderSync(orderId)
   }
 
   getLatestPayment(orderId: string, tenantContext: RequestTenantContext): CashierPayment | undefined {
@@ -390,7 +393,7 @@ export class CashierService {
     if (!order?.latestPaymentId) {
       return undefined
     }
-    return paymentStore.get(order.latestPaymentId)
+    return this.memoryStore.getPaymentSync(order.latestPaymentId)
   }
 
   /**
@@ -419,9 +422,8 @@ export class CashierService {
     }
 
     const existingPayment =
-      Array.from(paymentStore.values()).find(
+      this.memoryStore.listPaymentsByOrderSync(input.orderId).find(
         (payment) =>
-          payment.orderId === input.orderId &&
           (input.externalPaymentId
             ? payment.externalPaymentId === input.externalPaymentId
             : payment.paymentId === order.latestPaymentId)
@@ -600,17 +602,17 @@ export class CashierService {
 
   /**
    * 支付渠道统计：按支付渠道聚合今日/当月金额
-   * 从 orderStore 和 paymentStore 中读取真实数据，无数据时返回空数组
+   * 从 storeInstance 中读取真实数据，无数据时返回空数组
    */
   async getChannelStats(tenantId: string): Promise<{ channel: string; today: number; month: number }[]> {
     const today = new Date().toISOString().slice(0, 10)
     const monthPrefix = today.slice(0, 7)
     const stats = new Map<string, { today: number; month: number }>()
 
-    for (const order of orderStore.values()) {
+    for (const order of this.memoryStore.allOrdersValuesSync()) {
       if (order.tenantContext.tenantId !== tenantId) continue
 
-      const payment = order.latestPaymentId ? paymentStore.get(order.latestPaymentId) : undefined
+      const payment = order.latestPaymentId ? this.memoryStore.getPaymentSync(order.latestPaymentId) : undefined
       const channel = payment?.channel ?? 'CASH'
 
       if (!stats.has(channel)) stats.set(channel, { today: 0, month: 0 })
@@ -632,16 +634,14 @@ export class CashierService {
   }
 
   resetCashierStoresForTests(): void {
-    orderStore.clear()
-    paymentStore.clear()
+    this.memoryStore.resetForTests()
   }
 
   /**
    * P0-A1: 同时清除 Redis 缓存 (测试用)
    */
   async resetCashierCacheForTests(): Promise<void> {
-    orderStore.clear()
-    paymentStore.clear()
+    await this.memoryStore.resetForTests()
     if (this.cache) {
       await Promise.all([
         this.cache.delByPrefix('cashier:order:'),
