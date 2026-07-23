@@ -177,7 +177,7 @@ export class AdvancedModelConfigService {
       versionId: `ver-${Date.now()}-${i}`,
       modelName,
       version: `${1 + Math.floor(i / 2)}.${i % 2}.0`,
-      status: statuses[Math.min(i, 3)] as any,
+      status: statuses[Math.min(i, 3)]!,
       deployedAt: new Date(Date.now() - i * 7 * 86400000).toISOString(),
       deployedBy: `工程师 ${['Alice', 'Bob', 'Charlie', 'David', 'Eve'][i]}`,
       configSnapshot: { temperature: 0.7 + i * 0.05, maxTokens: 2048, topP: 0.9 },

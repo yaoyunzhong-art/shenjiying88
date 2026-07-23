@@ -1628,3 +1628,553 @@ model FinanceReportExport {
   @@index([format])
   @@map("finance_report_export")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-15 生日趴引擎
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model BirthdayPlan {
+  id            String   @id @default(cuid())
+  tenantId      String
+  memberId      String
+  birthday      String
+  planDate      String
+  advanceDays   Int
+  tier          String   @default("STANDARD")
+  rewardType    String
+  rewardValue   Float
+  status        String   @default("pending")
+  isUpcoming    Boolean  @default(false)
+  allowFriends  Boolean  @default(false)
+  friendDiscount Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rewards       BirthdayReward[]
+  trackings     BirthdayTracking[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([status])
+  @@index([planDate])
+  @@map("birthday_plan")
+}
+
+model BirthdayReward {
+  id        String    @id @default(cuid())
+  tenantId  String
+  planId    String
+  type      String
+  value     Float
+  sentAt    DateTime?
+  claimedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  plan BirthdayPlan @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([planId])
+  @@map("birthday_reward")
+}
+
+model BirthdayTracking {
+  id             String   @id @default(cuid())
+  tenantId       String
+  planId         String
+  friendInvited  Int      @default(0)
+  totalSpend     Float    @default(0)
+  returnVisitDays Int     @default(0)
+  createdAt      DateTime @default(now())
+
+  plan BirthdayPlan @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([planId])
+  @@map("birthday_tracking")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-16 团建营销引擎
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model TeamBuildingPlan {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  name                String
+  type                String
+  location            String
+  budget              Int
+  expectedParticipants Int
+  description         String   @default("")
+  recommendedSeason   String?
+  remark              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  events TeamBuildingEvent[]
+
+  @@index([tenantId])
+  @@index([type])
+  @@map("team_building_plan")
+}
+
+model TeamBuildingEvent {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  planId              String
+  name                String
+  eventDate           String
+  participants        Int
+  actualParticipants  Int?
+  totalSpend          Int?
+  avgSatisfaction     Float?
+  status              String   @default("scheduled")
+  lockedEquipment     Json     @default("[]")
+  participantMemberIds Json    @default("[]")
+  remark              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  plan    TeamBuildingPlan @relation(fields: [planId], references: [id])
+  reports TeamBuildingReport[]
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([eventDate])
+  @@map("team_building_event")
+}
+
+model TeamBuildingReport {
+  id                   String   @id @default(cuid())
+  eventId              String
+  tenantId             String
+  title                String
+  participantCount     Int
+  totalSpend           Int
+  avgSpend             Int
+  avgSatisfaction      Float
+  satisfactionBreakdown Json    @default("{}")
+  equipmentUsage       Json     @default("[]")
+  crmSyncStatus        String   @default("pending")
+  remark               String?
+  improvement          Json?
+  createdAt            DateTime @default(now())
+
+  event TeamBuildingEvent @relation(fields: [eventId], references: [id])
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("team_building_report")
+}
+
+model CrmSyncRecord {
+  id          String    @id @default(cuid())
+  tenantId    String
+  eventId     String
+  memberIds   Json      @default("[]")
+  totalSpend  Int       @default(0)
+  eventName   String    @default("")
+  syncStatus  String    @default("pending")
+  syncedAt    DateTime?
+  remark      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([syncStatus])
+  @@map("crm_sync_record")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-07 开放平台与ISV
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model IsvDeveloper {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  name        String
+  email       String   @unique
+  balance     Int      @default(0)
+  totalEarned Int      @default(0)
+  status      String   @default("active")
+  bio         String?
+  website     String?
+  phone       String?
+  apps        IsvApp[]
+  apiCallRecords ApiCallRecord[]
+  billingRecords BillingRecord[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("isv_developer")
+}
+
+model IsvApp {
+  id            String   @id @default(cuid())
+  tenantId      String?
+  name          String
+  description   String   @default("")
+  developerId   String
+  status        String   @default("pending")
+  apiKey        String   @unique
+  apiSecret     String
+  quota         Int      @default(1000)
+  apiVersion    String   @default("v1")
+  iconUrl       String?
+  category      String?
+  price         Int?
+  downloadCount Int      @default(0)
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNote    String?
+  apiKeys       ApiKeyRecord[]
+  apiCalls      ApiCallRecord[]
+  slaContracts  SlaContract[]
+  billingRecords BillingRecord[]
+  sdkVersions   SdkVersion[]
+  marketplace   MarketplaceItem?
+  developer      IsvDeveloper @relation(fields: [developerId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([developerId])
+  @@index([status])
+  @@map("isv_app")
+}
+
+model ApiKeyRecord {
+  id            String    @id @default(cuid())
+  appId         String
+  environment   String
+  apiKey        String    @unique
+  apiSecretHash String
+  status        String    @default("active")
+  createdBy     String
+  rotatedToId   String?
+  revokeReason  String?
+  createdAt     DateTime  @default(now())
+  rotatedAt     DateTime?
+  revokedAt     DateTime?
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([appId])
+  @@index([status])
+  @@map("api_key_record")
+}
+
+model ApiCallRecord {
+  id           String   @id @default(cuid())
+  appId        String
+  developerId  String
+  endpoint     String
+  timestamp    DateTime
+  cost         Int      @default(0)
+  statusCode   Int
+  signature    String
+  ipAddress    String?
+  durationMs   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  app       IsvApp       @relation(fields: [appId], references: [id])
+  developer IsvDeveloper @relation(fields: [developerId], references: [id])
+
+  @@index([appId])
+  @@index([developerId])
+  @@index([timestamp])
+  @@map("api_call_record")
+}
+
+model SlaContract {
+  id                    String    @id @default(cuid())
+  appId                 String
+  tierName              String
+  uptimeGuarantee       Float
+  penaltyRate           Float
+  monthlyCallCommitment Int
+  overageUnitPrice      Int
+  status                String    @default("active")
+  startDate             DateTime
+  endDate               DateTime?
+  currentUptime         Float     @default(1.0)
+  currentCalls          Int       @default(0)
+  breachCount           Int       @default(0)
+  totalPenalty          Int       @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([appId])
+  @@index([status])
+  @@map("sla_contract")
+}
+
+model BillingRecord {
+  id            String    @id @default(cuid())
+  developerId   String
+  appId         String
+  billingMonth  String
+  totalCalls    Int       @default(0)
+  totalAmount   Int       @default(0)
+  slaPenalty    Int       @default(0)
+  settleAmount  Int       @default(0)
+  status        String    @default("pending")
+  settledAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  developer IsvDeveloper @relation(fields: [developerId], references: [id])
+  app       IsvApp       @relation(fields: [appId], references: [id])
+
+  @@index([developerId])
+  @@index([appId])
+  @@index([billingMonth])
+  @@index([status])
+  @@map("billing_record")
+}
+
+model ApiVersion {
+  id             String    @id @default(cuid())
+  version        String    @unique
+  basePath       String
+  status         String    @default("active")
+  changelog      String?
+  deprecatedAt   DateTime?
+  sunsetAt       DateTime?
+  migrationGuide String?
+  createdAt      DateTime  @default(now())
+
+  @@map("api_version")
+}
+
+model SdkVersion {
+  id          String   @id @default(cuid())
+  appId       String
+  language    String
+  version     String
+  downloadUrl String
+  docContent  String?
+  isLatest    Boolean  @default(false)
+  changelog   String?
+  createdAt   DateTime @default(now())
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([appId])
+  @@index([isLatest])
+  @@map("sdk_version")
+}
+
+model MarketplaceItem {
+  id           String   @id @default(cuid())
+  appId        String   @unique
+  displayName  String
+  summary      String   @default("")
+  description  String   @default("")
+  tags         Json     @default("[]")
+  price        Int      @default(0)
+  screenshots  Json     @default("[]")
+  isFeatured   Boolean  @default(false)
+  rating       Float    @default(0)
+  reviewCount  Int      @default(0)
+  listedAt     DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([isFeatured])
+  @@map("marketplace_item")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-17 异业联盟（Alliance）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AlliancePartner {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  name         String
+  businessType String
+  contact      String
+  address      String   @default("")
+  status       String   @default("ACTIVE")
+  currentGrade String?
+  healthScore  Float?
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tierChangeRecords TierChangeRecord[]
+
+  @@index([tenantId])
+  @@index([businessType])
+  @@index([status])
+  @@index([currentGrade])
+  @@map("alliance_partner")
+}
+
+model TierChangeRecord {
+  id        String   @id @default(cuid())
+  partnerId String
+  fromGrade String?
+  toGrade   String
+  reason    String   @default("")
+  changedAt DateTime @default(now())
+
+  partner AlliancePartner @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+  @@map("tier_change_record")
+}
+
+model CrossBrandCoupon {
+  id                 String   @id @default(cuid())
+  issuerPartnerId    String
+  issuerPartnerName  String
+  denomination       Int
+  minSpend           Int      @default(0)
+  validFrom          DateTime
+  validTo            DateTime
+  acceptedPartnerIds Json     @default("[]")
+  status             String   @default("active")
+  description        String   @default("")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  redemptions CouponRedemption[]
+  settlements CouponSettlement[]
+
+  @@index([issuerPartnerId])
+  @@index([status])
+  @@index([validTo])
+  @@map("cross_brand_coupon")
+}
+
+model CouponRedemption {
+  id             String   @id @default(cuid())
+  couponId       String
+  partnerId      String
+  partnerName    String
+  orderId        String
+  memberId       String
+  orderAmount    Int
+  discountApplied Int
+  redeemedAt     DateTime @default(now())
+
+  coupon CrossBrandCoupon @relation(fields: [couponId], references: [id])
+
+  @@index([couponId])
+  @@index([partnerId])
+  @@index([orderId])
+  @@map("coupon_redemption")
+}
+
+model CouponSettlement {
+  id                  String    @id @default(cuid())
+  couponId            String
+  denomination        Int
+  totalDiscountApplied Int      @default(0)
+  issuerPartnerId     String
+  redeemPartnerId     String
+  issuerPayAmount     Int
+  redeemReceiveAmount Int
+  platformCommission  Int       @default(0)
+  status              String    @default("pending")
+  createdAt           DateTime  @default(now())
+  settledAt           DateTime?
+
+  coupon CrossBrandCoupon @relation(fields: [couponId], references: [id])
+
+  @@index([couponId])
+  @@index([status])
+  @@map("coupon_settlement")
+}
+
+model AllianceSettlement {
+  id                  String    @id @default(cuid())
+  orderId             String
+  type                String
+  totalAmount         Int
+  participants        Json      @default("[]")
+  executedParticipants Json?
+  status              String    @default("pending")
+  approvedAt          DateTime?
+  executedAt          DateTime?
+  refundAmount        Int?
+  returnCount         Int?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@map("alliance_settlement")
+}
+
+model UnlinkedOrder {
+  id              String   @id @default(cuid())
+  orderId         String
+  storeId         String
+  amount          Int      @default(0)
+  location        Json?
+  linkedPartnerId String?
+  linkStatus      String   @default("unlinked")
+  createdAt       DateTime @default(now())
+
+  @@index([storeId])
+  @@index([linkStatus])
+  @@map("unlinked_order")
+}
+
+model AnomalyTransaction {
+  id             String   @id @default(cuid())
+  partnerId      String
+  partnerName    String
+  type           String
+  severity       String
+  involvedAmount Int      @default(0)
+  description    String   @default("")
+  detectedAt     DateTime @default(now())
+  relatedId      String?
+
+  reviewRecords ReviewRecord[]
+
+  @@index([partnerId])
+  @@index([type])
+  @@index([severity])
+  @@map("anomaly_transaction")
+}
+
+model ReviewRecord {
+  id         String   @id @default(cuid())
+  anomalyId  String
+  partnerId  String
+  decision   String
+  reviewer   String
+  note       String   @default("")
+  reviewedAt DateTime @default(now())
+
+  anomaly AnomalyTransaction @relation(fields: [anomalyId], references: [id])
+
+  @@index([anomalyId])
+  @@index([partnerId])
+  @@index([decision])
+  @@map("review_record")
+}
+
+model DataCallbackRecord {
+  id            String   @id @default(cuid())
+  partnerId     String
+  dataType      String
+  payload       String
+  receivedAt    DateTime @default(now())
+  processStatus String   @default("pending")
+  processResult String?
+
+  @@index([partnerId])
+  @@index([dataType])
+  @@index([processStatus])
+  @@map("data_callback_record")
+}

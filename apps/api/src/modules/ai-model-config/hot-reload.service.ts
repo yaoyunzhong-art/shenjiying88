@@ -144,9 +144,10 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
       const healthCheckOk = await this.healthCheck(result.config)
       
       // 4. 如果健康检查失败,自动回滚
-      if (!healthCheckOk && (result as any).previousConfigId) {
+      const resultWithRef = result as unknown as { previousConfigId: string }
+      if (!healthCheckOk && resultWithRef.previousConfigId) {
         this.logger.warn(`Health check failed for config ${configId}, auto-rollback...`)
-        await this.repo.switchConfig((result as any).previousConfigId, 'system', 'Auto-rollback: health check failed')
+        await this.repo.switchConfig(resultWithRef.previousConfigId, 'system', 'Auto-rollback: health check failed')
         await this.refreshCache(storeId)
         
         return {

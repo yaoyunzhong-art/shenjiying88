@@ -14,7 +14,16 @@ import {
 } from '@nestjs/common';
 import { OpenPlatformService } from './open-platform.service';
 import {
+  IsvApp,
+  IsvDeveloper,
   IsvAppStatus,
+  ApiKeyRecord,
+  ApiCallRecord,
+  SlaContract,
+  BillingRecord,
+  ApiVersion,
+  SdkVersion,
+  MarketplaceItem,
   SdkLanguage,
 } from './open-platform.entity';
 
@@ -39,7 +48,7 @@ export class OpenPlatformController {
       website?: string;
       phone?: string;
     },
-  ): any {
+  ): IsvDeveloper {
     return this.svc.registerDeveloper(body);
   }
 
@@ -47,7 +56,7 @@ export class OpenPlatformController {
    * GET /open-platform/developers/:id — 开发者信息
    */
   @Get('developers/:id')
-  getDeveloper(@Param('id') id: string): any {
+  getDeveloper(@Param('id') id: string): IsvDeveloper {
     return this.svc.getDeveloper(id);
   }
 
@@ -55,7 +64,7 @@ export class OpenPlatformController {
    * GET /open-platform/developers — 开发者列表
    */
   @Get('developers')
-  listDevelopers(): any {
+  listDevelopers(): { developers: IsvDeveloper[] } {
     return { developers: this.svc.listDevelopers() };
   }
 
@@ -76,7 +85,7 @@ export class OpenPlatformController {
       iconUrl?: string;
       category?: string;
     },
-  ): any {
+  ): IsvApp {
     return this.svc.registerApp(body);
   }
 
@@ -88,7 +97,7 @@ export class OpenPlatformController {
     @Query('developerId') developerId?: string,
     @Query('status') status?: IsvAppStatus,
     @Query('category') category?: string,
-  ): any {
+  ): { apps: IsvApp[] } {
     return { apps: this.svc.listApps({ developerId, status, category }) };
   }
 
@@ -96,7 +105,7 @@ export class OpenPlatformController {
    * GET /open-platform/apps/:id — 应用详情
    */
   @Get('apps/:id')
-  getApp(@Param('id') id: string): any {
+  getApp(@Param('id') id: string): IsvApp {
     return this.svc.getApp(id);
   }
 
@@ -108,7 +117,7 @@ export class OpenPlatformController {
   updateAppStatus(
     @Param('id') id: string,
     @Body() body: { status: IsvAppStatus; reviewNote?: string; reviewer: string },
-  ): any {
+  ): IsvApp {
     return this.svc.updateAppStatus(id, body);
   }
 
@@ -123,7 +132,7 @@ export class OpenPlatformController {
   @HttpCode(HttpStatus.CREATED)
   generateKey(
     @Body() body: { appId: string; createdBy: string },
-  ): any {
+  ): ApiKeyRecord {
     return this.svc.generateApiKeyPair(body.appId, body.createdBy);
   }
 
@@ -134,7 +143,7 @@ export class OpenPlatformController {
   @HttpCode(HttpStatus.OK)
   rotateKey(
     @Body() body: { keyId: string; createdBy: string },
-  ): any {
+  ): { old: ApiKeyRecord; new: ApiKeyRecord } {
     return this.svc.rotateApiKey(body.keyId, body.createdBy);
   }
 
@@ -145,7 +154,7 @@ export class OpenPlatformController {
   @HttpCode(HttpStatus.OK)
   revokeKey(
     @Body() body: { keyId: string; reason: string },
-  ): any {
+  ): ApiKeyRecord {
     return this.svc.revokeApiKey(body.keyId, body.reason);
   }
 
@@ -162,7 +171,7 @@ export class OpenPlatformController {
     @Query('developerId') developerId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-  ): any {
+  ): ReturnType<OpenPlatformService['getUsageStats']> {
     return this.svc.getUsageStats({ appId, developerId, startDate, endDate });
   }
 
@@ -182,7 +191,7 @@ export class OpenPlatformController {
       ipAddress?: string;
       durationMs: number;
     },
-  ): any {
+  ): ApiCallRecord {
     return this.svc.recordCall(body);
   }
 
@@ -197,7 +206,7 @@ export class OpenPlatformController {
   @HttpCode(HttpStatus.CREATED)
   generateBilling(
     @Body() body: { billingMonth: string; appId: string },
-  ): any {
+  ): BillingRecord {
     return this.svc.generateBilling(body.billingMonth, body.appId);
   }
 
@@ -206,7 +215,7 @@ export class OpenPlatformController {
    */
   @Post('billing/:id/settle')
   @HttpCode(HttpStatus.OK)
-  settleBilling(@Param('id') id: string): any {
+  settleBilling(@Param('id') id: string): BillingRecord {
     return this.svc.settleBilling(id);
   }
 
@@ -228,7 +237,7 @@ export class OpenPlatformController {
       monthlyCallCommitment: number;
       overageUnitPrice: number;
     },
-  ): any {
+  ): SlaContract {
     return this.svc.createSla(body);
   }
 
@@ -239,7 +248,7 @@ export class OpenPlatformController {
   getSla(
     @Query('appId') appId?: string,
     @Query('slaId') slaId?: string,
-  ): any {
+  ): SlaContract | SlaContract[] {
     return this.svc.getSla({ appId, slaId });
   }
 
@@ -254,7 +263,7 @@ export class OpenPlatformController {
   @HttpCode(HttpStatus.CREATED)
   registerApiVersion(
     @Body() body: { version: string; basePath: string; changelog?: string },
-  ): any {
+  ): ApiVersion {
     return this.svc.registerApiVersion(body);
   }
 
@@ -266,7 +275,7 @@ export class OpenPlatformController {
   deprecateVersion(
     @Param('id') id: string,
     @Body() body: { sunsetDate: string },
-  ): any {
+  ): ApiVersion {
     return this.svc.deprecateApiVersion(id, body.sunsetDate);
   }
 
@@ -274,7 +283,7 @@ export class OpenPlatformController {
    * GET /open-platform/versions — 版本列表
    */
   @Get('versions')
-  listApiVersions(): any {
+  listApiVersions(): { versions: ApiVersion[] } {
     return { versions: this.svc.listApiVersions() };
   }
 
@@ -296,7 +305,7 @@ export class OpenPlatformController {
       docContent?: string;
       changelog?: string;
     },
-  ): any {
+  ): SdkVersion {
     return this.svc.publishSdk(body);
   }
 
@@ -304,7 +313,7 @@ export class OpenPlatformController {
    * GET /open-platform/sdks/:appId — SDK 列表
    */
   @Get('sdks/:appId')
-  listSdks(@Param('appId') appId: string): any {
+  listSdks(@Param('appId') appId: string): { sdks: SdkVersion[] } {
     return { sdks: this.svc.listSdks(appId) };
   }
 
@@ -327,7 +336,7 @@ export class OpenPlatformController {
       price: number;
       screenshots: string[];
     },
-  ): any {
+  ): MarketplaceItem {
     return this.svc.publishToMarketplace(body.appId, body);
   }
 
@@ -340,7 +349,7 @@ export class OpenPlatformController {
     @Query('search') search?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
-  ): any {
+  ): { items: MarketplaceItem[] } {
     return {
       items: this.svc.listMarketplace({
         tag,

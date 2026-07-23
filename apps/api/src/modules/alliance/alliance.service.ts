@@ -22,10 +22,12 @@ import {
   type SettlementType,
 } from './alliance-settlement.service'
 import { AllianceTierService } from './alliance-tier.service'
-import { AllianceCouponService, type CouponIssueRequest, type PartnerCouponStats } from './alliance-coupon.service'
+import { AllianceCouponService, type CouponIssueRequest, type PartnerCouponStats, type CrossBrandCoupon, type CouponRedemption, type CouponSettlement } from './alliance-coupon.service'
 import { AllianceDataService, type DataCallbackRecord, type CallbackDataType, type DataQuery, type DataDashboard, type CallbackStats } from './alliance-data.service'
-import { AllianceReviewService, type AnomalyTransaction, type ReviewRecord, type ReviewStatus } from './alliance-review.service'
+import { AllianceReviewService, type AnomalyTransaction, type ReviewRecord, type ReviewStatus, type AnomalyType, type AnomalySeverity } from './alliance-review.service'
 import { AllianceDashboardService, type DashboardOverview, type GradeDistribution, type MonthlyTrend, type ActivityOverview, type PartnerRanking, type PartnerDashboard } from './alliance-dashboard.service'
+import type { TierShareConfig, TierChangeRecord } from './alliance-tier.service'
+import type { Settlement } from './alliance-settlement.service'
 import type {
   AlliancePartner as AlliancePartnerType,
   PartnerInfo,
@@ -451,7 +453,7 @@ export class AllianceService {
   }
 
   /** 获取伙伴分账历史 */
-  getSettlementHistory(partnerId: string): AllianceResult<{ items: any[]; total: number }> {
+  getSettlementHistory(partnerId: string): AllianceResult<{ items: Settlement[]; total: number }> {
     const history = this.settlementService.getSettlementHistory(partnerId)
     return { success: true, data: { items: history, total: history.length } }
   }
@@ -483,7 +485,7 @@ export class AllianceService {
   }
 
   /** 手动关联订单 */
-  linkOrder(orderId: string, partnerId: string): AllianceResult<any> {
+  linkOrder(orderId: string, partnerId: string): AllianceResult<import('./alliance-settlement.service').UnlinkedOrder> {
     try {
       const result = this.orderDetector.manualLink(orderId, partnerId)
       return { success: true, data: result }
@@ -494,7 +496,7 @@ export class AllianceService {
   }
 
   /** 自动关联订单 */
-  autoLinkOrder(orderId: string): AllianceResult<any> {
+  autoLinkOrder(orderId: string): AllianceResult<{ linked: boolean; partnerId?: string; reason?: string }> {
     const result = this.orderDetector.autoLinkByRule(orderId)
     return { success: true, data: result }
   }
@@ -504,19 +506,19 @@ export class AllianceService {
   // ═══════════════════════════════════════════════════════════════
 
   /** 检测异常模式 */
-  detectAnomaly(partnerId: string): AllianceResult<{ partnerId: string; anomalies: any[]; count: number }> {
+  detectAnomaly(partnerId: string): AllianceResult<{ partnerId: string; anomalies: import('./alliance-settlement.service').AnomalyRecord[]; count: number }> {
     const anomalies = this.anomalyService.detectUnusualPattern(partnerId)
     return { success: true, data: { partnerId, anomalies, count: anomalies.length } }
   }
 
   /** 获取异常报告 */
-  getAnomalyReport(partnerId: string): AllianceResult<any> {
+  getAnomalyReport(partnerId: string): AllianceResult<import('./alliance-settlement.service').AnomalyReport> {
     const report = this.anomalyService.getAnomalyReport(partnerId)
     return { success: true, data: report }
   }
 
   /** 标记可疑分账 */
-  flagSuspiciousSettlement(settlementId: string): AllianceResult<any> {
+  flagSuspiciousSettlement(settlementId: string): AllianceResult<{ flagged: boolean; settlementId: string }> {
     const result = this.anomalyService.flagSuspiciousSettlement(settlementId)
     return { success: true, data: result }
   }
@@ -526,19 +528,19 @@ export class AllianceService {
   // ═══════════════════════════════════════════════════════════════
 
   /** 获取等级分成配置 */
-  getTierConfig(grade: Grade): AllianceResult<any> {
+  getTierConfig(grade: Grade): AllianceResult<TierShareConfig> {
     const config = this.tierService.getTierConfig(grade)
     return { success: true, data: config }
   }
 
   /** 获取所有等级配置 */
-  getAllTierConfigs(): AllianceResult<any> {
+  getAllTierConfigs(): AllianceResult<TierShareConfig[]> {
     const configs = this.tierService.getAllTierConfigs()
     return { success: true, data: configs }
   }
 
   /** 更新等级配置 */
-  setTierConfig(grade: Grade, config: any): AllianceResult<any> {
+  setTierConfig(grade: Grade, config: Partial<TierShareConfig>): AllianceResult<TierShareConfig> {
     const updated = this.tierService.setTierConfig(grade, config)
     return { success: true, data: updated }
   }
@@ -550,7 +552,7 @@ export class AllianceService {
   }
 
   /** 获取等级变更历史 */
-  getGradeChangeHistory(partnerId: string): AllianceResult<any> {
+  getGradeChangeHistory(partnerId: string): AllianceResult<TierChangeRecord[]> {
     const history = this.tierService.getGradeChangeHistory(partnerId)
     return { success: true, data: history }
   }
@@ -560,7 +562,7 @@ export class AllianceService {
   // ═══════════════════════════════════════════════════════════════
 
   /** 发放跨品牌优惠券 */
-  issueCoupon(req: CouponIssueRequest): AllianceResult<any> {
+  issueCoupon(req: CouponIssueRequest): AllianceResult<CrossBrandCoupon> {
     try {
       const coupon = this.couponService.issueCoupon(req)
       return { success: true, data: coupon }
@@ -570,7 +572,7 @@ export class AllianceService {
   }
 
   /** 核销优惠券 */
-  redeemCoupon(couponId: string, partnerId: string, partnerName: string, orderId: string, memberId: string, orderAmount: number): AllianceResult<any> {
+  redeemCoupon(couponId: string, partnerId: string, partnerName: string, orderId: string, memberId: string, orderAmount: number): AllianceResult<CouponRedemption> {
     try {
       const redemption = this.couponService.redeemCoupon(couponId, partnerId, partnerName, orderId, memberId, orderAmount)
       return { success: true, data: redemption }
@@ -580,7 +582,7 @@ export class AllianceService {
   }
 
   /** 取消优惠券 */
-  cancelCoupon(couponId: string): AllianceResult<any> {
+  cancelCoupon(couponId: string): AllianceResult<CrossBrandCoupon> {
     try {
       const coupon = this.couponService.cancelCoupon(couponId)
       return { success: true, data: coupon }
@@ -590,20 +592,20 @@ export class AllianceService {
   }
 
   /** 获取优惠券 */
-  getCoupon(couponId: string): AllianceResult<any> {
+  getCoupon(couponId: string): AllianceResult<CrossBrandCoupon> {
     const coupon = this.couponService.getCoupon(couponId)
     if (!coupon) return { success: false, message: `Coupon ${couponId} not found` }
     return { success: true, data: coupon }
   }
 
   /** 列出伙伴可核销优惠券 */
-  listRedeemableCoupons(partnerId: string): AllianceResult<any> {
+  listRedeemableCoupons(partnerId: string): AllianceResult<CrossBrandCoupon[]> {
     const coupons = this.couponService.listRedeemableCoupons(partnerId)
     return { success: true, data: coupons }
   }
 
   /** 优惠券结算 */
-  settleCoupon(couponId: string): AllianceResult<any> {
+  settleCoupon(couponId: string): AllianceResult<CouponSettlement> {
     try {
       const settlement = this.couponService.settleCoupon(couponId)
       return { success: true, data: settlement }
@@ -619,7 +621,7 @@ export class AllianceService {
   }
 
   /** 获取待结算列表 */
-  getPendingCouponSettlements(): AllianceResult<any> {
+  getPendingCouponSettlements(): AllianceResult<CouponSettlement[]> {
     const settlements = this.couponService.getPendingSettlements()
     return { success: true, data: settlements }
   }
@@ -663,7 +665,7 @@ export class AllianceService {
   /** 提交异常记录 */
   reportAnomaly(partnerId: string, partnerName: string, type: string, severity: string, amount: number, description: string, relatedId?: string): AllianceResult<AnomalyTransaction> {
     try {
-      const anomaly = this.reviewService.reportAnomaly(partnerId, partnerName, type as any, severity as any, amount, description, relatedId)
+      const anomaly = this.reviewService.reportAnomaly(partnerId, partnerName, type as AnomalyType, severity as AnomalySeverity, amount, description, relatedId)
       return { success: true, data: anomaly }
     } catch (err: any) {
       return { success: false, message: err.message, code: err.code }
@@ -693,7 +695,7 @@ export class AllianceService {
   }
 
   /** 获取审核统计 */
-  getReviewStats(): AllianceResult<any> {
+  getReviewStats(): AllianceResult<ReturnType<AllianceReviewService['getReviewStats']>> {
     const stats = this.reviewService.getReviewStats()
     return { success: true, data: stats }
   }

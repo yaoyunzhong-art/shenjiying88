@@ -37,8 +37,16 @@ import {
   RollbackAiModelDto,
   QueryAiModelPresetDto,
 } from './ai-model-config.dto'
-import type { TenantContext } from '../../common/context/tenant-context'
+import type { TenantContext, TenantRole } from '../../common/context/tenant-context'
 import { TenantGuard } from '../agent/tenant.guard'
+
+type RequestUser = {
+  tenantId?: string
+  storeId?: string
+  id?: string
+  userId?: string
+  role?: TenantRole
+}
 
 @Controller('ai-model-config')
 @UseGuards(TenantGuard)
@@ -139,7 +147,7 @@ export class AiModelConfigController {
    * V9 等保三级: tenant_id 必填,store_id 在门店操作时必填
    */
   private extractTenant(req: Request, override?: { storeId?: string }): TenantContext {
-    const user = (req as any).user ?? {}
+    const user = (req as unknown as { user?: RequestUser }).user ?? {}
     if (!user.tenantId) {
       throw new Error('[controller] Missing tenantId in req.user (auth guard not applied?)')
     }

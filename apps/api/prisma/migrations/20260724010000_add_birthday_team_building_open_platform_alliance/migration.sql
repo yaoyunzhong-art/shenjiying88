@@ -503,6 +503,7 @@ CREATE INDEX IF NOT EXISTS "alliance_settlement_status_idx" ON "alliance_settlem
 -- CreateTable: unlinked_order
 CREATE TABLE IF NOT EXISTS "unlinked_order" (
   "id" TEXT NOT NULL,
+  "orderId" TEXT NOT NULL,
   "storeId" TEXT NOT NULL,
   "amount" INTEGER NOT NULL DEFAULT 0,
   "location" JSONB,

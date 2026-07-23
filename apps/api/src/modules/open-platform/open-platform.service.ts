@@ -471,11 +471,6 @@ export class OpenPlatformService {
 
     this.callRecordStore.set(id, record);
 
-    // 4xx/5xx 不计费
-    if (dto.statusCode < 400) {
-      // 计费更新暂存在调用记录中
-    }
-
     this.logger.log(`记录API调用: ${id} (应用: ${dto.appId}, ${dto.endpoint})`);
     return record;
   }

@@ -13,7 +13,15 @@ import {
 } from '@nestjs/common';
 import { BirthdayService } from './birthday.service';
 import { BirthdayCountdownService } from './birthday-countdown.service';
-import { BirthdayTier, BirthdayPlanStatus, type RewardType } from './birthday.entity';
+import {
+  BirthdayPlan,
+  BirthdayReward,
+  BirthdayTracking,
+  BirthdayDashboard,
+  BirthdayTier,
+  BirthdayPlanStatus,
+  type RewardType,
+} from './birthday.entity';
 
 @Controller('birthday')
 export class BirthdayController {
@@ -104,7 +112,7 @@ export class BirthdayController {
   recordTracking(
     @Param('id') id: string,
     @Body() body: { friendInvited?: number; totalSpend?: number; returnVisitDays?: number },
-  ): any {
+  ): BirthdayTracking {
     return this.svc.recordTracking({
       planId: id,
       friendInvited: body.friendInvited,
@@ -121,7 +129,7 @@ export class BirthdayController {
    * GET /birthday/stats — 生日趴看板数据
    */
   @Get('stats')
-  getDashboard(@Query('month') month?: string): any {
+  getDashboard(@Query('month') month?: string): BirthdayDashboard {
     return this.svc.getDashboard(month);
   }
 
@@ -129,7 +137,7 @@ export class BirthdayController {
    * GET /birthday/stats/:memberId — 会员生日统计
    */
   @Get('stats/:memberId')
-  getMemberStats(@Param('memberId') memberId: string): any {
+  getMemberStats(@Param('memberId') memberId: string): ReturnType<BirthdayService['getMemberStats']> {
     return this.svc.getMemberStats(memberId);
   }
 
@@ -144,7 +152,7 @@ export class BirthdayController {
   getCountdown(
     @Param('memberId') memberId: string,
     @Query('birthday') birthday: string,
-  ): any {
+  ): { success: boolean; data: ReturnType<BirthdayCountdownService['getCountdown']> } {
     const countdown = this.countdownSvc.getCountdown(memberId, birthday, true);
     return { success: true, data: countdown };
   }
@@ -156,7 +164,7 @@ export class BirthdayController {
   getPreview(
     @Param('memberId') memberId: string,
     @Query('birthday') birthday: string,
-  ): any {
+  ): { success: boolean; data: ReturnType<BirthdayCountdownService['getPreview']> } {
     const preview = this.countdownSvc.getPreview(memberId, birthday);
     return { success: true, data: preview };
   }
@@ -167,7 +175,7 @@ export class BirthdayController {
    */
   @Post('effects/preload/:memberId')
   @HttpCode(HttpStatus.OK)
-  preloadEffects(@Param('memberId') memberId: string): any {
+  preloadEffects(@Param('memberId') memberId: string): ReturnType<BirthdayService['preloadEffects']> {
     return this.svc.preloadEffects(memberId);
   }
 }

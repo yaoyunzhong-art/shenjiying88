@@ -28,6 +28,9 @@ import type {
 // ============ Repository 接口 ============
 
 export interface AiModelConfigRepository {
+  // 历史维护 (Phase-FP)
+  deleteHistoryBefore(cutoffDate: Date): Promise<number>
+  getHistoryStats(): Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }>
   // 预设 (跨租户共享, 只读)
   listPresets(filter?: { provider?: AiModelProvider; industry?: string }): Promise<AiModelPreset[]>
   getPreset(id: string): Promise<AiModelPreset | null>
@@ -224,6 +227,33 @@ class PgRepository implements AiModelConfigRepository {
     })
   }
 
+  async deleteHistoryBefore(cutoffDate: Date): Promise<number> {
+    const ctx = requireTenantContext()
+    return withTenantSession(ctx, async (client) => {
+      const result = await client.query(
+        'DELETE FROM ai_model_config_history WHERE changed_at < $1',
+        [cutoffDate.toISOString()],
+      )
+      return result.rowCount ?? 0
+    })
+  }
+
+  async getHistoryStats(): Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }> {
+    const ctx = requireTenantContext()
+    return withTenantSession(ctx, async (client) => {
+      const countResult = await client.query('SELECT COUNT(*) AS cnt FROM ai_model_config_history')
+      const totalCount = Number(countResult.rows[0]?.cnt ?? 0)
+      const rangeResult = await client.query('SELECT MIN(changed_at) AS oldest, MAX(changed_at) AS newest FROM ai_model_config_history')
+      const distinctResult = await client.query('SELECT COUNT(DISTINCT config_id) AS cnt FROM ai_model_config_history')
+      return {
+        totalCount,
+        oldestDate: rangeResult.rows[0]?.oldest ?? null,
+        newestDate: rangeResult.rows[0]?.newest ?? null,
+        uniqueConfigCount: Number(distinctResult.rows[0]?.cnt ?? 0),
+      }
+    })
+  }
+
   async rollbackToHistory(historyId: string, operatorId: string, reason: string): Promise<AiModelStoreConfig> {
     const ctx = requireTenantContext()
     return withTenantSession(ctx, async (client) => {
@@ -390,6 +420,26 @@ class MemoryRepository implements AiModelConfigRepository {
     const ctx = requireTenantContext()
     void ctx
     return this.history.filter((h) => h.configId === configId).slice(-limit).reverse()
+  }
+
+  async deleteHistoryBefore(cutoffDate: Date): Promise<number> {
+    const before = this.history.length
+    this.history = this.history.filter((h) => new Date(h.changedAt) >= cutoffDate)
+    return before - this.history.length
+  }
+
+  async getHistoryStats(): Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }> {
+    if (this.history.length === 0) {
+      return { totalCount: 0, oldestDate: null, newestDate: null, uniqueConfigCount: 0 }
+    }
+    const sorted = [...this.history].sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime())
+    const uniqueConfigs = new Set(sorted.map((h) => h.configId))
+    return {
+      totalCount: sorted.length,
+      oldestDate: new Date(sorted[0].changedAt),
+      newestDate: new Date(sorted[sorted.length - 1].changedAt),
+      uniqueConfigCount: uniqueConfigs.size,
+    }
   }
 
   async rollbackToHistory(historyId: string, operatorId: string, reason: string): Promise<AiModelStoreConfig> {

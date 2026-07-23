@@ -95,10 +95,14 @@ export class SnapshotService {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - this.RETENTION_DAYS)
 
-    const deleted = await (this.repo as any).deleteHistoryBefore(cutoffDate)
-    
+    const r = this.repo as unknown as {
+      deleteHistoryBefore: (d: Date) => Promise<number> | number
+      getHistoryStats: () => Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }> | { totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }
+    }
+    const deleted = await r.deleteHistoryBefore(cutoffDate)
+
     this.logger.log(`Cleaned up ${deleted} expired snapshots (before ${cutoffDate.toISOString()})`)
-    
+
     return { deleted }
   }
 
@@ -111,7 +115,8 @@ export class SnapshotService {
     newestSnapshot: Date | null
     configsWithSnapshots: number
   }> {
-    const stats = await (this.repo as any).getHistoryStats()
+    const repo = this.repo as unknown as { getHistoryStats: () => Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }> | { totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number } }
+    const stats = await repo.getHistoryStats()
     
     return {
       totalSnapshots: stats.totalCount,

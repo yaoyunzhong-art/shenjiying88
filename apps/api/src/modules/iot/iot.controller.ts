@@ -4,6 +4,8 @@ import {
   MQTTBrokerService,
   AdaptiveHeartbeatService,
   IoTHardwareService,
+  DeviceType,
+  DeviceStatus,
 } from './iot-hardware.service'
 import { OTAFirmwareService, DeviceStateValidator, WorkOrderAutoAssignService } from './ota-upgrade.service'
 import type {
@@ -15,6 +17,7 @@ import type {
   FirmwareRecord,
   WorkOrderRecord,
   WorkOrderIssue,
+  WorkOrderPriority,
 } from './iot.entity'
 import {
   RegisterDeviceDto,
@@ -63,15 +66,15 @@ export class IoTController {
     if (existing) {
       throw new HttpException('设备已存在', HttpStatus.CONFLICT)
     }
-    return this.deviceService.registerDevice(dto.deviceId, dto.type as any)
+    return this.deviceService.registerDevice(dto.deviceId, dto.type as unknown as DeviceType)
   }
 
   /** 获取设备列表（支持过滤） */
   @Get('devices')
   listDevices(@Query() filter?: DeviceFilterDto): { total: number; devices: ESP32Device[] } {
     const devices = this.deviceService.listDevices({
-      type: filter?.type as any,
-      status: filter?.status as any,
+      type: filter?.type as unknown as DeviceType | undefined,
+      status: filter?.status as unknown as DeviceStatus | undefined,
     })
     return { total: devices.length, devices }
   }
@@ -96,7 +99,7 @@ export class IoTController {
     if (!device) {
       throw new HttpException('设备未找到', HttpStatus.NOT_FOUND)
     }
-    const updated = this.deviceService.updateDeviceStatus(deviceId, dto.status as any)
+    const updated = this.deviceService.updateDeviceStatus(deviceId, dto.status as unknown as DeviceStatus)
     if (!updated) {
       throw new HttpException('状态更新失败', HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -117,7 +120,7 @@ export class IoTController {
   /** 设备上线 */
   @Post('devices/online')
   async deviceOnline(@Body() dto: DeviceOnlineDto): Promise<ESP32Device> {
-    return this.iotHardwareService.deviceOnline(dto.deviceId, dto.type as any)
+    return this.iotHardwareService.deviceOnline(dto.deviceId, dto.type as unknown as DeviceType)
   }
 
   /** 设备下线 */
@@ -173,8 +176,8 @@ export class IoTController {
   getMQTTStatus(): { connected: boolean; brokerUrl: string | null; messageCount: number } {
     return {
       connected: this.mqttService.isConnected(),
-      brokerUrl: (this.mqttService as any).brokerUrl ?? null,
-      messageCount: (this.mqttService as any).messageHistory?.length ?? 0,
+      brokerUrl: (this.mqttService as unknown as { brokerUrl: string | null }).brokerUrl ?? null,
+      messageCount: (this.mqttService as unknown as { messageHistory: unknown[] | undefined }).messageHistory?.length ?? 0,
     }
   }
 
@@ -292,7 +295,7 @@ export class IoTController {
       deviceId: dto.deviceId,
       deviceType: dto.deviceType,
       description: dto.description,
-      priority: dto.priority as any,
+      priority: dto.priority as unknown as WorkOrderPriority,
       requiredSkills: dto.requiredSkills,
     }
     return this.workOrderService.autoAssign(issue)
