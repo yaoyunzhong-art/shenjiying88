@@ -28,6 +28,48 @@ export type {
   AnomalyReport,
 }
 
+// ── WP-17B 新增类型导出 ───────────────────────────────────────────────────────
+
+export type {
+  TierShareConfig,
+  TierChangeRecord,
+} from './alliance-tier.service'
+
+export type {
+  CrossBrandCoupon,
+  CouponIssueRequest,
+  CouponRedemption,
+  CouponSettlement,
+  PartnerCouponStats,
+} from './alliance-coupon.service'
+
+export type {
+  DataCallbackRecord,
+  CallbackDataType,
+  DataDashboard,
+  CallbackStats,
+  DataQuery,
+} from './alliance-data.service'
+
+export type {
+  AnomalyTransaction,
+  AnomalyType,
+  AnomalySeverity,
+  ReviewRecord,
+  ReviewStatus,
+} from './alliance-review.service'
+
+export type {
+  DashboardOverview,
+  GradeDistribution,
+  MonthlyTrend,
+  ActivityOverview,
+  PartnerRanking,
+  PartnerDashboard,
+} from './alliance-dashboard.service'
+
+// ── 原有接口 ───────────────────────────────────────────────────────────────────
+
 /**
  * 联盟伙伴注册请求
  */

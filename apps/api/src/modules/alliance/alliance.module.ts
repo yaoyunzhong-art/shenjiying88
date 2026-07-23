@@ -8,6 +8,11 @@ import {
   UnlinkedOrderDetector,
   AnomalyDetectionService,
 } from './alliance-settlement.service'
+import { AllianceTierService } from './alliance-tier.service'
+import { AllianceCouponService } from './alliance-coupon.service'
+import { AllianceDataService } from './alliance-data.service'
+import { AllianceReviewService } from './alliance-review.service'
+import { AllianceDashboardService } from './alliance-dashboard.service'
 
 @Module({
   imports: [AuditModule],
@@ -20,6 +25,11 @@ import {
     CrossMerchantSettlementService,
     UnlinkedOrderDetector,
     AnomalyDetectionService,
+    AllianceTierService,
+    AllianceCouponService,
+    AllianceDataService,
+    AllianceReviewService,
+    AllianceDashboardService,
   ],
   exports: [
     AllianceService,
@@ -29,6 +39,11 @@ import {
     CrossMerchantSettlementService,
     UnlinkedOrderDetector,
     AnomalyDetectionService,
+    AllianceTierService,
+    AllianceCouponService,
+    AllianceDataService,
+    AllianceReviewService,
+    AllianceDashboardService,
   ],
 })
 export class AllianceModule {}

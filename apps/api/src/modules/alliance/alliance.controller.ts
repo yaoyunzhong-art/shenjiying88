@@ -17,6 +17,11 @@ import {
   UnlinkedOrderDetector,
   AnomalyDetectionService,
 } from './alliance-settlement.service'
+import { AllianceTierService } from './alliance-tier.service'
+import { AllianceCouponService } from './alliance-coupon.service'
+import { AllianceDataService, type CallbackDataType } from './alliance-data.service'
+import { AllianceReviewService } from './alliance-review.service'
+import { AllianceDashboardService } from './alliance-dashboard.service'
 import {
   RegisterPartnerDto,
   UpdatePartnerDto,
@@ -26,6 +31,13 @@ import {
   SetMetricsDto,
   ScanUnlinkedOrdersDto,
   LinkOrderDto,
+  SetTierConfigDto,
+  IssueCouponDto,
+  RedeemCouponDto,
+  ReceiveCallbackDto,
+  QueryCallbackDto,
+  ReportAnomalyDto,
+  SubmitReviewDto,
 } from './alliance.dto'
 
 @Controller('alliance')
@@ -39,6 +51,11 @@ export class AllianceController {
     private readonly settlementService: CrossMerchantSettlementService,
     private readonly orderDetector: UnlinkedOrderDetector,
     private readonly anomalyService: AnomalyDetectionService,
+    private readonly tierService: AllianceTierService = new AllianceTierService(),
+    private readonly couponService: AllianceCouponService = new AllianceCouponService(new AllianceTierService()),
+    private readonly dataService: AllianceDataService = new AllianceDataService(),
+    private readonly reviewService: AllianceReviewService = new AllianceReviewService(),
+    private readonly dashboardService: AllianceDashboardService = new AllianceDashboardService(),
   ) {}
 
   // ─── Partner Registration ────────────────────────────────────
@@ -407,5 +424,349 @@ export class AllianceController {
   flagSuspicious(@Param('settlementId') settlementId: string) {
     const result = this.anomalyService.flagSuspiciousSettlement(settlementId)
     return { success: true, data: result }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 分级联盟 (BS-0218~BS-0219)
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 获取所有等级分成配置
+   */
+  @Get('tier/configs')
+  getTierConfigs() {
+    const configs = this.tierService.getAllTierConfigs()
+    return { success: true, data: configs }
+  }
+
+  /**
+   * 获取指定等级分成配置
+   */
+  @Get('tier/config/:grade')
+  getTierConfig(@Param('grade') grade: string) {
+    const config = this.tierService.getTierConfig(grade as any)
+    return { success: true, data: config }
+  }
+
+  /**
+   * 更新等级分成配置
+   */
+  @Put('tier/config')
+  setTierConfig(@Body() body: SetTierConfigDto) {
+    const updated = this.tierService.setTierConfig(body.grade, {
+      revenueShareRatio: body.revenueShareRatio,
+      couponCommissionRatio: body.couponCommissionRatio,
+      minSettlementThreshold: body.minSettlementThreshold,
+    })
+    return { success: true, data: updated }
+  }
+
+  /**
+   * 计算等级分成金额
+   */
+  @Post('tier/calculate-share')
+  calculateTierShare(@Body() body: { grade: string; orderAmount: number }) {
+    const share = this.tierService.calculateRevenueShare(body.grade as any, body.orderAmount)
+    return { success: true, data: { grade: body.grade, orderAmount: body.orderAmount, shareAmount: share } }
+  }
+
+  /**
+   * 获取等级变更历史
+   */
+  @Get('tier/change-history/:partnerId')
+  getGradeChangeHistory(@Param('partnerId') partnerId: string) {
+    const history = this.tierService.getGradeChangeHistory(partnerId)
+    return { success: true, data: history }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 联盟券互推 (BS-0220~BS-0221)
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 发放跨品牌优惠券
+   */
+  @Post('coupon/issue')
+  issueCoupon(@Body() body: IssueCouponDto) {
+    try {
+      const coupon = this.couponService.issueCoupon(body)
+      return { success: true, data: coupon }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 核销优惠券
+   */
+  @Post('coupon/redeem')
+  redeemCoupon(@Body() body: RedeemCouponDto) {
+    try {
+      const redemption = this.couponService.redeemCoupon(
+        body.couponId, body.partnerId, body.partnerName,
+        body.orderId, body.memberId, body.orderAmount,
+      )
+      return { success: true, data: redemption }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 取消优惠券
+   */
+  @Post('coupon/:couponId/cancel')
+  cancelCoupon(@Param('couponId') couponId: string) {
+    try {
+      const coupon = this.couponService.cancelCoupon(couponId)
+      return { success: true, data: coupon }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 获取优惠券详情
+   */
+  @Get('coupon/:couponId')
+  getCoupon(@Param('couponId') couponId: string) {
+    const coupon = this.couponService.getCoupon(couponId)
+    if (!coupon) {
+      return { success: false, message: `Coupon ${couponId} not found` }
+    }
+    return { success: true, data: coupon }
+  }
+
+  /**
+   * 列出伙伴可核销的优惠券
+   */
+  @Get('coupon/redeemable/:partnerId')
+  listRedeemableCoupons(@Param('partnerId') partnerId: string) {
+    const coupons = this.couponService.listRedeemableCoupons(partnerId)
+    return { success: true, data: coupons }
+  }
+
+  /**
+   * 结算优惠券
+   */
+  @Post('coupon/:couponId/settle')
+  settleCoupon(@Param('couponId') couponId: string) {
+    try {
+      const settlement = this.couponService.settleCoupon(couponId)
+      return { success: true, data: settlement }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 获取伙伴券统计
+   */
+  @Get('coupon/stats/:partnerId')
+  getPartnerCouponStats(@Param('partnerId') partnerId: string) {
+    const stats = this.couponService.getPartnerCouponStats(partnerId)
+    return { success: true, data: stats }
+  }
+
+  /**
+   * 获取待结算列表
+   */
+  @Get('coupon/pending-settlements')
+  getPendingCouponSettlements() {
+    const settlements = this.couponService.getPendingSettlements()
+    return { success: true, data: settlements }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 数据API (BS-0222~BS-0224)
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 接收数据回传
+   */
+  @Post('data/callback/:partnerId')
+  receiveCallback(
+    @Param('partnerId') partnerId: string,
+    @Body() body: ReceiveCallbackDto,
+  ) {
+    try {
+      const record = this.dataService.receiveCallback(partnerId, body.dataType as CallbackDataType, body.payload)
+      return { success: true, data: record }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 查询回传记录
+   */
+  @Get('data/records/:partnerId')
+  getCallbackRecords(
+    @Param('partnerId') partnerId: string,
+    @Query() query: QueryCallbackDto,
+  ) {
+    const records = this.dataService.getCallbackRecords(partnerId, {
+      dataType: query.dataType as CallbackDataType | undefined,
+      from: query.from ?? '',
+      to: query.to ?? '',
+    })
+    return { success: true, data: records }
+  }
+
+  /**
+   * 获取回传统计
+   */
+  @Get('data/stats/:partnerId')
+  getCallbackStats(@Param('partnerId') partnerId: string) {
+    const stats = this.dataService.getCallbackStats(partnerId)
+    return { success: true, data: stats }
+  }
+
+  /**
+   * 获取数据看板
+   */
+  @Get('data/dashboard/:partnerId')
+  getDataDashboard(@Param('partnerId') partnerId: string) {
+    const dashboard = this.dataService.getDataDashboard(partnerId)
+    return { success: true, data: dashboard }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 异常审核 (BS-0225~BS-0226)
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 提交异常记录
+   */
+  @Post('review/report-anomaly')
+  reportAnomaly(@Body() body: ReportAnomalyDto) {
+    try {
+      const anomaly = this.reviewService.reportAnomaly(
+        body.partnerId, body.partnerName,
+        body.type as any, body.severity as any,
+        body.involvedAmount, body.description, body.relatedId,
+      )
+      return { success: true, data: anomaly }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 获取待审核列表
+   */
+  @Get('review/pending')
+  getPendingReviews() {
+    const pending = this.reviewService.getPendingReviews()
+    return { success: true, data: pending }
+  }
+
+  /**
+   * 提交审核决定
+   */
+  @Post('review/submit')
+  submitReview(@Body() body: SubmitReviewDto) {
+    try {
+      const review = this.reviewService.submitReview(
+        body.anomalyId, body.decision as any,
+        body.reviewer, body.note,
+      )
+      return { success: true, data: review }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 获取审核历史
+   */
+  @Get('review/history/:anomalyId')
+  getReviewHistory(@Param('anomalyId') anomalyId: string) {
+    const history = this.reviewService.getReviewHistory(anomalyId)
+    return { success: true, data: history }
+  }
+
+  /**
+   * 获取审核统计
+   */
+  @Get('review/stats')
+  getReviewStats() {
+    const stats = this.reviewService.getReviewStats()
+    return { success: true, data: stats }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 联盟看板 (BS-0227~BS-0228)
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * 运营概览
+   */
+  @Get('dashboard/overview')
+  getDashboardOverview() {
+    const partners = this.partnerService.listPartners({})
+    const activePartners = partners.filter((p) => p.status === 'ACTIVE')
+    const now = new Date()
+    const currentMonth = now.toISOString().slice(0, 7)
+    const newThisMonth = partners.filter((p) => p.registeredAt.startsWith(currentMonth)).length
+    const overview = this.dashboardService.getOverview(activePartners.length, partners.length, newThisMonth)
+    return { success: true, data: overview }
+  }
+
+  /**
+   * 等级分布
+   */
+  @Get('dashboard/grade-distribution')
+  getGradeDistribution() {
+    const partners = this.partnerService.listPartners({})
+    const gradeCounts = new Map<string, number>()
+    for (const p of partners) {
+      const grade = p.currentGrade ?? 'C'
+      gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1)
+    }
+    const distribution = this.dashboardService.getGradeDistribution(gradeCounts)
+    return { success: true, data: distribution }
+  }
+
+  /**
+   * 月度趋势
+   */
+  @Get('dashboard/monthly-trend')
+  getMonthlyTrend(@Query('months') months?: string) {
+    const trend = this.dashboardService.getMonthlyTrend(months ? parseInt(months, 10) : 6)
+    return { success: true, data: trend }
+  }
+
+  /**
+   * 活动概览
+   */
+  @Get('dashboard/activities')
+  getActivityOverview() {
+    const overview = this.dashboardService.getActivityOverview()
+    return { success: true, data: overview }
+  }
+
+  /**
+   * 伙伴排行榜
+   */
+  @Get('dashboard/ranking')
+  getPartnerRanking() {
+    const partners = this.partnerService.listPartners({})
+    const nameMap = new Map(partners.map((p) => [p.id, p.name]))
+    const ranking = this.dashboardService.getPartnerRanking(nameMap)
+    return { success: true, data: ranking }
+  }
+
+  /**
+   * 伙伴看板
+   */
+  @Get('dashboard/partner/:partnerId')
+  getPartnerDashboard(@Param('partnerId') partnerId: string) {
+    const partner = this.partnerService.getPartner(partnerId)
+    if (!partner) {
+      return { success: false, message: `Partner ${partnerId} not found` }
+    }
+    const dashboard = this.dashboardService.getPartnerDashboard(partnerId, partner.name, partner.currentGrade ?? 'C')
+    return { success: true, data: dashboard }
   }
 }

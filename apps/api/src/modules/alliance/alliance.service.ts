@@ -20,6 +20,11 @@ import {
   UnlinkedOrderDetector,
   AnomalyDetectionService,
 } from './alliance-settlement.service'
+import { AllianceTierService } from './alliance-tier.service'
+import { AllianceCouponService, type CouponIssueRequest, type PartnerCouponStats } from './alliance-coupon.service'
+import { AllianceDataService, type DataCallbackRecord, type CallbackDataType, type DataQuery, type DataDashboard, type CallbackStats } from './alliance-data.service'
+import { AllianceReviewService, type AnomalyTransaction, type ReviewRecord, type ReviewStatus } from './alliance-review.service'
+import { AllianceDashboardService, type DashboardOverview, type GradeDistribution, type MonthlyTrend, type ActivityOverview, type PartnerRanking, type PartnerDashboard } from './alliance-dashboard.service'
 import type {
   AlliancePartner as AlliancePartnerType,
   PartnerInfo,
@@ -103,6 +108,11 @@ export class AllianceService {
     private readonly settlementService: CrossMerchantSettlementService,
     private readonly orderDetector: UnlinkedOrderDetector,
     private readonly anomalyService: AnomalyDetectionService,
+    private readonly tierService: AllianceTierService = new AllianceTierService(),
+    private readonly couponService: AllianceCouponService = new AllianceCouponService(new AllianceTierService()),
+    private readonly dataService: AllianceDataService = new AllianceDataService(),
+    private readonly reviewService: AllianceReviewService = new AllianceReviewService(),
+    private readonly dashboardService: AllianceDashboardService = new AllianceDashboardService(),
     @Optional() private readonly auditService?: AuditService,
   ) {}
 
@@ -491,5 +501,240 @@ export class AllianceService {
   flagSuspiciousSettlement(settlementId: string): AllianceResult<any> {
     const result = this.anomalyService.flagSuspiciousSettlement(settlementId)
     return { success: true, data: result }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 7. 分级联盟 (BS-0218~BS-0219)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 获取等级分成配置 */
+  getTierConfig(grade: Grade): AllianceResult<any> {
+    const config = this.tierService.getTierConfig(grade)
+    return { success: true, data: config }
+  }
+
+  /** 获取所有等级配置 */
+  getAllTierConfigs(): AllianceResult<any> {
+    const configs = this.tierService.getAllTierConfigs()
+    return { success: true, data: configs }
+  }
+
+  /** 更新等级配置 */
+  setTierConfig(grade: Grade, config: any): AllianceResult<any> {
+    const updated = this.tierService.setTierConfig(grade, config)
+    return { success: true, data: updated }
+  }
+
+  /** 计算等级分成金额 */
+  calculateRevenueShare(grade: Grade, orderAmount: number): AllianceResult<number> {
+    const share = this.tierService.calculateRevenueShare(grade, orderAmount)
+    return { success: true, data: share }
+  }
+
+  /** 获取等级变更历史 */
+  getGradeChangeHistory(partnerId: string): AllianceResult<any> {
+    const history = this.tierService.getGradeChangeHistory(partnerId)
+    return { success: true, data: history }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 8. 联盟券互推 (BS-0220~BS-0221)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 发放跨品牌优惠券 */
+  issueCoupon(req: CouponIssueRequest): AllianceResult<any> {
+    try {
+      const coupon = this.couponService.issueCoupon(req)
+      return { success: true, data: coupon }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 核销优惠券 */
+  redeemCoupon(couponId: string, partnerId: string, partnerName: string, orderId: string, memberId: string, orderAmount: number): AllianceResult<any> {
+    try {
+      const redemption = this.couponService.redeemCoupon(couponId, partnerId, partnerName, orderId, memberId, orderAmount)
+      return { success: true, data: redemption }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 取消优惠券 */
+  cancelCoupon(couponId: string): AllianceResult<any> {
+    try {
+      const coupon = this.couponService.cancelCoupon(couponId)
+      return { success: true, data: coupon }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 获取优惠券 */
+  getCoupon(couponId: string): AllianceResult<any> {
+    const coupon = this.couponService.getCoupon(couponId)
+    if (!coupon) return { success: false, message: `Coupon ${couponId} not found` }
+    return { success: true, data: coupon }
+  }
+
+  /** 列出伙伴可核销优惠券 */
+  listRedeemableCoupons(partnerId: string): AllianceResult<any> {
+    const coupons = this.couponService.listRedeemableCoupons(partnerId)
+    return { success: true, data: coupons }
+  }
+
+  /** 优惠券结算 */
+  settleCoupon(couponId: string): AllianceResult<any> {
+    try {
+      const settlement = this.couponService.settleCoupon(couponId)
+      return { success: true, data: settlement }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 获取伙伴券统计 */
+  getPartnerCouponStats(partnerId: string): AllianceResult<PartnerCouponStats> {
+    const stats = this.couponService.getPartnerCouponStats(partnerId)
+    return { success: true, data: stats }
+  }
+
+  /** 获取待结算列表 */
+  getPendingCouponSettlements(): AllianceResult<any> {
+    const settlements = this.couponService.getPendingSettlements()
+    return { success: true, data: settlements }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 9. 数据API (BS-0222~BS-0224)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 接收数据回传 */
+  receiveCallback(partnerId: string, dataType: CallbackDataType, payload: string): AllianceResult<DataCallbackRecord> {
+    try {
+      const record = this.dataService.receiveCallback(partnerId, dataType, payload)
+      return { success: true, data: record }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 查询回传记录 */
+  getCallbackRecords(partnerId: string, query?: DataQuery): AllianceResult<DataCallbackRecord[]> {
+    const records = this.dataService.getCallbackRecords(partnerId, query)
+    return { success: true, data: records }
+  }
+
+  /** 获取回传统计 */
+  getCallbackStats(partnerId: string): AllianceResult<CallbackStats> {
+    const stats = this.dataService.getCallbackStats(partnerId)
+    return { success: true, data: stats }
+  }
+
+  /** 获取数据看板 */
+  getDataDashboard(partnerId: string): AllianceResult<DataDashboard> {
+    const dashboard = this.dataService.getDataDashboard(partnerId)
+    return { success: true, data: dashboard }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 10. 异常审核 (BS-0225~BS-0226)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 提交异常记录 */
+  reportAnomaly(partnerId: string, partnerName: string, type: string, severity: string, amount: number, description: string, relatedId?: string): AllianceResult<AnomalyTransaction> {
+    try {
+      const anomaly = this.reviewService.reportAnomaly(partnerId, partnerName, type as any, severity as any, amount, description, relatedId)
+      return { success: true, data: anomaly }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 获取待审核列表 */
+  getPendingReviews(): AllianceResult<AnomalyTransaction[]> {
+    const pending = this.reviewService.getPendingReviews()
+    return { success: true, data: pending }
+  }
+
+  /** 提交审核 */
+  submitReview(anomalyId: string, decision: ReviewStatus, reviewer: string, note: string): AllianceResult<ReviewRecord> {
+    try {
+      const review = this.reviewService.submitReview(anomalyId, decision, reviewer, note)
+      return { success: true, data: review }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 获取审核历史 */
+  getReviewHistory(anomalyId: string): AllianceResult<ReviewRecord[]> {
+    const history = this.reviewService.getReviewHistory(anomalyId)
+    return { success: true, data: history }
+  }
+
+  /** 获取审核统计 */
+  getReviewStats(): AllianceResult<any> {
+    const stats = this.reviewService.getReviewStats()
+    return { success: true, data: stats }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 11. 联盟看板 (BS-0227~BS-0228)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 获取运营概览 */
+  getDashboardOverview(): AllianceResult<DashboardOverview> {
+    const partners = this.partnerService.listPartners({})
+    const activePartners = partners.filter((p) => p.status === 'ACTIVE')
+    const activeCount = this.partnerService.listPartners({ status: 'ACTIVE' }).length
+    const now = new Date()
+    const currentMonth = now.toISOString().slice(0, 7)
+    const newThisMonth = partners.filter((p) => p.registeredAt.startsWith(currentMonth)).length
+    const overview = this.dashboardService.getOverview(activeCount, partners.length, newThisMonth)
+    return { success: true, data: overview }
+  }
+
+  /** 获取等级分布 */
+  getGradeDistribution(): AllianceResult<GradeDistribution[]> {
+    const partners = this.partnerService.listPartners({})
+    const gradeCounts = new Map<string, number>()
+    for (const p of partners) {
+      const grade = p.currentGrade ?? 'C'
+      gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1)
+    }
+    const distribution = this.dashboardService.getGradeDistribution(gradeCounts)
+    return { success: true, data: distribution }
+  }
+
+  /** 获取月度趋势 */
+  getMonthlyTrend(months?: number): AllianceResult<MonthlyTrend[]> {
+    const trend = this.dashboardService.getMonthlyTrend(months)
+    return { success: true, data: trend }
+  }
+
+  /** 获取活动概览 */
+  getActivityOverview(): AllianceResult<ActivityOverview> {
+    const overview = this.dashboardService.getActivityOverview()
+    return { success: true, data: overview }
+  }
+
+  /** 获取伙伴排行榜 */
+  getPartnerRanking(): AllianceResult<PartnerRanking[]> {
+    const partners = this.partnerService.listPartners({})
+    const nameMap = new Map(partners.map((p) => [p.id, p.name]))
+    const ranking = this.dashboardService.getPartnerRanking(nameMap)
+    return { success: true, data: ranking }
+  }
+
+  /** 获取伙伴看板 */
+  getPartnerDashboard(partnerId: string): AllianceResult<PartnerDashboard> {
+    const partner = this.partnerService.getPartner(partnerId)
+    if (!partner) {
+      return { success: false, message: `Partner ${partnerId} not found` }
+    }
+    const dashboard = this.dashboardService.getPartnerDashboard(partnerId, partner.name, partner.currentGrade ?? 'C')
+    return { success: true, data: dashboard }
   }
 }
