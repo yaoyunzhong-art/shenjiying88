@@ -211,7 +211,7 @@ export class I18nGeoService {
       const preferred = acceptLanguage.split(',')[0]?.trim()
       if (preferred) {
         const langCode = preferred.split(';')[0]
-        if (langCode && this.isSupportedLocale(langCode as any)) {
+        if (langCode && this.isSupportedLocale(langCode)) {
           return langCode
         }
       }
@@ -230,7 +230,7 @@ export class I18nGeoService {
 
   getLocaleForRegion(regionName: string): string {
     for (const [, raw] of Object.entries(REGION_CONFIGS)) {
-      const config = raw as any
+      const config = raw as Record<string, unknown>
       if (
         config.regionCode === regionName ||
         config.regionName === regionName ||

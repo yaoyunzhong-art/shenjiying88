@@ -298,12 +298,13 @@ export class EdgeController {
   // ============ 私有 ============
 
   private extractTenant(req: Request): TenantContext {
-    const user = (req as any).user ?? {}
+    const u = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
+    const user = u as Record<string, unknown>
     return {
-      tenantId: user.tenantId ?? 'default-tenant',
-      storeId: user.storeId,
-      userId: user.id ?? user.userId,
-      role: user.role,
+      tenantId: (user.tenantId ?? 'default-tenant') as string,
+      storeId: user.storeId as string | undefined,
+      userId: (user.id ?? user.userId) as string | undefined,
+      role: user.role as import('../../common/context/tenant-context').TenantRole,
     }
   }
 }

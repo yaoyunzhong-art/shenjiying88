@@ -55,7 +55,7 @@ export class VenueController {
   ) {
     return this.venueService.list({
       type: type as VenueType,
-      status: status as VenueBookingStatus,
+      status: status as VenueStatus,
       search,
     })
   }
@@ -147,7 +147,7 @@ export class VenueController {
       venueId,
       userId,
       date,
-      status: status as VenueStatus,
+      status: status as VenueBookingStatus,
       shift: shift as VenueShift,
     })
   }

@@ -84,14 +84,15 @@ export class GovernanceApprovalService implements OnModuleDestroy {
     approvalTicket: string
   ): Promise<{ tenantId?: string; brandId?: string; storeId?: string }> {
     try {
-      const record = await (this.prisma as any).governanceApproval?.findUnique({
+      const prisma = this.prisma as unknown as { governanceApproval?: { findUnique: (args: unknown) => Promise<Record<string, unknown> | null> } }
+      const record = await prisma.governanceApproval?.findUnique({
         where: { approvalTicket }
       })
       if (record && typeof record === 'object') {
         return {
-          tenantId: (record as any).tenantId ?? undefined,
-          brandId: (record as any).brandId ?? undefined,
-          storeId: (record as any).storeId ?? undefined
+          tenantId: record.tenantId as string | undefined,
+          brandId: record.brandId as string | undefined,
+          storeId: record.storeId as string | undefined
         }
       }
     } catch {

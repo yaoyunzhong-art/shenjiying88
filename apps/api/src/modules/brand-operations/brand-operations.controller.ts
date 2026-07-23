@@ -73,11 +73,14 @@ import type {
   AssetCategoryTree,
   BrandDashboardData,
   ScheduleAction,
+  ScheduleStatus,
+  SettlementStatus,
 } from './brand-operations.phase-p47-80.entity'
 import type {
   ExportRecord,
   CollaborationContract,
   CampaignABTest,
+  RecycleBinEntityType,
   CalendarTimeline,
   RecycleBinItem,
 } from './brand-operations.phase-p47-100.entity'
@@ -447,8 +450,8 @@ export class BrandOperationsController {
     @Query('campaignId') campaignId?: string,
   ): CampaignSchedule[] {
     return this.service.listCampaignSchedules(MOCK_TENANT_ID, {
-      status: status as any,
-      action: action as any,
+      status: status as ScheduleStatus,
+      action: action as ScheduleAction,
       campaignId,
     })
   }
@@ -488,7 +491,7 @@ export class BrandOperationsController {
   @Get('revenue-shares')
   listRevenueShares(@Query() query: QueryRevenueShareDto): RevenueShareRecord[] {
     return this.service.listRevenueShareRecords(MOCK_TENANT_ID, {
-      status: query.status as any,
+      status: query.status as SettlementStatus,
       collaborationId: query.collaborationId,
       periodFrom: query.periodFrom,
       periodTo: query.periodTo,
@@ -767,7 +770,7 @@ export class BrandOperationsController {
   softDeleteEntity(@Body() body: { entityType: string; entityId: string; deletedBy: string }): RecycleBinItem {
     return this.service.softDeleteEntity({
       tenantId: MOCK_TENANT_ID,
-      entityType: body.entityType as any,
+      entityType: body.entityType as RecycleBinEntityType,
       entityId: body.entityId,
       deletedBy: body.deletedBy,
     })

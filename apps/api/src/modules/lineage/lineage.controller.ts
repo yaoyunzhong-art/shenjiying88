@@ -186,7 +186,7 @@ export class LineageController {
       const result = this.classifier.updateClassification(
         body.tableName,
         body.fieldName,
-        body.level as any,
+        body.level as import('./sensitive-data.service').SensitivityLevel,
       )
       return ok(result, 'Classification updated')
     } catch (err) {
@@ -223,7 +223,7 @@ export class LineageController {
       via: string
     },
   ) {
-    this.flowMonitor.trackFlow(body.fromTable, body.toTable, body.fromField, body.via as any)
+    this.flowMonitor.trackFlow(body.fromTable, body.toTable, body.fromField, body.via)
     return ok(null, 'Data flow tracked')
   }
 
