@@ -26,7 +26,7 @@
 | BS-0059 | >500 条导出需审批 | ❌ 未发现实现 | 需补导出审批流（RBAC + workflow）与可验证门禁（超阈值自动阻断/发起审批） |
 | BS-0062 | 密钥加密 + 定期轮换 | ⚠️ 部分 | 已存在生产环境强制密钥注入拒绝 fallback：`apps/api/src/modules/ai-model-config/encryption.util.ts`；全域密钥轮换与审计未形成闭环 |
 | BS-0063 | 年度第三方渗透测试 | ⚠️ 待补证据 | 需外部交付物（报告/整改闭环）并挂到验收目录 |
-| BS-0064 | 暴力破解防护（5 次锁定） | ⚠️ 已补代码、HTTP、跨实例门禁与审计留痕 | `apps/api/src/modules/auth/auth.service.ts` 已实现同一 `mobile/email` 连续失败 `5` 次锁定 `30` 分钟、成功登录复位，并支持 `RedisService` 可用时走共享锁定态、不可用时回退内存态；共享态失败计数已改为 `Redis INCR + EXPIRE` 路径，避免并发读改写覆盖；当前已补“触发锁定”和“成功清空失败态”的审计事件；`auth.service.test.ts`、`auth.http.e2e.test.ts` 已覆盖 service/HTTP/跨实例并发/审计验证 |
+| BS-0064 | 暴力破解防护（5 次锁定） | ⚠️ 已补代码、HTTP、跨实例门禁、审计与治理解锁 | `apps/api/src/modules/auth/auth.service.ts` 已实现同一 `mobile/email` 连续失败 `5` 次锁定 `30` 分钟、成功登录复位，并支持 `RedisService` 可用时走共享锁定态、不可用时回退内存态；共享态失败计数已改为 `Redis INCR + EXPIRE` 路径，避免并发读改写覆盖；当前已补“触发锁定”“成功清空失败态”“运维人工解锁”的审计事件，并新增 `POST /auth/locks/password/unlock` 受权治理接口；`auth.service.test.ts`、`auth.http.e2e.test.ts` 已覆盖 service/HTTP/跨实例并发/审计/解锁验证 |
 | BS-0065 | 离职 72 小时锁定 | ⚠️ 待补证据 | 需补账号生命周期治理（disable/revoke token/权限回收）与审计证据 |
 
 ---
