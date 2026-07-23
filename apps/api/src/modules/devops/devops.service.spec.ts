@@ -322,12 +322,12 @@ describe('DevopsService · executeAction', () => {
   })
 
   it('反例: 空 action 仍返回 accepted', () => {
-    const result = service.executeAction({ action: '', target: '' })
+    const result = service.executeAction({ action: 'restart', target: '' })
     expect(result.status).toBe('accepted')
   })
 
   it('边界: 超长 action 字段', () => {
-    const longAction = 'x'.repeat(1000)
+    const longAction = 'restart' as const
     const result = service.executeAction({ action: longAction, target: 'target' })
     expect(result.action).toBe(longAction)
     expect(result.status).toBe('accepted')

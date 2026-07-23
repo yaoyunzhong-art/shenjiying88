@@ -20,6 +20,7 @@ import { PaymentMixService } from './reports/payment-mix.service'
 import { HourlyHeatmapService } from './reports/hourly-heatmap.service'
 import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
+import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
 
 describe('Reports 综合测试 (Controller + Adapters + 10 报表服务)', () => {
   let ctrl: ReportController
@@ -51,11 +52,14 @@ describe('Reports 综合测试 (Controller + Adapters + 10 报表服务)', () =>
     const heatmap = new HourlyHeatmapService(orderAdapter)
     const channelFunnel = new ChannelFunnelService(orderAdapter)
     const invAlert = new InventoryAlertService(inventoryAdapter)
+    const governanceApprovalService = {
+      materializeApproval: vi.fn().mockResolvedValue({ ticket: 'approval-test-001' }),
+    } as unknown as GovernanceApprovalService;
 
     ctrl = new ReportController(
       agg, cache, exp, q,
       revenue, invTurn, memberGrowth, refundRate, orderConv,
-      prodRank, payMix, heatmap, channelFunnel, invAlert
+      prodRank, payMix, heatmap, channelFunnel, invAlert, governanceApprovalService
     )
   })
 

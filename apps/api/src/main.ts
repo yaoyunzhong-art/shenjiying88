@@ -90,7 +90,8 @@ async function bootstrap() {
     ],
   });
 
-  // 本地联调允许临时关闭 Swagger，避免文档反射异常阻塞业务接口启动。
+  // 本地联调允许临时关闭 Swagger，且即使 Swagger 反射失败也不应阻塞业务接口启动。
+  let swaggerReady = false;
   const swaggerEnabled = process.env.DISABLE_SWAGGER !== '1';
   if (swaggerEnabled) {
     const swaggerConfig = new DocumentBuilder()
@@ -101,11 +102,25 @@ async function bootstrap() {
     if (process.env.NODE_ENV !== 'production') {
       console.log('[bootstrap] creating swagger document');
     }
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[bootstrap] swagger document created');
+    try {
+      const document = SwaggerModule.createDocument(app, swaggerConfig);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[bootstrap] swagger document created');
+      }
+      SwaggerModule.setup('docs', app, document);
+      swaggerReady = true;
+    } catch (err) {
+      logger.warn(
+        {
+          err,
+          hint: 'Set DISABLE_SWAGGER=1 to silence this in local dev until metadata reflection is fixed.',
+        },
+        'swagger bootstrap skipped because document generation failed',
+      );
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[bootstrap] swagger document failed, continue without /docs');
+      }
     }
-    SwaggerModule.setup('docs', app, document);
   } else if (process.env.NODE_ENV !== 'production') {
     console.log('[bootstrap] swagger disabled by DISABLE_SWAGGER=1');
   }
@@ -123,7 +138,7 @@ async function bootstrap() {
     { url: `http://localhost:${port}/api/v1/foundation/bootstrap` },
     'foundation blueprint endpoint',
   );
-  if (swaggerEnabled) {
+  if (swaggerEnabled && swaggerReady) {
     logger.info({ url: `http://localhost:${port}/docs` }, 'swagger docs endpoint');
   }
 }

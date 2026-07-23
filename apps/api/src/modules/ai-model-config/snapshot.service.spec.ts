@@ -1,16 +1,28 @@
-import { Logger } from '@nestjs/common';
-import { SnapshotService, type SnapshotPoint, type TimeTravelResult } from './snapshot.service';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
+import { SnapshotService } from './snapshot.service';
 import type { AiModelConfigRepository } from './ai-model-config.repository';
 import type { AiModelConfigHistory, AiModelStoreConfig } from './ai-model-config.entity';
 
+type MockRepo = Mocked<AiModelConfigRepository> & {
+  deleteHistoryBefore: ReturnType<typeof vi.fn>;
+  getHistoryStats: ReturnType<typeof vi.fn>;
+};
+
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-function createMockRepo(): jest.Mocked<AiModelConfigRepository> {
+function createMockRepo(): MockRepo {
   return {
-    listHistory: jest.fn(),
-    deleteHistoryBefore: jest.fn(),
-    getHistoryStats: jest.fn(),
-  } as unknown as jest.Mocked<AiModelConfigRepository>;
+    listPresets: vi.fn(),
+    getPreset: vi.fn(),
+    createStoreConfig: vi.fn(),
+    listStoreConfigsByStore: vi.fn(),
+    getCurrentConfig: vi.fn(),
+    switchConfig: vi.fn(),
+    listHistory: vi.fn(),
+    rollbackToHistory: vi.fn(),
+    deleteHistoryBefore: vi.fn(),
+    getHistoryStats: vi.fn(),
+  } as unknown as MockRepo;
 }
 
 function makeHistoryEntry(overrides: Partial<AiModelConfigHistory> = {}): AiModelConfigHistory {
@@ -18,26 +30,26 @@ function makeHistoryEntry(overrides: Partial<AiModelConfigHistory> = {}): AiMode
     id: 'hist-1',
     configId: 'cfg-1',
     changedBy: 'user-1',
-    changedAt: new Date('2026-07-20T10:00:00Z'),
+    changedAt: '2026-07-20T10:00:00Z',
+    versionNumber: 1,
     snapshot: {
       id: 'cfg-1',
+      tenantId: 'tenant-1',
       storeId: 'store-1',
       configName: 'gpt-4-config',
-      provider: 'OPENAI',
+      provider: 'openai',
       endpointUrl: 'https://api.openai.com/v1',
+      apiKeyEncrypted: 'enc-key-1',
       contextWindow: 8192,
       temperature: 0.7,
       maxTokens: 2048,
-      customHeaders: null,
-      metadata: null,
-      isActive: true,
-      createdAt: new Date('2026-07-20T10:00:00Z'),
-      updatedAt: new Date('2026-07-20T10:00:00Z'),
+      isCurrent: true,
+      createdBy: 'user-1',
+      createdAt: '2026-07-20T10:00:00Z',
+      updatedAt: '2026-07-20T10:00:00Z',
     } as AiModelStoreConfig,
     reason: 'initial setup',
-    eventType: 'CREATE',
-    diff: null,
-    metadata: null,
+    changeType: 'create',
     ...overrides,
   } as AiModelConfigHistory;
 }
@@ -46,7 +58,7 @@ function makeHistoryEntry(overrides: Partial<AiModelConfigHistory> = {}): AiMode
 
 describe('SnapshotService', () => {
   let service: SnapshotService;
-  let repo: jest.Mocked<AiModelConfigRepository>;
+  let repo: MockRepo;
 
   beforeEach(() => {
     repo = createMockRepo();
@@ -54,7 +66,7 @@ describe('SnapshotService', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ── getTimeline ─────────────────────────────────────────────────────────
@@ -70,7 +82,7 @@ describe('SnapshotService', () => {
       expect(timeline).toHaveLength(1);
       expect(timeline[0].configId).toBe('cfg-1');
       expect(timeline[0].configName).toBe('gpt-4-config');
-      expect(timeline[0].provider).toBe('OPENAI');
+      expect(timeline[0].provider).toBe('openai');
       expect(timeline[0].changedBy).toBe('user-1');
       expect(timeline[0].changeReason).toBe('initial setup');
     });
@@ -115,7 +127,7 @@ describe('SnapshotService', () => {
     it('should handle string change dates', async () => {
       repo.listHistory.mockResolvedValue([
         makeHistoryEntry({
-          changedAt: '2026-07-20T10:00:00Z' as any,
+          changedAt: '2026-07-20T10:00:00Z',
         }),
       ]);
 
@@ -126,8 +138,8 @@ describe('SnapshotService', () => {
 
     it('should handle multiple history entries in order', async () => {
       repo.listHistory.mockResolvedValue([
-        makeHistoryEntry({ id: 'hist-2', changedAt: new Date('2026-07-22T10:00:00Z'), reason: 'update-2' }),
-        makeHistoryEntry({ id: 'hist-1', changedAt: new Date('2026-07-21T10:00:00Z'), reason: 'update-1' }),
+        makeHistoryEntry({ id: 'hist-2', changedAt: '2026-07-22T10:00:00Z', reason: 'update-2' }),
+        makeHistoryEntry({ id: 'hist-1', changedAt: '2026-07-21T10:00:00Z', reason: 'update-1' }),
       ]);
 
       const timeline = await service.getTimeline('cfg-1');
@@ -141,8 +153,8 @@ describe('SnapshotService', () => {
   describe('timeTravel', () => {
     it('should return the snapshot closest to but before the target timestamp', async () => {
       repo.listHistory.mockResolvedValue([
-        makeHistoryEntry({ id: 'hist-1', changedAt: new Date('2026-07-20T10:00:00Z') }),
-        makeHistoryEntry({ id: 'hist-2', changedAt: new Date('2026-07-22T10:00:00Z') }),
+        makeHistoryEntry({ id: 'hist-1', changedAt: '2026-07-20T10:00:00Z' }),
+        makeHistoryEntry({ id: 'hist-2', changedAt: '2026-07-22T10:00:00Z' }),
       ]);
 
       const result = await service.timeTravel('cfg-1', new Date('2026-07-21T00:00:00Z'));
@@ -153,7 +165,7 @@ describe('SnapshotService', () => {
 
     it('should return null config and history when no snapshot before timestamp', async () => {
       repo.listHistory.mockResolvedValue([
-        makeHistoryEntry({ changedAt: new Date('2026-07-22T10:00:00Z') }),
+        makeHistoryEntry({ changedAt: '2026-07-22T10:00:00Z' }),
       ]);
 
       const result = await service.timeTravel('cfg-1', new Date('2026-07-21T00:00:00Z'));
@@ -174,7 +186,7 @@ describe('SnapshotService', () => {
     it('should return the exact snapshot if changedAt equals timestamp', async () => {
       const target = new Date('2026-07-20T10:00:00Z');
       repo.listHistory.mockResolvedValue([
-        makeHistoryEntry({ id: 'hist-1', changedAt: target }),
+        makeHistoryEntry({ id: 'hist-1', changedAt: target.toISOString() }),
       ]);
 
       const result = await service.timeTravel('cfg-1', target);
@@ -185,7 +197,7 @@ describe('SnapshotService', () => {
 
     it('should return a TimeTravelResult with the original timestamp', async () => {
       repo.listHistory.mockResolvedValue([
-        makeHistoryEntry({ changedAt: new Date('2026-07-20T10:00:00Z') }),
+        makeHistoryEntry({ changedAt: '2026-07-20T10:00:00Z' }),
       ]);
 
       const target = new Date('2026-07-25T00:00:00Z');
@@ -196,7 +208,7 @@ describe('SnapshotService', () => {
 
     it('should handle up to 1000 history entries', async () => {
       repo.listHistory.mockResolvedValue([
-        makeHistoryEntry({ id: 'hist-1', changedAt: new Date('2026-07-20T10:00:00Z') }),
+        makeHistoryEntry({ id: 'hist-1', changedAt: '2026-07-20T10:00:00Z' }),
       ]);
 
       await service.timeTravel('cfg-1', new Date('2026-07-25T00:00:00Z'));
@@ -209,7 +221,7 @@ describe('SnapshotService', () => {
 
   describe('cleanupExpiredSnapshots', () => {
     it('should return deleted count', async () => {
-      (repo as any).deleteHistoryBefore = jest.fn().mockResolvedValue(5);
+      repo.deleteHistoryBefore.mockResolvedValue(5);
 
       const result = await service.cleanupExpiredSnapshots();
 
@@ -217,8 +229,8 @@ describe('SnapshotService', () => {
     });
 
     it('should call deleteHistoryBefore with a date 90 days ago', async () => {
-      const mockFn = jest.fn().mockResolvedValue(0);
-      (repo as any).deleteHistoryBefore = mockFn;
+      const mockFn = vi.fn().mockResolvedValue(0);
+      repo.deleteHistoryBefore = mockFn;
 
       await service.cleanupExpiredSnapshots();
 
@@ -230,7 +242,7 @@ describe('SnapshotService', () => {
     });
 
     it('should return 0 when nothing to delete', async () => {
-      (repo as any).deleteHistoryBefore = jest.fn().mockResolvedValue(0);
+      repo.deleteHistoryBefore.mockResolvedValue(0);
 
       const result = await service.cleanupExpiredSnapshots();
 
@@ -242,7 +254,7 @@ describe('SnapshotService', () => {
 
   describe('getSnapshotStats', () => {
     it('should return stats from repo', async () => {
-      (repo as any).getHistoryStats = jest.fn().mockResolvedValue({
+      repo.getHistoryStats.mockResolvedValue({
         totalCount: 100,
         oldestDate: new Date('2026-04-01T00:00:00Z'),
         newestDate: new Date('2026-07-23T00:00:00Z'),
@@ -258,7 +270,7 @@ describe('SnapshotService', () => {
     });
 
     it('should handle null dates', async () => {
-      (repo as any).getHistoryStats = jest.fn().mockResolvedValue({
+      repo.getHistoryStats.mockResolvedValue({
         totalCount: 0,
         oldestDate: null,
         newestDate: null,
@@ -279,18 +291,19 @@ describe('SnapshotService', () => {
   describe('compareSnapshots', () => {
     const baseConfig: AiModelStoreConfig = {
       id: 'cfg-1',
+      tenantId: 'tenant-1',
       storeId: 'store-1',
       configName: 'gpt-4-config',
-      provider: 'OPENAI',
+      provider: 'openai',
       endpointUrl: 'https://api.openai.com/v1',
+      apiKeyEncrypted: 'enc-key-1',
       contextWindow: 8192,
       temperature: 0.7,
       maxTokens: 2048,
-      customHeaders: null,
-      metadata: null,
-      isActive: true,
-      createdAt: new Date('2026-07-20T10:00:00Z'),
-      updatedAt: new Date('2026-07-20T10:00:00Z'),
+      isCurrent: true,
+      createdBy: 'user-1',
+      createdAt: '2026-07-20T10:00:00Z',
+      updatedAt: '2026-07-20T10:00:00Z',
     };
 
     it('should detect changes in configName', () => {
@@ -330,13 +343,13 @@ describe('SnapshotService', () => {
     });
 
     it('should detect provider change', () => {
-      const changed = { ...baseConfig, provider: 'AZURE_OPENAI' };
+      const changed: AiModelStoreConfig = { ...baseConfig, provider: 'custom' };
       const diffs = service.compareSnapshots(baseConfig, changed);
       const provDiff = diffs.find((d) => d.field === 'provider');
 
       expect(provDiff!.changed).toBe(true);
-      expect(provDiff!.before).toBe('OPENAI');
-      expect(provDiff!.after).toBe('AZURE_OPENAI');
+      expect(provDiff!.before).toBe('openai');
+      expect(provDiff!.after).toBe('custom');
     });
 
     it('should detect endpointUrl change', () => {

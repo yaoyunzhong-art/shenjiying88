@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaymentService, MockPaymentGateway } from './payment.service';
 import { OrderService } from './order.service';
@@ -7,14 +8,14 @@ import { OrderService } from './order.service';
 function createMockOrderService() {
   const orders = new Map<string, any>();
   return {
-    getById: jest.fn((orderId: string, tenantId: string) => {
+    getById: vi.fn((orderId: string, tenantId: string) => {
       const order = orders.get(orderId);
       if (!order || order.tenantId !== tenantId) return null;
       return order;
     }),
-    markPaid: jest.fn(),
+    markPaid: vi.fn(),
     _setOrder: (order: any) => orders.set(order.id, order),
-  } as unknown as jest.Mocked<OrderService>;
+  } as unknown as Mocked<OrderService> & { _setOrder: (order: any) => void };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ function makePendingOrder(overrides: Record<string, any> = {}) {
 
 describe('PaymentService', () => {
   let service: PaymentService;
-  let orderService: jest.Mocked<OrderService>;
+  let orderService: ReturnType<typeof createMockOrderService>;
   let gateway: MockPaymentGateway;
 
   beforeEach(() => {
@@ -63,7 +64,7 @@ describe('PaymentService', () => {
 
   afterEach(() => {
     service._clear();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ── create ──────────────────────────────────────────────────────────────

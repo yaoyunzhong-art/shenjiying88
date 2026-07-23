@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Body,
@@ -18,7 +19,7 @@ import type { RenovationTier, StorePlanningInput, OperationsPlanInput, StoreStag
 @UseGuards(TenantGuard)
 @Controller('intelligence')
 export class IntelligenceController {
-  constructor(private readonly svc: IntelligenceService) {}
+  constructor(@Inject(IntelligenceService) private readonly svc: IntelligenceService) {}
 
   @Post('feasibility')
   feasibility(@Body() body: { city: string; district: string; budget: number }) {
@@ -106,7 +107,6 @@ export class IntelligenceController {
   }
 
   /**
-  /**
    * 场景G: 开业后全周期运营管理方案
    * POST /intelligence/operations-plan
    */
@@ -135,6 +135,7 @@ export class IntelligenceController {
   async dataBaseSummary() {
     return this.svc.getDataBaseSummary()
   }
+
   /**
    * 场景B: 门店设备选型智能推荐
    * POST /intelligence/device-recommendation

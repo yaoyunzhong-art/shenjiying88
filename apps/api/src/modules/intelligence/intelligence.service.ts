@@ -16,7 +16,7 @@
  *   [V23] 12. 全周期运营方案 (operations-plan)
  *   [V23] 13. 数据底座整合 (sync-knowledge / data-base)
  */
-import { Injectable, Logger } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
 import { VenueDataService } from './venue-data.service'
@@ -73,10 +73,10 @@ export class IntelligenceService {
   private readonly logger = new Logger(IntelligenceService.name)
 
   constructor(
-    private readonly aiService: IntelligenceAiService,
-    private readonly collector: MonitorCollectorService,
-    private readonly venueData: VenueDataService,
-    private readonly empowerCardService: EmpowerCardService,
+    @Inject(IntelligenceAiService) private readonly aiService: IntelligenceAiService,
+    @Inject(MonitorCollectorService) private readonly collector: MonitorCollectorService,
+    @Inject(VenueDataService) private readonly venueData: VenueDataService,
+    @Inject(EmpowerCardService) private readonly empowerCardService: EmpowerCardService,
   ) {}
 
   /** 模拟侦察兵数据库的竞品密度数据 */
