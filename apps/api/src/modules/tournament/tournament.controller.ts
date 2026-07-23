@@ -13,14 +13,18 @@ import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   ApproveRejectTeamDto,
   CreateTournamentDto,
+  JoinTournamentDto,
   MatchQueryDto,
   MatchResultDto,
+  PredictionDto,
   RankingQueryDto,
+  RedeemDto,
   RegisterParticipantDto,
   RegisterTeamDto,
   TournamentQueryDto,
   UpdateTournamentDto,
-  UpdateTournamentStatusDto
+  UpdateTournamentStatusDto,
+  VoteDto
 } from './tournament.dto'
 import { TournamentService } from './tournament.service'
 import { TenantGuard } from '../agent/tenant.guard';
@@ -235,5 +239,113 @@ export class TournamentController {
   @Get('stores/:storeId/live')
   getLiveMatches(@Param('storeId') storeId: string) {
     return this.tournamentService.getLiveMatches(storeId)
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-10B: Enhanced Join
+  // ═══════════════════════════════════════════════════════════════
+
+  @Post(':tournamentId/join')
+  joinTournament(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('tournamentId') tournamentId: string,
+    @Body() body: JoinTournamentDto
+  ) {
+    return this.tournamentService.joinTournament({
+      tournamentId,
+      tenantId: tenantContext.tenantId,
+      userId: body.userId,
+      joinType: body.joinType
+    })
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-10B: Redemption (兑换)
+  // ═══════════════════════════════════════════════════════════════
+
+  @Post(':tournamentId/redeem')
+  redeem(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('tournamentId') tournamentId: string,
+    @Body() body: RedeemDto
+  ) {
+    return this.tournamentService.redeem({
+      tournamentId,
+      tenantId: tenantContext.tenantId,
+      userId: body.userId,
+      prizeId: body.prizeId,
+      points: body.points
+    })
+  }
+
+  @Get(':tournamentId/redemptions')
+  listRedemptions(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('tournamentId') tournamentId: string
+  ) {
+    return this.tournamentService.listRedemptions(tournamentId, tenantContext.tenantId)
+  }
+
+  @Get('redemption/:redemptionId')
+  getRedemption(@Param('redemptionId') redemptionId: string) {
+    const redemption = this.tournamentService.getRedemption(redemptionId)
+    if (!redemption) {
+      throw new Error(`Redemption not found: ${redemptionId}`)
+    }
+    return redemption
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-10B: Prediction (竞猜预测)
+  // ═══════════════════════════════════════════════════════════════
+
+  @Post(':tournamentId/prediction')
+  placePrediction(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('tournamentId') tournamentId: string,
+    @Body() body: PredictionDto
+  ) {
+    return this.tournamentService.placePrediction({
+      tournamentId,
+      tenantId: tenantContext.tenantId,
+      userId: body.userId,
+      matchId: body.matchId,
+      prediction: body.prediction,
+      stake: body.stake
+    })
+  }
+
+  @Get(':tournamentId/predictions')
+  getPredictions(
+    @Param('tournamentId') tournamentId: string
+  ) {
+    return this.tournamentService.getPredictions({ tournamentId })
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-10B: Vote (人气投票)
+  // ═══════════════════════════════════════════════════════════════
+
+  @Post(':tournamentId/vote')
+  castVote(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('tournamentId') tournamentId: string,
+    @Body() body: VoteDto
+  ) {
+    return this.tournamentService.castVote({
+      tournamentId,
+      tenantId: tenantContext.tenantId,
+      userId: body.userId,
+      contestantId: body.contestantId,
+      votes: body.votes
+    })
+  }
+
+  @Get(':tournamentId/popularity')
+  getPopularityRankings(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('tournamentId') tournamentId: string
+  ) {
+    return this.tournamentService.getPopularityRankings(tournamentId, tenantContext.tenantId)
   }
 }

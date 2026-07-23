@@ -51,6 +51,12 @@ export interface Tournament {
   rules: TournamentRules
   prizes: TournamentPrizes
   bannerImage?: string
+  /** 最小参赛人数 */
+  minParticipants: number
+  /** 参赛费用（积分） */
+  entryFee: number
+  /** 总奖池（积分） */
+  prizePool: number
   createdAt: string
   updatedAt: string
 }
@@ -112,4 +118,68 @@ export interface TeamRegistration {
   status: TeamRegistrationStatus
   createdAt: string
   updatedAt: string
+}
+
+// ── Enhanced join type ──
+
+export enum JoinType {
+  Participant = 'PARTICIPANT',
+  Spectator = 'SPECTATOR'
+}
+
+// ── Redemption ──
+
+export enum RedemptionStatus {
+  Pending = 'PENDING',
+  Completed = 'COMPLETED',
+  Failed = 'FAILED'
+}
+
+export interface RedemptionRecord {
+  id: string
+  tournamentId: string
+  userId: string
+  prizeId: string
+  prizeLabel: string
+  pointsCost: number
+  status: RedemptionStatus
+  estimatedDelivery: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ── Prediction ──
+
+export enum PredictionStatus {
+  Locked = 'LOCKED',
+  Won = 'WON',
+  Lost = 'LOST'
+}
+
+export interface PredictionRecord {
+  id: string
+  tournamentId: string
+  matchId: string
+  userId: string
+  prediction: string
+  stake: number
+  status: PredictionStatus
+  createdAt: string
+  updatedAt: string
+}
+
+// ── Vote ──
+
+export interface VoteRecord {
+  id: string
+  tournamentId: string
+  contestantId: string
+  userId: string
+  votes: number
+  createdAt: string
+}
+
+export interface PopularityEntry {
+  contestantId: string
+  totalVotes: number
 }
