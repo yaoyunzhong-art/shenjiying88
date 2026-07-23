@@ -8,6 +8,7 @@
 import type { License, LicenseScope, LicenseStatus, CreateLicenseRequest, LicenseAuditLog } from '../license.entity'
 import type { CreateAuditLogInput } from './license-audit-log.repository'
 
+
 // ============ 内存 License Repository ============
 
 class InMemoryLicenseRepo {
@@ -154,7 +155,7 @@ class InMemoryAuditLogRepo {
 
 export function createInMemoryLicenseRepos() {
   return {
-    licenseRepo: new InMemoryLicenseRepo() as any,
-    auditLogRepo: new InMemoryAuditLogRepo() as any,
+    licenseRepo: new InMemoryLicenseRepo() as unknown as Record<string, unknown>,
+    auditLogRepo: new InMemoryAuditLogRepo() as unknown as Record<string, unknown>,
   }
 }

@@ -48,7 +48,7 @@ export class LicenseGuard implements CanActivate {
     if (!meta) return true // 没设置 @RequireLicense 装饰器,放行
 
     const req = context.switchToHttp().getRequest<Request>()
-    const user = (req as any).user ?? {}
+    const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
     if (!user.tenantId) {
       throw new Error('[LicenseGuard] Missing tenantId in req.user')
     }
@@ -93,5 +93,5 @@ export class LicenseGuard implements CanActivate {
 /** @CurrentLicense() license: License */
 export const CurrentLicense = createParamDecorator((_data: unknown, ctx: ExecutionContext) => {
   const req = ctx.switchToHttp().getRequest<Request>()
-  return (req as any).license ?? null
+  return (req as unknown as { license?: Record<string, unknown> }).license ?? null
 })

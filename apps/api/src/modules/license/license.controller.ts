@@ -154,7 +154,7 @@ export class LicenseController {
       count?: number
     },
   ) {
-    const user = (req as any).user ?? {}
+    const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
     
     // 仅 admin 可生成激活码
     if (user.role !== 'admin' && user.role !== 'superadmin') {
@@ -207,7 +207,7 @@ export class LicenseController {
   // ============ 私有 ============
 
   private extractTenant(req: Request, override?: { storeId?: string }): TenantContext {
-    const user = (req as any).user ?? {}
+    const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
     if (!user.tenantId) {
       throw new Error('[controller] Missing tenantId in req.user')
     }
