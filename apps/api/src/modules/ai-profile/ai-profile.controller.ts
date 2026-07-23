@@ -1,10 +1,12 @@
 // ai-profile.controller.ts · WP-14 C端AI画像与营销引擎
 // BS-0189~BS-0198
 
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { AiProfileService } from './ai-profile.service';
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('ai-profile')
+@UseGuards(TenantGuard)
 export class AiProfileController {
   constructor(private readonly svc: AiProfileService) {}
 

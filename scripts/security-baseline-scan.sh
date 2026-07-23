@@ -17,7 +17,7 @@ PASS=0; FAIL=0; WARN=0; DETAILS=""
 # ── ① AuthGuard使用率 ──
 echo "--- [1/8] AuthGuard使用率 >=80% ---"
 if [ -f scripts/authguard-coverage-check.sh ]; then
-  result=$(bash scripts/authguard-coverage-check.sh 2>&1 | grep '覆盖率' | grep -oE '[0-9]{2}\.[0-9]+' || echo '0')
+  result=$(bash scripts/authguard-coverage-check.sh 2>&1 | grep 'Coverage rate' | grep -oE '[0-9]{2}\.[0-9]+' || echo '0')
   if awk "BEGIN{exit($result>=80?0:1)}" 2>/dev/null; then echo "  PASS AuthGuard $result% >=80%"; PASS=$((PASS+1))
   else echo "  FAIL AuthGuard $result% <80%"; FAIL=$((FAIL+1)); fi
 else echo "  FAIL authguard-coverage-check.sh 不存在"; FAIL=$((FAIL+1)); fi
