@@ -35,6 +35,7 @@ import {
   ManualMatchDto,
   ManualAdjustmentDto,
   ReconciliationStatsQueryDto,
+  ReconciliationQueryDto,
   ReconciliationChannel
 } from './dto/create-reconciliation.dto'
 
@@ -265,6 +266,18 @@ export class FinanceReconciliationController {
    * GET /api/finance/reconciliation/stats
    * 获取对账统计
    */
+  /**
+   * POST /api/finance/reconciliation/query
+   * 查询对账历史记录（按日期范围/门店/状态筛选）
+   */
+  @Post('query')
+  queryReconciliationHistory(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: ReconciliationQueryDto
+  ) {
+    return this.reconciliationService.queryReconciliationHistory(tenantContext, body)
+  }
+
   @Get('stats')
   getReconciliationStats(
     @TenantContext() tenantContext: RequestTenantContext,

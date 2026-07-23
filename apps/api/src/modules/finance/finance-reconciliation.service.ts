@@ -680,6 +680,50 @@ export class FinanceReconciliationService {
   // 辅助方法
   // ═══════════════════════════════════════════════════════
 
+  // ═══════════════════════════════════════════════════════
+  // 对账历史查询
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * 查询对账历史记录（按日期范围/门店/状态筛选）
+   * 支持分页
+   */
+  queryReconciliationHistory(
+    tenantContext: RequestTenantContext,
+    query: { dateFrom?: string; dateTo?: string; channel?: string; status?: string; limit?: number; offset?: number }
+  ): { batches: ReconciliationBatch[]; total: number; query: Record<string, unknown> } {
+    const tenantId = tenantContext.tenantId
+
+    let batches = Array.from(reconciliationBatchStore.values())
+      .filter((b) => b.tenantId === tenantId)
+
+    if (query.channel) {
+      batches = batches.filter((b) => b.channel === query.channel)
+    }
+    if (query.status) {
+      batches = batches.filter((b) => b.status === query.status)
+    }
+    if (query.dateFrom) {
+      batches = batches.filter((b) => b.date >= query.dateFrom!)
+    }
+    if (query.dateTo) {
+      batches = batches.filter((b) => b.date <= query.dateTo!)
+    }
+
+    batches.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+    const total = batches.length
+    const limit = query.limit ?? 20
+    const offset = query.offset ?? 0
+    batches = batches.slice(offset, offset + limit)
+
+    return {
+      batches,
+      total,
+      query: { tenantId, ...query }
+    }
+  }
+
   private emitEvent(event: {
     type: string
     tenantId: string
