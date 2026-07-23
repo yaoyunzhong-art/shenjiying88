@@ -20,6 +20,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
 import { VenueDataService } from './venue-data.service'
+import { EmpowerCardService } from '../empower-card/empower-card.service'
 import type {
   FeasibilityReport,
   OperationAdviceChoice,
@@ -29,14 +30,6 @@ import type {
   ScanMode,
   FinancePanorama,
   RenovationTier,
-  PricingStrategyInput,
-  PricingStrategyOutput,
-  PriceItem,
-  RevenueImpact,
-  MarketingCampaignInput,
-  MarketingCampaignOutput,
-  CampaignProposal,
-  CampaignType,
   RenovationTierZh,
   TrendPoint,
   StorePlanningInput,
@@ -46,11 +39,11 @@ import type {
   FinancialOverview,
   EquipmentSuggestion,
   RiskFactorItem,
+  DeviceCandidate,
+  AlternativeDeviceRecommendation,
   DeviceRecommendationInput,
   DeviceRecommendationOutput,
   RecommendedDevice,
-  DeviceCandidate,
-  AlternativeDeviceRecommendation,
   RenovationPlanInput,
   RenovationPlanOutput,
   RenovationItem,
@@ -81,6 +74,7 @@ export class IntelligenceService {
     private readonly aiService: IntelligenceAiService,
     private readonly collector: MonitorCollectorService,
     private readonly venueData: VenueDataService,
+    private readonly empowerCardService: EmpowerCardService,
   ) {}
 
   /** 模拟侦察兵数据库的竞品密度数据 */
@@ -699,183 +693,275 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
     return this.monitorCompetitor(city, 'full')
   }
 
+  // ─── 私有方法: 为选项注入数据佐证 ─────────────────────
+
+
+
   // ════════════════════════════════════════════════════════
-  // 10. 动态定价策略 (V23 场景E)
+  // 12. 全周期运营方案 (V23 场景G)
   // ════════════════════════════════════════════════════════
 
   /**
-   * 动态价格体系搭建
-   * 响应 POST /intelligence/pricing-strategy
-   * 数据源: price-monitor + IntelligenceAiService.generatePricingAdvice + scout.getPrices
+   * 全周期运营方案 — 早期/成长期/成熟期/焕新期
+   * 响应 POST /intelligence/operations-plan
    */
-  pricingStrategy(input: PricingStrategyInput): PricingStrategyOutput {
-    const { city, district, scenario, budget, storeTier } = input
+  generateOperationsPlan(input: OperationsPlanInput): OperationsPlanOutput {
+    const { storeId, stage } = input
+    const stageNameMap: Record<StoreStage, string> = { early: '开业初期', growth: '快速成长期', mature: '成熟运营期', renewal: '转型升级焕新期' }
+    const durationMap: Record<StoreStage, string> = { early: '1-3个月', growth: '3-12个月', mature: '1-3年', renewal: '3年以上' }
+    const baseStageData = this.getStageData(stage)
+    return { storeId, stage, stageName: stageNameMap[stage], duration: durationMap[stage], ...baseStageData }
+  }
 
-    // 1) 获取市场行情
-    const density = this.COMPETITOR_DENSITY[`${city}-${district}`] || this.COMPETITOR_DENSITY.default!
-    const stats = this.aiService.getCityPricingStats(city, district)
-    const aiAdvice = this.aiService.generatePricingAdvice(city, district, storeTier ?? 'mid')
-
-    // 2) 构建价目表
-    const tierFactor =
-      storeTier === 'high' ? 1.25 :
-      storeTier === 'low' ? 0.8 : 1.0
-
-    const items: PriceItem[] = [
-      {
-        name: '单人畅玩票',
-        category: '入场票',
-        suggestedPrice: Math.round(stats.avgPrice * tierFactor),
-        marketAvgPrice: stats.avgPrice,
-        priceElasticity: -1.2,
-        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500),
-      },
-      {
-        name: '双人畅玩票',
-        category: '入场票',
-        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 1.7),
-        marketAvgPrice: Math.round(stats.avgPrice * 1.8),
-        priceElasticity: -0.9,
-        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 0.6),
-      },
-      {
-        name: '亲子套票(1大1小)',
-        category: '套票',
-        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 1.4),
-        marketAvgPrice: Math.round(stats.avgPrice * 1.5),
-        priceElasticity: -0.7,
-        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 0.8),
-      },
-      {
-        name: '月卡会员',
-        category: '会员',
-        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 6),
-        marketAvgPrice: Math.round(stats.avgPrice * 7),
-        priceElasticity: -0.5,
-        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 1.5),
-      },
-      {
-        name: '季卡会员',
-        category: '会员',
-        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 14),
-        marketAvgPrice: Math.round(stats.avgPrice * 16),
-        priceElasticity: -0.4,
-        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 2.5),
-      },
-      {
-        name: '充值套餐(充200送60)',
-        category: '充值',
-        suggestedPrice: 200,
-        marketAvgPrice: 200,
-        priceElasticity: -0.3,
-        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 1.2),
-      },
-    ]
-
-    // 3) 场景化策略说明
-    const strategyExplanation = this.buildStrategyExplanation(
-      scenario, city, district, storeTier ?? 'mid', density, stats, aiAdvice,
-    )
-
-    // 4) 营收影响预估
-    const baseRevenue = Math.round(stats.avgPrice * 1500 * 30)
-    const estimatedMonthlyRevenue = Math.round(
-      baseRevenue * (scenario === 'new_store' ? 0.85 : scenario === 'seasonal' ? 1.25 : 1.1),
-    )
-    const estimatedMonthlyProfit = Math.round(estimatedMonthlyRevenue * 0.32)
-    const expectedGrowthPercent = Math.round(((estimatedMonthlyRevenue - baseRevenue) / baseRevenue) * 100)
-
-    const revenueImpact: RevenueImpact = {
-      estimatedMonthlyRevenue,
-      estimatedMonthlyProfit,
-      expectedGrowthPercent,
-      paybackImpact:
-        expectedGrowthPercent > 15
-          ? '积极: 定价策略可显著缩短回收期'
-          : expectedGrowthPercent > 0
-            ? '正向: 定价策略对回收期有正面影响'
-            : '中性: 新店期建议以引流为主，回收期可接受',
+  private getStageData(stage: StoreStage) {
+    switch (stage) {
+      case 'early': return this.buildEarlyStage()
+      case 'growth': return this.buildGrowthStage()
+      case 'mature': return this.buildMatureStage()
+      case 'renewal': return this.buildRenewalStage()
     }
+  }
 
+  private buildEarlyStage() {
     return {
-      scenario,
-      city,
-      district,
-      marketContext: {
-        avgMarketPrice: stats.avgPrice,
-        competitorCount: density.count,
-        priceRange: { min: stats.minPrice, max: stats.maxPrice },
-      },
-      priceItems: items,
-      strategyExplanation,
-      revenueImpact,
+      keyPoints: [
+        { area: '开业活动', content: '策划开业促销活动，包括开业优惠券、免费体验日、开业抽奖等，吸引首波客流', priority: 'high' as const },
+        { area: '定价策略', content: '采用渗透定价策略，开业期价格较同城竞品低10-15%，快速积累用户', priority: 'high' as const },
+        { area: '设备调试', content: '全面调试所有设备确保运行稳定，建立设备巡检制度和维护日志', priority: 'high' as const },
+        { area: '团队培训', content: '完成全体店员岗前培训，包括服务流程、设备操作、安全规范和应急处置', priority: 'high' as const },
+        { area: '线上入驻', content: '完成抖音/美团/大众点评等平台入驻，上架团购套餐，积累初始评价', priority: 'medium' as const },
+        { area: '会员体系', content: '搭建基础会员体系，设置开业专享入会福利，快速积累种子会员', priority: 'medium' as const },
+        { area: '供应链', content: '确认所有耗材供应商，建立补货周期和最低库存预警', priority: 'medium' as const },
+        { area: '数据基线', content: '确立运营数据指标体系（客单价/翻台率/坪效/获客成本），建立日报机制', priority: 'medium' as const },
+      ],
+      pricingStrategy: '渗透定价策略。开业期间价格较同城竞品低10-15%，快速获取市场份额。建议推出¥49体验套餐(原价¥69)、¥89双人畅玩(原价¥128)，限定前1000份。开业第二个月逐步恢复至正常价位，涨幅控制在5-10%以内。',
+      activityRhythm: [
+        '第1周: "开业大酬宾"全场体验价5折，限时7天',
+        '第2周: "会员日"首月限定，入会即享首单5折',
+        '第3周: "挑战赛"开幕，投篮/跳舞机积分赛周冠军奖',
+        '第4周: "邻里联欢"周边社区亲子邀请活动',
+      ],
+      competitorContingencies: [
+        { scenario: '竞品同步降价', response: '观察1周，若竞品降价后无明显提客，维持原策略；若客源流失>15%，推出差异化套餐应对', triggerCondition: '竞品降价幅度>15%且持续3天以上' },
+        { scenario: '竞品同期开业', response: '加大开业活动力度，增加免费体验时段，联合周边商铺做联动活动', triggerCondition: '同区域1km内有新竞品开业' },
+        { scenario: '平台评价差评增多', response: '48小时内回复评价，针对差评内容制定改进措施并公开展示改善结果', triggerCondition: '24小时内新增差评超过3条' },
+      ],
+      riskWarnings: [
+        '⚠️ 开业初期客流波动大，需准备足够的运营资金缓冲（建议预留3个月运营费用）',
+        '⚠️ 设备磨合期故障率高，建议与设备供应商签订快速响应维修协议',
+        '⚠️ 新员工流失风险，建议设置3个月试用期激励机制',
+        '⚠️ 开业热度消退后可能出现客流骤降，需提前策划第二波引流活动',
+      ],
+      milestones: ['M1: 开业首月累计到店人次达到区域目标', 'M2: 开业第二月实现日均营收平衡', 'M3: 完成首批设备维保和员工转正考核'],
+    }
+  }
+
+  private buildGrowthStage() {
+    return {
+      keyPoints: [
+        { area: '营销节奏', content: '建立月度营销日历，每月至少1场主题活动+2场限时促销，保持市场热度', priority: 'high' as const },
+        { area: '会员拉新', content: '会员增长率目标月均20%+，推出推荐有礼、储值赠金等拉新机制', priority: 'high' as const },
+        { area: '竞品应对', content: '建立竞品定期跟踪机制（双周报），重点监测价格/活动/评价变化', priority: 'high' as const },
+        { area: '数据分析', content: '建立周度运营分析会议，核心指标: 客单价/翻台率/坪效/获客成本/回购率', priority: 'high' as const },
+        { area: '口碑运营', content: '引导好评率>95%，每月产出2-3条优质UGC内容（抖音/小红书）', priority: 'medium' as const },
+        { area: '异业合作', content: '建立3-5个异业合作关系（餐饮/影院/教育），交叉引流', priority: 'medium' as const },
+        { area: '团队优化', content: '根据实际运营数据优化排班制度，完善绩效考核体系', priority: 'medium' as const },
+        { area: '设备监控', content: '建立设备生命周期管理，高频率设备提前预估更换周期', priority: 'medium' as const },
+      ],
+      pricingStrategy: '竞争导向定价+动态调价。根据同城竞品价格走势调整自身定价，保持在市场中位水平±10%。推出会员专属价格（会员价减免15-20%），增强会员粘性。周末/节假日实施高峰溢价（+15%），工作日推出平峰优惠（-10%）。',
+      activityRhythm: [
+        '第1月: "春游季"亲子畅玩套票促销',
+        '第2月: "五一黄金周"限时狂欢活动',
+        '第3月: "会员月"积分翻倍+专属活动',
+        '第4月: "暑期畅玩卡"预售（学生限定）',
+        '第5月: "暑期狂欢季"每周主题活动',
+        '第6月: "七夕情侣"双人特惠套餐',
+        '第7月: "开学季"学生返校优惠',
+        '第8月: "中秋国庆"双节联动活动',
+        '第9月: "万圣节"主题变装派对',
+      ],
+      competitorContingencies: [
+        { scenario: '竞品发起价格战', response: '不跟进降价，增加增值服务（赠送饮品/游戏币）维持价值感知', triggerCondition: '3家以上竞品同时降价>15%' },
+        { scenario: '竞品推出爆款活动', response: '对标分析活动类型，1周内推出差异化竞品活动进行回应', triggerCondition: '竞品活动获客增长>30%' },
+        { scenario: '竞品设备大更新', response: '评估自身设备竞争力，制定分阶段更新计划，优先更新高坪效设备', triggerCondition: '竞品更新设备超过3台且为引流类型' },
+      ],
+      riskWarnings: [
+        '⚠️ 增长期容易出现盲目扩张，建议根据坪效数据理性决策',
+        '⚠️ 会员增长可能导致服务品质下降，需同步增加服务人员配置',
+        '⚠️ 竞品跟进效仿活动方案，需保持创新领先半个月以上',
+        '⚠️ 设备高频率运转导致故障率上升，备件库存需充足',
+      ],
+      milestones: ['M1: 月均营业额达到开业期2倍', 'M2: 会员数突破2000人', 'M3: 12个月累计投资回收率达到80%'],
+    }
+  }
+
+  private buildMatureStage() {
+    return {
+      keyPoints: [
+        { area: '设备更新', content: '制定年度设备更新计划，重点淘汰低坪效设备、引入高毛利新型设备', priority: 'high' as const },
+        { area: '会员深耕', content: '启动会员分层运营（普通/银卡/金卡/钻石），差异化权益设计，提升ARPU值', priority: 'high' as const },
+        { area: '活动升级', content: '从常规促销升级为主题IP活动，引入跨界联名、KOL合作等深度营销', priority: 'high' as const },
+        { area: '降本增效', content: '全面成本分析，优化人员编制、能耗管理、耗材采购，目标综合成本下降10-15%', priority: 'high' as const },
+        { area: '数据驱动', content: '建立经营决策数据看板，使用AI分析预测客流/营收趋势', priority: 'medium' as const },
+        { area: '产品创新', content: '定期引入新游戏/新玩法，保持新鲜感，目标每季度至少2款新设备/新项目', priority: 'medium' as const },
+        { area: '口碑壁垒', content: '打造区域口碑标杆，目标好评率>98%，成为同品类首选门店', priority: 'medium' as const },
+        { area: '人才储备', content: '建立店长/主管梯队培养体系，为新增门店储备管理人才', priority: 'medium' as const },
+      ],
+      pricingStrategy: '价值定价策略。成熟期品牌力已形成，定价可参考同城高端竞品，保持在市场中位偏上水平（+10-15%）。推出年卡/季卡等长周期产品锁定高频客户。商务团体/企业团建等场景差异化定价。',
+      activityRhythm: [
+        'Q1: 新年开门红 + 春节主题月 + 会员专属答谢会',
+        'Q2: 春季IP联名活动 + 五一限定 + 周年庆大促',
+        'Q3: 暑期嘉年华 + 七夕企划 + 开学季预热',
+        'Q4: 中秋国庆双节联动 + 圣诞季 + 年终会员盛典',
+      ],
+      competitorContingencies: [
+        { scenario: '新竞品入市（资本推动型）', response: '发挥老店运营效率优势，通过精细化运营构建壁垒，不参与烧钱竞争', triggerCondition: '区域新增资本驱动型竞品且预算超自身2倍以上' },
+        { scenario: '竞品大规模装修翻新', response: '评估竞品翻新后客单价提升情况，2个月内完成针对性的差异升级', triggerCondition: '竞品闭店装修时长>2周或投入>100万' },
+        { scenario: '市场整体下行', response: '启动降本方案，减少非必要营销支出，重点服务高价值客户', triggerCondition: '连续3个月区域客流同比下降>20%' },
+      ],
+      riskWarnings: [
+        '⚠️ 运营固定思维导致创新不足，建议定期进行"竞品盲测"保持对标',
+        '⚠️ 设备老化导致客诉增加，建议建立设备健康度评分体系',
+        '⚠️ 核心员工流失风险，建议设计合理的利润分享和晋升通道',
+        '⚠️ 商圈流量自然衰退，建议提前6个月评估商圈生命周期',
+      ],
+      milestones: ['M1: 年营收保持年均增长10%+', 'M2: 会员ARPU值较上年提升15%+', 'M3: 综合运营成本较上年下降10%+'],
+    }
+  }
+
+  private buildRenewalStage() {
+    return {
+      keyPoints: [
+        { area: '重新装修', content: '全店翻新升级，融入最新设计风格，更新VI形象，打造网红打卡场景', priority: 'high' as const },
+        { area: '设备换代', content: '全面淘汰老旧设备，引入主流新设备包括VR2.0/全息投影/元宇宙互动等', priority: 'high' as const },
+        { area: '品牌升级', content: '品牌定位升级，从传统游乐厅升级为数字娱乐体验中心，重塑品牌故事', priority: 'high' as const },
+        { area: '模式创新', content: '探索新经营模式，会员订阅制、娱乐加餐饮、赛事运营、直播电商等', priority: 'high' as const },
+        { area: '数字化升级', content: '引入AI运营分析、智能排班、自动营销等数字化工具，提升管理效率', priority: 'medium' as const },
+        { area: '用户研究', content: '开展大规模用户调研，洞察新一代消费需求变化，指导产品创新方向', priority: 'medium' as const },
+        { area: '私域运营', content: '建设私域流量池，企业微信、社群、小程序，实现精准触达和运营', priority: 'medium' as const },
+        { area: '跨界创新', content: '探索游乐加X跨界模式（加咖啡、酒吧、电竞、教育、文创），构建第二增长曲线', priority: 'medium' as const },
+      ],
+      pricingStrategy: '品牌溢价策略。焕新后品牌定位升级，定价可提升至同城TOP水平加20-30%。引入会员订阅制月卡季卡年卡，锁定长期价值。探索体验式定价，利用新设备体验感支撑高客单价。',
+      activityRhythm: [
+        '开业期: 焕新开业的"重装庆典"系列活动，1个月预热加2周高潮加1个月延续',
+        '升级期: 新设备体验日加IP首发联动加KOL矩阵式传播，2个月',
+        '稳固期: 会员回馈月加体验官招募计划加品牌故事传播，1个月',
+        '持续期: 常规运营加持续创新，月度新品发布会、季度主题活动',
+      ],
+      competitorContingencies: [
+        { scenario: '竞品也在同期翻新', response: '突出差异化焕新主题，打城市首家概念标签，抢占消费者心智', triggerCondition: '同商圈竞品翻新重合期小于3个月' },
+        { scenario: '焕新后初期客流不及预期', response: '启动老客回访加体验邀请计划，赠送老会员焕新体验券，口口相传', triggerCondition: '焕新开业首月客流低于预期的60%' },
+        { scenario: '新设备运营不达预期', response: '快速调整设备组合，将低坪效新设备置换为高坪效验证设备', triggerCondition: '新设备上线3个月坪效低于预期的50%' },
+      ],
+      riskWarnings: [
+        '焕新投入高，需确保投资回收期在18个月内',
+        '装修期间停业造成老客流失，提前1个月做唤醒营销',
+        '设备选型失误风险，建议分批采购、小批量试运行',
+        '市场定位变化可能失去部分老客群，需平衡升级与延续',
+      ],
+      milestones: ['M1: 焕新后6个月内回收投资', 'M2: 焕新后品牌认知度提升50%+', 'M3: 新设备年坪效提升30%+'],
     }
   }
 
   // ════════════════════════════════════════════════════════
-  // 11. 精准营销活动方案策划 (V23 场景F)
+  // 13. 数据底座整合 (V23 场景H)
   // ════════════════════════════════════════════════════════
 
   /**
-   * 6大类活动方案策划
-   * 响应 POST /intelligence/marketing-campaign
+   * 侦察兵数据到知识库同步
+   * 把当前竞争态势摘要写入知识库可检索格式
+   * 响应 POST /intelligence/sync-knowledge
    */
-  marketingCampaign(input: MarketingCampaignInput): MarketingCampaignOutput {
-    const { city, district, season, budget } = input
+  async syncKnowledge(): Promise<SyncKnowledgeResult> {
+    const scanResult = await this.collector.incrementalScan()
+    const alerts = this.collector.deduplicate(scanResult)
+    const scoutDataCount = alerts.length
 
-    // 市场上下文
-    const density = this.COMPETITOR_DENSITY[`${city}-${district}`] || this.COMPETITOR_DENSITY.default!
-    const effectiveBudget = budget ?? 30000
+    const citySummary = new Map()
+    for (const alert of alerts) {
+      if (!citySummary.has(alert.city)) {
+        citySummary.set(alert.city, { priceChanges: 0, newActivities: 0, promotions: 0, ratingsChanges: 0 })
+      }
+      const s = citySummary.get(alert.city)
+      if (alert.type === 'price_change') s.priceChanges++
+      else if (alert.type === 'new_activity') s.newActivities++
+      else if (alert.type === 'new_promotion') s.promotions++
+      else if (alert.type === 'rating_change') s.ratingsChanges++
+    }
 
-    // 6大类方案
-    const campaigns: CampaignProposal[] = [
-      this.buildCampaign('douyin_group', city, district, effectiveBudget),
-      this.buildCampaign('weekend_tournament', city, district, effectiveBudget),
-      this.buildCampaign('member_day', city, district, effectiveBudget),
-      this.buildCampaign('ip_collaboration', city, district, effectiveBudget),
-      this.buildCampaign('summer_limited', city, district, effectiveBudget),
-      this.buildCampaign('blindbox_lottery', city, district, effectiveBudget),
-    ]
+    const now = new Date().toISOString().slice(0, 10)
+    let entries = 0
 
-    // 推荐最优方案 (按效果排序)
-    const sorted = [...campaigns].sort((a, b) => this.effectRank(b.estimatedEffect) - this.effectRank(a.estimatedEffect))
-    const recommendedCampaign = sorted[0]!
+    for (const [city, data] of citySummary) {
+      const parts = []
+      if (data.priceChanges > 0) parts.push(data.priceChanges + '家竞品价格异动')
+      if (data.newActivities > 0) parts.push(data.newActivities + '家竞品推出新活动')
+      if (data.promotions > 0) parts.push(data.promotions + '家竞品推出促销')
+      if (data.ratingsChanges > 0) parts.push(data.ratingsChanges + '家竞品评分变化')
+      if (parts.length > 0) {
+        try {
+          await this.empowerCardService.create({
+            tag: '竞品分析',
+            summary: '[' + now + '] ' + city + '竞争态势: ' + parts.join('，') + '。数据来源: 侦察兵同城扫描。',
+            source: '侦察兵自动扫描',
+            moduleMapping: 'intelligence.scout',
+          })
+          entries++
+        } catch (err: any) {
+          this.logger.warn('知识卡片创建失败(city=' + city + '): ' + err.message)
+        }
+      }
+    }
+    if (entries === 0) {
+      try {
+        await this.empowerCardService.create({
+          tag: '运营状态',
+          summary: '[' + now + '] 侦察兵扫描完成，当前区域竞争态势平稳，未检测到显著异动。',
+          source: '侦察兵自动扫描',
+          moduleMapping: 'intelligence.scout',
+        })
+        entries = 1
+      } catch {}
+    }
+    return { synced: true, scoutDataCount, knowledgeEntriesCreated: entries, timestamp: new Date().toISOString() }
+  }
 
+  /**
+   * 数据底座汇总
+   * 响应 GET /intelligence/data-base/summary
+   */
+  async getDataBaseSummary(): Promise<DataBaseSummary> {
+    const coveredCities = Object.keys(this.COMPETITOR_DENSITY).filter(k => k !== 'default').map(k => k.split('-')[0])
+    const uniqueCities = [...new Set(coveredCities)]
+    const totalVenueCount = Object.entries(this.COMPETITOR_DENSITY).filter(([k]) => k !== 'default').reduce((sum, [, v]) => sum + v.count, 0)
+    const dimensionCoverage = ['竞品数量与密度', '竞品价格分布', '竞品评分走势', '竞品活动监测', '竞品设备更新监测', '同城租金基准', '人流量预估', '商圈成熟度评估']
+    const lastScan = this.lastScanResult
+    const lastFullSync = lastScan ? lastScan.scanTimestamp : null
+    const lastIncrementalSync = new Date().toISOString()
+    let knowledgeEntries = 0
+    try {
+      const cards = await this.empowerCardService.list(0)
+      knowledgeEntries = cards.length
+    } catch {}
+    const coverageByCity: Record<string, { venueCount: number; avgFreshness: number }> = {}
+    for (const city of uniqueCities) {
+      const cityEntries = Object.entries(this.COMPETITOR_DENSITY).filter(([k]) => k.startsWith(city) && k !== 'default')
+      coverageByCity[city] = { venueCount: cityEntries.reduce((s, [, v]) => s + v.count, 0), avgFreshness: 90 }
+    }
+    const freshness = lastScan
+      ? (Date.now() - new Date(lastScan.scanTimestamp).getTime()) < 86400000 ? 'fresh'
+        : (Date.now() - new Date(lastScan.scanTimestamp).getTime()) < 604800000 ? 'stale' : 'outdated'
+      : 'stale'
     return {
-      city,
-      district,
-      season: season ?? 'general',
-      budget: effectiveBudget,
-      campaigns,
-      recommendedCampaign,
+      venueCount: totalVenueCount,
+      dimensionCoverage,
+      updateStatus: { lastFullSync, lastIncrementalSync, overallFreshness: freshness },
+      knowledgeBaseEntries: knowledgeEntries,
+      coverageByCity,
     }
   }
 
-  // ════════════════════════════════════════════════════════
-  // 私有方法: 定价策略说明
-  // ════════════════════════════════════════════════════════
-
-  private buildStrategyExplanation(
-    scenario: string, city: string, district: string, storeTier: string,
-    density: { count: number; avgPrice: number },
-    stats: { avgPrice: number; minPrice: number; maxPrice: number; competitorCount: number },
-    aiAdvice: string,
-  ): string {
-    const scenarioName: Record<string, string> = {
-      new_store: '新店开张',
-      competitor_reaction: '竞品反应',
-      seasonal: '季节性调价',
-    }
-
-    const tierName: Record<string, string> = {
-      high: '高端',
-      mid: '中端',
-      low: '低端/性价比',
-    }
-
-    const scenarioStrategies: Record<string, string> = {
-      new_store:
-        `\n【策略】新店期建议采用
+  private buildOptions(category: string, baseOptions: AdviceOption[]): AdviceOption[] {
     const evidences = this.aiService.getDataEvidence(category, baseOptions.length)
     return baseOptions.map((opt, idx) => ({
       ...opt,

@@ -13,7 +13,7 @@ import {
 import { TenantGuard } from '../agent/tenant.guard'
 
 import { IntelligenceService } from './intelligence.service'
-import type { RenovationTier, StorePlanningInput } from './intelligence.entity'
+import type { RenovationTier, StorePlanningInput, OperationsPlanInput, StoreStage } from './intelligence.entity'
 
 @UseGuards(TenantGuard)
 @Controller('intelligence')
@@ -103,5 +103,36 @@ export class IntelligenceController {
   @Post('monitor/scan/full')
   async triggerFull(@Query('city') city?: string) {
     return this.svc.triggerFullScan(city)
+  }
+
+  /**
+  /**
+   * 场景G: 开业后全周期运营管理方案
+   * POST /intelligence/operations-plan
+   */
+  @Post('operations-plan')
+  operationsPlan(@Body() body: OperationsPlanInput) {
+    if (!body.storeId?.trim()) throw new BadRequestException('门店ID不能为空')
+    const validStages: StoreStage[] = ['early', 'growth', 'mature', 'renewal']
+    if (!body.stage || !validStages.includes(body.stage)) throw new BadRequestException('阶段无效，可选: early/growth/mature/renewal')
+    return this.svc.generateOperationsPlan({ storeId: body.storeId.trim(), stage: body.stage })
+  }
+
+  /**
+   * 场景H: 侦察兵数据到知识库同步
+   * POST /intelligence/sync-knowledge
+   */
+  @Post('sync-knowledge')
+  async syncKnowledge() {
+    return this.svc.syncKnowledge()
+  }
+
+  /**
+   * 场景H: 数据底座汇总
+   * GET /intelligence/data-base/summary
+   */
+  @Get('data-base/summary')
+  async dataBaseSummary() {
+    return this.svc.getDataBaseSummary()
   }
 }
