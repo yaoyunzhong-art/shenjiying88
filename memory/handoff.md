@@ -181,3 +181,23 @@
   - 开发由大飞哥监督
   - 龙虾哥出脑力和策略
   - 树哥负责实际执行落地
+
+## 15. 2026-07-23 Sprint-0 执行包已就绪（请龙虾哥 Review）
+
+### Sprint-0 执行包（Kickoff/Tasks/Checklist）
+
+- `docs/knowledge/sprint-0/2026-07-23-wp-compliance-kickoff-tasks-checklist.md`
+- `docs/knowledge/sprint-0/2026-07-23-wp-00-kickoff-tasks-checklist.md`
+- `docs/knowledge/sprint-0/2026-07-23-wp-02a-kickoff-tasks-checklist.md`
+- `docs/knowledge/sprint-0/2026-07-23-wp-02b-kickoff-tasks-checklist.md`
+
+### WP-COMPLIANCE 新增合规资产
+
+- 模板库（PR/DEV/BLK/RB/周报）：
+  - `docs/knowledge/compliance/_templates.md`
+- 合规台账（数据源）：
+  - `.trae/compliance/deviation-registry.json`
+  - `.trae/compliance/bs-catalog.json`
+  - `.trae/compliance/coverage-matrix.json`
+- 生成 BS 台账命令：
+  - `pnpm exec tsx scripts/build-bs-catalog.ts`

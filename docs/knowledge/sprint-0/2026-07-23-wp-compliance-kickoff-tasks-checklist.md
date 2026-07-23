@@ -58,6 +58,10 @@
 - 模板路径
 - 示例编号
 - 至少 1 份后续工作包引用样例
+- 合规台账路径:
+  - `.trae/compliance/deviation-registry.json`
+  - `.trae/compliance/bs-catalog.json`
+  - `.trae/compliance/coverage-matrix.json`
 
 ### 回滚口径
 
@@ -108,7 +112,17 @@
   - 偏离率
   - 闭环时效
 
-### T5 验收目录
+### T5 模板落点
+
+- 统一模板落点:
+  - `docs/knowledge/compliance/_templates.md`
+
+### T6 台账生成
+
+- 从 `r18` 生成 BS 台账:
+  - `pnpm exec tsx scripts/build-bs-catalog.ts`
+
+### T7 验收目录
 
 - 固化验收文档落点:
   - `docs/knowledge/acceptance/<date>-<wp>-acceptance.md`
