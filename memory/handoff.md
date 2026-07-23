@@ -135,6 +135,8 @@
   - `docs/operations/r18-requirement-dev-mapping.md`
   - `docs/6-8-compliance-rectification-list.md`
   - `docs/6-8-foundation-compliance-charter.md`
+  - `docs/knowledge/2026-07-23-6-8-development-master-backlog-v1.md`
+  - `docs/knowledge/2026-07-23-6-8-development-master-backlog-v2.md`
   - `docs/operations/r11-architecture-hard-constraints.md`
   - `docs/operations/r12-middleware-engine-specs.md`
   - `docs/operations/r13-business-app-requirements.md`
@@ -148,7 +150,20 @@
 - 现阶段不能宣称“全部功能已开发完成”，只能宣称：
   - 交易/订单/H5 支付/财务主链已明显前进。
   - 对 `V5.1` 全量功能清单仍有大量条目未完成。
-- 最新开发计划采用“先底座和 P0，后 P1/P2，最后 SIM/OPT 全量验收”的单主线方案。
+- 最新开发计划现以 `v2 正式版` 为准，`v1` 仅保留作审阅痕迹，不再作为派工依据。
+- 最新可执行任务总表文件为：
+  - `docs/knowledge/2026-07-23-6-8-development-master-backlog-v2.md`
+- Sprint-0 执行包文件为：
+  - `docs/knowledge/sprint-0/2026-07-23-wp-compliance-kickoff-tasks-checklist.md`
+  - `docs/knowledge/sprint-0/2026-07-23-wp-00-kickoff-tasks-checklist.md`
+  - `docs/knowledge/sprint-0/2026-07-23-wp-02a-kickoff-tasks-checklist.md`
+  - `docs/knowledge/sprint-0/2026-07-23-wp-02b-kickoff-tasks-checklist.md`
+- `v2` 已完成以下修正：
+  - 补齐 `WP-00` 架构底座与 `WP-COMPLIANCE`
+  - 修正 `BS-0260` 误用，开发合规阀门改回 `BS-0233`
+  - 补齐 `P0 最小上线包`
+  - 将所有 `LYT` 相关任务拆成 `A 可先做 / B 条件启动`
+  - 增加 `阻塞单 / PR 合规字段 / 回滚模板 / 周报数据源`
 - 当前优先级顺序：
   - 先补底座和强依赖。
   - 先收 `P0` 和强合规项。
