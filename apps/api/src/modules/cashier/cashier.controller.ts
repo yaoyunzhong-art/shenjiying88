@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   Headers,
+  Inject,
   UseGuards,
   BadRequestException,
   NotFoundException,
@@ -54,11 +55,11 @@ export class CashierController {
   private readonly logger = new Logger(CashierController.name)
 
   constructor(
-    private readonly orderService: OrderService,
-    private readonly paymentService: PaymentService,
-    private readonly refundService: RefundService,
-    private readonly cashierService: CashierService,
-    private readonly inventoryItemService: InventoryItemService
+    @Inject(OrderService) private readonly orderService: OrderService,
+    @Inject(PaymentService) private readonly paymentService: PaymentService,
+    @Inject(RefundService) private readonly refundService: RefundService,
+    @Inject(CashierService) private readonly cashierService: CashierService,
+    @Inject(InventoryItemService) private readonly inventoryItemService: InventoryItemService
   ) {}
 
   // ── Orders ──

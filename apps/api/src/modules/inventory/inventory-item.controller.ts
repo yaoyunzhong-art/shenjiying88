@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Put,
@@ -35,7 +36,7 @@ interface StockQuery { tenantId?: string; qty?: number }
 @UseGuards(TenantGuard)
 @Controller('api/inventory/items')
 export class InventoryItemController {
-  constructor(private readonly svc: InventoryItemService) {}
+  constructor(@Inject(InventoryItemService) private readonly svc: InventoryItemService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
