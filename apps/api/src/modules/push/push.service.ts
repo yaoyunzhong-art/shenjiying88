@@ -1,7 +1,12 @@
 import { Injectable, Logger, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { PushRecordEntity } from './push.entity'
+import {
+  PushPriority as EntityPushPriority,
+  PushPlatform as EntityPushPlatform,
+  PushRecordEntity,
+  PushStatus as EntityPushStatus
+} from './push.entity'
 
 /**
  * Phase-32/33: 推送服务
@@ -245,12 +250,12 @@ export class APNsService {
         const entity = PushRecordEntity.fromContract({
           id: record.id,
           deviceToken: record.deviceToken,
-          platform: 'iOS',
+          platform: EntityPushPlatform.iOS,
           payload: record.payload,
-          priority: record.priority === 'high' ? 'HIGH' : 'NORMAL',
-          status: record.status === 'sent' ? 'SENT'
-            : record.status === 'failed' ? 'FAILED'
-            : 'REVOKED',
+          priority: record.priority === 'high' ? EntityPushPriority.High : EntityPushPriority.Normal,
+          status: record.status === 'sent' ? EntityPushStatus.Sent
+            : record.status === 'failed' ? EntityPushStatus.Failed
+            : EntityPushStatus.Revoked,
           sentAt: record.sentAt,
         })
         await this.pushRecordRepo.save(entity)

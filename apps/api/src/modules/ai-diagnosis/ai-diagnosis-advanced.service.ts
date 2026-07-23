@@ -259,7 +259,7 @@ export class AdvancedDiagnosisService {
     for (let i = 0; i < ruleIds.length; i++) {
       for (let j = i + 1; j < ruleIds.length; j++) {
         if (Math.random() > 0.7) {
-          const conflictType = ['contradiction', 'redundancy', 'subsumption', 'circular'][Math.floor(Math.random() * 4)] as any
+          const conflictType = ['contradiction', 'redundancy', 'subsumption', 'circular'][Math.floor(Math.random() * 4)]
           conflicts.push({
             ruleIdA: ruleIds[i],
             ruleIdB: ruleIds[j],

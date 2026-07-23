@@ -133,7 +133,7 @@ export class ReportAggregationService {
   }
 
   private parseDimensionValue(raw: string): string | number {
-    if (raw === 'null') return null as any
+    if (raw === 'null') return null as unknown as Record<string, unknown>
     const n = Number(raw)
     if (!Number.isNaN(n) && Number.isFinite(n) && raw !== '') return n
     return raw

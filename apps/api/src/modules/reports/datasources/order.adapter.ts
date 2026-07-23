@@ -66,7 +66,7 @@ export class OrderAdapter {
       if ('conditions' in c) {
         return this.matchFilters(row, c as ReportFilterGroup)
       }
-      const v = (row as any)[c.field]
+      const v = (row as Record<string, unknown>)[c.field]
       switch (c.op) {
         case '=': return v === c.value
         case '!=': return v !== c.value

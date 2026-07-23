@@ -15,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { CreateVenueDto, UpdateVenueDto, CreateVenueBookingDto } from './venue.dto'
+import { VenueShift, VenueStatus, VenueType } from './venue.entity'
 import { VenueService } from './venue.service'
 import { TenantGuard } from '../agent/tenant.guard'
 
@@ -147,7 +148,7 @@ export class VenueController {
       userId,
       date,
       status: status as VenueStatus,
-      shift: shift as ShiftType,
+      shift: shift as VenueShift,
     })
   }
 

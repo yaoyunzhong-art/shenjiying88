@@ -49,7 +49,7 @@ export class MemberAdapter {
   private matchFilters(row: MemberRow, group: ReportFilterGroup): boolean {
     const results = group.conditions.map(c => {
       if ('conditions' in c) return this.matchFilters(row, c as ReportFilterGroup)
-      const v = (row as any)[c.field]
+      const v = (row as Record<string, unknown>)[c.field]
       switch (c.op) {
         case '=': return v === c.value
         case '!=': return v !== c.value

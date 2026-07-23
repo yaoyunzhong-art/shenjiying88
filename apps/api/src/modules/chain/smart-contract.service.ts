@@ -2,6 +2,26 @@ import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import { nanoid } from 'nanoid'
 
+// ─── 合约存储记录类型 ──────────────────────────────────────────
+
+interface DeployedContractRecord {
+  name: string
+  contractId: string
+  address: string
+  params: string[]
+  deployedAt: string
+}
+
+interface QueryContractResult {
+  state: string
+  contractId: string
+}
+
+interface ContractInfoResult {
+  name: string
+  address: string
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 积分清算 + 分账智能合约服务 (T122-2)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -115,7 +135,7 @@ export class PointsSettlementContract {
     payerId: string,
     payerName: string,
     payees: Array<{ payeeId: string; payeeName: string; amount: number }>
-  ): PointsSettlementContract {
+  ): SettlementContractData {
     const now = new Date().toISOString()
     const totalAmount = payees.reduce((sum, p) => sum + p.amount, 0)
 
@@ -136,10 +156,10 @@ export class PointsSettlementContract {
     }
 
     settlementStore.set(contract.contractId, contract)
-    return contract as unknown as PointsSettlementContract
+    return contract
   }
 
-  approveSettlement(contractId: string): PointsSettlementContract {
+  approveSettlement(contractId: string): SettlementContractData {
     const contract = settlementStore.get(contractId)
     if (!contract) {
       throw new Error(`Settlement contract ${contractId} not found`)
@@ -158,10 +178,10 @@ export class PointsSettlementContract {
       updatedAt: now,
     }
     settlementStore.set(contractId, updated)
-    return updated as unknown as PointsSettlementContract
+    return updated
   }
 
-  executeSettlement(contractId: string): PointsSettlementContract {
+  executeSettlement(contractId: string): SettlementContractData {
     const contract = settlementStore.get(contractId)
     if (!contract) {
       throw new Error(`Settlement contract ${contractId} not found`)
@@ -218,7 +238,7 @@ export class PointsSettlementContract {
         updatedAt: now,
       }
       settlementStore.set(contractId, updated)
-      return updated as unknown as PointsSettlementContract
+      return updated
     }
 
     const updated: SettlementContractData = {
@@ -229,10 +249,10 @@ export class PointsSettlementContract {
       updatedAt: now,
     }
     settlementStore.set(contractId, updated)
-    return updated as unknown as PointsSettlementContract
+    return updated
   }
 
-  cancelSettlement(contractId: string): PointsSettlementContract {
+  cancelSettlement(contractId: string): SettlementContractData {
     const contract = settlementStore.get(contractId)
     if (!contract) {
       throw new Error(`Settlement contract ${contractId} not found`)
@@ -254,11 +274,11 @@ export class PointsSettlementContract {
       updatedAt: now,
     }
     settlementStore.set(contractId, updated)
-    return updated as unknown as PointsSettlementContract
+    return updated
   }
 
-  getContractState(contractId: string): PointsSettlementContract | null {
-    return settlementStore.get(contractId) as unknown as PointsSettlementContract | null
+  getContractState(contractId: string): SettlementContractData | null {
+    return settlementStore.get(contractId) ?? null
   }
 
   // 模拟获取 payer 余额（简化实现）
@@ -277,7 +297,7 @@ export class RevenueShareContract {
   createRevenueShare(
     totalRevenue: number,
     participants: Array<{ participantId: string; participantName: string; ratio: number }>
-  ): RevenueShareContract {
+  ): RevenueShareContractData {
     const now = new Date().toISOString()
 
     // 校验比例总和
@@ -305,10 +325,10 @@ export class RevenueShareContract {
     }
 
     revenueShareStore.set(contract.contractId, contract)
-    return contract as unknown as RevenueShareContract
+    return contract
   }
 
-  distributeRevenue(contractId: string): RevenueShareContract {
+  distributeRevenue(contractId: string): RevenueShareContractData {
     const contract = revenueShareStore.get(contractId)
     if (!contract) {
       throw new Error(`Revenue share contract ${contractId} not found`)
@@ -355,7 +375,7 @@ export class RevenueShareContract {
       updatedAt: now,
     }
     revenueShareStore.set(contractId, updated)
-    return updated as unknown as RevenueShareContract
+    return updated
   }
 
   getParticipantShare(
@@ -383,8 +403,8 @@ export class RevenueShareContract {
     return shareHistoryStore.get(contractId) ?? []
   }
 
-  getContractState(contractId: string): RevenueShareContract | null {
-    return revenueShareStore.get(contractId) as unknown as RevenueShareContract | null
+  getContractState(contractId: string): RevenueShareContractData | null {
+    return revenueShareStore.get(contractId) ?? null
   }
 }
 
@@ -406,10 +426,10 @@ export class ContractExecutor {
         payeeName: string
         amount: number
       }>
-      const settlementContract = new PointsSettlementContract()
-      const contract = settlementContract.createSettlement(payerId, payerName, payees)
+      const settlementContractInstance = new PointsSettlementContract()
+      const settlementData = settlementContractInstance.createSettlement(payerId, payerName, payees)
       return {
-        deployedContractId: (contract as any).contractId,
+        deployedContractId: settlementData.contractId,
         contractType: 'PointsSettlement',
       }
     } else if (contractType === 'RevenueShare') {
@@ -419,13 +439,13 @@ export class ContractExecutor {
         participantName: string
         ratio: number
       }>
-      const revenueShareContract = new RevenueShareContract()
-      const contract = revenueShareContract.createRevenueShare(
+      const revenueShareInstance = new RevenueShareContract()
+      const shareData = revenueShareInstance.createRevenueShare(
         totalRevenue,
         participants
       )
       return {
-        deployedContractId: (contract as any).contractId,
+        deployedContractId: shareData.contractId,
         contractType: 'RevenueShare',
       }
     } else {
@@ -442,22 +462,22 @@ export class ContractExecutor {
       try {
         const svc = new PointsSettlementContract()
         // 自动审批（如果尚未审批）
-        if ((settlementContract as any).status === SettlementStatus.Created) {
+        if (settlementContract.status === SettlementStatus.Created) {
           svc.approveSettlement(contractId)
         }
         const updated = svc.executeSettlement(contractId)
         const result: ContractExecutionResult = {
           contractId,
-          success: (updated as any).status === SettlementStatus.Completed,
+          success: updated.status === SettlementStatus.Completed,
           output: {
-            status: (updated as any).status,
-            totalAmount: (updated as any).totalAmount,
-            participants: (updated as any).participants,
+            status: updated.status,
+            totalAmount: updated.totalAmount,
+            participants: updated.participants,
           },
           executedAt: now,
         }
-        if ((updated as any).status === SettlementStatus.Failed) {
-          result.error = (updated as any).failureReason
+        if (updated.status === SettlementStatus.Failed) {
+          result.error = updated.failureReason
         }
         executionResults.set(contractId, result)
         return result
@@ -480,11 +500,11 @@ export class ContractExecutor {
         const updated = new RevenueShareContract().distributeRevenue(contractId)
         const result: ContractExecutionResult = {
           contractId,
-          success: (updated as any).status === RevenueShareStatus.Completed,
+          success: updated.status === RevenueShareStatus.Completed,
           output: {
-            status: (updated as any).status,
-            totalRevenue: (updated as any).totalRevenue,
-            participants: (updated as any).participants,
+            status: updated.status,
+            totalRevenue: updated.totalRevenue,
+            participants: updated.participants,
           },
           executedAt: now,
         }
@@ -512,12 +532,13 @@ export class ContractExecutor {
 // ── Test wrapper ──
 
 export class SmartContractService {
-  private contracts = new Map<string, any>()
+  private contracts = new Map<string, DeployedContractRecord>()
 
   async deployContract(name: string, params: string[]): Promise<{ contractId: string; address: string }> {
     const contractId = `sc-${nanoid()}`
     const address = `0x${Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`
-    this.contracts.set(contractId, { name, contractId, address, params, deployedAt: new Date().toISOString() })
+    const record: DeployedContractRecord = { name, contractId, address, params, deployedAt: new Date().toISOString() }
+    this.contracts.set(contractId, record)
     return { contractId, address }
   }
 
@@ -526,17 +547,17 @@ export class SmartContractService {
     return { success: true }
   }
 
-  async queryContract(contractId: string, method: string): Promise<any> {
+  async queryContract(contractId: string, method: string): Promise<QueryContractResult> {
     return { state: 'ok', contractId }
   }
 
-  async getContractInfo(contractId: string): Promise<any> {
+  async getContractInfo(contractId: string): Promise<ContractInfoResult> {
     const c = this.contracts.get(contractId)
     if (!c) throw new Error(`Contract ${contractId} not found`)
     return { name: c.name, address: c.address }
   }
 
-  async listContracts(): Promise<any[]> {
+  async listContracts(): Promise<DeployedContractRecord[]> {
     return Array.from(this.contracts.values())
   }
 
@@ -548,7 +569,7 @@ export class SmartContractService {
     return 21000
   }
 
-  async getContractEvents(contractId: string): Promise<any[]> {
+  async getContractEvents(contractId: string): Promise<unknown[]> {
     return []
   }
 }

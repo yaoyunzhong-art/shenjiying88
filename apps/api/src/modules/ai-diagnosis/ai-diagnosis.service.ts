@@ -48,7 +48,7 @@ export class AiDiagnosisService {
     }
 
     diagnosisStore.set(diagnosisId, diagnosis)
-    ;(diagnosis as any)._seq = ++createSeq
+    ;(diagnosis as Record<string, number>)._seq = ++createSeq
     return diagnosis
   }
 
@@ -77,7 +77,7 @@ export class AiDiagnosisService {
     results.sort((a, b) => {
       const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       if (timeDiff !== 0) return timeDiff
-      return ((b as any)._seq ?? 0) - ((a as any)._seq ?? 0)
+      return ((b as Record<string, number>)._seq ?? 0) - ((a as Record<string, number>)._seq ?? 0)
     })
 
     return { diagnoses: results, total: results.length }
@@ -192,7 +192,7 @@ export class AiDiagnosisService {
     }
 
     batchStore.set(batchId, batch)
-    ;(batch as any)._seq = ++createSeq
+    ;(batch as Record<string, number>)._seq = ++createSeq
     return batch
   }
 
@@ -210,7 +210,7 @@ export class AiDiagnosisService {
     results.sort((a, b) => {
       const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       if (timeDiff !== 0) return timeDiff
-      return ((b as any)._seq ?? 0) - ((a as any)._seq ?? 0)
+      return ((b as Record<string, number>)._seq ?? 0) - ((a as Record<string, number>)._seq ?? 0)
     })
     return results
   }
