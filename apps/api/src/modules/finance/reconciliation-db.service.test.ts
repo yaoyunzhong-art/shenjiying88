@@ -346,7 +346,7 @@ describe('[reconciliation-db] 边界情况', () => {
   it('大量 diffs 不损坏报告结构', async () => {
     const db = makeDbService()
     const manyDiffs: DiffRecord[] = Array.from({ length: 100 }, (_, i) => ({
-      kind: i % 2 === 0 ? 'amount-mismatch' as const : 'only-internal' as const,
+      kind: i % 2 === 0 ? 'amount-mismatch' as const : 'missing-external' as const,
       orderNo: `O-${String(i).padStart(3, '0')}`,
       internalId: `int-${i}`,
       diffCents: i * 10,

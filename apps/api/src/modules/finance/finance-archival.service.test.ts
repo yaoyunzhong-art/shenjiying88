@@ -74,7 +74,6 @@ async function seedConfirmedSettlement(
     storeId: ctx.storeId,
     startDate: periodStart,
     endDate: periodEnd,
-    description: 'June settlement',
   })
   const confirmed = await finance.confirmSettlementResolved(settlement.id, ctx)
   return { settlementId: confirmed.id, periodStart, periodEnd }
@@ -189,8 +188,8 @@ describe('[finance-archival] archive — 正例', () => {
     // 使用没有 ledger 的周期
     const result = await archivalService.archive(CTX_A, {
       settlementId,
-      startDate: '2026-07-01',
-      endDate: '2026-07-31',
+      periodStart: '2026-07-01',
+      periodEnd: '2026-07-31',
     })
 
     expect(result.snapshot.totalRevenue).toBe(0)
@@ -214,14 +213,13 @@ describe('[finance-archival] archive — 反例与边界', () => {
       storeId: CTX_A.storeId,
       startDate: '2026-06-01',
       endDate: '2026-06-30',
-      description: 'Pending settlement',
     })
 
     await expect(
       archivalService.archive(CTX_A, {
         settlementId: settlement.id,
-        startDate: '2026-06-01',
-        endDate: '2026-06-30',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
       }),
     ).rejects.toThrow(ConflictException)
   })
@@ -231,8 +229,8 @@ describe('[finance-archival] archive — 反例与边界', () => {
     await expect(
       archivalService.archive(CTX_A, {
         settlementId: 'nonexistent-settlement',
-        startDate: '2026-06-01',
-        endDate: '2026-06-30',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
       }),
     ).rejects.toThrow()
   })
@@ -475,7 +473,6 @@ describe('[finance-archival] 边界场景', () => {
       storeId: CTX_A.storeId,
       startDate: '2026-01-01',
       endDate: '2026-12-31',
-      description: 'Full year',
     })
     const confirmed = await financeService.confirmSettlementResolved(settlement.id, CTX_A)
 

@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('next/link', () => ({
   default: ({ children, href, style }: { children: React.ReactNode; href?: string; style?: React.CSSProperties }) => (
