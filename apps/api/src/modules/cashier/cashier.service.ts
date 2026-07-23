@@ -7,6 +7,7 @@ import { CACHE_SERVICE, type CacheService } from '../../infrastructure/cache/cac
 import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
+import { MemberLevel } from '../member/member.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { seedMembers } from './cashier.seed'
 import type { CashierPaymentCallbackDto, CreateCashierOrderDto, CreateCashierPaymentDto } from './cashier.dto'
@@ -192,7 +193,7 @@ export class CashierService {
         // 直接修改内存中的 profile 引用以补全字段
         profile.mobile = s.phone
         profile.points = s.points
-        profile.level = s.tier as string
+        profile.level = this.normalizeSeedTier(s.tier)
       } catch {
         // 已存在则跳过
       }
@@ -212,6 +213,21 @@ export class CashierService {
       throw new Error(`Member ${memberId} does not belong to tenant ${tenantContext.tenantId}`)
     }
     return member
+  }
+
+  private normalizeSeedTier(tier: string): MemberLevel {
+    switch (tier.toLowerCase()) {
+      case 'silver':
+        return MemberLevel.Silver
+      case 'gold':
+        return MemberLevel.Gold
+      case 'platinum':
+        return MemberLevel.Platinum
+      case 'diamond':
+        return MemberLevel.Diamond
+      default:
+        return MemberLevel.Bronze
+    }
   }
 
   private async publishEvent(eventName: string, payload: Record<string, unknown>) {

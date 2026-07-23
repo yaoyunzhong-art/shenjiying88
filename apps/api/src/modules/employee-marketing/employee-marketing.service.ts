@@ -299,7 +299,7 @@ export class EmployeeMarketingService {
     const id = `kpi-${randomBytes(8).toString('hex')}`;
     const config: KpiConfig = {
       id,
-      positionType: dto.positionType as any,
+      positionType: dto.positionType as PositionType,
       metricName: dto.metricName,
       target: dto.target,
       weight: dto.weight,

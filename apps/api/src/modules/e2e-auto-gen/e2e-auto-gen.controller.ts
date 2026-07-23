@@ -70,7 +70,7 @@ export class E2EAutoGenController {
    */
   @Post('configs')
   createConfig(@Body() body: CreateConfigRequestDto) {
-    return (this.e2eAutoGenService as any).createConfig(body)
+    return (this.e2eAutoGenService as Record<string, unknown>).createConfig(body) as object
   }
 
   /**

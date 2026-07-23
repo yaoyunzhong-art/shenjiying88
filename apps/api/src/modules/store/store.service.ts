@@ -234,8 +234,8 @@ export class StoreService {
     const sortBy = query.sortBy ?? 'createdAt'
     const sortOrder = query.sortOrder ?? 'desc'
     items.sort((a, b) => {
-      const aVal = (a as any)[sortBy]
-      const bVal = (b as any)[sortBy]
+      const aVal = (a as Record<string, unknown>)[sortBy]
+      const bVal = (b as Record<string, unknown>)[sortBy]
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         return sortOrder === 'asc'
           ? aVal.localeCompare(bVal)

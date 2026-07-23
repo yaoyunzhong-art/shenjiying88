@@ -109,7 +109,7 @@ export class InventoryPurchaseController {
       offset?: number
     } = {}
   ) {
-    return this.purchaseService.listPurchaseOrders(tenantContext, query as any)
+    return this.purchaseService.listPurchaseOrders(tenantContext, query as Record<string, unknown>)
   }
 
   /**
@@ -280,8 +280,9 @@ export class InventoryPurchaseController {
       purchaseOrderId: orderId,
       ...body,
       operatorId: resolveActorId(actorContext, body.operatorId)
-    } as any
-    return this.orderService.receiveWithHistory(orderId, tenantContext, receiveInput)
+    }
+    const input = receiveInput as Record<string, unknown>
+    return this.orderService.receiveWithHistory(orderId, tenantContext, input)
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -384,7 +385,7 @@ export class InventoryPurchaseController {
     return this.purchaseService.createReturn(tenantContext, {
       ...body,
       appliedBy: resolveActorName(actorContext, body.appliedBy)
-    } as any)
+    })
   }
 
   /**

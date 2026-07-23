@@ -302,6 +302,7 @@ describe('SnapshotService', () => {
       contextWindow: 8192,
       temperature: 0.7,
       maxTokens: 2048,
+      customHeaders: null,
       isCurrent: true,
       createdBy: 'user-1',
       createdAt: '2026-07-20T10:00:00Z',

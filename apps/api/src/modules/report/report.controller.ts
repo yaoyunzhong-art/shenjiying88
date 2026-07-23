@@ -48,7 +48,7 @@ export class ReportController {
     @Param('metric') metric: string,
     @Param('dimension') dimension: string,
   ): { metric: string; dimension: string; totals: Record<string, number> } {
-    const totals = this.service.aggregateBy(metric as any, dimension)
+    const totals = this.service.aggregateBy(metric as string, dimension)
     return { metric, dimension, totals: Object.fromEntries(totals) }
   }
 

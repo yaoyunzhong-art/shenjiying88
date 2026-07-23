@@ -155,8 +155,8 @@ export class MetricsController {
     params?: Record<string, number | string>; description?: string; autoRevertMs?: number
   }) {
     return this.observability.startChaosExperiment({
-      type: body.type as any,
-      scope: body.scope as any,
+      type: body.type as string,
+      scope: body.scope as string,
       target: body.target,
       params: body.params,
       description: body.description,

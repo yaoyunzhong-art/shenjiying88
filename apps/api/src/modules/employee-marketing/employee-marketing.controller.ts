@@ -181,7 +181,7 @@ export class EmployeeMarketingController {
 
   @Post('kol/register')
   registerKol(@Body() body: { name: string; level: string; followerCount: number; platforms: string[] }) {
-    return this.svc.registerKol(body as any);
+    return this.svc.registerKol(body as Record<string, unknown>);
   }
 
   @Post('kol/approve/:id')

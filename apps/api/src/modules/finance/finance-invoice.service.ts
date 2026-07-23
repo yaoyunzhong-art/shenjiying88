@@ -216,12 +216,12 @@ export class FinanceInvoiceService {
 
     const [items, total] = await Promise.all([
       this.prisma!.invoiceV2.findMany({
-        where: where as any,
-        orderBy: { createdAt: 'desc' },
+        where: where as Record<string, unknown>,
+        orderBy: { createdAt: 'desc' } as const,
         take: limit,
         skip: offset,
       }),
-      this.prisma!.invoiceV2.count({ where: where as any }),
+      this.prisma!.invoiceV2.count({ where: where as Record<string, unknown> }),
     ])
 
     return {

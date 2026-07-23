@@ -70,7 +70,7 @@ export class TenantQuotaController {
     // 如果有额外覆盖字段,应用 override
     const hasOverrides = Object.keys(overrides).length > 0
     if (hasOverrides) {
-      const quota = this.tenantQuotaService.overrideQuota(id, overrides as Partial<Omit<import('./tenant-quota.service').TenantQuota, 'tenantId' | 'updatedAt'>>)
+      const quota = this.tenantQuotaService.overrideQuota(id, overrides as Partial<Omit<TenantQuota, 'tenantId' | 'updatedAt'>>)
       return { data: quota }
     }
 

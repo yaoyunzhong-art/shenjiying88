@@ -19,6 +19,7 @@ import type {
   ReconciliationReport,
   DiffRecord,
   MatchResult,
+  MatchKeyType,
   DiffKind,
   ReconciliationSummary,
   DailyReconciliationReport,
@@ -580,7 +581,7 @@ export class FinanceReconciliationDbService {
       totalDiffCents: record.totalDiffCents,
       diffs,
       matches,
-      matchKeyType: record.matchKeyType as any,
+      matchKeyType: record.matchKeyType as MatchKeyType,
       generatedAt: record.generatedAt instanceof Date
         ? record.generatedAt.toISOString()
         : record.generatedAt,

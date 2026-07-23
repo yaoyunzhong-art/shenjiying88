@@ -172,7 +172,7 @@ export class SwaggerGenService {
 
         if (endpoint.requestBody) {
           item.request = {
-            ...(item.request as any),
+            ...(item.request as Record<string, unknown>),
             body: {
               mode: 'raw',
               raw: JSON.stringify(endpoint.requestBody.example || endpoint.requestBody.schema, null, 2),
@@ -183,7 +183,7 @@ export class SwaggerGenService {
         if (endpoint.responses?.length) {
           const response = endpoint.responses[0]
           item.request = {
-            ...(item.request as any),
+            ...(item.request as Record<string, unknown>),
             response: [{
               name: response.description,
               status: String(response.statusCode),
