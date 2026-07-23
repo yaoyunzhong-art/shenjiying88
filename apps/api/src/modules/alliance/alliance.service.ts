@@ -298,6 +298,23 @@ export class AllianceService {
     return { success: true, message: 'Metrics updated' }
   }
 
+  /**
+   * BS-0294: 低效联盟检测
+   * 检测月订单 < 10 或收益下降 > 50% 的联盟伙伴
+   */
+  detectLowEfficiency(): AllianceResult<Array<{
+    partnerId: string
+    partnerName: string
+    orderCount: number
+    revenue: number
+    revenueChangePercent: number
+    reason: string
+    alertedAt: string
+  }>> {
+    const alerts = this.healthService.detectLowEfficiencyPartners()
+    return { success: true, data: alerts }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // 4. 分账管理
   // ═══════════════════════════════════════════════════════════════

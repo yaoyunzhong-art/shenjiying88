@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards, HttpException, HttpStatus } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -100,5 +100,20 @@ export class QueueController {
       query.resourceId,
       tenantContext.tenantId
     )
+  }
+
+  /**
+   * BS-0295: GET /queue/capacity
+   * 获取系统容量/负载状态，取号时检测是否繁忙
+   */
+  @Get('capacity')
+  getCapacity(
+    @TenantContext() tenantContext: RequestTenantContext,
+  ) {
+    const status = this.queueService.getCapacityStatus(tenantContext.tenantId)
+    if (status.isBusy) {
+      throw new HttpException(status, HttpStatus.SERVICE_UNAVAILABLE)
+    }
+    return status
   }
 }

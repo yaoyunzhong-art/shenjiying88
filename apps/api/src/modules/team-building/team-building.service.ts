@@ -379,17 +379,25 @@ export class TeamBuildingService implements OnModuleInit {
 
     scored.sort((a, b) => b.score - a.score)
 
-    return scored.map((s) => ({
-      planId: s.plan.id,
-      name: s.plan.name,
-      type: s.plan.type,
-      location: s.plan.location,
-      budget: s.plan.budget,
-      score: s.score,
-      equipmentCheck: { passed: true, items: [], totalCapacityRequired: 0, totalCapacityAvailable: 0 },
-      reason: this.buildRecommendReason(s.plan, s.score),
-      recommended: s.score >= 50,
-    }))
+    const results = scored.map((s) => {
+      // BS-0297: 生成AI建议备注
+      const aiSuggestion = this.buildAiSuggestion(s.plan, s.score, req)
+
+      return {
+        planId: s.plan.id,
+        name: s.plan.name,
+        type: s.plan.type,
+        location: s.plan.location,
+        budget: s.plan.budget,
+        score: s.score,
+        equipmentCheck: { passed: true, items: [], totalCapacityRequired: 0, totalCapacityAvailable: 0 },
+        reason: this.buildRecommendReason(s.plan, s.score),
+        recommended: s.score >= 50,
+        aiSuggestion,
+      }
+    })
+
+    return results
   }
 
   private buildRecommendReason(plan: TeamBuildingPlan, score: number): string {
@@ -398,6 +406,48 @@ export class TeamBuildingService implements OnModuleInit {
     if (score >= 60) return `推荐选择！${label}方案与需求高度契合`
     if (score >= 40) return `可以考虑，${label}方案基本满足需求`
     return `可作参考，${label}方案与需求略有偏差`
+  }
+
+  /**
+   * BS-0297: 构建AI建议备注
+   * 基于方案匹配度、设备校验、参与人数给出优化建议
+   */
+  private buildAiSuggestion(plan: TeamBuildingPlan, score: number, req: RecommendRequest): string {
+    const suggestions: string[] = []
+
+    // 人数差异建议
+    const diff = Math.abs(plan.expectedParticipants - req.participants)
+    if (diff > 0) {
+      if (req.participants > plan.expectedParticipants) {
+        suggestions.push(`建议参与人数(${req.participants}人)超出方案设计上限(${plan.expectedParticipants}人)，可分批或调整方案`)
+      } else if (diff >= Math.round(plan.expectedParticipants * 0.5)) {
+        suggestions.push(`参与人数(${req.participants}人)较少，可合并团队或选择小型方案`)
+      }
+    }
+
+    // 预算建议
+    const budgetRatio = req.budget / plan.budget
+    if (budgetRatio < 0.5) {
+      suggestions.push(`预算(${req.budget}分)偏低，建议适当增加预算或选择更经济的方案`)
+    } else if (budgetRatio > 2.0) {
+      suggestions.push(`预算充裕，可考虑升级为${plan.type === 'outdoor' ? '两天一夜' : '高端'}版本`)
+    }
+
+    // 季节建议
+    if (plan.recommendedSeason && plan.recommendedSeason !== '全年') {
+      suggestions.push(`推荐${plan.recommendedSeason}出行，体验更佳`)
+    }
+
+    // 类型偏好建议
+    if (req.preferredType && plan.type !== req.preferredType) {
+      suggestions.push(`您偏好的${TYPE_LABELS[req.preferredType]}类型有更匹配的方案，可重新筛选`)
+    }
+
+    if (suggestions.length === 0) {
+      return '方案匹配度良好，无需额外调整'
+    }
+
+    return suggestions.join('；')
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -637,6 +687,9 @@ export class TeamBuildingService implements OnModuleInit {
 
     const avgSpend = Math.round(event.totalSpend / event.actualParticipants)
 
+    // BS-0298: 查找上次团建数据做进步对比
+    const improvement = this.buildImprovement(event, tenantId)
+
     const report: TeamBuildingReport = {
       id: `rpt-${randomUUID().slice(0, 8)}`,
       eventId,
@@ -660,11 +713,61 @@ export class TeamBuildingService implements OnModuleInit {
         usageRate: 0.85,
       })),
       crmSyncStatus: 'pending',
+      improvement,
       createdAt: new Date().toISOString(),
     }
 
     reportStore.set(report.id, report)
     return report
+  }
+
+  /**
+   * BS-0298: 构建较上次进步维度
+   * 对比上次已完成活动，计算参与人数/满意度变化
+   */
+  buildImprovement(event: TeamBuildingEvent, tenantId: string): import('./team-building.entity').ReportImprovement | undefined {
+    // 查找该租户最近一次已完成且不是当前event的活动
+    const allCompleted = Array.from(eventStore.values())
+      .filter((e) => e.tenantId === tenantId && e.status === 'completed' && e.id !== event.id)
+      .filter((e) => e.actualParticipants != null && e.avgSatisfaction != null)
+      .sort((a, b) => b.eventDate.localeCompare(a.eventDate))
+
+    const previous = allCompleted[0]
+    if (!previous) return undefined
+
+    const prevParticipants = previous.actualParticipants!
+    const curParticipants = event.actualParticipants!
+    const participantChangePercent =
+      prevParticipants > 0
+        ? Math.round(((curParticipants - prevParticipants) / prevParticipants) * 100)
+        : 0
+
+    const prevSatisfaction = previous.avgSatisfaction!
+    const curSatisfaction = event.avgSatisfaction!
+    const satisfactionChange = Math.round((curSatisfaction - prevSatisfaction) * 100) / 100
+
+    let summary: string
+    if (participantChangePercent > 0 && satisfactionChange > 0) {
+      summary = '双项提升！参与人数和满意度均较上次活动进步'
+    } else if (participantChangePercent > 0) {
+      summary = '参与人数增加，建议保持活动质量以提升满意度'
+    } else if (satisfactionChange > 0) {
+      summary = '满意度提升，建议加大宣传力度吸引更多人参与'
+    } else if (participantChangePercent < 0 && satisfactionChange < 0) {
+      summary = '需关注！参与人数和满意度均较上次下降'
+    } else {
+      summary = '与上次活动相比变化不大，可尝试新方案突破'
+    }
+
+    return {
+      previousParticipants: prevParticipants,
+      currentParticipants: curParticipants,
+      participantChangePercent,
+      previousSatisfaction: prevSatisfaction,
+      currentSatisfaction: curSatisfaction,
+      satisfactionChange,
+      summary,
+    }
   }
 
   getReport(id: string, tenantId: string): TeamBuildingReport {

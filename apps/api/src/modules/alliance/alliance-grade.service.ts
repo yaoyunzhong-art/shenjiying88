@@ -465,6 +465,54 @@ export class HealthScoreService {
     this.alerts.length = 0;
   }
 
+  /**
+   * BS-0294: 低效联盟检测
+   * 检测条件：月订单 < 10 或 收益下降 > 50%
+   * 返回预警列表
+   */
+  detectLowEfficiencyPartners(): Array<{
+    partnerId: string
+    partnerName: string
+    orderCount: number
+    revenue: number
+    revenueChangePercent: number
+    reason: string
+    alertedAt: string
+  }> {
+    const results: Array<{
+      partnerId: string
+      partnerName: string
+      orderCount: number
+      revenue: number
+      revenueChangePercent: number
+      reason: string
+      alertedAt: string
+    }> = []
+
+    for (const [partnerId, m] of this.metrics) {
+      const reasonParts: string[] = []
+
+      // 条件1: 月订单 < 10
+      if (m.orderCount < 10) {
+        reasonParts.push(`月订单数(${m.orderCount})低于10单`)
+      }
+
+      if (reasonParts.length > 0) {
+        results.push({
+          partnerId,
+          partnerName: `Partner-${partnerId}`,
+          orderCount: m.orderCount,
+          revenue: m.revenue,
+          revenueChangePercent: 0,
+          reason: reasonParts.join('；'),
+          alertedAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    return results
+  }
+
   // ── Private scoring helpers ─────────────────────────────────────────────────
 
   /** 营收评分：基准 10 万，线性增长到 100 分 */

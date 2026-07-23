@@ -33,6 +33,8 @@ export interface RecommendResult {
   location: string
   /** 预算（分） */
   budget: number
+  /** AI方案备注 */
+  aiSuggestion?: string
   /** 匹配得分 0~100 */
   score: number
   /** 设备清单校验结果 */
@@ -41,6 +43,11 @@ export interface RecommendResult {
   reason: string
   /** 是否推荐 */
   recommended: boolean
+  /**
+   * BS-0297: AI方案设备校验补充
+   * AI 建议备注字段，如设备调整建议、优化提示等
+   */
+  aiSuggestion?: string
 }
 
 /**
@@ -123,6 +130,26 @@ export interface LockedEquipment {
 }
 
 /**
+ * BS-0298: 进步对比数据
+ */
+export interface ReportImprovement {
+  /** 上期参与人数 */
+  previousParticipants: number
+  /** 本期参与人数 */
+  currentParticipants: number
+  /** 参与人数变化比例 */
+  participantChangePercent: number
+  /** 上期满意度 */
+  previousSatisfaction: number
+  /** 本期满意度 */
+  currentSatisfaction: number
+  /** 满意度变化值 */
+  satisfactionChange: number
+  /** 综合评价 */
+  summary: string
+}
+
+/**
  * 团建报告
  */
 export interface TeamBuildingReport {
@@ -147,6 +174,8 @@ export interface TeamBuildingReport {
   crmSyncStatus: 'pending' | 'synced' | 'failed'
   /** 备注 */
   remark?: string
+  /** BS-0298: 较上次进步维度 */
+  improvement?: ReportImprovement
   createdAt: string
 }
 

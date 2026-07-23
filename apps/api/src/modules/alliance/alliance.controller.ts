@@ -242,6 +242,15 @@ export class AllianceController {
   }
 
   /**
+   * BS-0294: 低效联盟预警
+   */
+  @Get('health/low-efficiency')
+  getLowEfficiency() {
+    const alerts = this.healthService.detectLowEfficiencyPartners()
+    return { success: true, data: alerts, total: alerts.length }
+  }
+
+  /**
    * 设置指标（测试辅助）
    */
   @Post('health/:partnerId/metrics')
