@@ -230,13 +230,12 @@ export class I18nGeoService {
 
   getLocaleForRegion(regionName: string): string {
     for (const [, raw] of Object.entries(REGION_CONFIGS)) {
-      const config = raw as Record<string, unknown>
       if (
-        config.regionCode === regionName ||
-        config.regionName === regionName ||
-        config.regionNameEn === regionName
+        raw.regionCode === regionName ||
+        raw.regionName === regionName ||
+        raw.regionNameEn === regionName
       ) {
-        return config.language
+        return raw.language
       }
     }
     return 'zh-CN'
