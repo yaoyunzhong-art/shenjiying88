@@ -166,6 +166,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
 import { NoticeModule } from './modules/notice/notice.module';
 import { TerminalModule } from './modules/terminal/terminal.module';
+import { OpenPlatformModule } from './modules/open-platform/open-platform.module';
 
 @Module({
   imports: [
@@ -344,6 +345,7 @@ import { TerminalModule } from './modules/terminal/terminal.module';
     ProbationTransferModule,
     NoticeModule,
     TerminalModule,
+    OpenPlatformModule,
   ],
   providers: [
     RequestGovernanceService,
