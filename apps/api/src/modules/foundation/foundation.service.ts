@@ -1813,21 +1813,29 @@ export class FoundationService {
       return new Map<string, FoundationAlertTimelineEntry>()
     }
 
-    const records = await this.prisma.auditLog.findMany({
-      where: {
-        tenantId,
-        resourceType: 'foundation-alert',
-        resourceId: { in: codes },
-        action: {
-          in: [
-            'foundation.operations.alerts.ack',
-            'foundation.operations.alerts.mute',
-            'foundation.operations.alerts.unmute'
-          ]
-        }
-      },
-      orderBy: [{ createdAt: 'desc' }]
-    })
+    let records: Awaited<ReturnType<PrismaService['auditLog']['findMany']>>
+    try {
+      records = await this.prisma.auditLog.findMany({
+        where: {
+          tenantId,
+          resourceType: 'foundation-alert',
+          resourceId: { in: codes },
+          action: {
+            in: [
+              'foundation.operations.alerts.ack',
+              'foundation.operations.alerts.mute',
+              'foundation.operations.alerts.unmute'
+            ]
+          }
+        },
+        orderBy: [{ createdAt: 'desc' }]
+      })
+    } catch (error) {
+      if (!this.shouldUseFoundationReadFallback(error)) {
+        throw error
+      }
+      records = []
+    }
 
     const latestMap = new Map<string, FoundationAlertTimelineEntry>()
     for (const record of records as Array<{

@@ -329,6 +329,22 @@ describe('Foundation - Simulator', () => {
       assert.ok(result.summary)
       assert.ok(Array.isArray(result.alerts))
     })
+
+    it('falls back when alert audit log table is unavailable', async () => {
+      ;(service as unknown as {
+        prisma: {
+          auditLog: {
+            findMany: () => Promise<never>
+          }
+        }
+      }).prisma.auditLog.findMany = async () => {
+        throw Object.assign(new Error('missing table'), { code: 'P2021' })
+      }
+
+      const result = await service.getOperationsOverview({ tenantId: 't-sim', brandId: 'b-sim' })
+      assert.ok(result.summary)
+      assert.ok(Array.isArray(result.alerts))
+    })
   })
 
   // ─── Alert Drilldown ───

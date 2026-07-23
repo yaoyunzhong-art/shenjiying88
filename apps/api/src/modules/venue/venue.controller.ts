@@ -53,8 +53,8 @@ export class VenueController {
     @Query('search') search?: string,
   ) {
     return this.venueService.list({
-      type: type as any,
-      status: status as any,
+      type: type as VenueType,
+      status: status as VenueStatus,
       search,
     })
   }
@@ -146,8 +146,8 @@ export class VenueController {
       venueId,
       userId,
       date,
-      status: status as any,
-      shift: shift as any,
+      status: status as VenueStatus,
+      shift: shift as ShiftType,
     })
   }
 

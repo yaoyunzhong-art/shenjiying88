@@ -53,7 +53,7 @@ export class FeedbackController {
     attachments?: string[]
     rating?: number
   }): Feedback {
-    return this.service.create(body as any)
+    return this.service.create(body as CreateFeedbackDto)
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -76,10 +76,10 @@ export class FeedbackController {
     pageSize?: string
   }): FeedbackPage {
     const q: FeedbackQuery = {}
-    if (query.type) q.type = query.type as any
-    if (query.status) q.status = query.status as any
-    if (query.severity) q.severity = query.severity as any
-    if (query.source) q.source = query.source as any
+    if (query.type) q.type = query.type
+    if (query.status) q.status = query.status
+    if (query.severity) q.severity = query.severity
+    if (query.source) q.source = query.source
     if (query.storeId) q.storeId = query.storeId
     if (query.userId) q.userId = query.userId
     if (query.tags) {
@@ -149,7 +149,7 @@ export class FeedbackController {
       repliedByName?: string
     },
   ): Feedback {
-    return this.service.update(id, body as any)
+    return this.service.update(id, body as UpdateFeedbackDto)
   }
 
   // ══════════════════════════════════════════════════════════════

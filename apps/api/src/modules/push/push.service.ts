@@ -245,12 +245,12 @@ export class APNsService {
         const entity = PushRecordEntity.fromContract({
           id: record.id,
           deviceToken: record.deviceToken,
-          platform: 'iOS' as any,
+          platform: 'iOS',
           payload: record.payload,
-          priority: record.priority === 'high' ? ('HIGH' as any) : ('NORMAL' as any),
-          status: record.status === 'sent' ? ('SENT' as any)
-            : record.status === 'failed' ? ('FAILED' as any)
-            : ('REVOKED' as any),
+          priority: record.priority === 'high' ? 'HIGH' : 'NORMAL',
+          status: record.status === 'sent' ? 'SENT'
+            : record.status === 'failed' ? 'FAILED'
+            : 'REVOKED',
           sentAt: record.sentAt,
         })
         await this.pushRecordRepo.save(entity)
