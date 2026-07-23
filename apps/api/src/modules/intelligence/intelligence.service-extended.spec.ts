@@ -99,7 +99,6 @@ describe('IntelligenceService — 可行性报告高级', () => {
     const shanghai = svc.generateFeasibilityReport('上海', '徐汇', 300)
     const unknown = svc.generateFeasibilityReport('未知城市', '未知区域', 300)
     expect(shanghai.competitorDensity).not.toBe(unknown.competitorDensity)
-    expect(unknown.competitorDensity).toBe(1) // default: count=1, density = min(1/10, 1)*100 = 10... wait 1/10=0.1 -> min(0.1,1)=0.1 -> 0.1*100=10
     // Actually density = Math.min(density.count / 10, 1) = min(0.1, 1) = 0.1, *100 = 10
     expect(unknown.competitorDensity).toBe(10)
   })

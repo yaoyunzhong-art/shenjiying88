@@ -150,7 +150,6 @@ export class IntelligenceController {
       city: body.city.trim(),
       storeType: body.storeType || 'standard',
       tier: body.tier || '标准',
-      district: body.district?.trim() || '',
     })
   }
 
@@ -167,7 +166,6 @@ export class IntelligenceController {
       area: body.area,
       tier: body.tier,
       city: body.city.trim(),
-      district: body.district?.trim() || '',
       style: body.style,
     })
   }
