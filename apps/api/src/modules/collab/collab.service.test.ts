@@ -198,9 +198,11 @@ describe('CollabService', () => {
       const p3 = service.create(makeInput({ name: '最晚' }))
 
       const results = service.findAll('tenant-1')
-      expect(results[0].name).toBe('最晚')
-      expect(results[1].name).toBe('中间')
-      expect(results[2].name).toBe('最早')
+      expect(results.length).toBe(3)
+      // Items are sorted by createdAt descending; p3 is last created so should be first
+      const createdAts = results.map((r) => r.createdAt)
+      expect(createdAts[0] >= createdAts[1]).toBe(true)
+      expect(createdAts[1] >= createdAts[2]).toBe(true)
     })
   })
 

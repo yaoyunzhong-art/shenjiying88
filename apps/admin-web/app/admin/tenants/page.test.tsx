@@ -7,7 +7,7 @@
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import React from 'react'
-import { render, screen, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -82,12 +82,12 @@ describe('AdminTenantsQuotaPage — 正例', () => {
     assert.ok(screen.getByText('📊 概况'))
   })
 
-  it('搜索输入框显示', async () => {
+  it('搜索输入框显示(通过 data-mock)', async () => {
     const mod = await import('./page')
     render(React.createElement(mod.default))
     await waitFor(() => {
-      const body = document.body.textContent || ''
-      assert.ok(body.includes('搜索租户'), '应显示搜索框')
+      const inputs = document.querySelectorAll('[data-mock="SearchFilterInput"]')
+      assert.ok(inputs.length >= 1, '应显示搜索输入框')
     }, { timeout: 500 })
   })
 
@@ -118,25 +118,44 @@ describe('AdminTenantsQuotaPage — 正例', () => {
     }, { timeout: 500 })
   })
 
-  it('渲染风险预警标题', async () => {
+  it('渲染风险预警标题(点击概况Tab后)', async () => {
     const mod = await import('./page')
     render(React.createElement(mod.default))
-    await waitFor(() => screen.getByText('⚠ 风险预警'), { timeout: 500 })
-    assert.ok(screen.getByText('⚠ 风险预警'))
+    // 切换到概况 Tab
+    await waitFor(() => {
+      const tabs = document.querySelectorAll('[data-tab-key="overview"]')
+      if (tabs.length > 0) tabs[0].click()
+    }, { timeout: 500 })
+    await waitFor(() => {
+      const body = document.body.textContent || ''
+      assert.ok(body.includes('风险预警'), '应显示风险预警')
+    }, { timeout: 500 })
   })
 
-  it('渲染版本分布标题', async () => {
+  it('渲染版本分布标题(点击概况Tab后)', async () => {
     const mod = await import('./page')
     render(React.createElement(mod.default))
-    await waitFor(() => screen.getByText('版本配额分布'), { timeout: 500 })
-    assert.ok(screen.getByText('版本配额分布'))
+    await waitFor(() => {
+      const tabs = document.querySelectorAll('[data-tab-key="overview"]')
+      if (tabs.length > 0) tabs[0].click()
+    }, { timeout: 500 })
+    await waitFor(() => {
+      const body = document.body.textContent || ''
+      assert.ok(body.includes('版本配额分布'), '应显示版本分布')
+    }, { timeout: 500 })
   })
 
-  it('渲染区域配额概况标题', async () => {
+  it('渲染区域配额概况标题(点击概况Tab后)', async () => {
     const mod = await import('./page')
     render(React.createElement(mod.default))
-    await waitFor(() => screen.getByText('区域配额概况'), { timeout: 500 })
-    assert.ok(screen.getByText('区域配额概况'))
+    await waitFor(() => {
+      const tabs = document.querySelectorAll('[data-tab-key="overview"]')
+      if (tabs.length > 0) tabs[0].click()
+    }, { timeout: 500 })
+    await waitFor(() => {
+      const body = document.body.textContent || ''
+      assert.ok(body.includes('区域配额概况'), '应显示区域概况')
+    }, { timeout: 500 })
   })
 })
 
@@ -205,9 +224,13 @@ describe('AdminTenantsQuotaPage — 边界', () => {
     }, { timeout: 500 })
   })
 
-  it('渲染警告卡片 - 店铺超限/紧张', async () => {
+  it('渲染警告卡片 - 店铺超限/紧张(点击概况Tab后)', async () => {
     const mod = await import('./page')
     render(React.createElement(mod.default))
+    await waitFor(() => {
+      const tabs = document.querySelectorAll('[data-tab-key="overview"]')
+      if (tabs.length > 0) tabs[0].click()
+    }, { timeout: 500 })
     await waitFor(() => {
       const body = document.body.textContent || ''
       assert.ok(body.includes('店铺超限') || body.includes('用户超限'), '应显示超限明细')

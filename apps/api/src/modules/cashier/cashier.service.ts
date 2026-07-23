@@ -24,10 +24,11 @@ import {
   type CashierPayment
 } from './cashier.entity'
 
+/** 模块级单例 MemoryStore（向后兼容：保持与旧 module-level Maps 相同的行为） */
+const globalMemoryStore = new CashierMemoryStore()
+
 @Injectable()
 export class CashierService {
-  private readonly memoryStore: CashierMemoryStore
-
   constructor(
     @Inject(MemberService) readonly memberService: MemberService,
     @Optional() @Inject(LoyaltyService)
@@ -45,7 +46,6 @@ export class CashierService {
     @Optional() @Inject('CASHIER_STORE')
     private readonly store?: ICashierStore
   ) {
-    this.memoryStore = new CashierMemoryStore()
     this.seedIfNeeded()
   }
 

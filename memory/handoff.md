@@ -108,3 +108,61 @@
 ## 9. 给龙虾哥的一句话执行令
 
 - 从现在起，神机营只按标准流程推进：先稳生产，再收唯一主链，不再多线乱战。
+
+---
+
+## 10. 2026-07-23 最新协作口径
+
+- 大飞哥负责监督、拍板和验收。
+- 龙虾哥负责动脑、动嘴、给策略、做评审、出建议。
+- 树哥负责执行、落代码、跑联调、补证据、做收口。
+- 后续所有任务默认按这套三方分工执行，除非大飞哥临时改口。
+
+## 11. 当前外部依赖约束
+
+- `LYT 电玩城` 和 `数字运动潮玩馆管理系统` 的真实接口文件暂时还没有拿到。
+- 因此所有 `LYT` 相关开发当前只能按以下原则推进：
+  - 先做本地适配器边界、配置模型、容错和降级能力。
+  - 不得臆造真实线上协议细节并当成已确认事实。
+  - 需要真实联调的接口，统一标记为 `blocked by missing LYT api spec`。
+  - 一旦接口文件到位，优先补齐：字段映射、签名方式、错误码、Webhook、轮询/回调语义。
+
+## 12. 当前最高规划基线
+
+- 当前项目最高蓝图继续以 `《规划6-8_副本.md.txt》V5.1` 为准。
+- 已完成的对照拆解与开发计划，统一按以下文档执行：
+  - `/Users/yaoyunzhong/Desktop/shenjiying/规划6-8_副本.md.txt`
+  - `docs/operations/r18-requirement-dev-mapping.md`
+  - `docs/6-8-compliance-rectification-list.md`
+  - `docs/6-8-foundation-compliance-charter.md`
+  - `docs/operations/r11-architecture-hard-constraints.md`
+  - `docs/operations/r12-middleware-engine-specs.md`
+  - `docs/operations/r13-business-app-requirements.md`
+  - `docs/operations/r14-cexperience-marketing-hard-constraints.md`
+  - `docs/operations/r15-social-growth-eco-governance.md`
+  - `docs/operations/r16-optimization-matrix.md`
+
+## 13. 已同步给龙虾哥的最新规划口径
+
+- 《规划6-8》不是“参考文档”，而是当前开发总基线。
+- 现阶段不能宣称“全部功能已开发完成”，只能宣称：
+  - 交易/订单/H5 支付/财务主链已明显前进。
+  - 对 `V5.1` 全量功能清单仍有大量条目未完成。
+- 最新开发计划采用“先底座和 P0，后 P1/P2，最后 SIM/OPT 全量验收”的单主线方案。
+- 当前优先级顺序：
+  - 先补底座和强依赖。
+  - 先收 `P0` 和强合规项。
+  - 再补业务、中台、增长引擎。
+  - 最后清零 `SIM-01 ~ SIM-20`、`OPT-01 ~ OPT-45`。
+
+## 14. 对龙虾哥的当前执行提醒
+
+- 后续在任何涉及 `LYT` 的方案建议里，必须显式区分：
+  - 已确认事实
+  - 本地假设
+  - 被接口文件阻塞项
+- 后续在任何排期建议里，必须优先引用 `《规划6-8_副本.md.txt》` 与 `r18` 映射，不再以局部模块完成度代替全局完成度。
+- 后续对大飞哥的口径必须保持一致：
+  - 开发由大飞哥监督
+  - 龙虾哥出脑力和策略
+  - 树哥负责实际执行落地

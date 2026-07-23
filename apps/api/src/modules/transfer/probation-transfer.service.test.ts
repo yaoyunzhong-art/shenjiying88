@@ -149,11 +149,22 @@ describe('ProbationTransferService', () => {
       expect(service.listTransfers('tenant-1', { employeeId: 'EMP-001' }).length).toBe(1)
     })
 
-    it('按日期范围过滤', () => {
+    it('按 fromDate 过滤（只返回起始日期之后的记录）', () => {
       service.createTransfer(makeTransferInput({ employeeId: 'EMP-001', probationStart: '2026-04-01' }))
       service.createTransfer(makeTransferInput({ employeeId: 'EMP-002', probationStart: '2026-06-01' }))
+      // fromDate: exclude items where probationStart < fromDate
+      // EMP-001: 2026-04-01 < 2026-05-01 → excluded
+      // EMP-002: 2026-06-01 < 2026-05-01 → false → included
       expect(service.listTransfers('tenant-1', { fromDate: '2026-05-01' }).length).toBe(1)
-      expect(service.listTransfers('tenant-1', { toDate: '2026-05-01' }).length).toBe(1)
+    })
+
+    it('按 toDate 过滤（只返回结束日期之前的记录）', () => {
+      service.createTransfer(makeTransferInput({ employeeId: 'EMP-001', probationEnd: '2026-06-30' }))
+      service.createTransfer(makeTransferInput({ employeeId: 'EMP-002', probationEnd: '2026-09-14' }))
+      // toDate: exclude items where probationEnd > toDate
+      // EMP-001: 2026-06-30 > 2026-07-01 → false → included
+      // EMP-002: 2026-09-14 > 2026-07-01 → true → excluded
+      expect(service.listTransfers('tenant-1', { toDate: '2026-07-01' }).length).toBe(1)
     })
   })
 
