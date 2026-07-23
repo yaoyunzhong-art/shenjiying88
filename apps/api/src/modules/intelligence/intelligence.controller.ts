@@ -106,6 +106,7 @@ export class IntelligenceController {
   }
 
   /**
+  /**
    * 场景G: 开业后全周期运营管理方案
    * POST /intelligence/operations-plan
    */
@@ -134,55 +135,42 @@ export class IntelligenceController {
   async dataBaseSummary() {
     return this.svc.getDataBaseSummary()
   }
-
   /**
-   * 场景C: 门店设备选型智能推荐
+   * 场景B: 门店设备选型智能推荐
    * POST /intelligence/device-recommendation
-   * 输入: { budget, area, city, storeType: 'arcade'|'game'|'mixed', tier: '经济'|'标准'|'精装'|'豪华' }
    */
   @Post('device-recommendation')
   async deviceRecommendation(@Body() body: any) {
     if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
     if (!body.area || body.area <= 0) throw new BadRequestException('面积必须大于0')
     if (!body.budget || body.budget <= 0) throw new BadRequestException('预算必须大于0')
-    const validStoreTypes = ['arcade', 'game', 'mixed']
-    if (!body.storeType || !validStoreTypes.includes(body.storeType)) throw new BadRequestException('门店类型无效，可选: arcade/game/mixed')
-    const validTiers = ['经济', '标准', '精装', '豪华']
-    if (!body.tier || !validTiers.includes(body.tier)) throw new BadRequestException('装修档次无效，可选: 经济/标准/精装/豪华')
     return this.svc.deviceRecommendation({
       budget: body.budget,
       area: body.area,
       city: body.city.trim(),
-      storeType: body.storeType,
-      tier: body.tier,
+      storeType: body.storeType || 'standard',
+      tier: body.tier || '标准',
+      district: body.district?.trim() || '',
     })
   }
 
   /**
-   * 场景D: 个性化装修方案建议
+   * 场景C: 个性化装修方案建议
    * POST /intelligence/renovation-plan
-   * 输入: { area, tier, city, style?: '现代'|'工业'|'卡通'|'科技' }
    */
   @Post('renovation-plan')
   async renovationPlan(@Body() body: any) {
     if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
     if (!body.area || body.area <= 0) throw new BadRequestException('面积必须大于0')
-    const validTiers = ['经济', '标准', '精装', '豪华']
-    if (!body.tier || !validTiers.includes(body.tier)) throw new BadRequestException('装修档次无效，可选: 经济/标准/精装/豪华')
-    const validStyles = ['现代', '工业', '卡通', '科技']
-    if (body.style && !validStyles.includes(body.style)) throw new BadRequestException('风格无效，可选: 现代/工业/卡通/科技')
+    if (!body.tier) throw new BadRequestException('档次不能为空（经济/标准/精装/豪华）')
     return this.svc.renovationPlan({
       area: body.area,
       tier: body.tier,
       city: body.city.trim(),
+      district: body.district?.trim() || '',
       style: body.style,
     })
   }
-
-  /**
-   * 场景E: 选址评估增强（已存在）
-   * GET /intelligence/siting-assessment
-   */
 
   /**
    * 场景E: 动态定价策略

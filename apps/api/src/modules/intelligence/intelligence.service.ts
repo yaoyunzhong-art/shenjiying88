@@ -52,6 +52,8 @@ import type {
   DensityLevel,
   PricingStrategyInput,
   PricingStrategyOutput,
+  PriceItem,
+  RevenueImpact,
   PriceProposal,
   CampaignProposal,
   MarketingCampaignInput,
@@ -1149,6 +1151,105 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
     const tierDesc: Record<string, string> = { '经济': '适合社区店或短期试水，控制成本为主', '标准': '性价比最优，适多数商圈投资，兼顾品质与成本', '精装': '适合核心商圈或高端社区，注重品牌形象', '豪华': '适合旗舰店或核心商圈，打造地标级娱乐体验' }
     return `${tierName[tier] || '标准型'}（${tierDesc[tier] || ''}）。${style}风格在${city}市场接受度高。${tier === '豪华' || tier === '精装' ? '建议增设打卡点设计，增强社交传播属性。' : '核心功能优先保障，装饰可后期迭代升级。'}`
   }
+
+// ════════════════════════════════════════════════════════
+// 10. 动态定价策略 (V23 场景E)
+// ════════════════════════════════════════════════════════
+
+/**
+ * 场景E: 动态价格体系搭建
+ * 响应 POST /intelligence/pricing-strategy
+ */
+async pricingStrategy(input: PricingStrategyInput): Promise<PricingStrategyOutput> {
+  const { city, district, scenario, budget, storeTier } = input
+  const density = this.COMPETITOR_DENSITY[`${city}-${district}`] || this.COMPETITOR_DENSITY.default!
+  const stats = this.aiService.getCityPricingStats(city, district)
+  const aiSuggestion = await this.aiService.generatePricingAdvice(city, district, storeTier ?? 'mid')
+
+  const tierFactor = storeTier === 'high' ? 1.25 : storeTier === 'low' ? 0.8 : 1.0
+
+  const priceItems: PriceItem[] = [
+    { name: '单人畅玩票', category: '入场票', suggestedPrice: Math.round(stats.avgPrice * tierFactor), marketAvgPrice: stats.avgPrice, priceElasticity: -1.2, estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500) },
+    { name: '双人畅玩票', category: '入场票', suggestedPrice: Math.round(stats.avgPrice * tierFactor * 1.7), marketAvgPrice: Math.round(stats.avgPrice * 1.8), priceElasticity: -0.9, estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 0.6) },
+    { name: '亲子套票(1大1小)', category: '套票', suggestedPrice: Math.round(stats.avgPrice * tierFactor * 1.4), marketAvgPrice: Math.round(stats.avgPrice * 1.5), priceElasticity: -0.7, estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 0.8) },
+    { name: '月卡会员', category: '会员', suggestedPrice: Math.round(stats.avgPrice * tierFactor * 6), marketAvgPrice: Math.round(stats.avgPrice * 7), priceElasticity: -0.5, estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 1.5) },
+    { name: '季卡会员', category: '会员', suggestedPrice: Math.round(stats.avgPrice * tierFactor * 14), marketAvgPrice: Math.round(stats.avgPrice * 16), priceElasticity: -0.4, estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 2.5) },
+    { name: '充值套餐(充200送60)', category: '充值', suggestedPrice: 200, marketAvgPrice: 200, priceElasticity: -0.3, estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 1.2) },
+  ]
+
+  const scenarioDesc: Record<string, string> = {
+    new_store: `【${city}${district}新店定价】新店期建议渗透定价（低于均价10-15%快速获客）。${aiSuggestion}`,
+    competitor_reaction: `【${city}${district}竞品反应】竞品变价时建议价值捍卫（增值服务应对降价）。${aiSuggestion}`,
+    seasonal: `【${city}${district}季节性调价】旺季溢价15-25%，淡季折扣10-20%。${aiSuggestion}`,
+  }
+  const strategyExplanation = scenarioDesc[scenario] ?? scenarioDesc.new_store
+
+  const baseRevenue = Math.round(stats.avgPrice * 1500 * 30)
+  const estimatedMonthlyRevenue = Math.round(baseRevenue * (scenario === 'new_store' ? 0.85 : scenario === 'seasonal' ? 1.25 : 1.1))
+  const estimatedMonthlyProfit = Math.round(estimatedMonthlyRevenue * 0.32)
+  const expectedGrowthPercent = Math.round(((estimatedMonthlyRevenue - baseRevenue) / baseRevenue) * 100)
+  const revenueImpact: RevenueImpact = {
+    estimatedMonthlyRevenue,
+    estimatedMonthlyProfit,
+    expectedGrowthPercent,
+    paybackImpact: expectedGrowthPercent > 15 ? '积极' : expectedGrowthPercent > 0 ? '正向' : '中性: 新店期以引流为主',
+  }
+
+  return {
+    scenario, city, district,
+    marketContext: { avgMarketPrice: stats.avgPrice, competitorCount: density.count, priceRange: { min: stats.minPrice, max: stats.maxPrice } },
+    priceItems,
+    strategyExplanation,
+    revenueImpact,
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// 11. 精准营销活动方案 (V23 场景F)
+// ════════════════════════════════════════════════════════
+
+/**
+ * 场景F: 6大类活动方案
+ * 响应 POST /intelligence/marketing-campaign
+ */
+marketingCampaign(input: MarketingCampaignInput): MarketingCampaignOutput {
+  const { city, district, season, budget } = input
+  const effectiveBudget = budget ?? 30000
+
+  const campaigns: CampaignProposal[] = [
+    { type: 'douyin_group', name: '抖音团购套餐', description: `在抖音平台推出${city}同城团购套餐，含单人/双人/亲子三档`,
+      pros: ['曝光量巨大', '同城精准推送', '到店核销率高', '适合新店快速打开知名度'],
+      cons: ['利润薄', '依赖内容质量', '同城竞品跟风快'],
+      estimatedEffect: '预计月收入+35-45%，新增月客流500-1000人', applicableScenarios: ['新店开业引流', '淡季拉升客流', '新品上线推广', '节假日促销'], costEstimate: Math.round(effectiveBudget * 0.15) },
+    { type: 'weekend_tournament', name: '周末主题比赛', description: '每周末举办主题赛事（投篮赛/跳舞机PK/赛车竞速）',
+      pros: ['话题性强', '复购率高', '社交分享传播', '场地成本可控'],
+      cons: ['需专人筹备', '奖品成本累加', '效果需积累'],
+      estimatedEffect: '预计周末客流+25%，月收入+18-25%', applicableScenarios: ['运营成熟期', '周末低谷拉升', '会员活跃度提升', '社交裂变增长'], costEstimate: Math.round(effectiveBudget * 0.12) },
+    { type: 'member_day', name: '会员日专属优惠', description: '每月固定日期会员专享半价/双倍积分/限定活动',
+      pros: ['会员粘性强', '口碑效应好', '运营成本低', '用户画像积累'],
+      cons: ['短期收入让利', '需会员基数500+', '新店效果不明显'],
+      estimatedEffect: '预计会员活跃度+25%，月收入+12-18%', applicableScenarios: ['开店6月+门店', '会员数达标', '成熟商圈', '私域运营'], costEstimate: Math.round(effectiveBudget * 0.08) },
+    { type: 'ip_collaboration', name: 'IP联名主题活动', description: '与热门动漫/游戏/影视IP合作，推出联名限定门票+周边+场景布置',
+      pros: ['话题性极强', '客单价提升30-50%', '引跨城粉丝', '品牌调性提升'],
+      cons: ['授权成本高', '筹备周期长', 'IP热度周期风险'],
+      estimatedEffect: '预计活动期间月收入+40%，客单价提升¥30+', applicableScenarios: ['大型门店500㎡+', '核心商圈', '品牌升级', '周年庆'], costEstimate: Math.round(effectiveBudget * 0.4) },
+    { type: 'summer_limited', name: '暑假限定畅玩季', description: '暑期推出不限次畅玩卡¥299、夜场特惠¥49、亲子月卡等活动',
+      pros: ['暑期档流量占全年30%+', '畅玩卡现金流好', '学生客群活跃', '可预售锁客'],
+      cons: ['季节性明显', '畅玩卡限量需把控', '需提前1个月筹备'],
+      estimatedEffect: '预计暑期月收入+40%，畅玩卡销售200-400张', applicableScenarios: ['暑假期间7-8月', '学生客群占比高', '社区型门店', '新店开业3月内'], costEstimate: Math.round(effectiveBudget * 0.2) },
+    { type: 'blindbox_lottery', name: '盲盒抽奖(合规版)', description: '合规盲盒机/集章抽奖/幸运转盘，消费满额抽奖，明示概率和保底机制',
+      pros: ['客单价提升50%+', '复购率提升28%', '参与率65%', '合规风险可控'],
+      cons: ['设备投入8000-15000/台', '奖品成本持续性', '需定期更换奖品'],
+      estimatedEffect: '预计客单价提升50%，月收入+20-30%', applicableScenarios: ['所有门店适用', '存量客户运营', '节假日辅助', '同质化竞争突围'], costEstimate: Math.round(effectiveBudget * 0.1) },
+  ]
+
+  // 按效果推荐最优
+  const effectScore: Record<string, number> = { douyin_group: 40, weekend_tournament: 25, member_day: 18, ip_collaboration: 40, summer_limited: 40, blindbox_lottery: 30 }
+  const sorted = [...campaigns].sort((a, b) => (effectScore[b.type] ?? 0) - (effectScore[a.type] ?? 0))
+  const recommendedCampaign = sorted[0]!
+
+  return { city, district, season: season ?? 'general', budget: effectiveBudget, campaigns, recommendedCampaign }
+}
 
 private buildOptions(category: string, baseOptions: AdviceOption[]): AdviceOption[] {
     const evidences = this.aiService.getDataEvidence(category, baseOptions.length)
