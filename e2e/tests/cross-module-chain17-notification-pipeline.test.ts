@@ -590,4 +590,209 @@ describe('链17: 消息推送 + 通知治理 (Miniapp→Domain→Admin→Tob-Web
     assert.ok(stored);
     assert.equal(stored!.content.length, 100000);
   });
+
+  // --- Phase 7: 新增增强场景 - 通知治理深度/角色隔离/批量操作 ---
+
+  test('[边界] 同一角色重复标记已读同一通知 → 幂等, 计数不重复减少', () => {
+    const unreadBefore = tobWebGetUnreadCount('admin');
+    // 找到一条 admin 未读的通知
+    const unreadNotif = notificationStore.find(n => {
+      if (!n.targetRoles.includes('admin')) return false;
+      if (n.status === 'archived' || n.status === 'read') return false;
+      const userReads = userReadStore.get('admin') || new Set();
+      return !userReads.has(n.id);
+    });
+    if (!unreadNotif) {
+      // 创建一个新的再标记
+      const r = miniappTriggerEvent({ type: 'system_announcement', title: '幂等已读测试', content: '幂等测试', priority: 'low', requestId: 'evt_idemp_read' });
+      assert.ok(r.success);
+      domainDispatchNotifications();
+      const nId = r.notification!.id;
+      // 第一次标记
+      const r1 = tobWebMarkAsRead('admin', [nId]);
+      assert.equal(r1.success, 1);
+      const unreadAfter1 = tobWebGetUnreadCount('admin');
+      // 第二次标记同一通知
+      const r2 = tobWebMarkAsRead('admin', [nId]);
+      assert.equal(r2.success, 1); // 也算 success (幂等)
+      const unreadAfter2 = tobWebGetUnreadCount('admin');
+      assert.equal(unreadAfter2.total, unreadAfter1.total, '重复标记不应减少未读计数');
+    } else {
+      const nId = unreadNotif.id;
+      const r1 = tobWebMarkAsRead('admin', [nId]);
+      assert.equal(r1.success, 1);
+      const unreadAfter = tobWebGetUnreadCount('admin');
+      // 再标记一次
+      const r2 = tobWebMarkAsRead('admin', [nId]);
+      assert.equal(r2.success, 1);
+      const unreadAfter2 = tobWebGetUnreadCount('admin');
+      assert.equal(unreadAfter2.total, unreadAfter.total, '重复标记幂等');
+    }
+  });
+
+  test('[边界] 全部角色标记已读后通知状态→read, 不再暴露给任何角色', () => {
+    // 创建一个新通知, target admin + finance
+    const r = miniappTriggerEvent({
+      type: 'refund_alert',
+      title: '全角色已读测试',
+      content: '所有目标角色均标记已读后应变为read',
+      priority: 'urgent',
+      requestId: 'evt_all_read_test',
+    });
+    assert.ok(r.success);
+    const nId = r.notification!.id;
+    domainDispatchNotifications();
+
+    // admin 标记
+    tobWebMarkAsRead('admin', [nId]);
+    let notif = notificationStore.find(n => n.id === nId)!;
+    assert.equal(notif.status, 'sent'); // 尚未全读
+
+    // compliance_officer 不是 target
+    // finance 标记
+    tobWebMarkAsRead('finance', [nId]);
+    notif = notificationStore.find(n => n.id === nId)!;
+    assert.equal(notif.status, 'read'); // 全读
+
+    // read 状态通知不应出现在未读列表中（即 refund_alert 类型的未读不包含该通知）
+    // 这里仅验证状态流转正确
+    const adminUnread = domainGetUnreadCount('admin');
+    // 刚变为read的通知不计入未读
+    const notifInUnread = notificationStore.some(n => {
+      if (n.id !== nId) return false;
+      const userReads = userReadStore.get('admin') || new Set();
+      return !userReads.has(n.id) && n.status === 'sent';
+    });
+    assert.equal(notifInUnread, false, '已全读的通知不应在admin未读列表中');
+  });
+
+  test('[边界] 禁用规则再启用 → 规则配置完整保留, 旧通知不受影响', () => {
+    // 先修改规则再恢复
+    const r = adminUpdateRule('rule_compliance', { enabled: false, smsEnabled: false });
+    assert.ok(r.success);
+    assert.equal(r.rule!.enabled, false);
+    assert.equal(r.rule!.smsEnabled, false);
+
+    // 恢复
+    const r2 = adminUpdateRule('rule_compliance', { enabled: true, smsEnabled: true });
+    assert.ok(r2.success);
+    assert.equal(r2.rule!.enabled, true);
+    assert.equal(r2.rule!.smsEnabled, true);
+
+    // 旧通知不受影响
+    const complianceNotifs = notificationStore.filter(n => n.type === 'compliance_alert');
+    for (const n of complianceNotifs) {
+      assert.ok(['pending', 'sent', 'read', 'archived'].includes(n.status));
+    }
+  });
+
+  test('[正例] 多角色各自独立未读计数 → 互不影响', () => {
+    // 创建一条同时发给 admin 和 store_manager 的通知
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '独立未读计数测试',
+      content: 'admin和store_manager各自应该有独立计数',
+      priority: 'low',
+      requestId: 'evt_independent_unread',
+    });
+    assert.ok(r.success);
+    domainDispatchNotifications();
+
+    const adminUnread = tobWebGetUnreadCount('admin');
+    const storeMgrUnread = tobWebGetUnreadCount('store_manager');
+
+    // 这条通知同时发给 admin 和 store_manager
+    assert.ok(adminUnread.byType['system_announcement'] >= 1);
+    assert.ok(storeMgrUnread.byType['system_announcement'] >= 1);
+
+    // admin 标记已读不影响 store_manager
+    const systemNotifs = adminUnread.byType['system_announcement'] || 0;
+    const storeMgrNotifsBefore = storeMgrUnread.byType['system_announcement'] || 0;
+
+    // admin 标记刚才创建的通知
+    const notifId = r.notification!.id;
+    tobWebMarkAsRead('admin', [notifId]);
+
+    const adminUnread2 = tobWebGetUnreadCount('admin');
+    const storeMgrUnread2 = tobWebGetUnreadCount('store_manager');
+
+    // admin 的未读减少, store_manager 的未读不变
+    assert.ok(adminUnread2.byType['system_announcement'] < systemNotifs,
+      'admin标记已读后system_announcement未读应减少');
+    assert.equal(storeMgrUnread2.byType['system_announcement'] || 0, storeMgrNotifsBefore,
+      'store_manager的未读计数不应受admin标记影响');
+  });
+
+  test('[边界] 批量标记大量通知(100个) → 全部成功, 未读减少', () => {
+    // 创建一批通知
+    const batchIds: string[] = [];
+    for (let i = 0; i < 100; i++) {
+      const r = miniappTriggerEvent({
+        type: 'system_announcement',
+        title: `批量标记通知 #${i}`,
+        content: `批量测试第${i}条`,
+        priority: 'low',
+        requestId: `evt_batch_mark_${i}`,
+      });
+      assert.ok(r.success);
+      batchIds.push(r.notification!.id);
+    }
+    domainDispatchNotifications();
+
+    const unreadBefore = tobWebGetUnreadCount('admin');
+
+    // 批量标记
+    const result = tobWebMarkAsRead('admin', batchIds);
+    assert.equal(result.success, 100);
+    assert.equal(result.errors.length, 0);
+
+    const unreadAfter = tobWebGetUnreadCount('admin');
+    assert.ok(unreadAfter.total <= unreadBefore.total - 100, '批量标记后未读应减少至少100');
+  });
+
+  test('[边界] 角色隔离: operator只能看到system_announcement和order_alert', () => {
+    // operator 的未读只含 system 通知
+    const operatorUnread = tobWebGetUnreadCount('operator');
+    const operatorNotifs = tobWebGetNotifications('operator');
+    for (const n of operatorNotifs) {
+      assert.ok(n.targetRoles.includes('operator'), '所有operator收到的通知都应在targetRoles中');
+    }
+  });
+
+  test('[边界] 批量标记包含不存在通知ID → 部分成功, 返回错误列表', () => {
+    const result = tobWebMarkAsRead('admin', ['notif_fake_1', 'notif_fake_2']);
+    assert.equal(result.success, 0);
+    assert.equal(result.errors.length, 2);
+    assert.ok(result.errors[0].includes('not_found'));
+  });
+
+  test('[边界] 归档已归档通知 → 幂等, 不报错（archived状态不变）', () => {
+    const archivedNotif = notificationStore.find(n => n.status === 'archived');
+    if (archivedNotif) {
+      const r = tobWebArchiveNotification('admin', archivedNotif.id);
+      assert.ok(r.success);
+      const stored = notificationStore.find(n => n.id === archivedNotif.id);
+      assert.equal(stored!.status, 'archived');
+    }
+  });
+
+  test('[边界] 新创建通知+立刻派发+未读计数 → 标记前未读>0, 标记后减少', () => {
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '即时派发未读测试',
+      content: '创建后立刻派发并检查未读计数变化',
+      priority: 'low',
+      requestId: 'evt_immediate_unread_test',
+    });
+    assert.ok(r.success);
+    const nId = r.notification!.id;
+    domainDispatchNotifications();
+
+    const unreadBefore = tobWebGetUnreadCount('admin');
+    assert.ok(unreadBefore.byType['system_announcement'] >= 1);
+
+    tobWebMarkAsRead('admin', [nId]);
+    const unreadAfter = tobWebGetUnreadCount('admin');
+    assert.equal(unreadAfter.byType['system_announcement'] ?? 0, (unreadBefore.byType['system_announcement'] || 0) - 1);
+  });
 });

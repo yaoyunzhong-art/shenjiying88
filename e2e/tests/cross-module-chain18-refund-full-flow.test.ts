@@ -433,4 +433,104 @@ describe('链18: 退款全流程 + 极限场景 + 降序验证 (Mobile→API→D
     assert.equal(r.totalAmount, totalAmountFromItems);
     assert.equal(r.total, r.items.length);
   });
+
+  // --- Phase 6: 新增增强场景 - 并发退款/多商品/超时回滚 ---
+
+  test('[正例] 多商品退款订单,每个商品独立退款 → 累加不超额', () => {
+    // order_05 已有部分退款990, 再退剩余部分
+    const remaining5 = 1980 - 990;
+    const r = mobileRequestRefund({ orderId: 'order_05', amount: remaining5, reason: '剩余商品退货', items: [{ productName: '咖啡杯套装', quantity: 10, amount: remaining5 }], requestId: 'ref_req_remaining_05' });
+    assert.ok(r.success);
+    assert.equal((r.refund as RefundRecord).amount, remaining5);
+
+    // 累计退款不应超过原始金额
+    const orderRefunds = domainGetRefundHistory('order_05');
+    const totalRefunded = orderRefunds.reduce((s, rf) => s + rf.amount, 0);
+    assert.ok(totalRefunded <= 1980, `累计退款${totalRefunded}不应超过1980`);
+  });
+
+  test('[边界] 退款接口熔断后重试(同一requestId) → 幂等, 状态不变', () => {
+    // 使用未取消订单 order_05
+    const r = mobileRequestRefund({ orderId: 'order_05', amount: 100, reason: '熔断重试', requestId: 'ref_req_retry_idempotent' });
+    assert.ok(r.success);
+    const refId = (r.refund as RefundRecord).id;
+    apiApproveRefund(refId);
+
+    // 多次重试同一 requestId
+    const retry1 = mobileRequestRefund({ orderId: 'order_05', amount: 100, reason: '熔断重试', requestId: 'ref_req_retry_idempotent' });
+    assert.ok(retry1.success);
+    assert.ok((retry1.refund as any).alreadyProcessed);
+  });
+
+  test('[正例] 退款理由为空字符串 → 系统允许（业务层不强制校验理由）', () => {
+    const r = mobileRequestRefund({ orderId: 'order_05', amount: 100, reason: '', requestId: 'ref_req_empty_reason' });
+    assert.ok(r.success);
+    assert.equal((r.refund as RefundRecord).reason, '');
+    assert.equal((r.refund as RefundRecord).status, 'requested');
+  });
+
+  test('[边界] 已退款商品的多次部分退款 → 最终总额不超过物品总价', () => {
+    // 用 order_02 (单商品 8999) 发起多个部分退款
+    const r1 = mobileRequestRefund({ orderId: 'order_02', amount: 2000, reason: '部分退款_分次1', requestId: 'ref_req_split_01' });
+    assert.ok(r1.success);
+    const r2 = mobileRequestRefund({ orderId: 'order_02', amount: 3000, reason: '部分退款_分次2', requestId: 'ref_req_split_02' });
+    assert.ok(r2.success);
+    const r3 = mobileRequestRefund({ orderId: 'order_02', amount: 1500, reason: '部分退款_分次3', requestId: 'ref_req_split_03' });
+    assert.ok(r3.success);
+
+    const allRefunds = domainGetRefundHistory('order_02');
+    // filtered: 部分退款分次1/2/3 + rejected(不想要了) + batch01+batch02
+    const partRefunds = allRefunds.filter(r => r.requestId.startsWith('ref_req_split'));
+    const totalPart = partRefunds.reduce((s, rf) => s + rf.amount, 0);
+    assert.equal(totalPart, 6500, '三次部分退款合计应为6500');
+    assert.ok(totalPart <= 8999);
+  });
+
+  test('[边界] 退款申请→审批→处理全链路耗时模拟 → 时间戳递增', () => {
+    const r = mobileRequestRefund({ orderId: 'order_03', amount: 5000, reason: '链路时间验证', requestId: 'ref_req_timeline_ts' });
+    assert.ok(r.success);
+    const ref = r.refund as RefundRecord;
+    const requestedAt = new Date(ref.requestedAt).getTime();
+
+    const approveResult = apiApproveRefund(ref.id);
+    assert.ok(approveResult.success);
+    const approvedAt = new Date(approveResult.refund!.approvedAt!).getTime();
+    assert.ok(approvedAt >= requestedAt, '审批时间应≥请求时间');
+
+    const processResult = domainProcessRefund(ref.id);
+    assert.ok(processResult.success);
+    const completedAt = new Date(processResult.refund!.completedAt!).getTime();
+    assert.ok(completedAt >= approvedAt, '完成时间应≥审批时间');
+  });
+
+  test('[边界] 退款Reason按原因分类聚合统计 → 统计准确', () => {
+    const stats = storefrontGetRefundStats();
+    // 我们已创建的 refund 中包含多种 reason
+    assert.ok(Object.keys(stats.byReason).length >= 3, '应有多于3种退款原因分类');
+    const totalByReason = Object.values(stats.byReason).reduce((s: number, c: number) => s + c, 0);
+    assert.equal(totalByReason, stats.totalRefunds, '按原因统计总数应与总退款数一致');
+  });
+
+  test('[边界] 全额退款后商品不再可退 → 该订单后续退款被拒', () => {
+    // order_01 已全额退款(订单已 cancelled)
+    const r = mobileRequestRefund({ orderId: 'order_01', amount: 1, reason: '全额后退款', requestId: 'ref_req_after_full' });
+    assert.equal(r.success, false);
+    assert.equal(r.error, 'order_already_cancelled');
+  });
+
+  test('[边界] 多订单退款总计聚合 → 统计正确反映总退款金额', () => {
+    const stats = storefrontGetRefundStats();
+    const allItems = refundStore.reduce((s, r) => s + r.amount, 0);
+    assert.equal(stats.totalAmount, allItems, '聚合统计总金额应与仓储实际一致');
+  });
+
+  test('[边界] 退款状态机不可逆(completed→approved) → 不允许', () => {
+    const completedRefund = refundStore.find(r => r.status === 'completed');
+    if (completedRefund) {
+      // 尝试在completed上做approve
+      const r = apiApproveRefund(completedRefund.id);
+      assert.equal(r.success, false);
+      assert.ok(r.error?.includes('invalid_status'));
+    }
+  });
 });
