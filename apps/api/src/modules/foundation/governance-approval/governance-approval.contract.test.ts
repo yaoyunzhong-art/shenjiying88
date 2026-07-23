@@ -534,4 +534,35 @@ describe('governance-approval contract: query', () => {
     assert.equal(summary.statuses.PENDING, 1)
     assert.equal(summary.statuses.APPROVED, 1)
   })
+
+  it('listGovernanceApprovals falls back to empty list when prisma table is unavailable', async () => {
+    const prismaUnavailable = Object.assign(new Error('missing table'), { code: 'P2021' })
+    const prisma = {
+      governanceApproval: {
+        findMany: async () => {
+          throw prismaUnavailable
+        }
+      }
+    }
+
+    const list = await listGovernanceApprovals(prisma as never, { limit: 10 })
+    assert.deepStrictEqual(list, [])
+  })
+
+  it('summarizeGovernanceApprovals falls back to empty summary when prisma table is unavailable', async () => {
+    const prismaUnavailable = Object.assign(new Error('missing table'), { code: 'P2021' })
+    const prisma = {
+      governanceApproval: {
+        findMany: async () => {
+          throw prismaUnavailable
+        }
+      }
+    }
+
+    const summary = await summarizeGovernanceApprovals(prisma as never, {})
+    assert.equal(summary.total, 0)
+    assert.equal(summary.statuses.PENDING, 0)
+    assert.equal(summary.statuses.APPROVED, 0)
+    assert.deepStrictEqual(summary.groups, [])
+  })
 })

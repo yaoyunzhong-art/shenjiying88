@@ -292,27 +292,35 @@ async function loadGovernanceApprovalSnapshots(
 ) {
   const from = parseDate(input.from)
   const to = parseDate(input.to)
-  const approvals = (await prisma.governanceApproval.findMany({
-    where: {
-      approvalTicket: input.approvalTicket,
-      operation: input.operation,
-      resourceType: input.resourceType,
-      resourceKey: input.resourceKey,
-      requestedBy: input.requestedBy,
-      decidedBy: input.decidedBy,
-      tenantId: input.tenantId,
-      status: input.status ? toPrismaApprovalStatus(input.status) : undefined,
-      updatedAt:
-        from || to
-          ? {
-              ...(from ? { gte: from } : {}),
-              ...(to ? { lte: to } : {})
-            }
-          : undefined
-    },
-    orderBy: [{ updatedAt: 'desc' }],
-    take
-  })) as GovernanceApprovalRecord[]
+  let approvals: GovernanceApprovalRecord[]
+  try {
+    approvals = (await prisma.governanceApproval.findMany({
+      where: {
+        approvalTicket: input.approvalTicket,
+        operation: input.operation,
+        resourceType: input.resourceType,
+        resourceKey: input.resourceKey,
+        requestedBy: input.requestedBy,
+        decidedBy: input.decidedBy,
+        tenantId: input.tenantId,
+        status: input.status ? toPrismaApprovalStatus(input.status) : undefined,
+        updatedAt:
+          from || to
+            ? {
+                ...(from ? { gte: from } : {}),
+                ...(to ? { lte: to } : {})
+              }
+            : undefined
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+      take
+    })) as GovernanceApprovalRecord[]
+  } catch (error) {
+    if (!shouldUseGovernanceApprovalFallback(error)) {
+      throw error
+    }
+    approvals = []
+  }
 
   return approvals
     .map((approval) => ({
@@ -322,6 +330,11 @@ async function loadGovernanceApprovalSnapshots(
     }))
     .filter((approval) => matchesApprovalListFilters(approval, input))
     .filter((approval) => matchesApprovalExecutionFilters(approval, input))
+}
+
+function shouldUseGovernanceApprovalFallback(error: unknown) {
+  const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
+  return code === 'P2021' || code === 'P1010' || code === 'P1001'
 }
 
 export async function getGovernanceApprovalDetail(prisma: PrismaService, approvalTicket: string) {

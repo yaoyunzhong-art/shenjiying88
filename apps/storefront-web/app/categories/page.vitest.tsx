@@ -293,22 +293,22 @@ describe('CategoriesPage — 分类管理', () => {
 
   test('clicking 详情 opens modal', async () => {
     render(<CategoriesPage />);
-    const btn = await screen.findByText('详情', {}, { timeout: 2000 });
-    fireEvent.click(btn);
+    const btns = await screen.findAllByText('详情', {}, { timeout: 2000 });
+    if (btns.length > 0) fireEvent.click(btns[0]);
     expect(screen.getByTestId('modal')).toBeInTheDocument();
   });
 
   test('modal shows category detail title', async () => {
     render(<CategoriesPage />);
-    const btn = await screen.findByText('详情', {}, { timeout: 2000 });
-    fireEvent.click(btn);
+    const btns = await screen.findAllByText('详情', {}, { timeout: 2000 });
+    if (btns.length > 0) fireEvent.click(btns[0]);
     expect(screen.getByTestId('modal').getAttribute('data-title')).toContain('分类详情');
   });
 
   test('modal close button works', async () => {
     render(<CategoriesPage />);
-    const btn = await screen.findByText('详情', {}, { timeout: 2000 });
-    fireEvent.click(btn);
+    const btns = await screen.findAllByText('详情', {}, { timeout: 2000 });
+    if (btns.length > 0) fireEvent.click(btns[0]);
     expect(screen.getByTestId('modal')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('modal-close'));
     await waitFor(() => {
@@ -318,15 +318,15 @@ describe('CategoriesPage — 分类管理', () => {
 
   test('modal has 设为隐藏 button for active category', async () => {
     render(<CategoriesPage />);
-    const btn = await screen.findByText('详情', {}, { timeout: 2000 });
-    fireEvent.click(btn);
+    const btns = await screen.findAllByText('详情', {}, { timeout: 2000 });
+    if (btns.length > 0) fireEvent.click(btns[0]);
     expect(screen.getByText('设为隐藏')).toBeInTheDocument();
   });
 
   test('modal has 归档 button', async () => {
     render(<CategoriesPage />);
-    const btn = await screen.findByText('详情', {}, { timeout: 2000 });
-    fireEvent.click(btn);
+    const btns = await screen.findAllByText('详情', {}, { timeout: 2000 });
+    if (btns.length > 0) fireEvent.click(btns[0]);
     expect(screen.getByText('归档')).toBeInTheDocument();
   });
 
