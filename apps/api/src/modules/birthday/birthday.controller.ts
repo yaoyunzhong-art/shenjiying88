@@ -1,5 +1,5 @@
 // birthday.controller.ts · WP-15 生日趴引擎
-// BS-0199~BS-0206
+// BS-0199~BS-0206, BS-0287
 
 import {
   Controller,
@@ -12,11 +12,15 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { BirthdayService } from './birthday.service';
+import { BirthdayCountdownService } from './birthday-countdown.service';
 import { BirthdayTier, BirthdayPlanStatus } from './birthday.entity';
 
 @Controller('birthday')
 export class BirthdayController {
-  constructor(private readonly svc: BirthdayService) {}
+  constructor(
+    private readonly svc: BirthdayService,
+    private readonly countdownSvc: BirthdayCountdownService,
+  ) {}
 
   // ══════════════════════════════════════════════════════
   // BS-0199: 生日识别 + BS-0200~0202: 自动营销
@@ -127,5 +131,43 @@ export class BirthdayController {
   @Get('stats/:memberId')
   getMemberStats(@Param('memberId') memberId: string): any {
     return this.svc.getMemberStats(memberId);
+  }
+
+  // ══════════════════════════════════════════════════════
+  // BS-0287: 生日特效倒计时预览
+  // ══════════════════════════════════════════════════════
+
+  /**
+   * GET /birthday/countdown/:memberId — 生日倒计时
+   */
+  @Get('countdown/:memberId')
+  getCountdown(
+    @Param('memberId') memberId: string,
+    @Query('birthday') birthday: string,
+  ): any {
+    const countdown = this.countdownSvc.getCountdown(memberId, birthday, true);
+    return { success: true, data: countdown };
+  }
+
+  /**
+   * GET /birthday/preview/:memberId — 生日特效预览
+   */
+  @Get('preview/:memberId')
+  getPreview(
+    @Param('memberId') memberId: string,
+    @Query('birthday') birthday: string,
+  ): any {
+    const preview = this.countdownSvc.getPreview(memberId, birthday);
+    return { success: true, data: preview };
+  }
+
+  /**
+   * BS-0292: POST /birthday/effects/preload/:memberId
+   * 生日当天入场时预加载特效数据
+   */
+  @Post('effects/preload/:memberId')
+  @HttpCode(HttpStatus.OK)
+  preloadEffects(@Param('memberId') memberId: string): any {
+    return this.svc.preloadEffects(memberId);
   }
 }

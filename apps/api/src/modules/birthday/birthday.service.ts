@@ -347,6 +347,68 @@ export class BirthdayService {
   }
 
   /**
+   * BS-0292: 入场特效预加载
+   * 生日当天入场时预加载特效数据
+   */
+  preloadEffects(memberId: string): {
+    memberId: string;
+    hasActivePlan: boolean;
+    effects: Array<{ type: string; name: string; data: Record<string, any> }>;
+  } {
+    const plan = this.findPlanByMember(memberId, 'active') ?? this.findPlanByMember(memberId, 'pending');
+    if (!plan || !plan.isUpcoming) {
+      return {
+        memberId,
+        hasActivePlan: false,
+        effects: [],
+      };
+    }
+
+    // 根据会员等级加载不同特效
+    const effects: Array<{ type: string; name: string; data: Record<string, any> }> = [];
+
+    // 入口动画数据
+    effects.push({
+      type: 'entrance_animation',
+      name: '生日入场动画',
+      data: {
+        animationKey: 'birthday-entrance',
+        duration: 3000,
+        priority: plan.tier === 'VIP' ? 1 : plan.tier === 'PREMIUM' ? 2 : 3,
+      },
+    });
+
+    // 特效配置
+    effects.push({
+      type: 'confetti_config',
+      name: '生日彩纸特效',
+      data: {
+        particleCount: plan.tier === 'VIP' ? 150 : plan.tier === 'PREMIUM' ? 100 : 50,
+        colors: ['#FFD700', '#FF6B6B', '#4ECDC4'],
+        duration: 5000,
+      },
+    });
+
+    // 奖励提示数据
+    effects.push({
+      type: 'reward_hint',
+      name: '生日奖励提示',
+      data: {
+        rewardType: plan.rewardType,
+        rewardValue: plan.rewardValue,
+        allowFriends: plan.allowFriends,
+        friendDiscount: plan.friendDiscount,
+      },
+    });
+
+    return {
+      memberId,
+      hasActivePlan: true,
+      effects,
+    };
+  }
+
+  /**
    * 会员生日统计
    */
   getMemberStats(memberId: string): {
