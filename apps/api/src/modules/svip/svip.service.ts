@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { SVIPPlan, SVIPSubscription, SVIPBenefit, SVIPStatus, SVIPBenefitType } from './svip.entity';
+import { PushNotificationScheduler } from '../push/push.service';
 
 interface CreatePlanInput {
   name: string;
@@ -25,6 +26,10 @@ export class SvipService {
   private readonly subscriptions: Map<string, SVIPSubscription> = new Map();
   private readonly benefits: Map<string, SVIPBenefit[]> = new Map();
   private readonly userSubscriptions: Map<string, string> = new Map();
+
+  constructor(
+    @Optional() private readonly pushScheduler?: PushNotificationScheduler,
+  ) {}
 
   listPlans(): Observable<SVIPPlan[]> {
     return of(Array.from(this.plans.values()))
@@ -116,6 +121,9 @@ export class SvipService {
     return of(subscription);
   }
 
+  /**
+   * BS-0266: 检查并过期 SVIP 订阅，过期时推送到期通知（P1 级别）
+   */
   checkAndExpire(): Observable<number> {
     const now = new Date();
     let expiredCount = 0;
@@ -125,6 +133,15 @@ export class SvipService {
         subscription.status = 'expired';
         this.subscriptions.set(subscription.subscriptionId, subscription);
         expiredCount++;
+
+        // BS-0266: SVIP到期 P1 级别推送
+        if (this.pushScheduler) {
+          this.pushScheduler.schedulePush(
+            subscription.userId,
+            `您的SVIP会员已于 ${subscription.expireAt.toLocaleDateString('zh-CN')} 到期，续费可恢复全部权益`,
+            new Date(),
+          );
+        }
       }
     });
 

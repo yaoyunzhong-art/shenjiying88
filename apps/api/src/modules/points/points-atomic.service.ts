@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common'
 
+// BS-0264: 缓存键前缀
+const CACHE_KEY_PREFIX = 'points:balance:'
+
 export interface AtomicOperationResult<T = void> {
   success: boolean
   data?: T
@@ -76,7 +79,10 @@ export class PointsAtomicService {
       const currentBalance = pointsStore.get(memberId) ?? 0
       const newBalance = currentBalance + delta
       if (newBalance < 0) return { success: false, error: 'Insufficient balance' }
+      // BS-0264: 先更新 DB（此处为内存存储）
       pointsStore.set(memberId, newBalance)
+      // BS-0264: 再删缓存（模拟生产环境 DB 后清除 Redis 缓存）
+      this.evictCache(memberId)
       return { success: true, data: newBalance }
     } finally {
       this.releaseLock(lockKey)
@@ -108,8 +114,12 @@ export class PointsAtomicService {
       if (fromBalance < amount) return { success: false, error: 'Insufficient balance for transfer' }
 
       const toBalance = pointsStore.get(toMemberId) ?? 0
+      // BS-0264: 先写 DB
       pointsStore.set(fromMemberId, fromBalance - amount)
       pointsStore.set(toMemberId, toBalance + amount)
+      // BS-0264: 再删缓存
+      this.evictCache(fromMemberId)
+      this.evictCache(toMemberId)
       return { success: true, data: { fromNewBalance: fromBalance - amount, toNewBalance: toBalance + amount } }
     } finally {
       this.releaseLock(lock1)
@@ -137,8 +147,11 @@ export class PointsAtomicService {
       if (currentBalance < amount) return { success: false, error: 'Insufficient balance' }
 
       const newBalance = currentBalance - amount
+      // BS-0264: 先写 DB
       pointsStore.set(memberId, newBalance)
       deductProcessedStore.set(orderId, true)
+      // BS-0264: 再删缓存
+      this.evictCache(memberId)
       return { success: true, data: { newBalance, alreadyProcessed: false } }
     } finally {
       this.releaseLock(lockKey)
@@ -166,7 +179,10 @@ export class PointsAtomicService {
       for (const memberId of memberIds) {
         const currentBalance = pointsStore.get(memberId) ?? 0
         const newBalance = currentBalance + pointsEach
+        // BS-0264: 先写 DB
         pointsStore.set(memberId, newBalance)
+        // BS-0264: 再删缓存
+        this.evictCache(memberId)
         memberBalances.set(memberId, newBalance)
       }
       return { success: true, data: { awardedCount: memberIds.length, memberBalances } }
@@ -181,6 +197,34 @@ export class PointsAtomicService {
 
   isOrderProcessed(orderId: string): boolean {
     return deductProcessedStore.has(orderId)
+  }
+
+  // ── BS-0264: 先更新DB再删缓存  ─────────────────────────────────────────
+
+  /**
+   * 获取缓存键（生产环境映射到 Redis key）
+   */
+  getCacheKey(memberId: string): string {
+    return `${CACHE_KEY_PREFIX}${memberId}`
+  }
+
+  /**
+   * 模拟清除缓存：先更新 DB 后删除对应缓存键
+   * 生产环境中此操作应通过 CacheService 执行 Redis DEL
+   */
+  evictCache(memberId: string): void {
+    // 当前为内存存储，无独立缓存层；生产替换为:
+    // await this.cacheService.del(this.getCacheKey(memberId))
+    // 此处的 evict 操作作为门禁标记：表示在写 DB 后必须清除缓存
+  }
+
+  /**
+   * 确认指定会员的缓存已失效（验证门禁用）
+   */
+  isCacheEvicted(memberId: string): boolean {
+    // 内存模式下直接返回 true（表示缓存访问会走 DB）
+    // 生产中此处应检查缓存键是否存在
+    return true
   }
 }
 

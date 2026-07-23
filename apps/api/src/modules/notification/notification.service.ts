@@ -1,4 +1,7 @@
 import { Inject, Injectable, OnModuleInit, Optional } from '@nestjs/common'
+import { DualChannelRouter } from '../push/channels/dual-channel-router'
+import { EmailPushChannel } from '../push/channels/email-channel'
+import { SmsPushChannel } from '../push/channels/sms-channel'
 import {
   CACHE_SERVICE,
   type CacheService
@@ -41,12 +44,21 @@ export function resetNotificationServiceTestState() {
 export class NotificationService implements OnModuleInit {
   private asyncSubscribed = false
 
+  // BS-0265: 短信/邮件双通道路由器
+  private readonly dualChannelRouter: DualChannelRouter
+
   constructor(
     @Optional() @Inject(CACHE_SERVICE) private readonly cache?: CacheService,
     @Optional() @Inject(EVENT_BUS_SERVICE) private readonly eventBus?: EventBusService,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService
   ) {
     this.registerMetrics()
+
+    // BS-0265: 初始化双通道路由，注册 Email + SMS 通道
+    // 当主通道发送失败时自动降级到备用通道
+    this.dualChannelRouter = new DualChannelRouter()
+    this.dualChannelRouter.register(new EmailPushChannel())
+    this.dualChannelRouter.register(new SmsPushChannel())
   }
 
   onModuleInit(): void {
@@ -470,6 +482,15 @@ export class NotificationService implements OnModuleInit {
   // ── Internal ──
 
   private simulateSend(dispatch: NotificationDispatch): void {
+    const startedAt = Date.now()
+
+    // BS-0265: 对 SMS/Email 通道使用双通道自动切换
+    if (dispatch.channel === NotificationChannelType.Sms ||
+        dispatch.channel === NotificationChannelType.Email) {
+      void this.sendViaDualChannel(dispatch)
+      return
+    }
+
     const shouldFail = dispatch.recipient.includes('fail')
     const updated: NotificationDispatch = {
       ...dispatch,
@@ -482,5 +503,63 @@ export class NotificationService implements OnModuleInit {
     }
     dispatchStore.set(dispatch.id, updated)
     void this.persistDispatchToCache(updated)
+  }
+
+  /**
+   * BS-0265: 通过双通道路由发送 SMS/Email
+   * 主通道失败时自动降级到备用通道
+   */
+  private async sendViaDualChannel(dispatch: NotificationDispatch): Promise<void> {
+    const channelName = dispatch.channel === NotificationChannelType.Sms ? 'sms' : 'email'
+
+    try {
+      const result = await this.dualChannelRouter.send(
+        {
+          recipient: dispatch.recipient,
+          body: typeof dispatch.payload.content === 'string'
+            ? dispatch.payload.content
+            : JSON.stringify(dispatch.payload),
+          priority: dispatch.channel === NotificationChannelType.Sms ? 10 : 5,
+          tenantId: dispatch.tenantId,
+          subject: dispatch.payload.subject as string | undefined,
+        } as any,
+        dispatch.channel === NotificationChannelType.Sms
+          ? { primary: 'sms', fallback: 'email' }
+          : { primary: 'email', fallback: 'sms' }
+      )
+
+      const updated: NotificationDispatch = {
+        ...dispatch,
+        status: result.success ? NotificationStatus.Sent : NotificationStatus.Failed,
+        sentAt: new Date().toISOString(),
+        providerResponse: result.success
+          ? { providerId: result.providerId, status: 'delivered_via_dual_channel', elapsedMs: result.elapsedMs }
+          : { error: result.error, status: 'all_channels_failed' },
+        updatedAt: new Date().toISOString()
+      }
+      dispatchStore.set(dispatch.id, updated)
+      void this.persistDispatchToCache(updated)
+    } catch (err) {
+      const updated: NotificationDispatch = {
+        ...dispatch,
+        status: NotificationStatus.Failed,
+        sentAt: new Date().toISOString(),
+        providerResponse: { error: String(err), status: 'dual_channel_exception' },
+        updatedAt: new Date().toISOString()
+      }
+      dispatchStore.set(dispatch.id, updated)
+      void this.persistDispatchToCache(updated)
+    }
+  }
+
+  /**
+   * BS-0265: 双通道健康检查
+   */
+  async checkDualChannelHealth(): Promise<{ email: boolean; sms: boolean }> {
+    const health = await this.dualChannelRouter.healthCheck()
+    return {
+      email: health['email'] ?? false,
+      sms: health['sms'] ?? false,
+    }
   }
 }

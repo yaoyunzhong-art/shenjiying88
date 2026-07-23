@@ -58,10 +58,12 @@ async function bootstrap() {
     'http://localhost:3003',
     'http://localhost:3011',
     'http://localhost:3111',
+    'http://localhost:3102',
     'http://127.0.0.1:3002',
     'http://127.0.0.1:3003',
     'http://127.0.0.1:3011',
     'http://127.0.0.1:3111',
+    'http://127.0.0.1:3102',
   ];
   const envOrigins = (process.env.CORS_ORIGIN ?? '')
     .split(',')

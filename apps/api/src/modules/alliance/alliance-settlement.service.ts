@@ -26,6 +26,26 @@ export interface Settlement {
   createdAt: Date
   approvedAt?: Date
   executedAt?: Date
+
+  // BS-0269: 分账报表加退货列
+  refundAmount?: number    // 退货金额（分）
+  returnCount?: number     // 退货笔数
+}
+
+// BS-0269: 退货统计数据
+export interface RefundStats {
+  settlementId: string
+  orderId: string
+  originalAmount: number
+  refundAmount: number
+  returnCount: number
+  refundRate: number       // 退款率 = refundAmount / originalAmount
+  participantsRefunds: Array<{
+    partnerId: string
+    partnerName: string
+    originalAmount: number
+    refundAmount: number
+  }>
 }
 
 export interface UnlinkedOrder {
@@ -208,11 +228,90 @@ export class CrossMerchantSettlementService {
     return this.partnerHistory.get(partnerId) ?? []
   }
 
+  // ── BS-0269: 分账报表加退货列 ────────────────────────────────────────────
+
+  /**
+   * 更新退货信息（模拟退货发生后调用）
+   */
+  updateRefundInfo(
+    settlementId: string,
+    refundAmount: number,
+    returnCount: number,
+  ): Settlement {
+    const settlement = this.settlements.get(settlementId)
+    if (!settlement) {
+      throw new SettlementError('NOT_FOUND', `settlement ${settlementId} not found`)
+    }
+
+    settlement.refundAmount = refundAmount
+    settlement.returnCount = returnCount
+
+    this.logger.log(`Settlement refund info updated: ${settlementId} refund=${refundAmount} returns=${returnCount}`)
+    return settlement
+  }
+
+  /**
+   * 获取退货统计报表
+   */
+  getSettlementRefundStats(settlementId: string): RefundStats {
+    const settlement = this.settlements.get(settlementId)
+    if (!settlement) {
+      throw new SettlementError('NOT_FOUND', `settlement ${settlementId} not found`)
+    }
+
+    const refundAmount = settlement.refundAmount ?? 0
+    const refundRate = settlement.totalAmount > 0
+      ? refundAmount / settlement.totalAmount
+      : 0
+
+    const participantsRefunds = settlement.participants.map(p => {
+      const pAmount = settlement.type === 'ratio'
+        ? Math.round(settlement.totalAmount * (p.ratio ?? 0))
+        : (p.fixedAmount ?? 0)
+      const pRefundRatio = refundRate
+      return {
+        partnerId: p.partnerId,
+        partnerName: p.partnerName,
+        originalAmount: pAmount,
+        refundAmount: Math.round(pAmount * pRefundRatio),
+      }
+    })
+
+    return {
+      settlementId: settlement.settlementId,
+      orderId: settlement.orderId,
+      originalAmount: settlement.totalAmount,
+      refundAmount,
+      returnCount: settlement.returnCount ?? 0,
+      refundRate,
+      participantsRefunds,
+    }
+  }
+
+  /**
+   * 获取指定商户的退货趋势（基于分账历史）
+   */
+  getPartnerRefundTrend(partnerId: string): Array<{ settlementId: string; orderId: string; totalAmount: number; refundAmount: number; returnCount: number; date: string }> {
+    const history = this.partnerHistory.get(partnerId) ?? []
+    return history
+      .filter(s => (s.refundAmount ?? 0) > 0 || (s.returnCount ?? 0) > 0)
+      .map(s => ({
+        settlementId: s.settlementId,
+        orderId: s.orderId,
+        totalAmount: s.totalAmount,
+        refundAmount: s.refundAmount ?? 0,
+        returnCount: s.returnCount ?? 0,
+        date: s.createdAt.toISOString().slice(0, 10),
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date))
+  }
+
   // 仅供测试用
   clearAll(): void {
     this.settlements.clear()
     this.partnerHistory.clear()
   }
+}
 }
 
 // ─── SettlementError ─────────────────────────────────────────────────────────
