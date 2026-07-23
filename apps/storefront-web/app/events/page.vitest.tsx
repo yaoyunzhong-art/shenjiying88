@@ -163,15 +163,15 @@ describe('EventsPage — 活动中心', () => {
     });
   });
 
-  test('type filter: clicking 竞赛 filters events', async () => {
+  test('type filter: clicking 竞赛 filters event list', async () => {
     render(<EventsPage />);
     await waitForData();
     const compBtn = screen.getAllByText('竞赛').filter(el => el.tagName === 'BUTTON')[0];
     fireEvent.click(compBtn);
     await waitFor(() => {
-      // '暑期狂欢·全民争霸赛' appears in both card list and top 3 ranking
-      expect(screen.getAllByText('暑期狂欢·全民争霸赛').length).toBeGreaterThanOrEqual(1);
-      expect(screen.queryByText('会员日双倍积分')).not.toBeInTheDocument();
+      expect(screen.getByText('电竞女神邀请赛')).toBeInTheDocument(); // 竞赛 event
+      // 'VR新游体验周' is 体验 — should not appear (and not in Top 3)
+      expect(screen.queryByText('VR新游体验周')).not.toBeInTheDocument();
     });
   });
 
@@ -181,12 +181,12 @@ describe('EventsPage — 活动中心', () => {
     const compBtn = screen.getAllByText('竞赛').filter(el => el.tagName === 'BUTTON')[0];
     fireEvent.click(compBtn);
     await waitFor(() => {
-      expect(screen.queryByText('会员日双倍积分')).not.toBeInTheDocument();
+      expect(screen.queryByText('VR新游体验周')).not.toBeInTheDocument();
     });
     const allTypeBtn = screen.getAllByText('全部').filter(el => el.tagName === 'BUTTON')[0];
     fireEvent.click(allTypeBtn);
     await waitFor(() => {
-      expect(screen.getByText('会员日双倍积分')).toBeInTheDocument();
+      expect(screen.getByText('VR新游体验周')).toBeInTheDocument();
     });
   });
 

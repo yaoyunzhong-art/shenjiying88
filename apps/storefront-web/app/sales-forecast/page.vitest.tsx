@@ -49,18 +49,20 @@ describe('SalesForecastPage — 销售预测', () => {
   test('renders forecast stats', async () => {
     render(<SalesForecastPage />);
     await waitForData();
-    expect(screen.getByText('明日预测')).toBeInTheDocument();
-    expect(screen.getByText('周同比')).toBeInTheDocument();
-    expect(screen.getByText('预测置信度')).toBeInTheDocument();
-    expect(screen.getByText('库存建议')).toBeInTheDocument();
+    // These labels appear in both the page's metrics and the SalesForecastPanel
+    expect(screen.getAllByText('明日预测').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('周同比').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('预测置信度').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('库存建议').length).toBeGreaterThanOrEqual(1);
   });
 
   test('renders forecast stat values', async () => {
     render(<SalesForecastPage />);
     await waitForData();
-    expect(screen.getByText('¥52,380')).toBeInTheDocument();
-    expect(screen.getByText('+12.5%')).toBeInTheDocument();
-    expect(screen.getByText('88%')).toBeInTheDocument();
+    // These values appear in both the page's metrics and the SalesForecastPanel
+    expect(screen.getAllByText('¥52,380').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('88%').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('+12.5%').length).toBeGreaterThanOrEqual(1);
   });
 
   // ====== 预测面板测试 ======
@@ -115,7 +117,7 @@ describe('SalesForecastPage — 销售预测', () => {
     await waitForData();
     expect(screen.getByText('加单 420 件')).toBeInTheDocument();
     expect(screen.getByText('加单 580 件')).toBeInTheDocument();
-    expect(screen.getByText('维持库存')).toBeInTheDocument();
+    expect(screen.getAllByText('维持库存').length).toBeGreaterThanOrEqual(1);
   });
 
   test('renders confidence values for categories', async () => {
@@ -223,7 +225,7 @@ describe('SalesForecastPage — 销售预测', () => {
   test('renders model status badges', async () => {
     render(<SalesForecastPage />);
     await waitForData();
-    expect(screen.getByText('运行中')).toBeInTheDocument();
+    expect(screen.getAllByText('运行中').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('训练中')).toBeInTheDocument();
   });
 

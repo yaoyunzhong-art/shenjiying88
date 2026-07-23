@@ -57,15 +57,17 @@ describe('InventoryKeeperPage — 库存看板', () => {
   test('renders category filter select', async () => {
     render(<InventoryKeeperPage />);
     await waitForData();
-    expect(screen.getByText('全部')).toBeInTheDocument();
+    // '全部' appears in multiple selects; use getAllByText
+    expect(screen.getAllByText('全部').length).toBeGreaterThanOrEqual(1);
   });
 
   test('renders status filter select', async () => {
     render(<InventoryKeeperPage />);
     await waitForData();
-    expect(screen.getByText('正常')).toBeInTheDocument();
-    expect(screen.getByText('偏少')).toBeInTheDocument();
-    expect(screen.getByText('严重不足')).toBeInTheDocument();
+    // '正常' appears in both select option and status badge on items
+    expect(screen.getAllByText('正常').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('偏少').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('严重不足').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('偏多')).toBeInTheDocument();
   });
 
@@ -102,10 +104,11 @@ describe('InventoryKeeperPage — 库存看板', () => {
   test('shows status badges with colors', async () => {
     render(<InventoryKeeperPage />);
     await waitForData();
-    expect(screen.getByText('正常')).toBeInTheDocument();
-    expect(screen.getByText('偏少')).toBeInTheDocument();
-    expect(screen.getByText('严重不足')).toBeInTheDocument();
-    expect(screen.getByText('偏多')).toBeInTheDocument();
+    // These labels appear both on status badges and in select options
+    expect(screen.getAllByText('正常').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('偏少').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('严重不足').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('偏多').length).toBeGreaterThanOrEqual(1);
   });
 
   // ====== 搜索测试 ======
@@ -114,12 +117,10 @@ describe('InventoryKeeperPage — 库存看板', () => {
     render(<InventoryKeeperPage />);
     await waitForData();
     const searchInput = screen.getByPlaceholderText('🔍 搜索商品/分类/库位...');
-    fireEvent.change(searchInput, { target: { value: '咖啡豆' } });
+    fireEvent.change(searchInput, { target: { value: '游戏' } });
     await waitFor(() => {
-      // The page uses a wrapper/select filter check, item 9 is '彩票打印纸' - not matching
-      // '橙汁' doesn't start appearing until page 2 normally
-      // With search narrowed, we filter down
-      expect(screen.queryByText('咖啡机专用除垢剂')).toBeInTheDocument();
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+      expect(screen.queryByText('可口可乐(箱)')).not.toBeInTheDocument();
     });
   });
 
@@ -236,8 +237,9 @@ describe('InventoryKeeperPage — 库存看板', () => {
   test('low stock items show restock suggestion', async () => {
     render(<InventoryKeeperPage />);
     await waitForData();
-    expect(screen.getByText('🟡 库存偏低')).toBeInTheDocument();
-    expect(screen.getByText('🔴 严重短缺')).toBeInTheDocument();
+    // These may appear multiple times across different items
+    expect(screen.getAllByText('🟡 库存偏低').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('🔴 严重短缺').length).toBeGreaterThanOrEqual(1);
   });
 
   test('restock bar shows suggested quantity', async () => {
