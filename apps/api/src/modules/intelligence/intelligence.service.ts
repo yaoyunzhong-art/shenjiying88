@@ -707,18 +707,41 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
    */
   generateOperationsPlan(input: OperationsPlanInput): OperationsPlanOutput {
     const { storeId, stage } = input
-    const stageNameMap: Record<StoreStage, string> = { early: '开业初期', growth: '快速成长期', mature: '成熟运营期', renewal: '转型升级焕新期' }
-    const durationMap: Record<StoreStage, string> = { early: '1-3个月', growth: '3-12个月', mature: '1-3年', renewal: '3年以上' }
+    const stageNameMap = {
+      early: '开业初期',
+      growth: '快速成长期',
+      mature: '成熟运营期',
+      renewal: '转型升级焕新期',
+    } as const
+    const durationMap = {
+      early: '1-3个月',
+      growth: '3-12个月',
+      mature: '1-3年',
+      renewal: '3年以上',
+    } as const
     const baseStageData = this.getStageData(stage)
-    return { storeId, stage, stageName: stageNameMap[stage], duration: durationMap[stage], ...baseStageData }
+
+    return {
+      storeId,
+      stage,
+      stageName: stageNameMap[stage],
+      duration: durationMap[stage],
+      ...baseStageData,
+    }
   }
 
   private getStageData(stage: StoreStage) {
     switch (stage) {
-      case 'early': return this.buildEarlyStage()
-      case 'growth': return this.buildGrowthStage()
-      case 'mature': return this.buildMatureStage()
-      case 'renewal': return this.buildRenewalStage()
+      case 'early':
+        return this.buildEarlyStage()
+      case 'growth':
+        return this.buildGrowthStage()
+      case 'mature':
+        return this.buildMatureStage()
+      case 'renewal':
+        return this.buildRenewalStage()
+      default:
+        return this.buildGrowthStage()
     }
   }
 
@@ -844,9 +867,8 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
       pricingStrategy: '品牌溢价策略。焕新后品牌定位升级，定价可提升至同城TOP水平加20-30%。引入会员订阅制月卡季卡年卡，锁定长期价值。探索体验式定价，利用新设备体验感支撑高客单价。',
       activityRhythm: [
         '开业期: 焕新开业的"重装庆典"系列活动，1个月预热加2周高潮加1个月延续',
-        '升级期: 新设备体验日加IP首发联动加KOL矩阵式传播，2个月',
-        '稳固期: 会员回馈月加体验官招募计划加品牌故事传播，1个月',
-        '持续期: 常规运营加持续创新，月度新品发布会、季度主题活动',
+        '稳固期: 会员回馈月加体验官招募计划加品牌故事传播（1个月）',
+        '持续期: 常规运营加持续创新，包含月度新品发布会和季度主题活动',
       ],
       competitorContingencies: [
         { scenario: '竞品也在同期翻新', response: '突出差异化焕新主题，打城市首家概念标签，抢占消费者心智', triggerCondition: '同商圈竞品翻新重合期小于3个月' },
@@ -859,7 +881,7 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
         '设备选型失误风险，建议分批采购、小批量试运行',
         '市场定位变化可能失去部分老客群，需平衡升级与延续',
       ],
-      milestones: ['M1: 焕新后6个月内回收投资', 'M2: 焕新后品牌认知度提升50%+', 'M3: 新设备年坪效提升30%+'],
+      milestones: ['M1: 焕新后6个月内回收投资', 'M2: 焕新后品牌认知度提升50%以上', 'M3: 新设备年坪效提升30%以上'],
     }
   }
 
@@ -867,22 +889,17 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
   // 13. 数据底座整合 (V23 场景H)
   // ════════════════════════════════════════════════════════
 
-  /**
-   * 侦察兵数据到知识库同步
-   * 把当前竞争态势摘要写入知识库可检索格式
-   * 响应 POST /intelligence/sync-knowledge
-   */
   async syncKnowledge(): Promise<SyncKnowledgeResult> {
     const scanResult = await this.collector.incrementalScan()
     const alerts = this.collector.deduplicate(scanResult)
     const scoutDataCount = alerts.length
 
-    const citySummary = new Map()
+    const citySummary = new Map<string, { priceChanges: number; newActivities: number; promotions: number; ratingsChanges: number }>()
     for (const alert of alerts) {
       if (!citySummary.has(alert.city)) {
         citySummary.set(alert.city, { priceChanges: 0, newActivities: 0, promotions: 0, ratingsChanges: 0 })
       }
-      const s = citySummary.get(alert.city)
+      const s = citySummary.get(alert.city)!
       if (alert.type === 'price_change') s.priceChanges++
       else if (alert.type === 'new_activity') s.newActivities++
       else if (alert.type === 'new_promotion') s.promotions++
@@ -893,7 +910,7 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
     let entries = 0
 
     for (const [city, data] of citySummary) {
-      const parts = []
+      const parts: string[] = []
       if (data.priceChanges > 0) parts.push(data.priceChanges + '家竞品价格异动')
       if (data.newActivities > 0) parts.push(data.newActivities + '家竞品推出新活动')
       if (data.promotions > 0) parts.push(data.promotions + '家竞品推出促销')
@@ -921,15 +938,11 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
           moduleMapping: 'intelligence.scout',
         })
         entries = 1
-      } catch {}
+      } catch { }
     }
     return { synced: true, scoutDataCount, knowledgeEntriesCreated: entries, timestamp: new Date().toISOString() }
   }
 
-  /**
-   * 数据底座汇总
-   * 响应 GET /intelligence/data-base/summary
-   */
   async getDataBaseSummary(): Promise<DataBaseSummary> {
     const coveredCities = Object.keys(this.COMPETITOR_DENSITY).filter(k => k !== 'default').map(k => k.split('-')[0])
     const uniqueCities = [...new Set(coveredCities)]
@@ -942,7 +955,7 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
     try {
       const cards = await this.empowerCardService.list(0)
       knowledgeEntries = cards.length
-    } catch {}
+    } catch { }
     const coverageByCity: Record<string, { venueCount: number; avgFreshness: number }> = {}
     for (const city of uniqueCities) {
       const cityEntries = Object.entries(this.COMPETITOR_DENSITY).filter(([k]) => k.startsWith(city) && k !== 'default')
@@ -961,7 +974,183 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
     }
   }
 
-  private buildOptions(category: string, baseOptions: AdviceOption[]): AdviceOption[] {
+  
+  // ─── 3a. 设备选型推荐 (V23 场景C) ──────────────────
+
+  /**
+   * 场景C: 门店设备选型智能推荐
+   * POST /intelligence/device-recommendation
+   * 基于同城竞品设备数据 + 预算/面积/tier/storeType 推荐设备清单
+   */
+  async deviceRecommendation(input: DeviceRecommendationInput): Promise<DeviceRecommendationOutput> {
+    const { budget, area, city, storeType, tier } = input
+    const competitorDevices = await this.venueData.getDevicesByCity(city)
+
+    const TIER_PRICE_RANGES: Record<string, { min: number; max: number }> = {
+      '经济': { min: 5000, max: 40000 },
+      '标准': { min: 8000, max: 70000 },
+      '精装': { min: 12000, max: 100000 },
+      '豪华': { min: 30000, max: 150000 },
+    }
+    const priceRange = TIER_PRICE_RANGES[tier] || TIER_PRICE_RANGES['标准']
+
+    const deviceStats = new Map<string, { totalQty: number; count: number; brands: Set<string> }>()
+    for (const d of competitorDevices) {
+      const key = d.deviceName
+      if (!deviceStats.has(key)) deviceStats.set(key, { totalQty: 0, count: 0, brands: new Set<string>() })
+      const stat = deviceStats.get(key)!
+      stat.totalQty += d.quantity
+      stat.count += 1
+      if (d.brand) stat.brands.add(d.brand)
+    }
+
+    const deviceCandidates: DeviceCandidate[] = [
+      { name: '街机射击', brand: '华立科技', unitPrice: 40000, supplier: '华立科技', warrantyMonths: 12, monthlyMaintenance: 400, category: '街机', reason: '同城竞品平均6-10台，覆盖率高' },
+      { name: 'VR体验', brand: 'Pico', unitPrice: 70000, supplier: 'Pico', warrantyMonths: 24, monthlyMaintenance: 700, category: 'VR/AR', reason: '年轻客群需求年增30%，差异化竞争力强' },
+      { name: '夹娃娃机', brand: '广州雄业', unitPrice: 8000, supplier: '广州雄业', warrantyMonths: 6, monthlyMaintenance: 80, category: '礼品', reason: '高利润率项目，平均回收期6个月' },
+      { name: '跳舞机', brand: '华立科技', unitPrice: 40000, supplier: '华立科技', warrantyMonths: 12, monthlyMaintenance: 400, category: '音游', reason: '社交属性强，周末翻台率高' },
+      { name: '篮球机', brand: '中娱', unitPrice: 12000, supplier: '中娱', warrantyMonths: 12, monthlyMaintenance: 120, category: '运动', reason: '亲子客群必配，引流效果好' },
+      { name: '赛车模拟', brand: 'Playseat', unitPrice: 52000, supplier: 'Playseat', warrantyMonths: 12, monthlyMaintenance: 520, category: '模拟', reason: '差异化配置，客单价高' },
+      { name: '射击机', brand: '世宇科技', unitPrice: 35000, supplier: '世宇科技', warrantyMonths: 12, monthlyMaintenance: 350, category: '街机', reason: '经典街机项目，各年龄段通吃' },
+      { name: '保龄球道', brand: '宾士域', unitPrice: 180000, supplier: '宾士域', warrantyMonths: 24, monthlyMaintenance: 1800, category: '运动', reason: '高端差异化项目，适合大面积场地' },
+      { name: '桌上冰球', brand: '中娱', unitPrice: 18000, supplier: '中娱', warrantyMonths: 12, monthlyMaintenance: 180, category: '运动', reason: '占地面积小，翻台率较高' },
+      { name: '儿童淘气堡', brand: '奇乐儿', unitPrice: 60000, supplier: '奇乐儿', warrantyMonths: 12, monthlyMaintenance: 600, category: '亲子', reason: '亲子业态核心项目，家庭客群必配' },
+      { name: '主机游戏区', brand: '索尼/微软', unitPrice: 25000, supplier: '索尼互动娱乐', warrantyMonths: 12, monthlyMaintenance: 250, category: '主机', reason: '年轻男性客群偏好，停留时间长' },
+      { name: '迷你KTV', brand: '咪哒', unitPrice: 28000, supplier: '咪哒', warrantyMonths: 12, monthlyMaintenance: 280, category: '唱吧', reason: '私密性强，情侣客群首选' },
+    ]
+
+    const STORE_TYPE_CATEGORIES: Record<string, string[]> = {
+      'arcade': ['街机', '音游', '礼品', '模拟', '运动'],
+      'game': ['主机', 'VR/AR', '街机', '模拟', '唱吧'],
+      'mixed': ['街机', 'VR/AR', '礼品', '运动', '亲子', '音游', '模拟', '主机', '唱吧'],
+    }
+    const allowedCategories = STORE_TYPE_CATEGORIES[storeType] || STORE_TYPE_CATEGORIES['mixed']
+
+    const candidates = deviceCandidates
+      .filter(d => allowedCategories.includes(d.category) && d.unitPrice >= priceRange.min && d.unitPrice <= priceRange.max * 1.5)
+      .sort((a, b) => a.unitPrice - b.unitPrice)
+
+    const getCompetitorAvgCount = (name: string): number => {
+      const matchKeys = [...deviceStats.keys()].filter(k => name.includes(k) || k.includes(name))
+      if (matchKeys.length === 0) return 0
+      let total = 0; let count = 0
+      for (const key of matchKeys) { const stat = deviceStats.get(key)!; total += stat.totalQty; count += stat.count }
+      return Math.round(total / count)
+    }
+
+    const totalBudget = budget * 10000
+    let remaining = totalBudget
+    const selectedDevices: RecommendedDevice[] = []
+
+    const TIER_FACTOR: Record<string, number> = { '经济': 0.6, '标准': 1.0, '精装': 1.4, '豪华': 1.8 }
+    const tierFactor = TIER_FACTOR[tier] || 1.0
+
+    for (const candidate of candidates) {
+      if (remaining <= 0) break
+      const avgCount = getCompetitorAvgCount(candidate.name)
+      const count = Math.max(1, Math.round((avgCount > 0 ? avgCount : 2) * tierFactor))
+      const totalPrice = candidate.unitPrice * count
+      if (totalPrice > remaining) {
+        const affordable = Math.floor(remaining / candidate.unitPrice)
+        if (affordable >= 1) {
+          selectedDevices.push({ name: candidate.name, brand: candidate.brand, count: affordable, unitPrice: candidate.unitPrice, totalPrice: candidate.unitPrice * affordable, supplier: candidate.supplier, warrantyMonths: candidate.warrantyMonths, monthlyMaintenance: candidate.monthlyMaintenance, category: candidate.category, reason: candidate.reason })
+          remaining -= candidate.unitPrice * affordable
+        }
+        continue
+      }
+      selectedDevices.push({ name: candidate.name, brand: candidate.brand, count, unitPrice: candidate.unitPrice, totalPrice, supplier: candidate.supplier, warrantyMonths: candidate.warrantyMonths, monthlyMaintenance: candidate.monthlyMaintenance, category: candidate.category, reason: candidate.reason })
+      remaining -= totalPrice
+    }
+
+    const totalCost = selectedDevices.reduce((s, d) => s + d.totalPrice, 0)
+    const utilizationPct = totalBudget > 0 ? Math.round((totalCost / totalBudget) * 10000) / 100 : 0
+
+    const alternatives: AlternativeDeviceRecommendation[] = []
+    for (const device of selectedDevices.slice(0, 3)) {
+      const altCandidates = deviceCandidates.filter(d => d.category === device.category && d.name !== device.name && d.unitPrice !== device.unitPrice)
+      if (altCandidates.length > 0) {
+        const alt = altCandidates[0]
+        alternatives.push({
+          name: alt.name, brand: alt.brand, unitPrice: alt.unitPrice,
+          count: Math.max(1, Math.round(device.count * device.unitPrice / alt.unitPrice)),
+          totalPrice: alt.unitPrice * Math.max(1, Math.round(device.count * device.unitPrice / alt.unitPrice)),
+          supplier: alt.supplier, reason: alt.reason,
+          tradeOff: alt.unitPrice > device.unitPrice ? '价格更高，性能更优' : '价格更低，配置精简',
+        })
+      }
+    }
+
+    const notes: string[] = []
+    if (utilizationPct < 50) notes.push('预算利用率较低，建议增加高端设备或扩大配置数量')
+    if (utilizationPct > 90) notes.push('预算接近饱和，建议考虑增加运营储备金')
+    if (competitorDevices.length > 0) notes.push(`基于${city}同城${new Set(competitorDevices.map(d => d.venueName)).size}家竞品设备数据推荐，覆盖${deviceStats.size}类设备`)
+    notes.push(`${tier}档配置，整体设备预算占总投资${utilizationPct}%`)
+    notes.push(`建议预留${Math.round(totalBudget * 0.1)}万作为运营备用金`)
+
+    return { budget, area, city, storeType, tier, devices: selectedDevices, totalCost, remainingBudget: remaining, budgetUtilizationPercent: utilizationPct, alternatives, notes }
+  }
+
+  // ─── 3b. 装修方案 (V23 场景D) ──────────────────────
+
+  /**
+   * 场景D: 个性化装修方案建议
+   * POST /intelligence/renovation-plan
+   * 基于面积/tier/city/style 输出四项分项估算+工期
+   */
+  async renovationPlan(input: RenovationPlanInput): Promise<RenovationPlanOutput> {
+    const { area, tier, city, style } = input
+    const selectedStyle = style || '现代'
+
+    const TIER_PER_SQM: Record<string, number> = { '经济': 800, '标准': 1500, '精装': 2500, '豪华': 4000 }
+    const perSqm = TIER_PER_SQM[tier] || TIER_PER_SQM['标准']
+    const STYLE_FACTOR: Record<string, number> = { '现代': 1.0, '工业': 1.1, '卡通': 1.15, '科技': 1.25 }
+    const styleFactor = STYLE_FACTOR[selectedStyle] || 1.0
+    const adjustedPerSqm = Math.round(perSqm * styleFactor)
+
+    const CITY_LABOR_FACTOR: Record<string, number> = { '上海': 1.3, '北京': 1.3, '深圳': 1.2, '广州': 1.15, '杭州': 1.15, '成都': 1.0, '南京': 1.1, '重庆': 0.95, '武汉': 1.0, '西安': 0.9, '长沙': 0.9 }
+    const laborFactor = CITY_LABOR_FACTOR[city] || 1.0
+
+    const baseRaw = Math.round(adjustedPerSqm * area * 0.45 * laborFactor)
+    const themedRaw = Math.round(adjustedPerSqm * area * 0.25 * laborFactor)
+    const furnitureRaw = Math.round(adjustedPerSqm * area * 0.20 * laborFactor)
+    const fireRaw = Math.round(adjustedPerSqm * area * 0.10 * laborFactor)
+
+    const baseDecoration: RenovationItem = { category: '基础装修', amount: baseRaw, percent: 45, detail: '地面/墙面/吊顶/强弱电/空调/给排水' }
+    const themedDesignDec: RenovationItem = { category: '主题设计', amount: themedRaw, percent: 25, detail: `${selectedStyle}风格主题包装·灯光氛围·品牌标识·导视系统` }
+    const furnitureDecor: RenovationItem = { category: '家具装饰', amount: furnitureRaw, percent: 20, detail: '休息区沙发·吧台·展示柜·绿植装饰·地毯窗帘' }
+    const fireSafetyApproval: RenovationItem = { category: '审批消防', amount: fireRaw, percent: 10, detail: '消防报审·喷淋烟感·应急照明·安防监控·经营许可' }
+    const items = [baseDecoration, themedDesignDec, furnitureDecor, fireSafetyApproval]
+    const subTotal = items.reduce((s, i) => s + i.amount, 0)
+    const estimatedTotal = Math.round(subTotal / 0.4)
+    const budgetPercent = Math.round((subTotal / estimatedTotal) * 100)
+
+    const tierAdaptation = this.buildTierAdaptationRenovation(tier, selectedStyle, city)
+
+    const baseDays = Math.ceil(area / 50)
+    const tierExtra: Record<string, number> = { '经济': 0, '标准': 10, '精装': 20, '豪华': 35 }
+    const styleExtra: Record<string, number> = { '现代': 0, '工业': 5, '卡通': 10, '科技': 15 }
+    const totalDays = baseDays + (tierExtra[tier] || 10) + (styleExtra[selectedStyle] || 0)
+    const renovationDuration = totalDays <= 30 ? `约${totalDays}天（1个月内）` : totalDays <= 60 ? `约${totalDays}天（1-2个月）` : `约${totalDays}天（2-3个月）`
+
+    const recommendations: string[] = []
+    recommendations.push(`${selectedStyle}风格适合${city}市场定位，建议确认核心客群偏好后再定稿`)
+    recommendations.push(`${tier}档装修建议预留${Math.round(subTotal * 0.15)}万作为不可预见费（约15%）`)
+    if (area >= 500) recommendations.push('大面积场地建议分阶段施工，减少装修期间的营收损失')
+    if (tier === '豪华') recommendations.push('豪华档建议聘请专业主题设计团队，确保品质一致性')
+    if (tier === '经济') recommendations.push('经济档建议重点投入消防审批和基础硬装，装饰可后期逐步升级')
+    recommendations.push(`预估工期${renovationDuration}，建议与设备采购同步推进以缩短开业筹备周期`)
+
+    return { area, tier, city, style: selectedStyle, baseDecoration, themedDesign: themedDesignDec, furnitureDecor, fireSafetyApproval, items, subTotal, budgetPercent, tierAdaptation, renovationDuration, recommendations }
+  }
+
+  /** 构建档次适配建议（装修方案用） */
+  private buildTierAdaptationRenovation(tier: string, style: string, city: string): string {
+    const tierName: Record<string, string> = { '经济': '经济型', '标准': '标准型', '精装': '精装型', '豪华': '豪华型' }
+    const tierDesc: Record<string, string> = { '经济': '适合社区店或短期试水，控制成本为主', '标准': '性价比最优，适多数商圈投资，兼顾品质与成本', '精装': '适合核心商圈或高端社区，注重品牌形象', '豪华': '适合旗舰店或核心商圈，打造地标级娱乐体验' }
+    return `${tierName[tier] || '标准型'}（${tierDesc[tier] || ''}）。${style}风格在${city}市场接受度高。${tier === '豪华' || tier === '精装' ? '建议增设打卡点设计，增强社交传播属性。' : '核心功能优先保障，装饰可后期迭代升级。'}`
+  }
+
+private buildOptions(category: string, baseOptions: AdviceOption[]): AdviceOption[] {
     const evidences = this.aiService.getDataEvidence(category, baseOptions.length)
     return baseOptions.map((opt, idx) => ({
       ...opt,

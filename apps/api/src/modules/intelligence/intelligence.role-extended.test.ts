@@ -11,6 +11,8 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { IntelligenceService } from './intelligence.service'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
+import { VenueDataService } from './venue-data.service'
+import { EmpowerCardService } from '../empower-card/empower-card.service'
 
 // ── 角色权限矩阵 ──
 
@@ -43,7 +45,9 @@ function checkRoleAccess(role: string, resource: string): boolean {
 function makeService(): IntelligenceService {
   const aiService = new IntelligenceAiService()
   const collector = new MonitorCollectorService()
-  return new IntelligenceService(aiService, collector)
+  const venueData = new VenueDataService()
+  const empowerCardService = new EmpowerCardService()
+  return new IntelligenceService(aiService, collector, venueData, empowerCardService)
 }
 
 // ════════════════════════════════════════════════════════════

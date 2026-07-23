@@ -239,6 +239,58 @@ function createMocks() {
     triggerFullScan(city?: string): Promise<any> {
       return Promise.resolve({ mode: 'full', city: city ?? 'all', triggered: true })
     },
+
+    async deviceRecommendation(input: { budget: number; area: number; city: string; storeType: string; tier: string }): Promise<any> {
+      return {
+        budget: input.budget, area: input.area, city: input.city, storeType: input.storeType, tier: input.tier,
+        devices: [
+          { name: '街机射击', brand: '华立科技', count: 6, unitPrice: 40000, totalPrice: 240000, supplier: '华立科技', warrantyMonths: 12, monthlyMaintenance: 400, category: '街机', reason: '同城竞品平均配置' },
+          { name: '夹娃娃机', brand: '广州雄业', count: 10, unitPrice: 8000, totalPrice: 80000, supplier: '广州雄业', warrantyMonths: 6, monthlyMaintenance: 80, category: '礼品', reason: '高利润率项目' },
+        ],
+        totalCost: 320000, remainingBudget: 80000, budgetUtilizationPercent: 80,
+        alternatives: [{ name: '射击机', brand: '世宇科技', unitPrice: 35000, count: 5, totalPrice: 175000, supplier: '世宇科技', reason: '替代方案', tradeOff: '价格更低' }],
+        notes: ['基于同城竞品数据推荐', '标准档配置', '建议预留20万运营备用金'],
+      }
+    },
+
+    async renovationPlan(input: { area: number; tier: string; city: string; style?: string }): Promise<any> {
+      const style = input.style || '现代'
+      return {
+        area: input.area, tier: input.tier, city: input.city, style,
+        baseDecoration: { category: '基础装修', amount: 135000, percent: 45, detail: '地面/墙面/吊顶' },
+        themedDesign: { category: '主题设计', amount: 75000, percent: 25, detail: `${style}风格主题包装` },
+        furnitureDecor: { category: '家具装饰', amount: 60000, percent: 20, detail: '休息区沙发·吧台' },
+        fireSafetyApproval: { category: '审批消防', amount: 30000, percent: 10, detail: '消防报审·喷淋烟感' },
+        items: [
+          { category: '基础装修', amount: 135000, percent: 45, detail: '地面/墙面/吊顶' },
+          { category: '主题设计', amount: 75000, percent: 25, detail: `${style}风格主题包装` },
+          { category: '家具装饰', amount: 60000, percent: 20, detail: '休息区沙发·吧台' },
+          { category: '审批消防', amount: 30000, percent: 10, detail: '消防报审·喷淋烟感' },
+        ],
+        subTotal: input.area * (input.tier === '豪华' ? 1200 : 800), budgetPercent: 40,
+        tierAdaptation: '标准型（性价比最优）',
+        renovationDuration: '约45天（1-2个月）',
+        recommendations: ['现代风格适合上海市场定位', '建议预留15%不可预见费', '预估工期约45天'],
+      }
+    },
+
+    operationsPlan(body: { storeId: string; stage: string }) {
+      const stages: Record<string, any> = {
+        early: { storeId: body.storeId, stage: 'early', stageName: '开业初期', duration: '1-3个月', keyPoints: [{ area: '开业活动', content: '开业促销', priority: 'high' }, { area: '定价策略', content: '渗透定价', priority: 'high' }, { area: '设备调试', content: '设备调试', priority: 'high' }, { area: '团队培训', content: '培训', priority: 'high' }], pricingStrategy: '渗透定价策略', activityRhythm: ['第1周: 开业', '第2周: 会员日', '第3周: 挑战赛', '第4周: 邻里联欢'], competitorContingencies: [{ scenario: '竞品降价', response: '观察', triggerCondition: '降价>15%' }, { scenario: '竞品同期开业', response: '加大活动', triggerCondition: '新竞品开业' }], riskWarnings: ['客流波动', '设备磨合', '员工流失', '热度消退'], milestones: ['M1', 'M2', 'M3'] },
+        growth: { storeId: body.storeId, stage: 'growth', stageName: '快速成长期', duration: '3-12个月', keyPoints: [{ area: '营销', content: '月度营销', priority: 'high' }, { area: '会员', content: '会员拉新', priority: 'high' }], pricingStrategy: '竞争定价', activityRhythm: ['第1月: 春游季'], competitorContingencies: [{ scenario: '价格战', response: '不跟进', triggerCondition: '3家降价' }], riskWarnings: ['盲目扩张'], milestones: ['M1'] },
+        mature: { storeId: body.storeId, stage: 'mature', stageName: '成熟运营期', duration: '1-3年', keyPoints: [{ area: '设备更新', content: '更新计划', priority: 'high' }, { area: '会员深耕', content: '分层运营', priority: 'high' }], pricingStrategy: '价值定价', activityRhythm: ['Q1', 'Q2'], competitorContingencies: [{ scenario: '新竞品', response: '构建壁垒', triggerCondition: '资本推动' }], riskWarnings: ['创新不足'], milestones: ['M1'] },
+        renewal: { storeId: body.storeId, stage: 'renewal', stageName: '转型升级焕新期', duration: '3年以上', keyPoints: [{ area: '重新装修', content: '全店翻新', priority: 'high' }, { area: '设备换代', content: '全面淘汰', priority: 'high' }], pricingStrategy: '品牌溢价焕新策略: 新设备+新装修支撑高客单价定位', activityRhythm: ['开业期', '升级期'], competitorContingencies: [{ scenario: '同期翻新', response: '差异化', triggerCondition: '重合期' }], riskWarnings: ['投入高'], milestones: ['M1'] },
+      }
+      return stages[body.stage] ?? stages.early
+    },
+
+    syncKnowledge(): Promise<any> {
+      return Promise.resolve({ synced: true, scoutDataCount: 5, knowledgeEntriesCreated: 2, timestamp: new Date().toISOString() })
+    },
+
+    dataBaseSummary(): Promise<any> {
+      return Promise.resolve({ venueCount: 42, dimensionCoverage: ['竞品数量', '竞品价格', '竞品评分', '竞品活动'], updateStatus: { lastFullSync: null, lastIncrementalSync: new Date().toISOString(), overallFreshness: 'fresh' }, knowledgeBaseEntries: 12, coverageByCity: { '上海': { venueCount: 8, avgFreshness: 90 } } })
+    },
   }
 }
 
@@ -300,6 +352,42 @@ class InlineIntelligenceController {
 
   async triggerFull(city?: string) {
     return this.svc.triggerFullScan(city)
+  }
+
+  operationsPlan(body: { storeId: string; stage: 'early' | 'growth' | 'mature' | 'renewal' }) {
+    if (!body.storeId?.trim()) throw Object.assign(new Error('门店ID不能为空'), { status: 400 })
+    const validStages = ['early', 'growth', 'mature', 'renewal']
+    if (!body.stage || !validStages.includes(body.stage)) throw Object.assign(new Error('阶段无效'), { status: 400 })
+    return this.svc.operationsPlan(body)
+  }
+
+  async deviceRecommendation(body: { budget: number; area: number; city: string; storeType: string; tier: string }) {
+    if (!body.city?.trim()) throw Object.assign(new Error('城市不能为空'), { status: 400 })
+    if (!body.area || body.area <= 0) throw Object.assign(new Error('面积必须大于0'), { status: 400 })
+    if (!body.budget || body.budget <= 0) throw Object.assign(new Error('预算必须大于0'), { status: 400 })
+    const validStoreTypes = ['arcade', 'game', 'mixed']
+    if (!body.storeType || !validStoreTypes.includes(body.storeType)) throw Object.assign(new Error('门店类型无效'), { status: 400 })
+    const validTiers = ['经济', '标准', '精装', '豪华']
+    if (!body.tier || !validTiers.includes(body.tier)) throw Object.assign(new Error('装修档次无效'), { status: 400 })
+    return this.svc.deviceRecommendation({ budget: body.budget, area: body.area, city: body.city.trim(), storeType: body.storeType, tier: body.tier })
+  }
+
+  async renovationPlan(body: { area: number; tier: string; city: string; style?: string }) {
+    if (!body.city?.trim()) throw Object.assign(new Error('城市不能为空'), { status: 400 })
+    if (!body.area || body.area <= 0) throw Object.assign(new Error('面积必须大于0'), { status: 400 })
+    const validTiers = ['经济', '标准', '精装', '豪华']
+    if (!body.tier || !validTiers.includes(body.tier)) throw Object.assign(new Error('装修档次无效'), { status: 400 })
+    const validStyles = ['现代', '工业', '卡通', '科技']
+    if (body.style && !validStyles.includes(body.style)) throw Object.assign(new Error('风格无效'), { status: 400 })
+    return this.svc.renovationPlan({ area: body.area, tier: body.tier, city: body.city.trim(), style: body.style })
+  }
+
+  async syncKnowledge() {
+    return this.svc.syncKnowledge()
+  }
+
+  async dataBaseSummary() {
+    return this.svc.dataBaseSummary()
   }
 }
 
@@ -527,6 +615,176 @@ describe('IntelligenceController', () => {
       const result = controller.storePlanning({ city: '成都', district: '锦江', budget: 200, area: 200, tier: 'economy' })
       assert.equal(result.city, '成都')
       assert.ok(result.financialOverview.initialInvestment.total > 0)
+    })
+  })
+
+  describe('POST /intelligence/operations-plan (场景G)', () => {
+    it('[正例] 返回完整的早期运营方案', () => {
+      const result = controller.operationsPlan({ storeId: 'store-001', stage: 'early' })
+      assert.equal(result.storeId, 'store-001')
+      assert.equal(result.stage, 'early')
+      assert.equal(result.stageName, '开业初期')
+      assert.ok(result.keyPoints.length >= 4)
+      assert.ok(result.activityRhythm.length >= 4)
+      assert.ok(result.competitorContingencies.length >= 2)
+      assert.ok(result.riskWarnings.length >= 2)
+      assert.ok(result.milestones.length >= 2)
+    })
+
+    it('[正例] 返回完整的成长期运营方案', () => {
+      const result = controller.operationsPlan({ storeId: 'store-001', stage: 'growth' })
+      assert.equal(result.stage, 'growth')
+      assert.equal(result.stageName, '快速成长期')
+      assert.equal(result.duration, '3-12个月')
+    })
+
+    it('[正例] 返回完整的成熟期运营方案', () => {
+      const result = controller.operationsPlan({ storeId: 'store-001', stage: 'mature' })
+      assert.equal(result.stage, 'mature')
+      assert.equal(result.stageName, '成熟运营期')
+    })
+
+    it('[正例] 返回完整的焕新期运营方案', () => {
+      const result = controller.operationsPlan({ storeId: 'store-001', stage: 'renewal' })
+      assert.equal(result.stage, 'renewal')
+      assert.equal(result.stageName, '转型升级焕新期')
+      assert.ok(result.pricingStrategy.length > 10)
+    })
+
+    it('[反例] 空storeId抛400', () => {
+      assert.throws(
+        () => controller.operationsPlan({ storeId: '', stage: 'early' }),
+        (err: any) => err.status === 400 && err.message.includes('门店ID不能为空'),
+      )
+    })
+
+    it('[反例] 无效stage抛400', () => {
+      assert.throws(
+        () => controller.operationsPlan({ storeId: 'store-001', stage: 'invalid' as any }),
+        (err: any) => err.status === 400 && err.message.includes('阶段无效'),
+      )
+    })
+  })
+
+  describe('POST /intelligence/sync-knowledge (场景H)', () => {
+    it('[正例] 执行知识同步返回结果', async () => {
+      const result = await controller.syncKnowledge()
+      assert.ok(result.synced)
+      assert.ok(typeof result.scoutDataCount === 'number')
+      assert.ok(typeof result.knowledgeEntriesCreated === 'number')
+      assert.ok(result.timestamp)
+    })
+  })
+
+  describe('GET /intelligence/data-base/summary (场景H)', () => {
+    it('[正例] 返回数据底座汇总', async () => {
+      const result = await controller.dataBaseSummary()
+      assert.ok(result.venueCount >= 0)
+      assert.ok(Array.isArray(result.dimensionCoverage))
+      assert.ok(result.dimensionCoverage.length >= 4)
+      assert.ok(result.updateStatus)
+      assert.ok(result.knowledgeBaseEntries >= 0)
+    })
+  })
+
+  describe('POST /intelligence/device-recommendation (场景C)', () => {
+    it('[正例] 返回设备推荐清单', async () => {
+      const result = await controller.deviceRecommendation({ budget: 200, area: 300, city: '上海', storeType: 'arcade', tier: '标准' })
+      assert.equal(result.city, '上海')
+      assert.ok(result.devices.length > 0)
+      assert.ok(result.totalCost > 0)
+      assert.ok(result.budgetUtilizationPercent > 0)
+      assert.ok(result.alternatives.length > 0)
+      assert.ok(result.notes.length > 0)
+    })
+
+    it('[正例] mixed类型返回更多设备', async () => {
+      const arcade = await controller.deviceRecommendation({ budget: 300, area: 400, city: '上海', storeType: 'arcade', tier: '标准' })
+      const mixed = await controller.deviceRecommendation({ budget: 300, area: 400, city: '上海', storeType: 'mixed', tier: '标准' })
+      assert.ok(mixed.devices.length >= arcade.devices.length)
+    })
+
+    it('[反例] 空城市抛 400', async () => {
+      await assert.rejects(
+        () => controller.deviceRecommendation({ budget: 200, area: 300, city: '', storeType: 'arcade', tier: '标准' }),
+        (err: any) => err.status === 400 && err.message.includes('城市不能为空'),
+      )
+    })
+
+    it('[反例] 面积 <= 0 抛 400', async () => {
+      await assert.rejects(
+        () => controller.deviceRecommendation({ budget: 200, area: 0, city: '上海', storeType: 'arcade', tier: '标准' }),
+        (err: any) => err.status === 400,
+      )
+    })
+
+    it('[反例] 无效 storeType 抛 400', async () => {
+      await assert.rejects(
+        () => controller.deviceRecommendation({ budget: 200, area: 300, city: '上海', storeType: 'invalid' as any, tier: '标准' }),
+        (err: any) => err.status === 400 && err.message.includes('门店类型无效'),
+      )
+    })
+
+    it('[反例] 无效 tier 抛 400', async () => {
+      await assert.rejects(
+        () => controller.deviceRecommendation({ budget: 200, area: 300, city: '上海', storeType: 'arcade', tier: '奢华' as any }),
+        (err: any) => err.status === 400 && err.message.includes('装修档次无效'),
+      )
+    })
+  })
+
+  describe('POST /intelligence/renovation-plan (场景D)', () => {
+    it('[正例] 返回装修方案', async () => {
+      const result = await controller.renovationPlan({ area: 300, tier: '标准', city: '上海', style: '现代' })
+      assert.equal(result.city, '上海')
+      assert.equal(result.style, '现代')
+      assert.ok(result.baseDecoration.amount > 0)
+      assert.ok(result.themedDesign.amount > 0)
+      assert.ok(result.furnitureDecor.amount > 0)
+      assert.ok(result.fireSafetyApproval.amount > 0)
+      assert.equal(result.items.length, 4)
+      assert.ok(result.subTotal > 0)
+      assert.ok(result.renovationDuration.length > 0)
+      assert.ok(result.recommendations.length > 0)
+    })
+
+    it('[正例] 不传style时默认为现代', async () => {
+      const result = await controller.renovationPlan({ area: 200, tier: '豪华', city: '上海' })
+      assert.equal(result.style, '现代')
+    })
+
+    it('[正例] 豪华档装修费用更高', async () => {
+      const economy = await controller.renovationPlan({ area: 300, tier: '经济', city: '上海' })
+      const luxury = await controller.renovationPlan({ area: 300, tier: '豪华', city: '上海' })
+      assert.ok(luxury.subTotal > economy.subTotal)
+    })
+
+    it('[反例] 空城市抛 400', async () => {
+      await assert.rejects(
+        () => controller.renovationPlan({ area: 300, tier: '标准', city: '' }),
+        (err: any) => err.status === 400 && err.message.includes('城市不能为空'),
+      )
+    })
+
+    it('[反例] 面积 <= 0 抛 400', async () => {
+      await assert.rejects(
+        () => controller.renovationPlan({ area: 0, tier: '标准', city: '上海' }),
+        (err: any) => err.status === 400,
+      )
+    })
+
+    it('[反例] 无效 tier 抛 400', async () => {
+      await assert.rejects(
+        () => controller.renovationPlan({ area: 300, tier: '顶级' as any, city: '上海' }),
+        (err: any) => err.status === 400 && err.message.includes('装修档次无效'),
+      )
+    })
+
+    it('[反例] 无效 style 抛 400', async () => {
+      await assert.rejects(
+        () => controller.renovationPlan({ area: 300, tier: '标准', city: '上海', style: '复古' as any }),
+        (err: any) => err.status === 400 && err.message.includes('风格无效'),
+      )
     })
   })
 })

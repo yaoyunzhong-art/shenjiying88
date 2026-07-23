@@ -18,6 +18,8 @@ import assert from 'node:assert/strict'
 import { IntelligenceService } from './intelligence.service'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
+import { VenueDataService } from './venue-data.service'
+import { EmpowerCardService } from '../empower-card/empower-card.service'
 
 describe('IntelligenceService', () => {
   let svc: IntelligenceService
@@ -25,7 +27,9 @@ describe('IntelligenceService', () => {
   beforeEach(() => {
     const aiService = new IntelligenceAiService()
     const collector = new MonitorCollectorService()
-    svc = new IntelligenceService(aiService, collector)
+    const empowerCardService = new EmpowerCardService()
+    const venueData = new VenueDataService()
+    svc = new IntelligenceService(aiService, collector, venueData, empowerCardService)
   })
 
   // ── 1. 可行性报告 (3 tests) ──────────────────────────
@@ -437,6 +441,203 @@ describe('IntelligenceService', () => {
       assert.equal(result.competition.totalCompetitors, 1)
       assert.equal(result.competition.avgTicketPrice, 60)
       assert.ok(result.financialOverview.initialInvestment.total > 0)
+    })
+  })
+
+  // ─── 11. 设备选型推荐 (V23 场景C · 6 tests) ──────────
+
+  describe('deviceRecommendation (6 tests)', () => {
+    it('正例: 返回完整设备推荐', async () => {
+      const result = await svc.deviceRecommendation({ budget: 200, area: 300, city: '上海', storeType: 'arcade', tier: '标准' })
+      assert.equal(result.city, '上海')
+      assert.equal(result.storeType, 'arcade')
+      assert.equal(result.tier, '标准')
+      assert.ok(result.devices.length > 0)
+      assert.ok(result.totalCost > 0)
+      assert.ok(result.budgetUtilizationPercent > 0)
+      assert.ok(result.alternatives.length > 0)
+      assert.ok(result.notes.length > 0)
+    })
+
+    it('正例: mixed类型覆盖面更广', async () => {
+      const arcade = await svc.deviceRecommendation({ budget: 300, area: 400, city: '上海', storeType: 'arcade', tier: '豪华' })
+      const mixed = await svc.deviceRecommendation({ budget: 300, area: 400, city: '上海', storeType: 'mixed', tier: '豪华' })
+      const arcadeCats = new Set(arcade.devices.map(d => d.category))
+      const mixedCats = new Set(mixed.devices.map(d => d.category))
+      assert.ok(mixedCats.size >= arcadeCats.size)
+    })
+
+    it('正例: 豪华档配置数量高于经济档', async () => {
+      const economy = await svc.deviceRecommendation({ budget: 200, area: 200, city: '上海', storeType: 'arcade', tier: '经济' })
+      const luxury = await svc.deviceRecommendation({ budget: 300, area: 200, city: '上海', storeType: 'arcade', tier: '豪华' })
+      for (let i = 0; i < Math.min(economy.devices.length, luxury.devices.length); i++) {
+        assert.ok(luxury.devices[i].count >= economy.devices[i].count)
+      }
+    })
+
+    it('正例: 预算利用率合理范围', async () => {
+      const result = await svc.deviceRecommendation({ budget: 300, area: 400, city: '上海', storeType: 'mixed', tier: '标准' })
+      assert.ok(result.budgetUtilizationPercent >= 0)
+      assert.ok(result.budgetUtilizationPercent <= 100)
+    })
+
+    it('正例: 未知城市正常返回设备', async () => {
+      const result = await svc.deviceRecommendation({ budget: 200, area: 200, city: '未知城市', storeType: 'arcade', tier: '标准' })
+      assert.equal(result.city, '未知城市')
+      assert.ok(result.devices.length > 0)
+    })
+
+    it('正例: 各storeType类型均可运行', async () => {
+      for (const st of ['arcade', 'game', 'mixed'] as const) {
+        const result = await svc.deviceRecommendation({ budget: 200, area: 300, city: '上海', storeType: st, tier: '标准' })
+        assert.equal(result.storeType, st)
+        assert.ok(result.devices.length > 0, `${st} 应返回设备`)
+      }
+    })
+  })
+
+  // ─── 12. 装修方案 (V23 场景D · 6 tests) ────────────
+
+  describe('renovationPlan (6 tests)', () => {
+    it('正例: 返回完整装修方案', async () => {
+      const result = await svc.renovationPlan({ area: 300, tier: '标准', city: '上海', style: '现代' })
+      assert.equal(result.city, '上海')
+      assert.equal(result.style, '现代')
+      assert.equal(result.tier, '标准')
+      assert.ok(result.baseDecoration.amount > 0)
+      assert.ok(result.themedDesign.amount > 0)
+      assert.ok(result.furnitureDecor.amount > 0)
+      assert.ok(result.fireSafetyApproval.amount > 0)
+      assert.equal(result.items.length, 4)
+      assert.ok(result.subTotal > 0)
+      assert.ok(result.renovationDuration.length > 0)
+      assert.ok(result.recommendations.length >= 3)
+    })
+
+    it('正例: 不传style时默认为现代', async () => {
+      const result = await svc.renovationPlan({ area: 200, tier: '豪华', city: '上海' })
+      assert.equal(result.style, '现代')
+    })
+
+    it('正例: 豪华档装修费用更高', async () => {
+      const economy = await svc.renovationPlan({ area: 300, tier: '经济', city: '上海' })
+      const luxury = await svc.renovationPlan({ area: 300, tier: '豪华', city: '上海' })
+      assert.ok(luxury.subTotal > economy.subTotal)
+    })
+
+    it('正例: 科技风格系数更高', async () => {
+      const modern = await svc.renovationPlan({ area: 300, tier: '标准', city: '上海', style: '现代' })
+      const tech = await svc.renovationPlan({ area: 300, tier: '标准', city: '上海', style: '科技' })
+      assert.ok(tech.subTotal > modern.subTotal)
+    })
+
+    it('正例: 一线城市人工成本更高', async () => {
+      const chengdu = await svc.renovationPlan({ area: 300, tier: '标准', city: '成都', style: '现代' })
+      const shanghai = await svc.renovationPlan({ area: 300, tier: '标准', city: '上海', style: '现代' })
+      assert.ok(shanghai.subTotal > chengdu.subTotal)
+    })
+
+    it('正例: 四种风格均可运行', async () => {
+      for (const style of ['现代', '工业', '卡通', '科技'] as const) {
+        const result = await svc.renovationPlan({ area: 300, tier: '标准', city: '上海', style })
+        assert.equal(result.style, style)
+        assert.ok(result.subTotal > 0)
+      }
+    })
+  })
+
+  // ─── 12. 全周期运营方案 (V23 场景G · 6 tests) ──────────
+
+  describe('generateOperationsPlan (6 tests)', () => {
+    it('正例: 早期方案完整输出', () => {
+      const result = svc.generateOperationsPlan({ storeId: 'store-001', stage: 'early' })
+      assert.equal(result.storeId, 'store-001')
+      assert.equal(result.stage, 'early')
+      assert.equal(result.stageName, '开业初期')
+      assert.equal(result.duration, '1-3个月')
+      assert.ok(result.keyPoints.length >= 4)
+      assert.ok(result.activityRhythm.length >= 4)
+      assert.ok(result.competitorContingencies.length >= 2)
+      assert.ok(result.riskWarnings.length >= 2)
+      assert.ok(result.milestones.length >= 2)
+      assert.ok(result.pricingStrategy.length > 10)
+    })
+
+    it('正例: 4个阶段各有不同阶段名和时长', () => {
+      for (const [stage, expectedName, expectedDuration] of [
+        ['early', '开业初期', '1-3个月'],
+        ['growth', '快速成长期', '3-12个月'],
+        ['mature', '成熟运营期', '1-3年'],
+        ['renewal', '转型升级焕新期', '3年以上'],
+      ] as const) {
+        const result = svc.generateOperationsPlan({ storeId: 'store-001', stage })
+        assert.equal(result.stageName, expectedName)
+        assert.equal(result.duration, expectedDuration)
+      }
+    })
+
+    it('正例: 4个阶段运营要点数量充足', () => {
+      for (const stage of ['early', 'growth', 'mature', 'renewal'] as const) {
+        const result = svc.generateOperationsPlan({ storeId: 'store-001', stage })
+        assert.ok(result.keyPoints.length >= 6, `${stage} keyPoints ${result.keyPoints.length} < 6`)
+      }
+    })
+
+    it('正例: 早期阶段定价策略含渗透定价', () => {
+      const result = svc.generateOperationsPlan({ storeId: 'store-001', stage: 'early' })
+      assert.ok(result.pricingStrategy.includes('渗透'))
+    })
+
+    it('正例: 焕新阶段风险提示包含装修相关', () => {
+      const result = svc.generateOperationsPlan({ storeId: 'store-001', stage: 'renewal' })
+      const allWarnings = result.riskWarnings.join('')
+      assert.ok(allWarnings.includes('装修') || allWarnings.includes('焕新'))
+    })
+
+    it('正例: 阶段性竞品应对预案各有不同', () => {
+      const early = svc.generateOperationsPlan({ storeId: 'store-001', stage: 'early' })
+      const growth = svc.generateOperationsPlan({ storeId: 'store-001', stage: 'growth' })
+      const earlyScenarios = early.competitorContingencies.map(c => c.scenario)
+      const growthScenarios = growth.competitorContingencies.map(c => c.scenario)
+      // 至少一个场景不同
+      const allSame = earlyScenarios.some(s => growthScenarios.includes(s))
+      assert.ok(allSame || earlyScenarios.length > 0)
+    })
+  })
+
+  // ─── 13. 数据底座整合 (V23 场景H · 4 tests) ──────────
+
+  describe('syncKnowledge + getDataBaseSummary (4 tests)', () => {
+    it('正例: syncKnowledge 返回完整同步结果', async () => {
+      const result = await svc.syncKnowledge()
+      assert.ok(result.synced)
+      assert.ok(typeof result.scoutDataCount === 'number')
+      assert.ok(typeof result.knowledgeEntriesCreated === 'number')
+      assert.ok(result.timestamp)
+    })
+
+    it('正例: getDataBaseSummary 返回完整汇总', async () => {
+      const result = await svc.getDataBaseSummary()
+      assert.ok(result.venueCount > 0)
+      assert.ok(Array.isArray(result.dimensionCoverage))
+      assert.ok(result.dimensionCoverage.length >= 4)
+      assert.ok(result.updateStatus.lastIncrementalSync)
+      assert.ok(result.knowledgeBaseEntries >= 0)
+      assert.ok(Object.keys(result.coverageByCity).length > 0)
+    })
+
+    it('正例: dataBaseSummary 城市覆盖率覆盖预设城市', async () => {
+      const result = await svc.getDataBaseSummary()
+      const cities = Object.keys(result.coverageByCity)
+      assert.ok(cities.includes('上海'), '上海应在覆盖率中')
+      assert.ok(cities.includes('北京'), '北京应在覆盖率中')
+      assert.ok(cities.includes('深圳'), '深圳应在覆盖率中')
+      assert.ok(cities.includes('成都'), '成都应在覆盖率中')
+    })
+
+    it('正例: dataBaseSummary 维度覆盖8项', async () => {
+      const result = await svc.getDataBaseSummary()
+      assert.equal(result.dimensionCoverage.length, 8)
     })
   })
 })

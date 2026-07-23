@@ -106,7 +106,6 @@ export class IntelligenceController {
   }
 
   /**
-  /**
    * 场景G: 开业后全周期运营管理方案
    * POST /intelligence/operations-plan
    */
@@ -134,5 +133,83 @@ export class IntelligenceController {
   @Get('data-base/summary')
   async dataBaseSummary() {
     return this.svc.getDataBaseSummary()
+
+  /**
+   * 场景B: 设备选型智能推荐
+   * POST /intelligence/device-recommendation
+   */
+  @Post('device-recommendation')
+  async deviceRecommendation(@Body() body: any) {
+    if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
+    if (!body.budget || body.budget < 50000) throw new BadRequestException('预算至少5万')
+    if (!body.area || body.area < 50) throw new BadRequestException('面积至少50㎡')
+    return this.svc.deviceRecommendation({
+      budget: Number(body.budget),
+      area: Number(body.area),
+      city: body.city.trim(),
+      storeType: body.storeType || 'standard',
+      tier: body.tier || '标准',
+      district: body.district?.trim() || '',
+    })
+  }
+
+  /**
+   * 场景C: 个性化装修方案建议
+   * POST /intelligence/renovation-plan
+   */
+  @Post('renovation-plan')
+  async renovationPlan(@Body() body: any) {
+    if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
+    if (!body.district?.trim()) throw new BadRequestException('区域不能为空')
+    if (!body.area || body.area < 10) throw new BadRequestException('面积至少10㎡')
+    if (!body.tier) throw new BadRequestException('档次不能为空（经济/标准/精装/豪华）')
+    return this.svc.renovationPlan({
+      area: Number(body.area),
+      tier: body.tier,
+      city: body.city.trim(),
+      district: body.district.trim(),
+      style: body.style,
+      storeType: body.storeType,
+    })
+  }
+
+  /**
+   * 场景D: 选址评估增强
+   * GET /intelligence/siting-assessment（已存在）
+   */
+
+  /**
+   * 场景E: 动态定价策略
+   * POST /intelligence/pricing-strategy
+   */
+  @Post('pricing-strategy')
+  async pricingStrategy(@Body() body: any) {
+    if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
+    if (!body.district?.trim()) throw new BadRequestException('区域不能为空')
+    if (!body.scenario?.trim()) throw new BadRequestException('场景不能为空')
+    return this.svc.pricingStrategy({
+      city: body.city.trim(),
+      district: body.district.trim(),
+      scenario: body.scenario,
+      budget: body.budget ? Number(body.budget) : undefined,
+      storeTier: body.storeTier,
+    })
+  }
+
+  /**
+   * 场景F: 精准营销活动方案（6大类）
+   * POST /intelligence/marketing-campaign
+   */
+  @Post('marketing-campaign')
+  async marketingCampaign(@Body() body: any) {
+    if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
+    if (!body.district?.trim()) throw new BadRequestException('区域不能为空')
+    if (!body.season?.trim()) throw new BadRequestException('季节不能为空')
+    return this.svc.marketingCampaign({
+      city: body.city.trim(),
+      district: body.district.trim(),
+      season: body.season,
+      budget: body.budget ? Number(body.budget) : undefined,
+    })
   }
 }

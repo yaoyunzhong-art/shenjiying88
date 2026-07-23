@@ -15,11 +15,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { IntelligenceService } from './intelligence.service'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
+import { VenueDataService } from './venue-data.service'
+import { EmpowerCardService } from '../empower-card/empower-card.service'
 
 function createService(): IntelligenceService {
   const aiService = new IntelligenceAiService()
   const collector = new MonitorCollectorService()
-  return new IntelligenceService(aiService, collector)
+  const venueData = new VenueDataService()
+  const empowerCardService = new EmpowerCardService()
+  return new IntelligenceService(aiService, collector, venueData, empowerCardService)
 }
 
 // ══════════════════════════════════════════════════════════════════
