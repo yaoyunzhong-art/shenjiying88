@@ -75,7 +75,7 @@ export class LicenseGuard implements CanActivate {
           return
         }
         // 透传到 requireLicense 的 throw
-        await this.licenseService.requireLicense(ctx.tenantId, ctx.userId, meta.scope, ctx.storeId)
+        await this.licenseService.requireLicense(ctx.tenantId, ctx.userId ?? 'system', meta.scope, ctx.storeId)
       }
     })
 
