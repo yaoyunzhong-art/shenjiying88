@@ -150,6 +150,7 @@ import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis
 import { InventoryAlertModule } from './modules/inventory-alert/inventory-alert.module';
 import { EquipmentFaultReportModule } from './modules/equipment-fault-report/equipment-fault-report.module';
 import { DeviceUsageReportModule } from './modules/device-usage-report/device-usage-report.module';
+import { EmployeeMarketingModule } from './modules/employee-marketing/employee-marketing.module';
 import { EmployeePerformanceReviewModule } from './modules/employee-performance-review/employee-performance-review.module';
 import { CustomerSatisfactionModule } from './modules/customer-satisfaction/customer-satisfaction.module';
 import { ProcurementOrderModule } from './modules/procurement-order/procurement-order.module';
@@ -324,6 +325,7 @@ import { NoticeModule } from './modules/notice/notice.module';
     InventoryAlertModule,
     EquipmentFaultReportModule,
     DeviceUsageReportModule,
+    EmployeeMarketingModule,
     EmployeePerformanceReviewModule,
     CustomerSatisfactionModule,
     ProcurementOrderModule,
