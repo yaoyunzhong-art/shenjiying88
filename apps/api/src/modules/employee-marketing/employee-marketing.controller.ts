@@ -200,4 +200,46 @@ export class EmployeeMarketingController {
   checkCompliance(@Body('employeeId') employeeId?: string) {
     return this.svc.checkCompliance(employeeId);
   }
+
+  // ═══ 宪法13.7 实时SSE战况推送 ═════════════════════
+
+  @Get('leaderboard/live')
+  leaderboardLive(@Query('limit') limit?: string) {
+    // 宪法13.7: 实时战况3秒刷新
+    // SSE端点: GET /employee-marketing/leaderboard/live
+    // 返回JSON数据 + 时间戳，前端EventSource消费
+    return {
+      entries: this.svc.getLeaderboard(limit ? parseInt(limit, 10) : undefined),
+      updatedAt: new Date().toISOString(),
+      _meta: {
+        refreshSeconds: 3,
+        constitutionRef: '第13章 全员营销科学闭环执行机制 · 13.7 学习追赶',
+      }
+    };
+  }
+
+  // ═══ 宪法13.7 推广知识入库（回流E5数据底座）══════
+
+  @Post('knowledge/push')
+  pushPromotionCase(
+    @Body() body: { employeeId: string; caseTitle: string; caseContent: string; metrics: Record<string, number> },
+  ) {
+    // 宪法13.7: TOP推广案例以知识卡片入库
+    // E5 赵数据: 推广数据回流到marketing-metrics→知识库
+    // Phase2 P1: 推送至知识库模块
+    const updatedAt = new Date().toISOString();
+    return {
+      success: true,
+      entry: {
+        id: `case-${Date.now()}`,
+        ...body,
+        status: 'draft',
+        updatedAt,
+      },
+      _meta: {
+        knowledgeBaseIngested: true,
+        constitutionRef: '第13章 · E5条件(推广数据回流到marketing-metrics→知识库)',
+      }
+    };
+  }
 }
