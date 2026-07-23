@@ -49,9 +49,9 @@ export class CashierService {
     this.seedIfNeeded()
   }
 
-  /** 获取存储实现：优先用注入的 store，否则用本地的 MemoryStore */
+  /** 获取存储实现：优先用注入的 store，否则用全局 MemoryStore */
   private get storeInstance(): ICashierStore {
-    return this.store ?? this.memoryStore
+    return this.store ?? globalMemoryStore
   }
 
     // ── 持久化私有工具 ──────────────────────────────────────────────────
@@ -141,7 +141,7 @@ export class CashierService {
    * P0-A1/RQ-20260720-011: cache-aside — 查支付,先内存后 Redis 再 DB
    */
   private async loadPayment(paymentId: string): Promise<CashierPayment | undefined> {
-    const fromMemory = this.memoryStore.getPaymentSync(paymentId)
+    const fromMemory = globalMemoryStore.getPaymentSync(paymentId)
     if (fromMemory) return fromMemory
 
     if (this.cache) {
@@ -236,7 +236,7 @@ export class CashierService {
 
   private createOrderNo(tenantContext: RequestTenantContext, now: string) {
     const datePart = now.slice(0, 10).replaceAll('-', '')
-    const currentDayCount = this.memoryStore.listOrdersSync(tenantContext.tenantId).filter(
+    const currentDayCount = globalMemoryStore.listOrdersSync(tenantContext.tenantId).filter(
       (order) =>
         order.createdAt.startsWith(now.slice(0, 10))
     ).length
@@ -284,11 +284,11 @@ export class CashierService {
   }
 
   listOrders(tenantContext: RequestTenantContext): CashierOrder[] {
-    return this.memoryStore.listOrdersSync(tenantContext.tenantId)
+    return globalMemoryStore.listOrdersSync(tenantContext.tenantId)
   }
 
   getOrder(orderId: string, tenantContext: RequestTenantContext): CashierOrder | undefined {
-    const order = this.memoryStore.getOrderSync(orderId)
+    const order = globalMemoryStore.getOrderSync(orderId)
     if (!order || order.tenantContext.tenantId !== tenantContext.tenantId) {
       return undefined
     }
@@ -376,16 +376,16 @@ export class CashierService {
   }
 
   listPayments(tenantContext: RequestTenantContext): CashierPayment[] {
-    return this.memoryStore.listPaymentsByTenantSync(tenantContext.tenantId)
+    return globalMemoryStore.listPaymentsByTenantSync(tenantContext.tenantId)
   }
 
   listOrderPayments(orderId: string, tenantContext: RequestTenantContext): CashierPayment[] {
-    const order = this.memoryStore.getOrderSync(orderId)
+    const order = globalMemoryStore.getOrderSync(orderId)
     if (!order || order.tenantContext.tenantId !== tenantContext.tenantId) {
       return []
     }
 
-    return this.memoryStore.listPaymentsByOrderSync(orderId)
+    return globalMemoryStore.listPaymentsByOrderSync(orderId)
   }
 
   getLatestPayment(orderId: string, tenantContext: RequestTenantContext): CashierPayment | undefined {
@@ -393,7 +393,7 @@ export class CashierService {
     if (!order?.latestPaymentId) {
       return undefined
     }
-    return this.memoryStore.getPaymentSync(order.latestPaymentId)
+    return globalMemoryStore.getPaymentSync(order.latestPaymentId)
   }
 
   /**
@@ -422,7 +422,7 @@ export class CashierService {
     }
 
     const existingPayment =
-      this.memoryStore.listPaymentsByOrderSync(input.orderId).find(
+      globalMemoryStore.listPaymentsByOrderSync(input.orderId).find(
         (payment) =>
           (input.externalPaymentId
             ? payment.externalPaymentId === input.externalPaymentId
@@ -609,10 +609,10 @@ export class CashierService {
     const monthPrefix = today.slice(0, 7)
     const stats = new Map<string, { today: number; month: number }>()
 
-    for (const order of this.memoryStore.allOrdersValuesSync()) {
+    for (const order of globalMemoryStore.allOrdersValuesSync()) {
       if (order.tenantContext.tenantId !== tenantId) continue
 
-      const payment = order.latestPaymentId ? this.memoryStore.getPaymentSync(order.latestPaymentId) : undefined
+      const payment = order.latestPaymentId ? globalMemoryStore.getPaymentSync(order.latestPaymentId) : undefined
       const channel = payment?.channel ?? 'CASH'
 
       if (!stats.has(channel)) stats.set(channel, { today: 0, month: 0 })
@@ -634,14 +634,14 @@ export class CashierService {
   }
 
   resetCashierStoresForTests(): void {
-    this.memoryStore.resetForTests()
+    globalMemoryStore.resetForTests()
   }
 
   /**
    * P0-A1: 同时清除 Redis 缓存 (测试用)
    */
   async resetCashierCacheForTests(): Promise<void> {
-    await this.memoryStore.resetForTests()
+    await globalMemoryStore.resetForTests()
     if (this.cache) {
       await Promise.all([
         this.cache.delByPrefix('cashier:order:'),
