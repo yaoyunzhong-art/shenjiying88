@@ -133,6 +133,40 @@ export class AlliancePartner {
     return updated as AlliancePartner;
   }
 
+  /** 退出/停用伙伴（入驻退出机制核心入口）*/
+  deactivatePartner(partnerId: string, reason?: string): AlliancePartner {
+    const partner = this.partners.get(partnerId);
+    if (!partner) throw new Error(`Partner not found: ${partnerId}`);
+    if (partner.status === 'INACTIVE') {
+      throw new Error(`Partner ${partnerId} is already inactive`);
+    }
+    const updated = {
+      ...partner,
+      status: 'INACTIVE' as const,
+      updatedAt: new Date().toISOString(),
+    };
+    this.partners.set(partnerId, updated as AlliancePartner);
+    this.logger.log(`[AlliancePartner] Deactivated: ${partner.name} (${partnerId})${reason ? ' reason=' + reason : ''}`);
+    return updated as AlliancePartner;
+  }
+
+  /** 重新启用伙伴 */
+  reactivatePartner(partnerId: string): AlliancePartner {
+    const partner = this.partners.get(partnerId);
+    if (!partner) throw new Error(`Partner not found: ${partnerId}`);
+    if (partner.status === 'ACTIVE') {
+      throw new Error(`Partner ${partnerId} is already active`);
+    }
+    const updated = {
+      ...partner,
+      status: 'ACTIVE' as const,
+      updatedAt: new Date().toISOString(),
+    };
+    this.partners.set(partnerId, updated as AlliancePartner);
+    this.logger.log(`[AlliancePartner] Reactivated: ${partner.name} (${partnerId})`);
+    return updated as AlliancePartner;
+  }
+
   getPartner(partnerId: string): AlliancePartner | undefined {
     return this.partners.get(partnerId);
   }

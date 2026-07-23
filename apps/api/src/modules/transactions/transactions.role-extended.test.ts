@@ -160,7 +160,7 @@ describe('🔧安监 — 交易安全审计视角', () => {
     assert.equal(callback.payment?.status, 'SUCCEEDED')
 
     // 安监查询完整交易聚合
-    const aggregate = controller.getOrderTransaction(created.order.orderId, createContext())
+    const aggregate = await controller.getOrderTransaction(created.order.orderId, createContext())
     assert.equal(aggregate.order.totalAmount, 200)
     assert.ok(aggregate.payment)
   })
@@ -206,10 +206,10 @@ describe('🔧安监 — 交易安全审计视角', () => {
     assert.equal(approvedRefund.status, 'COMPLETED')
   })
 
-  it('安监查询不存在订单应抛异常（审计边界检查）', () => {
+  it('安监查询不存在订单应抛异常（审计边界检查）', async () => {
     const { controller } = createFullEnv()
 
-    assert.throws(
+    await assert.rejects(
       () => controller.getOrderTransaction('non-existent-order-id', createContext()),
       /not found/
     )

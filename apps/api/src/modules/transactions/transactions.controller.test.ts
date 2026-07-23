@@ -163,7 +163,7 @@ describe('transactions controller', () => {
   describe('getOrderTransaction', () => {
     it('should return aggregate for existing order', async () => {
       const created = await checkoutAndPay('m-3', 50, 'ep-3')
-      const result = controller.getOrderTransaction(created.order.orderId, CTX)
+      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
       assert.equal(result.order.memberId, 'm-3')
       assert.equal(result.memberNickname, 'Test-m-3')
       assert.ok(result.payment)
@@ -171,15 +171,15 @@ describe('transactions controller', () => {
 
     it('should expose paid aggregate fields used by app order detail', async () => {
       const created = await checkoutAndPay('m-3b', 88, 'ep-3b')
-      const result = controller.getOrderTransaction(created.order.orderId, CTX)
+      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
       assert.equal(result.payment?.channel, 'wechat')
       assert.match(result.order.paidAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
       assert.ok((result.settlement?.awardedPoints ?? 0) > 0)
       assert.ok(result.pointsLedger.length >= 1)
     })
 
-    it('should throw for non-existing order (negative)', () => {
-      assert.throws(() => controller.getOrderTransaction('ghost', CTX), /not found/)
+    it('should throw for non-existing order (negative)', async () => {
+      await assert.rejects(() => controller.getOrderTransaction('ghost', CTX), /not found/)
     })
   })
 

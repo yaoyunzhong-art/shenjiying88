@@ -220,13 +220,13 @@ describe('TransactionsController', () => {
   describe('getOrderTransaction()', () => {
     it('正例: should return existing aggregate', async () => {
       const created = await prepareCheckoutAndPay(controller, 'got-m1', 80, 'got-e1')
-      const result = controller.getOrderTransaction(created.order.orderId, CTX)
+      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
       assert.equal(result.order.orderId, created.order.orderId)
       assert.ok(result.payment)
     })
 
-    it('反例: should throw for missing order', () => {
-      assert.throws(
+    it('反例: should throw for missing order', async () => {
+      await assert.rejects(
         () => controller.getOrderTransaction('not-found', CTX),
         /not found/
       )
@@ -234,7 +234,7 @@ describe('TransactionsController', () => {
 
     it('边界: should throw for wrong tenant', async () => {
       const created = await prepareCheckoutAndPay(controller, 'got-m2', 20, 'got-e2')
-      assert.throws(
+      await assert.rejects(
         () => controller.getOrderTransaction(created.order.orderId, { ...CTX, tenantId: 'other-tenant' }),
         /not found/
       )

@@ -152,6 +152,46 @@ export class AllianceService {
     }
   }
 
+  /** 停用伙伴（入驻退出机制核心入口）*/
+  deactivatePartner(partnerId: string, reason?: string): AllianceResult<AlliancePartnerType> {
+    try {
+      const partner = this.partnerService.deactivatePartner(partnerId, reason)
+      this.auditService?.log({
+        eventType: 'admin.config_change',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partnerId,
+        riskLevel: 'medium',
+        metadata: { action: 'deactivate', reason },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      return { success: true, data: partner, message: reason ?? 'Partner deactivated' }
+    } catch (err: any) {
+      this.logger.error(`deactivatePartner failed: ${err.message}`, err.stack)
+      return { success: false, message: err.message }
+    }
+  }
+
+  /** 重新启用伙伴 */
+  reactivatePartner(partnerId: string): AllianceResult<AlliancePartnerType> {
+    try {
+      const partner = this.partnerService.reactivatePartner(partnerId)
+      this.auditService?.log({
+        eventType: 'admin.config_change',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partnerId,
+        riskLevel: 'medium',
+        metadata: { action: 'reactivate' },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      return { success: true, data: partner }
+    } catch (err: any) {
+      this.logger.error(`reactivatePartner failed: ${err.message}`, err.stack)
+      return { success: false, message: err.message }
+    }
+  }
+
   /** 获取单个伙伴 */
   getPartner(partnerId: string): AllianceResult<AlliancePartnerType> {
     const partner = this.partnerService.getPartner(partnerId)
@@ -304,6 +344,48 @@ export class AllianceService {
       return { success: true, data: settlement }
     } catch (err: any) {
       this.logger.error(`approveSettlement failed: ${err.message}`, err.stack)
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 驳回分账 */
+  rejectSettlement(settlementId: string): AllianceResult<any> {
+    try {
+      const settlement = this.settlementService.rejectSettlement(settlementId)
+      this.auditService?.log({
+        eventType: 'settlement.rejected',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        metadata: { settlementId },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      return { success: true, data: settlement }
+    } catch (err: any) {
+      this.logger.error(`rejectSettlement failed: ${err.message}`, err.stack)
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /** 取消分账（审批后撤） */
+  cancelSettlement(settlementId: string): AllianceResult<any> {
+    try {
+      const settlement = this.settlementService.cancelSettlement(settlementId)
+      this.auditService?.log({
+        eventType: 'settlement.rejected',
+        actorId: 'system',
+        actorType: 'system',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        metadata: { settlementId, action: 'cancel_after_approval' },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      return { success: true, data: settlement }
+    } catch (err: any) {
+      this.logger.error(`cancelSettlement failed: ${err.message}`, err.stack)
       return { success: false, message: err.message, code: err.code }
     }
   }

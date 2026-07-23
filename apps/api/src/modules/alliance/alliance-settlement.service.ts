@@ -142,6 +142,34 @@ export class CrossMerchantSettlementService {
     return settlement
   }
 
+  /** 驳回分账 */
+  rejectSettlement(settlementId: string): Settlement {
+    const settlement = this.settlements.get(settlementId)
+    if (!settlement) {
+      throw new SettlementError('NOT_FOUND', `settlement ${settlementId} not found`)
+    }
+    if (settlement.status !== 'pending') {
+      throw new SettlementError('INVALID_STATUS', `cannot reject settlement in status: ${settlement.status}`)
+    }
+    settlement.status = 'cancelled'
+    this.logger.log(`Settlement rejected: ${settlementId}`)
+    return settlement
+  }
+
+  /** 取消分账（审批后撤） */
+  cancelSettlement(settlementId: string): Settlement {
+    const settlement = this.settlements.get(settlementId)
+    if (!settlement) {
+      throw new SettlementError('NOT_FOUND', `settlement ${settlementId} not found`)
+    }
+    if (settlement.status !== 'approved') {
+      throw new SettlementError('INVALID_STATUS', `cannot cancel settlement in status: ${settlement.status}`)
+    }
+    settlement.status = 'cancelled'
+    this.logger.log(`Settlement cancelled: ${settlementId}`)
+    return settlement
+  }
+
   /** 执行分账：各商户账户加钱 */
   executeSettlement(settlementId: string): Settlement {
     const settlement = this.settlements.get(settlementId)

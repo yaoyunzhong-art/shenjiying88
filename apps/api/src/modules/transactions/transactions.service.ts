@@ -5,7 +5,9 @@ import { CashierService } from '../cashier/cashier.service'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
-  CashierPaymentStatus
+  CashierPaymentStatus,
+  type CashierOrder,
+  type CashierPayment
 } from '../cashier/cashier.entity'
 import { FinanceService } from '../finance/finance.service'
 import { LedgerType } from '../finance/finance.entity'
@@ -341,20 +343,12 @@ export class TransactionsService {
     }
   }
 
-  private buildAggregate(
-    orderId: string,
-    tenantContext: RequestTenantContext
+  private composeAggregate(
+    order: CashierOrder,
+    tenantContext: RequestTenantContext,
+    latestPayment?: CashierPayment
   ): TransactionAggregate {
-    const order = this.cashierService.getOrder(orderId, tenantContext)
-    if (!order) {
-      throw new Error(`Transaction order ${orderId} not found`)
-    }
-
-    const payments = this.cashierService.listPayments(tenantContext)
-      .filter((p) => p.orderId === orderId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    const latestPayment = payments[0]
-
+    const orderId = order.orderId
     const tenantId = tenantContext.tenantId
     const memberNickname = this.memberService?.getProfile(order.memberId)?.nickname
 
@@ -375,6 +369,35 @@ export class TransactionsService {
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       refunds: this.listRefundRecordsForOrder(orderId, tenantId)
     }
+  }
+
+  private buildAggregate(
+    orderId: string,
+    tenantContext: RequestTenantContext
+  ): TransactionAggregate {
+    const order = this.cashierService.getOrder(orderId, tenantContext)
+    if (!order) {
+      throw new Error(`Transaction order ${orderId} not found`)
+    }
+
+    const payments = this.cashierService.listPayments(tenantContext)
+      .filter((p) => p.orderId === orderId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+    return this.composeAggregate(order, tenantContext, payments[0])
+  }
+
+  private async buildAggregateResolved(
+    orderId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<TransactionAggregate> {
+    const order = await this.cashierService.getOrderAsync(orderId, tenantContext)
+    if (!order) {
+      throw new Error(`Transaction order ${orderId} not found`)
+    }
+
+    const latestPayment = await this.cashierService.getLatestPaymentAsync(orderId, tenantContext)
+    return this.composeAggregate(order, tenantContext, latestPayment)
   }
 
   private listRefundRecordsForOrder(orderId: string, tenantId: string) {
@@ -1150,12 +1173,12 @@ export class TransactionsService {
       externalPaymentId: input.externalPaymentId
     })
 
-    return this.buildAggregate(order.orderId, tenantContext)
+    return this.buildAggregateResolved(order.orderId, tenantContext)
   }
 
   async applyPaymentCallback(input: CashierPaymentCallbackDto): Promise<TransactionAggregate> {
     const { order } = await this.cashierService.applyPaymentCallback(input)
-    const aggregate = this.buildAggregate(order.orderId, order.tenantContext)
+    const aggregate = await this.buildAggregateResolved(order.orderId, order.tenantContext)
 
     if (aggregate.payment?.status === CashierPaymentStatus.Succeeded) {
       await this.recordRevenueLedgerIfNeeded(order.tenantContext, aggregate)
@@ -1164,11 +1187,11 @@ export class TransactionsService {
     return aggregate
   }
 
-  getOrderTransaction(
+  async getOrderTransaction(
     orderId: string,
     tenantContext: RequestTenantContext
-  ): TransactionAggregate {
-    return this.buildAggregate(orderId, tenantContext)
+  ): Promise<TransactionAggregate> {
+    return this.buildAggregateResolved(orderId, tenantContext)
   }
 
   listOrderTransactions(

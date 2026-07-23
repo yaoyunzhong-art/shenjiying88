@@ -78,6 +78,32 @@ export class AllianceController {
   }
 
   /**
+   * 停用/退出伙伴
+   */
+  @Post('partner/:partnerId/deactivate')
+  deactivatePartner(@Param('partnerId') partnerId: string) {
+    try {
+      const partner = this.partnerService.deactivatePartner(partnerId)
+      return { success: true, data: partner, message: 'Partner deactivated' }
+    } catch (err: any) {
+      return { success: false, message: err.message }
+    }
+  }
+
+  /**
+   * 重新启用伙伴
+   */
+  @Post('partner/:partnerId/reactivate')
+  reactivatePartner(@Param('partnerId') partnerId: string) {
+    try {
+      const partner = this.partnerService.reactivatePartner(partnerId)
+      return { success: true, data: partner, message: 'Partner reactivated' }
+    } catch (err: any) {
+      return { success: false, message: err.message }
+    }
+  }
+
+  /**
    * 获取伙伴详情
    */
   @Get('partner/:partnerId')
@@ -250,6 +276,32 @@ export class AllianceController {
   executeSettlement(@Param('settlementId') settlementId: string) {
     try {
       const settlement = this.settlementService.executeSettlement(settlementId)
+      return { success: true, data: settlement }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 驳回分账（pending → cancelled）
+   */
+  @Post('settlement/:settlementId/reject')
+  rejectSettlement(@Param('settlementId') settlementId: string) {
+    try {
+      const settlement = this.settlementService.rejectSettlement(settlementId)
+      return { success: true, data: settlement }
+    } catch (err: any) {
+      return { success: false, message: err.message, code: err.code }
+    }
+  }
+
+  /**
+   * 取消分账（approved → cancelled）
+   */
+  @Post('settlement/:settlementId/cancel')
+  cancelSettlement(@Param('settlementId') settlementId: string) {
+    try {
+      const settlement = this.settlementService.cancelSettlement(settlementId)
       return { success: true, data: settlement }
     } catch (err: any) {
       return { success: false, message: err.message, code: err.code }

@@ -135,23 +135,50 @@ describe('TransactionsService', () => {
       paymentChannel: 'alipay'
     })
 
-    const aggregate = service.getOrderTransaction(created.order.orderId, createContext())
+    const aggregate = await service.getOrderTransaction(created.order.orderId, createContext())
 
     assert.equal(aggregate.order.orderId, created.order.orderId)
     assert.equal(aggregate.order.memberId, 'mem-tx-2')
     assert.ok(aggregate.payment)
   })
 
-  it('getOrderTransaction throws for non-existent order', () => {
+  it('getOrderTransaction throws for non-existent order', async () => {
     const memberService = new MemberService()
     const loyaltyService = new LoyaltyService(memberService)
     const cashierService = new CashierService(memberService, loyaltyService)
     const service = new TransactionsService(cashierService, loyaltyService)
 
-    assert.throws(
+    await assert.rejects(
       () => service.getOrderTransaction('non-existent', createContext()),
       /Transaction order non-existent not found/
     )
+  })
+
+  it('getOrderTransaction falls back to async cashier recovery path', async () => {
+    const memberService = new MemberService()
+    memberService.register({
+      memberId: 'mem-tx-recover',
+      tenantContext: createContext(),
+      nickname: 'Recover Tx User'
+    })
+    const loyaltyService = new LoyaltyService(memberService)
+    const cashierService = new CashierService(memberService, loyaltyService)
+    const service = new TransactionsService(cashierService, loyaltyService)
+
+    const created = await service.startCheckout(createContext(), {
+      memberId: 'mem-tx-recover',
+      items: [{ skuId: 'sku-tx-recover', quantity: 1, price: 66 }],
+      paymentChannel: 'wechat-pay'
+    })
+
+    cashierService.getOrder = () => undefined
+    cashierService.getOrderAsync = async () => created.order
+    cashierService.getLatestPaymentAsync = async () => created.payment
+
+    const aggregate = await service.getOrderTransaction(created.order.orderId, createContext())
+
+    assert.equal(aggregate.order.orderId, created.order.orderId)
+    assert.equal(aggregate.payment?.paymentId, created.payment?.paymentId)
   })
 
   it('listOrderTransactions filters by status, close reason and refund flag', async () => {
@@ -245,7 +272,7 @@ describe('TransactionsService', () => {
       refundAmount: 10
     })
 
-    const aggregate = service.getOrderTransaction(created.order.orderId, createContext())
+    const aggregate = await service.getOrderTransaction(created.order.orderId, createContext())
     const approvedRefund = aggregate.refunds.find((refund) => refund.refundId === firstRefund.refunds[0]!.refundId)
     const pendingRefund = aggregate.refunds.find((refund) => refund.refundId !== firstRefund.refunds[0]!.refundId)
 
@@ -1946,7 +1973,7 @@ describe('TransactionsService', () => {
     assert.equal(approvedRefund?.status, TransactionRefundStatus.Completed)
     assert.ok(approvedRefund?.completedAt)
 
-    const finalOrder = service.getOrderTransaction(created.order.orderId, createContext())
+    const finalOrder = await service.getOrderTransaction(created.order.orderId, createContext())
     assert.equal(finalOrder.payment?.status, 'SUCCEEDED')
     assert.equal(finalOrder.refunds.length, 1)
     assert.equal(finalOrder.refunds[0]?.status, TransactionRefundStatus.Completed)

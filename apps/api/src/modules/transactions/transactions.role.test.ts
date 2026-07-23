@@ -72,11 +72,11 @@ describe(`${ROLES.TenantAdmin} 交易角色测试`, () => {
     assert.equal(result.payment?.channel, 'wechat-pay')
   })
 
-  it('店长可查询订单交易聚合信息（权限边界）', () => {
+  it('店长可查询订单交易聚合信息（权限边界）', async () => {
     const { controller } = makeController()
 
     // 查询不存在的订单应报错
-    assert.throws(
+    await assert.rejects(
       () => controller.getOrderTransaction('no-such-order', createContext()),
       /not found/
     )
@@ -147,16 +147,16 @@ describe(`${ROLES.Safety} 交易角色测试`, () => {
       paymentChannel: 'wechat-pay'
     })
 
-    const aggregate = controller.getOrderTransaction(created.order.orderId, createContext())
+    const aggregate = await controller.getOrderTransaction(created.order.orderId, createContext())
     assert.equal(aggregate.order.totalAmount, 500)
     assert.ok(aggregate.payment)
   })
 
-  it('安监无法修改交易状态（权限边界 - 只读）', () => {
+  it('安监无法修改交易状态（权限边界 - 只读）', async () => {
     const { controller } = makeController()
 
     // 安监只有读取权限，controller 不提供修改接口
-    assert.throws(
+    await assert.rejects(
       () => controller.getOrderTransaction('hacked-order', createContext()),
       /not found/
     )
