@@ -215,3 +215,39 @@
   - 2FA 方案建议
   - 导出审批与 workflow 串联建议
   - 登录锁定策略的误伤兜底建议
+
+### DEV-0004 已补 HTTP 证据并校正当前代码基线
+
+- `apps/api/src/modules/auth/auth.service.ts`
+  - 当前磁盘代码已补回真实锁定语义，而非仅停留在文档口径
+  - 同一 `mobile/email` 连续输错 `5` 次后返回 `AUTH_005`，并锁定 `30` 分钟
+  - 正确登录会重置失败计数，锁定期间即使密码正确也继续拦截
+- `apps/api/src/modules/auth/auth.http.e2e.test.ts`
+  - 已新增 `POST /auth/login/password` 真 HTTP 证据
+  - 覆盖第 `5` 次错误密码返回 `AUTH_005`
+  - 覆盖锁定后正确密码仍被阻断
+- 已同步修正旧测试口径：
+  - `apps/api/src/modules/auth/auth.service.test.ts`
+  - `apps/api/src/modules/auth/auth.role.test.ts`
+  - `apps/api/src/modules/auth/auth.role-collaboration.test.ts`
+- 定向验证已通过：
+  - `pnpm --dir apps/api exec vitest run src/modules/auth/auth.service.test.ts src/modules/auth/auth.role.test.ts src/modules/auth/auth.role-collaboration.test.ts src/modules/auth/auth.http.e2e.test.ts`
+  - 结果：`4` 个测试文件、`85` 条用例全部通过
+- 当前结论：
+  - `DEV-0004` 已从“仅文档/口头口径”推进为“代码 + service + HTTP”三层证据
+  - 仍需后续把失败计数与锁定态从内存态升级为可持久化/跨实例共享，才能彻底消除生产级绕过风险
+
+### DEV-0004 已补 Redis 共享锁定态
+
+- `apps/api/src/modules/auth/auth.service.ts`
+  - 已改为 `RedisService` 可选注入
+  - Redis 可用时，密码失败计数与锁定态写入共享键，支持跨实例生效
+  - Redis 不可用时，自动回退到当前内存态，不阻断现有轻量测试基座
+- `apps/api/src/modules/auth/auth.service.test.ts`
+  - 已新增“两个 AuthService 实例共享同一 Redis 存储时，锁定态可跨实例生效”测试
+- 定向验证已通过：
+  - `pnpm --dir apps/api exec vitest run src/modules/auth/auth.service.test.ts src/modules/auth/auth.role.test.ts src/modules/auth/auth.role-collaboration.test.ts src/modules/auth/auth.http.e2e.test.ts src/modules/auth/auth.module.test.ts`
+  - 结果：`5` 个测试文件、`95` 条用例全部通过
+- 当前结论：
+  - `DEV-0004` 已从“代码 + service + HTTP”推进为“代码 + service + HTTP + 跨实例共享门禁”
+  - 后续若要再补强，可继续做 Redis 原子计数脚本化、审计留痕与运维解锁口径

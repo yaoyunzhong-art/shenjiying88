@@ -26,7 +26,7 @@
 | BS-0059 | >500 条导出需审批 | ❌ 未发现实现 | 需补导出审批流（RBAC + workflow）与可验证门禁（超阈值自动阻断/发起审批） |
 | BS-0062 | 密钥加密 + 定期轮换 | ⚠️ 部分 | 已存在生产环境强制密钥注入拒绝 fallback：`apps/api/src/modules/ai-model-config/encryption.util.ts`；全域密钥轮换与审计未形成闭环 |
 | BS-0063 | 年度第三方渗透测试 | ⚠️ 待补证据 | 需外部交付物（报告/整改闭环）并挂到验收目录 |
-| BS-0064 | 暴力破解防护（5 次锁定） | ⚠️ 待补证据 | 需在 auth/login 流补限流/锁定策略证据与测试用例 |
+| BS-0064 | 暴力破解防护（5 次锁定） | ⚠️ 已补代码、HTTP 与跨实例门禁 | `apps/api/src/modules/auth/auth.service.ts` 已实现同一 `mobile/email` 连续失败 `5` 次锁定 `30` 分钟、成功登录复位，并支持 `RedisService` 可用时走共享锁定态、不可用时回退内存态；`auth.service.test.ts`、`auth.http.e2e.test.ts` 已覆盖 service/HTTP/跨实例验证 |
 | BS-0065 | 离职 72 小时锁定 | ⚠️ 待补证据 | 需补账号生命周期治理（disable/revoke token/权限回收）与审计证据 |
 
 ---
@@ -86,4 +86,3 @@ AuthGuard 覆盖率: **95.75%** (203/212) — 远超 80% 阈值
 
 - `6-8_refs: [BS-0048..BS-0059, BS-0062..BS-0065]`
 - blocker_id: none
-

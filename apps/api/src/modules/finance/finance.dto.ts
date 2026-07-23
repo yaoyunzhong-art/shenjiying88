@@ -225,3 +225,64 @@ export class DailyRevenueQueryDto {
   @IsDateString()
   declare date: string
 }
+
+// ═══════════════════════════════════════════════════
+// 核算归档 (Archival) — WP-04A
+// ═══════════════════════════════════════════════════
+
+export class CreateArchivalDto {
+  @IsOptional()
+  @IsString()
+  declare storeId?: string
+
+  @IsOptional()
+  @IsString()
+  declare brandId?: string
+
+  @IsDateString()
+  declare periodStart: string
+
+  @IsDateString()
+  declare periodEnd: string
+
+  @IsString()
+  declare settlementId: string
+
+  @IsOptional()
+  @IsString()
+  declare type?: string
+
+  @IsOptional()
+  @IsString()
+  declare archivedBy?: string
+}
+
+export class ArchivalQueryDto {
+  @IsOptional()
+  @IsString()
+  declare storeId?: string
+
+  @IsOptional()
+  @IsString()
+  declare settlementId?: string
+
+  @IsOptional()
+  @IsString()
+  declare status?: string
+
+  @IsOptional()
+  @IsString()
+  declare type?: string
+
+  @IsOptional()
+  @IsDateString()
+  declare archivedAfter?: string
+
+  @IsOptional()
+  @IsDateString()
+  declare archivedBefore?: string
+
+  @IsOptional()
+  @IsNumber()
+  declare limit?: number
+}

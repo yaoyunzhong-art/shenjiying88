@@ -48,6 +48,7 @@ import type { ReconciliationServiceDeps } from './reconciliation'
   ],
   providers: [
     FinanceService,
+    FinanceArchivalService,
     FinanceInvoiceService,
     StorePAndLService,
     BrandPAndLService,
@@ -104,6 +105,7 @@ import type { ReconciliationServiceDeps } from './reconciliation'
   ],
   exports: [
     FinanceService,
+    FinanceArchivalService,
     FinanceInvoiceService,
     ReconService,
     ReconciliationService,

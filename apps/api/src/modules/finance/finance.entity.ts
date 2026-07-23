@@ -114,3 +114,56 @@ export interface DailyRevenue {
   netRevenue: number
   transactionCount: number
 }
+
+// ═══════════════════════════════════════════════════
+// 核算归档 (Archival) — WP-04A 财务核算主链
+// ═══════════════════════════════════════════════════
+
+export enum ArchivalStatus {
+  Pending = 'PENDING',
+  Archived = 'ARCHIVED',
+  Failed = 'FAILED'
+}
+
+export interface FinanceArchival {
+  id: string
+  tenantId: string
+  brandId?: string
+  storeId?: string
+  /** 归档周期起始 */
+  periodStart: string
+  /** 归档周期结束 */
+  periodEnd: string
+  /** 关联的结算 ID */
+  settlementId: string
+  /** 归档类型: DAILY | WEEKLY | MONTHLY | MANUAL */
+  type: string
+  status: ArchivalStatus
+  /** 归档时的快照数据 (session-data JSON) */
+  snapshot: {
+    totalRevenue: number
+    totalExpense: number
+    totalRefund: number
+    netRevenue: number
+    ledgerCount: number
+    revenueLedgerCount: number
+    expenseLedgerCount: number
+    refundLedgerCount: number
+    settlement: {
+      totalRevenue: number
+      totalExpense: number
+      netProfit: number
+      settlementStatus: string
+    }
+  }
+  /** 归档版本号 */
+  version: number
+  /** 归档人 */
+  archivedBy?: string
+  /** 归档时间 */
+  archivedAt?: string
+  /** 错误信息 */
+  errorMessage?: string
+  createdAt: string
+  updatedAt: string
+}

@@ -9,6 +9,41 @@ import { TokenService } from './token.service'
 import { SessionService } from './session.service'
 import { LoginType, AuthErrorCode } from './auth.types'
 
+class FakeRedisClient {
+  private readonly store = new Map<string, { value: string; expiresAt?: number }>()
+
+  private touch(key: string) {
+    const entry = this.store.get(key)
+    if (entry?.expiresAt && entry.expiresAt <= Date.now()) {
+      this.store.delete(key)
+      return undefined
+    }
+    return entry
+  }
+
+  async get(key: string): Promise<string | null> {
+    return this.touch(key)?.value ?? null
+  }
+
+  async set(key: string, value: string, mode?: string, ttl?: number): Promise<'OK'> {
+    const expiresAt = mode === 'EX' && typeof ttl === 'number'
+      ? Date.now() + ttl * 1000
+      : undefined
+    this.store.set(key, { value, expiresAt })
+    return 'OK'
+  }
+
+  async del(...keys: string[]): Promise<number> {
+    let count = 0
+    for (const key of keys) {
+      if (this.store.delete(key)) {
+        count += 1
+      }
+    }
+    return count
+  }
+}
+
 describe('AuthService', () => {
   let authService: AuthService
   let tokenService: TokenService
@@ -91,6 +126,86 @@ describe('AuthService', () => {
       )
       expect(result.success).toBe(false)
       expect(result.error!.code).toBe(AuthErrorCode.INVALID_CREDENTIALS)
+    })
+
+    it('should lock account after 5 consecutive failed password attempts', async () => {
+      let result
+
+      for (let i = 0; i < 5; i++) {
+        result = await authService.loginByPassword(
+          '13800138000', undefined, `wrong-password-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `dev-lock-${i}`, deviceType: 'web' },
+        )
+      }
+
+      expect(result!.success).toBe(false)
+      expect(result!.error!.code).toBe(AuthErrorCode.ACCOUNT_LOCKED)
+      expect(result!.error!.retryAfter).toBeGreaterThan(0)
+    })
+
+    it('should reset failed password attempts after a successful login', async () => {
+      for (let i = 0; i < 4; i++) {
+        const failed = await authService.loginByPassword(
+          '13800138000', undefined, `wrong-password-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `dev-reset-${i}`, deviceType: 'web' },
+        )
+
+        expect(failed.success).toBe(false)
+        expect(failed.error!.code).toBe(AuthErrorCode.INVALID_CREDENTIALS)
+      }
+
+      const success = await authService.loginByPassword(
+        '13800138000', undefined, 'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'dev-reset-success', deviceType: 'web' },
+      )
+
+      expect(success.success).toBe(true)
+
+      const failedAgain = await authService.loginByPassword(
+        '13800138000', undefined, 'wrong-password-after-reset',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'dev-reset-after', deviceType: 'web' },
+      )
+
+      expect(failedAgain.success).toBe(false)
+      expect(failedAgain.error!.code).toBe(AuthErrorCode.INVALID_CREDENTIALS)
+    })
+
+    it('should share lock state across service instances when redis is available', async () => {
+      const sharedRedis = new FakeRedisClient()
+      const redisService = { client: sharedRedis } as any
+
+      const firstInstance = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        redisService,
+      )
+      const secondInstance = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        redisService,
+      )
+
+      for (let i = 0; i < 5; i++) {
+        await firstInstance.loginByPassword(
+          '13800138000', undefined, `wrong-password-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `shared-${i}`, deviceType: 'web' },
+        )
+      }
+
+      const blocked = await secondInstance.loginByPassword(
+        '13800138000', undefined, 'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'shared-legit', deviceType: 'web' },
+      )
+
+      expect(blocked.success).toBe(false)
+      expect(blocked.error!.code).toBe(AuthErrorCode.ACCOUNT_LOCKED)
+      expect(blocked.error!.retryAfter).toBeGreaterThan(0)
     })
   })
 

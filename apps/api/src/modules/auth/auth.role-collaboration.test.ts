@@ -114,15 +114,19 @@ describe(`${ROLES.FrontDesk} auth 协作测试`, () => {
     assert.ok(result.success)
   })
 
-  it('前台连续输错密码应返回错误但不锁定（边界：服务端无硬锁定）', async () => {
+  it('前台连续输错密码 5 次后应被锁定', async () => {
     const { authService } = makeAuthEnv()
-    for (let i = 0; i < 3; i++) {
-      const r = await loginByPassword(authService, MEMBER_PHONE, 'wrongpwd')
-      assert.ok(!r.success)
+    let last
+    for (let i = 0; i < 5; i++) {
+      last = await loginByPassword(authService, MEMBER_PHONE, `wrongpwd-${i}`)
+      assert.ok(!last.success)
     }
-    // 正确密码仍可登录
+
+    assert.equal(last!.error!.code, AuthErrorCode.ACCOUNT_LOCKED)
+
     const result = await loginByPassword(authService, MEMBER_PHONE, 'password123')
-    assert.ok(result.success)
+    assert.equal(result.success, false)
+    assert.equal(result.error!.code, AuthErrorCode.ACCOUNT_LOCKED)
   })
 })
 
