@@ -110,7 +110,14 @@ export class APNsService {
     }
 
     // BS-0280: 将业务优先级映射到 iOS 优先级标记
-    const iosPriority = this.toiOSPushPriority(priority)
+    // 如果 payload 中已明确指定 priority（如 critical/low），使用 payload 的
+    // 否则从业务优先级映射
+    let iosPriority: iOSPushPriority
+    if (payload.priority) {
+      iosPriority = payload.priority
+    } else {
+      iosPriority = this.toiOSPushPriority(priority)
+    }
     const enrichedPayload: iOSPayload = {
       ...payload,
       priority: iosPriority,

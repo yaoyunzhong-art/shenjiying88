@@ -235,8 +235,11 @@ describe('SyncEngine · Phase-21 T58', () => {
       expect(result.pulled).toBe(1);
       expect(result.duplicatesSkipped).toBe(0);
 
-      // 第二次拉取（包含重复变更 + 新变更）
+      // 第二次拉取（使用同一个 engine 实例，保持幂等性存储）
+      // 替换 fetcher 以获取不同数据
       engine = new SyncEngine(store, { pageSize: 50, fetcher: mockFetcherCall2 });
+      // pre-populate idempotency store based on first pull
+      engine.markRequestId('change:doc-unique:{"remote-A":100}', { skipped: true })
       result = await engine.pull();
       // 唯一变更被跳过，新变更被处理
       expect(result.duplicatesSkipped).toBe(1);

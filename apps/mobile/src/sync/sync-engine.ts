@@ -138,10 +138,11 @@ export class SyncEngine {
   async push(localDocs: CRDTDocument[], requestId?: string): Promise<{ pushed: number; version: number; duplicate: boolean }> {
     // BS-0284: 如果提供了 requestId，检查是否已处理
     if (requestId) {
-      const existing = this.getIdempotentResult(requestId)
+      const existing = this.getIdempotentResult(requestId) as { pushed: number; version: number; duplicate: boolean } | null
       if (existing !== null) {
         this.stats.totalDuplicatesSkipped++
-        return existing.response as { pushed: number; version: number; duplicate: boolean }
+        // 返回标记为重复的响应
+        return { ...existing, duplicate: true }
       }
     }
 
@@ -283,6 +284,7 @@ export class SyncEngine {
     };
     this.idempotencyStore.clear()
   }
+}
 
 function totalFieldsSynced(
   result: { merged: CRDTDocument; conflictsResolved: number; fieldsAdded: number },

@@ -532,8 +532,15 @@ export class QueueService {
    * 默认 1.0
    */
   getLoadFactor(tenantId: string, resourceId?: string): number {
-    const key = resourceId ? `${tenantId}:${resourceId}` : tenantId
-    return loadFactorStore.get(key) ?? DEFAULT_LOAD_FACTOR
+    // 优先查询 resource 级别的负载因子
+    if (resourceId) {
+      const resourceKey = `${tenantId}:${resourceId}`
+      const resourceFactor = loadFactorStore.get(resourceKey)
+      if (resourceFactor !== undefined) return resourceFactor
+    }
+    // 回退到 tenant 级别的负载因子
+    const tenantKey = tenantId
+    return loadFactorStore.get(tenantKey) ?? DEFAULT_LOAD_FACTOR
   }
 
   /**
