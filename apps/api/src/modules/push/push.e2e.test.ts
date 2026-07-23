@@ -22,6 +22,8 @@ import { APNsService, WebSocketService, PushNotificationScheduler } from './push
 import { DndConfigService, FrequencyCapService } from './dnd-config'
 import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 /**
  * 在测试请求中注入 tenant 上下文到 request 对象
@@ -67,6 +69,8 @@ async function buildApp() {
       { provide: DualChannelRouter, useValue: dualChannelRouter },
       { provide: EmailPushChannel, useValue: emailChannel },
       { provide: SmsPushChannel, useValue: smsChannel },
+      { provide: PushPreferenceService, useValue: new PushPreferenceService() },
+      { provide: PushStatsService, useValue: new PushStatsService() },
     ],
   }).compile()
 

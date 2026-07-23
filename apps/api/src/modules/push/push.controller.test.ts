@@ -18,6 +18,8 @@ import { PushPlatform, PushPriority } from './push.entity'
 import { DndConfigService, FrequencyCapService } from './dnd-config'
 import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 // ── Mock Tenant Context ────────────────────────────────────────
 
@@ -48,7 +50,9 @@ describe('PushController', () => {
     apnsService = new APNsService()
     wsService = new WebSocketService()
     scheduler = new PushNotificationScheduler(apnsService)
-    controller = new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter)
+    const preferenceService = new PushPreferenceService()
+    const statsService = new PushStatsService()
+    controller = new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter, preferenceService, statsService)
   })
 
   // ─── 推送模板管理 ──────────────────────────────────────────

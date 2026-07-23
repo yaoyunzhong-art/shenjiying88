@@ -18,6 +18,8 @@ import { PushPlatform, PushPriority } from './push.entity'
 import { DndConfigService, FrequencyCapService } from './dnd-config'
 import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 // ── 8 角色定义 ──
 const ROLES = {
@@ -61,7 +63,9 @@ function createController(): PushController {
   const apns = new APNsService()
   const ws = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apns)
-  return new PushController(apns, ws, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter)
+  const preferenceService = new PushPreferenceService()
+  const statsService = new PushStatsService()
+  return new PushController(apns, ws, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter, preferenceService, statsService)
 }
 
 // ════════════════════════════════════════════════════════════════

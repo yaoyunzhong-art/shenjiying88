@@ -10,6 +10,8 @@ import { PushPlatform, PushPriority } from './push.entity'
 import { DndConfigService, FrequencyCapService } from './dnd-config'
 import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 describe('PushController', () => {
   let controller: PushController
@@ -32,6 +34,8 @@ describe('PushController', () => {
         EmailPushChannel,
         SmsPushChannel,
         DualChannelRouter,
+        PushPreferenceService,
+        PushStatsService,
       ]
     }).compile()
 

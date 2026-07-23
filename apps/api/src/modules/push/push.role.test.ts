@@ -12,6 +12,8 @@ import { PushPlatform, PushPriority, PushStatus, PushScheduleStatus } from './pu
 import { DndConfigService, FrequencyCapService } from './dnd-config'
 import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -34,7 +36,9 @@ function makeController(): PushController {
   const apnsService = new APNsService()
   const wsService = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apnsService)
-  return new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter)
+  const preferenceService = new PushPreferenceService()
+  const statsService = new PushStatsService()
+  return new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter, preferenceService, statsService)
 }
 
 // 模拟 tenant context

@@ -10,6 +10,8 @@ import { PushRecordEntity } from './push.entity'
 import { DndConfigService, FrequencyCapService } from './dnd-config'
 import { EmailPushChannel, SmsPushChannel, DualChannelRouter } from './channels'
 import { PushPriorityGuard } from './push-priority.guard'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([PushRecordEntity])],
@@ -28,6 +30,10 @@ import { PushPriorityGuard } from './push-priority.guard'
     EmailPushChannel,
     SmsPushChannel,
     DualChannelRouter,
+    // WP-13B 新增: C端便捷化 (BS-0164~BS-0167)
+    PushPreferenceService,
+    // WP-13B 新增: 效果回传 (BS-0185~BS-0188)
+    PushStatsService,
   ],
   exports: [
     APNsService,
@@ -39,6 +45,9 @@ import { PushPriorityGuard } from './push-priority.guard'
     DualChannelRouter,
     EmailPushChannel,
     SmsPushChannel,
+    // WP-13B
+    PushPreferenceService,
+    PushStatsService,
   ]
 })
 export class PushModule {}

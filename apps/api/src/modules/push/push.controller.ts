@@ -4,10 +4,16 @@ import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   BroadcastMessageDto,
   CancelScheduledPushDto,
+  DashboardQueryDto,
+  PushHistoryQueryDto,
+  RecordPushEventDto,
   RegisterPushTemplateDto,
   SchedulePushDto,
   SendPushDto,
-  SendWSMessageDto
+  SendWSMessageDto,
+  SetDndHoursDto,
+  SetPreferredChannelDto,
+  UpdatePushPreferenceDto,
 } from './push.dto'
 import {
   PushPlatform,
@@ -30,6 +36,9 @@ import { PushBusinessPriority, isPushPriorityMandatory } from './push-priority.e
 import { DndConfigService, FrequencyCapService, DEFAULT_DND_CONFIG, DEFAULT_FREQUENCY_CAP_CONFIG } from './dnd-config'
 import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, DEFAULT_CHANNEL_ROUTING } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
+import type { PushEffectDashboard, PushHistoryEntry } from './push-stats.entity'
 
 /**
  * 将 service 返回的轻量 ScheduledPush 转为 entity 完整 ScheduledPush
@@ -104,6 +113,10 @@ export class PushController {
     private readonly frequencyCap: FrequencyCapService,
     // WP-13A: 双通道
     private readonly dualChannelRouter: DualChannelRouter,
+    // WP-13B: 用户偏好 (BS-0164~BS-0167)
+    private readonly preferenceService: PushPreferenceService,
+    // WP-13B: 效果统计 (BS-0185~BS-0188)
+    private readonly statsService: PushStatsService,
   ) {}
 
   // ── Push Template endpoints ──
@@ -595,5 +608,259 @@ export class PushController {
   @Get('ws/connections')
   getWSConnections(): { activeConnections: number } {
     return { activeConnections: this.wsService.getActiveConnections() }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // WP-13B: C端便捷化 (BS-0164~BS-0167)
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * 获取用户推送偏好
+   * GET /push/preference/:tenantId/:memberId
+   * BS-0164: 用户推送偏好配置
+   */
+  @Get('preference/:tenantId/:memberId')
+  getUserPreference(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.preferenceService.getPreference(memberId, tenantId)
+  }
+
+  /**
+   * 更新用户推送偏好
+   * PATCH /push/preference/:tenantId/:memberId
+   * BS-0164: 用户推送偏好设置
+   */
+  @Patch('preference/:tenantId/:memberId')
+  updateUserPreference(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+    @Body() body: UpdatePushPreferenceDto,
+  ) {
+    return this.preferenceService.setPreference(memberId, tenantId, body)
+  }
+
+  /**
+   * 一键关闭 P3 营销推送
+   * POST /push/preference/:tenantId/:memberId/disable-marketing
+   * BS-0167: 一键关闭 P3 营销推送
+   */
+  @Post('preference/:tenantId/:memberId/disable-marketing')
+  disableMarketingPush(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.preferenceService.disableMarketingPush(memberId, tenantId)
+  }
+
+  /**
+   * 一键开启 P3 营销推送
+   * POST /push/preference/:tenantId/:memberId/enable-marketing
+   */
+  @Post('preference/:tenantId/:memberId/enable-marketing')
+  enableMarketingPush(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.preferenceService.enableMarketingPush(memberId, tenantId)
+  }
+
+  /**
+   * 设置用户级免打扰时段
+   * POST /push/preference/:tenantId/:memberId/dnd
+   * BS-0165: 用户自定义免打扰时间段
+   */
+  @Post('preference/:tenantId/:memberId/dnd')
+  setUserDndHours(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+    @Body() body: SetDndHoursDto,
+  ) {
+    return this.preferenceService.setDndHours(
+      memberId, tenantId, body.enabled, body.startTime, body.endTime
+    )
+  }
+
+  /**
+   * 设置首选推送通道
+   * POST /push/preference/:tenantId/:memberId/channel
+   * BS-0172: 通道优先级配置
+   */
+  @Post('preference/:tenantId/:memberId/channel')
+  setPreferredChannel(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+    @Body() body: SetPreferredChannelDto,
+  ) {
+    return this.preferenceService.setPreferredChannel(
+      memberId, tenantId, body.preferredChannel, body.fallbackChannels
+    )
+  }
+
+  /**
+   * 检查推送是否应发送 (按用户偏好)
+   * GET /push/preference/:tenantId/:memberId/check?priority=P3
+   * BS-0164: 推送前检查用户偏好
+   */
+  @Get('preference/:tenantId/:memberId/check')
+  checkPushPreference(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+    @Query('priority') priority: string,
+  ): { allowed: boolean; reason?: string } {
+    const p = priority as PushBusinessPriority
+    const allowed = this.preferenceService.shouldAllowPush(memberId, tenantId, p)
+    return {
+      allowed,
+      reason: allowed ? undefined : 'Blocked by user push preference',
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // WP-13B: 渠道策略 (BS-0171~BS-0175)
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * 获取用户首选通道
+   * GET /push/preference/:tenantId/:memberId/channels
+   * BS-0172: 获取用户通道优先级配置
+   */
+  @Get('preference/:tenantId/:memberId/channels')
+  getUserPreferredChannels(
+    @Param('tenantId') tenantId: string,
+    @Param('memberId') memberId: string,
+  ) {
+    return this.preferenceService.getPreferredChannels(memberId, tenantId)
+  }
+
+  /**
+   * 多通道发送 (根据用户偏好路由)
+   * POST /push/channels/send-smart
+   * BS-0171: 多通道路由 (自动选择用户首选通道)
+   */
+  @Post('channels/send-smart')
+  async sendSmartChannel(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: {
+      recipient: string
+      subject?: string
+      body: string
+      memberId?: string
+      priority?: PushBusinessPriority
+    }
+  ) {
+    const priority = body.priority ?? PushBusinessPriority.P1
+    const memberId = body.memberId
+
+    // 根据用户偏好获取通道优先级
+    let primary = DEFAULT_CHANNEL_ROUTING.primary
+    let fallback = DEFAULT_CHANNEL_ROUTING.fallback
+
+    if (memberId) {
+      const userChannels = this.preferenceService.getPreferredChannels(
+        memberId, tenantContext.tenantId
+      )
+      primary = userChannels.primary
+      fallback = userChannels.fallbacks[0] ?? 'email'
+    }
+
+    return this.dualChannelRouter.send(
+      {
+        recipient: body.recipient,
+        subject: body.subject,
+        body: body.body,
+        priority,
+        tenantId: tenantContext.tenantId,
+        memberId,
+      },
+      { primary, fallback }
+    )
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // WP-13B: 效果回传 (BS-0185~BS-0188)
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * 记录推送事件
+   * POST /push/events
+   * BS-0185: 推送事件回传 (送达/点击/失败)
+   */
+  @Post('events')
+  recordPushEvent(
+    @Body() body: RecordPushEventDto,
+  ) {
+    const eventType = body.eventType as 'sent' | 'delivered' | 'clicked' | 'failed' | 'bounced'
+    const priority = body.priority as PushBusinessPriority
+    return this.statsService.recordEvent({
+      pushRecordId: body.pushRecordId,
+      eventType,
+      memberId: body.memberId,
+      tenantId: body.tenantId,
+      channel: body.channel,
+      priority,
+      metadata: body.metadata,
+    })
+  }
+
+  /**
+   * 记录推送点击事件
+   * POST /push/events/click
+   * BS-0186: 点击率统计
+   */
+  @Post('events/click')
+  recordClickEvent(
+    @Body() body: {
+      pushRecordId: string
+      memberId: string
+      tenantId: string
+      channel: string
+      priority: string
+      metadata?: Record<string, unknown>
+    }
+  ) {
+    return this.statsService.recordClicked(
+      body.pushRecordId,
+      body.memberId,
+      body.tenantId,
+      body.channel,
+      body.priority as PushBusinessPriority,
+      body.metadata,
+    )
+  }
+
+  /**
+   * 获取推送效果看板
+   * GET /push/dashboard/:tenantId
+   * BS-0188: 效果看板数据
+   */
+  @Get('dashboard/:tenantId')
+  getPushDashboard(
+    @Param('tenantId') tenantId: string,
+    @Query() query: DashboardQueryDto,
+  ): PushEffectDashboard {
+    return this.statsService.getDashboard(tenantId, query.startDate, query.endDate)
+  }
+
+  /**
+   * 查询推送历史 (按会员)
+   * GET /push/history
+   * BS-0166: 推送历史记录查询
+   */
+  @Get('history')
+  queryPushHistory(
+    @Query() query: PushHistoryQueryDto,
+  ): { items: PushHistoryEntry[]; total: number; page: number; limit: number } {
+    return this.statsService.getPushHistory({
+      memberId: query.memberId,
+      tenantId: query.tenantId,
+      channel: query.channel,
+      priority: query.priority as PushBusinessPriority | undefined,
+      from: query.from,
+      to: query.to,
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+    })
   }
 }

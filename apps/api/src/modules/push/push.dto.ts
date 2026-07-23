@@ -191,3 +191,132 @@ export class PushQueryDto {
   @Min(1)
   limit?: number
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// WP-13B: C端便捷化 DTOs (BS-0164~BS-0167)
+// ═══════════════════════════════════════════════════════════════════
+
+export class UpdatePushPreferenceDto {
+  @IsBoolean()
+  @IsOptional()
+  dndEnabled?: boolean
+
+  @IsString()
+  @IsOptional()
+  dndStartTime?: string
+
+  @IsString()
+  @IsOptional()
+  dndEndTime?: string
+
+  @IsObject()
+  @IsOptional()
+  priorityEnabled?: Record<string, boolean>
+
+  @IsBoolean()
+  @IsOptional()
+  marketingPushEnabled?: boolean
+
+  @IsString()
+  @IsOptional()
+  preferredChannel?: string
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  fallbackChannels?: string[]
+}
+
+export class SetDndHoursDto {
+  @IsBoolean()
+  enabled!: boolean
+
+  @IsString()
+  startTime!: string
+
+  @IsString()
+  endTime!: string
+}
+
+export class SetPreferredChannelDto {
+  @IsString()
+  preferredChannel!: string
+
+  @IsArray()
+  @IsString({ each: true })
+  fallbackChannels!: string[]
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WP-13B: 效果回传 DTOs (BS-0185~BS-0188)
+// ═══════════════════════════════════════════════════════════════════
+
+export class RecordPushEventDto {
+  @IsString()
+  pushRecordId!: string
+
+  @IsString()
+  eventType!: string
+
+  @IsString()
+  memberId!: string
+
+  @IsString()
+  tenantId!: string
+
+  @IsString()
+  channel!: string
+
+  @IsString()
+  priority!: string
+
+  @IsObject()
+  @IsOptional()
+  metadata?: Record<string, unknown>
+}
+
+export class PushHistoryQueryDto {
+  @IsString()
+  @IsOptional()
+  memberId?: string
+
+  @IsString()
+  @IsOptional()
+  tenantId?: string
+
+  @IsString()
+  @IsOptional()
+  channel?: string
+
+  @IsString()
+  @IsOptional()
+  priority?: string
+
+  @IsDateString()
+  @IsOptional()
+  from?: string
+
+  @IsDateString()
+  @IsOptional()
+  to?: string
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  page?: number
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  limit?: number
+}
+
+export class DashboardQueryDto {
+  @IsString()
+  @IsOptional()
+  startDate?: string
+
+  @IsString()
+  @IsOptional()
+  endDate?: string
+}
