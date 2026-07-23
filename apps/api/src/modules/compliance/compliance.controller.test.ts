@@ -25,6 +25,7 @@ import { PIIMaskerService } from './pii-masker.service';
 import { GDPRErasureService } from './gdpr-erasure.service';
 import { AuditLogService } from './audit-log.service';
 import { AuditQueryService } from './audit-query.service';
+import { ComplianceGateService } from './compliance-gate.service';
 
 describe('ComplianceController', () => {
   let controller: ComplianceController;
@@ -33,6 +34,7 @@ describe('ComplianceController', () => {
   let gdprErasure: GDPRErasureService;
   let auditLog: AuditLogService;
   let auditQuery: AuditQueryService;
+  let gateService: ComplianceGateService;
 
   beforeEach(() => {
     piiDetector = new PIIDetectorService();
@@ -40,7 +42,8 @@ describe('ComplianceController', () => {
     gdprErasure = new GDPRErasureService();
     auditLog = new AuditLogService();
     auditQuery = new AuditQueryService(auditLog);
-    controller = new ComplianceController(piiDetector, piiMasker, gdprErasure, auditLog, auditQuery);
+    gateService = new ComplianceGateService(auditLog);
+    controller = new ComplianceController(piiDetector, piiMasker, gdprErasure, auditLog, auditQuery, gateService);
   });
 
   // ── PII 检测 ──
@@ -315,6 +318,43 @@ describe('ComplianceController', () => {
       const result = controller.verifyAuditChain();
       expect(result.valid).toBe(true);
       expect(result.totalChecked).toBe(2);
+    });
+  });
+
+  // ── 合规阀门 ──
+
+  describe('GET /compliance/gate/check', () => {
+    it('should pass all gates with high rates', () => {
+      const result = controller.checkGates('95', '100', '100');
+      expect(result.passed).toBe(true);
+      expect(result.results).toHaveLength(3);
+    });
+
+    it('should fail when coverage rate low', () => {
+      const result = controller.checkGates('50', '100', '100');
+      expect(result.passed).toBe(false);
+      expect(result.results[0].status).toBe('FAIL');
+    });
+
+    it('should use defaults when query params omitted', () => {
+      const result = controller.checkGates();
+      expect(result.results[0].currentValue).toBe(0);
+      expect(result.results[0].status).toBe('FAIL');
+    });
+  });
+
+  describe('GET /compliance/gate/config', () => {
+    it('should return gate config', () => {
+      const config = controller.getGateConfig();
+      expect(config.enabled).toBe(true);
+      expect(config.coverageThreshold).toBe(90);
+    });
+  });
+
+  describe('POST /compliance/gate/config', () => {
+    it('should update gate config', () => {
+      const updated = controller.updateGateConfig({ coverageThreshold: 80 });
+      expect(updated.coverageThreshold).toBe(80);
     });
   });
 

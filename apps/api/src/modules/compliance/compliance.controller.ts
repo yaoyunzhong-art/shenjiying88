@@ -35,6 +35,7 @@ import { PIIDetectorService } from './pii-detector.service';
 import { PIIMaskerService } from './pii-masker.service';
 import { GDPRErasureService } from './gdpr-erasure.service';
 import { AuditLogService } from './audit-log.service';
+import { ComplianceGateService } from './compliance-gate.service';
 import { AuditQueryService } from './audit-query.service';
 import type {
   AuditEntry,
@@ -73,6 +74,7 @@ export class ComplianceController {
     private readonly gdprErasure: GDPRErasureService,
     private readonly auditLog: AuditLogService,
     private readonly auditQuery: AuditQueryService,
+    private readonly gateService: ComplianceGateService,
   ) {}
 
   // ── PII 检测 ──────────────────────────────────────────────
@@ -239,6 +241,31 @@ export class ComplianceController {
       totalChecked: result.totalChecked,
       checkedAt: new Date().toISOString(),
     };
+  }
+
+  // ── 合规阀门 ──────────────────────────────────────────────
+
+  @Get('gate/check')
+  checkGates(
+    @Query('coverage') coverage?: string,
+    @Query('tscPass') tscPass?: string,
+    @Query('testPass') testPass?: string,
+  ) {
+    return this.gateService.checkGates({
+      coverageRate: coverage ? Number(coverage) : undefined,
+      tscPassRate: tscPass ? Number(tscPass) : undefined,
+      testPassRate: testPass ? Number(testPass) : undefined,
+    });
+  }
+
+  @Get('gate/config')
+  getGateConfig() {
+    return this.gateService.getConfig();
+  }
+
+  @Post('gate/config')
+  updateGateConfig(@Body() config: Record<string, unknown>) {
+    return this.gateService.updateConfig(config);
   }
 
   // ── 健康检查 ──────────────────────────────────────────────

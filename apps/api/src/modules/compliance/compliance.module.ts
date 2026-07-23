@@ -1,6 +1,6 @@
 /**
- * compliance.module.ts - Phase-20 T39-T43
- * 用途: 合规模块入口 (PII 检测 + 脱敏 + GDPR 删除 + 审计日志)
+ * compliance.module.ts - Phase-20 T39-T43 | WP-COMPLIANCE
+ * 用途: 合规模块入口 (PII 检测 + 脱敏 + GDPR 删除 + 审计日志 + 合规阀门)
  */
 import { Module, Global } from '@nestjs/common';
 import { PIIDetectorService } from './pii-detector.service';
@@ -8,6 +8,7 @@ import { PIIMaskerService } from './pii-masker.service';
 import { GDPRErasureService } from './gdpr-erasure.service';
 import { AuditLogService } from './audit-log.service';
 import { AuditQueryService } from './audit-query.service';
+import { ComplianceGateService } from './compliance-gate.service';
 import { ComplianceController } from './compliance.controller';
 
 @Global()
@@ -19,6 +20,7 @@ import { ComplianceController } from './compliance.controller';
     GDPRErasureService,
     AuditLogService,
     AuditQueryService,
+    ComplianceGateService,
   ],
   exports: [
     PIIDetectorService,
