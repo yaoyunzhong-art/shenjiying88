@@ -29,9 +29,10 @@ describe('TournamentHandicapService — BS-0281 擂台让分机制', () => {
   // ─── 胜率差超过阈值触发让分 ───
 
   it('BS-0281: 胜率差超过20%触发5分让分', () => {
+    // winRateDiff ≈ 0.25 (62.5% - 37.5%)
     const rankings: Ranking[] = [
-      makeRanking({ memberId: 'strong-player', wins: 10, losses: 2 }),  // 83.3%
-      makeRanking({ memberId: 'weak-player', wins: 2, losses: 10 }),    // 16.7%
+      makeRanking({ memberId: 'strong-player', wins: 5, losses: 3 }),  // 62.5%
+      makeRanking({ memberId: 'weak-player', wins: 3, losses: 5 }),    // 37.5%
     ]
 
     const result = service.calculateHandicap('strong-player', 'weak-player', rankings)
@@ -43,9 +44,10 @@ describe('TournamentHandicapService — BS-0281 擂台让分机制', () => {
   })
 
   it('BS-0281: 胜率差超过40%触发10分让分', () => {
+    // winRateDiff ≈ 0.45 (72.7% - 27.3%)
     const rankings: Ranking[] = [
-      makeRanking({ memberId: 'pro-player', wins: 20, losses: 1 }),
-      makeRanking({ memberId: 'newbie', wins: 0, losses: 20 }),
+      makeRanking({ memberId: 'pro-player', wins: 8, losses: 3 }),  // 72.7%
+      makeRanking({ memberId: 'newbie', wins: 3, losses: 8 }),      // 27.3%
     ]
 
     const result = service.calculateHandicap('pro-player', 'newbie', rankings)

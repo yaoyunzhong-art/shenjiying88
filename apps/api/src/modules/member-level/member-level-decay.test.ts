@@ -62,11 +62,11 @@ describe('MemberLevelDecayService — BS-0276 成长值衰减曲线', () => {
     expect(result.decayAmount).toBe(6000)
   })
 
-  it('BS-0276: 179天未消费，月度衰减最高降80%', () => {
+  it('BS-0276: 179天未消费，月度衰减降60%（3个月）', () => {
     const result = service.calculateDecay(makeConfig({ idleDays: 179 }))
     expect(result.period).toBe('monthly')
-    expect(result.decayedGrowth).toBe(2000)
-    expect(result.decayAmount).toBe(8000)
+    expect(result.decayedGrowth).toBe(4000)
+    expect(result.decayAmount).toBe(6000)
   })
 
   // ─── 季度衰减 ───
@@ -78,11 +78,11 @@ describe('MemberLevelDecayService — BS-0276 成长值衰减曲线', () => {
     expect(result.decayAmount).toBe(5000)
   })
 
-  it('BS-0276: 269天未消费，季度衰减最高降100%', () => {
+  it('BS-0276: 269天未消费，季度衰减降50%（1个季度）', () => {
     const result = service.calculateDecay(makeConfig({ idleDays: 269 }))
     expect(result.period).toBe('quarterly')
-    expect(result.decayedGrowth).toBe(0)
-    expect(result.decayAmount).toBe(10000)
+    expect(result.decayedGrowth).toBe(5000)
+    expect(result.decayAmount).toBe(5000)
   })
 
   // ─── 半年归零 ───
