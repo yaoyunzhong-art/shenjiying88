@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import type { DiagnosisEntity, DiagnosisBatch } from './ai-diagnosis.entity'
 
+type SequencedEntity = { _seq?: number }
+
 const diagnosisStore = new Map<string, DiagnosisEntity>()
 const batchStore = new Map<string, DiagnosisBatch>()
 let createSeq = 0
@@ -48,7 +50,7 @@ export class AiDiagnosisService {
     }
 
     diagnosisStore.set(diagnosisId, diagnosis)
-    ;(diagnosis as Record<string, number>)._seq = ++createSeq
+    ;(diagnosis as unknown as SequencedEntity)._seq = ++createSeq
     return diagnosis
   }
 
@@ -77,7 +79,7 @@ export class AiDiagnosisService {
     results.sort((a, b) => {
       const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       if (timeDiff !== 0) return timeDiff
-      return ((b as Record<string, number>)._seq ?? 0) - ((a as Record<string, number>)._seq ?? 0)
+      return ((b as unknown as SequencedEntity)._seq ?? 0) - ((a as unknown as SequencedEntity)._seq ?? 0)
     })
 
     return { diagnoses: results, total: results.length }
@@ -192,7 +194,7 @@ export class AiDiagnosisService {
     }
 
     batchStore.set(batchId, batch)
-    ;(batch as Record<string, number>)._seq = ++createSeq
+    ;(batch as unknown as SequencedEntity)._seq = ++createSeq
     return batch
   }
 
@@ -210,7 +212,7 @@ export class AiDiagnosisService {
     results.sort((a, b) => {
       const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       if (timeDiff !== 0) return timeDiff
-      return ((b as Record<string, number>)._seq ?? 0) - ((a as Record<string, number>)._seq ?? 0)
+      return ((b as unknown as SequencedEntity)._seq ?? 0) - ((a as unknown as SequencedEntity)._seq ?? 0)
     })
     return results
   }
