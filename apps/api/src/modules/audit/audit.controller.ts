@@ -53,7 +53,7 @@ export class AuditController {
       ...createDto,
       riskLevel: createDto.riskLevel ?? 'low',
       timestamp: new Date(),
-    } as any)
+    } as unknown as Parameters<import('./audit.service').AuditService['log']>[0])
     this.logger.log(`[AUDIT] Audit log created: id=${id}`)
     return { id }
   }
@@ -73,7 +73,7 @@ export class AuditController {
         ...dto,
         riskLevel: dto.riskLevel ?? 'low',
         timestamp: new Date(),
-      })) as any,
+      })) as unknown as Parameters<import('./audit.service').AuditService['logBatch']>[0],
     )
     this.logger.log(`[AUDIT] Batch created: ${ids.length} audit logs`)
     return { ids }

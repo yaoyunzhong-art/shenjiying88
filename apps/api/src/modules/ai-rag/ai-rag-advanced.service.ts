@@ -150,8 +150,7 @@ export class AdvancedRAGService {
     const cjkChars = [...query.replace(/[a-zA-Z0-9\s]/g, '')]
     const results: Array<{ chunkId: string; docId: string; collection: string; content: string; score: number; source: string; metadata: Record<string, unknown> }> = []
 
-    const kb = this.kb as Record<string, unknown>
-    const docMap = (kb.documents as Map<unknown, unknown>) ?? new Map()
+    const docMap = (this.kb as unknown as { documents?: Map<unknown, unknown> }).documents ?? new Map()
     for (const [, storedDoc] of docMap) {
       if (!storedDoc || !storedDoc.chunks) continue
       for (const chunk of storedDoc.chunks) {

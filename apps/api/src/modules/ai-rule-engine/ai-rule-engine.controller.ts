@@ -98,7 +98,7 @@ export class AiRuleEngineController {
   evaluateBatch(@Body() request: BatchEvaluateRequestDto): BatchEvaluateResponse {
     // DTO 在运行时经 ValidationPipe 保证结构与 BatchEvaluateRequest 一致
      
-    return this.aiRuleEngineService.batchEvaluate(request as any as BatchEvaluateRequest)
+    return this.aiRuleEngineService.batchEvaluate(request as unknown as BatchEvaluateRequest)
   }
 
   /** 风险评分：综合评估业务风险 */
@@ -132,7 +132,7 @@ export class AiRuleEngineController {
     @Param('id') id: string,
     @Body() config: import('./ai-rule-engine.dto').EngineConfigUpdateDto
   ): EngineDetail {
-    const detail = this.aiRuleEngineService.updateEngineConfig(id, config as any)
+    const detail = this.aiRuleEngineService.updateEngineConfig(id, config as unknown as import('./ai-rule-engine.service').AiRuleEngineService['updateEngineConfig'] extends (id: string, cfg: infer P) => unknown ? P : never)
     if (!detail) throw new Error(`Engine ${id} not found`)
     return detail
   }

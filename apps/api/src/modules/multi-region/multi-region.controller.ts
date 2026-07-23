@@ -203,6 +203,6 @@ export class MultiRegionController {
 
   @Post('failover/batch-check')
   async batchCheck(@Body() body: BatchCheckHealthDto) {
-    return this.failover.checkAll(body.forceOkMap as any)
+    return this.failover.checkAll(body.forceOkMap as Record<string, boolean>)
   }
 }

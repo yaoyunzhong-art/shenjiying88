@@ -88,7 +88,7 @@ export class TenantConfigController {
     if (!['W-S', 'W-T', 'W-B'].includes(code)) {
       throw new BadRequestException(`Invalid workbench code: ${code}`)
     }
-    const items = await this.service.getWorkbenchConfigs(code as WorkbenchConfigCode, category)
+    const items = await this.service.getWorkbenchConfigs(code as WorkbenchCode, category)
     return {
       workbench: code,
       items,

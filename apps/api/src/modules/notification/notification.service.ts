@@ -532,7 +532,7 @@ export class NotificationService implements OnModuleInit {
           priority: dispatch.channel === NotificationChannelType.Sms ? 10 : 5,
           tenantId: dispatch.tenantId,
           subject: dispatch.payload.subject as string | undefined,
-        } as any,
+        } as import('../push/channels/push-channel.interface').PushChannelRequest,
         dispatch.channel === NotificationChannelType.Sms
           ? { primary: 'sms', fallback: 'email' }
           : { primary: 'email', fallback: 'sms' }

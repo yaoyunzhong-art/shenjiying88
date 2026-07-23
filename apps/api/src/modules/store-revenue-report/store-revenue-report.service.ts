@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
-import type { RevenueReport } from './store-revenue-report.entity'
+import { RevenueReportType, type RevenueReport } from './store-revenue-report.entity'
 
 // ── In-memory store ──
 
@@ -324,7 +324,7 @@ function seedMockReports(): void {
       storeName: m.storeName,
       startDate: m.startDate,
       endDate: m.endDate,
-      reportType: m.reportType as import('./store-revenue-report.entity').RevenueReportType,
+      reportType: m.reportType as RevenueReportType,
       totalRevenue: m.totalRevenue,
       totalExpense: m.totalExpense,
       grossProfit: m.grossProfit,
@@ -388,7 +388,7 @@ export class StoreRevenueReportService {
       storeName: input.storeName,
       startDate: input.startDate,
       endDate: input.endDate,
-      reportType: input.reportType as import('./store-revenue-report.entity').RevenueReportType,
+      reportType: input.reportType as RevenueReportType,
       totalRevenue,
       totalExpense,
       grossProfit,
