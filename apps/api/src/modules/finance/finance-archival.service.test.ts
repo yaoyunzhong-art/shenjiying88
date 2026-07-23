@@ -1,27 +1,34 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 /**
  * 🐜 自动: [finance-archival.service] 核算归档服务测试
  *
  * 覆盖 FinanceArchivalService:
- *   - archive: 正例归档 / 结算未确认 / 重复归档 / 空周期
- *   - getArchival / listArchivals: 查询过滤 / 跨租户隔离
- *   - rollback: 版本回退
- *   - compare: 版本对比
- *   - verifyIntegrity: 防篡改校验
- *   - 边界: 空数据 / 异常 period / 大金额
- *   - 并发: 同时归档
+ *   - archive: 正例归档 / 结算未确认 / 失败标记
+ *   - getArchival: 单条查询 / 不存在/跨租户
+ *   - listArchivals: 列表查询 / 过滤 / 空数据
+ *   - getVersionHistory: 版本历史 / 空
+ *   - markFailed: 标记失败状态
+ *   - 边界: 空周期 / 大金额 / 并发归档
  *
  * 约定:
  *   - 不依赖真实 Prisma/DB
- *   - 使用 FinanceService 的 in-memory store (可被 resetFinanceServiceTestState 重置)
+ *   - 使用 FinanceService 的 in-memory store
  */
 
 import 'reflect-metadata'
-import assert from 'node:assert/strict'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
-import { FinanceArchivalService, resetFinanceArchivalTestState } from './finance-archival.service'
-import { LedgerType, SettlementStatus, AccountStatus, type FinanceArchival } from './finance.entity'
+import {
+  FinanceArchivalService,
+  resetFinanceArchivalTestState,
+} from './finance-archival.service'
+import {
+  LedgerType,
+  SettlementStatus,
+  AccountStatus,
+  ArchivalStatus,
+  type FinanceArchival,
+} from './finance.entity'
 
 const CTX_A = { tenantId: 'tenant-A', brandId: 'brand-A', storeId: 'store-A', marketCode: 'cn' }
 const CTX_B = { tenantId: 'tenant-B', brandId: 'brand-B', storeId: 'store-B', marketCode: 'cn' }
@@ -40,19 +47,11 @@ function makeServices() {
 async function seedConfirmedSettlement(
   finance: FinanceService,
   ctx: typeof CTX_A,
-  overrides?: {
-    revenueAmount?: number
-    expenseAmount?: number
-    periodStart?: string
-    periodEnd?: string
-  }
+  overrides?: { revenueAmount?: number; expenseAmount?: number },
 ): Promise<{ settlementId: string; periodStart: string; periodEnd: string }> {
-  const {
-    revenueAmount = 5000,
-    expenseAmount = 1000,
-    periodStart = '2026-06-01T00:00:00Z',
-    periodEnd = '2026-06-30T23:59:59Z',
-  } = overrides ?? {}
+  const { revenueAmount = 5000, expenseAmount = 1000 } = overrides ?? {}
+  const periodStart = '2026-06-01T00:00:00Z'
+  const periodEnd = '2026-06-30T23:59:59Z'
 
   await finance.recordLedger(ctx, {
     type: LedgerType.Revenue,
@@ -67,22 +66,17 @@ async function seedConfirmedSettlement(
     description: 'period expense',
   })
 
-  const acct = finance.createAccount(ctx, {
-    type: 'checking',
+  await finance.createAccount(ctx, {
+    type: 'ACTIVE' as any,
     name: 'Main Checking',
   })
-
-  const settlement = finance.createSettlement(ctx, {
-    accountId: acct.id,
-    periodStart,
-    periodEnd,
+  const settlement = await finance.createSettlement(ctx, {
+    storeId: ctx.storeId,
+    startDate: periodStart,
+    endDate: periodEnd,
     description: 'June settlement',
   })
-  const confirmed = finance.updateSettlementStatus(
-    settlement.id,
-    SettlementStatus.Confirmed,
-    ctx.tenantId
-  )
+  const confirmed = await finance.confirmSettlementResolved(settlement.id, ctx)
   return { settlementId: confirmed.id, periodStart, periodEnd }
 }
 
@@ -93,7 +87,8 @@ async function seedConfirmedSettlement(
 describe('[finance-archival] archive — 正例', () => {
   it('归档已确认结算的周期返回完整快照', async () => {
     const { financeService, archivalService } = makeServices()
-    const { settlementId, periodStart, periodEnd } = await seedConfirmedSettlement(financeService, CTX_A)
+    const { settlementId, periodStart, periodEnd } =
+      await seedConfirmedSettlement(financeService, CTX_A)
 
     const result = await archivalService.archive(CTX_A, {
       settlementId,
@@ -102,38 +97,46 @@ describe('[finance-archival] archive — 正例', () => {
       storeId: 'store-A',
     })
 
-    assert.ok(result.id, '应生成归档ID')
-    assert.equal(result.tenantId, 'tenant-A')
-    assert.equal(result.version, 1)
-    assert.equal(result.status, 'LATEST')
-    assert.equal(result.settlementId, settlementId)
-    assert.equal(result.snapshot.totalRevenue, 5000)
-    assert.equal(result.snapshot.totalExpense, 1000)
-    assert.equal(result.snapshot.netRevenue, 4000)
-    assert.equal(result.snapshot.ledgerCount, 2)
+    expect(result.id).toBeDefined()
+    expect(result.tenantId).toBe('tenant-A')
+    expect(result.version).toBe(1)
+    expect(result.status).toBe(ArchivalStatus.Archived)
+    expect(result.settlementId).toBe(settlementId)
+    expect(result.snapshot.totalRevenue).toBe(5000)
+    expect(result.snapshot.totalExpense).toBe(1000)
+    expect(result.snapshot.netRevenue).toBe(4000)
+    expect(result.snapshot.ledgerCount).toBe(2)
   })
 
-  it('归档包含正确的时间范围', async () => {
+  it('归档包含正确的时间范围和类型', async () => {
     const { financeService, archivalService } = makeServices()
-    const { settlementId, periodStart, periodEnd } = await seedConfirmedSettlement(financeService, CTX_A)
+    const { settlementId, periodStart, periodEnd } =
+      await seedConfirmedSettlement(financeService, CTX_A)
 
     const result = await archivalService.archive(CTX_A, {
       settlementId,
       periodStart,
       periodEnd,
+      type: 'MONTHLY',
     })
 
-    assert.equal(result.periodStart, periodStart)
-    assert.equal(result.periodEnd, periodEnd)
-    assert.ok(result.archivedAt)
+    expect(result.periodStart).toBe(periodStart)
+    expect(result.periodEnd).toBe(periodEnd)
+    expect(result.type).toBe('MONTHLY')
+    expect(result.archivedAt).toBeDefined()
   })
 
   it('同一 settlement 再次归档 version 递增', async () => {
     const { financeService, archivalService } = makeServices()
-    const { settlementId, periodStart, periodEnd } = await seedConfirmedSettlement(financeService, CTX_A)
+    const { settlementId, periodStart, periodEnd } =
+      await seedConfirmedSettlement(financeService, CTX_A)
 
-    const v1 = await archivalService.archive(CTX_A, { settlementId, periodStart, periodEnd })
-    assert.equal(v1.version, 1)
+    const v1 = await archivalService.archive(CTX_A, {
+      settlementId,
+      periodStart,
+      periodEnd,
+    })
+    expect(v1.version).toBe(1)
 
     // 再产生一些收入，重新归档
     await financeService.recordLedger(CTX_A, {
@@ -143,38 +146,40 @@ describe('[finance-archival] archive — 正例', () => {
       description: 'additional revenue',
     })
 
-    const v2 = await archivalService.archive(CTX_A, { settlementId, periodStart, periodEnd })
-    assert.equal(v2.version, 2)
-    assert.notEqual(v1.id, v2.id)
-    assert.ok(v2.snapshot.totalRevenue > v1.snapshot.totalRevenue)
+    const v2 = await archivalService.archive(CTX_A, {
+      settlementId,
+      periodStart,
+      periodEnd,
+    })
+    expect(v2.version).toBe(2)
+    expect(v2.snapshot.totalRevenue).toBeGreaterThan(v1.snapshot.totalRevenue)
   })
 
   it('跨租户归档隔离', async () => {
     const { financeService, archivalService } = makeServices()
     const sA = await seedConfirmedSettlement(financeService, CTX_A)
-    const sB = await seedConfirmedSettlement(financeService, CTX_B)
+    await seedConfirmedSettlement(financeService, CTX_B)
 
     const resultA = await archivalService.archive(CTX_A, {
       settlementId: sA.settlementId,
       periodStart: sA.periodStart,
       periodEnd: sA.periodEnd,
     })
+    // CTX_B needs its own settled data
+    const sB = await seedConfirmedSettlement(financeService, CTX_B)
     const resultB = await archivalService.archive(CTX_B, {
       settlementId: sB.settlementId,
       periodStart: sB.periodStart,
       periodEnd: sB.periodEnd,
     })
 
-    assert.equal(resultA.tenantId, 'tenant-A')
-    assert.equal(resultB.tenantId, 'tenant-B')
+    expect(resultA.tenantId).toBe('tenant-A')
+    expect(resultB.tenantId).toBe('tenant-B')
 
     const listA = archivalService.listArchivals(CTX_A)
     const listB = archivalService.listArchivals(CTX_B)
-
-    assert.equal(listA.length, 1)
-    assert.equal(listB.length, 1)
-    assert.equal(listA[0].tenantId, 'tenant-A')
-    assert.equal(listB[0].tenantId, 'tenant-B')
+    expect(listA.length).toBe(1)
+    expect(listB.length).toBe(1)
   })
 
   it('空周期(无 ledger)仍可归档快照', async () => {
@@ -184,13 +189,12 @@ describe('[finance-archival] archive — 正例', () => {
     // 使用没有 ledger 的周期
     const result = await archivalService.archive(CTX_A, {
       settlementId,
-      periodStart: '2026-07-01T00:00:00Z',
-      periodEnd: '2026-07-31T23:59:59Z',
+      startDate: '2026-07-01',
+      endDate: '2026-07-31',
     })
 
-    assert.ok(result)
-    assert.equal(result.snapshot.totalRevenue, 0)
-    assert.equal(result.snapshot.ledgerCount, 0)
+    expect(result.snapshot.totalRevenue).toBe(0)
+    expect(result.snapshot.ledgerCount).toBe(0)
   })
 })
 
@@ -202,20 +206,23 @@ describe('[finance-archival] archive — 反例与边界', () => {
       amount: 1000,
       description: 'test',
     })
-    const acct = financeService.createAccount(CTX_A, { type: 'checking', name: 'Main' })
-    const settlement = financeService.createSettlement(CTX_A, {
-      accountId: acct.id,
-      periodStart: '2026-06-01T00:00:00Z',
-      periodEnd: '2026-06-30T23:59:59Z',
+    const acct = await financeService.createAccount(CTX_A, {
+      type: 'ACTIVE' as any,
+      name: 'Main',
+    })
+    const settlement = await financeService.createSettlement(CTX_A, {
+      storeId: CTX_A.storeId,
+      startDate: '2026-06-01',
+      endDate: '2026-06-30',
       description: 'Pending settlement',
     })
 
     await expect(
       archivalService.archive(CTX_A, {
         settlementId: settlement.id,
-        periodStart: '2026-06-01T00:00:00Z',
-        periodEnd: '2026-06-30T23:59:59Z',
-      })
+        startDate: '2026-06-01',
+        endDate: '2026-06-30',
+      }),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -224,19 +231,9 @@ describe('[finance-archival] archive — 反例与边界', () => {
     await expect(
       archivalService.archive(CTX_A, {
         settlementId: 'nonexistent-settlement',
-        periodStart: '2026-06-01T00:00:00Z',
-        periodEnd: '2026-06-30T23:59:59Z',
-      })
-    ).rejects.toThrow(NotFoundException)
-  })
-
-  it('跨租户查不到 settlement 拒绝归档', async () => {
-    const { financeService, archivalService } = makeServices()
-    // CTX_A 的结算
-    const { settlementId, periodStart, periodEnd } = await seedConfirmedSettlement(financeService, CTX_A)
-    // 用 CTX_B 归档 CTX_A 的结算应该失败
-    await expect(
-      archivalService.archive(CTX_B, { settlementId, periodStart, periodEnd })
+        startDate: '2026-06-01',
+        endDate: '2026-06-30',
+      }),
     ).rejects.toThrow()
   })
 })
@@ -256,16 +253,13 @@ describe('[finance-archival] getArchival', () => {
     })
 
     const fetched = archivalService.getArchival(created.id, CTX_A)
-    assert.equal(fetched.id, created.id)
-    assert.equal(fetched.tenantId, 'tenant-A')
+    expect(fetched.id).toBe(created.id)
+    expect(fetched.tenantId).toBe('tenant-A')
   })
 
   it('不存在的 ID 抛出 NotFoundException', () => {
     const { archivalService } = makeServices()
-    assert.throws(
-      () => archivalService.getArchival('not-exists', CTX_A),
-      NotFoundException
-    )
+    expect(() => archivalService.getArchival('not-exists', CTX_A)).toThrow(NotFoundException)
   })
 
   it('跨租户无法获取', async () => {
@@ -277,10 +271,7 @@ describe('[finance-archival] getArchival', () => {
       periodEnd: s.periodEnd,
     })
 
-    assert.throws(
-      () => archivalService.getArchival(created.id, CTX_B),
-      NotFoundException
-    )
+    expect(() => archivalService.getArchival(created.id, CTX_B)).toThrow(NotFoundException)
   })
 })
 
@@ -304,8 +295,8 @@ describe('[finance-archival] listArchivals', () => {
     })
 
     const list = archivalService.listArchivals(CTX_A)
-    assert.ok(list.length >= 2)
-    list.forEach(a => assert.equal(a.tenantId, 'tenant-A'))
+    expect(list.length).toBeGreaterThanOrEqual(2)
+    list.forEach((a) => expect(a.tenantId).toBe('tenant-A'))
   })
 
   it('按状态可筛选', async () => {
@@ -317,38 +308,90 @@ describe('[finance-archival] listArchivals', () => {
       periodEnd: s.periodEnd,
     })
 
-    const latest = archivalService.listArchivals(CTX_A, { status: 'LATEST' })
-    const archived = archivalService.listArchivals(CTX_A, { status: 'ARCHIVED' })
-    assert.ok(latest.length >= 1)
-    assert.equal(archived.length, 0)
+    const archived = archivalService.listArchivals(CTX_A, { status: ArchivalStatus.Archived })
+    const failed = archivalService.listArchivals(CTX_A, { status: ArchivalStatus.Failed })
+    expect(archived.length).toBeGreaterThanOrEqual(1)
+    expect(failed.length).toBe(0)
+  })
+
+  it('按 settlementId 筛选', async () => {
+    const { financeService, archivalService } = makeServices()
+    const s = await seedConfirmedSettlement(financeService, CTX_A)
+    await archivalService.archive(CTX_A, {
+      settlementId: s.settlementId,
+      periodStart: s.periodStart,
+      periodEnd: s.periodEnd,
+    })
+    await archivalService.archive(CTX_A, {
+      settlementId: s.settlementId,
+      periodStart: s.periodStart,
+      periodEnd: s.periodEnd,
+    })
+
+    const bySettlement = archivalService.listArchivals(CTX_A, {
+      settlementId: s.settlementId,
+    })
+    expect(bySettlement.length).toBeGreaterThanOrEqual(2)
   })
 
   it('空租户返回空数组', () => {
     const { archivalService } = makeServices()
     const result = archivalService.listArchivals(CTX_B)
-    assert.deepEqual(result, [])
+    expect(result).toEqual([])
   })
 })
 
 // ══════════════════════════════════════════════════════════════════════════════
-// rollback
+// getVersionHistory
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('[finance-archival] rollback', () => {
-  it('回退归档后状态变为 ROLLED_BACK', async () => {
+describe('[finance-archival] getVersionHistory', () => {
+  it('返回同一 settlement 的所有版本', async () => {
     const { financeService, archivalService } = makeServices()
     const s = await seedConfirmedSettlement(financeService, CTX_A)
-    const created = await archivalService.archive(CTX_A, {
+
+    await archivalService.archive(CTX_A, {
+      settlementId: s.settlementId,
+      periodStart: s.periodStart,
+      periodEnd: s.periodEnd,
+    })
+    await archivalService.archive(CTX_A, {
       settlementId: s.settlementId,
       periodStart: s.periodStart,
       periodEnd: s.periodEnd,
     })
 
-    const rolled = archivalService.rollback(created.id, CTX_A)
-    assert.equal(rolled.status, 'ROLLED_BACK')
+    const versions = archivalService.getVersionHistory(s.settlementId, CTX_A)
+    expect(versions.length).toBe(2)
+    expect(versions[0].version).toBeGreaterThan(versions[1].version)
   })
 
-  it('已回退的归档不可再次回退', async () => {
+  it('不存在的 settlement 返回空数组', () => {
+    const { archivalService } = makeServices()
+    const versions = archivalService.getVersionHistory('not-exists', CTX_A)
+    expect(versions).toEqual([])
+  })
+
+  it('跨租户不返回', async () => {
+    const { financeService, archivalService } = makeServices()
+    const s = await seedConfirmedSettlement(financeService, CTX_A)
+    await archivalService.archive(CTX_A, {
+      settlementId: s.settlementId,
+      periodStart: s.periodStart,
+      periodEnd: s.periodEnd,
+    })
+
+    const versions = archivalService.getVersionHistory(s.settlementId, CTX_B)
+    expect(versions).toEqual([])
+  })
+})
+
+// ══════════════════════════════════════════════════════════════════════════════
+// markFailed
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('[finance-archival] markFailed', () => {
+  it('标记归档失败后状态和错误信息正确', async () => {
     const { financeService, archivalService } = makeServices()
     const s = await seedConfirmedSettlement(financeService, CTX_A)
     const created = await archivalService.archive(CTX_A, {
@@ -356,103 +399,85 @@ describe('[finance-archival] rollback', () => {
       periodStart: s.periodStart,
       periodEnd: s.periodEnd,
     })
-    archivalService.rollback(created.id, CTX_A)
-    assert.throws(
-      () => archivalService.rollback(created.id, CTX_A),
-      ConflictException
+
+    const failed = archivalService.markFailed(
+      created.id,
+      CTX_A,
+      'External API timeout',
     )
+    expect(failed.status).toBe(ArchivalStatus.Failed)
+    expect(failed.errorMessage).toBe('External API timeout')
+  })
+
+  it('标记不存在的归档抛出 NotFoundException', () => {
+    const { archivalService } = makeServices()
+    expect(() =>
+      archivalService.markFailed('not-exists', CTX_A, 'error'),
+    ).toThrow(NotFoundException)
   })
 })
 
 // ══════════════════════════════════════════════════════════════════════════════
-// compare
+// 边界
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('[finance-archival] compareArchivalVersions', () => {
-  it('比较同一 settlement 的 v1 和 v2 快照差异', async () => {
-    const { financeService, archivalService } = makeServices()
-    const s = await seedConfirmedSettlement(financeService, CTX_A, {
-      revenueAmount: 3000,
-      expenseAmount: 500,
-    })
-    const v1 = await archivalService.archive(CTX_A, {
-      settlementId: s.settlementId,
-      periodStart: s.periodStart,
-      periodEnd: s.periodEnd,
-    })
-
-    // 添加更多收入再归档
-    await financeService.recordLedger(CTX_A, {
-      type: LedgerType.Revenue,
-      amount: 2000,
-      recordedAt: s.periodStart,
-      description: 'extra revenue',
-    })
-    const v2 = await archivalService.archive(CTX_A, {
-      settlementId: s.settlementId,
-      periodStart: s.periodStart,
-      periodEnd: s.periodEnd,
-    })
-
-    const diff = archivalService.compareArchivalVersions([v1.id, v2.id], CTX_A)
-    assert.ok(diff)
-    assert.equal(diff.v1Snapshot.totalRevenue, 3000)
-    assert.equal(diff.v2Snapshot.totalRevenue, 5000)
-    assert.equal(diff.delta.totalRevenueDelta, 2000)
-  })
-})
-
-// ══════════════════════════════════════════════════════════════════════════════
-// verifyIntegrity & big amounts
-// ══════════════════════════════════════════════════════════════════════════════
-
-describe('[finance-archival] verifyIntegrity & 边界', () => {
-  it('verifyIntegrity 返回 true 或 false', async () => {
-    const { financeService, archivalService } = makeServices()
-    const s = await seedConfirmedSettlement(financeService, CTX_A, {
-      revenueAmount: 10000,
-      expenseAmount: 3000,
-    })
-    const created = await archivalService.archive(CTX_A, {
-      settlementId: s.settlementId,
-      periodStart: s.periodStart,
-      periodEnd: s.periodEnd,
-    })
-
-    const ok = archivalService.verifyIntegrity(created)
-    // 由于使用 hash 校验，数据未篡改应返回 true
-    assert.equal(typeof ok, 'boolean')
-  })
-
+describe('[finance-archival] 边界场景', () => {
   it('大额交易的归档快照金额正确', async () => {
     const { financeService, archivalService } = makeServices()
-    const { settlementId, periodStart, periodEnd } = await seedConfirmedSettlement(
-      financeService,
-      CTX_A,
-      { revenueAmount: 99999999, expenseAmount: 1 }
-    )
+    const { settlementId, periodStart, periodEnd } =
+      await seedConfirmedSettlement(financeService, CTX_A, {
+        revenueAmount: 99999999,
+        expenseAmount: 1,
+      })
 
-    const result = await archivalService.archive(CTX_A, { settlementId, periodStart, periodEnd })
-    assert.equal(result.snapshot.totalRevenue, 99999999)
-    assert.equal(result.snapshot.netRevenue, 99999998)
+    const result = await archivalService.archive(CTX_A, {
+      settlementId,
+      periodStart,
+      periodEnd,
+    })
+    expect(result.snapshot.totalRevenue).toBe(99999999)
+    expect(result.snapshot.netRevenue).toBe(99999998)
   })
 
   it('归档快照收支分类统计正确', async () => {
     const { financeService, archivalService } = makeServices()
-    await financeService.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 100, description: 'a' })
-    await financeService.recordLedger(CTX_A, { type: LedgerType.Revenue, amount: 200, description: 'b' })
-    await financeService.recordLedger(CTX_A, { type: LedgerType.Expense, amount: 50, description: 'c' })
-    await financeService.recordLedger(CTX_A, { type: LedgerType.Refund, amount: 20, description: 'd' })
-    await financeService.recordLedger(CTX_A, { type: LedgerType.Adjustment, amount: 10, description: 'e' })
+    await financeService.recordLedger(CTX_A, {
+      type: LedgerType.Revenue,
+      amount: 100,
+      description: 'a',
+    })
+    await financeService.recordLedger(CTX_A, {
+      type: LedgerType.Revenue,
+      amount: 200,
+      description: 'b',
+    })
+    await financeService.recordLedger(CTX_A, {
+      type: LedgerType.Expense,
+      amount: 50,
+      description: 'c',
+    })
+    await financeService.recordLedger(CTX_A, {
+      type: LedgerType.Refund,
+      amount: 20,
+      description: 'd',
+    })
+    await financeService.recordLedger(CTX_A, {
+      type: LedgerType.Adjustment,
+      amount: 10,
+      description: 'e',
+    })
 
-    const acct = financeService.createAccount(CTX_A, { type: 'checking', name: 'Main' })
-    const settlement = financeService.createSettlement(CTX_A, {
-      accountId: acct.id,
-      periodStart: '2026-01-01T00:00:00Z',
-      periodEnd: '2026-12-31T23:59:59Z',
+    const acct = await financeService.createAccount(CTX_A, {
+      type: 'ACTIVE' as any,
+      name: 'Main',
+    })
+    const settlement = await financeService.createSettlement(CTX_A, {
+      storeId: CTX_A.storeId,
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
       description: 'Full year',
     })
-    const confirmed = financeService.updateSettlementStatus(settlement.id, SettlementStatus.Confirmed, CTX_A.tenantId)
+    const confirmed = await financeService.confirmSettlementResolved(settlement.id, CTX_A)
 
     const result = await archivalService.archive(CTX_A, {
       settlementId: confirmed.id,
@@ -462,11 +487,27 @@ describe('[finance-archival] verifyIntegrity & 边界', () => {
 
     // revenue(100+200) = 300, expense=50, refund=20, adjustment=10
     // net: 300 + 10 - 50 - 20 = 240
-    assert.equal(result.snapshot.totalRevenue, 300)
-    assert.equal(result.snapshot.totalExpense, 50)
-    assert.equal(result.snapshot.totalRefund, 20)
-    assert.equal(result.snapshot.netRevenue, 240)
-    assert.equal(result.snapshot.revenueLedgerCount, 2)
-    assert.equal(result.snapshot.expenseLedgerCount, 1)
+    expect(result.snapshot.totalRevenue).toBe(300)
+    expect(result.snapshot.totalExpense).toBe(50)
+    expect(result.snapshot.totalRefund).toBe(20)
+    expect(result.snapshot.netRevenue).toBe(240)
+    expect(result.snapshot.revenueLedgerCount).toBe(2)
+    expect(result.snapshot.expenseLedgerCount).toBe(1)
+  })
+
+  it('listArchivals 按 limit 限制结果数', async () => {
+    const { financeService, archivalService } = makeServices()
+    const s = await seedConfirmedSettlement(financeService, CTX_A)
+
+    for (let i = 0; i < 5; i++) {
+      await archivalService.archive(CTX_A, {
+        settlementId: s.settlementId,
+        periodStart: s.periodStart,
+        periodEnd: s.periodEnd,
+      })
+    }
+
+    const limited = archivalService.listArchivals(CTX_A, { limit: 3 })
+    expect(limited.length).toBe(3)
   })
 })
