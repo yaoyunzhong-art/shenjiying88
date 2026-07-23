@@ -294,7 +294,7 @@ export class AllianceService {
 
   /** 设置指标（测试辅助） */
   setMetrics(partnerId: string, metrics: HealthMetricsInput): AllianceResult<void> {
-    this.healthService.setMetrics(partnerId, metrics as any)
+    this.healthService.setMetrics(partnerId, metrics)
     return { success: true, message: 'Metrics updated' }
   }
 
@@ -324,7 +324,7 @@ export class AllianceService {
     try {
       const settlement = this.settlementService.createSettlement(
         req.orderId,
-        req.type as any,
+        req.type as AllianceType,
         req.totalAmount,
         req.participants.map((p) => ({
           partnerId: p.partnerId,

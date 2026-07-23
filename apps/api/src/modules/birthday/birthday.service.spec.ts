@@ -34,7 +34,7 @@ describe('BirthdayService', () => {
       birthday: overrides.birthday ?? '07-25',
       advanceDays: overrides.advanceDays ?? 3,
       tier: overrides.tier ?? BirthdayTier.Standard,
-      rewardType: (overrides.rewardType as any) ?? 'coupon',
+      rewardType: (overrides.rewardType as RewardType) ?? 'coupon',
       rewardValue: overrides.rewardValue ?? 50,
       allowFriends,
       // 只有 allowFriends=true 时提供默认折扣值

@@ -453,7 +453,7 @@ export class AllianceController {
    */
   @Get('tier/config/:grade')
   getTierConfig(@Param('grade') grade: string) {
-    const config = this.tierService.getTierConfig(grade as any)
+    const config = this.tierService.getTierConfig(grade as Grade)
     return { success: true, data: config }
   }
 
@@ -475,7 +475,7 @@ export class AllianceController {
    */
   @Post('tier/calculate-share')
   calculateTierShare(@Body() body: { grade: string; orderAmount: number }) {
-    const share = this.tierService.calculateRevenueShare(body.grade as any, body.orderAmount)
+    const share = this.tierService.calculateRevenueShare(body.grade as Grade, body.orderAmount)
     return { success: true, data: { grade: body.grade, orderAmount: body.orderAmount, shareAmount: share } }
   }
 
@@ -652,7 +652,7 @@ export class AllianceController {
     try {
       const anomaly = this.reviewService.reportAnomaly(
         body.partnerId, body.partnerName,
-        body.type as any, body.severity as any,
+        body.type as AllianceType, body.severity as Severity,
         body.involvedAmount, body.description, body.relatedId,
       )
       return { success: true, data: anomaly }
@@ -677,7 +677,7 @@ export class AllianceController {
   submitReview(@Body() body: SubmitReviewDto) {
     try {
       const review = this.reviewService.submitReview(
-        body.anomalyId, body.decision as any,
+        body.anomalyId, body.decision as ReviewDecision,
         body.reviewer, body.note,
       )
       return { success: true, data: review }

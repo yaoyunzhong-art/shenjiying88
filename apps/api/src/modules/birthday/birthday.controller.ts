@@ -48,7 +48,7 @@ export class BirthdayController {
       birthday: body.birthday,
       advanceDays: body.advanceDays ?? 3,
       tier: (body.tier as BirthdayTier) ?? BirthdayTier.Standard,
-      rewardType: (body.rewardType as any) ?? 'coupon',
+      rewardType: (body.rewardType as RewardType) ?? 'coupon',
       rewardValue: body.rewardValue ?? 50,
       allowFriends: body.allowFriends,
       friendDiscount: body.friendDiscount,

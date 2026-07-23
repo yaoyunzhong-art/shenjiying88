@@ -707,10 +707,18 @@ export class ConfigurationGovernanceService {
   }
 
   async getSecretMetadata(secretName?: string) {
-    const persistedRecords = await this.prisma.secretAsset.findMany({
-      where: secretName ? { key: secretName } : undefined,
-      orderBy: [{ key: 'asc' }, { version: 'desc' }]
-    })
+    let persistedRecords = [] as Awaited<ReturnType<typeof this.prisma.secretAsset.findMany>>
+    try {
+      persistedRecords = await this.prisma.secretAsset.findMany({
+        where: secretName ? { key: secretName } : undefined,
+        orderBy: [{ key: 'asc' }, { version: 'desc' }]
+      })
+    } catch (error) {
+      if (!this.shouldUseConfigurationFallback(error)) {
+        throw error
+      }
+      persistedRecords = []
+    }
     const persistedKeys = new Set(persistedRecords.map((record) => record.key))
     const persisted = this.groupByKey(persistedRecords).map(([key, records]) =>
       this.toPersistedSecretMetadata(key, records)
@@ -725,6 +733,11 @@ export class ConfigurationGovernanceService {
     }
 
     return merged
+  }
+
+  private shouldUseConfigurationFallback(error: unknown) {
+    const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
   }
 
   async getCertificateMetadata(filters: {

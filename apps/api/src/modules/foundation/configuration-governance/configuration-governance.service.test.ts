@@ -533,6 +533,18 @@ it('getSecretMetadata throws NotFoundException for unknown secret', async () => 
   )
 })
 
+it('getSecretMetadata falls back to in-memory secrets when prisma table is unavailable', async () => {
+  const service = createService()
+  service['prisma'].secretAsset.findMany = (async () => {
+    throw Object.assign(new Error('missing table'), { code: 'P2021' })
+  }) as never
+
+  const secrets = await service.getSecretMetadata()
+
+  assert.ok(secrets.length > 0)
+  assert.ok(secrets.some((secret: Record<string, unknown>) => secret.name === 'lyt-webhook-signing-secret'))
+})
+
 it('getCertificateMetadata returns certificate records', async () => {
   const service = createService()
   const certificates = await service.getCertificateMetadata()

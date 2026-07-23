@@ -212,7 +212,7 @@ export class CrossMerchantSettlementService {
 
     settlement.status = 'executed'
     settlement.executedAt = new Date()
-    ;(settlement as any).executedParticipants = executedParticipants
+    ;(settlement as AllianceSettlement).executedParticipants = executedParticipants
 
     this.logger.log(`Settlement executed: ${settlementId} participants=${executedParticipants.length}`)
     return settlement

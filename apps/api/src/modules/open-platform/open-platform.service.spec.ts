@@ -699,8 +699,8 @@ describe('OpenPlatformService', () => {
 
     const app1Slas = svc.getSla({ appId: app1.id });
     expect(Array.isArray(app1Slas)).toBe(true);
-    expect((app1Slas as any[]).length).toBe(1);
-    expect((app1Slas as any[])[0].appId).toBe(app1.id);
+    expect((app1Slas as SlaContract[]).length).toBe(1);
+    expect((app1Slas as SlaContract[])[0].appId).toBe(app1.id);
   });
 
   it('BS-0112: 开发者列表返回全部', async () => {
