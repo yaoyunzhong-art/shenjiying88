@@ -19,6 +19,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
+import { VenueDataService } from './venue-data.service'
 import type {
   FeasibilityReport,
   OperationAdviceChoice,
@@ -28,6 +29,14 @@ import type {
   ScanMode,
   FinancePanorama,
   RenovationTier,
+  PricingStrategyInput,
+  PricingStrategyOutput,
+  PriceItem,
+  RevenueImpact,
+  MarketingCampaignInput,
+  MarketingCampaignOutput,
+  CampaignProposal,
+  CampaignType,
   RenovationTierZh,
   TrendPoint,
   StorePlanningInput,
@@ -40,6 +49,8 @@ import type {
   DeviceRecommendationInput,
   DeviceRecommendationOutput,
   RecommendedDevice,
+  DeviceCandidate,
+  AlternativeDeviceRecommendation,
   RenovationPlanInput,
   RenovationPlanOutput,
   RenovationItem,
@@ -69,6 +80,7 @@ export class IntelligenceService {
   constructor(
     private readonly aiService: IntelligenceAiService,
     private readonly collector: MonitorCollectorService,
+    private readonly venueData: VenueDataService,
   ) {}
 
   /** 模拟侦察兵数据库的竞品密度数据 */
@@ -687,9 +699,183 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
     return this.monitorCompetitor(city, 'full')
   }
 
-  // ─── 私有方法: 为选项注入数据佐证 ─────────────────────
+  // ════════════════════════════════════════════════════════
+  // 10. 动态定价策略 (V23 场景E)
+  // ════════════════════════════════════════════════════════
 
-  private buildOptions(category: string, baseOptions: AdviceOption[]): AdviceOption[] {
+  /**
+   * 动态价格体系搭建
+   * 响应 POST /intelligence/pricing-strategy
+   * 数据源: price-monitor + IntelligenceAiService.generatePricingAdvice + scout.getPrices
+   */
+  pricingStrategy(input: PricingStrategyInput): PricingStrategyOutput {
+    const { city, district, scenario, budget, storeTier } = input
+
+    // 1) 获取市场行情
+    const density = this.COMPETITOR_DENSITY[`${city}-${district}`] || this.COMPETITOR_DENSITY.default!
+    const stats = this.aiService.getCityPricingStats(city, district)
+    const aiAdvice = this.aiService.generatePricingAdvice(city, district, storeTier ?? 'mid')
+
+    // 2) 构建价目表
+    const tierFactor =
+      storeTier === 'high' ? 1.25 :
+      storeTier === 'low' ? 0.8 : 1.0
+
+    const items: PriceItem[] = [
+      {
+        name: '单人畅玩票',
+        category: '入场票',
+        suggestedPrice: Math.round(stats.avgPrice * tierFactor),
+        marketAvgPrice: stats.avgPrice,
+        priceElasticity: -1.2,
+        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500),
+      },
+      {
+        name: '双人畅玩票',
+        category: '入场票',
+        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 1.7),
+        marketAvgPrice: Math.round(stats.avgPrice * 1.8),
+        priceElasticity: -0.9,
+        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 0.6),
+      },
+      {
+        name: '亲子套票(1大1小)',
+        category: '套票',
+        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 1.4),
+        marketAvgPrice: Math.round(stats.avgPrice * 1.5),
+        priceElasticity: -0.7,
+        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 0.8),
+      },
+      {
+        name: '月卡会员',
+        category: '会员',
+        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 6),
+        marketAvgPrice: Math.round(stats.avgPrice * 7),
+        priceElasticity: -0.5,
+        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 1.5),
+      },
+      {
+        name: '季卡会员',
+        category: '会员',
+        suggestedPrice: Math.round(stats.avgPrice * tierFactor * 14),
+        marketAvgPrice: Math.round(stats.avgPrice * 16),
+        priceElasticity: -0.4,
+        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 2.5),
+      },
+      {
+        name: '充值套餐(充200送60)',
+        category: '充值',
+        suggestedPrice: 200,
+        marketAvgPrice: 200,
+        priceElasticity: -0.3,
+        estimatedMonthlyRevenue: Math.round(stats.avgPrice * 1500 * 1.2),
+      },
+    ]
+
+    // 3) 场景化策略说明
+    const strategyExplanation = this.buildStrategyExplanation(
+      scenario, city, district, storeTier ?? 'mid', density, stats, aiAdvice,
+    )
+
+    // 4) 营收影响预估
+    const baseRevenue = Math.round(stats.avgPrice * 1500 * 30)
+    const estimatedMonthlyRevenue = Math.round(
+      baseRevenue * (scenario === 'new_store' ? 0.85 : scenario === 'seasonal' ? 1.25 : 1.1),
+    )
+    const estimatedMonthlyProfit = Math.round(estimatedMonthlyRevenue * 0.32)
+    const expectedGrowthPercent = Math.round(((estimatedMonthlyRevenue - baseRevenue) / baseRevenue) * 100)
+
+    const revenueImpact: RevenueImpact = {
+      estimatedMonthlyRevenue,
+      estimatedMonthlyProfit,
+      expectedGrowthPercent,
+      paybackImpact:
+        expectedGrowthPercent > 15
+          ? '积极: 定价策略可显著缩短回收期'
+          : expectedGrowthPercent > 0
+            ? '正向: 定价策略对回收期有正面影响'
+            : '中性: 新店期建议以引流为主，回收期可接受',
+    }
+
+    return {
+      scenario,
+      city,
+      district,
+      marketContext: {
+        avgMarketPrice: stats.avgPrice,
+        competitorCount: density.count,
+        priceRange: { min: stats.minPrice, max: stats.maxPrice },
+      },
+      priceItems: items,
+      strategyExplanation,
+      revenueImpact,
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  // 11. 精准营销活动方案策划 (V23 场景F)
+  // ════════════════════════════════════════════════════════
+
+  /**
+   * 6大类活动方案策划
+   * 响应 POST /intelligence/marketing-campaign
+   */
+  marketingCampaign(input: MarketingCampaignInput): MarketingCampaignOutput {
+    const { city, district, season, budget } = input
+
+    // 市场上下文
+    const density = this.COMPETITOR_DENSITY[`${city}-${district}`] || this.COMPETITOR_DENSITY.default!
+    const effectiveBudget = budget ?? 30000
+
+    // 6大类方案
+    const campaigns: CampaignProposal[] = [
+      this.buildCampaign('douyin_group', city, district, effectiveBudget),
+      this.buildCampaign('weekend_tournament', city, district, effectiveBudget),
+      this.buildCampaign('member_day', city, district, effectiveBudget),
+      this.buildCampaign('ip_collaboration', city, district, effectiveBudget),
+      this.buildCampaign('summer_limited', city, district, effectiveBudget),
+      this.buildCampaign('blindbox_lottery', city, district, effectiveBudget),
+    ]
+
+    // 推荐最优方案 (按效果排序)
+    const sorted = [...campaigns].sort((a, b) => this.effectRank(b.estimatedEffect) - this.effectRank(a.estimatedEffect))
+    const recommendedCampaign = sorted[0]!
+
+    return {
+      city,
+      district,
+      season: season ?? 'general',
+      budget: effectiveBudget,
+      campaigns,
+      recommendedCampaign,
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  // 私有方法: 定价策略说明
+  // ════════════════════════════════════════════════════════
+
+  private buildStrategyExplanation(
+    scenario: string, city: string, district: string, storeTier: string,
+    density: { count: number; avgPrice: number },
+    stats: { avgPrice: number; minPrice: number; maxPrice: number; competitorCount: number },
+    aiAdvice: string,
+  ): string {
+    const scenarioName: Record<string, string> = {
+      new_store: '新店开张',
+      competitor_reaction: '竞品反应',
+      seasonal: '季节性调价',
+    }
+
+    const tierName: Record<string, string> = {
+      high: '高端',
+      mid: '中端',
+      low: '低端/性价比',
+    }
+
+    const scenarioStrategies: Record<string, string> = {
+      new_store:
+        `\n【策略】新店期建议采用
     const evidences = this.aiService.getDataEvidence(category, baseOptions.length)
     return baseOptions.map((opt, idx) => ({
       ...opt,

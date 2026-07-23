@@ -30,6 +30,16 @@ interface VenueBrief {
   equipment: { name: string; count: number }[] | null
 }
 
+/** 竞品设备记录（来自DB的原始数据） */
+export interface CompetitorDeviceRecord {
+  venueId: number
+  venueName: string
+  deviceName: string
+  quantity: number
+  brand?: string
+  status?: string
+}
+
 interface EquipmentRecommendation {
   name: string
   count: number
@@ -121,6 +131,49 @@ export class VenueDataService {
       avgPrice: density.avgPrice,
       topDistricts: density.districts,
     }
+  }
+
+  /** 获取同城竞品设备配置 */
+  async getDevicesByCity(city: string): Promise<CompetitorDeviceRecord[]> {
+    const pool = getPgPool()
+    if (pool) {
+      try {
+        const result = await pool.query(`
+          SELECT cd.venue_id, v.name AS venue_name, cd.device_name, cd.quantity, cd.brand, cd.status
+          FROM competitor_devices cd
+          JOIN venues v ON v.id = cd.venue_id
+          WHERE v.city = $1
+          ORDER BY cd.quantity DESC
+        `, [city])
+        return result.rows.map((r: any) => ({
+          venueId: r.venue_id,
+          venueName: r.venue_name,
+          deviceName: r.device_name,
+          quantity: r.quantity,
+          brand: r.brand,
+          status: r.status,
+        }))
+      } catch (e: any) {
+        this.logger.warn(`DB device query failed for city=${city}: ${e.message}, falling back`)
+      }
+    }
+    // 降级返回 mock 数据
+    const defaultDevices: CompetitorDeviceRecord[] = [
+      { venueId: 1, venueName: `${city}竞品店A`, deviceName: '街机射击', quantity: 8, brand: '华立' },
+      { venueId: 1, venueName: `${city}竞品店A`, deviceName: 'VR体验', quantity: 4, brand: 'Pico' },
+      { venueId: 1, venueName: `${city}竞品店A`, deviceName: '夹娃娃机', quantity: 12, brand: '广州雄业' },
+      { venueId: 1, venueName: `${city}竞品店A`, deviceName: '跳舞机', quantity: 3, brand: '华立' },
+      { venueId: 2, venueName: `${city}竞品店B`, deviceName: '篮球机', quantity: 4, brand: '中娱' },
+      { venueId: 2, venueName: `${city}竞品店B`, deviceName: '赛车模拟', quantity: 2, brand: 'Playseat' },
+      { venueId: 3, venueName: `${city}竞品店C`, deviceName: '射击机', quantity: 6, brand: '世宇' },
+      { venueId: 3, venueName: `${city}竞品店C`, deviceName: '夹娃娃机', quantity: 10, brand: '华立' },
+    ]
+    // 检查是否有该城市数据
+    const cityKey = Object.keys(FALLBACK_DENSITY).find(k => k.startsWith(city))
+    if (cityKey) {
+      return defaultDevices
+    }
+    return []
   }
 
   /** 获取流行设备推荐 */

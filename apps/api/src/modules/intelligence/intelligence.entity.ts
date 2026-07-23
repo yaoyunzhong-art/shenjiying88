@@ -278,55 +278,81 @@ export interface StorePlanningOutput {
 }
 
 // ════════════════════════════════════════════════════
-// 6. 设备选型推荐 (V23 全场景赋能)
+// 6. 设备选型推荐 (V23 全场景赋能 · 场景C)
 // ════════════════════════════════════════════════════
 
+/** 设备选型输入 */
 export interface DeviceRecommendationInput {
   budget: number
   area: number
-  tier: 'economy' | 'standard' | 'deluxe' | 'luxury'
   city: string
-  storeType: 'arcade' | 'family' | 'esports' | 'mixed'
+  storeType: 'arcade' | 'game' | 'mixed'
+  tier: '经济' | '标准' | '精装' | '豪华'
 }
 
 /** 推荐设备详情 */
 export interface RecommendedDevice {
+  name: string
   brand: string
-  model: string
-  category: string
   count: number
   unitPrice: number
   totalPrice: number
   supplier: string
-  supplierQualified: boolean
   warrantyMonths: number
-  monthlyMaintenanceFee: number
+  monthlyMaintenance: number
+  category: string
   reason: string
 }
 
-/** 设备推荐输出 */
+/** 候选设备（含替代方案用） */
+export interface DeviceCandidate {
+  name: string
+  brand: string
+  unitPrice: number
+  supplier: string
+  warrantyMonths: number
+  monthlyMaintenance: number
+  category: string
+  reason: string
+}
+
+/** 替代方案 */
+export interface AlternativeDeviceRecommendation {
+  name: string
+  brand: string
+  totalPrice: number
+  unitPrice: number
+  count: number
+  supplier: string
+  reason: string
+  tradeOff: string
+}
+
+/** 设备选型输出 */
 export interface DeviceRecommendationOutput {
   budget: number
   area: number
-  tier: string
   city: string
   storeType: string
+  tier: string
   devices: RecommendedDevice[]
   totalCost: number
   remainingBudget: number
   budgetUtilizationPercent: number
+  alternatives: AlternativeDeviceRecommendation[]
   notes: string[]
 }
 
 // ════════════════════════════════════════════════════
-// 7. 装修方案 (V23 全场景赋能)
+// 7. 装修方案 (V23 全场景赋能 · 场景D)
 // ════════════════════════════════════════════════════
 
+/** 装修方案输入 */
 export interface RenovationPlanInput {
   area: number
-  tier: 'economy' | 'standard' | 'deluxe' | 'luxury'
+  tier: '经济' | '标准' | '精装' | '豪华'
   city: string
-  style?: 'modern' | 'cyberpunk' | 'retro' | 'minimalist' | 'nature'
+  style?: '现代' | '工业' | '卡通' | '科技'
 }
 
 /** 装修分项 */
@@ -338,9 +364,10 @@ export interface RenovationItem {
 }
 
 /** 档次适配建议 */
-export interface TierAdaptationAdvice {
-  currentTier: string
-  upgrades: { name: string; cost: number; benefit: string }[]
+export interface TierUpgradeOption {
+  name: string
+  cost: number
+  benefit: string
 }
 
 /** 装修方案输出 */
@@ -349,14 +376,15 @@ export interface RenovationPlanOutput {
   tier: string
   city: string
   style: string
+  baseDecoration: RenovationItem
+  themedDesign: RenovationItem
+  furnitureDecor: RenovationItem
+  fireSafetyApproval: RenovationItem
   items: RenovationItem[]
   subTotal: number
-  tierAdvice: TierAdaptationAdvice
-  // 按档次拆分
-  economyPlan: RenovationItem[] | null
-  standardPlan: RenovationItem[] | null
-  deluxePlan: RenovationItem[] | null
-  luxuryPlan: RenovationItem[] | null
+  budgetPercent: number
+  tierAdaptation: string
+  renovationDuration: string
   recommendations: string[]
 }
 
@@ -405,16 +433,33 @@ export interface SitingRiskFactor {
 // 9. 动态定价策略 (V23 全场景赋能)
 // ════════════════════════════════════════════════════
 
-export type PricingScenario = 'new_store' | 'competitor_change' | 'seasonal_adjustment'
+export type PricingScenario = 'new_store' | 'competitor_reaction' | 'seasonal'
 
 export interface PricingStrategyInput {
   city: string
   district: string
   scenario: PricingScenario
   currentPrice?: number
-  competitorNewPrice?: number
-  season?: 'spring' | 'summer' | 'autumn' | 'winter'
+  budget?: number
   storeTier?: 'low' | 'mid' | 'high'
+}
+
+/** 价目建议项 (含价格弹性) */
+export interface PriceItem {
+  name: string
+  category: string
+  suggestedPrice: number
+  marketAvgPrice: number
+  priceElasticity: number
+  estimatedMonthlyRevenue: number
+}
+
+/** 营收影响预估 */
+export interface RevenueImpact {
+  estimatedMonthlyRevenue: number
+  estimatedMonthlyProfit: number
+  expectedGrowthPercent: number
+  paybackImpact: string
 }
 
 /** 定价建议项 */
@@ -429,7 +474,7 @@ export interface PriceProposal {
   riskLevel: 'low' | 'medium' | 'high'
 }
 
-/** 定价策略输出 */
+/** 定价策略输出 (场景E: 动态价格体系搭建) */
 export interface PricingStrategyOutput {
   scenario: PricingScenario
   city: string
@@ -439,8 +484,9 @@ export interface PricingStrategyOutput {
     competitorCount: number
     priceRange: { min: number; max: number }
   }
-  proposals: PriceProposal[]
-  recommendedProposal: PriceProposal
+  priceItems: PriceItem[]
+  strategyExplanation: string
+  revenueImpact: RevenueImpact
 }
 
 // ════════════════════════════════════════════════════
@@ -469,13 +515,15 @@ export interface CampaignProposal {
 export interface MarketingCampaignInput {
   city: string
   district: string
+  season?: string
   budget?: number
-  targetTypes?: CampaignType[]
 }
 
 export interface MarketingCampaignOutput {
   city: string
   district: string
+  season: string
+  budget: number
   campaigns: CampaignProposal[]
   recommendedCampaign: CampaignProposal
 }
