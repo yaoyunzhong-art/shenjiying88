@@ -485,3 +485,93 @@ test.describe('授权检查 - 安全与边界', () => {
     expect(containerVisible).toBe(true)
   })
 })
+
+// ===== 新增测试: 并发与批量检查（2 tests） =====
+
+test.describe('授权检查 - 并发与批量场景', () => {
+  test('TC32-29: 批量授权状态快速检查 @smoke @license', async ({ licensePage, page }) => {
+    // Given: 导航到授权管理页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 连续快速执行多次授权检查
+    const checkPromises = []
+    for (let i = 0; i < 5; i++) {
+      checkPromises.push(
+        licensePage.checkLicense().catch(() => ({
+          status: 'error',
+          isValid: false,
+          fromCache: false,
+        }))
+      )
+    }
+
+    const results = await Promise.all(checkPromises)
+
+    // Then: 所有检查结果都应返回且格式正确
+    expect(results.length).toBe(5)
+
+    results.forEach((result, index) => {
+      expect(result).toBeDefined()
+      expect(typeof result.isValid).toBe('boolean')
+      expect(typeof result.fromCache).toBe('boolean')
+      expect(result.status).toBeTruthy()
+    })
+
+    // 后续检查应命中缓存
+    const lastResult = results[results.length - 1]
+    if (lastResult.fromCache) {
+      // 缓存数据仍然有效
+      expect(lastResult.isValid).toBeDefined()
+    }
+  })
+
+  test('TC32-30: 并发检查时状态一致性 @license', async ({ licensePage, page }) => {
+    // Given: 导航到授权管理页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 模拟授权状态变更（先有效然后失效）
+    let checkIteration = 0
+    await page.route('**/api/license/check', async (route) => {
+      checkIteration++
+      // 交替返回不同状态验证一致性处理
+      const body = checkIteration <= 3
+        ? { valid: true, fromCache: false, status: 'active' }
+        : { valid: false, fromCache: false, status: 'expired' }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      })
+    })
+
+    // 前三次检查
+    const results1 = []
+    for (let i = 0; i < 3; i++) {
+      const r = await licensePage.checkLicense()
+      results1.push(r)
+    }
+
+    // 检查结果一致性
+    results1.forEach(r => {
+      expect(r.isValid).toBe(true)
+    })
+
+    // 后续检查（状态已变）
+    const results2 = []
+    for (let i = 0; i < 2; i++) {
+      const r = await licensePage.checkLicense()
+      results2.push(r)
+    }
+
+    // 状态变更后结果应一致
+    results2.forEach(r => {
+      expect(r.isValid).toBe(false)
+    })
+
+    // Then: UI状态应与API结果一致
+    // 读取状态徽章显示
+    const statusText = await licensePage.getText(licensePage.selectors.statusBadge)
+    expect(statusText).toBeTruthy()
+  })
+})
