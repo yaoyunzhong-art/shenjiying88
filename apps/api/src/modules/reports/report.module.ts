@@ -20,6 +20,7 @@ import { PaymentMixService } from './reports/payment-mix.service'
 import { HourlyHeatmapService } from './reports/hourly-heatmap.service'
 import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
+import { GovernanceApprovalModule } from '../foundation/governance-approval/governance-approval.module'
 
 /**
  * Phase-39 T169: ReportModule - BI 多维分析
@@ -33,6 +34,7 @@ import { InventoryAlertService } from './reports/inventory-alert.service'
  */
 
 @Module({
+  imports: [GovernanceApprovalModule],
   controllers: [ReportController],
   providers: [
     ReportService,

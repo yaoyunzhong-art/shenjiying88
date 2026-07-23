@@ -102,7 +102,8 @@ function makeCtrl(opts: { seedData?: boolean } = {}) {
   const controller = new ReportController(
     agg, cache, exp, q,
     revenue, invTurn, memberGrowth, refundRate, orderConv,
-    prodRank, payMix, heatmap, channelFunnel, invAlert
+    prodRank, payMix, heatmap, channelFunnel, invAlert,
+    {} as any
   )
   return { controller, cache, exp }
 }

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { Test } from '@nestjs/testing'
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { LocaleModule } from './locale.module'
-import { LocaleService } from './locale.service'
+import { LocaleService, type CountryCode, type TimeZone } from './locale.service'
 
 describe('LocaleModule E2E', () => {
   let app: INestApplication

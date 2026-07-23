@@ -9,6 +9,7 @@ import { ReportAggregationService } from './report-aggregation.service'
 import { ReportCacheService } from './report-cache.service'
 import { ReportExportService } from './report-export.service'
 import { ReportQueryService } from './report-query.service'
+import { GovernanceApprovalModule } from '../foundation/governance-approval/governance-approval.module'
 
 // ── 合约类型验证 ──────────────────────────────────────────
 
@@ -117,10 +118,10 @@ describe('📊 ReportModule 模块结构', () => {
     }
   })
 
-  it('ReportModule has no imports (self-contained design)', () => {
+  it('ReportModule imports GovernanceApprovalModule for export approval gate', () => {
     const imports = Reflect.getMetadata('imports', ReportModule) as unknown[] | undefined
-    assert.ok(imports === undefined || imports.length === 0,
-      'ReportModule should have no imports (self-contained)')
+    assert.ok(Array.isArray(imports), 'imports should be an array')
+    assert.ok(imports?.includes(GovernanceApprovalModule), 'GovernanceApprovalModule should be imported')
   })
 })
 

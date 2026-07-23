@@ -201,3 +201,17 @@
   - `.trae/compliance/coverage-matrix.json`
 - 生成 BS 台账命令：
   - `pnpm exec tsx scripts/build-bs-catalog.ts`
+
+### WP-02B 第一批 P0 偏离已登记
+
+- 已正式登记到 `.trae/compliance/deviation-registry.json`：
+  - `DEV-0001` → `BS-0050` 审计日志一年留存缺口
+  - `DEV-0002` → `BS-0057` 管理员 2FA 缺口
+  - `DEV-0003` → `BS-0059` 超 500 条导出审批阀门缺口
+  - `DEV-0004` → `BS-0064` 暴力破解 5 次锁定缺口
+- 已新建 Sprint-1 整改执行包：
+  - `docs/knowledge/sprint-1/2026-07-23-wp-02b-p0-remediation-kickoff-tasks-checklist.md`
+- 龙虾哥后续评审时请重点给：
+  - 2FA 方案建议
+  - 导出审批与 workflow 串联建议
+  - 登录锁定策略的误伤兜底建议

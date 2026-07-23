@@ -73,6 +73,7 @@ function makeController(overrides: {
     { generate: overrides.hourlyHeatmap ?? defaultGen } as any,
     { generate: overrides.channelFunnel ?? defaultGen } as any,
     { generate: overrides.inventoryAlert ?? defaultGen } as any,
+    {} as any,
   )
 }
 

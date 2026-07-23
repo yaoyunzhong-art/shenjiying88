@@ -23,6 +23,7 @@ import { HourlyHeatmapService } from './reports/hourly-heatmap.service'
 import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
 
 /**
  * Phase-39 T169: 报表中心 Controller
@@ -58,6 +59,7 @@ interface QueryParams {
   type?: ReportType
   status?: 'pending' | 'processing' | 'completed' | 'failed'
   noCache?: string
+  approvalTicket?: string
 }
 
 @Controller('api/reports')
@@ -79,7 +81,8 @@ export class ReportController {
     private readonly paymentMix: PaymentMixService,
     private readonly hourlyHeatmap: HourlyHeatmapService,
     private readonly channelFunnel: ChannelFunnelService,
-    private readonly inventoryAlert: InventoryAlertService
+    private readonly inventoryAlert: InventoryAlertService,
+    private readonly governanceApprovalService: GovernanceApprovalService,
   ) {}
 
   // ─── 10 个内置报表 ──────────────────────────────────────
@@ -212,10 +215,50 @@ export class ReportController {
 
   @Post('exports')
   @HttpCode(HttpStatus.ACCEPTED)
-  async createBatchExportTask(@Body() body: QueryParams) {
+  async createBatchExportTask(@Body() body: QueryParams): Promise<any> {
     this.validateBatchExportRequest(body)
     const format = this.normalizeBatchExportFormat(body.format)
     const result = await this.generateReportResult(body)
+    const rowCount = result.rows.length
+
+    if (this.exportSvc.requiresApproval(rowCount)) {
+      const approval = await this.governanceApprovalService.materializeApproval({
+        operation: 'report.export.bulk',
+        resourceType: 'report-export',
+        resourceKey: this.buildExportApprovalResourceKey(body, format),
+        approvalRequired: true,
+        approvalTicket: body.approvalTicket,
+        tenantId: body.tenantId!,
+        requestedBy: 'ops.admin-web',
+        requestPayload: {
+          tenantId: body.tenantId,
+          type: body.type,
+          from: body.from,
+          to: body.to,
+          format,
+          rowCount,
+        },
+        summary: {
+          reportType: body.type,
+          exportFormat: format,
+          rowCount,
+          threshold: this.exportSvc.getApprovalThreshold(),
+          requestEndpoint: '/api/reports/exports',
+          approvalReason: 'row-count-exceeds-threshold',
+        },
+      })
+
+      if (approval.status !== 'APPROVED') {
+        return {
+          approvalRequired: true,
+          approvalTicket: approval.ticket,
+          approvalStatus: approval.status,
+          rowCount,
+          approvalThreshold: this.exportSvc.getApprovalThreshold(),
+          blockedReason: `Export row count ${rowCount} exceeds approval threshold ${this.exportSvc.getApprovalThreshold()}`,
+        }
+      }
+    }
 
     return this.exportSvc.createBatchExportTaskFromResult({
       tenantId: body.tenantId!,
@@ -327,5 +370,18 @@ export class ReportController {
       return normalized
     }
     throw new BadRequestException(`Unsupported batch export format: ${normalized}`)
+  }
+
+  private buildExportApprovalResourceKey(
+    q: QueryParams,
+    format: 'csv' | 'json' | 'html',
+  ): string {
+    return [
+      q.tenantId ?? 'unknown-tenant',
+      q.type ?? 'unknown-type',
+      q.from ?? 'unknown-from',
+      q.to ?? 'unknown-to',
+      format,
+    ].join(':')
   }
 }
