@@ -91,6 +91,7 @@ import { AiSalesModule } from './modules/ai-sales/ai-sales.module';
 import { AllianceModule } from './modules/alliance/alliance.module';
 import { DeployModule } from './modules/deploy/deploy.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AiProfileModule } from './modules/ai-profile/ai-profile.module';
 import { AiPushModule } from './modules/ai-push/ai-push.module';
 import { DeviceAdapterModule } from './modules/device-adapter/device-adapter.module';
 import { EdgeModule } from './modules/edge/edge.module';
@@ -164,6 +165,7 @@ import { StoreModule } from './modules/store/store.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
 import { NoticeModule } from './modules/notice/notice.module';
+import { TerminalModule } from './modules/terminal/terminal.module';
 
 @Module({
   imports: [
@@ -267,6 +269,7 @@ import { NoticeModule } from './modules/notice/notice.module';
     AllianceModule,
     DeployModule,
     AuditModule,
+    AiProfileModule,
     AiPushModule,
     DeviceAdapterModule,
     EdgeModule,
@@ -340,6 +343,7 @@ import { NoticeModule } from './modules/notice/notice.module';
     FeedbackModule,
     ProbationTransferModule,
     NoticeModule,
+    TerminalModule,
   ],
   providers: [
     RequestGovernanceService,
