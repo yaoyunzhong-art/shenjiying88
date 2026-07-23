@@ -45,3 +45,45 @@
 - 合规模板库：`docs/knowledge/compliance/_templates.md`
 - 偏离台账：`.trae/compliance/deviation-registry.json`
 
+---
+
+## 4. Sprint-0 WP-02B 本轮完成项 (2026-07-23)
+
+### 4.1 审计事件类型补缺
+
+新增事件类型（代码级，无需 DDL）：
+- `user.created`, `user.deleted`, `user.disabled`, `user.enabled`
+- `admin.user_created`, `admin.user_deleted`, `admin.user_disabled`, `admin.user_enabled`
+
+**修改文件**: `apps/api/src/modules/audit/audit.service.ts`, `apps/api/src/modules/audit/audit.entity.ts`
+
+### 4.2 修复测试缺陷
+
+修复 `audit.role-api.test.ts`：异常检测需 `eventType='auth.login'` + `metadata.success=false`，但原测试使用了不存在的事件类型 `auth.login_failed`。
+
+### 4.3 PRD 摘要卡
+
+- `docs/knowledge/prd/v23/v23-prd-security-audit.md` — 安全与审计模块全量盘点 + 本轮回合变更说明
+
+### 4.4 测试结果
+
+| 模块 | 文件 | 用例 | 结果 |
+|------|------|------|------|
+| audit | 14 | 396 | ✅ 全绿 |
+| security | 13 | 347 | ✅ 全绿 |
+
+**无** `test.skip` / `test.only`
+
+### 4.5 安全基线扫描
+
+AuthGuard 覆盖率: **95.75%** (203/212) — 远超 80% 阈值
+
+### 4.6 TSC 检查
+
+无新增编译错误（预存错误来自 `ai-model-config`/`cashier`/`compliance`/`devops` 测试文件，与本次变更无关）
+
+### 4.7 PR 合规
+
+- `6-8_refs: [BS-0048..BS-0059, BS-0062..BS-0065]`
+- blocker_id: none
+

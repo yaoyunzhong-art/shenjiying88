@@ -13,12 +13,12 @@ import {
 
 export type AuditEventType =
   | 'auth.login' | 'auth.logout' | 'auth.register' | 'auth.password_change'
-  | 'user.profile_update' | 'user.consent_update' | 'user.data_delete'
+  | 'user.created' | 'user.deleted' | 'user.disabled' | 'user.enabled' | 'user.profile_update' | 'user.consent_update' | 'user.data_delete'
   | 'order.created' | 'order.paid' | 'order.refunded' | 'order.cancelled'
   | 'points.earned' | 'points.redeemed' | 'points.adjusted'
   | 'payment.initiated' | 'payment.completed' | 'payment.failed' | 'payment.refunded'
   | 'settlement.created' | 'settlement.approved' | 'settlement.rejected' | 'settlement.paid'
-  | 'admin.config_change' | 'admin.user_impersonate' | 'admin.data_export'
+  | 'admin.config_change' | 'admin.user_impersonate' | 'admin.data_export' | 'admin.user_created' | 'admin.user_deleted' | 'admin.user_disabled' | 'admin.user_enabled'
   | 'admin.role_create' | 'admin.role_update' | 'admin.role_delete'
   | 'admin.permission_grant' | 'admin.permission_revoke'
   | 'user.role_assigned' | 'user.role_unassigned'

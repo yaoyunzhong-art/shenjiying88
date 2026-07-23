@@ -192,11 +192,12 @@ describe(`${ROLES.Safety} — audit controller API`, () => {
     // 模拟短时间内大量登录失败
     for (let i = 0; i < 8; i++) {
       await ctrl.create({
-        eventType: 'auth.login_failed',
+        eventType: 'auth.login',
         actorId: `suspicious_${i}`,
         actorType: 'user',
         riskLevel: 'high',
         ipAddress: '10.0.0.1',
+        metadata: { success: false },
       } as any)
     }
     const anomalies = await ctrl.detectAnomalies(60)
