@@ -330,3 +330,83 @@ describe('QueueService: getQueueStats', () => {
     assert.equal(stats.avgWaitMin, 0)
   })
 })
+
+describe('QueueService: BS-0275 load factor', () => {
+  it('getLoadFactor returns default 1.0 for unknown tenant', () => {
+    const svc = makeService()
+    assert.equal(svc.getLoadFactor('unknown-tenant'), 1.0)
+  })
+
+  it('setLoadFactor stores and returns the value', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t1', 1.5)
+    assert.equal(svc.getLoadFactor('t1'), 1.5)
+  })
+
+  it('setLoadFactor clamps to [0.5, 3.0]', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t1', 5.0)   // above max
+    assert.equal(svc.getLoadFactor('t1'), 3.0)
+    svc.setLoadFactor('t1', 0.2)   // below min
+    assert.equal(svc.getLoadFactor('t1'), 0.5)
+  })
+
+  it('setLoadFactor supports per-resource override', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t1', 2.0, 'resource-A')
+    svc.setLoadFactor('t1', 0.8, 'resource-B')
+    assert.equal(svc.getLoadFactor('t1', 'resource-A'), 2.0)
+    assert.equal(svc.getLoadFactor('t1', 'resource-B'), 0.8)
+    // tenant default unchanged
+    assert.equal(svc.getLoadFactor('t1'), 1.0)
+  })
+
+  it('create uses load factor to adjust estimatedWaitMin', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t1', 2.0, 'slow-resource')
+    svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u1', userName: 'u', partySize: 1, resourceId: 'slow-resource' })
+    svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u2', userName: 'u', partySize: 1, resourceId: 'slow-resource' })
+    const third = svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u3', userName: 'u', partySize: 1, resourceId: 'slow-resource' })
+    // 2 ahead × 5 min × 2.0 loadFactor = 20
+    assert.equal(third.estimatedWaitMin, 20)
+  })
+
+  it('calculateDynamicWait returns correct ahead count and estimation', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t1', 1.5, 'r1')
+    svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u1', userName: 'u', partySize: 1, resourceId: 'r1' })
+    svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u2', userName: 'u', partySize: 1, resourceId: 'r1' })
+
+    const result = svc.calculateDynamicWait('t1', 'r1', QueueType.Waiting)
+    assert.equal(result.aheadCount, 2)
+    assert.equal(result.loadFactor, 1.5)
+    assert.equal(result.estimatedWaitMin, Math.round(2 * 5 * 1.5))
+  })
+
+  it('calculateDynamicWait uses tenant default load factor when resource not set', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t1', 2.0) // tenant-wide
+    svc.create({ tenantId: 't1', type: QueueType.Waiting, userId: 'u1', userName: 'u', partySize: 1, resourceId: 'r1' })
+
+    const result = svc.calculateDynamicWait('t1', 'r1', QueueType.Waiting)
+    assert.equal(result.loadFactor, 2.0)
+  })
+
+  it('getMyPosition includes load factor in estimatedWaitMinutes', () => {
+    const svc = makeService()
+    svc.setLoadFactor('t', 3.0, 'r1')
+    svc.joinQueue({ tenantId: 't', queueType: QueueType.Waiting, memberId: 'm1', resourceId: 'r1' })
+    const pos = svc.getMyPosition('m1', 'r1', 't')
+    assert.equal(pos.position, 1)
+    // 1 × 5 min × 3.0 = 15
+    assert.equal(pos.estimatedWaitMinutes, 15)
+  })
+
+  it('setLoadFactor is per-tenant isolated', () => {
+    const svc = makeService()
+    svc.setLoadFactor('tenant-a', 2.5)
+    svc.setLoadFactor('tenant-b', 0.6)
+    assert.equal(svc.getLoadFactor('tenant-a'), 2.5)
+    assert.equal(svc.getLoadFactor('tenant-b'), 0.6)
+  })
+})

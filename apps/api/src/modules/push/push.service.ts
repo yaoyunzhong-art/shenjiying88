@@ -18,11 +18,21 @@ import { PushRecordEntity } from './push.entity'
 
 export type PushPriority = 'high' | 'normal'
 
+/**
+ * BS-0280: iOS 推送优先级标记
+ * - critical: 紧急告警（iOS 可越过静音/勿扰模式）
+ * - high: 高优先级（标准推送）
+ * - low: 低优先级（可被合并或延迟）
+ */
+export type iOSPushPriority = 'critical' | 'high' | 'low'
+
 export interface iOSPayload {
   alert: string
   badge?: number
   sound?: string
   extra?: Record<string, unknown>
+  /** BS-0280: iOS 推送优先级标记 */
+  priority?: iOSPushPriority
 }
 
 export interface PushRecord {
@@ -73,6 +83,21 @@ export class APNsService {
   ) {}
 
   /**
+   * 将业务优先级映射到 iOS 推送优先级
+   * BS-0280: critical, high, low
+   */
+  private toiOSPushPriority(priority: PushPriority): iOSPushPriority {
+    switch (priority) {
+      case 'high':
+        return 'high'
+      case 'normal':
+        return 'low'
+      default:
+        return 'high'
+    }
+  }
+
+  /**
    * 发送 iOS 推送
    * @param deviceToken 目标设备 token
    * @param payload 推送内容
@@ -84,10 +109,17 @@ export class APNsService {
       return false
     }
 
+    // BS-0280: 将业务优先级映射到 iOS 优先级标记
+    const iosPriority = this.toiOSPushPriority(priority)
+    const enrichedPayload: iOSPayload = {
+      ...payload,
+      priority: iosPriority,
+    }
+
     const record: PushRecord = {
       id: `push_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       deviceToken,
-      payload,
+      payload: enrichedPayload,
       priority,
       sentAt: new Date().toISOString(),
       status: 'sent'
@@ -99,7 +131,7 @@ export class APNsService {
     // 模拟 APNs 请求 (实际使用 node-apn / @parse/node-apn)
     const topic = payload.extra?.topic as string ?? 'com.shenjiying.app'
     this.logger.log(
-      `[APNs] ${priority.toUpperCase()} push to ${deviceToken.slice(0, 8)}... ` +
+      `[APNs] ${iosPriority.toUpperCase()} priority push to ${deviceToken.slice(0, 8)}... ` +
         `alert=${payload.alert} topic=${topic}`
     )
 
@@ -107,10 +139,55 @@ export class APNsService {
   }
 
   /**
+   * BS-0280: 发送 critical 级别推送
+   * 使用 critical 优先级，iOS 会越过静音/勿扰模式推送
+   */
+  async sendCriticalPush(deviceToken: string, alert: string, sound?: string): Promise<boolean> {
+    const payload: iOSPayload = {
+      alert,
+      sound: sound ?? 'default',
+      priority: 'critical',
+    }
+    return this.pushToiOS(deviceToken, payload, 'high')
+  }
+
+  /**
+   * BS-0280: 发送 low 级别推送
+   * 低优先级推送，iOS 可合并或延迟展示
+   */
+  async sendLowPriorityPush(deviceToken: string, alert: string): Promise<boolean> {
+    const payload: iOSPayload = {
+      alert,
+      priority: 'low',
+    }
+    return this.pushToiOS(deviceToken, payload, 'normal')
+  }
+
+  /**
+   * BS-0280: 根据指定 iOS 优先级发送推送
+   */
+  async pushWithiOSPriority(
+    deviceToken: string,
+    alert: string,
+    iosPriority: iOSPushPriority,
+    badge?: number,
+  ): Promise<boolean> {
+    const payload: iOSPayload = {
+      alert,
+      priority: iosPriority,
+      badge,
+      sound: iosPriority === 'critical' ? 'default' : undefined,
+    }
+    const mappedPriority: PushPriority = iosPriority === 'low' ? 'normal' : 'high'
+    return this.pushToiOS(deviceToken, payload, mappedPriority)
+  }
+
+  /**
    * P1-8: 高优先级推送 (用于实时性要求高的场景)
+   * BS-0280: 自动标记为 high 优先级
    */
   async sendWithHighPriority(deviceToken: string, alert: string): Promise<boolean> {
-    return this.pushToiOS(deviceToken, { alert, sound: 'default' }, 'high')
+    return this.pushToiOS(deviceToken, { alert, sound: 'default', priority: 'high' }, 'high')
   }
 
   /**

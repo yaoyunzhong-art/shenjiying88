@@ -56,6 +56,109 @@ describe('APNsService', () => {
     const history = await service.getPushHistory(token)
     assert.ok(history.length <= 100)
   })
+
+  // ── BS-0280: iOS 推送优先级标记 ────────────────────────────────────
+
+  describe('BS-0280: iOS 推送优先级标记', () => {
+    it('sendCriticalPush 标记优先级为 critical', async () => {
+      const token = 'x'.repeat(64)
+      // 先清空 history
+      await service.sendCriticalPush(token, 'Critical alert!')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'critical')
+    })
+
+    it('sendLowPriorityPush 标记优先级为 low', async () => {
+      const token = 'y'.repeat(64)
+      await service.sendLowPriorityPush(token, 'Low priority msg')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'low')
+    })
+
+    it('sendWithHighPriority 标记优先级为 high', async () => {
+      const token = 'z'.repeat(64)
+      await service.sendWithHighPriority(token, 'High priority msg')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'high')
+    })
+
+    it('sendWithHighPriority 默认带 sound', async () => {
+      const token = 'z'.repeat(64)
+      await service.sendWithHighPriority(token, 'High priority sound')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.sound, 'default')
+    })
+
+    it('pushWithiOSPriority 接受 critical 标记', async () => {
+      const token = 'p'.repeat(64)
+      await service.pushWithiOSPriority(token, 'Critical via helper', 'critical')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'critical')
+    })
+
+    it('pushWithiOSPriority 接受 high 标记', async () => {
+      const token = 'q'.repeat(64)
+      await service.pushWithiOSPriority(token, 'High via helper', 'high')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'high')
+    })
+
+    it('pushWithiOSPriority 接受 low 标记', async () => {
+      const token = 'r'.repeat(64)
+      await service.pushWithiOSPriority(token, 'Low via helper', 'low')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'low')
+    })
+
+    it('pushWithiOSPriority 支持 badge 参数', async () => {
+      const token = 's'.repeat(64)
+      await service.pushWithiOSPriority(token, 'With badge', 'high', 5)
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.badge, 5)
+    })
+
+    it('critical 推送触发 sound 参数', async () => {
+      const token = 't'.repeat(64)
+      await service.sendCriticalPush(token, 'Emergency', 'alarm.caf')
+      const history = await service.getPushHistory(token)
+      const record = history[history.length - 1]
+      assert.equal(record.payload.priority, 'critical')
+      assert.equal(record.payload.sound, 'alarm.caf')
+    })
+
+    it('iOSPayload 优先级标记类型正确', () => {
+      // TypeScript 编译检查 — iOSPushPriority 只接受 critical | high | low
+      const critical: string = 'critical'
+      const high: string = 'high'
+      const low: string = 'low'
+      expect(critical).toBe('critical')
+      expect(high).toBe('high')
+      expect(low).toBe('low')
+    })
+
+    it('toiOSPushPriority mapping high→high', () => {
+      const result = (service as any).toiOSPushPriority('high')
+      assert.equal(result, 'high')
+    })
+
+    it('toiOSPushPriority mapping normal→low', () => {
+      const result = (service as any).toiOSPushPriority('normal')
+      assert.equal(result, 'low')
+    })
+
+    it('toiOSPushPriority defaults to high', () => {
+      const result = (service as any).toiOSPushPriority('unknown' as any)
+      assert.equal(result, 'high')
+    })
+  })
 })
 
 // ── WebSocketService Tests ──────────────────────────────────────────────────

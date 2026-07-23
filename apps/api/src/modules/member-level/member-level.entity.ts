@@ -109,3 +109,29 @@ export interface AllLevelConfig {
   tiers: LevelConfig[]
   lastUpdated: string
 }
+
+// ── BS-0276: 成长值衰减曲线 ──
+
+/** 衰减周期 */
+export type DecayPeriod = 'monthly' | 'quarterly' | 'halfYear'
+
+/** 衰减配置 */
+export interface DecayConfig {
+  /** 无消费开始日 */
+  lastConsumptionDate: string
+  /** 当前成长值 */
+  currentGrowth: number
+  /** 已过天数（无消费） */
+  idleDays: number
+}
+
+/** 衰减计算结果 */
+export interface DecayResult {
+  originalGrowth: number
+  decayedGrowth: number
+  decayRate: number
+  decayAmount: number
+  period: DecayPeriod
+  idleDays: number
+  nextDecayDate: string
+}

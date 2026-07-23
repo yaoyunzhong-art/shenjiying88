@@ -119,4 +119,138 @@ describe('SyncEngine · Phase-21 T58', () => {
     expect(engine.getCurrentVersion()).toBe(42);
     expect(engine.getStats().lastSyncVersion).toBe(42);
   });
+
+  // ── BS-0284: 数据同步幂等性 ─────────────────────────────────────
+
+  describe('BS-0284: 数据同步幂等性', () => {
+    it('重复的 requestId 应被跳过 (push)', async () => {
+      store.setField('doc1', 'name', 'Alice', 'device-A', 100);
+      const docs = [store.getDoc('doc1')!];
+
+      // 第一次推送
+      const result1 = await engine.push(docs, 'req-001');
+      expect(result1.pushed).toBe(1);
+      expect(result1.duplicate).toBe(false);
+
+      // 第二次推送（相同 requestId）
+      const result2 = await engine.push(docs, 'req-001');
+      expect(result2.duplicate).toBe(true);
+      expect(result2.pushed).toBe(1); // 返回首次结果
+    });
+
+    it('不同的 requestId 正常处理', async () => {
+      store.setField('doc1', 'name', 'Alice', 'device-A', 100);
+      store.setField('doc2', 'title', 'Doc2', 'device-A', 200);
+
+      const docs1 = [store.getDoc('doc1')!];
+      const docs2 = [store.getDoc('doc2')!];
+
+      const r1 = await engine.push(docs1, 'req-A');
+      const r2 = await engine.push(docs2, 'req-B');
+
+      expect(r1.duplicate).toBe(false);
+      expect(r2.duplicate).toBe(false);
+      expect(r1.version).toBeLessThan(r2.version);
+    });
+
+    it('未提供 requestId 时不执行幂等检测', async () => {
+      store.setField('doc1', 'name', 'Alice', 'device-A', 100);
+      const docs = [store.getDoc('doc1')!];
+
+      // 不传 requestId，两次都能正常执行
+      const r1 = await engine.push(docs);
+      const r2 = await engine.push(docs);
+
+      expect(r1.duplicate).toBe(false);
+      expect(r2.duplicate).toBe(false);
+      // 版本递增
+      expect(r2.version).toBe(r1.version + 1);
+    });
+
+    it('getIdempotentResult 为不存在 ID 返回 null', () => {
+      expect(engine.getIdempotentResult('nonexistent-request')).toBeNull();
+    });
+
+    it('isDuplicateRequest 正确判断重复', () => {
+      engine.markRequestId('test-request', { success: true });
+      expect(engine.isDuplicateRequest('test-request')).toBe(true);
+      expect(engine.isDuplicateRequest('other-request')).toBe(false);
+    });
+
+    it('getIdempotencyStats 返回正确数量', () => {
+      engine.markRequestId('id-1', { ok: true });
+      engine.markRequestId('id-2', { ok: true });
+
+      const stats = engine.getIdempotencyStats();
+      expect(stats.totalRecords).toBe(2);
+      expect(stats.ttlMs).toBe(24 * 60 * 60 * 1000);
+    });
+
+    it('resetForTests 清空幂等性存储', () => {
+      engine.markRequestId('id-1', { ok: true });
+      expect(engine.isDuplicateRequest('id-1')).toBe(true);
+
+      engine.resetForTests();
+      expect(engine.isDuplicateRequest('id-1')).toBe(false);
+      expect(engine.getStats().totalDuplicatesSkipped).toBe(0);
+    });
+
+    it('pull 中的重复变更被跳过并统计', async () => {
+      // 先拉取一次，包含某个变更
+      // 第二次拉取时相同变更应被跳过
+      const mockFetcherCall1 = async (): Promise<SyncDelta> => ({
+        version: 1,
+        changes: [
+          {
+            id: 'doc-unique',
+            fields: { name: { value: 'Alice', timestamp: 100, deviceId: 'remote-A' } },
+            clock: { 'remote-A': 100 },
+            updatedAt: 100,
+          },
+        ],
+        hasMore: false,
+      });
+      const mockFetcherCall2 = async (): Promise<SyncDelta> => ({
+        version: 2,
+        changes: [
+          {
+            id: 'doc-unique',
+            fields: { name: { value: 'Alice', timestamp: 100, deviceId: 'remote-A' } },
+            clock: { 'remote-A': 100 },
+            updatedAt: 100,
+          },
+          {
+            id: 'doc-new',
+            fields: { title: { value: 'New Doc', timestamp: 200, deviceId: 'remote-B' } },
+            clock: { 'remote-B': 200 },
+            updatedAt: 200,
+          },
+        ],
+        hasMore: false,
+      });
+
+      // 第一次拉取
+      engine = new SyncEngine(store, { pageSize: 50, fetcher: mockFetcherCall1 });
+      let result = await engine.pull();
+      expect(result.pulled).toBe(1);
+      expect(result.duplicatesSkipped).toBe(0);
+
+      // 第二次拉取（包含重复变更 + 新变更）
+      engine = new SyncEngine(store, { pageSize: 50, fetcher: mockFetcherCall2 });
+      result = await engine.pull();
+      // 唯一变更被跳过，新变更被处理
+      expect(result.duplicatesSkipped).toBe(1);
+      expect(result.pulled).toBe(2);
+    });
+
+    it('幂等性记录有 TTL 上限', async () => {
+      const markSpy = vi.spyOn(engine as any, 'evictExpiredRecords');
+
+      engine.markRequestId('will-expire', { ok: true });
+      expect(markSpy).toHaveBeenCalled();
+      expect(engine.isDuplicateRequest('will-expire')).toBe(true);
+
+      markSpy.mockRestore();
+    });
+  });
 });

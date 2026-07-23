@@ -183,3 +183,37 @@ export interface PopularityEntry {
   contestantId: string
   totalVotes: number
 }
+
+// ── BS-0281: 擂台让分机制 ──
+
+/** 让分配置 */
+export interface HandicapConfig {
+  /** 是否启用让分 */
+  enabled: boolean
+  /** 最大让分数 */
+  maxHandicap: number
+  /** 胜率差阈值（超过此值触发让分） */
+  winRateDiffThreshold: number
+}
+
+/** 让分计算结果 */
+export interface HandicapResult {
+  /** 弱势方获得的额外分数 */
+  handicapPoints: number
+  /** 胜率差 */
+  winRateDiff: number
+  /** 弱势方ID */
+  underdogId: string
+  /** 强势方ID */
+  favoriteId: string
+  /** 调整后弱势方分数 */
+  adjustedScore: number
+}
+
+/** 选手胜率统计 */
+export interface PlayerWinRate {
+  memberId: string
+  totalMatches: number
+  wins: number
+  winRate: number
+}

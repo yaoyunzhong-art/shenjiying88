@@ -35,6 +35,26 @@ export interface ReminderRecord {
   scheduledAt: Date
 }
 
+/** BS-0278: 过期提醒计划 — 5次定时 */
+export interface ExpirationReminderSchedule {
+  memberId: string
+  points: number
+  expireAt: Date
+  /** 已触发的提醒索引 (0-4) */
+  triggered: number[]
+  /** 排定的提醒日期 (第30天/14天/7天/3天/1天) */
+  reminderDates: Date[]
+  createdAt: Date
+}
+
+/** BS-0278: 提醒触发结果 */
+export interface ReminderTriggerResult {
+  sent: boolean
+  scheduleIndex: number
+  daysBefore: number
+  message: string
+}
+
 export interface AlertPayload {
   type: 'inflation' | 'circuit_breaker' | 'expiration'
   threshold: number
@@ -270,6 +290,12 @@ export class ExpirationNotifier {
   private readonly reminders = new Map<string, ReminderRecord>()
   private readonly MAX_REMINDERS = 5
 
+  /** BS-0278: 过期提醒排程存储（按精确时间点） */
+  private readonly schedules = new Map<string, ExpirationReminderSchedule>()
+
+  /** BS-0278: 过期提醒时间点：第30天/14天/7天/3天/1天 */
+  private readonly REMINDER_BEFORE_DAYS = [30, 14, 7, 3, 1]
+
   scheduleReminder(memberId: string, points: number, expireAt: Date): void {
     if (this.reminders.has(memberId)) return
 
@@ -317,6 +343,121 @@ export class ExpirationNotifier {
 
   clear(): void {
     this.reminders.clear()
+    this.schedules.clear()
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // BS-0278: 积分过期5次提醒（第30天/14天/7天/3天/1天）
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * BS-0278: 排定积分过期5次提醒时间表
+   * 过期前第30天、14天、7天、3天、1天各提醒一次
+   * @returns 排定的提醒日期列表
+   */
+  schedule5TimingReminder(memberId: string, points: number, expireAt: Date): ExpirationReminderSchedule {
+    const reminderDates = this.REMINDER_BEFORE_DAYS.map(daysBefore => {
+      const date = new Date(expireAt)
+      date.setDate(date.getDate() - daysBefore)
+      return date
+    })
+
+    const schedule: ExpirationReminderSchedule = {
+      memberId,
+      points,
+      expireAt,
+      triggered: [],
+      reminderDates,
+      createdAt: new Date()
+    }
+
+    this.schedules.set(memberId, schedule)
+
+    // 保持原有提醒
+    if (!this.reminders.has(memberId)) {
+      this.scheduleReminder(memberId, points, expireAt)
+    }
+
+    return schedule
+  }
+
+  /**
+   * BS-0278: 检查并触发当天的过期提醒
+   * 由定时任务每日调用
+   * @returns 当天触发的提醒列表
+   */
+  checkAndSend5TimingReminders(): ReminderTriggerResult[] {
+    const results: ReminderTriggerResult[] = []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    for (const [memberId, schedule] of this.schedules.entries()) {
+      for (let i = 0; i < schedule.reminderDates.length; i++) {
+        const reminderDate = schedule.reminderDates[i]
+        if (!reminderDate) continue
+
+        // 已触发过的跳过
+        if (schedule.triggered.includes(i)) continue
+
+        const reminderDay = new Date(reminderDate)
+        reminderDay.setHours(0, 0, 0, 0)
+
+        if (reminderDay.getTime() <= today.getTime()) {
+          const daysBefore = this.REMINDER_BEFORE_DAYS[i]!
+          const message = this.buildReminderMessage(memberId, schedule.points, daysBefore)
+
+          // 标记已触发
+          schedule.triggered.push(i)
+          this.schedules.set(memberId, schedule)
+
+          // 同时记录到旧版提醒
+          const record = this.reminders.get(memberId)
+          if (record) {
+            record.reminderCount = Math.max(record.reminderCount, schedule.triggered.length)
+          }
+
+          results.push({
+            sent: true,
+            scheduleIndex: i,
+            daysBefore,
+            message
+          })
+        }
+      }
+    }
+
+    return results
+  }
+
+  /**
+   * BS-0278: 获取指定会员的过期提醒排程
+   */
+  getReminderSchedule(memberId: string): ExpirationReminderSchedule | undefined {
+    return this.schedules.get(memberId)
+  }
+
+  /**
+   * BS-0278: 获取所有排程中的最近提醒日期
+   */
+  getAllSchedules(): ExpirationReminderSchedule[] {
+    return Array.from(this.schedules.values())
+  }
+
+  /**
+   * BS-0278: 取消指定会员的5次提醒排程
+   */
+  cancelSchedule(memberId: string): boolean {
+    return this.schedules.delete(memberId)
+  }
+
+  /**
+   * BS-0278: 构建提醒消息
+   */
+  private buildReminderMessage(memberId: string, points: number, daysBefore: number): string {
+    if (daysBefore === 1) {
+      return `【紧急提醒】会员 ${memberId} 的 ${points} 积分将于明天过期，请尽快使用`
+    }
+    return `【积分过期提醒】会员 ${memberId} 的 ${points} 积分将在 ${daysBefore} 天后过期`
   }
 }
 

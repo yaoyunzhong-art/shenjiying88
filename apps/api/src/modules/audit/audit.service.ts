@@ -70,6 +70,12 @@ export class AuditService {
     return `audit_${Date.now()}_${this.idCounter}`
   }
 
+  /** BS-0277: 2% 实时审计抽检阈值 */
+  private readonly AUDIT_SAMPLE_RATE = 0.02
+
+  /** BS-0277: 抽样审计日志独立存储（可被定时任务读取） */
+  private readonly sampledAuditLogs: AuditLog[] = []
+
   // ── 事件记录 ─────────────────────────────────────────────────────────
 
   /** 记录审计事件（异步，不阻塞主流程）*/
@@ -87,6 +93,12 @@ export class AuditService {
     }
     this.auditLogs.set(id, log)
 
+    // BS-0277: 2% 实时审计抽检
+    if (this.shouldSample(id)) {
+      this.sampledAuditLogs.push(log)
+      this.logger.log(`[AUDIT] ⚡ Sampled for real-time audit risk=${log.riskLevel} id=${id}`)
+    }
+
     // 根据风险等级选择日志级别
     const riskLevel = event.riskLevel
     const logMsg = `[AUDIT] ${event.eventType} actor=${event.actorId} type=${event.actorType} id=${id} risk=${riskLevel}`
@@ -97,6 +109,46 @@ export class AuditService {
     }
 
     return id
+  }
+
+  /**
+   * BS-0277: 判断是否应该对该事件进行抽样审计
+   * 基于 ID 哈希的确定性抽样（2% 阈值）
+   * 同一 ID 始终得到同一抽样结果
+   */
+  private shouldSample(id: string): boolean {
+    // 使用 ID 的哈希值做确定性抽样
+    let hash = 0
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0
+    }
+    // 映射到 [0, 1) 区间
+    const normalized = Math.abs(hash % 100) / 100
+    return normalized < this.AUDIT_SAMPLE_RATE
+  }
+
+  /**
+   * BS-0277: 获取当前抽样审计日志
+   */
+  getSampledAuditLogs(): AuditLog[] {
+    return [...this.sampledAuditLogs]
+  }
+
+  /**
+   * BS-0277: 清空抽样审计日志缓存
+   */
+  clearSampledAuditLogs(): void {
+    this.sampledAuditLogs.length = 0
+  }
+
+  /**
+   * BS-0277: 获取抽样审计统计
+   */
+  getSamplingStats(): { rate: number; totalSampled: number } {
+    return {
+      rate: this.AUDIT_SAMPLE_RATE,
+      totalSampled: this.sampledAuditLogs.length,
+    }
   }
 
   /** 批量记录（用于高频事件，如积分变动）*/
@@ -517,6 +569,7 @@ export class AuditService {
     this.clientIP = null
     this.traceId = null
     this.idCounter = 0
+    this.sampledAuditLogs.length = 0
     this.logger.warn('[AUDIT] In-memory logs cleared (test mode)')
   }
 

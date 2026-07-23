@@ -16,6 +16,16 @@ const queueStore = new Map<string, QueueEntity>()
 // Per-tenant per-type queue number counter
 const queueNumberCounters = new Map<string, number>()
 
+// Per-tenant-per-resource load factor (multiplier for estimated wait time)
+// loadFactor: >1 means slower than baseline, <1 means faster than baseline
+const loadFactorStore = new Map<string, number>()
+
+/** Default minutes per person/group for wait estimation */
+const DEFAULT_BASE_WAIT_MIN = 5
+
+/** Default load factor (1.0 = normal) */
+const DEFAULT_LOAD_FACTOR = 1.0
+
 export interface CreateQueueInput {
   tenantId: string
   type: QueueType
@@ -91,9 +101,10 @@ export class QueueService {
     const prefix = prefixMap[input.type]
     const queueNumber = `${prefix}${String(currentNumber).padStart(3, '0')}`
 
-    // Calculate estimated wait
+    // Calculate estimated wait with dynamic load factor
     const aheadCount = this.countAhead(input.tenantId, input.type)
-    const estimatedWaitMin = aheadCount * 5 // 5 min per person/group default
+    const loadFactor = this.getLoadFactor(input.tenantId, input.resourceId)
+    const estimatedWaitMin = Math.round(aheadCount * DEFAULT_BASE_WAIT_MIN * loadFactor)
 
     const entry = new QueueEntity()
     entry.id = `queue-${randomUUID()}`
@@ -302,9 +313,10 @@ export class QueueService {
     if (idx === -1) {
       return { position: -1, estimatedWaitMinutes: 0, entry: null }
     }
+    const loadFactor = this.getLoadFactor(tenantId, resourceId)
     return {
       position: idx + 1,
-      estimatedWaitMinutes: (idx + 1) * 5,
+      estimatedWaitMinutes: Math.round((idx + 1) * DEFAULT_BASE_WAIT_MIN * loadFactor),
       entry: waiting[idx]
     }
   }
@@ -501,18 +513,98 @@ export class QueueService {
     }
   }
 
-  private countAhead(tenantId: string, type: QueueType): number {
+  private countAhead(tenantId: string, type: QueueType, resourceId?: string): number {
     return Array.from(queueStore.values()).filter(
       (q) =>
         q.tenantId === tenantId &&
         q.type === type &&
-        (q.status === QueueStatus.Waiting || q.status === QueueStatus.Called)
+        (q.status === QueueStatus.Waiting || q.status === QueueStatus.Called) &&
+        (resourceId ? q.resourceId === resourceId : true)
     ).length
+  }
+
+  // Testing helper
+  // ── 负载因子管理 ─────────────────────────────────────────────────
+
+  /**
+   * BS-0275: 获取当前负载因子
+   * loadFactor key = `{tenantId}:{resourceId}` (resourceId 可选)
+   * 默认 1.0
+   */
+  getLoadFactor(tenantId: string, resourceId?: string): number {
+    const key = resourceId ? `${tenantId}:${resourceId}` : tenantId
+    return loadFactorStore.get(key) ?? DEFAULT_LOAD_FACTOR
+  }
+
+  /**
+   * BS-0275: 设置负载因子（动态调整等待时间）
+   * - loadFactor > 1: 慢于基线（繁忙时段）
+   * - loadFactor < 1: 快于基线（空闲时段）
+   * - loadFactor = 1: 基线速度
+   * 范围: 0.5 ~ 3.0
+   */
+  setLoadFactor(tenantId: string, loadFactor: number, resourceId?: string): void {
+    const clamped = Math.max(0.5, Math.min(3.0, loadFactor))
+    const key = resourceId ? `${tenantId}:${resourceId}` : tenantId
+    loadFactorStore.set(key, Math.round(clamped * 10) / 10)
+  }
+
+  /**
+   * BS-0275: 动态计算预计等待时间
+   * 根据当前排队人数 × 负载因子 × 基线时间
+   */
+  calculateDynamicWait(
+    tenantId: string,
+    resourceId?: string,
+    type?: QueueType
+  ): { aheadCount: number; loadFactor: number; estimatedWaitMin: number } {
+    const effectiveType = type ?? QueueType.Waiting
+    const aheadCount = this.countAhead(tenantId, effectiveType, resourceId)
+    const loadFactor = this.getLoadFactor(tenantId, resourceId)
+    const estimatedWaitMin = Math.round(aheadCount * DEFAULT_BASE_WAIT_MIN * loadFactor)
+    return { aheadCount, loadFactor, estimatedWaitMin }
+  }
+
+  // ── BS-0295: 系统容量检测 ────────────────────────────────
+
+  /**
+   * BS-0295: 获取系统容量/负载状态
+   * 排队取号时检测系统负载，超过阈值返回系统繁忙状态
+   * 状态端点: GET /queue/capacity
+   */
+  getCapacityStatus(tenantId: string): {
+    loadFactor: number
+    waitingCount: number
+    capacityThreshold: number
+    isBusy: boolean
+    message: string
+  } {
+    const loadFactor = this.getLoadFactor(tenantId)
+    const waitingEntries = Array.from(queueStore.values()).filter(
+      (q) => q.tenantId === tenantId && q.status === QueueStatus.Waiting
+    )
+    const waitingCount = waitingEntries.length
+
+    // 负载阈值: loadFactor >= 2.0 或等待人数 >= 15 视为繁忙
+    const capacityThreshold = 2.0
+    const waitingThreshold = 15
+    const isBusy = loadFactor >= capacityThreshold || waitingCount >= waitingThreshold
+
+    return {
+      loadFactor,
+      waitingCount,
+      capacityThreshold,
+      isBusy,
+      message: isBusy
+        ? '系统繁忙，当前排队人数较多，预计等待时间较长'
+        : '系统运行正常'
+    }
   }
 
   // Testing helper
   resetQueueStoresForTests(): void {
     queueStore.clear()
     queueNumberCounters.clear()
+    loadFactorStore.clear()
   }
 }

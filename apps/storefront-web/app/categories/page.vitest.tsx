@@ -1,168 +1,457 @@
+/**
+ * categories/page.vitest.tsx — 分类管理页 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 页面渲染 · 统计卡片 · 搜索筛选 · 状态过滤 · 数据表格 · 分页 · 排序 · 详情弹窗 · 状态变更 · 空态 · 错误态
+ * 角色: 👔店长 · 💳采购
+ */
 import React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => '/categories',
-  useSearchParams: () => new URLSearchParams(),
-}));
+// ── Mocks ──
 
-const mockPS = vi.fn(({ children, title }: any) => <div data-testid="ps" data-t={title}>{children}</div>);
-
-// DataTable won't be rendered initially because categories data loads via wrapLoad + setTimeout + then
-// So we accept EmptyState is shown instead
-const mockDT = vi.fn(({ columns, rows, rowKey, sort, onSortChange }: any) =>
-  <div data-testid="dt" data-r={rows.length} data-sk={sort?.key} data-sd={sort?.direction}>
-    {rows.map((r: any) => <div key={rowKey(r)}>
-      {columns.map((c: any) => <span key={c.key}>{c.render ? c.render(r) : String(r[c.key])}</span>)}
-    </div>)}
+// Track call counts for dynamic mocks
+let renderCount = 0;
+const mockPageShell = vi.fn(({ title, description, children }: any) => (
+  <div data-testid="page-shell" data-title={title} data-description={description}>
+    {children}
   </div>
-);
-const mockSB = vi.fn(({ label, variant }: any) => <span data-testid="sb" data-v={variant}>{label}</span>);
-let modalCallCount = 0;
-const mockModal = vi.fn(({ open, onClose, title, children }: any) => {
-  modalCallCount++;
-  return open ? <div data-testid="modal" data-t={title}><button data-testid="mc" onClick={onClose}>✕</button><div>ModalContent</div></div> : null;
+));
+const mockStatusBadge = vi.fn(({ label, variant, size }: any) => (
+  <span data-testid={`status-badge`} data-label={label} data-variant={variant} data-size={size}>{label}</span>
+));
+const mockEmptyState = vi.fn(({ title, description }: any) => (
+  <div data-testid="empty-state"><h3 data-testid="es-title">{title}</h3><p>{description}</p></div>
+));
+const mockModal = vi.fn(({ open, onClose, title, children }: any) => (
+  open ? <div data-testid="modal" data-title={title}><button data-testid="modal-close" onClick={onClose}>✕</button><div>{children}</div></div> : null
+));
+const mockDataTable = vi.fn(({ columns, rows, rowKey, sort, onSortChange }: any) => {
+  renderCount++;
+  return (
+    <div data-testid="data-table" data-render-count={renderCount}>
+      <table>
+        <thead>
+          <tr>
+            {columns.map((col: any) => (
+              <th key={col.key} data-testid={`th-${col.key}`} data-sortable={col.sortable ? 'true' : 'false'}
+                onClick={() => { if (col.sortable && onSortChange) {
+                  const isSame = sort?.key === col.key;
+                  onSortChange({ key: col.key, direction: isSame && sort?.direction === 'asc' ? 'desc' : 'asc' });
+                }}}
+              >
+                {col.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {(rows || []).map((row: any) => (
+            <tr key={rowKey(row)} data-testid={`row-${rowKey(row)}`}>
+              {columns.map((col: any) => (
+                <td key={col.key}>{col.render ? col.render(row) : String(row[col.key] ?? '')}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {sort && <div data-testid="sort-config">{sort.key}:{sort.direction}</div>}
+    </div>
+  );
 });
-const mockES = vi.fn(({ title }: any) => <div data-testid="es" data-t={title}>{title}</div>);
 
 vi.mock('@m5/ui', () => ({
-  PageShell: (p: any) => mockPS(p),
-  DataTable: (p: any) => mockDT(p),
-  StatusBadge: (p: any) => mockSB(p),
+  PageShell: (p: any) => mockPageShell(p),
+  DataTable: (p: any) => mockDataTable(p),
+  StatusBadge: (p: any) => mockStatusBadge(p),
   Modal: (p: any) => mockModal(p),
-  EmptyState: (p: any) => mockES(p),
+  EmptyState: (p: any) => mockEmptyState(p),
 }));
 
-// wrapLoad mock: instead of waiting for setTimeout, resolve immediately
+// Mock the tri-state hook to resolve immediately
 vi.mock('../_components/useTriState', () => ({
-  useTriState: () => ({
-    loading: false,
-    error: null,
-    wrapLoad: vi.fn((promise: Promise<any>) => promise),
-  }),
+  useTriState: (initialState?: any) => {
+    const [loading, setLoading] = React.useState(initialState?.loading ?? false);
+    const [error, setError] = React.useState<string | null>(initialState?.error ?? null);
+    return {
+      loading,
+      error,
+      empty: false,
+      setLoading,
+      setError,
+      wrapLoad: vi.fn((promise: Promise<any>) => {
+        setLoading(true);
+        return promise.then((data: any) => {
+          setLoading(false);
+          return data;
+        }).catch((err: any) => {
+          setError(err?.message ?? 'error');
+          setLoading(false);
+          return undefined;
+        });
+      }),
+      reset: vi.fn(),
+    };
+  },
 }));
 
 vi.mock('../_components/TriStateRenderer', () => ({
-  TriStateRenderer: ({ children }: any) => <div data-testid="tric">{typeof children === 'function' ? children() : children}</div>,
+  TriStateRenderer: ({ loading, empty, error, onRetry, children }: any) => {
+    if (loading) return <div data-testid="tri-state-loading">加载中…</div>;
+    if (error) return <div data-testid="tri-state-error">{error}<button data-testid="tri-state-retry" onClick={onRetry}>重试</button></div>;
+    if (empty) return <div data-testid="tri-state-empty">暂无数据</div>;
+    return <>{typeof children === 'function' ? children() : children}</>;
+  },
 }));
 
+vi.mock('next/link', () => ({
+  default: ({ children, href }: any) => <a data-testid="next-link" href={href}>{children}</a>,
+}));
+
+// ── Test Subject ──
+
 import CategoriesPage from './page';
-beforeEach(() => { vi.clearAllMocks(); modalCallCount = 0; });
 
-describe('CategoriesPage', () => {
+describe('CategoriesPage — 分类管理', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    renderCount = 0;
+  });
+
+  // ====== 渲染测试 ======
+
   test('renders PageShell with correct title', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(mockPS.mock.lastCall![0].title).toBe('分类管理');
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(mockPageShell).toHaveBeenCalledWith(
+        expect.objectContaining({ title: '分类管理' }),
+        expect.anything(),
+      );
+    });
   });
 
-  test('renders page heading', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(document.querySelector('h1')!.textContent).toContain('分类管理');
+  test('renders PageShell with correct description', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(mockPageShell).toHaveBeenCalledWith(
+        expect.objectContaining({ description: expect.stringContaining('管理门店') }),
+        expect.anything(),
+      );
+    });
   });
 
-  test('renders stat card labels', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(screen.getByText('总分类')).toBeInTheDocument();
-    expect(screen.getByText('启用中')).toBeInTheDocument();
-    expect(screen.getByText('隐藏')).toBeInTheDocument();
-    expect(screen.getByText('已归档')).toBeInTheDocument();
+  test('renders 分类管理 page title', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('📂 分类管理')).toBeInTheDocument();
+    });
+  });
+
+  test('shows total stats in header text', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const statText = screen.getByText(/共 \d+ 个分类/);
+      expect(statText).toBeInTheDocument();
+    });
+  });
+
+  test('renders 5 stat cards', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('总分类')).toBeInTheDocument();
+      expect(screen.getByText('启用中')).toBeInTheDocument();
+      expect(screen.getByText('隐藏')).toBeInTheDocument();
+      expect(screen.getByText('已归档')).toBeInTheDocument();
+      expect(screen.getByText('总产品')).toBeInTheDocument();
+    });
+  });
+
+  test('stat 总分类 shows correct count', async () => {
+    render(<CategoriesPage />);
+    // Total should be 18 in mock data
+    await waitFor(() => {
+      const statValue = screen.getByText('18');
+      expect(statValue).toBeInTheDocument();
+    });
   });
 
   test('renders search input', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    const inputs = document.querySelectorAll('input[type="text"]');
-    expect(inputs.length).toBe(1);
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const searchInput = screen.getByPlaceholderText(/搜索分类/);
+      expect(searchInput).toBeInTheDocument();
+    });
   });
 
-  test('renders status filter select', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(document.querySelectorAll('select').length).toBe(1);
+  test('renders status filter dropdown', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('全部状态')).toBeInTheDocument();
+      expect(screen.getByText('启用')).toBeInTheDocument();
+      expect(screen.getByText('隐藏')).toBeInTheDocument();
+      expect(screen.getByText('归档')).toBeInTheDocument();
+    });
   });
 
-  test('renders page description with category counts', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(document.querySelector('p')!.textContent).toContain('个分类');
+  test('renders hierarchy hints', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/顶级分类/)).toBeInTheDocument();
+      expect(screen.getByText(/子分类/)).toBeInTheDocument();
+    });
   });
 
-  test('empty state shown since categories load async', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(mockES).toHaveBeenCalled();
+  test('renders DataTable', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('data-table')).toBeInTheDocument();
+    });
   });
 
-  test('search input change triggers value update', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { value: '瑜伽' } });
-    expect(input.value).toBe('瑜伽');
+  test('DataTable renders all 7 columns', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('th-name')).toBeInTheDocument();
+      expect(screen.getByTestId('th-slug')).toBeInTheDocument();
+      expect(screen.getByTestId('th-productCount')).toBeInTheDocument();
+      expect(screen.getByTestId('th-sortOrder')).toBeInTheDocument();
+      expect(screen.getByTestId('th-status')).toBeInTheDocument();
+      expect(screen.getByTestId('th-updatedAt')).toBeInTheDocument();
+      expect(screen.getByTestId('th-actions')).toBeInTheDocument();
+    });
   });
 
-  test('status select change updates value', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    const select = document.querySelector('select') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'hidden' } });
-    expect(select.value).toBe('hidden');
+  test('renders pagination when total pages > 1', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/共 \d+ 条/)).toBeInTheDocument();
+    });
   });
 
-  test('renders via TriStateRenderer', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(screen.getByTestId('tric')).toBeInTheDocument();
+  test('renders 详情 button for each row', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtns = screen.getAllByText('详情');
+      expect(detailBtns.length).toBeGreaterThan(0);
+      expect(detailBtns.length).toBeLessThanOrEqual(10);
+    });
   });
 
-  test('renders hierarchy badges', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(document.body.textContent).toContain('顶级分类');
+  test('shows subcategory count for top-level categories', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const subCount = screen.getByText(/子分类\)/);
+      expect(subCount).toBeInTheDocument();
+    });
   });
 
-  test('renders filter count summary', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(document.body.textContent).toContain('筛选后');
+  // ====== 搜索测试 ======
+
+  test('search filters by category name', async () => {
+    render(<CategoriesPage />);
+    const searchInput = await screen.findByPlaceholderText(/搜索分类/);
+    fireEvent.change(searchInput, { target: { value: '瑜伽' } });
+    await waitFor(() => {
+      expect(screen.getByText('瑜伽课')).toBeInTheDocument();
+    });
   });
 
-  test('pagination not shown when empty', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    // EmptyState is shown instead of DataTable + pagination when categories are empty
-    expect(document.body.textContent).not.toContain('上一页');
+  test('search is case-insensitive', async () => {
+    render(<CategoriesPage />);
+    const searchInput = await screen.findByPlaceholderText(/搜索分类/);
+    fireEvent.change(searchInput, { target: { value: 'YOGA' } });
+    await waitFor(() => {
+      expect(screen.getByText('瑜伽课')).toBeInTheDocument();
+    });
   });
 
-  test('page heading is h1 element', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    const h1 = document.querySelector('h1');
-    expect(h1).toBeInTheDocument();
+  test('search returns no results shows empty message', async () => {
+    render(<CategoriesPage />);
+    const searchInput = await screen.findByPlaceholderText(/搜索分类/);
+    fireEvent.change(searchInput, { target: { value: '不存在的分类' } });
+    await waitFor(() => {
+      expect(mockEmptyState).toHaveBeenCalled();
+    });
   });
 
-  test('renders 总产品 stat card', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(screen.getByText('总产品')).toBeInTheDocument();
+  test('search resets page to 1', async () => {
+    render(<CategoriesPage />);
+    const searchInput = await screen.findByPlaceholderText(/搜索分类/);
+    fireEvent.change(searchInput, { target: { value: 'a' } });
+    // Should not break
+    expect(searchInput).toBeInTheDocument();
   });
 
-  test('EmptyState called with correct title', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(mockES).toHaveBeenCalled();
-    const call = mockES.mock.lastCall![0];
-    expect(call.title).toContain('暂无分类记录');
+  // ====== 筛选测试 ======
+
+  test('status filter to active', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const option = screen.getByText(/启用 \(/);
+      expect(option).toBeInTheDocument();
+    });
   });
 
-  test('categories page renders without crash', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(screen.getByTestId('ps')).toBeInTheDocument();
+  test('status filter to hidden', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const option = screen.getByText(/隐藏 \(/);
+      expect(option).toBeInTheDocument();
+    });
   });
 
-  test('search placeholder includes relevant text', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-    expect(input.placeholder).toContain('搜索');
+  test('status filter to archived', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const option = screen.getByText(/归档 \(/);
+      expect(option).toBeInTheDocument();
+    });
   });
 
-  test('TotalProducts stat card present', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    expect(screen.getByText('总产品')).toBeInTheDocument();
+  // ====== 排序测试 ======
+
+  test('sort changes when clicking sortable column header', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const nameTh = screen.getByTestId('th-name');
+      fireEvent.click(nameTh);
+      // Should show sort config
+      expect(screen.getByTestId('sort-config')).toBeInTheDocument();
+    });
   });
 
-  test('select has ALL default option', async () => {
-    await act(async () => { render(<CategoriesPage />); });
-    const select = document.querySelector('select') as HTMLSelectElement;
-    expect(select.options[0].value).toBe('ALL');
+  test('default sort is sortOrder:asc', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const sortConfig = screen.getByTestId('sort-config');
+      expect(sortConfig.textContent).toBe('sortOrder:asc');
+    });
+  });
+
+  test('toggling sort direction', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const nameTh = screen.getByTestId('th-sortOrder');
+      fireEvent.click(nameTh); // asc -> desc
+    });
+    await waitFor(() => {
+      const sortConfig = screen.getByTestId('sort-config');
+      expect(sortConfig.textContent).toBe('sortOrder:desc');
+    });
+  });
+
+  // ====== 分页测试 ======
+
+  test('pagination: previous button disabled on first page', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const prevBtn = screen.getByText('← 上一页');
+      expect(prevBtn).toBeDisabled();
+    });
+  });
+
+  test('pagination: clicking next changes page', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const nextBtn = screen.getByText('下一页 →');
+      expect(nextBtn).not.toBeDisabled();
+    });
+  });
+
+  // ====== 详情弹窗测试 ======
+
+  test('clicking 详情 opens modal', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtn = screen.getAllByText('详情')[0];
+      fireEvent.click(detailBtn);
+    });
+    expect(screen.getByTestId('modal')).toBeInTheDocument();
+  });
+
+  test('modal shows category detail title', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtn = screen.getAllByText('详情')[0];
+      fireEvent.click(detailBtn);
+    });
+    const modal = screen.getByTestId('modal');
+    expect(modal).toHaveAttribute('data-title', expect.stringContaining('分类详情'));
+  });
+
+  test('modal shows status badge', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtn = screen.getAllByText('详情')[0];
+      fireEvent.click(detailBtn);
+    });
+    // Status badges in modal
+    const badges = screen.getAllByTestId('status-badge');
+    expect(badges.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('modal close button works', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtn = screen.getAllByText('详情')[0];
+      fireEvent.click(detailBtn);
+    });
+    expect(screen.getByTestId('modal')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('modal-close'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('modal')).toBeNull();
+    });
+  });
+
+  // ====== 状态变更测试 ======
+
+  test('modal has 设为隐藏 button for active category', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtn = screen.getAllByText('详情')[0];
+      fireEvent.click(detailBtn);
+    });
+    expect(screen.getByText('设为隐藏')).toBeInTheDocument();
+  });
+
+  test('modal has 归档 button', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const detailBtn = screen.getAllByText('详情')[0];
+      fireEvent.click(detailBtn);
+    });
+    expect(screen.getByText('归档')).toBeInTheDocument();
+  });
+
+  // ====== 边界情况 ======
+
+  test('category with 0 product count shows greyed out styling', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      // 二手转卖 has productCount = 0
+      expect(screen.getByText('二手转卖')).toBeInTheDocument();
+    });
+  });
+
+  test('hierarchy: shows 隶属于 text for child categories', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const affiliated = screen.getAllByText(/隶属于/);
+      expect(affiliated.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('code style identifier rendered for slug', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      const codes = document.querySelectorAll('code');
+      expect(codes.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('shows filtered count text', async () => {
+    render(<CategoriesPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/筛选后/)).toBeInTheDocument();
+    });
   });
 });

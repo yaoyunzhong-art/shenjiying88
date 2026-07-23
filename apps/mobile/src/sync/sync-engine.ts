@@ -35,6 +35,18 @@ export interface SyncStats {
   totalPushes: number;
   totalConflictsResolved: number;
   totalFieldsSynced: number;
+  /** BS-0284: 幂等性统计 */
+  totalDuplicatesSkipped: number;
+}
+
+/**
+ * BS-0284: 幂等性请求记录
+ * 存储已处理的 requestId 及其响应
+ */
+interface IdempotencyRecord {
+  requestId: string;
+  response: unknown;
+  processedAt: number;
 }
 
 export class SyncEngine {
@@ -47,7 +59,15 @@ export class SyncEngine {
     totalPushes: 0,
     totalConflictsResolved: 0,
     totalFieldsSynced: 0,
+    /** BS-0284 */
+    totalDuplicatesSkipped: 0,
   };
+
+  /** BS-0284: 已处理的 requestId 映射 */
+  private idempotencyStore = new Map<string, IdempotencyRecord>();
+
+  /** BS-0284: 已处理 requestId 的 TTL（毫秒） */
+  private readonly IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000; // 24小时
 
   constructor(
     private readonly store: CRDTStore,
@@ -62,21 +82,34 @@ export class SyncEngine {
     version: number;
     conflictsResolved: number;
     hasMore: boolean;
+    /** BS-0284: 本次拉取跳过的重复数量 */
+    duplicatesSkipped: number;
   }> {
     const fetcher =
       this.options.fetcher ?? this.mockFetcher();
     const pageSize = this.options.pageSize ?? 100;
     let totalPulled = 0;
     let totalConflicts = 0;
+    let totalDuplicates = 0;
     let currentVersion = this.lastSyncVersion;
 
     let hasMore = true;
     while (hasMore) {
       const delta = await fetcher(this.lastSyncVersion, pageSize);
       for (const change of delta.changes) {
+        // BS-0284: 检查是否重复变更（基于文档 ID + 版本号）
+        const dedupKey = `change:${change.id}:${change.clock ? JSON.stringify(change.clock) : change.updatedAt}`
+        if (this.isDuplicateRequest(dedupKey)) {
+          totalDuplicates++
+          continue
+        }
+
         const result = this.store.mergeRemote(change);
         totalConflicts += result.conflictsResolved;
         totalFieldsSynced(result, this);
+
+        // BS-0284: 记录已处理
+        this.markRequestId(dedupKey, { skipped: false })
       }
       totalPulled += delta.changes.length;
       currentVersion = Math.max(currentVersion, delta.version);
@@ -90,14 +123,28 @@ export class SyncEngine {
     this.stats.lastSyncAt = this.lastSyncAt;
     this.stats.totalPulls += 1;
     this.stats.totalConflictsResolved += totalConflicts;
+    this.stats.totalDuplicatesSkipped += totalDuplicates;
 
-    return { pulled: totalPulled, version: currentVersion, conflictsResolved: totalConflicts, hasMore: false };
+    return { pulled: totalPulled, version: currentVersion, conflictsResolved: totalConflicts, hasMore: false, duplicatesSkipped: totalDuplicates };
   }
 
   /**
    * 推送本地变更 (V1 mock: 通过 offline-queue)
+   *
+   * BS-0284: 支持幂等推送
+   * @param localDocs 要推送的变更文档
+   * @param requestId 可选的请求 ID（用于幂等检测）
    */
-  async push(localDocs: CRDTDocument[]): Promise<{ pushed: number; version: number }> {
+  async push(localDocs: CRDTDocument[], requestId?: string): Promise<{ pushed: number; version: number; duplicate: boolean }> {
+    // BS-0284: 如果提供了 requestId，检查是否已处理
+    if (requestId) {
+      const existing = this.getIdempotentResult(requestId)
+      if (existing !== null) {
+        this.stats.totalDuplicatesSkipped++
+        return existing.response as { pushed: number; version: number; duplicate: boolean }
+      }
+    }
+
     // Mock: 服务器接收后,version 递增
     const pushed = localDocs.length;
     this.lastSyncVersion += 1;
@@ -105,7 +152,15 @@ export class SyncEngine {
     this.stats.lastSyncVersion = this.lastSyncVersion;
     this.stats.lastSyncAt = this.lastSyncAt;
     this.stats.totalPushes += pushed;
-    return { pushed, version: this.lastSyncVersion };
+
+    const response = { pushed, version: this.lastSyncVersion, duplicate: false }
+
+    // BS-0284: 记录请求结果
+    if (requestId) {
+      this.markRequestId(requestId, response)
+    }
+
+    return response
   }
 
   /** 全量同步: pull + push */
@@ -151,6 +206,68 @@ export class SyncEngine {
     });
   }
 
+  // ── BS-0284: 幂等性方法 ───────────────────────────────────────────
+
+  /**
+   * BS-0284: 根据 requestId 获取幂等性结果
+   * 如果 requestId 已存在且未过期，返回之前的响应
+   */
+  getIdempotentResult(requestId: string): unknown {
+    const record = this.idempotencyStore.get(requestId)
+    if (!record) return null
+
+    // 检查 TTL
+    if (Date.now() - record.processedAt > this.IDEMPOTENCY_TTL_MS) {
+      this.idempotencyStore.delete(requestId)
+      return null
+    }
+
+    return record.response
+  }
+
+  /**
+   * BS-0284: 检查是否重复请求
+   */
+  isDuplicateRequest(requestId: string): boolean {
+    return this.getIdempotentResult(requestId) !== null
+  }
+
+  /**
+   * BS-0284: 标记 requestId 为已处理
+   */
+  markRequestId(requestId: string, response: unknown): void {
+    this.idempotencyStore.set(requestId, {
+      requestId,
+      response,
+      processedAt: Date.now(),
+    })
+
+    // BS-0284: 清理过期记录
+    this.evictExpiredRecords()
+  }
+
+  /**
+   * BS-0284: 清理过期的幂等性记录
+   */
+  private evictExpiredRecords(): void {
+    const now = Date.now()
+    for (const [id, record] of this.idempotencyStore) {
+      if (now - record.processedAt > this.IDEMPOTENCY_TTL_MS) {
+        this.idempotencyStore.delete(id)
+      }
+    }
+  }
+
+  /**
+   * BS-0284: 获取幂等性统计
+   */
+  getIdempotencyStats(): { totalRecords: number; ttlMs: number } {
+    return {
+      totalRecords: this.idempotencyStore.size,
+      ttlMs: this.IDEMPOTENCY_TTL_MS,
+    }
+  }
+
   // ── Test helpers ──
   resetForTests(): void {
     this.lastSyncVersion = 0;
@@ -162,9 +279,10 @@ export class SyncEngine {
       totalPushes: 0,
       totalConflictsResolved: 0,
       totalFieldsSynced: 0,
+      totalDuplicatesSkipped: 0,
     };
+    this.idempotencyStore.clear()
   }
-}
 
 function totalFieldsSynced(
   result: { merged: CRDTDocument; conflictsResolved: number; fieldsAdded: number },
