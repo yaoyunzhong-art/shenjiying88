@@ -159,12 +159,45 @@ export class TrustGovernanceService {
 
   async getOperationsOverview() {
     const [approvals, audits, policies, ledgers] = await Promise.all([
-      this.summarizeGovernanceApprovals({
-        groupBy: ['operation', 'status', 'executionStatus', 'failureStatus']
-      }),
-      this.summarizeAuditRecords(),
-      this.listRateLimitPolicies({}),
-      this.listQuotaLedgers({ limit: 200 })
+      this.withPrismaUnavailableFallback(
+        () =>
+          this.summarizeGovernanceApprovals({
+            groupBy: ['operation', 'status', 'executionStatus', 'failureStatus']
+          }),
+        () => ({
+          groups: [],
+          total: 0,
+          statuses: {
+            NOT_REQUIRED: 0,
+            PENDING: 0,
+            APPROVED: 0,
+            REJECTED: 0,
+            CANCELLED: 0,
+            SUPERSEDED: 0
+          },
+          byOperation: {},
+          execution: {
+            executed: 0,
+            pending: 0,
+            withFailures: 0,
+            byExecutionStatus: {},
+            byFailureStatus: {}
+          },
+          failures: {}
+        })
+      ),
+      this.withPrismaUnavailableFallback(() => this.summarizeAuditRecords(), () => ({
+        total: 0,
+        byAction: {},
+        bySource: {},
+        byRiskLevel: {
+          low: 0,
+          medium: 0,
+          high: 0
+        }
+      })),
+      this.withPrismaUnavailableFallback(() => this.listRateLimitPolicies({}), () => []),
+      this.withPrismaUnavailableFallback(() => this.listQuotaLedgers({ limit: 200 }), () => [])
     ])
 
     const now = Date.now()
@@ -456,7 +489,7 @@ export class TrustGovernanceService {
       })
       retention = 'prisma'
     } catch (error) {
-      if (!this.shouldUseAuditFallback(error)) {
+      if (!this.shouldUsePrismaUnavailableFallback(error)) {
         throw error
       }
       this.auditFallbackRecords.unshift(fallbackRecord)
@@ -525,7 +558,7 @@ export class TrustGovernanceService {
         take: Math.max((filters.limit ?? 20) * 3, filters.limit ?? 20)
       })
     } catch (error) {
-      if (!this.shouldUseAuditFallback(error)) {
+      if (!this.shouldUsePrismaUnavailableFallback(error)) {
         throw error
       }
       this.logger.warn(
@@ -1379,9 +1412,23 @@ export class TrustGovernanceService {
     return value === 'low' || value === 'medium' || value === 'high' ? value : 'medium'
   }
 
-  private shouldUseAuditFallback(error: unknown) {
+  private shouldUsePrismaUnavailableFallback(error: unknown) {
     const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
     return code === 'P2021' || code === 'P1010' || code === 'P1001'
+  }
+
+  private async withPrismaUnavailableFallback<T>(run: () => Promise<T>, fallback: () => T): Promise<T> {
+    try {
+      return await run()
+    } catch (error) {
+      if (!this.shouldUsePrismaUnavailableFallback(error)) {
+        throw error
+      }
+      this.logger.warn(
+        `[TrustGovernanceService] prisma unavailable fallback triggered (${this.describePrismaFallback(error)})`
+      )
+      return fallback()
+    }
   }
 
   private describePrismaFallback(error: unknown) {

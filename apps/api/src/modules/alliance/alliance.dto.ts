@@ -9,6 +9,7 @@ import {
   ValidateNested,
   ArrayMinSize,
   IsIn,
+  IsNotEmpty,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 import {
@@ -20,15 +21,18 @@ import { SettlementType } from '../alliance/alliance-settlement.service'
 
 export class RegisterPartnerDto {
   @IsString()
+  @IsNotEmpty()
   name!: string
 
   @IsEnum(['RETAIL', 'F&B', 'SERVICE', 'TECH', 'OTHER'] as const)
   businessType!: BusinessType
 
   @IsString()
+  @IsNotEmpty()
   contact!: string
 
   @IsString()
+  @IsNotEmpty()
   address!: string
 }
 
@@ -128,6 +132,7 @@ export class SetMetricsDto {
 
 export class ScanUnlinkedOrdersDto {
   @IsString()
+  @IsNotEmpty()
   storeId!: string
 
   @IsString()
@@ -136,6 +141,7 @@ export class ScanUnlinkedOrdersDto {
 
 export class LinkOrderDto {
   @IsString()
+  @IsNotEmpty()
   partnerId!: string
 }
 

@@ -1056,7 +1056,52 @@ export class FoundationService {
 
   async getOperationsOverview(tenantContext?: RequestTenantContext) {
     const [trustOverviewRaw, configurationOverviewRaw, resilienceOverviewRaw, runtimeOverviewRaw] = await Promise.all([
-      this.trustGovernanceService.getOperationsOverview(),
+      this.trustGovernanceService.getOperationsOverview().catch(() => ({
+        generatedAt: new Date().toISOString(),
+        approvals: {
+          groups: [],
+          total: 0,
+          statuses: {
+            NOT_REQUIRED: 0,
+            PENDING: 0,
+            APPROVED: 0,
+            REJECTED: 0,
+            CANCELLED: 0,
+            SUPERSEDED: 0
+          },
+          byOperation: {},
+          execution: {
+            executed: 0,
+            pending: 0,
+            withFailures: 0,
+            byExecutionStatus: {},
+            byFailureStatus: {}
+          },
+          failures: {}
+        },
+        audits: {
+          total: 0,
+          byAction: {},
+          bySource: {},
+          byRiskLevel: {
+            low: 0,
+            medium: 0,
+            high: 0
+          }
+        },
+        rateLimit: {
+          policies: {
+            total: 0,
+            tenantScoped: 0,
+            runtimeManaged: 0
+          },
+          ledgers: {
+            total: 0,
+            blocked: 0,
+            exhausted: 0
+          }
+        }
+      })),
       this.configurationGovernanceService.getOperationsOverview(),
       this.resilienceOperationsService.getOperationsOverview(),
       this.runtimeGovernanceService.getOperationsOverview(tenantContext?.tenantId)
