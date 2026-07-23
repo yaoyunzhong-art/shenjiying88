@@ -1339,7 +1339,7 @@ test('sdk: createBusinessClient cashier.lookupMember encodes query', async () =>
   globalThis.fetch = (async (input) => {
     requestUrl = String(input);
     return new Response(
-      JSON.stringify({ success: true, data: { memberId: 'mem-001', name: '张三', phone: '13800138001' }, timestamp: '2026-07-22T00:00:00.000Z' }),
+      JSON.stringify({ success: true, data: { id: 'mem-001', memberNo: 'MEM001', name: '张三', phone: '13800138001', tier: 'gold', points: 1000, discountRate: 0.9 }, timestamp: '2026-07-22T00:00:00.000Z' }),
       { status: 200, headers: { 'content-type': 'application/json' } }
     );
   }) as typeof fetch;
@@ -1380,7 +1380,7 @@ test('sdk: createBusinessClient orders.listPage returns paginated response', asy
 
 test('sdk: createBusinessClient finance accounts and revenue summary', async () => {
   globalThis.fetch = (async () => new Response(
-    JSON.stringify({ success: true, data: [{ accountId: 'acct-001', balance: 10000 }], timestamp: '2026-07-22T00:00:00.000Z' }),
+    JSON.stringify({ success: true, data: [{ id: 'acct-001', tenantId: 'tenant-demo', name: 'Main Account', type: 'CASH', balance: 10000, status: 'ACTIVE', createdAt: '2026-07-22T00:00:00Z', updatedAt: '2026-07-22T00:00:00Z' }], timestamp: '2026-07-22T00:00:00.000Z' }),
     { status: 200, headers: { 'content-type': 'application/json' } }
   )) as typeof fetch;
 

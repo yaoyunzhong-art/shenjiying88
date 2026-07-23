@@ -87,22 +87,22 @@ function createClient(overrides?: Record<string, string>) {
 describe('ApiClient — GET 请求', () => {
   it('getFoundationBootstrap 发送正确路径', async () => {
     const calls = createMockFetch({
-      'GET:http://localhost:3001/api/v1/foundation/bootstrap': { data: { scope: { tenantId: 'T001' }, contracts: [] } },
+      'GET:http://localhost:3001/api/v1/foundation/bootstrap': { data: { tenantContext: { tenantId: 'T001' } } },
     });
     const client = createClient();
     const result = await client.getFoundationBootstrap();
-    assert.ok(result.scope != null);
+    assert.ok(result.tenantContext != null);
     assert.equal(calls[0]?.url, 'http://localhost:3001/api/v1/foundation/bootstrap');
     assert.equal(calls[0]?.method, 'GET');
   });
 
   it('getPortalDomainGovernanceSummary 发送正确路径', async () => {
     const calls = createMockFetch({
-      'GET:http://localhost:3001/api/v1/portals/domain-governance': { data: { status: 'ready', domains: [] } },
+      'GET:http://localhost:3001/api/v1/portals/domain-governance': { data: { requiresAttention: false, lastEvaluatedAt: '2026-07-22T00:00:00Z', totalMissingPrimaryScopes: 0, totalActiveWithoutPrimaryDomains: 0, recommendedReadyScopes: 0, tenantMissingPrimaryScopes: 0, brandMissingPrimaryScopes: 0, storeMissingPrimaryScopes: 0, currentScopes: [] } },
     });
     const client = createClient();
     const result = await client.getPortalDomainGovernanceSummary();
-    assert.equal(result.status, 'ready');
+    assert.equal(result.requiresAttention, false);
     assert.equal(calls[0]?.method, 'GET');
   });
 
@@ -124,23 +124,23 @@ describe('ApiClient — GET 请求', () => {
   it('listObservabilitySignals 拼接 status query', async () => {
     const calls = createMockFetch({
       'GET:http://localhost:3001/api/v1/foundation/resilience-operations/observability?status=degraded':
-        { data: [{ signalId: 'sig-001', status: 'degraded' }] },
+        { data: [{ signal: 'metrics', status: 'degraded', coverage: 95, collectionLagSeconds: 30, lastCollectedAt: '2026-07-22T00:00:00Z', owner: 'ops', alertRoutes: [], evidence: [] }] },
     });
     const client = createClient();
     const result = await client.listObservabilitySignals({ status: 'degraded' });
     assert.equal(result.length, 1);
-    assert.equal(result[0]?.signalId, 'sig-001');
+    assert.equal(result[0]?.signal, 'metrics');
   });
 
   it('listResilienceRecoveryPlans 拼接 status query', async () => {
     const calls = createMockFetch({
       'GET:http://localhost:3001/api/v1/foundation/resilience-operations/recovery-plans?status=attention':
-        { data: [{ planId: 'plan-001', status: 'attention' }] },
+        { data: [{ resource: 'plan-001', status: 'attention', rtoMinutes: 60, rpoMinutes: 15, lastDrillAt: '2026-07-22T00:00:00Z', staleAfterDays: 30, dependencies: [] }] },
     });
     const client = createClient();
     const result = await client.listResilienceRecoveryPlans({ status: 'attention' });
     assert.equal(result.length, 1);
-    assert.equal(result[0]?.planId, 'plan-001');
+    assert.equal(result[0]?.resource, 'plan-001');
   });
 
   it('describeResilienceRecoveryPlan 编码 resource 参数', async () => {
@@ -161,7 +161,7 @@ describe('ApiClient — GET 请求', () => {
     });
     const client = createClient();
     const result = await client.getFoundationAlertDrilldown('observability-degradation');
-    assert.equal(result.alert.code, 'observability-degradation');
+    assert.equal(result.alert?.code, 'observability-degradation');
     assert.equal(calls[0]?.method, 'GET');
   });
 });
@@ -174,9 +174,7 @@ describe('ApiClient — POST 请求', () => {
     });
     const client = createClient();
     const result = await client.batchReplayRuntimeGovernanceActions({
-      receipts: [{ receiptCode: 'rc-001', nonce: 'nonce-001' }],
-      idempotencyKey: 'batch-replay-001',
-      actorId: 'ops.admin',
+      items: [{ receiptCode: 'rc-001', ledgerKey: 'ledger-001', requestedFrom: 'ADMIN_WEB_RUNTIME', ticketCode: 'tc-001', idempotencyKey: 'batch-replay-001' }],
     });
     assert.equal(result.total, 1);
     assert.match(calls[0]?.body ?? '', /receiptCode/);
@@ -185,46 +183,45 @@ describe('ApiClient — POST 请求', () => {
   it('stageResilienceEdgeReplay 发送正确数据', async () => {
     const calls = createMockFetch({
       'POST:http://localhost:3001/api/v1/foundation/resilience-operations/edge-replay/stage':
-        { data: { stageId: 'stage-001', status: 'staged' } },
+        { data: { status: 'staged', storeId: 'store-001', operationCount: 5, replayPipeline: [], observabilityHooks: [] } },
     });
     const client = createClient();
     const result = await client.stageResilienceEdgeReplay({
-      edgeNodeId: 'edge-001',
-      direction: 'DOWNSTREAM',
-      idempotencyKey: 'stage-001',
+      storeId: 'store-001',
+      operationCount: 5,
     });
-    assert.equal(result.stageId, 'stage-001');
+    assert.equal(result.storeId, 'store-001');
     assert.equal(calls[0]?.method, 'POST');
   });
 
   it('ingestIntegrationWebhook 编码 source 并发送 body', async () => {
     const calls = createMockFetch({
       'POST:http://localhost:3001/api/v1/foundation/integration-orchestration/webhooks/shopify/ingest':
-        { data: { webhookId: 'wh-001', status: 'ingested' } },
+        { data: { status: 'accepted', source: 'shopify', signatureVerified: true, idempotency: { key: 'ingest-001', firstSeenAt: '2026-07-22T00:00:00Z' }, pipeline: ['webhook'] } },
     });
     const client = createClient();
     const result = await client.ingestIntegrationWebhook('shopify', {
       payload: { event: 'order.created' },
-      idempotencyKey: 'ingest-001',
-      sourceId: 'shopify-001',
+      signature: 'sha256-abc',
+      timestamp: '2026-07-22T00:00:00Z',
     });
-    assert.equal(result.webhookId, 'wh-001');
+    assert.equal(result.status, 'accepted');
     assert.match(calls[0]?.body ?? '', /order.created/);
   });
 
   it('publishIntegrationEvent 发送正确 body', async () => {
     const calls = createMockFetch({
       'POST:http://localhost:3001/api/v1/foundation/integration-orchestration/events':
-        { data: { eventId: 'evt-001', status: 'published' } },
+        { data: { status: 'accepted', envelope: { eventId: 'evt-001', eventName: 'order.created', source: 'lyt', payload: {}, timestamp: '2026-07-22T00:00:00Z' }, persistedEventId: 'evt-001', guarantees: ['at-least-once'] } },
     });
     const client = createClient();
     const result = await client.publishIntegrationEvent({
       source: 'lyt',
-      eventType: 'order.created',
+      eventName: 'order.created',
       payload: { orderId: 'ord-001' },
       idempotencyKey: 'evt-001',
     });
-    assert.equal(result.eventId, 'evt-001');
+    assert.equal(result.persistedEventId, 'evt-001');
   });
 
   it('acknowledgeFoundationAlert 附带 note body', async () => {
@@ -234,7 +231,7 @@ describe('ApiClient — POST 请求', () => {
     });
     const client = createClient();
     const result = await client.acknowledgeFoundationAlert('alert-001', { note: 'handled' });
-    assert.equal(result.acknowledgement.status, 'ACKED');
+    assert.equal(result.acknowledgement?.status, 'ACKED');
     assert.match(calls[0]?.body ?? '', /handled/);
   });
 
@@ -248,7 +245,7 @@ describe('ApiClient — POST 请求', () => {
       note: 'muted',
       mutedUntil: '2026-07-23T10:00:00Z',
     });
-    assert.equal(result.acknowledgement.status, 'MUTED');
+    assert.equal(result.acknowledgement?.status, 'MUTED');
     assert.match(calls[0]?.body ?? '', /2026-07-23/);
   });
 
@@ -259,7 +256,7 @@ describe('ApiClient — POST 请求', () => {
     });
     const client = createClient();
     const result = await client.unmuteFoundationAlert('alert-001', { note: 'restored' });
-    assert.equal(result.acknowledgement.status, 'ACKED');
+    assert.equal(result.acknowledgement?.status, 'ACKED');
   });
 });
 
@@ -475,12 +472,12 @@ describe('ApiClient — 配置治理端点', () => {
   it('listConfigurationSecrets 发送 GET', async () => {
     const calls = createMockFetch({
       'GET:http://localhost:3001/api/v1/foundation/configuration-governance/secrets':
-        { data: [{ key: 'api-key-1', kind: 'API_KEY' }] },
+        { data: [{ name: 'api-key-1', status: 'active' }] },
     });
     const client = createClient();
     const result = await client.listConfigurationSecrets();
     assert.equal(result.length, 1);
-    assert.equal(result[0]?.key, 'api-key-1');
+    assert.equal(result[0]?.name, 'api-key-1');
   });
 
   it('listConfigurationCertificates 发送 GET', async () => {
