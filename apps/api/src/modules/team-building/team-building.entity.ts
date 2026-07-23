@@ -33,8 +33,6 @@ export interface RecommendResult {
   location: string
   /** 预算（分） */
   budget: number
-  /** AI方案备注 */
-  aiSuggestion?: string
   /** 匹配得分 0~100 */
   score: number
   /** 设备清单校验结果 */
