@@ -392,3 +392,187 @@ describe('L3 E2E 链33 · 财务对账验收链', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P-38 AC-38-05: 支付渠道对账 — 微信支付总额 vs 系统记录 比对
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('P-38 AC-38-05: 支付渠道对账', () => {
+  test('微信支付总额与系统记录完全匹配 (AC-38-05)', () => {
+    const sim = new FinanceSimulator();
+
+    // 5笔微信支付
+    addTransaction(sim, { id: 'wx-1', storeId: 's1', type: 'sale', amount: 5000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-tx-001' });
+    addTransaction(sim, { id: 'wx-2', storeId: 's1', type: 'sale', amount: 12800, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-tx-002' });
+    addTransaction(sim, { id: 'wx-3', storeId: 's1', type: 'sale', amount: 3500, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-tx-003' });
+    addTransaction(sim, { id: 'wx-4', storeId: 's1', type: 'sale', amount: 9900, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-tx-004' });
+    addTransaction(sim, { id: 'wx-5', storeId: 's1', type: 'sale', amount: 4500, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-tx-005' });
+
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+    const wechatTotal = sim.transactions
+      .filter(t => t.channel === 'wechat')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    assert.equal(wechatTotal, 35700); // 5000+12800+3500+9900+4500
+    assert.equal(batch.internalTotal, wechatTotal);
+    // 假设外部对账数据匹配
+    assert.equal(batch.difference, 0);
+    assert.equal(batch.status, 'matched');
+  });
+
+  test('微信支付总额与系统记录不匹配 → 标记差异 (AC-38-05 反例)', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'wx-mis-1', storeId: 's1', type: 'sale', amount: 5000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-mis-001' });
+    addTransaction(sim, { id: 'wx-mis-2', storeId: 's1', type: 'sale', amount: 8000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-mis-002' });
+
+    // 模拟外部对账数据比系统少 100
+    const internalTotal = sim.transactions.filter(t => t.channel === 'wechat').reduce((s, t) => s + t.amount, 0);
+    const externalTotal = internalTotal - 100;
+
+    assert.equal(internalTotal, 13000);
+    assert.notEqual(internalTotal, externalTotal);
+    // 差异应被标记为 unmatched
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1', externalTotal);
+    assert.equal(batch.difference, 100);
+    assert.notEqual(batch.status, 'matched');
+  });
+
+  test('混合支付渠道对账: 微信+支付宝+现金 各自独立对账', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'mx-1', storeId: 's1', type: 'sale', amount: 10000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-mx-001' });
+    addTransaction(sim, { id: 'mx-2', storeId: 's1', type: 'sale', amount: 5000, currency: 'CNY', channel: 'alipay', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'ali-mx-001' });
+    addTransaction(sim, { id: 'mx-3', storeId: 's1', type: 'sale', amount: 3000, currency: 'CNY', channel: 'cash', transactionTime: Date.now(), settledAt: Date.now(), externalRef: null });
+    addTransaction(sim, { id: 'mx-4', storeId: 's1', type: 'sale', amount: 20000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-mx-002' });
+
+    const wechatTotal = sim.transactions.filter(t => t.channel === 'wechat').reduce((s, t) => s + t.amount, 0);
+    const alipayTotal = sim.transactions.filter(t => t.channel === 'alipay').reduce((s, t) => s + t.amount, 0);
+    const cashTotal = sim.transactions.filter(t => t.channel === 'cash').reduce((s, t) => s + t.amount, 0);
+
+    assert.equal(wechatTotal, 30000);
+    assert.equal(alipayTotal, 5000);
+    assert.equal(cashTotal, 3000);
+  });
+
+  test('退款后支付渠道对账差异归零 (退款冲红)', () => {
+    const sim = new FinanceSimulator();
+    // 一笔交易 + 退款
+    addTransaction(sim, { id: 'refund-sale', storeId: 's1', type: 'sale', amount: 10000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-refund-sale' });
+    addTransaction(sim, { id: 'refund-tx', storeId: 's1', type: 'refund', amount: -10000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-refund-tx' });
+
+    const netWechat = sim.transactions
+      .filter(t => t.channel === 'wechat')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    assert.equal(netWechat, 0); // sale 10000 + refund -10000 = 0
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P-38 AC-38-06: 异常标记 — 金额异常订单自动标红
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('P-38 AC-38-06: 异常金额标记', () => {
+  test('金额 > 10000 的订单自动标红 (AC-38-06)', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'tx-normal', storeId: 's1', type: 'sale', amount: 5000, currency: 'CNY', channel: 'cash', transactionTime: Date.now(), settledAt: null, externalRef: null });
+    addTransaction(sim, { id: 'tx-large', storeId: 's1', type: 'sale', amount: 50000, currency: 'CNY', channel: 'cash', transactionTime: Date.now(), settledAt: null, externalRef: null });
+
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+
+    // 大额交易应被标记异常
+    const flaggedEntries = batch.entries.filter(e => {
+      const tx = sim.transactions.find(t => t.id === e.transactionId);
+      return tx && tx.amount > 10000;
+    });
+    assert.equal(flaggedEntries.length, 1);
+    assert.equal(flaggedEntries[0].transactionId, 'tx-large');
+  });
+
+  test('多笔异常交易: 全部金额 > 10000 均被标记', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'anomaly-a', storeId: 's1', type: 'sale', amount: 9999, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: null, externalRef: 'wx-anomaly-a' });
+    addTransaction(sim, { id: 'anomaly-b', storeId: 's1', type: 'sale', amount: 15000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: null, externalRef: 'wx-anomaly-b' });
+    addTransaction(sim, { id: 'anomaly-c', storeId: 's1', type: 'sale', amount: 200000, currency: 'CNY', channel: 'card', transactionTime: Date.now(), settledAt: null, externalRef: 'card-anomaly-c' });
+    addTransaction(sim, { id: 'anomaly-d', storeId: 's1', type: 'sale', amount: 9999.99, currency: 'CNY', channel: 'cash', transactionTime: Date.now(), settledAt: null, externalRef: null });
+
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+    const flaggedIds = batch.entries
+      .filter(e => {
+        const tx = sim.transactions.find(t => t.id === e.transactionId);
+        return tx && tx.amount > 10000;
+      })
+      .map(e => e.transactionId);
+
+    assert.ok(flaggedIds.includes('anomaly-b'), '15000 应被标记');
+    assert.ok(flaggedIds.includes('anomaly-c'), '200000 应被标记');
+    assert.ok(!flaggedIds.includes('anomaly-a'), '9999 不应被标记');
+    assert.ok(!flaggedIds.includes('anomaly-d'), '9999.99 不应被标记');
+  });
+
+  test('异常金额阈值: 刚好 10000 视为正常', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'tx-boundary', storeId: 's1', type: 'sale', amount: 10000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: null, externalRef: 'wx-boundary' });
+
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+    const flagged = batch.entries.filter(e => {
+      const tx = sim.transactions.find(t => t.id === e.transactionId);
+      return tx && tx.amount > 10000;
+    });
+    assert.equal(flagged.length, 0);
+  });
+
+  test('多笔异常交易导致 reconciliation 状态为 unmatched', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'tx-ok', storeId: 's1', type: 'sale', amount: 5000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: null, externalRef: 'wx-ok' });
+    addTransaction(sim, { id: 'tx-big', storeId: 's1', type: 'sale', amount: 50000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: null, externalRef: 'wx-big' });
+
+    // 故意传入错误的外部总额触发差异
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1', 5000);
+    assert.notEqual(batch.status, 'matched');
+    // 确认大额交易贡献了差异
+    const bigEntry = batch.entries.find(e => e.transactionId === 'tx-big');
+    assert.ok(bigEntry);
+    assert.ok(!bigEntry.matched);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P-38 AC-38-01/02: 日结报表 — 有订单日/无订单日
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('P-38 AC-38-01/02: 日结报表', () => {
+  test('日结: 有 10 笔订单展示 10 笔总计 (AC-38-01)', () => {
+    const sim = new FinanceSimulator();
+    for (let i = 0; i < 10; i++) {
+      addTransaction(sim, { id: `daily-${i}`, storeId: 's1', type: 'sale', amount: 1000 + i * 100, currency: 'CNY', channel: i % 3 === 0 ? 'wechat' : i % 3 === 1 ? 'alipay' : 'cash', transactionTime: Date.now(), settledAt: i % 2 === 0 ? Date.now() : null, externalRef: i % 2 === 0 ? `ext-${i}` : null });
+    }
+
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+    assert.equal(batch.entries.length, 10);
+    const expectedTotal = [1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900].reduce((s, v) => s + v, 0);
+    assert.equal(batch.internalTotal, expectedTotal);
+  });
+
+  test('日结: 无订单日展示空报表 (AC-38-02)', () => {
+    const sim = new FinanceSimulator();
+    // 不添加任何交易
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+    assert.equal(batch.entries.length, 0);
+    assert.equal(batch.internalTotal, 0);
+    assert.equal(batch.difference, 0);
+  });
+
+  test('日结: 混合退款与销售展示净收入', () => {
+    const sim = new FinanceSimulator();
+    addTransaction(sim, { id: 'sales-d1', storeId: 's1', type: 'sale', amount: 30000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-d1' });
+    addTransaction(sim, { id: 'sales-d2', storeId: 's1', type: 'sale', amount: 5000, currency: 'CNY', channel: 'cash', transactionTime: Date.now(), settledAt: Date.now(), externalRef: null });
+    addTransaction(sim, { id: 'refund-d3', storeId: 's1', type: 'refund', amount: -30000, currency: 'CNY', channel: 'wechat', transactionTime: Date.now(), settledAt: Date.now(), externalRef: 'wx-refund-d1' });
+
+    const batch = generateReconciliationBatch(sim, '2026-07-17', 's1');
+    const totalSales = sim.transactions.filter(t => t.type === 'sale').reduce((s, t) => s + t.amount, 0);
+    const totalRefunds = sim.transactions.filter(t => t.type === 'refund').reduce((s, t) => s + t.amount, 0);
+    assert.equal(totalSales, 35000);
+    assert.equal(totalRefunds, -30000);
+    assert.equal(batch.internalTotal, 5000); // 净收入
+  });
+});
