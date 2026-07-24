@@ -10,7 +10,12 @@ import {
   MaxLength
 } from 'class-validator'
 import 'reflect-metadata'
-import { QueueType, QueueStatus } from './queue.entity'
+import {
+  QueueChannel,
+  QueueSource,
+  QueueType,
+  QueueStatus
+} from './queue.entity'
 
 export class CreateQueueDto {
   @IsEnum(QueueType)
@@ -43,6 +48,16 @@ export class CreateQueueDto {
   @IsString()
   @IsOptional()
   remark?: string
+
+  /** WP-12A: 排队来源 */
+  @IsEnum(QueueSource)
+  @IsOptional()
+  source?: QueueSource
+
+  /** WP-12A: 排队渠道 */
+  @IsEnum(QueueChannel)
+  @IsOptional()
+  channel?: QueueChannel
 }
 
 export class UpdateQueueDto {
@@ -89,6 +104,14 @@ export class QueueQueryDto {
   @IsString()
   @IsOptional()
   queueNumber?: string
+
+  @IsEnum(QueueSource)
+  @IsOptional()
+  source?: QueueSource
+
+  @IsEnum(QueueChannel)
+  @IsOptional()
+  channel?: QueueChannel
 
   @IsInt()
   @Min(1)
@@ -139,6 +162,55 @@ export class JoinQueueDto {
   @IsString()
   @IsOptional()
   remark?: string
+
+  /** WP-12A: 排队来源 */
+  @IsEnum(QueueSource)
+  @IsOptional()
+  source?: QueueSource
+
+  /** WP-12A: 排队渠道 */
+  @IsEnum(QueueChannel)
+  @IsOptional()
+  channel?: QueueChannel
+}
+
+/**
+ * WP-12A: 渠道排队 DTO（微信/App/Kiosk）
+ */
+export class JoinByChannelDto {
+  @IsEnum(QueueType)
+  queueType!: QueueType
+
+  @IsString()
+  @MinLength(1)
+  memberId!: string
+
+  @IsString()
+  @IsOptional()
+  memberName?: string
+
+  @IsString()
+  @IsOptional()
+  resourceId?: string
+
+  @IsString()
+  @IsOptional()
+  resourceName?: string
+
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  priority?: number
+
+  @IsString()
+  @IsOptional()
+  remark?: string
+}
+
+export class TransferEntryDto {
+  @IsEnum(QueueSource)
+  targetSource!: QueueSource
 }
 
 export class CallNextDto {

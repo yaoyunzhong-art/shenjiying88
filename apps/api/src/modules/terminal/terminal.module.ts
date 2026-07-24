@@ -10,10 +10,12 @@
 import { Module } from '@nestjs/common'
 import { TerminalController } from './terminal.controller'
 import { TerminalService } from './terminal.service'
+import { TerminalMqttService } from './terminal-mqtt.service'
+import { TerminalSignService } from './terminal-sign.service'
 
 @Module({
   controllers: [TerminalController],
-  providers: [TerminalService],
-  exports: [TerminalService],
+  providers: [TerminalService, TerminalMqttService, TerminalSignService],
+  exports: [TerminalService, TerminalMqttService, TerminalSignService],
 })
 export class TerminalModule {}

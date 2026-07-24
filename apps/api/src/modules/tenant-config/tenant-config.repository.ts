@@ -53,6 +53,10 @@ export class TenantConfigRepository {
       })
       return rows.map(this.rowToInstance)
     } catch (err) {
+      if (this.shouldUsePersistenceFallback(err)) {
+        this.logger.log(`[loadAllInstances] skipped persistence preload: ${(err as Error).message}`)
+        return []
+      }
       this.logger.error(`[loadAllInstances] failed: ${(err as Error).message}`)
       return []
     }
@@ -161,6 +165,10 @@ export class TenantConfigRepository {
       })
       return rows.map(this.rowToAuditLog)
     } catch (err) {
+      if (this.shouldUsePersistenceFallback(err)) {
+        this.logger.warn(`[loadAuditLogs] skipped DB audit read for tenant=${tenantId}: ${(err as Error).message}`)
+        return []
+      }
       this.logger.error(`[loadAuditLogs] failed for tenant=${tenantId}: ${(err as Error).message}`)
       return []
     }
@@ -179,9 +187,21 @@ export class TenantConfigRepository {
       })
       return rows.map(this.rowToAuditLog)
     } catch (err) {
+      if (this.shouldUsePersistenceFallback(err)) {
+        this.logger.warn(`[findAuditByConfigId] skipped DB audit read for ${configId}: ${(err as Error).message}`)
+        return []
+      }
       this.logger.error(`[findAuditByConfigId] failed for ${configId}: ${(err as Error).message}`)
       return []
     }
+  }
+
+  private shouldUsePersistenceFallback(error: unknown): boolean {
+    const code =
+      typeof error === 'object' && error && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
   }
 
   // ============ Row → Entity Mappers ============

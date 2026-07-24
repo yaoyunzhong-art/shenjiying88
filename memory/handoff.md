@@ -337,3 +337,48 @@
 - 定向验证已通过：
   - `pnpm --dir apps/api exec vitest run src/modules/auth/auth.service.test.ts src/modules/auth/auth.http.e2e.test.ts src/modules/auth/auth.module.test.ts src/modules/auth/auth.role.test.ts src/modules/auth/auth.role-collaboration.test.ts`
   - 结果：`5` 个测试文件、`98` 条用例全部通过
+
+### Foundation 总览链已终局收口
+
+- fresh runtime 已在端口 `3122` 成功启动：
+  - `INFO: m5-api started`
+  - `foundation blueprint endpoint = http://localhost:3122/api/v1/foundation/bootstrap`
+  - `swagger docs endpoint = http://localhost:3122/docs`
+- `foundation` 主线最终运行态证据已经补齐，三条接口全部恢复 `200`：
+  - `GET /api/v1/foundation/overview` → `200`
+  - `GET /api/v1/foundation/overview/alerts` → `200`
+  - `GET /api/v1/foundation/overview/alerts/catalog` → `200`
+- 对应响应体已留证：
+  - `/tmp/foundation-overview-3122.body`
+  - `/tmp/foundation-alerts-3122.body`
+  - `/tmp/foundation-catalog-3122.body`
+- 当前 `overview`/`alerts` 响应中已可见真实聚合数据：
+  - `secret-rotation-attention`
+  - `recovery-drill-attention`
+  - `observability-degradation`
+  - `moduleHealth.trustGovernance/configurationGovernance/resilienceOperations/runtimeGovernance`
+- 为打通 fresh runtime，本轮连续清掉了一批 `ts-node` 类型阻塞，关键收口文件包括：
+  - `apps/api/src/modules/finance/reconciliation-db.service.ts`
+  - `apps/api/src/modules/observability/metrics.controller.ts`
+  - `apps/api/src/modules/observability/grafana-dashboards.ts`
+  - `apps/api/src/modules/marketing/marketing.service.ts`
+  - `apps/api/src/modules/e2e-auto-gen/e2e-auto-gen.controller.ts`
+  - `apps/api/src/modules/recommend/recommend.service.ts`
+- foundation 缺表降级链路当前已补平并经 fresh runtime 证明生效：
+  - `trust-governance`
+  - `governance-approval`
+  - `runtime-governance`
+  - `configuration-governance`
+  - `foundation alert acknowledgement / audit activity`
+- 当前剩余启动日志里仍可能出现某些“本地库缺表”的降级提示，但已不再阻断 API 启动，也不再把 `foundation` 三条接口打成 `500`
+
+### 启动噪音已继续收敛
+
+- `apps/api/src/modules/tenant-config/tenant-config.repository.ts`
+  - `ConfigInstance` / `ConfigAuditLog` 在 Prisma 返回 `P2021/P1010/P1001` 时，读链路已按只读降级处理
+  - 启动阶段的 `loadAllInstances()` 已从高噪音 `error` 收敛为普通 `log + []`
+- `apps/api/src/modules/saas-advanced/domain-resolution.service.ts`
+  - `CustomDomain` 缺表时，`onModuleInit()` 已按降级口径跳过预热
+  - 本地开发场景下缺表提示已从 `warn` 收敛为普通 `log`
+- 结论：
+  - 当前 dev runtime 口径已从“编译阻塞 + foundation 500”推进到“可启动、可出文档、foundation 三连全绿、剩余缺表仅降级提示”

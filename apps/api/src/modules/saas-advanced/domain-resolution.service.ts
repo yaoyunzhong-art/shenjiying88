@@ -66,6 +66,10 @@ export class DomainResolutionService implements OnModuleInit {
         }
       }
     } catch (error) {
+      if (this.shouldUsePersistenceFallback(error)) {
+        this.logger.log(`load custom domains skipped: ${(error as Error).message}`)
+        return
+      }
       this.logger.warn(`load custom domains skipped: ${(error as Error).message}`)
     }
   }
@@ -132,6 +136,14 @@ export class DomainResolutionService implements OnModuleInit {
 
   private customDomains(): DomainResolutionDelegate {
     return (this.prisma as unknown as { customDomain: DomainResolutionDelegate }).customDomain
+  }
+
+  private shouldUsePersistenceFallback(error: unknown): boolean {
+    const code =
+      typeof error === 'object' && error && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
   }
 
   private buildScopeKey(scope: PrimaryDomainScope): string {
