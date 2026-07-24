@@ -2178,3 +2178,340 @@ model DataCallbackRecord {
   @@index([processStatus])
   @@map("data_callback_record")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// P-47 品牌运营 (Brand Operations)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model BrandAsset {
+  id        String   @id @default(cuid())
+  tenantId  String
+  type      String
+  url       String
+  name      String
+  metadata  Json?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, type])
+  @@index([tenantId, isDeleted])
+  @@map("brand_asset")
+}
+
+model BrandCampaign {
+  id            String    @id @default(cuid())
+  tenantId      String
+  title         String
+  description   String
+  status        String    @default("draft")
+  storeIds      Json
+  startDate     DateTime
+  endDate       DateTime
+  createdBy     String
+  approvedBy    String?
+  submittedBy   String?
+  submittedAt   DateTime?
+  approvedAt    DateTime?
+  rejectedBy    String?
+  rejectReason  String?
+  publishedBy   String?
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, startDate, endDate])
+  @@map("brand_campaign")
+}
+
+model BrandCampaignTemplate {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  name                String
+  description         String   @default("")
+  defaultStoreIds     Json
+  defaultDurationDays Int      @default(30)
+  createdBy           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("brand_campaign_template")
+}
+
+model Collaboration {
+  id        String    @id @default(cuid())
+  tenantId  String
+  title     String
+  type      String
+  status    String    @default("draft")
+  partnerName  String
+  partnerContactName  String
+  partnerContactPhone String
+  partnerGrade String
+  revenueShareType  String?
+  revenueSharePartnerRate Float?
+  revenueShareOurRate     Float?
+  startDate DateTime
+  endDate   DateTime
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@map("collaboration")
+}
+
+model BrandChannel {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  type      String
+  config    Json?
+  contactName  String?
+  contactPhone String?
+  status    String   @default("active")
+  creaedBy  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, type])
+  @@index([tenantId, status])
+  @@map("brand_channel")
+}
+
+model BrandKPI {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  category    String
+  period      String
+  periodStart String
+  periodEnd   String
+  targetValue Float
+  currentValue Float  @default(0)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, category])
+  @@index([tenantId, period])
+  @@map("brand_kpi")
+}
+
+model RecycleBinItem {
+  id         String   @id @default(cuid())
+  tenantId   String
+  entityType String
+  entityId   String
+  entityData Json?
+  deletedBy  String
+  restoredAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, entityType])
+  @@index([tenantId])
+  @@map("recycle_bin_item")
+}
+
+model CollaborationContract {
+  id             String   @id @default(cuid())
+  collaborationId String
+  tenantId       String
+  contractNumber String
+  contractType   String
+  status         String   @default("draft")
+  content        String   @default("")
+  signedByA      DateTime?
+  signedByB      DateTime?
+  effectiveDate  DateTime?
+  expiryDate     DateTime?
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([collaborationId])
+  @@index([tenantId, status])
+  @@map("collaboration_contract")
+}
+
+model CampaignABTest {
+  id          String   @id @default(cuid())
+  campaignId  String
+  tenantId    String
+  name        String
+  description String   @default("")
+  variants    Json
+  winnerVariant String?
+  decidedAt   DateTime?
+  status      String   @default("running")
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([tenantId, status])
+  @@map("campaign_ab_test")
+}
+
+model ExportRecord {
+  id          String    @id @default(cuid())
+  tenantId    String
+  format      String
+  scope       String
+  status      String    @default("pending")
+  fileUrl     String?
+  requestedBy String
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("export_record")
+}
+
+model CampaignSchedule {
+  id          String   @id @default(cuid())
+  campaignId  String
+  tenantId    String
+  action      String
+  scheduledAt DateTime
+  status      String   @default("pending")
+  executedAt  DateTime?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([tenantId, status])
+  @@map("campaign_schedule")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// P-30 后勤管理 (Logistics Management)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Supplier {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  contactName String
+  contactPhone String
+  email       String?
+  address     String?
+  grade       String   @default("regular")
+  status      String   @default("active")
+  score       Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+  stockMovements  StockMovement[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, grade])
+  @@map("supplier")
+}
+
+model PurchaseOrder {
+  id            String    @id @default(cuid())
+  tenantId      String
+  supplierId    String
+  orderNumber   String    @unique
+  items         Json
+  totalAmount   Float
+  status        String    @default("pending")
+  orderedBy     String
+  approvedBy    String?
+  deliveredAt   DateTime?
+  cancelledBy   String?
+  cancelReason  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([supplierId])
+  @@map("purchase_order")
+}
+
+model StockMovement {
+  id          String   @id @default(cuid())
+  tenantId    String
+  type        String   // inbound / outbound / adjustment
+  itemId      String?
+  itemName    String
+  quantity    Int
+  supplierId  String?
+  referenceId String?  // 关联采购订单ID
+  operator    String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId, type])
+  @@index([tenantId, createdAt])
+  @@map("stock_movement")
+}
+
+model StockItem {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  sku         String?  @unique
+  category    String?
+  quantity    Int      @default(0)
+  minQuantity Int      @default(10)
+  unit        String   @default("个")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, category])
+  @@index([tenantId, quantity])
+  @@map("stock_item")
+}
+
+model MaintenanceTask {
+  id            String    @id @default(cuid())
+  tenantId      String
+  title         String
+  description   String    @default("")
+  type          String    @default("regular")  // regular / emergency
+  priority      String    @default("medium")
+  status        String    @default("pending")  // pending / assigned / in_progress / completed / cancelled
+  assignedTo    String?
+  assignedAt    DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  cancelledBy   String?
+  cancelReason  String?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@map("maintenance_task")
+}
+
+model LogisticsKPI {
+  id        String   @id @default(cuid())
+  tenantId  String
+  period    String   // e.g. "2026-07"
+  totalOrders  Int   @default(0)
+  totalInbound  Int  @default(0)
+  totalOutbound Int  @default(0)
+  completedTasks Int @default(0)
+  emergencyTasks Int @default(0)
+  avgCompletionHours Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, period])
+  @@map("logistics_kpi")
+}
