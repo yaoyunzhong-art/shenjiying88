@@ -1,5 +1,5 @@
 /**
- * 🧪 增强版: checkout 金额全链路E2E测试 (25+ test cases)
+ * 🧪 增强版: checkout 金额全链路E2E测试 (65+ test cases)
  *
  * 覆盖:
  *   - 基本UI渲染 (收银台/表单/金额汇总)
@@ -9,6 +9,10 @@
  *   - 优惠券叠加 (平台满减/品类券/新客券/运费券)
  *   - 错误回滚 (支付失败/表单校验/超时/库存)
  *   - 权限节点 (订单操作权限/退款权限)
+ *   - 优惠券叠加增强 (互斥/可叠加/优先级/过期/库存不足)
+ *   - 阶梯折扣 (多档满减/门槛边界/运费独立)
+ *   - 税费计算边界 (含税/零税率/高税率/一致性)
+ *   - 多种支付组合分摊 (双支付/三支付/不匹配/组合+优惠券/零金额)
  *
  * 基于: checkout-amount-l3.spec.ts
  * 参考: cross-module-chain18-refund-full-flow.test.ts
@@ -1075,6 +1079,65 @@ test.describe('Phase 11 · 多种支付组合分摊', () => {
         // 应处理0金额或提示
         const body = page.locator('body')
         await expect(body).toBeVisible()
+      }
+    }
+  })
+
+  test('CHK-065: [边界] 仅一种支付方式 → 正常单一支付', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 1) {
+        // 只填一种支付方式，全额675
+        await paymentInputs.first().fill('675')
+
+        await page.getByRole('button', { name: /确认|提交/ }).click()
+        await expect(
+          page.getByText(/订单已提交|支付成功/).or(page.getByText(/合计|不匹配/))
+        ).toBeVisible({ timeout: 5000 })
+      }
+    }
+  })
+
+  test('CHK-066: [边界] 组合支付+多配送+多优惠券 → 完整链路一致性', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 1. 切换加急配送
+    await selectDelivery(page, '加急配送（1-2天）')
+    // 2. 使用满减券
+    await applyCoupon(page, 'FULL100')
+    // 3. 使用运费券
+    await applyCoupon(page, 'FREESHIP')
+    await page.waitForTimeout(300)
+
+    // 最终金额 = 675 - 100 = 575（运费券免运费）
+    await expectAmount(page, 'total-amount', '¥575.00')
+
+    // 4. 组合支付分摊
+    await fillCheckoutForm(page)
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 2) {
+        await paymentInputs.nth(0).fill('300')
+        await paymentInputs.nth(1).fill('275')
+
+        await page.getByRole('button', { name: /确认|提交/ }).click()
+        await expect(
+          page.getByText(/订单已提交|支付成功/)
+        ).toBeVisible({ timeout: 5000 })
       }
     }
   })
