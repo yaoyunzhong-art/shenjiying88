@@ -327,8 +327,15 @@ describe('rate-limits-ledger: 业务逻辑 - 格式化与摘要', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('rate-limits/ledgers/[ledger] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
 describe('Rate Limits / Ledgers — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
+  it('是客户端组件', () => assert.ok(SRC.includes("'use client'")));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));

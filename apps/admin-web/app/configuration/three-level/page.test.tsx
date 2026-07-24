@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 // ── 类型 ──
 
@@ -196,4 +197,22 @@ describe('ThreeLevelConfig — 边界情况', () => {
     const snap = buildSnapshot('W-S', [item]);
     assert.equal(snap.items[0]!.key, longKey);
   });
+});
+
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+
+describe('configuration/three-level — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+});
+
+describe('ThreeLevelConfig — hooks验证', () => {
+  it('是服务端组件', () => assert.ok(SRC.includes('export default async')));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('Promise.all')));
+  it('包含权限边界组件', () => assert.ok(SRC.includes('AdminPermissionGate')));
+  it('包含 Suspense 骨架屏', () => assert.ok(SRC.includes('Suspense') && SRC.includes('LoadingSkeleton')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default')));
 });

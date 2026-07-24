@@ -210,10 +210,17 @@ describe('rate-limits-policy: 业务逻辑 - 策略数据', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('rate-limits/policies/[policy] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
 describe('Rate Limits / Policies — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
+  it('是客户端组件', () => assert.ok(SRC.includes("'use client'")));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
+  it('包含核心 hooks', () => assert.ok(SRC.includes('useState') && SRC.includes('useEffect')));
   it('包含数据结构', () => assert.ok(SRC.includes('{') && SRC.includes('[')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));

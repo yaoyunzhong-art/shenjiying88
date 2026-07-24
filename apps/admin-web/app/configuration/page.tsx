@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -301,7 +302,12 @@ export default function ConfigurationPage() {
   ], [stats]);
 
   return (
-    <div style={styles.page}>
+    <AdminPermissionGate
+      requiredPermission="foundation.governance.read"
+      title="配置管理访问受限"
+      description="配置管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看配置项、筛选器与治理动作。"
+    >
+      <div style={styles.page}>
       <h1 style={styles.title}>⚙️ 配置管理</h1>
       <p style={styles.subtitle}>系统配置项管理，支持新增、编辑、删除、搜索、分组/环境/状态筛选。</p>
 
@@ -450,6 +456,7 @@ export default function ConfigurationPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }
