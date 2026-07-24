@@ -162,6 +162,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { TeamBuildingModule } from './modules/team-building/team-building.module';
 import { HrModule } from './modules/hr/hr.module';
 import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
+import { MinorProtectionModule } from './modules/minor-protection/minor-protection.module';
 import { StoreModule } from './modules/store/store.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
@@ -342,6 +343,7 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     TeamBuildingModule,
     HrModule,
     BrandOperationsModule,
+    MinorProtectionModule,
     StoreModule,
     FeedbackModule,
     ProbationTransferModule,
