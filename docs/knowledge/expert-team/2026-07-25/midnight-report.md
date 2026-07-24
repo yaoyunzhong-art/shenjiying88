@@ -143,3 +143,35 @@ G4(体验): ✅  G5(合规): ✅  G6(治理): ✅
 ---
 
 _🌙 凌晨产出报告 · 2026-07-25 02:11 CST · V23 Day5 · 25 commits_
+
+---
+
+## 附：V23 Day5 凌晨 timeline (精确到分钟)
+
+| 时间 | Commit | 内容 |
+|:-----|:------|:-----|
+| 00:04 | - | P0/P1/P2 实时盘点 |
+| 00:13 | `92991c923` | retrieval Pulse-71 醒神 |
+| 00:25 | - | P2全面定论 (全部假性债) |
+| 00:32 | `803f544b1` | ai-review Pulse-73 醒神 |
+| 00:48 | `03509eb30` | 未成年保护骨架 0%→100% |
+| 01:00 | `4fd570f02` | 未成年 Prisma双写 |
+| 01:15 | `3524f2bb0` | 集成测试15条全绿 |
+| 01:20 | `f05302933` | 审计日志接入 |
+| 01:25 | `88931d41f` | 审计全局拦截器 |
+| 01:28 | `37d27ebf3` | 13 commits push |
+| 01:30 | `29d7bb6b8` | retrieval/ai-review test适配 |
+| 01:35 | `ee17edd46` | TenantGuard鉴权接入 |
+| 01:38 | `4e53e9313` | admin-web续产 |
+| 01:42 | `326fff888` | 订单持久化Prisma |
+| 01:47 | `b2a585c37` | RLS白名单 48→72 |
+| 01:52 | `1679e9c72` | admin-web settings |
+| 01:55 | `276b3a593` | vitest OOM诊断 |
+| 02:04 | `640a19303` | admin-web agents/intelligence |
+| 02:06 | `18af66d09` | admin-web agents全线 |
+| 02:10 | `05cd873ad` | ai-review spec清理 |
+| 02:12 | `35a0a8387` | **6道门重新签署** |
+| 02:14 | `b7a12bbe6` | admin-web identity-access |
+| 02:16 | `d6547cfda` | console.log清理 |
+
+**总：28 commits · 凌晨02:00~02:16**
