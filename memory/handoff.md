@@ -439,3 +439,26 @@
 - 结论：
   - 当前 dev runtime 已无 OTel console exporter 带来的大段对象噪音
   - tracing 默认口径调整为“本地静默、显式开启、生产 OTLP”
+
+### retrieval 与 mock bootstrap 日志再收一刀
+
+- `apps/api/src/modules/retrieval/retrieval.client.ts`
+  - `QdrantClientWrapper` skeleton 启动日志已去掉重复的 `[QdrantClientWrapper]` 前缀
+- `apps/api/src/modules/retrieval/retrieval.embedder.ts`
+  - `EmbeddingService` skeleton 启动日志已去掉重复的 `[EmbeddingService]` 前缀
+- `apps/api/src/modules/cashier/ports/payment-channel.bootstrap.ts`
+  - 当 `ENABLE_MOCK_PAYMENT_CHANNELS` 未开启时，默认不再打印“skip default mock channel bootstrap”提示
+  - 显式开启时仍保留真实 bootstrap 成功日志
+- fresh runtime 再次复验：
+  - 启动探针端口：`3137`
+  - 日志可见：
+    - `LOG [TenantConfigRepository] [loadAllInstances] skipped persistence preload: The table "public.ConfigInstance" does not exist in the current database.`
+    - `LOG [DomainResolutionService] load custom domains skipped: The table "public.CustomDomain" does not exist in the current database.`
+    - `LOG [QdrantClientWrapper] onModuleInit skipped — Pulse-71 skeleton`
+    - `LOG [EmbeddingService] onModuleInit skipped — Pulse-71 skeleton`
+    - `INFO: m5-api started`
+  - 默认日志中已不再出现：
+    - `Skip default mock channel bootstrap because ENABLE_MOCK_PAYMENT_CHANNELS is not enabled`
+- 当前剩余最显眼的启动噪音：
+  - Nest `RouterExplorer` 大量 `Mapped {...}` 路由枚举日志
+  - 若继续收口，可下一步评估是否仅在显式调试时保留该类框架级路由日志

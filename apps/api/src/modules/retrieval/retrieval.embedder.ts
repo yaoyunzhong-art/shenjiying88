@@ -70,7 +70,7 @@ export class EmbeddingService implements IEmbedder, OnModuleInit {
     //     baseURL: this.cfg.embedder.baseUrl,
     //     timeout: this.cfg.embedder.timeoutMs,
     //   })
-    this.logger.log('[EmbeddingService] onModuleInit skipped — Pulse-71 skeleton')
+    this.logger.log('onModuleInit skipped — Pulse-71 skeleton')
   }
 
   async embed(_text: string): Promise<number[]> {

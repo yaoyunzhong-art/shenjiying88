@@ -33,7 +33,6 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
     const shouldBootstrapMockChannels = process.env.ENABLE_MOCK_PAYMENT_CHANNELS === 'true'
 
     if (!shouldBootstrapMockChannels) {
-      this.logger.log('Skip default mock channel bootstrap because ENABLE_MOCK_PAYMENT_CHANNELS is not enabled')
       return
     }
 
