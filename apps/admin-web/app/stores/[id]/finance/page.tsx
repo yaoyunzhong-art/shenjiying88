@@ -2,6 +2,14 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Tabs, Input, Select, Modal, message, Progress, Empty } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店财务访问受限',
+  description:
+    '门店财务页已接入管理员本地 session，只有具备 store:read 的账号才能查看营收支出、结算状态与财务报表入口。',
+} as const;
 
 const TRANSACTIONS = [
   { id: 'T001', date: '2026-07-12', type: '营收', category: '游戏收入', amount: 12800, method: '微信', status: 'settled' },
@@ -47,8 +55,9 @@ export default function FinancePage() {
   const pendingSettle = TRANSACTIONS.filter(d => d.status === 'pending').reduce((s, d) => s + d.amount, 0);
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>💰 财务管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>营收 · 支出 · 对账 · 结算</span></div>
           <Space><Button onClick={() => setShowSettle(true)}>日结</Button><Button type="primary">月报</Button></Space>
@@ -148,7 +157,8 @@ export default function FinancePage() {
             <div style={{ color: '#94a3b8', fontSize: 13 }}>日结将生成当日财务报表并锁定结算</div>
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

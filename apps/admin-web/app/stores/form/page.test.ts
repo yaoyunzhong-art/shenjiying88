@@ -7,6 +7,10 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
 // ---- Form types (mirrored from page.tsx for testing) ----
 
@@ -143,6 +147,11 @@ const VALID_STORE: StoreFormValues = {
 // ==================== Tests ====================
 
 describe('store-form — default state', () => {
+  it('源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+
   it('should have initial default values', () => {
     assert.equal(DEFAULT_VALUES.name, '');
     assert.equal(DEFAULT_VALUES.code, '');

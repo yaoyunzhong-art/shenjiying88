@@ -17,6 +17,11 @@ import fs from 'fs'
 describe('StoreNewPage: 纯函数/常量逻辑', () => {
   const c = fs.readFileSync('apps/admin-web/app/stores/new/page.tsx', 'utf-8')
 
+  it('源码接入管理员权限边界', () => {
+    assert.ok(c.includes('AdminPermissionGate'))
+    assert.ok(c.includes("requiredPermission: 'store:read'"))
+  })
+
   it('源码包含 export default', () => assert.ok(c.includes('export default')))
   it('源码包含 use client', () => assert.ok(c.includes('"use client') || c.includes("'use client")))
   it('包含 useState', () => assert.ok(c.includes('useState')))
