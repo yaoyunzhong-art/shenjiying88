@@ -123,6 +123,7 @@ import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
 import { EmpowerCardModule } from './modules/empower-card/empower-card.module';
 import { ScoutModule } from './modules/scout/scout.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
+import { LogisticsManagementModule } from './modules/logistics-management/logistics-management.module';
 import { RlsModule } from './modules/rls/rls.module';
 import { DevopsModule } from './modules/devops/devops.module';
 import { CrmModule } from './modules/crm/crm.module';
@@ -302,6 +303,7 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     EmpowerCardModule,
     ScoutModule,
     LogisticsModule,
+    LogisticsManagementModule,
     RlsModule,
     DevopsModule,
     VenueModule,

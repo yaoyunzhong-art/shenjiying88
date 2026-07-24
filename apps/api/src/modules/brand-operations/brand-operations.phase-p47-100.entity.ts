@@ -201,3 +201,13 @@ export function createCampaignVariantId(): string {
 export function createRecycleBinItemId(): string {
   return `rb-${randomUUID()}`
 }
+
+// ── P-47 新增: BrandChannel ID ────────────────────────────────────────
+
+export function createBrandChannelId(): string {
+  return `chan-${randomUUID()}`
+}
+
+export function createBrandKPIId(): string {
+  return `kpi-${randomUUID()}`
+}

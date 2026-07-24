@@ -55,12 +55,24 @@ import type {
   RecycleBinEntityType,
   RecycleBinItem,
 } from './brand-operations.phase-p47-100.entity'
+import type {
+  BrandChannel,
+  ChannelType,
+  ChannelStatus,
+  ChannelConfig,
+  BrandKPI,
+  KpiCategory,
+  KpiPeriod,
+  BrandKPISummary,
+} from './brand-operations.channel-kpi.entity'
 import {
   createExportRecordId,
   createCollaborationContractId,
   createABTestId,
   createCampaignVariantId,
   createRecycleBinItemId,
+  createBrandChannelId,
+  createBrandKPIId,
 } from './brand-operations.phase-p47-100.entity'
 
 // ── In-memory stores (Phase-47 骨架阶段,后续替换为 Prisma) ──
@@ -83,6 +95,10 @@ const collaborationContractStore = new Map<string, CollaborationContract>()
 const campaignABTestStore = new Map<string, CampaignABTest>()
 const recycleBinStore = new Map<string, RecycleBinItem>()
 
+// ── P-47 新增: BrandChannel + BrandKPI stores ──
+const brandChannelStore = new Map<string, BrandChannel>()
+const brandKPIStore = new Map<string, BrandKPI>()
+
 // ── 导入/导出给测试重置 ──
 export function resetBrandOpsStoresForTests(): void {
   assetStore.clear()
@@ -98,9 +114,11 @@ export function resetBrandOpsStoresForTests(): void {
   collaborationContractStore.clear()
   campaignABTestStore.clear()
   recycleBinStore.clear()
+  brandChannelStore.clear()
+  brandKPIStore.clear()
 }
 
-export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore, campaignScheduleStore, revenueShareStore, assetCategoryStore, assetTagStore, exportRecordStore, collaborationContractStore, campaignABTestStore, recycleBinStore }
+export const _testonly = { assetStore, campaignStore, syncStore, templateStore, collaborationStore, campaignScheduleStore, revenueShareStore, assetCategoryStore, assetTagStore, exportRecordStore, collaborationContractStore, campaignABTestStore, recycleBinStore, brandChannelStore, brandKPIStore }
 
 // ── 创建/更新本地方法 ──
 
@@ -1816,6 +1834,225 @@ export class BrandOperationsService {
       storeSyncRate,
       totalTemplates: templates.length,
       publishedTemplates: templates.filter((t) => t.published).length,
+    }
+  }
+
+  // ════════════════════════════════════════════════════
+  //  BrandChannel 管理
+  // ════════════════════════════════════════════════════
+
+  createBrandChannel(input: {
+    tenantId: string
+    brandId: string
+    name: string
+    type: ChannelType
+    config?: ChannelConfig
+    contactName?: string
+    contactPhone?: string
+    notes?: string
+    operatorId?: string
+    operatorName?: string
+    createdBy: string
+  }): BrandChannel {
+    const now = new Date().toISOString()
+    const channel: BrandChannel = {
+      id: createBrandChannelId(),
+      tenantId: input.tenantId,
+      brandId: input.brandId,
+      name: input.name,
+      type: input.type,
+      status: 'active',
+      config: input.config,
+      contactName: input.contactName,
+      contactPhone: input.contactPhone,
+      notes: input.notes,
+      operatorId: input.operatorId,
+      operatorName: input.operatorName,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    brandChannelStore.set(channel.id, channel)
+    this.logger.log(`Created brand channel ${channel.id}: "${channel.name}"`)
+    return { ...channel }
+  }
+
+  getBrandChannel(id: string, tenantId: string): BrandChannel | undefined {
+    const c = brandChannelStore.get(id)
+    if (!c || c.tenantId !== tenantId) return undefined
+    return { ...c }
+  }
+
+  listBrandChannels(
+    tenantId: string,
+    filter?: { type?: ChannelType; status?: ChannelStatus },
+  ): BrandChannel[] {
+    return Array.from(brandChannelStore.values())
+      .filter((c) => c.tenantId === tenantId)
+      .filter((c) => (filter?.type ? c.type === filter.type : true))
+      .filter((c) => (filter?.status ? c.status === filter.status : true))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map((c) => ({ ...c }))
+  }
+
+  updateBrandChannel(
+    id: string,
+    tenantId: string,
+    patch: Partial<Pick<BrandChannel, 'name' | 'type' | 'status' | 'config' | 'contactName' | 'contactPhone' | 'notes' | 'operatorId' | 'operatorName'>>,
+  ): BrandChannel {
+    const c = brandChannelStore.get(id)
+    if (!c || c.tenantId !== tenantId) throw new Error(`BrandChannel not found: ${id}`)
+    const updated: BrandChannel = {
+      ...c,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    }
+    brandChannelStore.set(id, updated)
+    return { ...updated }
+  }
+
+  deleteBrandChannel(id: string, tenantId: string): boolean {
+    const c = brandChannelStore.get(id)
+    if (!c || c.tenantId !== tenantId) return false
+    brandChannelStore.delete(id)
+    return true
+  }
+
+  // ════════════════════════════════════════════════════
+  //  BrandKPI 管理
+  // ════════════════════════════════════════════════════
+
+  createBrandKPI(input: {
+    tenantId: string
+    brandId: string
+    name: string
+    category: KpiCategory
+    period: KpiPeriod
+    periodStart: string
+    periodEnd: string
+    targetValue: number
+    actualValue?: number
+    source?: string
+    notes?: string
+    channelId?: string
+    campaignId?: string
+    createdBy: string
+  }): BrandKPI {
+    const actualValue = input.actualValue ?? 0
+    const achievementRate = input.targetValue > 0
+      ? Math.round((actualValue / input.targetValue) * 10000) / 100
+      : 0
+
+    const now = new Date().toISOString()
+    const kpi: BrandKPI = {
+      id: createBrandKPIId(),
+      tenantId: input.tenantId,
+      brandId: input.brandId,
+      name: input.name,
+      category: input.category,
+      period: input.period,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      targetValue: input.targetValue,
+      actualValue,
+      achievementRate,
+      source: input.source,
+      notes: input.notes,
+      channelId: input.channelId,
+      campaignId: input.campaignId,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    }
+    brandKPIStore.set(kpi.id, kpi)
+    this.logger.log(`Created brand KPI ${kpi.id}: "${kpi.name}"`)
+    return { ...kpi }
+  }
+
+  getBrandKPI(id: string, tenantId: string): BrandKPI | undefined {
+    const k = brandKPIStore.get(id)
+    if (!k || k.tenantId !== tenantId) return undefined
+    return { ...k }
+  }
+
+  listBrandKPIs(
+    tenantId: string,
+    filter?: {
+      category?: KpiCategory
+      period?: KpiPeriod
+      periodStart?: string
+      periodEnd?: string
+      channelId?: string
+      campaignId?: string
+    },
+  ): BrandKPI[] {
+    return Array.from(brandKPIStore.values())
+      .filter((k) => k.tenantId === tenantId)
+      .filter((k) => (filter?.category ? k.category === filter.category : true))
+      .filter((k) => (filter?.period ? k.period === filter.period : true))
+      .filter((k) => (filter?.periodStart ? k.periodStart >= filter.periodStart : true))
+      .filter((k) => (filter?.periodEnd ? k.periodEnd <= filter.periodEnd : true))
+      .filter((k) => (filter?.channelId ? k.channelId === filter.channelId : true))
+      .filter((k) => (filter?.campaignId ? k.campaignId === filter.campaignId : true))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map((k) => ({ ...k }))
+  }
+
+  updateBrandKPI(
+    id: string,
+    tenantId: string,
+    patch: { actualValue?: number; source?: string; notes?: string },
+  ): BrandKPI {
+    const k = brandKPIStore.get(id)
+    if (!k || k.tenantId !== tenantId) throw new Error(`BrandKPI not found: ${id}`)
+
+    const actualValue = patch.actualValue !== undefined ? patch.actualValue : k.actualValue
+    const achievementRate = k.targetValue > 0
+      ? Math.round((actualValue / k.targetValue) * 10000) / 100
+      : 0
+
+    const updated: BrandKPI = {
+      ...k,
+      actualValue,
+      achievementRate,
+      source: patch.source ?? k.source,
+      notes: patch.notes ?? k.notes,
+      updatedAt: new Date().toISOString(),
+    }
+    brandKPIStore.set(id, updated)
+    return { ...updated }
+  }
+
+  deleteBrandKPI(id: string, tenantId: string): boolean {
+    const k = brandKPIStore.get(id)
+    if (!k || k.tenantId !== tenantId) return false
+    brandKPIStore.delete(id)
+    return true
+  }
+
+  getBrandKPISummary(tenantId: string): BrandKPISummary {
+    const kpis = Array.from(brandKPIStore.values()).filter((k) => k.tenantId === tenantId)
+
+    const byCategory = {} as Record<KpiCategory, { count: number; avgAchievement: number }>
+    const categories: KpiCategory[] = ['exposure', 'engagement', 'conversion', 'revenue', 'retention', 'brand_awareness']
+    for (const cat of categories) {
+      const filtered = kpis.filter((k) => k.category === cat)
+      byCategory[cat] = {
+        count: filtered.length,
+        avgAchievement: filtered.length > 0
+          ? Math.round(filtered.reduce((s, k) => s + k.achievementRate, 0) / filtered.length * 100) / 100
+          : 0,
+      }
+    }
+
+    return {
+      totalKpis: kpis.length,
+      byCategory,
+      exposure: { impressions: 0, reach: 0 },
+      engagement: { likes: 0, shares: 0, comments: 0 },
+      conversion: { conversions: 0, conversionRate: 0 },
+      revenue: { revenue: 0, roi: 0 },
+      topChannels: [],
     }
   }
 }

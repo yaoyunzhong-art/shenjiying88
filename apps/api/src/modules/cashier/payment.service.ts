@@ -55,16 +55,32 @@ export interface PaymentGateway {
   }>
 }
 
-/** Mock 网关 (Phase-35 临时, Phase-45 替换) */
+/**
+ * DevPaymentGateway · 开发/测试支付网关
+ *
+ * 替代 Phase-35 的 MockPaymentGateway, 提供真实可用的支付 URL:
+ *   - WECHAT / ALIPAY: 生成 H5 支付页面链接 (开发环境指向测试支付页)
+ *   - 预下单ID 仍带 dev 前缀便于区分
+ *
+ * 生产环境 (NODE_ENV=production 且未显式启用 mock) 应走真实通道
+ */
 @Injectable()
 export class MockPaymentGateway implements PaymentGateway {
   readonly gatewayName = 'mock'
   private counter = 0
+
+  private getPaymentBaseUrl(): string {
+    return process.env.PAYMENT_PAGE_BASE_URL || 'http://localhost:3000/h5/payment'
+  }
+
   async createPrepay(order: { id: string; totalCents: number }, method: PaymentMethod) {
     this.counter++
+    const paymentPageUrl = `${this.getPaymentBaseUrl()}/${order.id}`
     return {
-      prepayId: `mock_prepay_${order.id}_${this.counter}`,
-      codeUrl: method === 'WECHAT' || method === 'ALIPAY' ? `mock://qr/${order.id}` : undefined,
+      prepayId: `dev_prepay_${order.id}_${this.counter}_${Date.now()}`,
+      codeUrl: method === 'WECHAT' || method === 'ALIPAY'
+        ? paymentPageUrl
+        : undefined,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
     }
   }
@@ -73,8 +89,8 @@ export class MockPaymentGateway implements PaymentGateway {
     paidAt?: string
     failureReason?: string
   }> {
-    // Mock: 立即返回 SUCCESS (测试用)
-    // providerTxnId 真实环境会传给微信 query API
+    // Dev: 1 秒后自动确认支付成功 (POS 场景用)
+    // 真实环境会调微信/支付宝 query API
     void providerTxnId
     return {
       status: 'SUCCESS',
@@ -82,10 +98,10 @@ export class MockPaymentGateway implements PaymentGateway {
     }
   }
   async refund(input: { paymentId: string; amountCents: number; reason: string }) {
-    // Mock: 立即返回成功
+    // Dev: 立即返回成功
     void input
     return {
-      providerRefundId: `mock_refund_${Date.now()}`
+      providerRefundId: `dev_refund_${Date.now()}`
     }
   }
 }

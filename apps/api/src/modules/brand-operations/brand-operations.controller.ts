@@ -54,6 +54,13 @@ import {
   QueryCalendarTimelineDto,
   QueryRecycleBinDto,
 } from './brand-operations.phase-p47-100.dto'
+import {
+  CreateBrandChannelDto,
+  UpdateBrandChannelDto,
+  CreateBrandKPIDto,
+  UpdateBrandKPIDto,
+  QueryBrandKPIDto,
+} from './brand-operations.channel-kpi.dto'
 import type {
   BrandAsset,
   BrandCampaign,
@@ -84,6 +91,15 @@ import type {
   CalendarTimeline,
   RecycleBinItem,
 } from './brand-operations.phase-p47-100.entity'
+import type {
+  BrandChannel,
+  BrandKPI,
+  BrandKPISummary,
+  ChannelType,
+  ChannelStatus,
+  KpiCategory,
+  KpiPeriod,
+} from './brand-operations.channel-kpi.entity'
 
 // 当前 Phase-47 骨架阶段使用硬编码 tenant/brand; 上线后替换为真实租户上下文
 const MOCK_TENANT_ID = 'tenant-1'
@@ -801,5 +817,116 @@ export class BrandOperationsController {
   cleanExpiredRecycleBinItems(@Body() body: { now?: string }): { deleted: number } {
     const deleted = this.service.cleanExpiredRecycleBinItems(body.now)
     return { deleted }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  BrandChannel CRUD (品牌渠道配置)
+  // ════════════════════════════════════════════════════════
+
+  @Post('channels')
+  createBrandChannel(@Body() body: CreateBrandChannelDto): BrandChannel {
+    return this.service.createBrandChannel({
+      tenantId: MOCK_TENANT_ID,
+      brandId: MOCK_BRAND_ID,
+      name: body.name,
+      type: body.type as ChannelType,
+      config: body.config,
+      contactName: body.contactName,
+      contactPhone: body.contactPhone,
+      notes: body.notes,
+      operatorId: body.operatorId,
+      operatorName: body.operatorName,
+      createdBy: MOCK_TENANT_ID,
+    })
+  }
+
+  @Get('channels')
+  listBrandChannels(
+    @Query('type') type?: string,
+    @Query('status') status?: string,
+  ): BrandChannel[] {
+    return this.service.listBrandChannels(MOCK_TENANT_ID, {
+      type: type as ChannelType | undefined,
+      status: status as ChannelStatus | undefined,
+    })
+  }
+
+  @Get('channels/:id')
+  getBrandChannel(@Param('id') id: string): BrandChannel | undefined {
+    return this.service.getBrandChannel(id, MOCK_TENANT_ID)
+  }
+
+  @Patch('channels/:id')
+  updateBrandChannel(
+    @Param('id') id: string,
+    @Body() body: UpdateBrandChannelDto,
+  ): BrandChannel {
+    return this.service.updateBrandChannel(id, MOCK_TENANT_ID, body)
+  }
+
+  @Delete('channels/:id')
+  deleteBrandChannel(@Param('id') id: string): { success: boolean } {
+    const result = this.service.deleteBrandChannel(id, MOCK_TENANT_ID)
+    return { success: result }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  BrandKPI CRUD (品牌KPI指标)
+  // ════════════════════════════════════════════════════════
+
+  @Post('kpis')
+  createBrandKPI(@Body() body: CreateBrandKPIDto): BrandKPI {
+    return this.service.createBrandKPI({
+      tenantId: MOCK_TENANT_ID,
+      brandId: MOCK_BRAND_ID,
+      name: body.name,
+      category: body.category as KpiCategory,
+      period: body.period as KpiPeriod,
+      periodStart: body.periodStart,
+      periodEnd: body.periodEnd,
+      targetValue: body.targetValue,
+      actualValue: body.actualValue,
+      source: body.source,
+      notes: body.notes,
+      channelId: body.channelId,
+      campaignId: body.campaignId,
+      createdBy: body.createdBy ?? MOCK_TENANT_ID,
+    })
+  }
+
+  @Get('kpis')
+  listBrandKPIs(@Query() query: QueryBrandKPIDto): BrandKPI[] {
+    return this.service.listBrandKPIs(MOCK_TENANT_ID, {
+      category: query.category as KpiCategory | undefined,
+      period: query.period as KpiPeriod | undefined,
+      periodStart: query.periodStart,
+      periodEnd: query.periodEnd,
+      channelId: query.channelId,
+      campaignId: query.campaignId,
+    })
+  }
+
+  @Get('kpis/:id')
+  getBrandKPI(@Param('id') id: string): BrandKPI | undefined {
+    return this.service.getBrandKPI(id, MOCK_TENANT_ID)
+  }
+
+  @Patch('kpis/:id')
+  updateBrandKPI(
+    @Param('id') id: string,
+    @Body() body: UpdateBrandKPIDto,
+  ): BrandKPI {
+    return this.service.updateBrandKPI(id, MOCK_TENANT_ID, body)
+  }
+
+  @Delete('kpis/:id')
+  deleteBrandKPI(@Param('id') id: string): { success: boolean } {
+    const result = this.service.deleteBrandKPI(id, MOCK_TENANT_ID)
+    return { success: result }
+  }
+
+  @Get('kpis/summary')
+  getBrandKPISummary(): BrandKPISummary {
+    return this.service.getBrandKPISummary(MOCK_TENANT_ID)
   }
 }

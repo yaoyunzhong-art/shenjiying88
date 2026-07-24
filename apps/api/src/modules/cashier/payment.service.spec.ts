@@ -303,13 +303,14 @@ describe('PaymentService', () => {
 
   // ── MockPaymentGateway ────────────────────────────────────────────────────
 
-  describe('MockPaymentGateway', () => {
-    it('should create prepay with correct structure', async () => {
+  describe('DevPaymentGateway', () => {
+    it('should create prepay with real payment URL', async () => {
       const mg = new MockPaymentGateway();
       const result = await mg.createPrepay({ id: 'ORD-001', totalCents: 1000 }, 'WECHAT');
 
-      expect(result.prepayId).toMatch(/^mock_prepay_/);
-      expect(result.codeUrl).toBeDefined();
+      expect(result.prepayId).toMatch(/^dev_prepay_/);
+      expect(result.codeUrl).toMatch(/^http/);
+      expect(result.codeUrl).toContain('ORD-001');
       expect(result.expiresAt).toBeDefined();
     });
 
@@ -329,7 +330,23 @@ describe('PaymentService', () => {
         reason: 'customer_request',
       });
 
-      expect(result.providerRefundId).toMatch(/^mock_refund_/);
+      expect(result.providerRefundId).toMatch(/^dev_refund_/);
+    });
+
+    it('should only return codeUrl for WECHAT/ALIPAY', async () => {
+      const mg = new MockPaymentGateway();
+
+      const wechat = await mg.createPrepay({ id: 'O1', totalCents: 1000 }, 'WECHAT');
+      expect(wechat.codeUrl).toBeDefined();
+
+      const alipay = await mg.createPrepay({ id: 'O2', totalCents: 1000 }, 'ALIPAY');
+      expect(alipay.codeUrl).toBeDefined();
+
+      const cash = await mg.createPrepay({ id: 'O3', totalCents: 1000 }, 'CASH');
+      expect(cash.codeUrl).toBeUndefined();
+
+      const card = await mg.createPrepay({ id: 'O4', totalCents: 1000 }, 'CARD');
+      expect(card.codeUrl).toBeUndefined();
     });
   });
 
