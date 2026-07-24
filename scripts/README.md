@@ -33,6 +33,9 @@ scripts/
 - `verify-local-api-startup-baseline.sh`
   - 用于固化当前 `apps/api` 的本地启动日志基线
   - 自动拉起 API、校验关键保留/禁止日志，并抽样验证 `health/ping`、`docs`、`foundation/bootstrap`
+- `preflight-local-api-runtime.sh`
+  - 作为本地 preflight 包装入口复用同一套启动基线校验
+  - 用于和生产/k8s 预检脚本保持语义分层
 
 ## 使用方式
 

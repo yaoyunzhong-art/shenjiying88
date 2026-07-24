@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import assert from 'node:assert/strict';
 import type { NextFunction, Request, Response } from 'express';
-import { LoggerService, LOGGER_CONFIG, LOGGER_DESTINATION } from './logger.service';
+import { LoggerService, resolvePrettyMode } from './logger.service';
 import { attachRequestContext } from './request-context.middleware';
 
 /** 构造一个捕获到内存的 logger */
@@ -113,6 +113,41 @@ describe('LoggerService — 级别过滤', () => {
     assert.equal(lines.length, 2, '仅 warn+error 输出');
     assert.equal(JSON.parse(lines[0]).level, 40);
     assert.equal(JSON.parse(lines[1]).level, 50);
+  });
+});
+
+describe('LoggerService — LOG_PRETTY 环境开关', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalLogPretty = process.env.LOG_PRETTY;
+
+  beforeEach(() => {
+    vi.resetModules();
+    delete process.env.LOG_PRETTY;
+    process.env.NODE_ENV = 'development';
+  });
+
+  afterEach(() => {
+    if (originalNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+
+    if (originalLogPretty === undefined) {
+      delete process.env.LOG_PRETTY;
+    } else {
+      process.env.LOG_PRETTY = originalLogPretty;
+    }
+  });
+
+  it('LOG_PRETTY=false 时禁用 pretty 输出', () => {
+    process.env.LOG_PRETTY = 'false';
+    expect(resolvePrettyMode()).toBe(false);
+  });
+
+  it('未设置 LOG_PRETTY 时开发环境默认启用 pretty', () => {
+    delete process.env.LOG_PRETTY;
+    expect(resolvePrettyMode()).toBe(true);
   });
 });
 

@@ -23,6 +23,9 @@ KEEP_ARTIFACTS="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --)
+      shift
+      ;;
     --port)
       PORT="${2:-}"
       shift 2
@@ -53,6 +56,11 @@ API_DIR="$REPO_ROOT/apps/api"
 
 if [[ ! -d "$API_DIR" ]]; then
   echo "apps/api directory not found: $API_DIR" >&2
+  exit 1
+fi
+
+if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "FAIL: port ${PORT} is already in use; choose another port with --port" >&2
   exit 1
 fi
 
@@ -129,7 +137,7 @@ echo "log_file=$LOG_FILE"
 
 (
   cd "$API_DIR"
-  API_PORT="$PORT" node --require ts-node/register --require tsconfig-paths/register src/main.ts
+  LOG_PRETTY=false API_PORT="$PORT" node --require ts-node/register --require tsconfig-paths/register src/main.ts
 ) >"$LOG_FILE" 2>&1 &
 SERVER_PID="$!"
 

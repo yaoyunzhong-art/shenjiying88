@@ -13,6 +13,7 @@
     "prisma:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "preflight:local-runtime": "bash ../../scripts/preflight-local-api-runtime.sh",
     "verify:startup-baseline": "bash ../../scripts/verify-local-api-startup-baseline.sh"
   },
   "dependencies": {

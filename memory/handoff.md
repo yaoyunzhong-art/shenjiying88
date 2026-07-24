@@ -703,3 +703,41 @@
 - 结论：
   - runtime 启动日志基线已从“口头约定”升级为“可复跑脚本”
   - 后续若并行改动导致噪音回归，可直接用该脚本做第一道回归闸门
+
+### 启动基线已接入标准命令与 CI
+
+- 根仓命令入口已补齐：
+  - `package.json`
+  - `pnpm verify:api:startup-baseline`
+- API workspace 命令入口已补齐：
+  - `apps/api/package.json`
+  - `pnpm --dir apps/api verify:startup-baseline`
+- CI 已新增独立 job：
+  - `.github/workflows/ci.yml`
+  - `🚦 API Startup Baseline`
+  - 在 `typecheck` 之后执行 `pnpm verify:api:startup-baseline`
+- 兼容性修正：
+  - `scripts/verify-local-api-startup-baseline.sh` 已兼容 `pnpm ... -- --port 3147` 透传的裸 `--`
+- 本地双入口验证：
+  - `pnpm verify:api:startup-baseline -- --port 3147` → 通过
+  - `pnpm --dir apps/api verify:startup-baseline -- --port 3148` → 通过
+- 结论：
+  - 当前启动基线已经具备“脚本能力 + 命令入口 + CI 守门”三层闭环
+  - 后续无论本地联调还是 GitHub CI，均可用同一套基线快速发现启动噪音回归
+
+### 启动基线已纳入 preflight / g8 本地口径
+
+- 新增本地 preflight 包装脚本：
+  - `scripts/preflight-local-api-runtime.sh`
+  - 作用是承接 `verify-local-api-startup-baseline.sh`，但保持与生产/k8s preflight 语义分层
+- 根仓命令新增：
+  - `pnpm preflight:api:local`
+  - `pnpm g8:preflight:local`
+- API workspace 命令新增：
+  - `pnpm --dir apps/api preflight:local-runtime`
+- 运行态验证：
+  - `pnpm preflight:api:local -- --port 3149` → 通过
+  - `pnpm g8:preflight:local -- --port 3150` → 通过
+- 结论：
+  - 当前 runtime 启动基线已形成“verify / preflight / g8-local / CI”四层接入
+  - 本地预检现在可以沿用既有 `preflight` 与 `g8` 命名体系，而不会把本地启动探针误混到生产预检脚本中
