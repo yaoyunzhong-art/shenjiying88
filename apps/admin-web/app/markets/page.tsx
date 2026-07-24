@@ -20,6 +20,7 @@ import {
   type DataTableSortConfig
 } from '@m5/ui';
 
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { useDetailActions } from '../components/use-detail-actions';
 
 // ---- 类型定义 ----
@@ -54,6 +55,13 @@ const REGION_MAP: Record<MarketItem['region'], { label: string; variant: MarketS
   'middle-east': { label: '中东', variant: 'danger' },
   'latin-america': { label: '拉美', variant: 'neutral' },
 };
+
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '市场管理中心访问受限',
+  description:
+    '市场管理中心已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看全球市场分布、区域筛选结果与部署概览。',
+} as const;
 
 // ---- Mock 数据 ----
 
@@ -169,9 +177,27 @@ export default function MarketsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { setLoading(false) }, []);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!MOCK_MARKETS || MOCK_MARKETS.length === 0) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (!MOCK_MARKETS || MOCK_MARKETS.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    );
+  }
 
   // 搜索过滤
   const searchFields = useMemo<(keyof MarketItem)[]>(() => ['code', 'name', 'region', 'currency', 'timezone'], []);
@@ -233,11 +259,12 @@ export default function MarketsPage() {
   }, [statusFiltered]);
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="市场管理中心"
-        subtitle="统一管理全球市场配置，包括语言、货币、时区和区域覆盖。支持多区域扩展与本地化部署。"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="市场管理中心"
+          subtitle="统一管理全球市场配置，包括语言、货币、时区和区域覆盖。支持多区域扩展与本地化部署。"
+        >
         {/* 统计卡片 */}
         <QuickStats
           items={[
@@ -330,13 +357,14 @@ export default function MarketsPage() {
           onPageSizeChange={pagination.setPageSize}
         />
 
-        <DetailActionBar
-          actions={actions}
-          heading="工作台收口动作"
-          caption="复制 / 导出 / 分享当前市场管理中心筛选快照"
-        />
-      </PageShell>
-    </main>
+          <DetailActionBar
+            actions={actions}
+            heading="工作台收口动作"
+            caption="复制 / 导出 / 分享当前市场管理中心筛选快照"
+          />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

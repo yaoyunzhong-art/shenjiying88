@@ -4,14 +4,28 @@
  * 覆盖: 正例·反例·边界·防御·数据校验
  * 组件: AdminTenantsQuotaPage — 租户配额仪表盘
  */
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import React from 'react'
 import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-afterEach(() => { cleanup() })
+const ADMIN_USER_KEY = 'admin_user'
+
+beforeEach(() => {
+  window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
+    userId: 'admin:test',
+    username: 'admin_tenants_test',
+    role: 'super-admin',
+    permissions: ['tenant:read'],
+  }))
+})
+
+afterEach(() => {
+  window.localStorage.clear()
+  cleanup()
+})
 
 // ── 正例: 结构渲染 ──
 
@@ -293,6 +307,12 @@ describe('AdminTenantsQuotaPage — 防御', () => {
   it('源码包含 QuotaStatus 类型', () => {
     const src = readPageSource()
     assert.ok(src.includes('QuotaStatus'), '应有配额状态类型')
+  })
+
+  it('源码接入管理员权限边界', () => {
+    const src = readPageSource()
+    assert.ok(src.includes('AdminPermissionGate'), '应接入 AdminPermissionGate')
+    assert.ok(src.includes("requiredPermission: 'tenant:read'"), '应复用 tenant:read 权限')
   })
 })
 
