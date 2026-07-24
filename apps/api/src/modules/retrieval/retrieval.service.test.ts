@@ -1,210 +1,124 @@
 // @ts-nocheck
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-/**
- * retrieval.service.test.ts · RetrievalService 单元测试
- *
- * 覆盖:
- *   - retrieveCode / retrieveKnowledge 骨架行为
- *   - buildRAGContext
- *   - indexChunks
- *   - getComponentHealth / getLastIndexAt
- *   - 边界与状态验证
- */
+import { describe, it, expect, beforeEach } from 'vitest'
+import { RetrievalService } from './retrieval.service'
+import { QdrantClientWrapper } from './retrieval.client'
+import { EmbeddingService } from './retrieval.embedder'
+import { retrievalConfig } from './config/retrieval.config'
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+function makeCfg() {
+  const raw = retrievalConfig()
+  return raw
+}
 
-describe('RetrievalService', () => {
-  const { RetrievalService } = require('./retrieval.service')
+function makeQdrant() {
+  return new QdrantClientWrapper(makeCfg())
+}
 
-  let service: InstanceType<typeof RetrievalService>
+function makeEmbedder() {
+  return new EmbeddingService(makeCfg())
+}
+
+describe('RetrievalService (Pulse-71 Refactored)', () => {
+  let service: RetrievalService
 
   beforeEach(() => {
-    service = new RetrievalService()
+    service = new RetrievalService(makeCfg(), makeQdrant(), makeEmbedder())
   })
-
-  // ─── retrieveCode ─────────────────────────────────────────────────────
 
   describe('retrieveCode', () => {
-    it('should return skeleton empty response', async () => {
-      const response = await service.retrieveCode({ query: 'test query' })
-
-      assert.ok(Array.isArray(response.results))
-      assert.equal(response.results.length, 0)
-      assert.equal(response.totalHits, 0)
-      assert.equal(response.latencyMs, 0)
-      assert.equal(response.cacheHit, false)
-      assert.deepEqual(response.collections, ['code_chunks'])
+    it('returns empty results with no Qdrant data', async () => {
+      const r = await service.retrieveCode({ query: 'test query' })
+      expect(Array.isArray(r.results)).toBe(true)
+      expect(r.totalHits).toBe(0)
+      expect(r.cacheHit).toBe(false)
+      expect(r.collections).toEqual(['code_chunks'])
     })
 
-    it('should accept query with all options', async () => {
-      const response = await service.retrieveCode({
-        query: 'loyalty rules',
-        topK: 20,
-        threshold: 0.6,
-        collections: ['code_chunks', 'rfc_history'],
-        phaseFilter: ['phase-19'],
-        pathPrefix: 'apps/api/src',
-        hybrid: true,
-        rerank: true,
+    it('accepts all query options without throwing', async () => {
+      const r = await service.retrieveCode({
+        query: 'loyalty rules', topK: 20, threshold: 0.6,
+        collections: ['code_chunks', 'rfc_history'], phaseFilter: ['phase-19'],
+        pathPrefix: 'apps/api/src', hybrid: true, rerank: true,
       })
-
-      assert.equal(response.results.length, 0)
+      expect(r.totalHits).toBe(0)
     })
 
-    it('should handle empty query', async () => {
-      const response = await service.retrieveCode({ query: '' })
-
-      assert.equal(response.totalHits, 0)
+    it('handles empty query', async () => {
+      const r = await service.retrieveCode({ query: '' })
+      expect(r.totalHits).toBe(0)
     })
 
-    it('should handle extreme topK', async () => {
-      const response = await service.retrieveCode({ query: 'test', topK: 100 })
-
-      assert.equal(response.totalHits, 0)
+    it('handles extreme topK', async () => {
+      const r = await service.retrieveCode({ query: 'test', topK: 100 })
+      expect(r.totalHits).toBe(0)
     })
   })
-
-  // ─── retrieveKnowledge ────────────────────────────────────────────────
 
   describe('retrieveKnowledge', () => {
-    it('should return skeleton empty response for knowledge', async () => {
-      const response = await service.retrieveKnowledge({ query: 'test knowledge' })
-
-      assert.ok(Array.isArray(response.results))
-      assert.equal(response.results.length, 0)
-      assert.equal(response.totalHits, 0)
-      assert.deepEqual(response.collections, ['knowledge_docs'])
+    it('returns empty results for knowledge', async () => {
+      const r = await service.retrieveKnowledge({ query: 'test knowledge' })
+      expect(r.totalHits).toBe(0)
+      expect(r.collections).toEqual(['knowledge_docs'])
     })
 
-    it('should handle knowledge query with options', async () => {
-      const response = await service.retrieveKnowledge({
-        query: 'deploy guide',
-        topK: 5,
-        collections: ['knowledge_docs'],
-      })
-
-      assert.equal(response.totalHits, 0)
+    it('handles knowledge query with options', async () => {
+      const r = await service.retrieveKnowledge({ query: 'deploy guide', topK: 5, collections: ['knowledge_docs'] })
+      expect(r.totalHits).toBe(0)
     })
   })
-
-  // ─── buildRAGContext ──────────────────────────────────────────────────
 
   describe('buildRAGContext', () => {
-    it('should return empty context with trigger', async () => {
-      const ctx = await service.buildRAGContext('test query', {
-        phase: 'phase-19',
-        pulse: 'pulse-68',
-        intent: 'review',
-      })
-
-      assert.ok(Array.isArray(ctx.codeContext))
-      assert.equal(ctx.codeContext.length, 0)
-      assert.ok(Array.isArray(ctx.knowledgeContext))
-      assert.equal(ctx.knowledgeContext.length, 0)
-      assert.equal(ctx.totalLatencyMs, 0)
-      assert.deepEqual(ctx.trigger, { phase: 'phase-19', pulse: 'pulse-68', intent: 'review' })
+    it('returns empty context with trigger', async () => {
+      const ctx = await service.buildRAGContext('test query', { phase: 'phase-19', pulse: 'pulse-68', intent: 'review' })
+      expect(Array.isArray(ctx.codeContext)).toBe(true)
+      expect(ctx.codeContext.length).toBe(0)
+      expect(Array.isArray(ctx.knowledgeContext)).toBe(true)
+      expect(ctx.knowledgeContext.length).toBe(0)
+      expect(ctx.trigger).toEqual({ phase: 'phase-19', pulse: 'pulse-68', intent: 'review' })
     })
 
-    it('should return context without trigger', async () => {
+    it('returns context without trigger', async () => {
       const ctx = await service.buildRAGContext('test query')
-
-      assert.equal(ctx.codeContext.length, 0)
-      assert.equal(ctx.knowledgeContext.length, 0)
-      assert.equal(ctx.trigger, undefined)
+      expect(ctx.codeContext.length).toBe(0)
+      expect(ctx.knowledgeContext.length).toBe(0)
     })
 
-    it('should handle empty query string', async () => {
+    it('handles empty query', async () => {
       const ctx = await service.buildRAGContext('')
-
-      assert.equal(ctx.codeContext.length, 0)
+      expect(ctx.codeContext.length).toBe(0)
     })
 
-    it('should handle very long query string', async () => {
+    it('handles very long query', async () => {
       const ctx = await service.buildRAGContext('x'.repeat(5000))
-
-      assert.equal(ctx.codeContext.length, 0)
+      expect(ctx.codeContext.length).toBe(0)
     })
   })
-
-  // ─── indexChunks ──────────────────────────────────────────────────────
 
   describe('indexChunks', () => {
-    it('should return zero written and all failed (skeleton)', async () => {
-      const result = await service.indexChunks('code_chunks', [
-        {
-          payload: {
-            chunkId: 'abc123',
-            filePath: 'apps/api/src/test.ts',
-            language: 'typescript',
-            astType: 'class',
-            symbolName: 'TestClass',
-            lineRange: [1, 50],
-            phase: 'phase-19',
-            pulse: 'pulse-68',
-            gitSha: 'abc123def',
-            tokens: 100,
-            isPublic: true,
-            isTest: false,
-            content: 'export class TestClass {}',
-          },
-          vector: [0.1, 0.2, 0.3],
-        },
+    it('writes all chunks in noop mode', async () => {
+      const r = await service.indexChunks('code_chunks', [
+        { payload: { chunkId: 'abc', filePath: 'a.ts', language: 'ts', astType: 'class', symbolName: 'X', lineRange: [1,10], phase: 'p1', pulse: 'p1', gitSha: 's', tokens: 10, isPublic: true, isTest: false, content: 'x' }, vector: [0.1] },
       ])
-
-      assert.equal(result.written, 0)
-      assert.equal(result.failed, 1)
+      expect(r.written).toBe(1)
+      expect(r.failed).toBe(0)
     })
 
-    it('should handle empty chunks array', async () => {
-      const result = await service.indexChunks('knowledge_docs', [])
-
-      assert.equal(result.written, 0)
-      assert.equal(result.failed, 0)
-    })
-
-    it('should handle multiple chunks', async () => {
-      const result = await service.indexChunks('code_chunks', [
-        {
-          payload: {
-            chunkId: 'chunk-1', filePath: 'a.ts', language: 'typescript',
-            astType: 'method', symbolName: 'foo', lineRange: [1, 10],
-            phase: 'p19', pulse: 'p68', gitSha: 'sha1', tokens: 50,
-            isPublic: true, isTest: false, content: 'function foo() {}',
-          },
-          vector: [0.1],
-        },
-        {
-          payload: {
-            chunkId: 'chunk-2', filePath: 'b.ts', language: 'typescript',
-            astType: 'method', symbolName: 'bar', lineRange: [1, 10],
-            phase: 'p19', pulse: 'p68', gitSha: 'sha2', tokens: 30,
-            isPublic: false, isTest: true, content: '// test',
-          },
-          vector: [0.2],
-        },
-      ])
-
-      assert.equal(result.written, 0)
-      assert.equal(result.failed, 2)
+    it('handles empty chunks', async () => {
+      const r = await service.indexChunks('knowledge_docs', [])
+      expect(r.written).toBe(0)
+      expect(r.failed).toBe(0)
     })
   })
 
-  // ─── getComponentHealth / getLastIndexAt ──────────────────────────────
-
-  describe('health check', () => {
-    it('getLastIndexAt should return null initially', () => {
-      const result = service.getLastIndexAt()
-
-      assert.equal(result, null)
+  describe('health', () => {
+    it('getLastIndexAt returns null initially', () => {
+      expect(service.getLastIndexAt()).toBeNull()
     })
 
-    it('getComponentHealth should return skeleton state', async () => {
-      const health = await service.getComponentHealth()
-
-      assert.equal(health.qdrant, 'unavailable')
-      assert.equal(health.embedder, 'unavailable')
-      assert.equal(health.lastIndexAt, null)
+    it('getComponentHealth returns degraded (no qdrant server)', async () => {
+      const h = await service.getComponentHealth()
+      expect(h.qdrant).toBe('degraded')
+      expect(h.embedder).toBe('ok')
     })
   })
 })

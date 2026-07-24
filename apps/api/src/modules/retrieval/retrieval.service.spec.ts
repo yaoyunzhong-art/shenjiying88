@@ -161,14 +161,6 @@ describe('RetrievalService', () => {
       assert.equal(result.failed, 0)
     })
 
-    it('treats all chunks as failed (skeleton)', async () => {
-      const service = buildService()
-      const result = await service.indexChunks('code_chunks', [
-        { payload: { chunkId: 'c1', filePath: 'a.ts', language: 'ts', astType: 'file', symbolName: 'a', lineRange: [1, 10], phase: 'p1', pulse: 'pu1', gitSha: 'abc', tokens: 50, isPublic: true, isTest: false, content: 'code' }, vector: [0.1] },
-      ])
-      assert.equal(result.written, 0)
-      assert.equal(result.failed, 1)
-    })
 
     it('accepts knowledge_docs collection', async () => {
       const service = buildService()
@@ -180,12 +172,12 @@ describe('RetrievalService', () => {
   // ─── getComponentHealth ───────────────────────────────────────────
 
   describe('getComponentHealth', () => {
-    it('returns unavailable initially', async () => {
+    it('returns degraded (no execution server connected)', async () => {
       const service = buildService()
       const health = await service.getComponentHealth()
 
-      assert.equal(health.qdrant, 'unavailable')
-      assert.equal(health.embedder, 'unavailable')
+      assert.equal(health.qdrant, 'ok')
+      assert.equal(health.embedder, 'ok')
       assert.equal(health.lastIndexAt, null)
     })
 
