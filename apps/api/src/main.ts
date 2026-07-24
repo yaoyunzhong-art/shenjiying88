@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, type LoggerService as NestLoggerService } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,11 +8,85 @@ import helmet from 'helmet';
 // OpenTelemetry SDK 副作用导入:必须在 NestFactory.create 之前,否则业务代码
 // 可能先于 instrumentation patch 注册,导致部分 span 缺失。
 // initTracing() 内部幂等,且在 exporter=none 时不启动 SDK。
-import { LoggerService } from './modules/observability/logger/logger.service';
+import { LoggerService as StructuredLoggerService } from './modules/observability/logger/logger.service';
 import { initTracing } from './modules/observability/tracing/tracing';
 import { AppModule } from './app.module';
 
 initTracing();
+
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1';
+const QUIET_NEST_LOG_CONTEXTS = new Set(['RouterExplorer', 'RoutesResolver', 'InstanceLoader']);
+const SHOULD_LOG_NEST_ROUTE_MAP = process.env.DEBUG_NEST_ROUTES === '1';
+
+function createNestLoggerAdapter(logger: StructuredLoggerService): NestLoggerService {
+  const shouldSkip = (context?: string): boolean =>
+    !SHOULD_LOG_NEST_ROUTE_MAP && typeof context === 'string' && QUIET_NEST_LOG_CONTEXTS.has(context);
+
+  const extractContext = (optionalParams: unknown[]): string | undefined => {
+    const last = optionalParams.at(-1);
+    return typeof last === 'string' ? last : undefined;
+  };
+
+  const write = (
+    level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal',
+    message: unknown,
+    optionalParams: unknown[] = [],
+  ): void => {
+    const context = extractContext(optionalParams);
+    if (shouldSkip(context)) return;
+
+    const extras = context ? optionalParams.slice(0, -1) : optionalParams;
+    const payload: Record<string, unknown> = context ? { context } : {};
+
+    if (message instanceof Error) {
+      payload.err = message;
+    } else if (typeof message !== 'string') {
+      payload.data = message;
+    }
+
+    if (extras.length === 1) {
+      payload.extra = extras[0];
+    } else if (extras.length > 1) {
+      payload.extra = extras;
+    }
+
+    const text =
+      message instanceof Error
+        ? message.message
+        : typeof message === 'string'
+          ? message
+          : 'nest logger event';
+
+    switch (level) {
+      case 'warn':
+        logger.warn(payload, text);
+        return;
+      case 'error':
+        logger.error(payload, text);
+        return;
+      case 'debug':
+        logger.debug(payload, text);
+        return;
+      case 'trace':
+        logger.trace(payload, text);
+        return;
+      case 'fatal':
+        logger.fatal(payload, text);
+        return;
+      default:
+        logger.info(payload, text);
+    }
+  };
+
+  return {
+    log: (message: unknown, ...optionalParams: unknown[]) => write('info', message, optionalParams),
+    error: (message: unknown, ...optionalParams: unknown[]) => write('error', message, optionalParams),
+    warn: (message: unknown, ...optionalParams: unknown[]) => write('warn', message, optionalParams),
+    debug: (message: unknown, ...optionalParams: unknown[]) => write('debug', message, optionalParams),
+    verbose: (message: unknown, ...optionalParams: unknown[]) => write('trace', message, optionalParams),
+    fatal: (message: unknown, ...optionalParams: unknown[]) => write('fatal', message, optionalParams),
+  };
+}
 
 /**
  * M5 API 启动入口
@@ -30,14 +104,14 @@ initTracing();
  *   - x-request-id 中间件 (入站透传 / 出站回写)
  */
 async function bootstrap() {
-  const logger = new LoggerService({ serviceName: 'm5-api-bootstrap' });
-  if (process.env.NODE_ENV !== 'production') {
+  const logger = new StructuredLoggerService({ serviceName: 'm5-api-bootstrap' });
+  if (SHOULD_LOG_INIT_DEBUG) {
     console.log('[bootstrap] creating Nest app');
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: undefined, // 关闭 NestJS 默认 logger,改用我们的 pino
+    logger: createNestLoggerAdapter(logger),
   });
-  if (process.env.NODE_ENV !== 'production') {
+  if (SHOULD_LOG_INIT_DEBUG) {
     console.log('[bootstrap] Nest app created');
   }
   app.setGlobalPrefix('api/v1');
@@ -99,12 +173,12 @@ async function bootstrap() {
       .setDescription('M5 multi-tenant SaaS API gateway and backbone service.')
       .setVersion('0.1.0')
       .build();
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[bootstrap] creating swagger document');
     }
     try {
       const document = SwaggerModule.createDocument(app, swaggerConfig);
-      if (process.env.NODE_ENV !== 'production') {
+      if (SHOULD_LOG_INIT_DEBUG) {
         console.log('[bootstrap] swagger document created');
       }
       SwaggerModule.setup('docs', app, document);
@@ -117,20 +191,20 @@ async function bootstrap() {
         },
         'swagger bootstrap skipped because document generation failed',
       );
-      if (process.env.NODE_ENV !== 'production') {
+      if (SHOULD_LOG_INIT_DEBUG) {
         console.log('[bootstrap] swagger document failed, continue without /docs');
       }
     }
-  } else if (process.env.NODE_ENV !== 'production') {
+  } else if (SHOULD_LOG_INIT_DEBUG) {
     console.log('[bootstrap] swagger disabled by DISABLE_SWAGGER=1');
   }
 
   const port = Number(process.env.API_PORT ?? 3001);
-  if (process.env.NODE_ENV !== 'production') {
+  if (SHOULD_LOG_INIT_DEBUG) {
     console.log(`[bootstrap] listening on ${port}`);
   }
   await app.listen(port);
-  if (process.env.NODE_ENV !== 'production') {
+  if (SHOULD_LOG_INIT_DEBUG) {
     console.log('[bootstrap] listen completed');
   }
   logger.info({ port, allowedOrigins }, 'm5-api started');

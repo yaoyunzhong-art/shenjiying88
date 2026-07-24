@@ -462,3 +462,96 @@
 - 当前剩余最显眼的启动噪音：
   - Nest `RouterExplorer` 大量 `Mapped {...}` 路由枚举日志
   - 若继续收口，可下一步评估是否仅在显式调试时保留该类框架级路由日志
+
+### Nest 框架级启动枚举日志已收口
+
+- `apps/api/src/main.ts`
+  - 已将 Nest 系统 logger 接入项目自有的 pino `LoggerService`
+  - 默认静默框架级上下文：
+    - `RouterExplorer`
+    - `RoutesResolver`
+    - `InstanceLoader`
+  - 保留显式调试开关：
+    - `DEBUG_NEST_ROUTES=1` 时可重新打开上述框架级启动枚举日志
+    - `DEBUG_INIT_LOGS=1` 时可重新打开 bootstrap 级 `console.log` 调试打点
+- fresh runtime 再次复验：
+  - 启动探针端口：`3139`
+  - 默认日志中已不再出现：
+    - `RouterExplorer` 的 `Mapped {...}` 路由枚举
+    - `RoutesResolver` 控制器路由解析枚举
+    - `InstanceLoader` 的 `Module dependencies initialized`
+    - `[bootstrap] creating Nest app` / `listen completed` 等开发调试打点
+  - 同时仍保留关键运行态信息：
+    - `TenantConfigRepository` 与 `DomainResolutionService` 的缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` 的 skeleton 提示
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+- 当前剩余较显眼但已非框架刷屏的问题：
+  - 少量模块自定义初始化日志，如 `CashierSeed`、`DbKnowledgeService`、若干 seeded/initialized 提示
+  - 若继续收口，下一步应优先评估这些业务模块日志是否也需要改成显式调试或更短摘要
+
+### 业务模块初始化噪音继续收口
+
+- `apps/api/src/modules/cashier/cashier.service.ts`
+  - `CashierSeed` 加载完成提示已改为仅在 `DEBUG_INIT_LOGS=1` 时输出
+- `apps/api/src/modules/db-knowledge/db-knowledge.service.ts`
+  - `DbKnowledgeService` 的 `Migration applied` 成功提示已改为仅在 `DEBUG_INIT_LOGS=1` 时输出
+  - 迁移失败的 `console.warn` 仍保留，避免吞掉真实异常
+- `apps/api/src/modules/retrieval/retrieval.client.ts`
+  - `QdrantClientWrapper initialized for ...` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/retrieval/retrieval.embedder.ts`
+  - `EmbeddingService initialized for ...` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/retrieval/retrieval.service.ts`
+  - `RetrievalService initialized (Phase-19 skeleton)` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/ai-review/ai-review.service.ts`
+  - `AIReviewService initialized (Phase-19 skeleton)` 已从 `info` 降为 `debug`
+- fresh runtime 再次复验：
+  - 启动探针端口：`3140`
+  - 默认日志中已不再出现：
+    - `[CashierSeed] Loaded ...`
+    - `[DbKnowledgeService] ✅ Migration applied`
+    - `QdrantClientWrapper initialized for ...`
+    - `EmbeddingService initialized for ...`
+    - `RetrievalService initialized (Phase-19 skeleton)`
+    - `AIReviewService initialized (Phase-19 skeleton)`
+  - 关键运行态日志仍保留：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` 的 `onModuleInit skipped — Pulse-71 skeleton`
+    - `INFO: m5-api started`
+- 当前剩余更值得下一步评估的自定义启动日志：
+  - `RbacService`、`DataScopeService`、`CategoriesService`
+  - `TeamBuildingService`、`HrService`、`HrPerformanceService`、`HrRecruitmentService`
+  - 若继续收口，优先应该把“seeded/initialized”类提示收成 debug 或聚合摘要
+
+### seeded/initialized 类业务初始化提示已继续收口
+
+- `apps/api/src/modules/permission/rbac.service.ts`
+  - `Initialized ${roles} roles and ${permissions} permissions` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/permission/data-scope.service.ts`
+  - `Initialized mock user-store assignments` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/categories/categories.service.ts`
+  - `已加载 ${count} 个商品分类` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/team-building/team-building.service.ts`
+  - `Seeded ${planStore.size} team-building plans` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/hr/hr.service.ts`
+  - `Seeded ${employeeStore.size} employees` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/hr/hr-performance.service.ts`
+  - `Seeded ${templateStore.size} performance templates, ${evaluationStore.size} evaluations` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/hr/hr-recruitment.service.ts`
+  - `Seeded ${positionStore.size} positions, ${candidateStore.size} candidates, ${referralStore.size} referrals` 已从 `info` 降为 `debug`
+- fresh runtime 再次复验：
+  - 启动探针端口：`3141`
+  - 关键运行态日志仍保留：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+  - 过滤复验结果表明，默认日志中已不再出现上述 7 条 `seeded/initialized` 提示
+- 当前剩余较显眼的启动日志：
+  - `BootstrapService` 状态切换提示
+  - `MonitorScheduler` 初始化提示
+  - `DualChannelRouter` channel registered 提示
+  - `CostTrackerService` initialized 提示
+  - `CampaignTriggerService` subscribed 提示
+  - `ReconciliationCron` / `FinanceSettlementCron` / `OutboxRelay` started 提示
