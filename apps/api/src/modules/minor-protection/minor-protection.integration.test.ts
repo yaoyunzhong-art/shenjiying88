@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { MinorProtectionModule } from './minor-protection.module'
+import { PrismaService } from '../../prisma/prisma.service'
 
 describe('MinorProtection Integration (HTTP)', () => {
   let app: INestApplication
@@ -15,7 +16,11 @@ describe('MinorProtection Integration (HTTP)', () => {
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [MinorProtectionModule],
-    }).compile()
+    }).overrideProvider(PrismaService).useValue({ 
+    minorIdentityVerification: { findMany: async () => [], upsert: async () => ({}), create: async () => ({}) }, 
+    minorAccessLog: { findMany: async () => [], create: async () => ({}) },
+    $connect: async () => {}, $disconnect: async () => {},
+  } as any).compile()
     app = moduleRef.createNestApplication()
     await app.init()
   })

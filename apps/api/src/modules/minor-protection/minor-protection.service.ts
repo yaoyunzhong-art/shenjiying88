@@ -6,7 +6,7 @@
  * 2. 时段管控 (宵禁 + 限时)
  * 3. 合规审计日志
  */
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
 import type {
   MinorProtectionConfig,
   MinorProtectionCheckResult,
@@ -14,6 +14,7 @@ import type {
   IdentityVerificationRecord,
   MinorAccessLog,
 } from './minor-protection.entity'
+import { MinorProtectionPrismaStore } from './minor-protection.prisma-store'
 import {
   DEFAULT_MINOR_CONFIG,
   createVerificationId,
@@ -29,8 +30,22 @@ export function resetMinorProtectionStores(): void {
   accessLogStore.clear()
 }
 
+export function setVerificationStoreEntry(id: string, record: IdentityVerificationRecord): void {
+  verificationStore.set(id, record)
+}
+
+export function setAccessLogStoreEntry(tenantId: string, log: MinorAccessLog): void {
+  accessLogStore.set(log.id, log)
+}
+
+export function clearVerificationStore(): void { verificationStore.clear() }
+export function clearAccessLogStore(): void { accessLogStore.clear() }
+
 @Injectable()
 export class MinorProtectionService {
+  constructor(
+    @Optional() private readonly prismaStore?: MinorProtectionPrismaStore
+  ) {}
   private readonly logger = new Logger(MinorProtectionService.name)
 
   // ═══════════════════════════════════════════
@@ -77,6 +92,9 @@ export class MinorProtectionService {
     }
 
     verificationStore.set(record.id, record)
+
+    // fire-and-forget persist to DB
+    this.prismaStore?.persistVerification(record).catch(err => this.logger?.error?.("persist failed", err))
     this.logger.log(`身份认证: ${input.memberId} -> ${isMinor ? '未成年人' : '成年人'} (${age}岁)`)
     return record
   }
@@ -185,6 +203,9 @@ export class MinorProtectionService {
       createdAt: new Date().toISOString(),
     }
     accessLogStore.set(log.id, log)
+
+    // fire-and-forget persist to DB
+    this.prismaStore?.persistAccessLog(log).catch(err => this.logger?.error?.('persist log failed', err))
     return { result, blockedReason, timeRestricted }
   }
 
