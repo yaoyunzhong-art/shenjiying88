@@ -1,3 +1,4 @@
+'use client'
 /**
  * 供应商编辑/创建表单页 — Supplier Form Page (Next.js App Router Page)
  * 功能: 新建/编辑供应商信息，含字段验证、提交、错误处理

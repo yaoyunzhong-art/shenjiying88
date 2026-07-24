@@ -1,3 +1,4 @@
+'use client'
 /**
  * 采购单创建/编辑表单页 — Purchase Order Form Page (Next.js App Router Page)
  * 功能: 新建采购单，含字段验证、提交、错误处理

@@ -1,3 +1,4 @@
+'use client'
 /**
  * customers/page.tsx — 门店客户管理列表页 (admin-web)
  *

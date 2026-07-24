@@ -1,3 +1,4 @@
+'use client'
 /**
  * 采购单管理列表页 — Purchase Orders List Page
  * 角色视角：管理员 / 采购 / 店长

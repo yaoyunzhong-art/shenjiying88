@@ -1,3 +1,4 @@
+'use client'
 /**
  * customers/new/page.tsx — 新建客户表单页 (admin-web)
  *
