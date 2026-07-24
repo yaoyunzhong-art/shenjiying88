@@ -104,6 +104,12 @@ function getMemberStats(members: MemberItem[]) {
    ══════════════════════════════════════════════════════════ */
 
 describe('members — 文件结构', () => {
+  it('0. page.tsx 接入管理员权限边界', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('AdminPermissionGate'));
+    assert.ok(source.includes("requiredPermission: 'member:read'"));
+  });
+
   it('1. page.tsx 存在', () => {
     assert.equal(fs.existsSync(path.join(__dirname, 'page.tsx')), true);
   });

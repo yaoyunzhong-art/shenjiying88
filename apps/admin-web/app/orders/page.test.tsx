@@ -19,6 +19,12 @@ function readSource(): string {
 // ---- 正例 ----
 
 describe('orders — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes("requiredPermission: 'order:read'"), '应复用 order:read 权限');
+  });
+
   it('应导出一个默认组件 OrdersPage', () => {
     const src = readSource();
     assert.ok(src.includes('export default function OrdersPage'), '缺少默认导出组件');
@@ -40,7 +46,8 @@ describe('orders — 正例', () => {
   it('应计算 totalRevenue 和 avgOrderValue', () => {
     const src = readSource();
     assert.ok(src.includes('totalRevenue'), '缺少总营收');
-    assert.ok(src.includes('MOCK_ORDERS.reduce'), '缺少 reduce 计算');
+    assert.ok(src.includes('avgOrderValue'), '缺少客单价统计');
+    assert.ok(src.includes('reduce((sum, o) => sum + o.paidAmount, 0)') || src.includes('reduce((sum, o) => sum + o.totalAmount, 0)'), '缺少 reduce 计算');
   });
 
   it('应包含 OrdersPageContent 子组件', () => {
@@ -70,7 +77,7 @@ describe('orders — 正例', () => {
 describe('orders — 边界', () => {
   it('MOCK_ORDERS 长度统计', () => {
     const src = readSource();
-    assert.ok(src.includes('MOCK_ORDERS.length'), '长度统计');
+    assert.ok(src.includes('orders.length') || src.includes('total: orders.length'), '长度统计');
   });
 
   it('应支持 marketCode 市场分类', () => {
@@ -116,7 +123,7 @@ describe('orders — 防御', () => {
 
   it('平均订单金额计算应避免除以 0', () => {
     const src = readSource();
-    assert.ok(src.includes('/ MOCK_ORDERS.length'), '长度除 0 保护');
+    assert.ok(src.includes('orders.length > 0') || src.includes("? (orders.reduce"), '长度除 0 保护');
   });
 
   it('应包含 Suspense fallback', () => {

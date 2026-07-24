@@ -12,6 +12,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   MOCK_MEMBERS,
@@ -24,6 +26,8 @@ import {
   type MemberTier,
   type MemberStatus,
 } from '../members-data';
+
+const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
 // ---- Page-level filter helpers ----
 
@@ -112,6 +116,11 @@ function formatCurrency(amount: number): string {
 // ---- 正例 ----
 
 describe('members-page: 正例 (positive cases)', () => {
+  it('源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'member:read'"));
+  });
+
   describe('search', () => {
     it('should find member by name', () => {
       const result = searchMembers(MOCK_MEMBERS, '张伟');

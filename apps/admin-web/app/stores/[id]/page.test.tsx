@@ -97,6 +97,11 @@ function validatePhone(phone: string): { valid: boolean; reason?: string } {
 // ---- Server Component 直测 ----
 
 describe('StoreDetailPage — 数据工厂', () => {
+  it('源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+
   it('默认门店应包含所有字段', () => {
     const store = makeStore();
     assert.strictEqual(store.id, 'store-001');

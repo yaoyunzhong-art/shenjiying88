@@ -8,6 +8,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   MOCK_STORES,
@@ -17,6 +19,8 @@ import {
   type StoreStatus,
   type StoreRiskLevel,
 } from '../../stores-data';
+
+const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
 // ---- Detail lookup (mirrors getStoreById in page.tsx) ----
 // The page uses its own inline lookup table, but we test against the shared MOCK_STORES
@@ -93,6 +97,11 @@ function getStoreRiskLevelLabel(level: StoreRiskLevel): string {
 // ---- 正例 ----
 
 describe('stores/[id]: 正例 (positive cases)', () => {
+  it('源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+
   describe('detail lookup', () => {
     it('should find store by existing id', () => {
       const store = getStoreById('s1');

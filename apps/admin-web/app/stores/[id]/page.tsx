@@ -25,6 +25,7 @@ import {
   readinessMeta,
   type StoreCapabilityAccessSnapshot
 } from '../../lyt-capability-access';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 import type { Metadata, ResolvingMetadata } from 'next';
@@ -63,6 +64,13 @@ const RISK_LEVEL_MAP: Record<StoreDetail['riskLevel'], { label: string; variant:
   medium: { label: '中风险', variant: 'warning' },
   high: { label: '高风险', variant: 'danger' }
 };
+
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店详情访问受限',
+  description:
+    '门店详情页已接入管理员本地 session，只有具备 store:read 的账号才能查看门店档案、能力访问矩阵与编辑表单。',
+} as const;
 
 // ---- Mock 门店详情数据 ----
 
@@ -274,27 +282,28 @@ export default function StoreDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'stores', detailLabel: store.name })}
-      />
-      <DetailShell
-        title={store.name}
-        subtitle={`${store.code} · ${store.marketCode}`}
-      breadcrumbs={[
-        { label: '门店管理', href: '/stores' },
-        { label: store.name },
-      ]}
-      backLink={{ label: '返回门店列表', href: '/stores' }}
-      actions={actions}
-    >
-      {/* 统计数据卡片 */}
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
-        <StatCard label="运营状态" value={statusInfo.label} helper={store.lastDeployed} />
-        <StatCard label="风险等级" value={riskInfo.label} helper={store.marketCode} />
-        <StatCard label="关联租户" value={String(store.tenantCount)} helper={`${store.brandCount} 个品牌`} />
-        <StatCard label="面积" value={`${store.floorArea.toLocaleString()} m²`} helper={`开业: ${store.openedAt}`} />
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'stores', detailLabel: store.name })}
+        />
+        <DetailShell
+          title={store.name}
+          subtitle={`${store.code} · ${store.marketCode}`}
+        breadcrumbs={[
+          { label: '门店管理', href: '/stores' },
+          { label: store.name },
+        ]}
+        backLink={{ label: '返回门店列表', href: '/stores' }}
+        actions={actions}
+      >
+        {/* 统计数据卡片 */}
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
+          <StatCard label="运营状态" value={statusInfo.label} helper={store.lastDeployed} />
+          <StatCard label="风险等级" value={riskInfo.label} helper={store.marketCode} />
+          <StatCard label="关联租户" value={String(store.tenantCount)} helper={`${store.brandCount} 个品牌`} />
+          <StatCard label="面积" value={`${store.floorArea.toLocaleString()} m²`} helper={`开业: ${store.openedAt}`} />
+        </div>
 
       <section
         style={{
@@ -548,17 +557,18 @@ export default function StoreDetailPage({ params }: { params: Promise<{ id: stri
           当前门店详情已直接感知 capability access，可继续把同一治理策略前推到店长/导购/收银工作台首页。
         </div>
 
-        <DetailActionBar
-          actions={detailActions}
-          heading="详情收口动作"
-          caption="复制 / 导出 / 分享当前门店详情"
-        />
+          <DetailActionBar
+            actions={detailActions}
+            heading="详情收口动作"
+            caption="复制 / 导出 / 分享当前门店详情"
+          />
+        </div>
+      </DetailShell>
+      <DetailClosureBar
+        links={buildStandardClosureLinks({ workspace: 'stores', detailId: store.id })}
+      />
       </div>
-    </DetailShell>
-    <DetailClosureBar
-      links={buildStandardClosureLinks({ workspace: 'stores', detailId: store.id })}
-    />
-    </div>
+    </AdminPermissionGate>
   );
 }
 

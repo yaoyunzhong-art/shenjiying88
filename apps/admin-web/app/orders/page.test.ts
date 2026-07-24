@@ -23,6 +23,12 @@ test('[正例] 应导出 OrdersPage 默认组件', () => {
   assert.ok(src.includes('export default function OrdersPage'), '缺少 OrdersPage 默认导出');
 });
 
+test('[正例] 页面应接入管理员权限边界', () => {
+  const src = readFileSync(SOURCE, 'utf-8');
+  assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+  assert.ok(src.includes("requiredPermission: 'order:read'"), '应复用 order:read 权限');
+});
+
 test('[正例] 页面应包含 use client 指令', () => {
   const src = readFileSync(SOURCE, 'utf-8');
   assert.ok(src.includes("'use client'"), '缺少 use client');

@@ -18,6 +18,12 @@ function readSource(): string {
 // ---- 正例: 模块结构 & 数据映射 ----
 
 describe('reports/[id] — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes("requiredPermission: 'dashboard:read'"), '应复用 dashboard:read 权限');
+  });
+
   it('应导出一个默认函数组件', () => {
     const src = readSource();
     assert.ok(src.includes('export default function'), '未找到默认导出函数组件');
