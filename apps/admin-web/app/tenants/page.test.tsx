@@ -20,6 +20,12 @@ function readSource(): string {
 // ---- 正例 ----
 
 describe('tenants — 正例 (positive)', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes("requiredPermission: 'tenant:read'"), '应复用 tenant:read 权限');
+  });
+
   it('应导出一个默认组件 TenantsPage', () => {
     const src = readSource();
     assert.ok(src.includes('export default function TenantsPage'), '缺少默认导出组件');

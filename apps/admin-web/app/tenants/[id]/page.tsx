@@ -17,6 +17,7 @@ import {
   useFormSubmit,
   type DetailShellAction
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
@@ -110,6 +111,13 @@ async function submitTenantEdit(form: EditFormData): Promise<{ success: boolean 
   await new Promise((resolve) => setTimeout(resolve, 800));
   return { success: true };
 }
+
+const permissionGate = {
+  requiredPermission: 'tenant:read',
+  title: '租户详情访问受限',
+  description:
+    '租户详情页已接入管理员本地 session，只有具备 tenant:read 的账号才能查看租户档案、部署信息与关联资源概览。',
+} as const;
 
 // ---- 页面组件 ----
 
@@ -212,31 +220,125 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'tenants', detailLabel: tenant.name })}
-      />
-      <DetailShell
-        title={tenant.name}
-        subtitle={`${tenant.code} · ${tenant.marketCode}`}
-      breadcrumbs={[
-        { label: '租户管理', href: '/tenants' },
-        { label: tenant.name },
-      ]}
-      backLink={{ label: '返回租户列表', href: '/tenants' }}
-      actions={actions}
-    >
-      {/* 统计数据卡片 */}
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
-        <StatCard label="运营状态" value={statusInfo.label} helper={tenant.lastDeployed} />
-        <StatCard label="套餐" value={planInfo.label} helper={`${BILLING_MAP[tenant.billingMode]}`} />
-        <StatCard label="关联门店" value={String(tenant.storeCount)} helper={`${tenant.brandCount} 个品牌`} />
-        <StatCard label="注册时间" value={tenant.registeredAt} helper={`${tenant.adminCount} 名管理员`} />
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'tenants', detailLabel: tenant.name })}
+        />
+        <DetailShell
+          title={tenant.name}
+          subtitle={`${tenant.code} · ${tenant.marketCode}`}
+        breadcrumbs={[
+          { label: '租户管理', href: '/tenants' },
+          { label: tenant.name },
+        ]}
+        backLink={{ label: '返回租户列表', href: '/tenants' }}
+        actions={actions}
+      >
+        {/* 统计数据卡片 */}
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
+          <StatCard label="运营状态" value={statusInfo.label} helper={tenant.lastDeployed} />
+          <StatCard label="套餐" value={planInfo.label} helper={`${BILLING_MAP[tenant.billingMode]}`} />
+          <StatCard label="关联门店" value={String(tenant.storeCount)} helper={`${tenant.brandCount} 个品牌`} />
+          <StatCard label="注册时间" value={tenant.registeredAt} helper={`${tenant.adminCount} 名管理员`} />
+        </div>
 
-      {/* 编辑模式 */}
-      {editOpen ? (
-        <section
+        {/* 编辑模式 */}
+        {editOpen ? (
+          <section
+            style={{
+              borderRadius: 16,
+              padding: 24,
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+              marginBottom: 24,
+            }}
+          >
+            <h2 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700 }}>编辑租户信息</h2>
+
+            {submitState.isSubmitting || submitState.errorMessage || submitState.successMessage ? (
+              <div style={{ marginBottom: 16 }}>
+                <FormSubmitFeedback state={submitState} />
+              </div>
+            ) : null}
+
+            <div style={{ display: 'grid', gap: 16 }}>
+              <FormField label="租户名称" required error={errors.name}>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
+                  disabled={submitState.isSubmitting}
+                  style={inputStyle}
+                  placeholder="输入租户名称"
+                />
+              </FormField>
+              <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
+                <FormField label="联系人" required error={errors.contactName}>
+                  <input
+                    type="text"
+                    value={formData.contactName}
+                    onChange={(e) => handleFieldChange('contactName', e.target.value)}
+                    disabled={submitState.isSubmitting}
+                    style={inputStyle}
+                    placeholder="输入联系人姓名"
+                  />
+                </FormField>
+                <FormField label="联系电话" required error={errors.contactPhone}>
+                  <input
+                    type="text"
+                    value={formData.contactPhone}
+                    onChange={(e) => handleFieldChange('contactPhone', e.target.value)}
+                    disabled={submitState.isSubmitting}
+                    style={inputStyle}
+                    placeholder="输入联系电话"
+                  />
+                </FormField>
+              </div>
+              <FormField label="联系邮箱" error={errors.contactEmail} helper="选填">
+                <input
+                  type="email"
+                  value={formData.contactEmail}
+                  onChange={(e) => handleFieldChange('contactEmail', e.target.value)}
+                  disabled={submitState.isSubmitting}
+                  style={inputStyle}
+                  placeholder="输入联系邮箱"
+                />
+              </FormField>
+              <FormField label="描述" helper="简要描述租户的业务范围与特点">
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => handleFieldChange('description', e.target.value)}
+                  disabled={submitState.isSubmitting}
+                  style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                  placeholder="输入租户描述"
+                />
+              </FormField>
+
+              {/* 提交 / 取消按钮 */}
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8 }}>
+                <SubmitButton
+                  loading={submitState.isSubmitting}
+                  disabled={submitState.isSubmitting}
+                  onClick={handleSave}
+                  variant="primary"
+                >
+                  保存修改
+                </SubmitButton>
+                <SubmitButton
+                  disabled={submitState.isSubmitting}
+                  onClick={handleCancel}
+                  variant="secondary"
+                >
+                  取消
+                </SubmitButton>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* 详情信息卡片 */}
+        <div
           style={{
             borderRadius: 16,
             padding: 24,
@@ -245,140 +347,48 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
             marginBottom: 24,
           }}
         >
-          <h2 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700 }}>编辑租户信息</h2>
-
-          {submitState.isSubmitting || submitState.errorMessage || submitState.successMessage ? (
-            <div style={{ marginBottom: 16 }}>
-              <FormSubmitFeedback state={submitState} />
+          <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>租户信息</h2>
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+            <InfoRow label="租户编码" value={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{tenant.code}<CopyToClipboard text={tenant.code} size="sm" iconOnly /></span>} />
+            <InfoRow label="所属市场" value={tenant.marketCode} />
+            <InfoRow
+              label="运营状态"
+              value={<StatusBadge label={statusInfo.label} variant={statusInfo.variant} size="sm" dot />}
+            />
+            <InfoRow
+              label="套餐"
+              value={<StatusBadge label={planInfo.label} variant={planInfo.variant} size="sm" />}
+            />
+            <InfoRow label="计费方式" value={BILLING_MAP[tenant.billingMode]} />
+            <InfoRow label="时区" value={tenant.timezone} />
+            <InfoRow label="联系人" value={tenant.contactName} />
+            <InfoRow label="联系邮箱" value={tenant.contactEmail} />
+            <InfoRow label="联系电话" value={tenant.contactPhone} />
+            <InfoRow label="关联门店数" value={`${tenant.storeCount} 个`} />
+            <InfoRow label="关联品牌数" value={`${tenant.brandCount} 个`} />
+            <InfoRow label="管理员数" value={`${tenant.adminCount} 人`} />
+            <InfoRow label="注册时间" value={tenant.registeredAt} />
+            <InfoRow label="最后部署" value={tenant.lastDeployed} />
+          </div>
+          {tenant.description ? (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
+              <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>描述</div>
+              <div style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.6 }}>{tenant.description}</div>
             </div>
           ) : null}
 
-          <div style={{ display: 'grid', gap: 16 }}>
-            <FormField label="租户名称" required error={errors.name}>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                disabled={submitState.isSubmitting}
-                style={inputStyle}
-                placeholder="输入租户名称"
-              />
-            </FormField>
-            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
-              <FormField label="联系人" required error={errors.contactName}>
-                <input
-                  type="text"
-                  value={formData.contactName}
-                  onChange={(e) => handleFieldChange('contactName', e.target.value)}
-                  disabled={submitState.isSubmitting}
-                  style={inputStyle}
-                  placeholder="输入联系人姓名"
-                />
-              </FormField>
-              <FormField label="联系电话" required error={errors.contactPhone}>
-                <input
-                  type="text"
-                  value={formData.contactPhone}
-                  onChange={(e) => handleFieldChange('contactPhone', e.target.value)}
-                  disabled={submitState.isSubmitting}
-                  style={inputStyle}
-                  placeholder="输入联系电话"
-                />
-              </FormField>
-            </div>
-            <FormField label="联系邮箱" error={errors.contactEmail} helper="选填">
-              <input
-                type="email"
-                value={formData.contactEmail}
-                onChange={(e) => handleFieldChange('contactEmail', e.target.value)}
-                disabled={submitState.isSubmitting}
-                style={inputStyle}
-                placeholder="输入联系邮箱"
-              />
-            </FormField>
-            <FormField label="描述" helper="简要描述租户的业务范围与特点">
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleFieldChange('description', e.target.value)}
-                disabled={submitState.isSubmitting}
-                style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
-                placeholder="输入租户描述"
-              />
-            </FormField>
-
-            {/* 提交 / 取消按钮 */}
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8 }}>
-              <SubmitButton
-                loading={submitState.isSubmitting}
-                disabled={submitState.isSubmitting}
-                onClick={handleSave}
-                variant="primary"
-              >
-                保存修改
-              </SubmitButton>
-              <SubmitButton
-                disabled={submitState.isSubmitting}
-                onClick={handleCancel}
-                variant="secondary"
-              >
-                取消
-              </SubmitButton>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* 详情信息卡片 */}
-      <div
-        style={{
-          borderRadius: 16,
-          padding: 24,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          marginBottom: 24,
-        }}
-      >
-        <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>租户信息</h2>
-        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-          <InfoRow label="租户编码" value={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{tenant.code}<CopyToClipboard text={tenant.code} size="sm" iconOnly /></span>} />
-          <InfoRow label="所属市场" value={tenant.marketCode} />
-          <InfoRow
-            label="运营状态"
-            value={<StatusBadge label={statusInfo.label} variant={statusInfo.variant} size="sm" dot />}
+          <DetailActionBar
+            actions={detailActions}
+            heading="详情收口动作"
+            caption="复制 / 导出 / 分享当前租户详情"
           />
-          <InfoRow
-            label="套餐"
-            value={<StatusBadge label={planInfo.label} variant={planInfo.variant} size="sm" />}
-          />
-          <InfoRow label="计费方式" value={BILLING_MAP[tenant.billingMode]} />
-          <InfoRow label="时区" value={tenant.timezone} />
-          <InfoRow label="联系人" value={tenant.contactName} />
-          <InfoRow label="联系邮箱" value={tenant.contactEmail} />
-          <InfoRow label="联系电话" value={tenant.contactPhone} />
-          <InfoRow label="关联门店数" value={`${tenant.storeCount} 个`} />
-          <InfoRow label="关联品牌数" value={`${tenant.brandCount} 个`} />
-          <InfoRow label="管理员数" value={`${tenant.adminCount} 人`} />
-          <InfoRow label="注册时间" value={tenant.registeredAt} />
-          <InfoRow label="最后部署" value={tenant.lastDeployed} />
         </div>
-        {tenant.description ? (
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>描述</div>
-            <div style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.6 }}>{tenant.description}</div>
-          </div>
-        ) : null}
-
-        <DetailActionBar
-          actions={detailActions}
-          heading="详情收口动作"
-          caption="复制 / 导出 / 分享当前租户详情"
-        />
+      </DetailShell>
+      <DetailClosureBar
+        links={buildStandardClosureLinks({ workspace: 'tenants', detailId: tenant.id })}
+      />
       </div>
-    </DetailShell>
-    <DetailClosureBar
-      links={buildStandardClosureLinks({ workspace: 'tenants', detailId: tenant.id })}
-    />
-    </div>
+    </AdminPermissionGate>
   );
 }
 
