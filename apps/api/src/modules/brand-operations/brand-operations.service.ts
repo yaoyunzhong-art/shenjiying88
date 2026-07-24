@@ -1,5 +1,6 @@
 import { randomUUID, randomInt } from 'node:crypto'
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
+import { BrandOperationsPrismaStore } from './brand-operations.prisma-store'
 import type {
   BrandAsset,
   BrandAssetType,
@@ -126,6 +127,10 @@ export const _testonly = { assetStore, campaignStore, syncStore, templateStore, 
 export class BrandOperationsService {
   private readonly logger = new Logger(BrandOperationsService.name)
 
+  constructor(
+    @Optional() private readonly prismaStore?: BrandOperationsPrismaStore,
+  ) {}
+
   // ═══════════════════════════════════════════
   //  BrandAsset 管理
   // ═══════════════════════════════════════════
@@ -155,6 +160,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     assetStore.set(asset.id, asset)
+    if (this.prismaStore) void this.prismaStore.persistAsset(asset.id)
     this.logger.debug(`Created brand asset ${asset.id} (${asset.type})`)
     return asset
   }
@@ -188,6 +194,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     assetStore.set(assetId, updated)
+    if (this.prismaStore) void this.prismaStore.persistAsset(assetId)
     return updated
   }
 
@@ -234,6 +241,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     campaignStore.set(campaign.id, campaign)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(campaign.id)
     this.logger.debug(`Created brand campaign ${campaign.id}: "${campaign.title}"`)
     return campaign
   }
@@ -280,6 +288,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     campaignStore.set(campaignId, updated)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(campaignId)
     return updated
   }
 
@@ -414,6 +423,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     templateStore.set(template.id, template)
+    if (this.prismaStore) void this.prismaStore.persistTemplate(template.id)
     this.logger.debug(`Created campaign template ${template.id}: "${template.name}"`)
     return template
   }
@@ -456,6 +466,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     templateStore.set(templateId, updated)
+    if (this.prismaStore) void this.prismaStore.persistTemplate(templateId)
     return updated
   }
 
@@ -525,6 +536,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     campaignStore.set(campaignId, updated)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(campaignId)
     return updated
   }
 
@@ -553,6 +565,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     campaignStore.set(campaignId, updated)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(campaignId)
     return updated
   }
 
@@ -574,6 +587,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     campaignStore.set(campaignId, updated)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(campaignId)
     return updated
   }
 
@@ -595,6 +609,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     campaignStore.set(campaignId, updated)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(campaignId)
     return updated
   }
 
@@ -657,6 +672,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     collaborationStore.set(collab.id, collab)
+    if (this.prismaStore) void this.prismaStore.persistCollaboration(collab.id)
     this.logger.debug(`Created collaboration ${collab.id}: "${collab.title}"`)
     return collab
   }
@@ -710,6 +726,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     collaborationStore.set(collabId, updated)
+    if (this.prismaStore) void this.prismaStore.persistCollaboration(collabId)
     return updated
   }
 
@@ -748,6 +765,7 @@ export class BrandOperationsService {
       collab.campaignIds.push(campaignId)
       collab.updatedAt = new Date().toISOString()
       collaborationStore.set(collabId, collab)
+    if (this.prismaStore) void this.prismaStore.persistCollaboration(collabId)
     }
     return collab
   }
@@ -783,6 +801,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     campaignScheduleStore.set(schedule.id, schedule)
+    if (this.prismaStore) void this.prismaStore.persistCampaignSchedule(schedule.id)
     this.logger.debug(`Created campaign schedule ${schedule.id}: ${input.action} campaign ${input.campaignId} at ${input.scheduledAt}`)
     return { ...schedule }
   }
@@ -815,6 +834,7 @@ export class BrandOperationsService {
     s.status = 'cancelled'
     s.updatedAt = new Date().toISOString()
     campaignScheduleStore.set(id, s)
+    if (this.prismaStore) void this.prismaStore.persistCampaignSchedule(id)
     return { ...s }
   }
 
@@ -846,6 +866,7 @@ export class BrandOperationsService {
       }
       s.updatedAt = now
       campaignScheduleStore.set(s.id, s)
+    if (this.prismaStore) void this.prismaStore.persistCampaignSchedule(s.id)
       executed.push({ ...s })
     }
 
@@ -1118,6 +1139,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     exportRecordStore.set(record.id, record)
+    if (this.prismaStore) void this.prismaStore.persistExportRecord(record.id)
 
     // 模拟异步生成
     this.generateExportData(record.id, input.tenantId, input.scope, input.format)
@@ -1160,10 +1182,12 @@ export class BrandOperationsService {
       record.filePath = `/exports/${tenantId}/${scope}/${id}.${_format}`
       record.completedAt = new Date().toISOString()
       exportRecordStore.set(id, record)
+    if (this.prismaStore) void this.prismaStore.persistExportRecord(id)
     } catch (error: any) {
       record.status = 'failed'
       record.errorMessage = error.message
       exportRecordStore.set(id, record)
+    if (this.prismaStore) void this.prismaStore.persistExportRecord(id)
     }
   }
 
@@ -1697,12 +1721,16 @@ export class BrandOperationsService {
       const original = JSON.parse(item.originalData) as Record<string, any>
       if (item.entityType === 'asset') {
         assetStore.set(item.entityId, original as unknown as BrandAsset)
+    if (this.prismaStore) void this.prismaStore.persistAsset(item.entityId)
       } else if (item.entityType === 'campaign') {
         campaignStore.set(item.entityId, original as unknown as BrandCampaign)
+    if (this.prismaStore) void this.prismaStore.persistCampaign(item.entityId)
       } else if (item.entityType === 'template') {
         templateStore.set(item.entityId, original as unknown as BrandCampaignTemplate)
+    if (this.prismaStore) void this.prismaStore.persistTemplate(item.entityId)
       } else if (item.entityType === 'collaboration') {
         collaborationStore.set(item.entityId, original as unknown as Collaboration)
+    if (this.prismaStore) void this.prismaStore.persistCollaboration(item.entityId)
       }
 
       item.restoredAt = new Date().toISOString()
@@ -1873,6 +1901,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     brandChannelStore.set(channel.id, channel)
+    if (this.prismaStore) void this.prismaStore.persistChannel(channel.id)
     this.logger.debug(`Created brand channel ${channel.id}: "${channel.name}"`)
     return { ...channel }
   }
@@ -1908,6 +1937,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     brandChannelStore.set(id, updated)
+    if (this.prismaStore) void this.prismaStore.persistChannel(id)
     return { ...updated }
   }
 
@@ -1965,6 +1995,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     brandKPIStore.set(kpi.id, kpi)
+    if (this.prismaStore) void this.prismaStore.persistKPI(kpi.id)
     this.logger.debug(`Created brand KPI ${kpi.id}: "${kpi.name}"`)
     return { ...kpi }
   }
@@ -2020,6 +2051,7 @@ export class BrandOperationsService {
       updatedAt: new Date().toISOString(),
     }
     brandKPIStore.set(id, updated)
+    if (this.prismaStore) void this.prismaStore.persistKPI(id)
     return { ...updated }
   }
 

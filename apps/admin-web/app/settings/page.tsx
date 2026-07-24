@@ -7,9 +7,13 @@
  * 包含：配置统计、分类Tab切换、设置项列表
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Tabs } from '@m5/ui';
+import {
+  getCachedAdminUser,
+  hasAdminPermission,
+} from '../lib/admin-session';
 
 // ============================================================
 // 设置分类类型
@@ -34,20 +38,21 @@ interface ConfigModule {
   status: 'configured' | 'partial' | 'pending';
   category: SettingCategory;
   itemCount?: number;
+  requiredPermission?: string;
 }
 
 const MODULES: ConfigModule[] = [
-  { key: 'payment-config', label: '支付配置', href: '/settings/payment-config', icon: '💳', description: '管理支付通道与结算参数，支持微信支付、支付宝、银联等多种支付方式', status: 'configured', category: 'basic', itemCount: 3 },
-  { key: 'membership-levels', label: '会员等级', href: '/settings/membership-levels', icon: '🏅', description: '定义会员等级体系与权益配置，包括升降级规则与折扣策略', status: 'configured', category: 'basic', itemCount: 4 },
-  { key: 'promotion-rules', label: '促销规则', href: '/settings/promotion-rules', icon: '🎁', description: '配置满减、折扣、赠品等促销活动规则与触发条件', status: 'partial', category: 'basic', itemCount: 2 },
-  { key: 'tax-rates', label: '税率配置', href: '/settings/tax-rates', icon: '🧾', description: '设置各商品品类的税率标准与税务计算规则', status: 'partial', category: 'basic', itemCount: 4 },
-  { key: 'system-config', label: '系统配置', href: '/settings/system-config', icon: '⚙️', description: '全局系统参数、运行配置与品牌基础信息设置', status: 'configured', category: 'basic', itemCount: 8 },
-  { key: 'venue-config', label: '场馆配置', href: '/settings/venue-config', icon: '🏟', description: '管理场馆运营参数、设施配置与营业时间设置', status: 'configured', category: 'basic', itemCount: 3 },
-  { key: 'notifications', label: '通知设置', href: '/settings/notifications', icon: '🔔', description: '配置通知规则、推送渠道、频率限制与静默时段', status: 'partial', category: 'notification', itemCount: 3 },
-  { key: 'notification-templates', label: '通知模板', href: '/settings/notification-templates', icon: '📋', description: '管理各业务场景的通知消息模板，支持变量占位符', status: 'configured', category: 'notification', itemCount: 5 },
-  { key: 'security', label: '安全设置', href: '/settings/security', icon: '🔒', description: '密码策略、登录保护、IP白名单与安全审计配置', status: 'configured', category: 'security', itemCount: 5 },
-  { key: 'permissions', label: '权限管理', href: '/settings/permissions', icon: '🔑', description: '管理用户角色与权限矩阵，支持角色继承与资源级授权', status: 'configured', category: 'security', itemCount: 6 },
-  { key: 'workflow', label: '工作流配置', href: '/settings/workflow', icon: '🔄', description: '配置审批工作流与自动化流程节点，支持条件分支与多人审批', status: 'pending', category: 'advanced', itemCount: 1 },
+  { key: 'payment-config', label: '支付配置', href: '/settings/payment-config', icon: '💳', description: '管理支付通道与结算参数，支持微信支付、支付宝、银联等多种支付方式', status: 'configured', category: 'basic', itemCount: 3, requiredPermission: 'finance:read' },
+  { key: 'membership-levels', label: '会员等级', href: '/settings/membership-levels', icon: '🏅', description: '定义会员等级体系与权益配置，包括升降级规则与折扣策略', status: 'configured', category: 'basic', itemCount: 4, requiredPermission: 'member:read' },
+  { key: 'promotion-rules', label: '促销规则', href: '/settings/promotion-rules', icon: '🎁', description: '配置满减、折扣、赠品等促销活动规则与触发条件', status: 'partial', category: 'basic', itemCount: 2, requiredPermission: 'campaign:write' },
+  { key: 'tax-rates', label: '税率配置', href: '/settings/tax-rates', icon: '🧾', description: '设置各商品品类的税率标准与税务计算规则', status: 'partial', category: 'basic', itemCount: 4, requiredPermission: 'finance:read' },
+  { key: 'system-config', label: '系统配置', href: '/settings/system-config', icon: '⚙️', description: '全局系统参数、运行配置与品牌基础信息设置', status: 'configured', category: 'basic', itemCount: 8, requiredPermission: 'settings:read' },
+  { key: 'venue-config', label: '场馆配置', href: '/settings/venue-config', icon: '🏟', description: '管理场馆运营参数、设施配置与营业时间设置', status: 'configured', category: 'basic', itemCount: 3, requiredPermission: 'store:read' },
+  { key: 'notifications', label: '通知设置', href: '/settings/notifications', icon: '🔔', description: '配置通知规则、推送渠道、频率限制与静默时段', status: 'partial', category: 'notification', itemCount: 3, requiredPermission: 'notification:read' },
+  { key: 'notification-templates', label: '通知模板', href: '/settings/notification-templates', icon: '📋', description: '管理各业务场景的通知消息模板，支持变量占位符', status: 'configured', category: 'notification', itemCount: 5, requiredPermission: 'notification:write' },
+  { key: 'security', label: '安全设置', href: '/settings/security', icon: '🔒', description: '密码策略、登录保护、IP白名单与安全审计配置', status: 'configured', category: 'security', itemCount: 5, requiredPermission: 'security:read' },
+  { key: 'permissions', label: '权限管理', href: '/settings/permissions', icon: '🔑', description: '管理用户角色与权限矩阵，支持角色继承与资源级授权', status: 'configured', category: 'security', itemCount: 6, requiredPermission: 'identity-access:write' },
+  { key: 'workflow', label: '工作流配置', href: '/settings/workflow', icon: '🔄', description: '配置审批工作流与自动化流程节点，支持条件分支与多人审批', status: 'pending', category: 'advanced', itemCount: 1, requiredPermission: 'workflow:write' },
 ];
 
 // ============================================================
@@ -220,6 +225,11 @@ const styles = {
 // ============================================================
 export default function SettingsPage() {
   const [activeCategory, setActiveCategory] = useState<SettingCategory>('basic');
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCachedAdminUser>>(null);
+
+  useEffect(() => {
+    setCurrentUser(getCachedAdminUser());
+  }, []);
 
   const totalModules = MODULES.length;
   const configuredCount = MODULES.filter(m => m.status === 'configured').length;
@@ -228,6 +238,12 @@ export default function SettingsPage() {
 
   const filteredModules = MODULES.filter(m => m.category === activeCategory);
   const tabItems = buildTabItems();
+
+  function canAccessModule(module: ConfigModule): boolean {
+    return hasAdminPermission(currentUser, module.requiredPermission ?? 'settings:read');
+  }
+
+  const accessibleModuleCount = MODULES.filter(canAccessModule).length;
 
   return (
     <div style={styles.page}>
@@ -238,6 +254,25 @@ export default function SettingsPage() {
           系统全局配置管理面板。管理支付、会员、安全、通知等 {totalModules} 个配置模块，
           每个模块支持独立的参数配置与状态监控。
         </p>
+        <div style={{ ...styles.moduleCard, cursor: 'default', marginTop: 16 }}>
+          {currentUser ? (
+            <>
+              <div style={{ ...styles.moduleName, fontSize: 14 }}>
+                当前会话角色：{currentUser.role}
+              </div>
+              <div style={styles.moduleDescription}>
+                已识别 {currentUser.permissions.length} 项权限，可访问 {accessibleModuleCount}/{totalModules} 个配置模块。
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ ...styles.moduleName, fontSize: 14 }}>未检测到管理员会话</div>
+              <div style={styles.moduleDescription}>
+                当前仅展示目录预览。登录后会依据本地 session 中的 permissions 决定可访问模块。
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 统计卡片 */}
@@ -278,28 +313,52 @@ export default function SettingsPage() {
         </h2>
         <div style={styles.grid}>
           {filteredModules.length > 0 ? (
-            filteredModules.map(mod => (
-              <Link
-                key={mod.key}
-                href={mod.href}
-                style={styles.moduleCard}
-              >
-                <div style={styles.moduleHeader}>
-                  <span style={styles.moduleIcon}>{mod.icon}</span>
-                  <span style={styles.moduleName}>{mod.label}</span>
+            filteredModules.map(mod => {
+              const canAccess = canAccessModule(mod);
+              const cardStyle = {
+                ...styles.moduleCard,
+                opacity: canAccess ? 1 : 0.58,
+                cursor: canAccess ? 'pointer' : 'not-allowed',
+              };
+
+              const content = (
+                <>
+                  <div style={styles.moduleHeader}>
+                    <span style={styles.moduleIcon}>{mod.icon}</span>
+                    <span style={styles.moduleName}>{mod.label}</span>
+                  </div>
+                  <div style={styles.moduleDescription}>{mod.description}</div>
+                  <div style={styles.moduleFooter}>
+                    <span style={styles.statusBadge(STATUS_COLOR[mod.status])}>
+                      <span style={styles.statusDot(STATUS_COLOR[mod.status])} />
+                      {STATUS_LABEL[mod.status]}
+                    </span>
+                    <div style={{ display: 'grid', justifyItems: 'end', gap: 4 }}>
+                      {mod.itemCount !== undefined && (
+                        <span style={styles.itemCount}>{mod.itemCount} 项设置</span>
+                      )}
+                      <span style={{ ...styles.itemCount, color: canAccess ? '#94a3b8' : '#f59e0b' }}>
+                        {canAccess ? `权限: ${mod.requiredPermission ?? 'settings:read'}` : `缺少 ${mod.requiredPermission ?? 'settings:read'}`}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              );
+
+              return canAccess ? (
+                <Link
+                  key={mod.key}
+                  href={mod.href}
+                  style={cardStyle}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div key={mod.key} style={cardStyle} aria-disabled="true">
+                  {content}
                 </div>
-                <div style={styles.moduleDescription}>{mod.description}</div>
-                <div style={styles.moduleFooter}>
-                  <span style={styles.statusBadge(STATUS_COLOR[mod.status])}>
-                    <span style={styles.statusDot(STATUS_COLOR[mod.status])} />
-                    {STATUS_LABEL[mod.status]}
-                  </span>
-                  {mod.itemCount !== undefined && (
-                    <span style={styles.itemCount}>{mod.itemCount} 项设置</span>
-                  )}
-                </div>
-              </Link>
-            ))
+              );
+            })
           ) : (
             <div style={styles.emptyText}>
               该分类下暂无配置模块

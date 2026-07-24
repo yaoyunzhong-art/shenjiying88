@@ -5,10 +5,21 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, StatusBadge, DataTable, Tabs, type DataTableColumn } from '@m5/ui';
+import {
+  getCachedAdminUser,
+  hasAdminPermission,
+} from '../lib/admin-session';
 
 export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth';
+
+const VIEW_PERMISSIONS: Record<DashboardView, string> = {
+  overview: 'dashboard:read',
+  operations: 'dashboard:operations:read',
+  financial: 'finance:read',
+  growth: 'dashboard:growth:read',
+};
 
 interface DashboardStats {
   todayRevenue: number;
@@ -343,15 +354,52 @@ function FallbackView({ view }: { view: string }) {
 export default function DashboardClient({ stats }: { stats: DashboardStats }) {
   const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [activeSubTab, setActiveSubTab] = useState<string>('trend');
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCachedAdminUser>>(null);
+
+  useEffect(() => {
+    setCurrentUser(getCachedAdminUser());
+  }, []);
 
   const viewTabs = [
-    { key: 'overview' as const, label: '📊 总览' },
-    { key: 'operations' as const, label: '⚙️ 运营' },
-    { key: 'financial' as const, label: '💰 财务' },
-    { key: 'growth' as const, label: '📈 增长' },
+    { key: 'overview' as const, label: '📊 总览', permission: VIEW_PERMISSIONS.overview },
+    { key: 'operations' as const, label: '⚙️ 运营', permission: VIEW_PERMISSIONS.operations },
+    { key: 'financial' as const, label: '💰 财务', permission: VIEW_PERMISSIONS.financial },
+    { key: 'growth' as const, label: '📈 增长', permission: VIEW_PERMISSIONS.growth },
   ];
 
+  const accessibleViewTabs = useMemo(
+    () => viewTabs.filter((tab) => hasAdminPermission(currentUser, tab.permission)),
+    [currentUser],
+  );
+
+  useEffect(() => {
+    if (accessibleViewTabs.length === 0) {
+      return;
+    }
+
+    if (!accessibleViewTabs.some((tab) => tab.key === activeView)) {
+      setActiveView(accessibleViewTabs[0]!.key);
+    }
+  }, [activeView, accessibleViewTabs]);
+
+  if (accessibleViewTabs.length === 0) {
+    return (
+      <Card variant="outlined" style={{ padding: 24 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#f59e0b', marginBottom: 8 }}>
+          未检测到可用仪表盘权限
+        </div>
+        <div style={{ fontSize: 13, color: '#94a3b8' }}>
+          请先登录管理员账号，或补齐 `dashboard:read` 等相关 permissions 后再访问。
+        </div>
+      </Card>
+    );
+  }
+
   const renderView = () => {
+    if (!hasAdminPermission(currentUser, VIEW_PERMISSIONS[activeView])) {
+      return <FallbackView view={`${activeView} (denied)`} />;
+    }
+
     switch (activeView) {
       case 'overview':
         return <OverviewView stats={stats} activeSubTab={activeSubTab} setActiveSubTab={setActiveSubTab} />;
@@ -368,9 +416,26 @@ export default function DashboardClient({ stats }: { stats: DashboardStats }) {
 
   return (
     <div style={{ display: 'grid', gap: 24 }}>
+      <Card style={{ padding: 16 }}>
+        {currentUser ? (
+          <div style={{ display: 'grid', gap: 6 }}>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>
+              当前角色: {currentUser.role}
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8' }}>
+              已识别 {currentUser.permissions.length} 项权限，当前可访问 {accessibleViewTabs.length}/{viewTabs.length} 个仪表盘视图。
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            未检测到本地管理员会话，页面按权限预检结果展示可访问视图。
+          </div>
+        )}
+      </Card>
+
       {/* 视图切换Tab: 总览/运营/财务/增长 */}
       <Tabs
-        items={viewTabs}
+        items={accessibleViewTabs}
         activeKey={activeView}
         onChange={(key) => setActiveView(key as DashboardView)}
         variant="segment"

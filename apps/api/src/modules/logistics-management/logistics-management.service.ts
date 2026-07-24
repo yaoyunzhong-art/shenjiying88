@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
+import { LogisticsManagementPrismaStore } from './logistics-management.prisma-store'
 import type {
   SupplyOrder,
   SupplyOrderStatus,
@@ -44,6 +45,10 @@ export const _testonly = { supplyOrderStore, supplyVendorStore, inventoryItemSto
 @Injectable()
 export class LogisticsManagementService {
   private readonly logger = new Logger(LogisticsManagementService.name)
+
+  constructor(
+    @Optional() private readonly prismaStore?: LogisticsManagementPrismaStore,
+  ) {}
 
   // ═══════════════════════════════════════════
   //  SupplyOrder 采购订单

@@ -51,7 +51,16 @@ async function mockLoginApi(formData: LoginFormData): Promise<LoginResult> {
   return {
     token: 'mock-jwt-token',
     role: 'super_admin',
-    permissions: ['*', 'identity-access:write', 'user:write'],
+    permissions: [
+      'dashboard:read',
+      'dashboard:operations:read',
+      'dashboard:growth:read',
+      'settings:read',
+      'identity-access:write',
+      'user:write',
+      'security:read',
+      'notification:read',
+    ],
   };
 }
 
@@ -113,7 +122,7 @@ describe('login-page: 正例 (positive cases)', () => {
       assert.strictEqual(result.token, 'mock-jwt-token');
       assert.strictEqual(result.role, 'super_admin');
       assert.ok(Array.isArray(result.permissions));
-      assert.ok(result.permissions.includes('*'));
+      assert.ok(result.permissions.includes('dashboard:read'));
       assert.ok(result.token.length > 0);
     });
   });
@@ -251,5 +260,6 @@ describe('login-page: 边界 (boundary cases)', () => {
     assert.ok(['super_admin', 'admin', 'user'].includes(result.role) === false || result.role === 'super_admin');
     assert.strictEqual(result.role, 'super_admin');
     assert.ok(result.permissions.includes('identity-access:write'));
+    assert.ok(result.permissions.includes('settings:read'));
   });
 });

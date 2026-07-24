@@ -42,6 +42,7 @@ describe('Dashboard — 服务端页面', () => {
 
 describe('Dashboard — 客户端组件', () => {
   it('使用useState钩子', () => assert.ok(CLIENT_SRC.includes('useState')));
+  it('使用useEffect恢复管理员会话', () => assert.ok(CLIENT_SRC.includes('useEffect')));
   it('包含use client指令', () => assert.ok(CLIENT_SRC.includes("'use client'")));
   it('包含营收趋势展示', () => assert.ok(CLIENT_SRC.includes('revenue')));
   it('包含设备状态过滤', () => assert.ok(CLIENT_SRC.includes('online') && CLIENT_SRC.includes('offline')));
@@ -52,6 +53,7 @@ describe('Dashboard — 客户端组件', () => {
   it('包含StatusBadge组件', () => assert.ok(CLIENT_SRC.includes('StatusBadge')));
   it('包含Tabs组件', () => assert.ok(CLIENT_SRC.includes('<Tabs')));
   it('包含Card组件', () => assert.ok(CLIENT_SRC.includes('<Card')));
+  it('读取admin-session helper', () => assert.ok(CLIENT_SRC.includes('getCachedAdminUser') && CLIENT_SRC.includes('hasAdminPermission')));
   it('包含空状态处理', () => assert.ok(CLIENT_SRC.includes('空状态') || CLIENT_SRC.includes('待办已完成')));
   it('包含趋势柱状图', () => assert.ok(CLIENT_SRC.includes('heightPercent')));
 
@@ -63,6 +65,8 @@ describe('Dashboard — 客户端组件', () => {
   it('包含财务视图组件', () => assert.ok(CLIENT_SRC.includes('FinancialView')));
   it('包含增长视图组件', () => assert.ok(CLIENT_SRC.includes('GrowthView')));
   it('包含FallbackView未知视图处理', () => assert.ok(CLIENT_SRC.includes('FallbackView')));
+  it('包含VIEW_PERMISSIONS视图权限映射', () => assert.ok(CLIENT_SRC.includes('VIEW_PERMISSIONS')));
+  it('包含accessibleViewTabs过滤结果', () => assert.ok(CLIENT_SRC.includes('accessibleViewTabs')));
   it('视图Tab使用segment变体', () => assert.ok(CLIENT_SRC.includes("'segment'") || CLIENT_SRC.includes('"segment"')));
   it('视图Tab使用fill填充', () => assert.ok(CLIENT_SRC.includes('fill')));
 

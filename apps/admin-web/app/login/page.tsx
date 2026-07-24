@@ -27,6 +27,10 @@ import {
   type DataTableColumn,
 } from '@m5/ui';
 import { adminWebBootstrap } from '../bootstrap';
+import {
+  clearAdminSession,
+  storeAdminSession,
+} from '../lib/admin-session';
 
 // ==================== 类型定义 ====================
 
@@ -100,11 +104,16 @@ async function mockLoginApi(username: string, password: string): Promise<LoginRe
     token: 'mock-jwt-token',
     role: 'super_admin',
     permissions: [
-      '*',
+      'dashboard:read',
+      'dashboard:operations:read',
+      'dashboard:growth:read',
+      'settings:read',
       'identity-access:read',
       'identity-access:write',
       'user:read',
       'user:write',
+      'security:read',
+      'notification:read',
     ],
   };
 }
@@ -251,14 +260,26 @@ export default function LoginPage() {
     setLoginError(null);
     setLoginSuccess(false);
     setLoginResult(null);
+    clearAdminSession();
 
     try {
       const result = await mockLoginApi(username, password);
+      storeAdminSession({
+        accessToken: result.token,
+        refreshToken: rememberMe ? 'mock-refresh-token' : '',
+        user: {
+          userId: `admin:${username.trim()}`,
+          username: username.trim(),
+          role: result.role,
+          permissions: result.permissions,
+        },
+      });
       setLoginResult(result);
       setLoginSuccess(true);
     } catch (err) {
       setLoginSuccess(false);
       setLoginError(err instanceof Error ? err.message : '登录失败，请稍后重试');
+      clearAdminSession();
     } finally {
       setIsSubmitting(false);
     }

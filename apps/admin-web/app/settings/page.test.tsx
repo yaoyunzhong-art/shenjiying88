@@ -125,6 +125,12 @@ describe('settings page', () => {
       const descs = src.match(/description:/g);
       assert.ok(descs && descs.length >= 10, `got ${descs?.length} descriptions`);
     });
+    it('模块应声明 requiredPermission 字段', () => {
+      const src = readSrc();
+      assert.ok(src);
+      const requiredPermissions = src.match(/requiredPermission:/g);
+      assert.ok(requiredPermissions && requiredPermissions.length >= 10, `got ${requiredPermissions?.length} requiredPermission assignments`);
+    });
     // 反例：模块不应有重复 key
     it('模块 key 不应重复', () => {
       const src = readSrc();
@@ -178,6 +184,12 @@ describe('settings page', () => {
       const src = readSrc();
       assert.ok(src);
       assert.ok(src.includes('设置中心') || src.includes('设置'));
+    });
+    it('应读取 admin-session helper', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('getCachedAdminUser'));
+      assert.ok(src.includes('hasAdminPermission'));
     });
     it('应包含 4 个统计卡片', () => {
       const src = readSrc();
@@ -291,6 +303,12 @@ describe('settings page', () => {
       assert.ok(src.includes('useState') || src.includes('useReducer'));
       assert.ok(src.includes('activeCategory') || src.includes('activeTab'));
     });
+    it('应通过 useEffect 恢复当前管理员会话', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('useEffect'));
+      assert.ok(src.includes('setCurrentUser(getCachedAdminUser())'));
+    });
     it('activeCategory 的默认值应为 basic', () => {
       const src = readSrc();
       assert.ok(src);
@@ -304,6 +322,12 @@ describe('settings page', () => {
       assert.ok(src);
       assert.ok(src.includes('setActiveCategory'));
       assert.ok(src.includes('as SettingCategory') || src.includes('as SettingCategory'));
+    });
+    it('模块卡片应展示缺少权限提示', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('缺少 ${mod.requiredPermission ?? \'settings:read\'}'));
+      assert.ok(src.includes('aria-disabled="true"'));
     });
   });
 
