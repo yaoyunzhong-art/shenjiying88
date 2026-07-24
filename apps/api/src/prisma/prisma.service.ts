@@ -14,9 +14,13 @@ const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  private _debugLog(msg: string) {
+    if (process.env.DEBUG_INIT_LOGS === '1') console.log(`[debug:init] ${msg}`)
+  }
+
   async onModuleInit() {
     if (SHOULD_LOG_INIT_DEBUG) {
-      console.log('[debug:init] PrismaService.onModuleInit begin')
+      this._debugLog('onModuleInit begin')
     }
 
     // 🐜 V20: 应用 RLS $extends 扩展 — 数据库层 tenantId 自动注入
@@ -47,7 +51,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       return
     }
     if (SHOULD_LOG_INIT_DEBUG) {
-      console.log('[debug:init] PrismaService.onModuleInit end')
+      this._debugLog('onModuleInit end')
     }
   }
 

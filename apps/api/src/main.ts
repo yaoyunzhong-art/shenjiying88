@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { ValidationPipe, type LoggerService as NestLoggerService } from '@nestjs/common';
+import { Logger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -114,7 +115,7 @@ async function bootstrap() {
   const logger = new StructuredLoggerService({ serviceName: 'm5-api-bootstrap' });
   const nestLogger = createNestLoggerAdapter(logger);
   if (SHOULD_LOG_INIT_DEBUG) {
-    console.log('[bootstrap] creating Nest app');
+    Logger.log('[bootstrap] creating Nest app');
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
@@ -122,7 +123,7 @@ async function bootstrap() {
   app.useLogger(nestLogger);
   app.flushLogs();
   if (SHOULD_LOG_INIT_DEBUG) {
-    console.log('[bootstrap] Nest app created');
+    Logger.log('[bootstrap] Nest app created');
   }
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -184,12 +185,12 @@ async function bootstrap() {
       .setVersion('0.1.0')
       .build();
     if (SHOULD_LOG_INIT_DEBUG) {
-      console.log('[bootstrap] creating swagger document');
+      Logger.log('[bootstrap] creating swagger document');
     }
     try {
       const document = SwaggerModule.createDocument(app, swaggerConfig);
       if (SHOULD_LOG_INIT_DEBUG) {
-        console.log('[bootstrap] swagger document created');
+        Logger.log('[bootstrap] swagger document created');
       }
       SwaggerModule.setup('docs', app, document);
       swaggerReady = true;
@@ -202,20 +203,20 @@ async function bootstrap() {
         'swagger bootstrap skipped because document generation failed',
       );
       if (SHOULD_LOG_INIT_DEBUG) {
-        console.log('[bootstrap] swagger document failed, continue without /docs');
+        Logger.log('[bootstrap] swagger document failed, continue without /docs');
       }
     }
   } else if (SHOULD_LOG_INIT_DEBUG) {
-    console.log('[bootstrap] swagger disabled by DISABLE_SWAGGER=1');
+    Logger.log('[bootstrap] swagger disabled by DISABLE_SWAGGER=1');
   }
 
   const port = Number(process.env.API_PORT ?? 3001);
   if (SHOULD_LOG_INIT_DEBUG) {
-    console.log(`[bootstrap] listening on ${port}`);
+    Logger.log(`[bootstrap] listening on ${port}`);
   }
   await app.listen(port);
   if (SHOULD_LOG_INIT_DEBUG) {
-    console.log('[bootstrap] listen completed');
+    Logger.log('[bootstrap] listen completed');
   }
   logger.info({ port, allowedOrigins }, 'm5-api started');
   logger.info(

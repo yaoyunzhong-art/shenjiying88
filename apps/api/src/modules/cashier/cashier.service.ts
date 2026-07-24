@@ -203,7 +203,7 @@ export class CashierService {
     }
 
     if (SHOULD_LOG_INIT_DEBUG) {
-      console.log(`[CashierSeed] Loaded ${seedMembers.length} members (NODE_ENV=${process.env.NODE_ENV ?? 'undefined'})`)
+    if (process.env.NODE_ENV !== "production") process.stderr.write(`[CashierSeed] Loaded ${seedMembers.length} members\n`)
     }
   }
 
