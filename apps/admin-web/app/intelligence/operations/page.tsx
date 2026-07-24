@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { AdminPermissionGate } from '../components/admin-permission-gate'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface ChoiceOption {
   id: string; label: string; description: string; pros: string[]

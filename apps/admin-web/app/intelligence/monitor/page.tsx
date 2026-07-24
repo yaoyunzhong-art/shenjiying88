@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { AdminPermissionGate } from '../components/admin-permission-gate'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface Alert {
   id: string
