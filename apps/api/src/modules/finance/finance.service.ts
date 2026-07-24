@@ -389,6 +389,15 @@ export class FinanceService {
     return ledger
   }
 
+  async deleteLedgerResolved(
+    ledgerId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<{ success: boolean }> {
+    await this.getLedgerResolved(ledgerId, tenantContext)
+    ledgerStore.delete(ledgerId)
+    return { success: true }
+  }
+
   async getSettlementDetailResolved(
     settlementId: string,
     tenantContext: RequestTenantContext
