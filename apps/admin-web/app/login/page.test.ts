@@ -14,6 +14,7 @@ import assert from 'node:assert';
 interface LoginResult {
   token: string;
   role: string;
+  permissions: string[];
 }
 
 interface LoginFormData {
@@ -47,7 +48,11 @@ async function mockLoginApi(formData: LoginFormData): Promise<LoginResult> {
     throw new Error('用户名或密码错误，请检查后重试');
   }
 
-  return { token: 'mock-jwt-token', role: 'super_admin' };
+  return {
+    token: 'mock-jwt-token',
+    role: 'super_admin',
+    permissions: ['*', 'identity-access:write', 'user:write'],
+  };
 }
 
 // ---- Validate form data (page-level validation before submit) ----
@@ -103,10 +108,12 @@ describe('login-page: 正例 (positive cases)', () => {
   });
 
   describe('submit flow', () => {
-    it('correct credentials return token and role', async () => {
+    it('correct credentials return token role and permissions', async () => {
       const result = await mockLoginApi({ username: 'admin', password: 'admin123' });
       assert.strictEqual(result.token, 'mock-jwt-token');
       assert.strictEqual(result.role, 'super_admin');
+      assert.ok(Array.isArray(result.permissions));
+      assert.ok(result.permissions.includes('*'));
       assert.ok(result.token.length > 0);
     });
   });
@@ -243,5 +250,6 @@ describe('login-page: 边界 (boundary cases)', () => {
     assert.ok(result.token.length > 0);
     assert.ok(['super_admin', 'admin', 'user'].includes(result.role) === false || result.role === 'super_admin');
     assert.strictEqual(result.role, 'super_admin');
+    assert.ok(result.permissions.includes('identity-access:write'));
   });
 });

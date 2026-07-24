@@ -5,8 +5,18 @@
  * 角色视角：企业用户（SaaS 租户管理员）
  */
 
-import { describe, it, before } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
 
 // ===== 从 page.tsx 中提取的纯函数逻辑 =====
 
@@ -129,5 +139,10 @@ describe('[EnterpriseLoginPage] localStorage Token 存储合约', () => {
       'enterprise_refresh_token',
       'enterprise_user',
     ]);
+  });
+
+  it('登录成功后通过 storeEnterpriseSession 统一写入用户缓存', () => {
+    const source = readSource();
+    assert.ok(source.includes('storeEnterpriseSession'), '应通过 storeEnterpriseSession 写入缓存');
   });
 });

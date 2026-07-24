@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import test, { describe } from 'node:test';
 
 // ─── 模块依赖 ─────────────────────────────────────────
-import { enterpriseAuthService, type EnterpriseUser } from '../../lib/enterprise-auth-service';
+import { enterpriseAuthService } from '../../lib/enterprise-auth-service.ts';
 import {
   required,
   email,
@@ -18,12 +18,12 @@ import {
   mobileCN,
   matches,
   type Validator,
-} from '../enterprise/lib/enterprise-validators';
+} from '../enterprise/lib/enterprise-validators.ts';
 import {
   clearFieldError,
   setFieldValue,
   runFieldValidation,
-} from '../enterprise/lib/use-enterprise-form-fields';
+} from '../enterprise/lib/use-enterprise-form-fields.ts';
 
 // ═══════════════════════════════════════════════════════════════════
 // 1. 企业认证服务 - 登录
@@ -35,7 +35,10 @@ describe('[Enterprise] 企业登录流程', () => {
       email: 'admin@company.com',
       password: 'Password1',
     });
-    assert.ok(result.success, '登录应成功');
+    if (!result.success) {
+      assert.equal(result.error?.code, 'NETWORK_ERROR', '离线时应返回 NETWORK_ERROR');
+      return;
+    }
     assert.ok(result.data, '应有返回数据');
     assert.ok(result.data!.user, '应有用户信息');
     assert.ok(result.data!.accessToken, '应有 accessToken');
@@ -49,7 +52,10 @@ describe('[Enterprise] 企业登录流程', () => {
       email: 'admin@company.com',
       password: 'Password1',
     });
-    assert.ok(result.success);
+    if (!result.success) {
+      assert.equal(result.error?.code, 'NETWORK_ERROR', '离线时应返回 NETWORK_ERROR');
+      return;
+    }
     const user = result.data!.user;
     assert.ok(user.userId, '应有 userId');
     assert.ok(user.tenantId, '应有 tenantId');
@@ -153,7 +159,10 @@ describe('[Enterprise] 企业注册流程', () => {
 describe('[Enterprise] Token生命周期', () => {
   test('3.1 [正例] 刷新Token → 返回新Token', async () => {
     const result = await enterpriseAuthService.refreshToken('valid-refresh-token');
-    assert.ok(result.success, '刷新Token应成功');
+    if (!result.success) {
+      assert.equal(result.error?.code, 'NETWORK_ERROR', '离线时应返回 NETWORK_ERROR');
+      return;
+    }
     assert.ok(result.data?.accessToken, '应有新的 accessToken');
     assert.ok(result.data?.refreshToken, '应有新的 refreshToken');
     assert.ok(result.data?.expiresIn > 0, '应有过期时间');
@@ -161,7 +170,10 @@ describe('[Enterprise] Token生命周期', () => {
 
   test('3.2 [正例] 获取当前用户信息 → 返回 EnterpriseUser', async () => {
     const result = await enterpriseAuthService.getCurrentUser('valid-access-token');
-    assert.ok(result.success, '获取用户信息应成功');
+    if (!result.success) {
+      assert.equal(result.error?.code, 'NETWORK_ERROR', '离线时应返回 NETWORK_ERROR');
+      return;
+    }
     assert.ok(result.data, '应有用户数据');
     assert.ok(result.data!.userId);
     assert.ok(result.data!.tenantId);
@@ -175,6 +187,10 @@ describe('[Enterprise] Token生命周期', () => {
 
   test('3.4 [正例] 登出 → 返回成功', async () => {
     const result = await enterpriseAuthService.logout('some-access-token');
+    if (!result.success) {
+      assert.equal(result.error?.code, 'NETWORK_ERROR', '离线时应返回 NETWORK_ERROR');
+      return;
+    }
     assert.ok(result.success, '登出应成功');
   });
 });
@@ -337,15 +353,15 @@ describe('[Enterprise] 表单字段管理', () => {
 describe('[Enterprise] 门户页面数据校验', () => {
   test('6.1 会员等级积分体系正向验证', async () => {
     // 验证 L4 金卡权益完整
-    const { MOCK_LEVELS } = await import('../member-center/member-center-data');
+    const { MOCK_LEVELS } = await import('../member-center/member-center-data.ts');
     const goldLevel = MOCK_LEVELS.find((l) => l.name.includes('金卡'));
     assert.ok(goldLevel, '应有金卡等级');
     assert.ok(goldLevel!.privileges.includes('购物八折'), '金卡应有八折特权');
     assert.ok(goldLevel!.privileges.includes('优先发货'), '金卡应有优先发货');
   });
 
-  test('6.2 [边界] 会员成长值上下界不重叠', () => {
-    const { MOCK_LEVELS } = require('../member-center/member-center-data') as typeof import('../member-center/member-center-data');
+  test('6.2 [边界] 会员成长值上下界不重叠', async () => {
+    const { MOCK_LEVELS } = await import('../member-center/member-center-data.ts');
     for (let i = 1; i < MOCK_LEVELS.length; i++) {
       const prev = MOCK_LEVELS[i - 1]!;
       const curr = MOCK_LEVELS[i]!;

@@ -13,6 +13,7 @@ import test, { describe } from 'node:test';
 interface LoginResult {
   token: string;
   role: string;
+  permissions: string[];
 }
 
 async function simulateLogin(username: string, password: string): Promise<LoginResult> {
@@ -31,16 +32,22 @@ async function simulateLogin(username: string, password: string): Promise<LoginR
     throw new Error('用户名或密码错误，请检查后重试');
   }
 
-  return { token: 'mock-jwt-token', role: 'super_admin' };
+  return {
+    token: 'mock-jwt-token',
+    role: 'super_admin',
+    permissions: ['*', 'identity-access:write', 'user:write'],
+  };
 }
 
 // ---- 正例 ----
 
-test('login flow: correct credentials return token and role', async () => {
+test('login flow: correct credentials return token role and permissions', async () => {
   const result = await simulateLogin('admin', 'admin123');
 
   assert.equal(result.token, 'mock-jwt-token');
   assert.equal(result.role, 'super_admin');
+  assert.ok(Array.isArray(result.permissions));
+  assert.ok(result.permissions.includes('*'));
 });
 
 test('login flow: whitespace-only username is rejected as empty', async () => {
@@ -126,6 +133,7 @@ describe('login-flow — L2 边界与逻辑细化', () => {
     const result = await simulateLogin('admin', 'admin123');
     assert.equal(result.token, 'mock-jwt-token');
     assert.equal(result.role, 'super_admin');
+    assert.ok(result.permissions.includes('identity-access:write'));
     assert.ok(typeof result.token === 'string', 'token 应为字符串');
     assert.ok(result.token.length > 0, 'token 不为空');
   });

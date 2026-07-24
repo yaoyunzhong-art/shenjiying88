@@ -6,13 +6,27 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PAGE_SOURCE = resolve(__dirname, 'page.tsx');
+const AUTH_SERVICE_SOURCE = resolve(__dirname, '../../../lib/enterprise-auth-service.ts');
+
+function readPageSource(): string {
+  return readFileSync(PAGE_SOURCE, 'utf-8');
+}
+
+function readAuthServiceSource(): string {
+  return readFileSync(AUTH_SERVICE_SOURCE, 'utf-8');
+}
 
 // 导出模块就绪检查
 describe('EnterpriseConsolePage module', () => {
-  it('should export a default function component', async () => {
-    const mod = await import('./page');
-    assert.ok(mod.default !== undefined, 'page module should export default');
-    assert.equal(typeof mod.default, 'function', 'default export should be a function (component)');
+  it('should export a default function component', () => {
+    const source = readPageSource();
+    assert.ok(source.includes('export default function EnterpriseConsolePage'), 'page module should export default component');
   });
 });
 
@@ -97,33 +111,33 @@ describe('EnterpriseConsole stats cards', () => {
 
 // enterprise-auth-service 类型与接口检查
 describe('Enterprise user auth service', () => {
-  it('should export EnterpriseUser type (≈) via module load', async () => {
-    const auth = await import('../../../lib/enterprise-auth-service');
-    assert.ok(auth !== undefined, 'auth module should exist');
-    assert.ok(typeof auth === 'object', 'auth module should export an object');
+  it('should define EnterpriseUser contract in auth service source', () => {
+    const source = readAuthServiceSource();
+    assert.ok(source.includes('export interface EnterpriseUser'), 'auth service should declare EnterpriseUser');
   });
 
-  it('should export key functions if any', async () => {
-    const auth = await import('../../../lib/enterprise-auth-service');
-    // Common auth exports (may exist)
-    const expectedExports = ['EnterpriseUser'];
-    for (const exp of expectedExports) {
-      // Module may or may not re-export type — that's fine
-      if (exp in auth) {
-        assert.ok(true, `export ${exp} found`);
-      }
-    }
+  it('should keep EnterpriseUser permissions field in auth service contract', () => {
+    const source = readAuthServiceSource();
+    assert.ok(source.includes('permissions: string[];'), 'EnterpriseUser should include permissions array');
   });
 });
 
 describe('Enterprise console permissions', () => {
-  it('should render permissions section in account info', async () => {
-    // 直接读取源文件（RSC 无法 .toString()）
-    const fs = await import('fs/promises');
-    const source = await fs.readFile('./app/enterprise/console/page.tsx', 'utf-8');
+  it('should render permissions section in account info', () => {
+    const source = readPageSource();
     assert.ok(source.includes('权限'), 'page should render permissions label');
     assert.ok(source.includes('user?.permissions?.length'), 'page should read EnterpriseUser.permissions');
     assert.ok(source.includes('暂无权限'), 'page should handle empty permissions');
+  });
+
+  it('should restore cached session and refresh user profile', () => {
+    const source = readPageSource();
+    assert.ok(source.includes('getEnterpriseAccessToken'), 'page should read enterprise access token');
+    assert.ok(source.includes('getCachedEnterpriseUser'), 'page should read cached enterprise user');
+    assert.ok(source.includes('enterpriseAuthService.getCurrentUser(token)'), 'page should refresh current user from /auth/me');
+    assert.ok(source.includes('normalizeEnterpriseUser(result.data)'), 'page should normalize refreshed user payload');
+    assert.ok(source.includes('storeEnterpriseSession'), 'page should rewrite normalized session');
+    assert.ok(source.includes('clearEnterpriseSession()'), 'page should clear broken session before redirect');
   });
 });
 

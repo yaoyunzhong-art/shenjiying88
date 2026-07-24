@@ -4,6 +4,16 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
 
 // ---- 类型对齐 announcement-service.ts ----
 
@@ -177,6 +187,31 @@ describe('AnnouncementDetailPage (tob-web) 公告详情页', () => {
       const res = await announcementService.updateStatus('ann_004', 'published');
       assert.equal(res.success, true);
       if (res.data) assert.equal(res.data.status, 'published');
+    });
+  });
+
+  describe('权限门禁', () => {
+    it('17. 首屏需要 announcement:read 权限', () => {
+      const src = readSource();
+      assert.ok(src.includes('getEnterpriseAccessToken'), '缺少 token helper 检查');
+      assert.ok(src.includes('getCachedEnterpriseUser'), '缺少 cached user 检查');
+      assert.ok(src.includes("hasEnterprisePermission(cachedUser, 'announcement:read')"), '缺少 announcement:read 权限校验');
+      assert.ok(src.includes('/enterprise/console?denied=announcement.read'), '缺少 announcement.read 拒绝跳转');
+    });
+
+    it('18. 可管理权限由 update 或 publish/archive 决定', () => {
+      const src = readSource();
+      assert.ok(src.includes("hasEnterprisePermission(cachedUser, 'announcement:update')"), '缺少 announcement:update 权限校验');
+      assert.ok(src.includes("hasEnterprisePermission(cachedUser, 'announcement:publish')"), '缺少 announcement:publish 权限校验');
+      assert.ok(src.includes("hasEnterprisePermission(cachedUser, 'announcement:archive')"), '缺少 announcement:archive 权限校验');
+    });
+
+    it('19. 状态流转前再次校验所需权限', () => {
+      const src = readSource();
+      assert.ok(src.includes("newStatus === 'published' ? 'announcement:publish' : 'announcement:archive'"), '缺少状态到权限映射');
+      assert.ok(src.includes("!hasEnterprisePermission(currentUser, requiredPermission)"), '缺少 requiredPermission 校验');
+      assert.ok(src.includes("!hasEnterprisePermission(currentUser, 'announcement:update')"), '缺少 update 兜底权限');
+      assert.ok(src.includes('缺少 ${requiredPermission} 权限'), '缺少无权限错误提示');
     });
   });
 });

@@ -92,7 +92,8 @@ describe('NewAnnouncementPage (tob-web) 发布公告表单', () => {
   describe('防御', () => {
     it('12. 未登录跳转', () => {
       const src = readSource();
-      assert.ok(src.includes('enterprise_access_token'), '缺少 token 检查');
+      assert.ok(src.includes('getEnterpriseAccessToken'), '缺少 token helper 检查');
+      assert.ok(src.includes('getCachedEnterpriseUser'), '缺少 cached user 检查');
       assert.ok(src.includes('router.push'), '缺少 router.push');
     });
 
@@ -112,6 +113,18 @@ describe('NewAnnouncementPage (tob-web) 发布公告表单', () => {
       const src = readSource();
       assert.ok(src.includes('handleChange'), '缺少 handleChange');
       assert.ok(src.includes('field: keyof'), '缺少字段类型');
+    });
+
+    it('16. 首屏缺少 announcement:create 权限时跳转控制台', () => {
+      const src = readSource();
+      assert.ok(src.includes("hasEnterprisePermission(cachedUser, 'announcement:create')"), '缺少 announcement:create 首屏权限校验');
+      assert.ok(src.includes('/enterprise/console?denied=announcement.create'), '缺少 announcement.create 拒绝跳转');
+    });
+
+    it('17. 提交前再次校验 announcement:create 权限', () => {
+      const src = readSource();
+      assert.ok(src.includes("hasEnterprisePermission(currentUser, 'announcement:create')"), '缺少提交前权限复核');
+      assert.ok(src.includes('缺少 announcement:create 权限'), '缺少提交前无权限错误提示');
     });
   });
 });

@@ -22,6 +22,7 @@ interface Policy {
   type: PolicyType;
   description: string;
   boundRoles: string[];
+  boundPermissions: string[];
   status: PolicyStatus;
   createdAt: string;
   updatedAt: string;
@@ -39,14 +40,14 @@ const TYPES: PolicyType[] = ['OAuth', 'SAML', 'JWT', '自定义'];
 // ============================================================
 
 const DEFAULT_POLICIES: Policy[] = [
-  { id: 'pol-001', name: '微信OAuth登录', type: 'OAuth', description: '微信开放平台OAuth2.0登录认证', boundRoles: ['customer'], status: 'active', createdAt: '2026-01-15', updatedAt: '2026-06-10' },
-  { id: 'pol-002', name: '企业SAML SSO', type: 'SAML', description: '企业内部SAML 2.0单点登录', boundRoles: ['employee', 'admin'], status: 'active', createdAt: '2026-02-01', updatedAt: '2026-06-08' },
-  { id: 'pol-003', name: '手机验证码登录', type: '自定义', description: '手机号+验证码快速登录', boundRoles: ['customer', 'employee'], status: 'active', createdAt: '2026-03-10', updatedAt: '2026-05-20' },
-  { id: 'pol-004', name: 'JWT Token鉴权', type: 'JWT', description: 'JSON Web Token 接口鉴权', boundRoles: ['admin'], status: 'active', createdAt: '2026-01-20', updatedAt: '2026-06-15' },
-  { id: 'pol-005', name: '支付宝OAuth登录', type: 'OAuth', description: '支付宝开放平台OAuth2.0登录', boundRoles: ['customer'], status: 'inactive', createdAt: '2026-04-05', updatedAt: '2026-04-05' },
-  { id: 'pol-006', name: 'LDAP目录认证', type: '自定义', description: 'LDAP企业目录服务统一认证', boundRoles: ['employee', 'admin'], status: 'inactive', createdAt: '2026-05-01', updatedAt: '2026-05-01' },
-  { id: 'pol-007', name: '钉钉扫码登录', type: 'OAuth', description: '钉钉开放平台OAuth2.0扫码登录', boundRoles: ['employee'], status: 'active', createdAt: '2026-03-20', updatedAt: '2026-06-12' },
-  { id: 'pol-008', name: 'API Key认证', type: '自定义', description: '第三方应用API Key签名认证', boundRoles: ['partner'], status: 'inactive', createdAt: '2026-06-01', updatedAt: '2026-06-01' },
+  { id: 'pol-001', name: '微信OAuth登录', type: 'OAuth', description: '微信开放平台OAuth2.0登录认证', boundRoles: ['customer'], boundPermissions: ['identity:wechat:login'], status: 'active', createdAt: '2026-01-15', updatedAt: '2026-06-10' },
+  { id: 'pol-002', name: '企业SAML SSO', type: 'SAML', description: '企业内部SAML 2.0单点登录', boundRoles: ['employee', 'admin'], boundPermissions: ['identity:saml:login', 'identity:session:write'], status: 'active', createdAt: '2026-02-01', updatedAt: '2026-06-08' },
+  { id: 'pol-003', name: '手机验证码登录', type: '自定义', description: '手机号+验证码快速登录', boundRoles: ['customer', 'employee'], boundPermissions: ['identity:sms:login'], status: 'active', createdAt: '2026-03-10', updatedAt: '2026-05-20' },
+  { id: 'pol-004', name: 'JWT Token鉴权', type: 'JWT', description: 'JSON Web Token 接口鉴权', boundRoles: ['admin'], boundPermissions: ['identity:token:issue', 'identity:token:verify'], status: 'active', createdAt: '2026-01-20', updatedAt: '2026-06-15' },
+  { id: 'pol-005', name: '支付宝OAuth登录', type: 'OAuth', description: '支付宝开放平台OAuth2.0登录', boundRoles: ['customer'], boundPermissions: ['identity:alipay:login'], status: 'inactive', createdAt: '2026-04-05', updatedAt: '2026-04-05' },
+  { id: 'pol-006', name: 'LDAP目录认证', type: '自定义', description: 'LDAP企业目录服务统一认证', boundRoles: ['employee', 'admin'], boundPermissions: ['identity:ldap:bind', 'identity:profile:read'], status: 'inactive', createdAt: '2026-05-01', updatedAt: '2026-05-01' },
+  { id: 'pol-007', name: '钉钉扫码登录', type: 'OAuth', description: '钉钉开放平台OAuth2.0扫码登录', boundRoles: ['employee'], boundPermissions: ['identity:dingtalk:login'], status: 'active', createdAt: '2026-03-20', updatedAt: '2026-06-12' },
+  { id: 'pol-008', name: 'API Key认证', type: '自定义', description: '第三方应用API Key签名认证', boundRoles: ['partner'], boundPermissions: ['identity:apikey:verify'], status: 'inactive', createdAt: '2026-06-01', updatedAt: '2026-06-01' },
 ];
 
 // ============================================================
@@ -54,7 +55,7 @@ const DEFAULT_POLICIES: Policy[] = [
 // ============================================================
 
 const getEmptyPolicy = (): Omit<Policy, 'id'> => ({
-  name: '', type: 'OAuth', description: '', boundRoles: [], status: 'active',
+  name: '', type: 'OAuth', description: '', boundRoles: [], boundPermissions: [], status: 'active',
   createdAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString().slice(0, 10),
 });
@@ -153,6 +154,10 @@ const roleTagStyle: React.CSSProperties = {
   fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
   color: '#94a3b8', background: 'rgba(148,163,184,0.12)', marginRight: 4,
 };
+const permissionTagStyle: React.CSSProperties = {
+  fontSize: 11, display: 'inline-block', padding: '2px 8px', borderRadius: 6,
+  color: '#86efac', background: 'rgba(34,197,94,0.12)', marginRight: 4, marginBottom: 4,
+};
 
 const tabStyle = (active: boolean): React.CSSProperties => ({
   padding: '6px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
@@ -178,6 +183,7 @@ export default function IdentityAccessPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Omit<Policy, 'id'>>(getEmptyPolicy());
   const [rolesInput, setRolesInput] = useState('');
+  const [permissionsInput, setPermissionsInput] = useState('');
 
   // ---- 派生 ----
   const stats = useMemo(() => ({
@@ -199,7 +205,8 @@ export default function IdentityAccessPage() {
         i.name.toLowerCase().includes(q) ||
         i.description.toLowerCase().includes(q) ||
         i.type.toLowerCase().includes(q) ||
-        i.boundRoles.some(rr => rr.toLowerCase().includes(q))
+        i.boundRoles.some(rr => rr.toLowerCase().includes(q)) ||
+        i.boundPermissions.some(permission => permission.toLowerCase().includes(q))
       );
     }
     return r;
@@ -218,12 +225,14 @@ export default function IdentityAccessPage() {
     setEditingId(null);
     setFormData(getEmptyPolicy());
     setRolesInput('');
+    setPermissionsInput('');
     setShowModal(true);
   }, []);
   const openEdit = useCallback((item: Policy) => {
     setEditingId(item.id);
-    setFormData({ name: item.name, type: item.type, description: item.description, boundRoles: item.boundRoles, status: item.status, createdAt: item.createdAt, updatedAt: item.updatedAt });
+    setFormData({ name: item.name, type: item.type, description: item.description, boundRoles: item.boundRoles, boundPermissions: item.boundPermissions, status: item.status, createdAt: item.createdAt, updatedAt: item.updatedAt });
     setRolesInput(item.boundRoles.join(', '));
+    setPermissionsInput(item.boundPermissions.join(', '));
     setShowModal(true);
   }, []);
   const closeModal = useCallback(() => { setShowModal(false); setEditingId(null); }, []);
@@ -232,7 +241,8 @@ export default function IdentityAccessPage() {
   const handleSave = useCallback(() => {
     if (!formData.name) return;
     const roles = rolesInput.split(',').map(r => r.trim()).filter(Boolean);
-    const data = { ...formData, boundRoles: roles };
+    const permissions = permissionsInput.split(',').map(permission => permission.trim()).filter(Boolean);
+    const data = { ...formData, boundRoles: roles, boundPermissions: permissions };
     if (editingId) {
       setPolicies(prev => prev.map(p => p.id === editingId ? { ...p, ...data } : p));
     } else {
@@ -240,7 +250,7 @@ export default function IdentityAccessPage() {
       setPolicies(prev => [...prev, { id: `pol-${String(maxId + 1).padStart(3, '0')}`, ...data }]);
     }
     closeModal();
-  }, [formData, rolesInput, editingId, policies, closeModal]);
+  }, [formData, rolesInput, permissionsInput, editingId, policies, closeModal]);
 
   const handleDelete = useCallback((id: string) => {
     if (window.confirm('确定要删除该策略吗？')) setPolicies(prev => prev.filter(p => p.id !== id));
@@ -306,6 +316,7 @@ export default function IdentityAccessPage() {
               <th style={S.th}>类型</th>
               <th style={S.th}>描述</th>
               <th style={S.th}>绑定角色</th>
+              <th style={S.th}>绑定权限</th>
               <th style={S.th}>状态</th>
               <th style={S.th}>更新时间</th>
               <th style={S.th}>操作</th>
@@ -318,6 +329,11 @@ export default function IdentityAccessPage() {
                 <td style={S.td}><span style={typeTagStyle(p.type)}>{p.type}</span></td>
                 <td style={{ ...S.td, fontSize: 12, color: '#94a3b8', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</td>
                 <td style={S.td}>{p.boundRoles.map(r => <span key={r} style={roleTagStyle}>{r}</span>)}</td>
+                <td style={S.td}>
+                  {p.boundPermissions.length > 0 ? p.boundPermissions.map(permission => (
+                    <span key={permission} style={permissionTagStyle}>{permission}</span>
+                  )) : <span style={{ color: '#64748b' }}>暂无权限</span>}
+                </td>
                 <td style={S.td}><span style={statusTagStyle(p.status)}>● {STATUS_LABELS[p.status]}</span></td>
                 <td style={{ ...S.td, fontSize: 12 }}>{p.updatedAt}</td>
                 <td style={S.actionCell}>
@@ -379,6 +395,11 @@ export default function IdentityAccessPage() {
             <div style={S.formField}>
               <label style={S.formLabel}>绑定角色（逗号分隔）</label>
               <input style={S.formInput} value={rolesInput} onChange={e => setRolesInput(e.target.value)} placeholder="例如: admin, employee, customer" />
+            </div>
+
+            <div style={S.formField}>
+              <label style={S.formLabel}>绑定权限（逗号分隔）</label>
+              <input style={S.formInput} value={permissionsInput} onChange={e => setPermissionsInput(e.target.value)} placeholder="例如: identity:login, identity:session:write" />
             </div>
 
             <div style={S.formBtnRow}>

@@ -3,6 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell } from '@m5/ui';
+import {
+  getCachedEnterpriseUser,
+  getEnterpriseAccessToken,
+  hasEnterprisePermission,
+} from '../../enterprise/lib/enterprise-session';
 
 interface FormData {
   title: string;
@@ -33,9 +38,14 @@ export default function NewAnnouncementPage() {
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('enterprise_access_token');
-    if (!token) {
+    const token = getEnterpriseAccessToken();
+    const cachedUser = getCachedEnterpriseUser();
+    if (!token || !cachedUser) {
       router.push('/enterprise/login');
+      return;
+    }
+    if (!hasEnterprisePermission(cachedUser, 'announcement:create')) {
+      router.push('/enterprise/console?denied=announcement.create');
     }
   }, [router]);
 
@@ -63,6 +73,11 @@ export default function NewAnnouncementPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const currentUser = getCachedEnterpriseUser();
+    if (!hasEnterprisePermission(currentUser, 'announcement:create')) {
+      setSubmitError('缺少 announcement:create 权限');
+      return;
+    }
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);

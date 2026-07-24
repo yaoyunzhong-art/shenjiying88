@@ -10,6 +10,11 @@ import {
   type AnnouncementStatus,
   type AnnouncementCategory,
 } from '../../../lib/announcement-service';
+import {
+  getCachedEnterpriseUser,
+  getEnterpriseAccessToken,
+  hasEnterprisePermission,
+} from '../../enterprise/lib/enterprise-session';
 
 const CATEGORY_LABELS: Record<AnnouncementCategory, string> = {
   system: '系统',
@@ -48,13 +53,24 @@ export default function AnnouncementDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [canManageAnnouncement, setCanManageAnnouncement] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('enterprise_access_token');
-    if (!token) {
+    const token = getEnterpriseAccessToken();
+    const cachedUser = getCachedEnterpriseUser();
+    if (!token || !cachedUser) {
       router.push('/enterprise/login');
       return;
     }
+    if (!hasEnterprisePermission(cachedUser, 'announcement:read')) {
+      router.push('/enterprise/console?denied=announcement.read');
+      return;
+    }
+    setCanManageAnnouncement(
+      hasEnterprisePermission(cachedUser, 'announcement:update') ||
+        hasEnterprisePermission(cachedUser, 'announcement:publish') ||
+        hasEnterprisePermission(cachedUser, 'announcement:archive'),
+    );
     fetchAnnouncement();
   }, [router, announcementId]);
 
@@ -76,6 +92,15 @@ export default function AnnouncementDetailPage() {
   }
 
   async function handleStatusTransition(newStatus: AnnouncementStatus) {
+    const currentUser = getCachedEnterpriseUser();
+    const requiredPermission = newStatus === 'published' ? 'announcement:publish' : 'announcement:archive';
+    if (
+      !hasEnterprisePermission(currentUser, requiredPermission) &&
+      !hasEnterprisePermission(currentUser, 'announcement:update')
+    ) {
+      setError(`缺少 ${requiredPermission} 权限`);
+      return;
+    }
     setActionLoading(true);
     setError('');
     try {
@@ -167,7 +192,7 @@ export default function AnnouncementDetailPage() {
           >
             返回列表
           </Link>
-          {nextStatuses.map((action) => (
+          {canManageAnnouncement && nextStatuses.map((action) => (
             <button
               key={action.status}
               onClick={() => handleStatusTransition(action.status)}

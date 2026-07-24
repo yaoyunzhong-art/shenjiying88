@@ -211,9 +211,9 @@ describe('IdentityAccessPage — 页面结构', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Identity Access — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
+  it('是客户端组件', () => assert.ok(SRC.includes("'use client'")));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
+  it('包含本地状态与筛选逻辑', () => assert.ok(SRC.includes('useState') && SRC.includes('useMemo')));
   it('包含数组数据', () => assert.ok(SRC.includes('[') || SRC.includes('...')));
   it('包含条件判断', () => assert.ok(SRC.includes('if')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
@@ -221,4 +221,6 @@ describe('Identity Access — hooks验证', () => {
   it('包含字符串处理', () => assert.ok(true));
   it('包含默认导出', () => assert.ok(SRC.includes('export default')));
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('策略契约包含 boundPermissions', () => assert.ok(SRC.includes('boundPermissions')));
+  it('编辑表单包含 permissionsInput', () => assert.ok(SRC.includes('permissionsInput')));
 });

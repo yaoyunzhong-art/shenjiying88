@@ -15,16 +15,16 @@ const CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'users-client.tsx')
 // 导入客户端组件用于渲染测试
 import UsersClient from './users-client';
 
-describe('users — 服务端 (正例+反例)', () => {
-  it('async 渲染', () => assert.ok(SRC.includes('async function UsersPage')));
-  it('PageShell 布局', () => assert.ok(SRC.includes('<PageShell')));
-  it('Suspense 加载态', () => assert.ok(SRC.includes('<Suspense')));
-  it('ErrorBoundary 容错', () => assert.ok(SRC.includes('<ErrorBoundary')));
-  it('导入客户端组件', () => assert.ok(SRC.includes('users-client')));
-  it('dynamic = force-dynamic', () => assert.ok(SRC.includes("export const dynamic = 'force-dynamic'")));
-  it('revalidate = 0', () => assert.ok(SRC.includes('export const revalidate = 0')));
-  it('LoadingSkeleton 卡片变体', () => assert.ok(SRC.includes('variant="card"')));
-  it('服务端不含 use client (反例)', () => assert.ok(!SRC.includes("'use client'")));
+describe('users/page.tsx — 页面源码契约', () => {
+  it('页面为客户端组件', () => assert.ok(SRC.includes("'use client'")));
+  it('导出默认 UsersPage 组件', () => assert.ok(SRC.includes('export default function UsersPage')));
+  it('PageShell 布局存在', () => assert.ok(SRC.includes('<PageShell')));
+  it('标题包含权限配置语义', () => assert.ok(SRC.includes('权限配置')));
+  it('用户契约包含 permissions 字段', () => assert.ok(SRC.includes('permissions: string[]')));
+  it('搜索逻辑纳入 permissions', () => assert.ok(SRC.includes("u.permissions.join(' ')")));
+  it('角色列展示权限摘要', () => assert.ok(SRC.includes("row.permissions.includes('*') ? '全部权限' : `权限 ${row.permissions.length} 项`")));
+  it('保留新建用户入口', () => assert.ok(SRC.includes('新建用户')));
+  it('保留导出列表入口', () => assert.ok(SRC.includes('导出列表')));
 });
 
 describe('users — 客户端组件结构 (正例)', () => {
@@ -40,6 +40,8 @@ describe('users — 客户端组件结构 (正例)', () => {
   it('StatCard 统计卡片导入', () => assert.ok(CLIENT_SRC.includes('StatCard')));
   it('Card 基础卡片导入', () => assert.ok(CLIENT_SRC.includes('Card,')));
   it('条件渲染逻辑存在', () => assert.ok(CLIENT_SRC.includes(' && ') || CLIENT_SRC.includes(' ? ')));
+  it('用户契约包含 permissions 字段', () => assert.ok(CLIENT_SRC.includes('permissions: string[]')));
+  it('搜索逻辑纳入 permissions', () => assert.ok(CLIENT_SRC.includes("u.permissions.join(' ')")));
 });
 
 describe('users — 角色统计条 StatCard (正例)', () => {
@@ -235,6 +237,7 @@ describe('users — DataTable 表格 (正例+反例+边界)', () => {
     const firstCells = container.querySelector('[data-testid="data-table"] tbody tr').querySelectorAll('td');
     assert.ok(firstCells[0].textContent.includes('张三'));
     assert.ok(firstCells[2].textContent.includes('超级管理员'));
+    assert.ok(firstCells[2].textContent.includes('全部权限'));
   });
 
   it('源文件定义 6 列 DataTableColumn', () => {

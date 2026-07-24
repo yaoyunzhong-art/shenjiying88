@@ -33,6 +33,7 @@ import { adminWebBootstrap } from '../bootstrap';
 interface LoginResult {
   token: string;
   role: string;
+  permissions: string[];
 }
 
 interface LoginHistoryEntry {
@@ -95,7 +96,17 @@ async function mockLoginApi(username: string, password: string): Promise<LoginRe
     throw new Error('用户名或密码错误，请检查后重试');
   }
 
-  return { token: 'mock-jwt-token', role: 'super_admin' };
+  return {
+    token: 'mock-jwt-token',
+    role: 'super_admin',
+    permissions: [
+      '*',
+      'identity-access:read',
+      'identity-access:write',
+      'user:read',
+      'user:write',
+    ],
+  };
 }
 
 // ==================== Mock 登录历史 ====================
@@ -202,6 +213,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginResult, setLoginResult] = useState<LoginResult | null>(null);
   const [loginHistory] = useState<LoginHistoryEntry[]>(MOCK_LOGIN_HISTORY);
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyOnlyFail, setHistoryOnlyFail] = useState(false);
@@ -238,9 +250,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setLoginError(null);
     setLoginSuccess(false);
+    setLoginResult(null);
 
     try {
-      await mockLoginApi(username, password);
+      const result = await mockLoginApi(username, password);
+      setLoginResult(result);
       setLoginSuccess(true);
     } catch (err) {
       setLoginSuccess(false);
@@ -323,7 +337,19 @@ export default function LoginPage() {
                 marginBottom: 16,
               }}
             >
-              ✅ 登录成功！正在跳转至工作台...
+              <div>✅ 登录成功！正在跳转至工作台...</div>
+              {loginResult && (
+                <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+                  <div>
+                    当前角色: <strong>{loginResult.role}</strong>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {(loginResult.permissions ?? []).map((permission) => (
+                      <StatusBadge key={permission} label={permission} variant="success" size="sm" />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

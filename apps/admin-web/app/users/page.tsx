@@ -17,6 +17,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
+  permissions: string[];
   status: UserStatus;
   store: string;
   lastLogin: string;
@@ -37,18 +38,18 @@ const STATUS_MAP: Record<UserStatus, { label: string; variant: 'success' | 'erro
 };
 
 const MOCK_USERS: User[] = [
-  { id: 'U001', name: '张明', email: 'zhangming@sportsant.net', role: 'super_admin', status: 'active', store: '总部', lastLogin: '2026-07-20 08:30', createdAt: '2024-01-01', phone: '13800001111', loginCount: 1286 },
-  { id: 'U002', name: '李芳', email: 'lifang@store-a.com', role: 'store_manager', status: 'active', store: '朝阳店', lastLogin: '2026-07-19 09:15', createdAt: '2024-03-15', phone: '13800002222', loginCount: 856 },
-  { id: 'U003', name: '王伟', email: 'wangwei@store-a.com', role: 'staff', status: 'active', store: '朝阳店', lastLogin: '2026-07-19 18:45', createdAt: '2024-06-01', phone: '13800003333', loginCount: 523 },
-  { id: 'U004', name: '赵敏', email: 'zhaomin@finance.com', role: 'finance', status: 'active', store: '总部', lastLogin: '2026-07-20 10:00', createdAt: '2024-05-20', phone: '13800004444', loginCount: 412 },
-  { id: 'U005', name: '孙磊', email: 'sunlei@market.com', role: 'marketing', status: 'active', store: '总部', lastLogin: '2026-07-19 16:20', createdAt: '2024-07-01', phone: '13800005555', loginCount: 367 },
-  { id: 'U006', name: '周婷', email: 'zhouting@store-a.com', role: 'staff', status: 'inactive', store: '朝阳店', lastLogin: '2026-06-30 12:00', createdAt: '2025-01-10', phone: '13800006666', loginCount: 189 },
-  { id: 'U007', name: '吴强', email: 'wuqiang@ops.com', role: 'ops', status: 'active', store: '总部', lastLogin: '2026-07-20 07:50', createdAt: '2024-09-01', phone: '13800007777', loginCount: 634 },
-  { id: 'U008', name: '郑浩', email: 'zhenghao@store-b.com', role: 'store_manager', status: 'suspended', store: '海淀店', lastLogin: '2026-07-10 14:30', createdAt: '2024-11-01', phone: '13800008888', loginCount: 278 },
-  { id: 'U009', name: '陈雪', email: 'chenxue@store-b.com', role: 'staff', status: 'active', store: '海淀店', lastLogin: '2026-07-19 14:10', createdAt: '2025-03-01', phone: '13800009999', loginCount: 145 },
-  { id: 'U010', name: '刘洋', email: 'liuyang@store-c.com', role: 'staff', status: 'active', store: '西单店', lastLogin: '2026-07-18 20:00', createdAt: '2025-02-15', phone: '13800001010', loginCount: 210 },
-  { id: 'U011', name: '杨华', email: 'yanghua@store-c.com', role: 'staff', status: 'active', store: '西单店', lastLogin: '2026-07-17 12:30', createdAt: '2025-04-01', phone: '13800001111', loginCount: 98 },
-  { id: 'U012', name: '马鹏', email: 'mapeng@store-d.com', role: 'store_manager', status: 'active', store: '望京店', lastLogin: '2026-07-18 09:00', createdAt: '2025-03-15', phone: '13800001212', loginCount: 312 },
+  { id: 'U001', name: '张明', email: 'zhangming@sportsant.net', role: 'super_admin', permissions: ['*', 'identity-access:write', 'user:write'], status: 'active', store: '总部', lastLogin: '2026-07-20 08:30', createdAt: '2024-01-01', phone: '13800001111', loginCount: 1286 },
+  { id: 'U002', name: '李芳', email: 'lifang@store-a.com', role: 'store_manager', permissions: ['store:read', 'staff:read', 'staff:write'], status: 'active', store: '朝阳店', lastLogin: '2026-07-19 09:15', createdAt: '2024-03-15', phone: '13800002222', loginCount: 856 },
+  { id: 'U003', name: '王伟', email: 'wangwei@store-a.com', role: 'staff', permissions: ['store:read', 'schedule:read'], status: 'active', store: '朝阳店', lastLogin: '2026-07-19 18:45', createdAt: '2024-06-01', phone: '13800003333', loginCount: 523 },
+  { id: 'U004', name: '赵敏', email: 'zhaomin@finance.com', role: 'finance', permissions: ['finance:read', 'finance:export'], status: 'active', store: '总部', lastLogin: '2026-07-20 10:00', createdAt: '2024-05-20', phone: '13800004444', loginCount: 412 },
+  { id: 'U005', name: '孙磊', email: 'sunlei@market.com', role: 'marketing', permissions: ['campaign:read', 'campaign:write'], status: 'active', store: '总部', lastLogin: '2026-07-19 16:20', createdAt: '2024-07-01', phone: '13800005555', loginCount: 367 },
+  { id: 'U006', name: '周婷', email: 'zhouting@store-a.com', role: 'staff', permissions: ['store:read'], status: 'inactive', store: '朝阳店', lastLogin: '2026-06-30 12:00', createdAt: '2025-01-10', phone: '13800006666', loginCount: 189 },
+  { id: 'U007', name: '吴强', email: 'wuqiang@ops.com', role: 'ops', permissions: ['monitor:read', 'alert:write'], status: 'active', store: '总部', lastLogin: '2026-07-20 07:50', createdAt: '2024-09-01', phone: '13800007777', loginCount: 634 },
+  { id: 'U008', name: '郑浩', email: 'zhenghao@store-b.com', role: 'store_manager', permissions: ['store:read', 'staff:read'], status: 'suspended', store: '海淀店', lastLogin: '2026-07-10 14:30', createdAt: '2024-11-01', phone: '13800008888', loginCount: 278 },
+  { id: 'U009', name: '陈雪', email: 'chenxue@store-b.com', role: 'staff', permissions: ['store:read', 'schedule:read'], status: 'active', store: '海淀店', lastLogin: '2026-07-19 14:10', createdAt: '2025-03-01', phone: '13800009999', loginCount: 145 },
+  { id: 'U010', name: '刘洋', email: 'liuyang@store-c.com', role: 'staff', permissions: ['store:read', 'inventory:read'], status: 'active', store: '西单店', lastLogin: '2026-07-18 20:00', createdAt: '2025-02-15', phone: '13800001010', loginCount: 210 },
+  { id: 'U011', name: '杨华', email: 'yanghua@store-c.com', role: 'staff', permissions: ['store:read'], status: 'active', store: '西单店', lastLogin: '2026-07-17 12:30', createdAt: '2025-04-01', phone: '13800001111', loginCount: 98 },
+  { id: 'U012', name: '马鹏', email: 'mapeng@store-d.com', role: 'store_manager', permissions: ['store:read', 'staff:read', 'inventory:read'], status: 'active', store: '望京店', lastLogin: '2026-07-18 09:00', createdAt: '2025-03-15', phone: '13800001212', loginCount: 312 },
 ];
 
 const ALL_ROLES: UserRole[] = ['super_admin', 'store_manager', 'staff', 'finance', 'marketing', 'ops'];
@@ -56,7 +57,20 @@ const ALL_ROLES: UserRole[] = ['super_admin', 'store_manager', 'staff', 'finance
 const columns: DataTableColumn<User>[] = [
   { key: 'name', title: '姓名', dataKey: 'name', sortable: true, render: (row) => <span style={{ color: '#93c5fd', fontWeight: 600 }}>{row.name}</span> },
   { key: 'email', title: '邮箱', dataKey: 'email', sortable: true },
-  { key: 'role', title: '角色', dataKey: 'role', sortable: true, render: (row) => <Tag>{ROLE_LABELS[row.role]}</Tag> },
+  {
+    key: 'role',
+    title: '角色',
+    dataKey: 'role',
+    sortable: true,
+    render: (row) => (
+      <div style={{ display: 'grid', gap: 4 }}>
+        <Tag>{ROLE_LABELS[row.role]}</Tag>
+        <span style={{ fontSize: 12, color: '#64748b' }}>
+          {row.permissions.includes('*') ? '全部权限' : `权限 ${row.permissions.length} 项`}
+        </span>
+      </div>
+    ),
+  },
   { key: 'status', title: '状态', dataKey: 'status', sortable: true, render: (row) => <StatusBadge label={STATUS_MAP[row.status].label} variant={STATUS_MAP[row.status].variant} size="sm" dot /> },
   { key: 'store', title: '门店', dataKey: 'store', sortable: true },
   { key: 'lastLogin', title: '最后登录', dataKey: 'lastLogin', sortable: true },
@@ -69,7 +83,7 @@ export default function UsersPage() {
   const [showNewUserModal, setShowNewUserModal] = useState(false);
 
   const filtered = useMemo(() => MOCK_USERS.filter((u) => {
-    const ms = !searchTerm || `${u.name} ${u.email} ${u.store}`.toLowerCase().includes(searchTerm.toLowerCase());
+    const ms = !searchTerm || `${u.name} ${u.email} ${u.store} ${u.permissions.join(' ')}`.toLowerCase().includes(searchTerm.toLowerCase());
     const mr = roleFilter === 'ALL' || u.role === roleFilter;
     return ms && mr;
   }), [searchTerm, roleFilter]);
