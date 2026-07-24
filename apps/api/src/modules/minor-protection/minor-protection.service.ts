@@ -15,6 +15,7 @@ import type {
   MinorAccessLog,
 } from './minor-protection.entity'
 import { MinorProtectionPrismaStore } from './minor-protection.prisma-store'
+import { AuditService } from '../audit/audit.service'
 import {
   DEFAULT_MINOR_CONFIG,
   createVerificationId,
@@ -44,7 +45,8 @@ export function clearAccessLogStore(): void { accessLogStore.clear() }
 @Injectable()
 export class MinorProtectionService {
   constructor(
-    @Optional() private readonly prismaStore?: MinorProtectionPrismaStore
+    @Optional() private readonly prismaStore?: MinorProtectionPrismaStore,
+    @Optional() private readonly auditService?: AuditService
   ) {}
   private readonly logger = new Logger(MinorProtectionService.name)
 
@@ -95,6 +97,15 @@ export class MinorProtectionService {
 
     // fire-and-forget persist to DB
     this.prismaStore?.persistVerification(record).catch(err => this.logger?.error?.("persist failed", err))
+
+    // audit: identity verification
+    this.auditService?.log({
+      eventType: record.isMinor ? 'compliance.consent_recorded' : 'compliance.consent_recorded',
+      actorId: input.memberId, actorType: 'user', tenantId: input.tenantId,
+      resourceType: 'minor_verification', resourceId: record.id,
+      riskLevel: record.isMinor ? 'medium' : 'low',
+      metadata: { method: input.method, isMinor: record.isMinor, hasGuardianConsent: !!record.guardianConsent },
+    }).catch(err => this.logger?.error?.('audit log failed', err))
     this.logger.log(`身份认证: ${input.memberId} -> ${isMinor ? '未成年人' : '成年人'} (${age}岁)`)
     return record
   }
