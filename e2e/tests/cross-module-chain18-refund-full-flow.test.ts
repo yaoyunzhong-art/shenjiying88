@@ -533,4 +533,232 @@ describe('链18: 退款全流程 + 极限场景 + 降序验证 (Mobile→API→D
       assert.ok(r.error?.includes('invalid_status'));
     }
   });
+
+  // ====== Phase 7: 新增增强 —— 空数据处理 / 并发场景 / 权限校验 / 边界条件 ======
+
+  /**
+   * @description 空数据场景: 初始空仓储(无订单/退款) → 查询退款列表返回空, 聚合统计全零
+   */
+  test('[空数据] 空仓储场景 → Storefront退款列表为空, 聚合统计全零', () => {
+    const savedOrders = new Map(orderStore);
+    const savedRefunds = [...refundStore];
+
+    orderStore.clear();
+    refundStore.length = 0;
+
+    const list = storefrontGetRefundList();
+    assert.equal(list.items.length, 0);
+    assert.equal(list.total, 0);
+    assert.equal(list.totalAmount, 0);
+
+    const stats = storefrontGetRefundStats();
+    assert.equal(stats.totalRefunds, 0);
+    assert.equal(stats.totalAmount, 0);
+    assert.deepEqual(stats.byStatus, {});
+    assert.deepEqual(stats.byReason, {});
+
+    // Mobile退款不存在的订单 → order_not_found
+    const r = mobileRequestRefund({ orderId: 'any_order', amount: 100, reason: '空数据测试', requestId: 'ref_empty_data' });
+    assert.equal(r.success, false);
+    assert.equal(r.error, 'order_not_found');
+
+    // 恢复
+    for (const [k, v] of savedOrders) orderStore.set(k, v);
+    refundStore.push(...savedRefunds);
+  });
+
+  /**
+   * @description 空数据场景: 订单存在但无任何退款记录 → 查询该订单退款列表返回空
+   */
+  test('[空数据] 有订单无退款 → 订单退款列表返回空', () => {
+    // 创建一个新订单, 无退款
+    const newOrder: OrderRecord = {
+      id: 'order_no_refund',
+      items: [{ productName: '新品测试', quantity: 1, unitPrice: 9999, subtotal: 9999 }],
+      totalAmount: 9999,
+      status: 'delivered',
+      paidAt: new Date().toISOString(),
+      source: 'mobile',
+    };
+    orderStore.set(newOrder.id, newOrder);
+
+    const list = storefrontGetRefundList(newOrder.id);
+    assert.equal(list.items.length, 0);
+    assert.equal(list.total, 0);
+    assert.equal(list.totalAmount, 0);
+  });
+
+  /**
+   * @description 并发场景: 并发发起多笔退款(同一订单) → 全部独立创建, requestId唯一
+   */
+  test('[并发] 同一订单并发发起5笔退款 → 各自独立创建, 不互相影响', () => {
+    const orderId = 'order_03';
+    const concurrency = 5;
+    const results: any[] = [];
+    for (let i = 0; i < concurrency; i++) {
+      results.push(mobileRequestRefund({
+        orderId,
+        amount: 1000 * (i + 1),
+        reason: `并发退款#${i}`,
+        requestId: `ref_concurrent_${i}_${Date.now()}`,
+      }));
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    assert.equal(successCount, concurrency, `并发${concurrency}笔退款应全部成功`);
+
+    // 所有退款金额合计不应超过订单总额
+    const orderRefunds = domainGetRefundHistory(orderId);
+    const concurrentRefunds = orderRefunds.filter(r => r.requestId.startsWith('ref_concurrent_'));
+    const totalAmount = concurrentRefunds.reduce((s, rf) => s + rf.amount, 0);
+    const orderTotal = orderStore.get(orderId)!.totalAmount;
+    assert.ok(totalAmount <= orderTotal, `并发退款总额${totalAmount}不应超过订单总额${orderTotal}`);
+  });
+
+  /**
+   * @description 并发场景: 并发退款+审批+处理 → 状态机不冲突
+   */
+  test('[并发] 并发退款+审批+处理 → 状态机交替正确', () => {
+    // 创建两个独立退款
+    const r1 = mobileRequestRefund({ orderId: 'order_02', amount: 2000, reason: '并发审批A', requestId: 'ref_parallel_approve_a' });
+    const r2 = mobileRequestRefund({ orderId: 'order_02', amount: 1500, reason: '并发审批B', requestId: 'ref_parallel_approve_b' });
+    assert.ok(r1.success);
+    assert.ok(r2.success);
+
+    const ref1 = r1.refund as RefundRecord;
+    const ref2 = r2.refund as RefundRecord;
+
+    // 交错审批+处理
+    const approve1 = apiApproveRefund(ref1.id);
+    assert.ok(approve1.success);
+    assert.equal(approve1.refund!.status, 'approved');
+
+    const approve2 = apiApproveRefund(ref2.id);
+    assert.ok(approve2.success);
+    assert.equal(approve2.refund!.status, 'approved');
+
+    const process1 = domainProcessRefund(ref1.id);
+    assert.ok(process1.success);
+    assert.equal(process1.refund!.status, 'completed');
+
+    const process2 = domainProcessRefund(ref2.id);
+    assert.ok(process2.success);
+    assert.equal(process2.refund!.status, 'completed');
+
+    // 时间线完整
+    const t1 = domainGetRefundTimeline(ref1.id);
+    assert.ok(t1.length >= 4, '退款A时间线完整');
+    const t2 = domainGetRefundTimeline(ref2.id);
+    assert.ok(t2.length >= 4, '退款B时间线完整');
+  });
+
+  /**
+   * @description 权限校验: 退款审批人信息正确记录 → processedBy可追溯
+   */
+  test('[权限] 退款审批人记录 → processedBy可追溯, 不同审批人区分', () => {
+    const r = mobileRequestRefund({ orderId: 'order_05', amount: 200, reason: '审批追溯', requestId: 'ref_audit_trail' });
+    assert.ok(r.success);
+    const refId = (r.refund as RefundRecord).id;
+
+    const approve1 = apiApproveRefund(refId, 'finance_admin_01');
+    assert.ok(approve1.success);
+    assert.equal(approve1.refund!.processedBy, 'finance_admin_01');
+
+    const storedRefund = refundStore.find(rf => rf.id === refId)!;
+    assert.equal(storedRefund.processedBy, 'finance_admin_01');
+    assert.ok(storedRefund.approvedAt, '审批时间应被记录');
+  });
+
+  /**
+   * @description 边界条件: 退款金额为小数(分) → 系统支持精确到分
+   */
+  test('[边界] 退款金额包含小数(分) → 精确存储, 统计正确', () => {
+    const r = mobileRequestRefund({ orderId: 'order_05', amount: 99.50, reason: '零头退款', requestId: 'ref_cents_amount' });
+    assert.ok(r.success);
+    assert.equal((r.refund as RefundRecord).amount, 99.50);
+
+    const list = storefrontGetRefundList('order_05');
+    const found = list.items.find(item => item.requestId === 'ref_cents_amount');
+    assert.ok(found);
+    assert.equal(found!.amount, 99.50);
+
+    // 累计验证
+    const stats = storefrontGetRefundStats();
+    const allAmt = refundStore.reduce((s, rf) => s + rf.amount, 0);
+    assert.equal(stats.totalAmount, allAmt, '含小数的总金额应精确');
+  });
+
+  /**
+   * @description 边界条件: 退款Reason为超长字符串(5000字符) → 完整存储不截断
+   */
+  test('[边界] 退款理由超长(5000字符) → 完整存储不截断', () => {
+    const longReason = 'Z'.repeat(5000);
+    const r = mobileRequestRefund({ orderId: 'order_03', amount: 500, reason: longReason, requestId: 'ref_long_reason' });
+    assert.ok(r.success);
+    assert.equal((r.refund as RefundRecord).reason.length, 5000, '超长退款理由应完整保留');
+  });
+
+  /**
+   * @description 边界条件: 退款状态filter查询 → 精确返回对应状态退款
+   */
+  test('[边界] domainGetRefundHistory按状态筛选 → 仅返回匹配状态的退款', () => {
+    const completedRefunds = domainGetRefundHistory(undefined, 'completed');
+    for (const rf of completedRefunds) {
+      assert.equal(rf.status, 'completed', '筛选completed应全部为completed状态');
+    }
+
+    const rejectedRefunds = domainGetRefundHistory(undefined, 'rejected');
+    for (const rf of rejectedRefunds) {
+      assert.equal(rf.status, 'rejected', '筛选rejected应全部为rejected状态');
+    }
+
+    const completedCount = completedRefunds.length;
+    const rejectedCount = rejectedRefunds.length;
+    const otherCount = refundStore.filter(rf => rf.status !== 'completed' && rf.status !== 'rejected').length;
+    assert.equal(completedCount + rejectedCount + otherCount, refundStore.length,
+      '各状态退款数量之和应等于总数');
+  });
+
+  /**
+   * @description 幂等校验: API多重为同一退款审批(approve) → 仅首次成功, 后续被拒
+   */
+  test('[幂等] 同一退款重复审批 → 仅首次成功, 后续被拒', () => {
+    const r = mobileRequestRefund({ orderId: 'order_05', amount: 300, reason: '幂等审批测试', requestId: 'ref_idempotent_approve' });
+    assert.ok(r.success);
+    const refId = (r.refund as RefundRecord).id;
+
+    // 首次approve
+    const first = apiApproveRefund(refId);
+    assert.ok(first.success);
+    assert.equal(first.refund!.status, 'approved');
+
+    // 再次approve → 失败
+    const second = apiApproveRefund(refId);
+    assert.equal(second.success, false);
+    assert.ok(second.error?.includes('invalid_status'));
+
+    // 第三次 - 再次失败
+    const third = apiApproveRefund(refId);
+    assert.equal(third.success, false);
+    assert.ok(third.error?.includes('invalid_status'));
+  });
+
+  /**
+   * @description 数据一致性: 退款的items数与订单原商品一致 → 验证部分退款准确性
+   */
+  test('[数据一致性] 部分退款items明细与订单商品匹配 → items中的productName在订单中存在', () => {
+    const allRefundsWithItems = refundStore.filter(r => r.items.length > 0);
+    assert.ok(allRefundsWithItems.length >= 1, '应存在包含items的退款');
+
+    for (const rf of allRefundsWithItems) {
+      const order = orderStore.get(rf.orderId);
+      assert.ok(order, `退款${rf.id}对应的订单${rf.orderId}应存在`);
+      for (const item of rf.items) {
+        const orderItem = order!.items.find(oi => oi.productName === item.productName);
+        assert.ok(orderItem, `退款商品${item.productName}应在订单${rf.orderId}的商品列表中`);
+        assert.ok(item.amount <= item.quantity * orderItem!.unitPrice,
+          `退款商品${item.productName}金额${item.amount}不应超过可退金额${item.quantity * orderItem!.unitPrice}`);
+      }
+    }
+  });
 });
