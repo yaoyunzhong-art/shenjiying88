@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 配置预览数据
@@ -57,6 +58,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '支付配置访问受限',
+  description:
+    '支付配置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看支付通道、费率与结算规则。',
+} as const;
+
 export default function PaymentConfigPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,66 +77,70 @@ export default function PaymentConfigPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div></AdminPermissionGate>;
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div></AdminPermissionGate>;
   }
 
   if (channels.length === 0) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.title}>💳 支付配置</h1>
-        <p style={styles.subtitle}>管理支付通道与结算参数。</p>
-        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.page}>
+          <h1 style={styles.title}>💳 支付配置</h1>
+          <p style={styles.subtitle}>管理支付通道与结算参数。</p>
+          <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>💳 支付配置</h1>
-      <p style={styles.subtitle}>管理支付通道与结算参数。支持微信支付、支付宝、银联、现金等多种支付方式，灵活配置各通道费率与结算规则。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>💳 支付配置</h1>
+        <p style={styles.subtitle}>管理支付通道与结算参数。支持微信支付、支付宝、银联、现金等多种支付方式，灵活配置各通道费率与结算规则。</p>
 
-      {/* 概览 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📊 通道概览</h2>
-        <p style={styles.sectionText}>当前系统已配置的支付通道及运行状态。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>通道名称</th>
-              <th style={styles.th}>标识</th>
-              <th style={styles.th}>状态</th>
-              <th style={styles.th}>费率</th>
-            </tr>
-          </thead>
-          <tbody>
-            {channels.map(ch => (
-              <tr key={ch.provider}>
-                <td style={styles.td}>{ch.name}</td>
-                <td style={styles.td}>{ch.provider}</td>
-                <td style={styles.td}><span style={styles.tag('#22c55e')}>● {ch.status}</span></td>
-                <td style={styles.td}>{ch.feeRate}</td>
+        {/* 概览 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📊 通道概览</h2>
+          <p style={styles.sectionText}>当前系统已配置的支付通道及运行状态。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>通道名称</th>
+                <th style={styles.th}>标识</th>
+                <th style={styles.th}>状态</th>
+                <th style={styles.th}>费率</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {channels.map(ch => (
+                <tr key={ch.provider}>
+                  <td style={styles.td}>{ch.name}</td>
+                  <td style={styles.td}>{ch.provider}</td>
+                  <td style={styles.td}><span style={styles.tag('#22c55e')}>● {ch.status}</span></td>
+                  <td style={styles.td}>{ch.feeRate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* 结算配置 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📅 结算配置</h2>
-        <div style={styles.configList}>
-          {SETTLEMENT_CONFIGS.map(c => (
-            <div key={c.key} style={styles.configItem}>
-              <span style={styles.configKey}>{c.key}</span>
-              <span style={styles.configValue}>{c.value}</span>
-            </div>
-          ))}
+        {/* 结算配置 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📅 结算配置</h2>
+          <div style={styles.configList}>
+            {SETTLEMENT_CONFIGS.map(c => (
+              <div key={c.key} style={styles.configItem}>
+                <span style={styles.configKey}>{c.key}</span>
+                <span style={styles.configValue}>{c.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

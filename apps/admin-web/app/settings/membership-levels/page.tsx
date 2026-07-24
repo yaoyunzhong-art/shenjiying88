@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 等级预览数据
@@ -54,6 +55,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '会员等级配置访问受限',
+  description:
+    '会员等级配置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看等级体系、折扣权益与升降级规则。',
+} as const;
+
 export default function MembershipLevelsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,65 +73,69 @@ export default function MembershipLevelsPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div></AdminPermissionGate>;
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div></AdminPermissionGate>;
   }
 
   if (LEVELS.length === 0) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.title}>🏅 会员等级设置</h1>
-        <p style={styles.subtitle}>管理会员等级定义与权益配置。</p>
-        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.page}>
+          <h1 style={styles.title}>🏅 会员等级设置</h1>
+          <p style={styles.subtitle}>管理会员等级定义与权益配置。</p>
+          <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🏅 会员等级设置</h1>
-      <p style={styles.subtitle}>管理会员等级定义与权益配置。支持多级会员体系，自定义升级规则与各等级专属权益。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🏅 会员等级设置</h1>
+        <p style={styles.subtitle}>管理会员等级定义与权益配置。支持多级会员体系，自定义升级规则与各等级专属权益。</p>
 
-      {/* 等级列表 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📊 等级定义</h2>
-        <p style={styles.sectionText}>当前系统配置的会员等级体系。等级越高，权益越丰富。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>等级</th>
-              <th style={styles.th}>名称</th>
-              <th style={styles.th}>最低积分</th>
-              <th style={styles.th}>折扣</th>
-              <th style={styles.th}>权益</th>
-            </tr>
-          </thead>
-          <tbody>
-            {LEVELS.map(l => (
-              <tr key={l.level}>
-                <td style={styles.td}>Lv.{l.level}</td>
-                <td style={{ ...styles.td, fontWeight: 600 }}>{l.name}</td>
-                <td style={styles.td}>{l.minPoints.toLocaleString()}</td>
-                <td style={styles.td}>{l.discount}</td>
-                <td style={styles.td}>{l.benefits}</td>
+        {/* 等级列表 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📊 等级定义</h2>
+          <p style={styles.sectionText}>当前系统配置的会员等级体系。等级越高，权益越丰富。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>等级</th>
+                <th style={styles.th}>名称</th>
+                <th style={styles.th}>最低积分</th>
+                <th style={styles.th}>折扣</th>
+                <th style={styles.th}>权益</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {LEVELS.map(l => (
+                <tr key={l.level}>
+                  <td style={styles.td}>Lv.{l.level}</td>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{l.name}</td>
+                  <td style={styles.td}>{l.minPoints.toLocaleString()}</td>
+                  <td style={styles.td}>{l.discount}</td>
+                  <td style={styles.td}>{l.benefits}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* 升降级规则 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🔄 升降级规则</h2>
-        <ul style={styles.ruleList}>
-          {RULES.map((rule, i) => (
-            <li key={i} style={styles.ruleItem}>{rule}</li>
-          ))}
-        </ul>
+        {/* 升降级规则 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🔄 升降级规则</h2>
+          <ul style={styles.ruleList}>
+            {RULES.map((rule, i) => (
+              <li key={i} style={styles.ruleItem}>{rule}</li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

@@ -369,4 +369,13 @@ describe('settings page', () => {
       assert.ok(allCat.length >= 10, `单元模块数 ${allCat.length}`);
     });
   });
+
+  describe('权限边界', () => {
+    it('接入管理员权限边界', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('AdminPermissionGate'));
+      assert.ok(src.includes("requiredPermission: 'foundation.governance.read'"));
+    });
+  });
 });

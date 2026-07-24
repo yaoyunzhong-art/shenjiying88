@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface TaxRatePreview {
   category: string;
@@ -53,6 +54,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '税率配置访问受限',
+  description:
+    '税率配置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看品类税率、税务规则与生效配置。',
+} as const;
+
 export default function TaxRatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,69 +72,73 @@ export default function TaxRatesPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div></AdminPermissionGate>;
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div></AdminPermissionGate>;
   }
 
   if (TAX_RATES.length === 0) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.title}>🧾 税率配置</h1>
-        <p style={styles.subtitle}>管理各品类税率与税务参数。</p>
-        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.page}>
+          <h1 style={styles.title}>🧾 税率配置</h1>
+          <p style={styles.subtitle}>管理各品类税率与税务参数。</p>
+          <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🧾 税率配置</h1>
-      <p style={styles.subtitle}>管理各品类税率与税务参数。按商品品类配置增值税率及生效日期，支持税种管理与税务计算规则。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🧾 税率配置</h1>
+        <p style={styles.subtitle}>管理各品类税率与税务参数。按商品品类配置增值税率及生效日期，支持税种管理与税务计算规则。</p>
 
-      {/* 品类税率表 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📊 品类税率表</h2>
-        <p style={styles.sectionText}>各商品品类的现行税率标准。税率变更需要提前配置生效日期。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>品类</th>
-              <th style={styles.th}>税率</th>
-              <th style={styles.th}>税种</th>
-              <th style={styles.th}>生效日期</th>
-            </tr>
-          </thead>
-          <tbody>
-            {TAX_RATES.map(r => (
-              <tr key={r.category}>
-                <td style={{ ...styles.td, fontWeight: 600 }}>{r.category}</td>
-                <td style={styles.td}>{r.taxRate}</td>
-                <td style={styles.td}>{r.taxType}</td>
-                <td style={styles.td}>{r.effectiveDate}</td>
+        {/* 品类税率表 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📊 品类税率表</h2>
+          <p style={styles.sectionText}>各商品品类的现行税率标准。税率变更需要提前配置生效日期。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>品类</th>
+                <th style={styles.th}>税率</th>
+                <th style={styles.th}>税种</th>
+                <th style={styles.th}>生效日期</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* 税务规则 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>⚖️ 税务规则</h2>
-        <div style={styles.configList}>
-          {TAX_RULES.map(r => (
-            <div key={r.key} style={styles.configItem}><span style={styles.configKey}>{r.key}</span><span style={styles.configValue}>{r.value}</span></div>
-          ))}
+            </thead>
+            <tbody>
+              {TAX_RATES.map(r => (
+                <tr key={r.category}>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{r.category}</td>
+                  <td style={styles.td}>{r.taxRate}</td>
+                  <td style={styles.td}>{r.taxType}</td>
+                  <td style={styles.td}>{r.effectiveDate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        <div style={styles.infoBox}>
-          <div style={styles.infoText}>
-            💡 温馨提示：税率变更需提前7天配置生效日期，系统将在指定日期自动切换税率。切换前创建的历史订单使用原税率。
+        {/* 税务规则 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>⚖️ 税务规则</h2>
+          <div style={styles.configList}>
+            {TAX_RULES.map(r => (
+              <div key={r.key} style={styles.configItem}><span style={styles.configKey}>{r.key}</span><span style={styles.configValue}>{r.value}</span></div>
+            ))}
+          </div>
+
+          <div style={styles.infoBox}>
+            <div style={styles.infoText}>
+              💡 温馨提示：税率变更需提前7天配置生效日期，系统将在指定日期自动切换税率。切换前创建的历史订单使用原税率。
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

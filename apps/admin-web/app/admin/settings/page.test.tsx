@@ -9,6 +9,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 // ── 类型 ──
 
@@ -174,5 +176,12 @@ describe('AdminSettings — 边界情况', () => {
 
   it('所有 providers 数量统计', () => {
     assert.equal(MOCK_SMS.length + MOCK_MAIL.length + MOCK_PAYMENT.length, 8);
+  });
+});
+
+describe('admin/settings — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 });

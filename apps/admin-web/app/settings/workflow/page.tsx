@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 const FLOW_CONFIGS = [
   { key: '当前版本', value: 'v1' },
@@ -52,6 +53,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '工作流配置访问受限',
+  description:
+    '工作流配置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看流程定义、节点类型与审批策略。',
+} as const;
+
 export default function WorkflowPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,56 +71,66 @@ export default function WorkflowPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>
+      </AdminPermissionGate>
+    );
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>
+      </AdminPermissionGate>
+    );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🔄 工作流配置</h1>
-      <p style={styles.subtitle}>审批工作流与自动化流程配置。支持多节点流程编排、条件分支、多人审批策略与驳回处理。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🔄 工作流配置</h1>
+        <p style={styles.subtitle}>审批工作流与自动化流程配置。支持多节点流程编排、条件分支、多人审批策略与驳回处理。</p>
 
-      {/* 示例工作流 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📋 示例流程：采购审批</h2>
-        <p style={styles.sectionText}>一个典型的采购审批工作流，按金额大小自动路由到不同审批人。</p>
-        <div style={styles.flowDiagram}>
-          <span style={styles.flowNode(true)}>🟢 开始</span>
-          <span style={styles.flowArrow}>→</span>
-          <span style={styles.flowNode(false)}>经理审批</span>
-          <span style={styles.flowArrow}>→</span>
-          <span style={styles.flowNode(false)}>金额判断</span>
-          <span style={styles.flowArrow}>→</span>
-          <span style={styles.flowNode(false)}>执行处理</span>
-          <span style={styles.flowArrow}>→</span>
-          <span style={styles.flowNode(true)}>🔴 结束</span>
-          <span style={{ color: '#475569', fontSize: 12, marginLeft: 8 }}>| 驳回 → 结束</span>
+        {/* 示例工作流 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📋 示例流程：采购审批</h2>
+          <p style={styles.sectionText}>一个典型的采购审批工作流，按金额大小自动路由到不同审批人。</p>
+          <div style={styles.flowDiagram}>
+            <span style={styles.flowNode(true)}>🟢 开始</span>
+            <span style={styles.flowArrow}>→</span>
+            <span style={styles.flowNode(false)}>经理审批</span>
+            <span style={styles.flowArrow}>→</span>
+            <span style={styles.flowNode(false)}>金额判断</span>
+            <span style={styles.flowArrow}>→</span>
+            <span style={styles.flowNode(false)}>执行处理</span>
+            <span style={styles.flowArrow}>→</span>
+            <span style={styles.flowNode(true)}>🔴 结束</span>
+            <span style={{ color: '#475569', fontSize: 12, marginLeft: 8 }}>| 驳回 → 结束</span>
+          </div>
+
+          <div style={styles.configList}>
+            {FLOW_CONFIGS.map(c => (
+              <div key={c.key} style={styles.configItem}><span style={styles.configKey}>{c.key}</span><span style={styles.configValue}>{c.value}</span></div>
+            ))}
+          </div>
         </div>
 
-        <div style={styles.configList}>
-          {FLOW_CONFIGS.map(c => (
-            <div key={c.key} style={styles.configItem}><span style={styles.configKey}>{c.key}</span><span style={styles.configValue}>{c.value}</span></div>
-          ))}
+        {/* 节点类型 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🏗️ 节点类型</h2>
+          <p style={styles.sectionText}>工作流支持以下节点类型，灵活组合实现复杂审批流程。</p>
+          <div style={styles.nodeGrid}>
+            {NODE_TYPES.map(nt => (
+              <div key={nt.name} style={styles.nodeCard}>
+                <div style={styles.nodeIcon}>{nt.icon}</div>
+                <div style={styles.nodeName}>{nt.name}</div>
+                <div style={styles.nodeDesc}>{nt.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* 节点类型 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🏗️ 节点类型</h2>
-        <p style={styles.sectionText}>工作流支持以下节点类型，灵活组合实现复杂审批流程。</p>
-        <div style={styles.nodeGrid}>
-          {NODE_TYPES.map(nt => (
-            <div key={nt.name} style={styles.nodeCard}>
-              <div style={styles.nodeIcon}>{nt.icon}</div>
-              <div style={styles.nodeName}>{nt.name}</div>
-              <div style={styles.nodeDesc}>{nt.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

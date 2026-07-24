@@ -15,9 +15,10 @@ const __dirname = dirname(__filename);
 import assert from 'node:assert/strict';
 
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
 import SystemConfigPage from './page';
 import fs from 'node:fs';
+const ADMIN_USER_KEY = 'admin_user';
 
 /* ── 类型 ── */
 
@@ -76,19 +77,28 @@ function findConfigByGroup(configs: SystemConfig[], group: ConfigGroup): SystemC
 
 /* ── 辅助 ── */
 
-function setup() {
+async function setup() {
   cleanup();
-  return render(React.createElement(SystemConfigPage));
+  window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
+    userId: 'admin:test',
+    username: 'config-admin',
+    role: 'super-admin',
+    permissions: ['foundation.governance.read'],
+  }));
+  const view = render(React.createElement(SystemConfigPage));
+  await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+  await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+  return view;
 }
 
 /* ============================================================ */
 
 describe('system-config: 页面渲染', () => {
-  it('renders title', () => { const { container } = setup(); assert.ok(container.querySelector('h1')?.textContent?.includes('系统配置')); });
-  it('renders description', () => { const { container } = setup(); assert.ok(container.textContent?.includes('系统')); });
-  it('renders without error', () => { assert.doesNotThrow(() => setup()); });
+  it('renders title', async () => { const { container } = await setup(); assert.ok(container.querySelector('h1')?.textContent?.includes('系统配置')); });
+  it('renders description', async () => { const { container } = await setup(); assert.ok(container.textContent?.includes('系统')); });
+  it('renders without error', async () => { await assert.doesNotReject(() => setup()); });
   it.skip('has padding layout (跳检: happy-dom无内联样式)', () => { const { container } = setup(); const _pad = (container.firstElementChild as HTMLElement)?.style?.padding ?? ''; assert.ok(!_pad || _pad.includes('24px'), 'padding should be 24px or empty'); });
-  it('has single h1', () => { const { container } = setup(); assert.equal(container.querySelectorAll('h1').length, 1); });
+  it('has single h1', async () => { const { container } = await setup(); assert.equal(container.querySelectorAll('h1').length, 1); });
   it('component is a function', () => { assert.equal(typeof SystemConfigPage, 'function'); });
 });
 
@@ -256,4 +266,8 @@ describe('Settings / System Config — hooks验证', { timeout: 3000 }, () => {
   it('包含字符串处理', () => assert.ok(true));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
 });

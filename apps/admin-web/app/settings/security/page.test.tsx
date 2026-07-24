@@ -14,6 +14,7 @@ import SecurityPage from './page'
 
 const PAGE = resolve(import.meta.dirname, 'page.tsx')
 const content = fs.readFileSync(PAGE, 'utf-8')
+const ADMIN_USER_KEY = 'admin_user'
 
 describe('settings/security', () => {
   // ── 页面存在与导出 ──
@@ -72,10 +73,20 @@ describe('settings/security', () => {
 
 // ── React 渲染测试 ──
 describe('settings/security — React 渲染', () => {
-  afterEach(() => { cleanup() })
+  afterEach(() => {
+    cleanup()
+    window.localStorage.clear()
+  })
 
   async function renderAfterLoad() {
+    window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
+      userId: 'admin:test',
+      username: 'security-admin',
+      role: 'super-admin',
+      permissions: ['foundation.governance.read'],
+    }))
     const view = render(<SecurityPage />)
+    await act(async () => { await new Promise(r => setTimeout(r, 0)) })
     await act(async () => { await new Promise(r => setTimeout(r, 0)) })
     return view
   }
@@ -95,5 +106,12 @@ describe('settings/security — React 渲染', () => {
     await renderAfterLoad()
     const sections = screen.getAllByRole('heading', { level: 2 })
     assert.strictEqual(sections.length, 3)
+  })
+})
+
+describe('settings/security — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })

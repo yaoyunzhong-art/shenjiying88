@@ -47,3 +47,10 @@ describe('settings/workflow', () => {
   it('包含示例流程 section', () => { assert.ok(content.includes('示例流程') || content.includes('示例')) })
   it('包含节点类型 section', () => { assert.ok(content.includes('节点类型')) })
 })
+
+describe('settings/workflow — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})

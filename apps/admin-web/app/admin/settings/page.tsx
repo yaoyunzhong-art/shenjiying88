@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { PageShell, StatusBadge, Switch } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // Mock 数据
@@ -346,6 +347,13 @@ function formatMoney(n: number): string {
   if (n >= 10000) return `¥${(n / 10000).toFixed(1)}万`;
   return `¥${n.toLocaleString()}`;
 }
+
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '全局设置访问受限',
+  description:
+    '全局设置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看系统信息、短信邮件服务、支付通道与安全策略。',
+} as const;
 
 // ============================================================
 // 组件: 系统信息编辑
@@ -880,32 +888,52 @@ export default function SettingsPage() {
     }
   }, []);
 
-  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
-  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
-  if (!data) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>
+      </AdminPermissionGate>
+    );
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>
+      </AdminPermissionGate>
+    );
+  }
+  if (!data) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>
+      </AdminPermissionGate>
+    );
+  }
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="系统全局设置" subtitle="基础配置 · 服务通道 · 安全策略">
-        {/* 系统信息 */}
-        <div style={{ marginBottom: 20 }}><SystemInfoSection /></div>
-        <div style={divider} />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell title="系统全局设置" subtitle="基础配置 · 服务通道 · 安全策略">
+          {/* 系统信息 */}
+          <div style={{ marginBottom: 20 }}><SystemInfoSection /></div>
+          <div style={divider} />
 
-        {/* 短信服务 */}
-        <div style={{ marginBottom: 20 }}><SmsSection /></div>
-        <div style={divider} />
+          {/* 短信服务 */}
+          <div style={{ marginBottom: 20 }}><SmsSection /></div>
+          <div style={divider} />
 
-        {/* 邮件服务 */}
-        <div style={{ marginBottom: 20 }}><MailSection /></div>
-        <div style={divider} />
+          {/* 邮件服务 */}
+          <div style={{ marginBottom: 20 }}><MailSection /></div>
+          <div style={divider} />
 
-        {/* 支付通道 */}
-        <div style={{ marginBottom: 20 }}><PaymentSection /></div>
-        <div style={divider} />
+          {/* 支付通道 */}
+          <div style={{ marginBottom: 20 }}><PaymentSection /></div>
+          <div style={divider} />
 
-        {/* 安全策略 */}
-        <SecuritySection />
-      </PageShell>
-    </main>
+          {/* 安全策略 */}
+          <SecuritySection />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

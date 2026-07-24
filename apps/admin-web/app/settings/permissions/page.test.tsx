@@ -52,3 +52,10 @@ describe('settings/permissions', () => {
   it('包含角色定义 section', () => { assert.ok(content.includes('角色定义')) })
   it('包含权限继承规则 section', () => { assert.ok(content.includes('权限继承') || content.includes('继承规则')) })
 })
+
+describe('settings/permissions — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})

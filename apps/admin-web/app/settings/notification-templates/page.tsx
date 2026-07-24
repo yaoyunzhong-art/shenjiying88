@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface TemplatePreview {
   scene: string;
@@ -56,6 +57,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '通知模板访问受限',
+  description:
+    '通知模板页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模板列表、变量规则与版本状态。',
+} as const;
+
 export default function NotificationTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,67 +75,71 @@ export default function NotificationTemplatesPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div></AdminPermissionGate>;
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div></AdminPermissionGate>;
   }
 
   if (TEMPLATES.length === 0) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.title}>📋 通知模板设置</h1>
-        <p style={styles.subtitle}>管理各场景通知消息模板。</p>
-        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.page}>
+          <h1 style={styles.title}>📋 通知模板设置</h1>
+          <p style={styles.subtitle}>管理各场景通知消息模板。</p>
+          <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>📋 通知模板设置</h1>
-      <p style={styles.subtitle}>管理各场景通知消息模板。支持模板变量占位符、多通道模板配置与版本管理。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>📋 通知模板设置</h1>
+        <p style={styles.subtitle}>管理各场景通知消息模板。支持模板变量占位符、多通道模板配置与版本管理。</p>
 
-      {/* 模板列表 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📄 通知模板列表</h2>
-        <p style={styles.sectionText}>系统中已配置的通知模板，每个场景可按不同推送渠道独立配置。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>场景</th>
-              <th style={styles.th}>渠道</th>
-              <th style={styles.th}>模板名称</th>
-              <th style={styles.th}>变量</th>
-              <th style={styles.th}>版本</th>
-              <th style={styles.th}>状态</th>
-            </tr>
-          </thead>
-          <tbody>
-            {TEMPLATES.map(t => (
-              <tr key={`${t.scene}-${t.channel}`}>
-                <td style={{ ...styles.td, fontWeight: 600 }}>{t.scene}</td>
-                <td style={styles.td}>{t.channel}</td>
-                <td style={styles.td}>{t.name}</td>
-                <td style={styles.td}>{t.variables}</td>
-                <td style={styles.td}>v{t.version}</td>
-                <td style={styles.td}><span style={styles.tag(t.isActive ? '#22c55e' : '#64748b')}>{t.isActive ? '启用' : '停用'}</span></td>
+        {/* 模板列表 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📄 通知模板列表</h2>
+          <p style={styles.sectionText}>系统中已配置的通知模板，每个场景可按不同推送渠道独立配置。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>场景</th>
+                <th style={styles.th}>渠道</th>
+                <th style={styles.th}>模板名称</th>
+                <th style={styles.th}>变量</th>
+                <th style={styles.th}>版本</th>
+                <th style={styles.th}>状态</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {TEMPLATES.map(t => (
+                <tr key={`${t.scene}-${t.channel}`}>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{t.scene}</td>
+                  <td style={styles.td}>{t.channel}</td>
+                  <td style={styles.td}>{t.name}</td>
+                  <td style={styles.td}>{t.variables}</td>
+                  <td style={styles.td}>v{t.version}</td>
+                  <td style={styles.td}><span style={styles.tag(t.isActive ? '#22c55e' : '#64748b')}>{t.isActive ? '启用' : '停用'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* 变量规则 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🔤 变量使用规范</h2>
-        <div style={styles.configList}>
-          {VARIABLE_RULES.map(r => (
-            <div key={r.key} style={styles.configItem}><span style={styles.configKey}>{r.key}</span><span style={styles.configValue}>{r.value}</span></div>
-          ))}
+        {/* 变量规则 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🔤 变量使用规范</h2>
+          <div style={styles.configList}>
+            {VARIABLE_RULES.map(r => (
+              <div key={r.key} style={styles.configItem}><span style={styles.configKey}>{r.key}</span><span style={styles.configValue}>{r.value}</span></div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

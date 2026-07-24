@@ -34,6 +34,7 @@ import {
   useSearchFilter,
   useSortedItems,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ==================== 类型定义 ====================
 
@@ -102,6 +103,13 @@ const DEFAULT_FORM = {
   equipment: '' as string,
   notes: '',
 };
+
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '消防管理访问受限',
+  description:
+    '消防管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看检查记录、风险等级、导出报告与合规状态。',
+} as const;
 
 // ==================== 列定义 ====================
 
@@ -337,128 +345,130 @@ export default function FirePreventionPage() {
   }, []);
 
   return (
-    <PageShell title="🔥 消防管理" subtitle="消防安全检查记录与风险管理">
-      {/* 统计面板 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="总检查项" value={stats.total.toString()} helper={`高风险 ${stats.highRisk}`} />
-        <StatCard label="待检查" value={stats.pending.toString()} helper={`检查中 ${stats.inProgress}`} variant="warning" />
-        <StatCard label="已通过" value={stats.passed.toString()} helper="通过项" variant="success" />
-        <StatCard label="未通过" value={stats.failed.toString()} helper="需整改" variant="error" />
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="🔥 消防管理" subtitle="消防安全检查记录与风险管理">
+        {/* 统计面板 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+          <StatCard label="总检查项" value={stats.total.toString()} helper={`高风险 ${stats.highRisk}`} />
+          <StatCard label="待检查" value={stats.pending.toString()} helper={`检查中 ${stats.inProgress}`} variant="warning" />
+          <StatCard label="已通过" value={stats.passed.toString()} helper="通过项" variant="success" />
+          <StatCard label="未通过" value={stats.failed.toString()} helper="需整改" variant="error" />
+        </div>
 
-      {/* 效率概要 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
-        <div style={{ padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, fontSize: 13 }}>
-          <span style={{ color: '#16a34a' }}>完成率</span>
-          <div style={{ fontWeight: 700, fontSize: 20, color: '#166534', marginTop: 2 }}>
-            {stats.total > 0 ? Math.round(((stats.passed + stats.failed) / stats.total) * 100) : 0}%
+        {/* 效率概要 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+          <div style={{ padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, fontSize: 13 }}>
+            <span style={{ color: '#16a34a' }}>完成率</span>
+            <div style={{ fontWeight: 700, fontSize: 20, color: '#166534', marginTop: 2 }}>
+              {stats.total > 0 ? Math.round(((stats.passed + stats.failed) / stats.total) * 100) : 0}%
+            </div>
+          </div>
+          <div style={{ padding: '10px 14px', background: '#fefce8', borderRadius: 8, fontSize: 13 }}>
+            <span style={{ color: '#ca8a04' }}>高危占比</span>
+            <div style={{ fontWeight: 700, fontSize: 20, color: '#854d0e', marginTop: 2 }}>
+              {stats.total > 0 ? Math.round((stats.highRisk / stats.total) * 100) : 0}%
+            </div>
+          </div>
+          <div style={{ padding: '10px 14px', background: '#eff6ff', borderRadius: 8, fontSize: 13 }}>
+            <span style={{ color: '#2563eb' }}>需整改项</span>
+            <div style={{ fontWeight: 700, fontSize: 20, color: '#1e40af', marginTop: 2 }}>{stats.failed}</div>
           </div>
         </div>
-        <div style={{ padding: '10px 14px', background: '#fefce8', borderRadius: 8, fontSize: 13 }}>
-          <span style={{ color: '#ca8a04' }}>高危占比</span>
-          <div style={{ fontWeight: 700, fontSize: 20, color: '#854d0e', marginTop: 2 }}>
-            {stats.total > 0 ? Math.round((stats.highRisk / stats.total) * 100) : 0}%
-          </div>
-        </div>
-        <div style={{ padding: '10px 14px', background: '#eff6ff', borderRadius: 8, fontSize: 13 }}>
-          <span style={{ color: '#2563eb' }}>需整改项</span>
-          <div style={{ fontWeight: 700, fontSize: 20, color: '#1e40af', marginTop: 2 }}>{stats.failed}</div>
-        </div>
-      </div>
 
-      {/* 反馈 */}
-      {feedback && (
-        <FormSubmitFeedback
-          success={feedback.type === 'success' ? feedback.message : undefined}
-          onDismissSuccess={() => setFeedback(null)}
+        {/* 反馈 */}
+        {feedback && (
+          <FormSubmitFeedback
+            success={feedback.type === 'success' ? feedback.message : undefined}
+            onDismissSuccess={() => setFeedback(null)}
+          />
+        )}
+
+        {/* 工具栏 */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <SearchFilterInput placeholder="搜索区域、检查人..." value={searchQuery} onChange={syncSearch} width="auto" />
+          <Select
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as InspectionStatus | 'ALL')}
+            options={[
+              { value: 'ALL', label: '全部状态' },
+              ...Object.entries(FIRE_STATUS_MAP).map(([k, v]) => ({ value: k, label: v.label })),
+            ]}
+          />
+          <div style={{ flex: 1 }} />
+          <SubmitButton label="＋ 新建检查" variant="primary" onClick={() => { setFormData(DEFAULT_FORM); setFormErrors({}); setShowCreateModal(true); }} />
+          <Button variant="outline" onClick={handleRefresh}>🔄 刷新</Button>
+          <Button variant="outline" onClick={handleExportReport}>📥 导出报告</Button>
+        </div>
+
+        {/* 批量操作栏 */}
+        {selectedIds.size > 0 && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>已选 {selectedIds.size} 项</span>
+            <Button variant="primary" size="sm" onClick={handleBatchComplete}>标记已完成</Button>
+            <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
+          </div>
+        )}
+
+        {/* 表格 */}
+        <DataTable
+          title={`消防检查 (${filteredItems.length})`}
+          columns={columns}
+          items={pageItems}
+          rowKey={(item) => item.id}
+          sort={sortConfig}
+          onSortChange={setSortConfig}
+          striped
+          compact
+          emptyText={searchQuery || statusFilter !== 'ALL' ? '没有匹配的检查记录' : '暂无检查记录'}
         />
-      )}
 
-      {/* 工具栏 */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <SearchFilterInput placeholder="搜索区域、检查人..." value={searchQuery} onChange={syncSearch} width="auto" />
-        <Select
-          value={statusFilter}
-          onChange={(v) => setStatusFilter(v as InspectionStatus | 'ALL')}
-          options={[
-            { value: 'ALL', label: '全部状态' },
-            ...Object.entries(FIRE_STATUS_MAP).map(([k, v]) => ({ value: k, label: v.label })),
-          ]}
+        <Pagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={filteredItems.length}
+          onPageChange={pagination.setPage}
+          onPageSizeChange={pagination.setPageSize}
         />
-        <div style={{ flex: 1 }} />
-        <SubmitButton label="＋ 新建检查" variant="primary" onClick={() => { setFormData(DEFAULT_FORM); setFormErrors({}); setShowCreateModal(true); }} />
-        <Button variant="outline" onClick={handleRefresh}>🔄 刷新</Button>
-        <Button variant="outline" onClick={handleExportReport}>📥 导出报告</Button>
-      </div>
 
-      {/* 批量操作栏 */}
-      {selectedIds.size > 0 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>已选 {selectedIds.size} 项</span>
-          <Button variant="primary" size="sm" onClick={handleBatchComplete}>标记已完成</Button>
-          <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
-        </div>
-      )}
-
-      {/* 表格 */}
-      <DataTable
-        title={`消防检查 (${filteredItems.length})`}
-        columns={columns}
-        items={pageItems}
-        rowKey={(item) => item.id}
-        sort={sortConfig}
-        onSortChange={setSortConfig}
-        striped
-        compact
-        emptyText={searchQuery || statusFilter !== 'ALL' ? '没有匹配的检查记录' : '暂无检查记录'}
-      />
-
-      <Pagination
-        page={pagination.page}
-        pageSize={pagination.pageSize}
-        total={filteredItems.length}
-        onPageChange={pagination.setPage}
-        onPageSizeChange={pagination.setPageSize}
-      />
-
-      {/* 创建 Modal */}
-      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="新建消防检查" width={560}>
-        <InspectionForm formData={formData} onChange={setFormData} errors={formErrors} />
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-          <SubmitButton label="取消" variant="secondary" onClick={() => setShowCreateModal(false)} />
-          <SubmitButton label="创建" variant="primary" onClick={handleCreate} />
-        </div>
-      </Modal>
-
-      {/* 编辑 Modal */}
-      <Modal open={showEditModal} onClose={() => { setShowEditModal(false); setEditingItem(null); }} title={`编辑检查记录`} width={560}>
-        <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>编号: {editingItem?.id}</p>
-        <InspectionForm formData={formData} onChange={setFormData} errors={formErrors} />
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-          <SubmitButton label="取消" variant="secondary" onClick={() => { setShowEditModal(false); setEditingItem(null); }} />
-          <SubmitButton label="保存修改" variant="primary" onClick={handleUpdate} />
-        </div>
-      </Modal>
-
-      {/* 安全合规提示 */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-        <div style={{ flex: 1, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 13 }}>
-          <div style={{ fontWeight: 600 }}>📋 合规状态</div>
-          <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
-            <span>通过率</span>
-            <span style={{ fontWeight: 700 }}>{stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0}%</span>
+        {/* 创建 Modal */}
+        <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="新建消防检查" width={560}>
+          <InspectionForm formData={formData} onChange={setFormData} errors={formErrors} />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+            <SubmitButton label="取消" variant="secondary" onClick={() => setShowCreateModal(false)} />
+            <SubmitButton label="创建" variant="primary" onClick={handleCreate} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-            <span>待检查</span>
-            <span style={{ fontWeight: 700 }}>{stats.pending} 项</span>
+        </Modal>
+
+        {/* 编辑 Modal */}
+        <Modal open={showEditModal} onClose={() => { setShowEditModal(false); setEditingItem(null); }} title={`编辑检查记录`} width={560}>
+          <p style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>编号: {editingItem?.id}</p>
+          <InspectionForm formData={formData} onChange={setFormData} errors={formErrors} />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+            <SubmitButton label="取消" variant="secondary" onClick={() => { setShowEditModal(false); setEditingItem(null); }} />
+            <SubmitButton label="保存修改" variant="primary" onClick={handleUpdate} />
+          </div>
+        </Modal>
+
+        {/* 安全合规提示 */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <div style={{ flex: 1, padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 13 }}>
+            <div style={{ fontWeight: 600 }}>📋 合规状态</div>
+            <div style={{ marginTop: 4, display: 'flex', justifyContent: 'space-between' }}>
+              <span>通过率</span>
+              <span style={{ fontWeight: 700 }}>{stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0}%</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+              <span>待检查</span>
+              <span style={{ fontWeight: 700 }}>{stats.pending} 项</span>
+            </div>
+          </div>
+          <div style={{ flex: 1, padding: '10px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a', fontSize: 13 }}>
+            <div style={{ fontWeight: 600 }}>🛡️ 消防安全提示</div>
+            <div style={{ marginTop: 4, color: '#92400e' }}>按时完成检查，确保所有设备正常运行。高风险区域需优先处理。</div>
           </div>
         </div>
-        <div style={{ flex: 1, padding: '10px 14px', background: '#fefce8', borderRadius: 8, border: '1px solid #fde68a', fontSize: 13 }}>
-          <div style={{ fontWeight: 600 }}>🛡️ 消防安全提示</div>
-          <div style={{ marginTop: 4, color: '#92400e' }}>按时完成检查，确保所有设备正常运行。高风险区域需优先处理。</div>
-        </div>
-      </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

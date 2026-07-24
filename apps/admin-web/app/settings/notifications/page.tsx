@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface NotifRulePreview {
   category: string;
@@ -44,6 +45,13 @@ const styles: Record<string, React.CSSProperties> = {
   channelDesc: { fontSize: 12, color: '#64748b' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '通知设置访问受限',
+  description:
+    '通知设置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看通知规则、静默时段与推送渠道配置。',
+} as const;
+
 export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,54 +67,56 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  if (loading) return <div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></div>;
-  if (error) return <div style={styles.page}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></div>;
-  if (!data || data.length === 0) return <div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></div>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></div></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><div style={styles.page}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></div></AdminPermissionGate>;
+  if (!data || data.length === 0) return <AdminPermissionGate {...permissionGate}><div style={styles.page}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></div></AdminPermissionGate>;
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🔔 通知设置</h1>
-      <p style={styles.subtitle}>配置通知规则与推送渠道。按业务类别设置通知频率上限、静默时段与推送渠道，支持多通道并行推送。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🔔 通知设置</h1>
+        <p style={styles.subtitle}>配置通知规则与推送渠道。按业务类别设置通知频率上限、静默时段与推送渠道，支持多通道并行推送。</p>
 
-      {/* 通知规则 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📋 通知规则</h2>
-        <p style={styles.sectionText}>各类业务通知的发送规则配置。安全类通知不受静默时段限制。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>类别</th>
-              <th style={styles.th}>推送渠道</th>
-              <th style={styles.th}>频率上限</th>
-              <th style={styles.th}>静默时段</th>
-              <th style={styles.th}>状态</th>
-            </tr>
-          </thead>
-          <tbody>
-            {RULES.map(r => (
-              <tr key={r.category}>
-                <td style={{ ...styles.td, fontWeight: 600 }}>{r.category}</td>
-                <td style={styles.td}>{r.channels}</td>
-                <td style={styles.td}>{r.maxPerHour}次/小时</td>
-                <td style={styles.td}>{r.quietPeriod}</td>
-                <td style={styles.td}><span style={styles.tag(r.enabled ? '#22c55e' : '#ef4444')}>● {r.enabled ? '启用' : '停用'}</span></td>
+        {/* 通知规则 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📋 通知规则</h2>
+          <p style={styles.sectionText}>各类业务通知的发送规则配置。安全类通知不受静默时段限制。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>类别</th>
+                <th style={styles.th}>推送渠道</th>
+                <th style={styles.th}>频率上限</th>
+                <th style={styles.th}>静默时段</th>
+                <th style={styles.th}>状态</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {RULES.map(r => (
+                <tr key={r.category}>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{r.category}</td>
+                  <td style={styles.td}>{r.channels}</td>
+                  <td style={styles.td}>{r.maxPerHour}次/小时</td>
+                  <td style={styles.td}>{r.quietPeriod}</td>
+                  <td style={styles.td}><span style={styles.tag(r.enabled ? '#22c55e' : '#ef4444')}>● {r.enabled ? '启用' : '停用'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* 推送渠道 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📡 推送渠道</h2>
-        <p style={styles.sectionText}>系统支持以下通知推送渠道，每个通知规则可自定义渠道组合。</p>
-        <div style={styles.channelGrid}>
-          <div style={styles.channelCard}><div style={styles.channelIcon}>📱</div><div style={styles.channelName}>Push 推送</div><div style={styles.channelDesc}>App 消息推送</div></div>
-          <div style={styles.channelCard}><div style={styles.channelIcon}>💬</div><div style={styles.channelName}>短信</div><div style={styles.channelDesc}>短信平台发送</div></div>
-          <div style={styles.channelCard}><div style={styles.channelIcon}>📧</div><div style={styles.channelName}>邮件</div><div style={styles.channelDesc}>SMTP 邮件服务</div></div>
-          <div style={styles.channelCard}><div style={styles.channelIcon}>📋</div><div style={styles.channelName}>App内</div><div style={styles.channelDesc}>应用内消息中心</div></div>
+        {/* 推送渠道 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📡 推送渠道</h2>
+          <p style={styles.sectionText}>系统支持以下通知推送渠道，每个通知规则可自定义渠道组合。</p>
+          <div style={styles.channelGrid}>
+            <div style={styles.channelCard}><div style={styles.channelIcon}>📱</div><div style={styles.channelName}>Push 推送</div><div style={styles.channelDesc}>App 消息推送</div></div>
+            <div style={styles.channelCard}><div style={styles.channelIcon}>💬</div><div style={styles.channelName}>短信</div><div style={styles.channelDesc}>短信平台发送</div></div>
+            <div style={styles.channelCard}><div style={styles.channelIcon}>📧</div><div style={styles.channelName}>邮件</div><div style={styles.channelDesc}>SMTP 邮件服务</div></div>
+            <div style={styles.channelCard}><div style={styles.channelIcon}>📋</div><div style={styles.channelName}>App内</div><div style={styles.channelDesc}>应用内消息中心</div></div>
+          </div>
         </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

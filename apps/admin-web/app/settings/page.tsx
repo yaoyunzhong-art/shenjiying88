@@ -10,6 +10,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Tabs } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
   getCachedAdminUser,
   hasAdminPermission,
@@ -220,6 +221,13 @@ const styles = {
   },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '设置中心访问受限',
+  description:
+    '设置中心页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看配置目录、状态摘要与模块权限缺口。',
+} as const;
+
 // ============================================================
 // 页面组件
 // ============================================================
@@ -246,126 +254,128 @@ export default function SettingsPage() {
   const accessibleModuleCount = MODULES.filter(canAccessModule).length;
 
   return (
-    <div style={styles.page}>
-      {/* 页面头部 */}
-      <div style={styles.header}>
-        <h1 style={styles.title}>⚙️ 设置中心</h1>
-        <p style={styles.subtitle}>
-          系统全局配置管理面板。管理支付、会员、安全、通知等 {totalModules} 个配置模块，
-          每个模块支持独立的参数配置与状态监控。
-        </p>
-        <div style={{ ...styles.moduleCard, cursor: 'default', marginTop: 16 }}>
-          {currentUser ? (
-            <>
-              <div style={{ ...styles.moduleName, fontSize: 14 }}>
-                当前会话角色：{currentUser.role}
-              </div>
-              <div style={styles.moduleDescription}>
-                已识别 {currentUser.permissions.length} 项权限，可访问 {accessibleModuleCount}/{totalModules} 个配置模块。
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ ...styles.moduleName, fontSize: 14 }}>未检测到管理员会话</div>
-              <div style={styles.moduleDescription}>
-                当前仅展示目录预览。登录后会依据本地 session 中的 permissions 决定可访问模块。
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* 统计卡片 */}
-      <div style={styles.statsRow}>
-        <div style={styles.statCard('rgba(30, 41, 59, 0.8)')}>
-          <div style={styles.statLabel}>配置模块总数</div>
-          <div style={styles.statValue}>{totalModules}</div>
-        </div>
-        <div style={styles.statCard('rgba(34, 197, 94, 0.08)')}>
-          <div style={styles.statLabel}>已完全配置</div>
-          <div style={{ ...styles.statValue, color: '#22c55e' }}>{configuredCount}</div>
-        </div>
-        <div style={styles.statCard('rgba(234, 179, 8, 0.08)')}>
-          <div style={styles.statLabel}>部分配置</div>
-          <div style={{ ...styles.statValue, color: '#eab308' }}>{partialCount}</div>
-        </div>
-        <div style={styles.statCard('rgba(239, 68, 68, 0.08)')}>
-          <div style={styles.statLabel}>待配置</div>
-          <div style={{ ...styles.statValue, color: '#ef4444' }}>{pendingCount}</div>
-        </div>
-      </div>
-
-      {/* 分类 Tab */}
-      <div style={styles.tabBar}>
-        <Tabs
-          items={tabItems}
-          activeKey={activeCategory}
-          onChange={(key: string) => setActiveCategory(key as SettingCategory)}
-          variant="underline"
-          size="md"
-        />
-      </div>
-
-      {/* 当前分类下的配置模块列表 */}
-      <div>
-        <h2 style={styles.sectionTitle}>
-          📋 {CATEGORY_LABEL[activeCategory]}
-        </h2>
-        <div style={styles.grid}>
-          {filteredModules.length > 0 ? (
-            filteredModules.map(mod => {
-              const canAccess = canAccessModule(mod);
-              const cardStyle = {
-                ...styles.moduleCard,
-                opacity: canAccess ? 1 : 0.58,
-                cursor: canAccess ? 'pointer' : 'not-allowed',
-              };
-
-              const content = (
-                <>
-                  <div style={styles.moduleHeader}>
-                    <span style={styles.moduleIcon}>{mod.icon}</span>
-                    <span style={styles.moduleName}>{mod.label}</span>
-                  </div>
-                  <div style={styles.moduleDescription}>{mod.description}</div>
-                  <div style={styles.moduleFooter}>
-                    <span style={styles.statusBadge(STATUS_COLOR[mod.status])}>
-                      <span style={styles.statusDot(STATUS_COLOR[mod.status])} />
-                      {STATUS_LABEL[mod.status]}
-                    </span>
-                    <div style={{ display: 'grid', justifyItems: 'end', gap: 4 }}>
-                      {mod.itemCount !== undefined && (
-                        <span style={styles.itemCount}>{mod.itemCount} 项设置</span>
-                      )}
-                      <span style={{ ...styles.itemCount, color: canAccess ? '#94a3b8' : '#f59e0b' }}>
-                        {canAccess ? `权限: ${mod.requiredPermission ?? 'settings:read'}` : `缺少 ${mod.requiredPermission ?? 'settings:read'}`}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              );
-
-              return canAccess ? (
-                <Link
-                  key={mod.key}
-                  href={mod.href}
-                  style={cardStyle}
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div key={mod.key} style={cardStyle} aria-disabled="true">
-                  {content}
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        {/* 页面头部 */}
+        <div style={styles.header}>
+          <h1 style={styles.title}>⚙️ 设置中心</h1>
+          <p style={styles.subtitle}>
+            系统全局配置管理面板。管理支付、会员、安全、通知等 {totalModules} 个配置模块，
+            每个模块支持独立的参数配置与状态监控。
+          </p>
+          <div style={{ ...styles.moduleCard, cursor: 'default', marginTop: 16 }}>
+            {currentUser ? (
+              <>
+                <div style={{ ...styles.moduleName, fontSize: 14 }}>
+                  当前会话角色：{currentUser.role}
                 </div>
-              );
-            })
-          ) : (
-            <div style={styles.emptyText}>
-              该分类下暂无配置模块
-            </div>
-          )}
+                <div style={styles.moduleDescription}>
+                  已识别 {currentUser.permissions.length} 项权限，可访问 {accessibleModuleCount}/{totalModules} 个配置模块。
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ ...styles.moduleName, fontSize: 14 }}>未检测到管理员会话</div>
+                <div style={styles.moduleDescription}>
+                  当前仅展示目录预览。登录后会依据本地 session 中的 permissions 决定可访问模块。
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* 统计卡片 */}
+        <div style={styles.statsRow}>
+          <div style={styles.statCard('rgba(30, 41, 59, 0.8)')}>
+            <div style={styles.statLabel}>配置模块总数</div>
+            <div style={styles.statValue}>{totalModules}</div>
+          </div>
+          <div style={styles.statCard('rgba(34, 197, 94, 0.08)')}>
+            <div style={styles.statLabel}>已完全配置</div>
+            <div style={{ ...styles.statValue, color: '#22c55e' }}>{configuredCount}</div>
+          </div>
+          <div style={styles.statCard('rgba(234, 179, 8, 0.08)')}>
+            <div style={styles.statLabel}>部分配置</div>
+            <div style={{ ...styles.statValue, color: '#eab308' }}>{partialCount}</div>
+          </div>
+          <div style={styles.statCard('rgba(239, 68, 68, 0.08)')}>
+            <div style={styles.statLabel}>待配置</div>
+            <div style={{ ...styles.statValue, color: '#ef4444' }}>{pendingCount}</div>
+          </div>
+        </div>
+
+        {/* 分类 Tab */}
+        <div style={styles.tabBar}>
+          <Tabs
+            items={tabItems}
+            activeKey={activeCategory}
+            onChange={(key: string) => setActiveCategory(key as SettingCategory)}
+            variant="underline"
+            size="md"
+          />
+        </div>
+
+        {/* 当前分类下的配置模块列表 */}
+        <div>
+          <h2 style={styles.sectionTitle}>
+            📋 {CATEGORY_LABEL[activeCategory]}
+          </h2>
+          <div style={styles.grid}>
+            {filteredModules.length > 0 ? (
+              filteredModules.map(mod => {
+                const canAccess = canAccessModule(mod);
+                const cardStyle = {
+                  ...styles.moduleCard,
+                  opacity: canAccess ? 1 : 0.58,
+                  cursor: canAccess ? 'pointer' : 'not-allowed',
+                };
+
+                const content = (
+                  <>
+                    <div style={styles.moduleHeader}>
+                      <span style={styles.moduleIcon}>{mod.icon}</span>
+                      <span style={styles.moduleName}>{mod.label}</span>
+                    </div>
+                    <div style={styles.moduleDescription}>{mod.description}</div>
+                    <div style={styles.moduleFooter}>
+                      <span style={styles.statusBadge(STATUS_COLOR[mod.status])}>
+                        <span style={styles.statusDot(STATUS_COLOR[mod.status])} />
+                        {STATUS_LABEL[mod.status]}
+                      </span>
+                      <div style={{ display: 'grid', justifyItems: 'end', gap: 4 }}>
+                        {mod.itemCount !== undefined && (
+                          <span style={styles.itemCount}>{mod.itemCount} 项设置</span>
+                        )}
+                        <span style={{ ...styles.itemCount, color: canAccess ? '#94a3b8' : '#f59e0b' }}>
+                          {canAccess ? `权限: ${mod.requiredPermission ?? 'settings:read'}` : `缺少 ${mod.requiredPermission ?? 'settings:read'}`}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                );
+
+                return canAccess ? (
+                  <Link
+                    key={mod.key}
+                    href={mod.href}
+                    style={cardStyle}
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={mod.key} style={cardStyle} aria-disabled="true">
+                    {content}
+                  </div>
+                );
+              })
+            ) : (
+              <div style={styles.emptyText}>
+                该分类下暂无配置模块
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   );
 }

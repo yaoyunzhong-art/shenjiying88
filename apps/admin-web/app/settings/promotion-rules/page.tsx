@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface RulePreview {
   name: string;
@@ -55,6 +56,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '促销规则访问受限',
+  description:
+    '促销规则页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看活动规则、类型说明与时效配置。',
+} as const;
+
 export default function PromotionRulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,69 +74,73 @@ export default function PromotionRulesPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div></AdminPermissionGate>;
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return <AdminPermissionGate {...permissionGate}><div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div></AdminPermissionGate>;
   }
 
   if (RULES.length === 0) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.title}>🎁 促销规则设置</h1>
-        <p style={styles.subtitle}>配置促销活动规则与触发条件。</p>
-        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.page}>
+          <h1 style={styles.title}>🎁 促销规则设置</h1>
+          <p style={styles.subtitle}>配置促销活动规则与触发条件。</p>
+          <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🎁 促销规则设置</h1>
-      <p style={styles.subtitle}>配置促销活动规则与触发条件。支持满减、折扣、赠品、包邮、加价购、秒杀六种促销类型，灵活设置优先级与时效。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🎁 促销规则设置</h1>
+        <p style={styles.subtitle}>配置促销活动规则与触发条件。支持满减、折扣、赠品、包邮、加价购、秒杀六种促销类型，灵活设置优先级与时效。</p>
 
-      {/* 活动规则列表 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📋 当前活动规则</h2>
-        <p style={styles.sectionText}>系统中正在运行或已配置的促销规则。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>规则名称</th>
-              <th style={styles.th}>类型</th>
-              <th style={styles.th}>状态</th>
-              <th style={styles.th}>有效期</th>
-              <th style={styles.th}>条件</th>
-            </tr>
-          </thead>
-          <tbody>
-            {RULES.map(r => (
-              <tr key={r.name}>
-                <td style={{ ...styles.td, fontWeight: 600 }}>{r.name}</td>
-                <td style={styles.td}>{r.type}</td>
-                <td style={styles.td}><span style={styles.tag('#22c55e')}>● 进行中</span></td>
-                <td style={styles.td}>{r.period}</td>
-                <td style={styles.td}>{r.condition}</td>
+        {/* 活动规则列表 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📋 当前活动规则</h2>
+          <p style={styles.sectionText}>系统中正在运行或已配置的促销规则。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>规则名称</th>
+                <th style={styles.th}>类型</th>
+                <th style={styles.th}>状态</th>
+                <th style={styles.th}>有效期</th>
+                <th style={styles.th}>条件</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {RULES.map(r => (
+                <tr key={r.name}>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{r.name}</td>
+                  <td style={styles.td}>{r.type}</td>
+                  <td style={styles.td}><span style={styles.tag('#22c55e')}>● 进行中</span></td>
+                  <td style={styles.td}>{r.period}</td>
+                  <td style={styles.td}>{r.condition}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* 促销类型说明 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🏷️ 促销类型说明</h2>
-        <div style={styles.typeGrid}>
-          {PROMOTION_TYPES.map(pt => (
-            <div key={pt.name} style={styles.typeCard}>
-              <div style={styles.typeIcon}>{pt.icon}</div>
-              <div style={styles.typeName}>{pt.name}</div>
-              <div style={styles.typeDesc}>{pt.desc}</div>
-            </div>
-          ))}
+        {/* 促销类型说明 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🏷️ 促销类型说明</h2>
+          <div style={styles.typeGrid}>
+            {PROMOTION_TYPES.map(pt => (
+              <div key={pt.name} style={styles.typeCard}>
+                <div style={styles.typeIcon}>{pt.icon}</div>
+                <div style={styles.typeName}>{pt.name}</div>
+                <div style={styles.typeDesc}>{pt.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }
