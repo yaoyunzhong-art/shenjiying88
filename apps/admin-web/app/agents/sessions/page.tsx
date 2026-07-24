@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -49,13 +50,38 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_OPTIONS = ['全部', 'completed', 'running', 'failed', 'pending']
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: 'Agent 会话追踪访问受限',
+  description:
+    'Agent 会话追踪页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看实时会话、状态分布与会话详情。',
+} as const
+
 export default function AgentSessionsPage() {
   // 三态条件渲染
   const [loading, _setLoading] = useState(false)
   const [error, _setError] = useState<string | null>(null)
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!SEED_SESSIONS || SEED_SESSIONS.length === 0) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (!SEED_SESSIONS || SEED_SESSIONS.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    )
+  }
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -101,7 +127,8 @@ export default function AgentSessionsPage() {
   }, [])
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>Agent 会话追踪</h1>
         <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看 ReAct Agent 会话的实时状态、用户输入、当前步数与最终输出，作为会话级可观测面板。</p>
@@ -212,6 +239,7 @@ export default function AgentSessionsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

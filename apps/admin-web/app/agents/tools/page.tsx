@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -52,13 +53,38 @@ const RISK_LABELS: Record<string, string> = {
 
 const CATEGORY_OPTIONS = ['全部', '数据查询', '资金操作', '库存管理', '通知', '营销', '履约']
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: 'Agent 工具注册中心访问受限',
+  description:
+    'Agent 工具注册中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看工具定义、风险等级与参数治理信息。',
+} as const
+
 export default function AgentToolsPage() {
   // 三态条件渲染
   const [loading, _setLoading] = useState(false)
   const [error, _setError] = useState<string | null>(null)
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!SEED_TOOLS || SEED_TOOLS.length === 0) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (!SEED_TOOLS || SEED_TOOLS.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    )
+  }
 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -102,7 +128,8 @@ export default function AgentToolsPage() {
   }, [])
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>Agent 工具注册中心</h1>
         <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看 Agent 可调用的工具定义、参数 schema 与风险等级，作为 runtime governance 与 tool risk gating 的依据。</p>
@@ -216,6 +243,7 @@ export default function AgentToolsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }
