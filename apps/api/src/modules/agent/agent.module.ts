@@ -21,7 +21,7 @@ export class AgentModule implements OnModuleInit {
    */
   onModuleInit(): void {
     if (!this.eventBuffer || typeof this.eventBuffer.setEventStore !== 'function') {
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.DEBUG_INIT_LOGS === '1' && process.env.NODE_ENV !== 'production') {
         console.warn('[agent] event buffer unavailable, skip dual-write setup')
       }
       return

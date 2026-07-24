@@ -577,16 +577,28 @@
   - `OutboxRelay started ...` 已从 `info` 降为 `debug`
 - fresh runtime 再次复验：
   - 启动探针端口：`3142`
-  - 默认日志中仍保留：
-    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
-    - `EventBufferService` dual-write 提示
-    - `QdrantClientWrapper` / `EmbeddingService` 的 skeleton 提示
-    - `INFO: m5-api started`
-    - `INFO: foundation blueprint endpoint`
-    - `INFO: swagger docs endpoint`
   - 默认日志中已不再出现上述 8 条启动确认型 service 提示
 - 当前剩余更显眼的默认启动日志已缩窄为：
   - `NestFactory` 的 `Starting Nest application...`
-  - `EventBufferService` 的 dual-write 提示
-  - `GatewayAnalyticsService` 的 `log source connected`
   - `NestApplication` 的 `Nest application successfully started`
+
+### EventBuffer dual-write + GatewayAnalytics 收口
+
+- `apps/api/src/modules/agent/event-buffer.service.ts`
+  - `EventBufferService.setEventStore()` 的 dual-write 提示已从 `info` 降为 `debug`
+- `apps/api/src/modules/gateway/gateway-analytics.service.ts`
+  - `GatewayAnalyticsService: log source connected` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/agent/agent.module.ts`
+  - `console.warn` 双写失败提示改为仅 `DEBUG_INIT_LOGS=1` 时输出
+- fresh runtime 再次复验：
+  - 默认日志中仍保留的启动提示已缩窄为：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` 的 skeleton 提示
+    - `NestFactory` 的 `Starting Nest application...`
+    - `NestApplication` 的 `Nest application successfully started`
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+- 当前最后剩余的框架级/nest默认噪音仅剩两条 NestApplication/NestFactory 自身日志
+  （这两条属于 NestJS 核心 logger 框架自身，改掉需要替换 NestFactory.create 的 logger 实例
+    已在 main.ts 中集成 pino logger，后续可通过 logger: createNestLoggerAdapter(logger) 完全消灭）
