@@ -166,4 +166,155 @@ describe('MemberLevelService', () => {
       assert.ok(result.growthValue >= 0)
     })
   })
+
+  describe('BS-0114: 升级事件发射', () => {
+    it('should NOT emit event when previousLevelKey is not provided', () => {
+      const result = service.evaluateMemberLevel({
+        memberId: 'member-evt-001',
+        growthValue: 2000,
+        totalSpend: 5000,
+        totalVisits: 30,
+        tenantId: 'tenant-001'
+      })
+
+      assert.equal(result.currentLevelKey, 'VIP_L2')
+      assert.ok(result.upgraded)
+    })
+
+    it('should NOT emit event when level unchanged vs previousLevelKey', () => {
+      const result = service.evaluateMemberLevel({
+        memberId: 'member-evt-002',
+        growthValue: 2000,
+        totalSpend: 5000,
+        totalVisits: 30,
+        tenantId: 'tenant-001'
+      }, 'VIP_L2')
+
+      assert.equal(result.currentLevelKey, 'VIP_L2')
+      assert.ok(result.upgraded)
+    })
+
+    it('should emit upgrade event when level changes with mock event bus', () => {
+      const published: Array<{ name: string; payload: unknown }> = []
+      const mockBus = {
+        publish: async (eventName: string, payload: unknown) => {
+          published.push({ name: eventName, payload })
+        },
+        subscribe: () => {},
+        backend: 'memory' as const,
+        ping: async () => true
+      }
+      const svc = new MemberLevelService(mockBus)
+
+      const result = svc.evaluateMemberLevel({
+        memberId: 'member-evt-003',
+        growthValue: 2500,
+        totalSpend: 5000,
+        totalVisits: 30,
+        tenantId: 'tenant-001'
+      }, 'VIP_L2')
+
+      assert.equal(result.currentLevelKey, 'VIP_L3')
+      assert.equal(published.length, 1)
+      assert.equal(published[0]!.name, 'member-level.upgraded')
+      const payload = published[0]!.payload as Record<string, unknown>
+      assert.equal(payload['memberId'], 'member-evt-003')
+      assert.equal(payload['fromLevelKey'], 'VIP_L2')
+      assert.equal(payload['toLevelKey'], 'VIP_L3')
+    })
+
+    it('should emit upgrade event for multi-level jump', () => {
+      const published: Array<{ name: string; payload: unknown }> = []
+      const mockBus = {
+        publish: async (eventName: string, payload: unknown) => {
+          published.push({ name: eventName, payload })
+        },
+        subscribe: () => {},
+        backend: 'memory' as const,
+        ping: async () => true
+      }
+      const svc = new MemberLevelService(mockBus)
+
+      const result = svc.evaluateMemberLevel({
+        memberId: 'member-evt-004',
+        growthValue: 300000,
+        totalSpend: 3000000,
+        totalVisits: 5000,
+        tenantId: 'tenant-001'
+      }, 'REGULAR_L1')
+
+      assert.equal(result.currentLevelKey, 'MYTH_L3')
+      assert.equal(published.length, 1)
+      const payload = published[0]!.payload as Record<string, unknown>
+      assert.equal(payload['fromLevelKey'], 'REGULAR_L1')
+      assert.equal(payload['toLevelKey'], 'MYTH_L3')
+    })
+
+    it('should include all required fields in upgrade event payload', () => {
+      const published: Array<{ name: string; payload: unknown }> = []
+      const mockBus = {
+        publish: async (eventName: string, payload: unknown) => {
+          published.push({ name: eventName, payload })
+        },
+        subscribe: () => {},
+        backend: 'memory' as const,
+        ping: async () => true
+      }
+      const svc = new MemberLevelService(mockBus)
+
+      svc.evaluateMemberLevel({
+        memberId: 'member-evt-005',
+        growthValue: 2600,
+        totalSpend: 5000,
+        totalVisits: 30,
+        tenantId: 'tenant-005'
+      }, 'VIP_L2')
+
+      assert.equal(published.length, 1)
+      const payload = published[0]!.payload as Record<string, unknown>
+      assert.equal(payload['eventType'], 'member-level.upgraded')
+      assert.ok(typeof payload['timestamp'] === 'string')
+      assert.equal(payload['memberId'], 'member-evt-005')
+      assert.equal(payload['tenantId'], 'tenant-005')
+      assert.equal(payload['fromLevelKey'], 'VIP_L2')
+      assert.equal(payload['toLevelKey'], 'VIP_L3')
+      assert.equal(payload['growthValue'], 2600)
+      assert.ok(Array.isArray(payload['newBenefits']))
+      assert.ok(typeof payload['reason'] === 'string')
+    })
+
+    it('should NOT crash when eventBus is undefined', () => {
+      const svc = new MemberLevelService() // no event bus
+
+      const result = svc.evaluateMemberLevel({
+        memberId: 'member-evt-006',
+        growthValue: 100,
+        totalSpend: 200,
+        totalVisits: 2,
+        tenantId: 'tenant-001'
+      }, 'REGULAR_L1')
+
+      assert.equal(result.currentLevelKey, 'REGULAR_L2')
+    })
+
+    it('should handle eventBus publish rejection gracefully', () => {
+      const failingBus = {
+        publish: async () => { throw new Error('bus down') },
+        subscribe: () => {},
+        backend: 'memory' as const,
+        ping: async () => true
+      }
+      const svc = new MemberLevelService(failingBus)
+
+      const result = svc.evaluateMemberLevel({
+        memberId: 'member-evt-007',
+        growthValue: 100,
+        totalSpend: 200,
+        totalVisits: 2,
+        tenantId: 'tenant-001'
+      }, 'REGULAR_L1')
+
+      assert.equal(result.currentLevelKey, 'REGULAR_L2')
+    })
+  })
 })
