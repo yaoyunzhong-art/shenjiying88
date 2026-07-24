@@ -1,7 +1,7 @@
 /**
  * 未成年保护 Controller
  */
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, NotFoundException } from '@nestjs/common'
 import { MinorProtectionService } from './minor-protection.service'
 import type { IdentityVerifyMethod, MinorProtectionConfig } from './minor-protection.entity'
 
@@ -34,7 +34,9 @@ export class MinorProtectionController {
 
   @Get('verifications/:id')
   getVerification(@Param('id') id: string, @Query('tenantId') tenantId: string) {
-    return this.service.getVerification(id, tenantId)
+    const record = this.service.getVerification(id, tenantId)
+    if (!record) throw new NotFoundException('Verification record not found')
+    return record
   }
 
   @Post('check-access')
