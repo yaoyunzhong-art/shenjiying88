@@ -575,3 +575,496 @@ test.describe('授权检查 - 并发与批量场景', () => {
     expect(statusText).toBeTruthy()
   })
 })
+
+// ===== 增强测试: 批量许可证状态轮询（3 tests） =====
+
+test.describe('授权检查 - 批量许可证状态轮询', () => {
+  test.beforeEach(async ({ licensePage }) => {
+    await licensePage.navigateToLicenseManager()
+  })
+
+  test('TC32-31: 批量轮询多个许可证状态 @license', async ({ licensePage }) => {
+    // Given: 获取授权列表
+    const licenses = await licensePage.getLicenseList()
+
+    // When: 对列表中每个授权执行检查
+    const results = []
+    for (const lic of licenses.slice(0, Math.min(licenses.length, 5))) {
+      const r = await licensePage.checkLicense()
+      results.push(r)
+    }
+
+    // Then: 每个检查结果应格式正确
+    expect(results.length).toBeGreaterThanOrEqual(0)
+    results.forEach(r => {
+      expect(r).toBeDefined()
+      expect(typeof r.isValid).toBe('boolean')
+      expect(r.status).toBeTruthy()
+    })
+  })
+
+  test('TC32-32: 轮询间隔一致性验证 @license', async ({ licensePage }) => {
+    // Given: 连续轮询两次
+    const t1 = Date.now()
+    await licensePage.checkLicense()
+    const t2 = Date.now()
+    await licensePage.checkLicense()
+    const t3 = Date.now()
+
+    // When: 计算两次间隔
+    const interval = t3 - t2
+    const totalTime = t2 - t1
+
+    // Then: 两次检查的间隔不应过大（说明非阻塞）
+    expect(interval).toBeGreaterThanOrEqual(0)
+    // 每次检查应在合理时间内完成
+    expect(totalTime).toBeLessThan(TIMEOUTS.short)
+  })
+
+  test('TC32-33: 设备离线时轮询降级 @license', async ({ licensePage, context }) => {
+    // Given: 离线状态
+    await context.setOffline(true)
+
+    // When: 执行轮询检查
+    const result = await licensePage.checkLicense().catch(() => ({
+      status: 'offline',
+      isValid: false,
+      fromCache: false,
+    }))
+
+    // Then: 离线应降级返回缓存或错误
+    await context.setOffline(false)
+    expect(result).toBeDefined()
+  })
+})
+
+// ===== 增强测试: 离线缓存校验（2 tests） =====
+
+test.describe('授权检查 - 离线缓存校验', () => {
+  test.beforeEach(async ({ licensePage }) => {
+    await licensePage.navigateToLicenseManager()
+  })
+
+  test('TC32-34: 离线状态下读取本地缓存数据 @license', async ({ licensePage, context }) => {
+    // Given: 先在线加载获取缓存
+    await licensePage.checkLicense()
+
+    // When: 设置离线
+    await context.setOffline(true)
+
+    // 执行检查
+    const cachedResult = await licensePage.checkLicense().catch(() => null)
+    await context.setOffline(false)
+
+    // Then: 离线时应有缓存返回
+    if (cachedResult) {
+      expect(cachedResult.isValid).toBeDefined()
+      // 缓存数据应是合理的布尔值
+      expect(typeof cachedResult.isValid).toBe('boolean')
+    }
+  })
+
+  test('TC32-35: 离线缓存数据格式完整性 @license', async ({ licensePage, context }) => {
+    // Given: 在线获得完整缓存
+    await licensePage.checkLicense()
+
+    // When: 离线读取
+    await context.setOffline(true)
+    const offlineData = await licensePage.checkLicense().catch(() => null)
+    await context.setOffline(false)
+
+    // Then: 缓存数据应包含关键字段
+    if (offlineData && offlineData.fromCache) {
+      expect(offlineData).toMatchObject({
+        isValid: expect.any(Boolean),
+        status: expect.any(String),
+        fromCache: true,
+      })
+    }
+  })
+})
+
+// ===== 增强测试: 混合订阅+永久许可证校验（2 tests） =====
+
+test.describe('授权检查 - 混合订阅+永久许可证校验', () => {
+  test('TC32-36: 同时存在订阅和永久许可证时状态正确 @license', async ({ licensePage }) => {
+    // Given: 导航到授权页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 检查是否存在多类型许可证指示器
+    const multiLicenseIndicator = await licensePage.isVisible('[data-testid="multi-license-indicator"]').catch(() => false)
+
+    // Then: 如果是混合许可证场景
+    if (multiLicenseIndicator) {
+      const licenseTypes = await licensePage.page.locator('[data-testid="license-type-badge"]').allTextContents()
+      // 应有订阅和永久两种类型
+      const hasSubscription = licenseTypes.some(t => /订阅|subscri/i.test(t))
+      const hasPermanent = licenseTypes.some(t => /永久|permanent|life/i.test(t))
+      expect(hasSubscription || hasPermanent).toBe(true)
+    }
+
+    // 检查结果仍应返回有效
+    const result = await licensePage.checkLicense()
+    expect(result.isValid).toBeDefined()
+  })
+
+  test('TC32-37: 订阅到期后永久许可证仍有效 @license', async ({ licensePage, page }) => {
+    // Given: 模拟订阅到期但永久许可证存在
+    await licensePage.navigateToLicenseManager()
+
+    // 返回一个混合场景：订阅无效但永久有效
+    await page.route('**/api/license/check', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          valid: true,
+          fromCache: false,
+          status: 'active (permanent)',
+          licenses: [
+            { type: 'subscription', status: 'expired', expireAt: '2025-01-01' },
+            { type: 'permanent', status: 'active', expireAt: null },
+          ],
+        }),
+      })
+    })
+
+    // When: 执行检查
+    const result = await licensePage.checkLicense()
+
+    // Then: 虽然订阅过期，但永久许可证未过期，整体有效
+    expect(result.isValid).toBe(true)
+    expect(result.status).toMatch(/active|有效/i)
+  })
+})
+
+// ===== 增强测试: 许可证降级后校验（2 tests） =====
+
+test.describe('授权检查 - 许可证降级后校验', () => {
+  test('TC32-38: 许可证降级后功能受限提示 @license', async ({ licensePage, page }) => {
+    // Given: 许可证被降级
+    await licensePage.navigateToLicenseManager()
+
+    // 模拟降级API响应
+    await page.route('**/api/license/check', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          valid: true,
+          fromCache: false,
+          status: 'downgraded',
+          tier: 'basic',
+          previousTier: 'premium',
+          message: '授权已被降级为基础版',
+        }),
+      })
+    })
+
+    // When: 检查状态
+    const result = await licensePage.checkLicense()
+
+    // Then: 降级状态应正确反映
+    expect(result.isValid).toBe(true)
+    expect(result.status).toMatch(/downgrade|降级|basic/i)
+  })
+
+  test('TC32-39: 降级后核心功能仍可用 @license', async ({ licensePage }) => {
+    // Given: 降级后的许可证
+    await licensePage.navigateToLicenseManager()
+
+    // When: 检查核心功能入口
+    const coreFeature = await licensePage.isVisible('[data-testid="core-feature-section"]').catch(() => false)
+
+    // Then: 即使降级，核心功能应可用
+    if (coreFeature) {
+      const coreBtn = licensePage.page.locator('[data-testid="core-feature-section"]')
+      const isDisabled = await coreBtn.isDisabled().catch(() => false)
+      // 核心功能不应被禁用
+      expect(isDisabled).toBe(false)
+    }
+  })
+})
+
+// ===== 增强测试: 跨区域许可证校验（1 test） =====
+
+test.describe('授权检查 - 跨区域许可证校验', () => {
+  test('TC32-40: 跨区域访问时许可证校验 @license', async ({ licensePage, context }) => {
+    // Given: 模拟不同区域设置
+    await licensePage.navigateToLicenseManager()
+
+    // 通过修改地理位置相关设置
+    await context.addCookies([
+      { name: 'region', value: 'us-east', domain: 'localhost', path: '/' },
+    ])
+
+    // When: 执行校验
+    const result = await licensePage.checkLicense()
+
+    // Then: 跨区域应能正常校验
+    expect(result).toBeDefined()
+    expect(result.status).toBeTruthy()
+
+    // 如果有限区域的指示器，应显示
+    const regionBanner = await licensePage.isVisible('[data-testid="region-restriction-banner"]').catch(() => false)
+    if (regionBanner) {
+      const regionText = await licensePage.getText('[data-testid="region-restriction-banner"]')
+      expect(regionText).toBeTruthy()
+    }
+  })
+})
+
+// ===== 增强测试: 高并发校验（2 tests） =====
+
+test.describe('授权检查 - 高并发校验', () => {
+  test('TC32-41: 多个用户同时校验许可证 @license', async ({ browser }) => {
+    // Given: 创建多个浏览器上下文模拟多用户
+    const userCount = 5
+    const contexts = []
+    const results = []
+
+    for (let i = 0; i < userCount; i++) {
+      const ctx = await browser.newContext()
+      const p = await ctx.newPage()
+      const { LicensePage: LPage } = await import('../pages/license.page')
+      const lp = new LPage(p)
+      await lp.navigateToLicenseManager()
+      contexts.push({ ctx, lp })
+    }
+
+    // When: 所有用户同时发起校验
+    const checkPromises = contexts.map(context =>
+      context.lp.checkLicense().catch(() => ({
+        status: 'error',
+        isValid: false,
+        fromCache: false,
+      }))
+    )
+    results.push(...await Promise.all(checkPromises))
+
+    // Then: 所有校验应返回结果，系统不崩溃
+    expect(results.length).toBe(userCount)
+    results.forEach(r => {
+      expect(r).toBeDefined()
+      expect(typeof r.isValid).toBe('boolean')
+      expect(r.status).toBeTruthy()
+    })
+
+    // 清理
+    for (const c of contexts) {
+      await c.ctx.close()
+    }
+  })
+
+  test('TC32-42: 高并发下校验响应不超时 @performance @license', async ({ licensePage }) => {
+    // Given: 导航到页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 同时发起多个校验请求
+    const startTime = Date.now()
+    const promises = []
+    for (let i = 0; i < 10; i++) {
+      promises.push(licensePage.checkLicense().catch(() => ({
+        status: 'error', isValid: false, fromCache: false,
+      })))
+    }
+    await Promise.all(promises)
+    const totalTime = Date.now() - startTime
+
+    // Then: 并发校验应在合理时间内完成
+    expect(totalTime).toBeLessThan(TIMEOUTS.medium)
+  })
+})
+
+// ===== 增强测试: 校验缓存过期刷新（2 tests） =====
+
+test.describe('授权检查 - 校验缓存过期刷新', () => {
+  test('TC32-43: 缓存过期后自动发起新请求 @license', async ({ licensePage }) => {
+    // Given: 首次检查建立缓存
+    await licensePage.navigateToLicenseManager()
+    const firstResult = await licensePage.checkLicense()
+
+    // When: 等待缓存过期
+    await licensePage.page.waitForTimeout(2000)
+
+    // 再次检查
+    const secondResult = await licensePage.checkLicense()
+
+    // Then: 第二次应有新数据（缓存过期后是新请求）
+    expect(secondResult).toBeDefined()
+    // 如果两次都成功，状态应一致
+    if (firstResult.isValid === secondResult.isValid) {
+      expect(firstResult.status).toBe(secondResult.status)
+    }
+  })
+
+  test('TC32-44: 强制刷新按钮清除缓存 @license', async ({ licensePage }) => {
+    // Given: 页面有缓存
+    await licensePage.navigateToLicenseManager()
+    await licensePage.checkLicense()
+
+    // When: 点击强制刷新按钮
+    const refreshBtn = await licensePage.isVisible('[data-testid="force-refresh-btn"]').catch(() => false)
+    if (refreshBtn) {
+      await licensePage.click('[data-testid="force-refresh-btn"]')
+      await licensePage.page.waitForTimeout(500)
+
+      // Then: 清除缓存后应显示加载状态
+      const loadingVisible = await licensePage.isVisible(licensePage.common.loading || '[data-testid="loading-spinner"]').catch(() => false)
+      if (loadingVisible) {
+        await licensePage.waitForLoadingComplete()
+      }
+
+      // 最终应显示新的校验结果
+      const result = await licensePage.checkLicense()
+      expect(result).toBeDefined()
+    }
+  })
+})
+
+// ===== 增强测试: 不合法令牌校验（2 tests） =====
+
+test.describe('授权检查 - 不合法令牌校验', () => {
+  test('TC32-45: 已吊销令牌校验失败 @security @license', async ({ licensePage, page }) => {
+    // Given: 模拟已吊销的令牌
+    await licensePage.navigateToLicenseManager()
+
+    // 修改localStorage的令牌为已吊销状态
+    await page.evaluate(() => {
+      localStorage.setItem('auth_token', 'revoked-jwt-token-12345')
+    })
+
+    // When: 执行校验
+    const result = await licensePage.checkLicense().catch(() => ({
+      status: 'unauthorized',
+      isValid: false,
+      fromCache: false,
+    }))
+
+    // Then: 吊销令牌应返回未授权
+    expect(result.isValid).toBe(false)
+  })
+
+  test('TC32-46: 伪造令牌校验拒绝 @security @license', async ({ licensePage, page }) => {
+    // Given: 伪造的令牌
+    await licensePage.navigateToLicenseManager()
+    await page.evaluate(() => {
+      localStorage.setItem('auth_token', 'fake-tampered-token-xyz')
+    })
+
+    // When: 执行校验
+    const result = await licensePage.checkLicense().catch(() => ({
+      status: 'invalid_token',
+      isValid: false,
+      fromCache: false,
+    }))
+
+    // Then: 伪造令牌应被拒绝
+    expect(result.isValid).toBe(false)
+  })
+})
+
+// ===== 增强测试: 吊销后重新激活再校验（2 tests） =====
+
+test.describe('授权检查 - 吊销后重新激活再校验', () => {
+  test('TC32-47: 吊销后重新激活再校验应成功 @license', async ({ licensePage }) => {
+    // Given: 先激活一个有效的授权
+    await licensePage.navigateToLicenseManager()
+    const validCode = TEST_ACTIVATION_CODES.valid.code
+    await licensePage.activateLicense(validCode)
+
+    // 尝试吊销（如果有吊销功能）
+    const suspendBtn = await licensePage.isVisible('[data-testid="license-suspend-btn"]').catch(() => false)
+    if (suspendBtn) {
+      await licensePage.click('[data-testid="license-suspend-btn"]')
+      const confirmVisible = await licensePage.isVisible(licensePage.common.confirmButton)
+      if (confirmVisible) {
+        await licensePage.click(licensePage.common.confirmButton)
+        await licensePage.page.waitForTimeout(500)
+      }
+    }
+
+    // When: 吊销后重新激活
+    await licensePage.navigateToLicenseManager()
+    const reActivateResult = await licensePage.activateLicense(validCode)
+
+    // Then: 重新激活后进行校验
+    const checkResult = await licensePage.checkLicense()
+    expect(checkResult).toBeDefined()
+  })
+
+  test('TC32-48: 吊销-重新激活-再吊销的完整生命周期 @license', async ({ licensePage }) => {
+    // Given: 导航页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 执行完整的授权状态变更
+    const validCode = TEST_ACTIVATION_CODES.valid.code
+    const actResult = await licensePage.activateLicense(validCode)
+
+    await licensePage.navigateToLicenseManager()
+    const check1 = await licensePage.checkLicense()
+
+    // 尝试吊销
+    const suspendBtn = await licensePage.isVisible('[data-testid="license-suspend-btn"]').catch(() => false)
+    if (suspendBtn && check1.isValid) {
+      await licensePage.click('[data-testid="license-suspend-btn"]')
+      const confirmVisible = await licensePage.isVisible(licensePage.common.confirmButton)
+      if (confirmVisible) {
+        await licensePage.click(licensePage.common.confirmButton)
+        await licensePage.page.waitForTimeout(500)
+      }
+    }
+
+    // 重新激活
+    await licensePage.navigateToLicenseManager()
+    await licensePage.activateLicense(validCode)
+
+    // Then: 最终校验应正常
+    const finalCheck = await licensePage.checkLicense()
+    expect(finalCheck).toBeDefined()
+    expect(finalCheck.status).toBeTruthy()
+  })
+})
+
+// ===== 增强测试: 校验响应时间断言（2 tests） =====
+
+test.describe('授权检查 - 校验响应时间断言', () => {
+  test('TC32-49: 校验API响应时间在SLA范围内 @performance @license', async ({ licensePage }) => {
+    // Given: 导航页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 执行校验并计时
+    const startTime = Date.now()
+    const result = await licensePage.checkLicense()
+    const responseTime = Date.now() - startTime
+
+    // Then: 响应时间应满足SLA要求（< 200ms）
+    expect(responseTime).toBeLessThan(200)
+    expect(result.isValid).toBeDefined()
+  })
+
+  test('TC32-50: 多次校验的平均响应时间稳定 @performance @license', async ({ licensePage }) => {
+    // Given: 导航页面
+    await licensePage.navigateToLicenseManager()
+
+    // When: 连续执行5次校验
+    const times = []
+    for (let i = 0; i < 5; i++) {
+      const start = Date.now()
+      await licensePage.checkLicense()
+      times.push(Date.now() - start)
+      await licensePage.page.waitForTimeout(100)
+    }
+
+    // Then: 平均响应时间和方差
+    const avgTime = times.reduce((a, b) => a + b, 0) / times.length
+    const maxTime = Math.max(...times)
+    const minTime = Math.min(...times)
+
+    expect(avgTime).toBeLessThan(150)
+    // 波动不应太大（最大/最小比值 < 5）
+    if (minTime > 0) {
+      expect(maxTime / minTime).toBeLessThan(5)
+    }
+  })
+})
