@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -22,14 +23,20 @@ import {
   CreateInvoiceDto,
   InvoiceQueryDto,
   RevenueSummaryQueryDto,
-  DailyRevenueQueryDto
+  DailyRevenueQueryDto,
+  CreateArchivalDto,
+  ArchivalQueryDto
 } from './finance.dto'
 import { FinanceService } from './finance.service'
+import { FinanceArchivalService } from './finance-archival.service'
 
 @UseGuards(TenantGuard)
 @Controller('finance')
 export class FinanceController {
-  constructor(@Inject(FinanceService) private readonly financeService: FinanceService) {}
+  constructor(
+    @Inject(FinanceService) private readonly financeService: FinanceService,
+    @Inject(FinanceArchivalService) private readonly archivalService: FinanceArchivalService
+  ) {}
 
   private get resolvedFinanceService() {
     return this.financeService as FinanceService & {
@@ -109,6 +116,10 @@ export class FinanceController {
         tenantContext: RequestTenantContext,
         query: DailyRevenueQueryDto
       ) => Promise<ReturnType<FinanceService['getDailyRevenue']>>
+      deleteLedgerResolved?: (
+        ledgerId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['deleteLedger']>>
     }
   }
 
@@ -142,6 +153,17 @@ export class FinanceController {
       return this.resolvedFinanceService.getLedgerResolved(ledgerId, tenantContext)
     }
     return this.financeService.getLedger(ledgerId, tenantContext)
+  }
+
+  @Delete('ledgers/:ledgerId')
+  deleteLedger(
+    @Param('ledgerId') ledgerId: string,
+    @TenantContext() tenantContext: RequestTenantContext
+  ) {
+    if (this.resolvedFinanceService.deleteLedgerResolved) {
+      return this.resolvedFinanceService.deleteLedgerResolved(ledgerId, tenantContext)
+    }
+    return this.financeService.deleteLedger(ledgerId, tenantContext)
   }
 
   // ── Account ──
@@ -274,6 +296,14 @@ export class FinanceController {
     return this.financeService.disputeSettlement(settlementId, tenantContext)
   }
 
+  @Post('settlements/:settlementId/finalize')
+  finalizeSettlement(
+    @Param('settlementId') settlementId: string,
+    @TenantContext() tenantContext: RequestTenantContext
+  ) {
+    return this.financeService.confirmSettlement(settlementId, tenantContext)
+  }
+
   // ── Invoice ──
 
   @Post('invoices')
@@ -344,6 +374,14 @@ export class FinanceController {
     return this.financeService.getRevenueSummary(tenantContext, query)
   }
 
+  @Get('revenue-summary')
+  getRevenueSummaryAlias(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Query() query: RevenueSummaryQueryDto = {} as RevenueSummaryQueryDto
+  ) {
+    return this.getRevenueSummary(tenantContext, query)
+  }
+
   @Get('revenue/daily')
   getDailyRevenue(
     @TenantContext() tenantContext: RequestTenantContext,
@@ -353,6 +391,40 @@ export class FinanceController {
       return this.resolvedFinanceService.getDailyRevenueResolved(tenantContext, query)
     }
     return this.financeService.getDailyRevenue(tenantContext, query)
+  }
+
+  @Get('daily-revenue')
+  getDailyRevenueAlias(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Query() query: DailyRevenueQueryDto = {} as DailyRevenueQueryDto
+  ) {
+    return this.getDailyRevenue(tenantContext, query)
+  }
+
+  // ── Archival ──
+
+  @Post('archivals')
+  createArchival(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: CreateArchivalDto
+  ) {
+    return this.archivalService.archive(tenantContext, body)
+  }
+
+  @Get('archivals')
+  listArchivals(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Query() query: ArchivalQueryDto = {} as ArchivalQueryDto
+  ) {
+    return this.archivalService.listArchivals(tenantContext, query)
+  }
+
+  @Get('archivals/:archivalId')
+  getArchival(
+    @Param('archivalId') archivalId: string,
+    @TenantContext() tenantContext: RequestTenantContext
+  ) {
+    return this.archivalService.getArchival(archivalId, tenantContext)
   }
 
   // ── Transaction Integration ──
