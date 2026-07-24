@@ -113,6 +113,13 @@ describe('integration-orchestration/events: 页面渲染', () => {
   });
 });
 
+describe('integration-orchestration/events — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'));
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
 describe('integration-orchestration/events: 数据类型', () => {
   it('EventStatus has 5 values', () => {
     const statuses: EventStatus[] = ['pending', 'processing', 'completed', 'failed', 'skipped'];
@@ -278,6 +285,7 @@ describe('Integration Orchestration / Events — hooks验证', () => {
   it('包含数组数据', () => assert.ok(PAGE_SRC.includes('[') || PAGE_SRC.includes('...')));
   it('包含条件判断', () => assert.ok(PAGE_SRC.includes('if')));
   it('包含样式定义', () => assert.ok(PAGE_SRC.includes('style={')));
+  it('包含权限边界组件', () => assert.ok(PAGE_SRC.includes('AdminPermissionGate')));
   it('包含数据格式化', () => assert.ok(true));
   it('包含字符串处理', () => assert.ok(true));
   it('包含默认导出', () => assert.ok(PAGE_SRC.includes('export default')));

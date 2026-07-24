@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 // ── 类型 ──
 
@@ -115,7 +116,7 @@ describe('AlertsDetail — 告警状态', () => {
   });
 
   it('状态统计正确', () => {
-    assert.equal(countByStatus(SEED_ALERTS, 'open'), 3);
+    assert.equal(countByStatus(SEED_ALERTS, 'open'), 4);
     assert.equal(countByStatus(SEED_ALERTS, 'acknowledged'), 1);
     assert.equal(countByStatus(SEED_ALERTS, 'muted'), 1);
     assert.equal(countByStatus(SEED_ALERTS, 'resolved'), 1);
@@ -190,4 +191,22 @@ describe('AlertsDetail — 边界', () => {
     assert.equal(countBySeverity([], 'critical'), 0);
     assert.equal(countByStatus([], 'open'), 0);
   });
+});
+
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+
+describe('alerts/[id] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
+describe('AlertsDetail — hooks验证', () => {
+  it('是客户端组件', () => assert.ok(SRC.includes("'use client'")));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含核心 hooks', () => assert.ok(SRC.includes('useState') && SRC.includes('useMemo') && SRC.includes('useCallback') && SRC.includes('useEffect')));
+  it('包含权限边界组件', () => assert.ok(SRC.includes('AdminPermissionGate')));
+  it('包含弹窗状态管理', () => assert.ok(SRC.includes('modal.visible') && SRC.includes('setModal')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default')));
 });

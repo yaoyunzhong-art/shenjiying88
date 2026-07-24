@@ -15,6 +15,7 @@ import {
   StatusBadge,
   WorkspaceBreadcrumb,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ---- 类型导出 ----
 
@@ -330,8 +331,13 @@ export default function AnnouncementsPage() {
   // ---- 渲染 ----
 
   return (
-    <PageShell title="公告管理">
-      <WorkspaceBreadcrumb workspaceLabel="系统管理" workspaceHref="/" detailLabel="公告管理" />
+    <AdminPermissionGate
+      requiredPermission="foundation.governance.read"
+      title="公告管理访问受限"
+      description="公告管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看公告列表、发布编排、归档状态与删除操作。"
+    >
+      <PageShell title="公告管理">
+        <WorkspaceBreadcrumb workspaceLabel="系统管理" workspaceHref="/" detailLabel="公告管理" />
 
       {/* 反馈 */}
       {submitState === 'success' && (
@@ -678,6 +684,7 @@ export default function AnnouncementsPage() {
           </div>
         </div>
       )}
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

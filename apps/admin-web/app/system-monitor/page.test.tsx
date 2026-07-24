@@ -15,6 +15,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const pagePath = resolve(__dirname, 'page.tsx');
 const SRC = fs.readFileSync(pagePath, 'utf-8');
 
+describe('system-monitor — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'))
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})
+
 // ─── Mock fetch — URL-pattern responseRegistry ──
 const responseRegistry = new Map<string, () => unknown>();
 function setResponseFor(pattern: string, factory: () => unknown) { responseRegistry.set(pattern, factory); }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 // ─── 类型定义 ──────────────────────────────────────
 
@@ -129,6 +130,12 @@ export default function SystemMonitorPage() {
 
   const warningCount = services.filter(s => s.status !== 'healthy').length
   const healthyCount = services.filter(s => s.status === 'healthy').length
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '系统监控访问受限',
+    description:
+      '系统监控页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看服务健康、实时指标与活动日志。',
+  } as const
 
   // 系统健康度统计
   const totalServices = services.length
@@ -139,22 +146,25 @@ export default function SystemMonitorPage() {
 
   if (loading && refreshKey === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-        <span className="ml-3 text-gray-600">加载系统状态...</span>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+          <span className="ml-3 text-gray-600">加载系统状态...</span>
+        </div>
+      </AdminPermissionGate>
     )
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">系统监控</h1>
-          <p className="text-sm text-gray-500 mt-1">服务健康 · 实时指标 · 活动日志</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">系统监控</h1>
+            <p className="text-sm text-gray-500 mt-1">服务健康 · 实时指标 · 活动日志</p>
+          </div>
+          <button onClick={handleRefresh} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
         </div>
-        <button onClick={handleRefresh} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
-      </div>
 
       {error && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -273,6 +283,7 @@ export default function SystemMonitorPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

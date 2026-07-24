@@ -19,6 +19,7 @@ import {
   Badge, DataTable, PageShell, Pagination, SearchFilterInput, Select, StatCard, StatusBadge,
   usePagination, useSortedItems, type DataTableColumn, type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -138,84 +139,90 @@ export default function AuditLogsPage() {
   const pageItems = pagination.paginate(sorted);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="审计日志"
-        subtitle="查看所有租户配置变更与操作审计记录,支持搜索和筛选"
-      >
-        <div className="flex gap-3 mb-4 flex-wrap">
-          {[
-            { l: '总日志数', v: logs.length, c: 'text-blue-400' },
-            { l: '错误事件', v: errCnt, c: 'text-red-400' },
-            { l: '警告事件', v: warnCnt, c: 'text-amber-400' },
-            { l: '信息事件', v: infoCnt, c: 'text-green-400' },
-            { l: '操作人数', v: operators, c: 'text-violet-400' },
-            { l: '今日', v: today, c: 'text-cyan-400' },
-            { l: '本周', v: thisWeek, c: 'text-teal-400' },
-          ].map((card) => (
-            <div key={card.l} className="flex-1 min-w-[90px] rounded-xl bg-[rgba(15,23,42,0.4)] border border-[rgba(148,163,184,0.1)] p-3">
-              <div className="text-[11px] text-slate-400 mb-1">{card.l}</div>
-              <div className={`text-xl font-bold font-mono ${card.c}`}>{card.v}</div>
-            </div>
-          ))}
-        </div>
-        <EventTypeDistribution counts={eventTypeCounts} />
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <div className="flex-1 min-w-[240px]">
-            <SearchFilterInput placeholder="搜索摘要/操作人/类型..." value={search}
-              onChange={(v) => { setSearch(v); pagination.setPage(1); }} />
+    <AdminPermissionGate
+      requiredPermission="foundation.governance.read"
+      title="审计日志访问受限"
+      description="审计日志页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看配置变更、权限操作与系统审计记录。"
+    >
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="审计日志"
+          subtitle="查看所有租户配置变更与操作审计记录,支持搜索和筛选"
+        >
+          <div className="flex gap-3 mb-4 flex-wrap">
+            {[
+              { l: '总日志数', v: logs.length, c: 'text-blue-400' },
+              { l: '错误事件', v: errCnt, c: 'text-red-400' },
+              { l: '警告事件', v: warnCnt, c: 'text-amber-400' },
+              { l: '信息事件', v: infoCnt, c: 'text-green-400' },
+              { l: '操作人数', v: operators, c: 'text-violet-400' },
+              { l: '今日', v: today, c: 'text-cyan-400' },
+              { l: '本周', v: thisWeek, c: 'text-teal-400' },
+            ].map((card) => (
+              <div key={card.l} className="flex-1 min-w-[90px] rounded-xl bg-[rgba(15,23,42,0.4)] border border-[rgba(148,163,184,0.1)] p-3">
+                <div className="text-[11px] text-slate-400 mb-1">{card.l}</div>
+                <div className={`text-xl font-bold font-mono ${card.c}`}>{card.v}</div>
+              </div>
+            ))}
           </div>
-          <Select options={EVENT_OPTS} value={eventFilter}
-            onChange={(v) => { setEventFilter(v); pagination.setPage(1); }} placeholder="事件类型" />
-          <Select options={SEV_OPTS} value={sevFilter}
-            onChange={(v) => { setSevFilter(v); pagination.setPage(1); }} placeholder="级别" />
-          <input type="date" value={dateRange.start} onChange={(e) => { setDateRange((d) => ({ ...d, start: e.target.value })); pagination.setPage(1); }}
-            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
-          <input type="date" value={dateRange.end} onChange={(e) => { setDateRange((d) => ({ ...d, end: e.target.value })); pagination.setPage(1); }}
-            className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
-          <button onClick={() => {
-            const csv = formatForExport(filtered);
-            const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-            URL.revokeObjectURL(url);
-          }} className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">导出CSV</button>
-          <span className="text-xs text-slate-500">共 {sorted.length} 条</span>
-        </div>
-        <DataTable<AuditLogEntry>
-          columns={cols} rows={pageItems} sort={sortConfig} onSortChange={setSortConfig}
-          emptyText={search || eventFilter || sevFilter ? '未找到匹配的日志' : '暂无审计日志'}
-          rowKey={(r) => r.id}
-          onRowClick={(r) => setExpandedId(expandedId === r.id ? null : r.id)}
-        />
-        {expandedId && (
-          <div className="mt-3 rounded-lg bg-slate-800/80 border border-slate-700 p-4 text-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-medium text-white">日志详情</span>
-              <button onClick={() => setExpandedId(null)} className="text-xs text-slate-400 hover:text-white">关闭 ×</button>
+          <EventTypeDistribution counts={eventTypeCounts} />
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <SearchFilterInput placeholder="搜索摘要/操作人/类型..." value={search}
+                onChange={(v) => { setSearch(v); pagination.setPage(1); }} />
             </div>
-            {(() => {
-              const entry = logs.find((l) => l.id === expandedId);
-              if (!entry) return <p className="text-slate-500">未找到日志条目</p>;
-              return (
-                <div className="grid grid-cols-2 gap-3">
-                  <div><span className="text-slate-400">ID: </span><span className="text-white font-mono text-xs">{entry.id}</span></div>
-                  <div><span className="text-slate-400">租户: </span><span className="text-white">{entry.tenantId}</span></div>
-                  <div><span className="text-slate-400">摘要: </span><span className="text-white">{entry.summary}</span></div>
-                  <div><span className="text-slate-400">操作人: </span><span className="font-mono text-xs text-white">{entry.operator}</span></div>
-                  <div><span className="text-slate-400">来源: </span><span className="text-white">{entry.source}</span></div>
-                  <div><span className="text-slate-400">时间: </span><span className="font-mono text-xs text-white">{entry.createdAt}</span></div>
-                </div>
-              );
-            })()}
+            <Select options={EVENT_OPTS} value={eventFilter}
+              onChange={(v) => { setEventFilter(v); pagination.setPage(1); }} placeholder="事件类型" />
+            <Select options={SEV_OPTS} value={sevFilter}
+              onChange={(v) => { setSevFilter(v); pagination.setPage(1); }} placeholder="级别" />
+            <input type="date" value={dateRange.start} onChange={(e) => { setDateRange((d) => ({ ...d, start: e.target.value })); pagination.setPage(1); }}
+              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+            <input type="date" value={dateRange.end} onChange={(e) => { setDateRange((d) => ({ ...d, end: e.target.value })); pagination.setPage(1); }}
+              className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+            <button onClick={() => {
+              const csv = formatForExport(filtered);
+              const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+              URL.revokeObjectURL(url);
+            }} className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">导出CSV</button>
+            <span className="text-xs text-slate-500">共 {sorted.length} 条</span>
           </div>
-        )}
-        <div className="flex justify-end mt-4">
-          <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length}
-            onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
-        </div>
-      </PageShell>
-    </main>
+          <DataTable<AuditLogEntry>
+            columns={cols} rows={pageItems} sort={sortConfig} onSortChange={setSortConfig}
+            emptyText={search || eventFilter || sevFilter ? '未找到匹配的日志' : '暂无审计日志'}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => setExpandedId(expandedId === r.id ? null : r.id)}
+          />
+          {expandedId && (
+            <div className="mt-3 rounded-lg bg-slate-800/80 border border-slate-700 p-4 text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-white">日志详情</span>
+                <button onClick={() => setExpandedId(null)} className="text-xs text-slate-400 hover:text-white">关闭 ×</button>
+              </div>
+              {(() => {
+                const entry = logs.find((l) => l.id === expandedId);
+                if (!entry) return <p className="text-slate-500">未找到日志条目</p>;
+                return (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><span className="text-slate-400">ID: </span><span className="text-white font-mono text-xs">{entry.id}</span></div>
+                    <div><span className="text-slate-400">租户: </span><span className="text-white">{entry.tenantId}</span></div>
+                    <div><span className="text-slate-400">摘要: </span><span className="text-white">{entry.summary}</span></div>
+                    <div><span className="text-slate-400">操作人: </span><span className="font-mono text-xs text-white">{entry.operator}</span></div>
+                    <div><span className="text-slate-400">来源: </span><span className="text-white">{entry.source}</span></div>
+                    <div><span className="text-slate-400">时间: </span><span className="font-mono text-xs text-white">{entry.createdAt}</span></div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          <div className="flex justify-end mt-4">
+            <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length}
+              onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
+          </div>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

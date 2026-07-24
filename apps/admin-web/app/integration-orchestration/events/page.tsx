@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -45,6 +46,13 @@ const STATUS_COLORS: Record<string, string> = {
   failed: '#ff4757',
 }
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '事件信封列表访问受限',
+  description:
+    '事件信封列表页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看来源筛选、投递状态与重试记录。',
+} as const;
+
 export default function IntegrationOrchestrationEventsPage() {
   const [search, setSearch] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
@@ -64,21 +72,25 @@ export default function IntegrationOrchestrationEventsPage() {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={{ textAlign: 'center', padding: '80px 24px', color: '#8892b0' }}>
-          <div style={{ fontSize: 14 }}>加载中...</div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.container}>
+          <div style={{ textAlign: 'center', padding: '80px 24px', color: '#8892b0' }}>
+            <div style={{ fontSize: 14 }}>加载中...</div>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
   if (error) {
     return (
-      <div style={styles.container}>
-        <div style={{ textAlign: 'center', padding: '80px 24px', color: '#ff4757' }}>
-          <div style={{ fontSize: 14 }}>错误: {error}</div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.container}>
+          <div style={{ textAlign: 'center', padding: '80px 24px', color: '#ff4757' }}>
+            <div style={{ fontSize: 14 }}>错误: {error}</div>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
@@ -117,115 +129,117 @@ export default function IntegrationOrchestrationEventsPage() {
   }, [])
 
   return (
-    <div style={styles.container}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>事件信封列表</h1>
-        <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看所有 domain event / webhook envelope，支持按来源筛选。</p>
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>事件信封列表</h1>
+          <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看所有 domain event / webhook envelope，支持按来源筛选。</p>
+        </div>
 
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-        <div style={styles.card}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>事件总数</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#2ed573' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>已投递</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#2ed573' }}>{stats.delivered}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#ff4757' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>投递失败</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#ff4757' }}>{stats.failed}</div>
-        </div>
-        <div style={styles.card}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>累计重试次数</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.totalRetries}</div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
-        <input
-          style={styles.input}
-          placeholder="搜索事件 ID / 名称 / 来源..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-        />
-        <select style={styles.select} value={sourceFilter} onChange={e => { setSourceFilter(e.target.value); setPage(1) }}>
-          <option value="">全部来源</option>
-          {sources.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <button style={styles.btn} onClick={() => window.location.reload()}>刷新</button>
-      </div>
-
-      {paginated.length === 0 ? (
-        <div style={{ ...styles.card, textAlign: 'center', padding: '48px 24px' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📨</div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>无匹配事件</div>
-          <div style={{ color: '#8892b0', fontSize: 14 }}>当前筛选条件下没有事件信封记录，请调整筛选条件。</div>
-        </div>
-      ) : (
-        <>
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
           <div style={styles.card}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>信封 ID</th>
-                  <th style={styles.th}>事件名称</th>
-                  <th style={styles.th}>来源</th>
-                  <th style={styles.th}>状态</th>
-                  <th style={styles.th}>重试次数</th>
-                  <th style={styles.th}>创建时间</th>
-                  <th style={styles.th}>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map(item => (
-                  <tr key={item.envelopeId}>
-                    <td style={styles.td}>{item.envelopeId}</td>
-                    <td style={styles.td}>{item.eventName}</td>
-                    <td style={styles.td}>{item.source}</td>
-                    <td style={styles.td}>
-                      <span style={{ color: STATUS_COLORS[item.status] ?? '#e0e0e0', fontWeight: 600 }}>{item.status}</span>
-                    </td>
-                    <td style={styles.td}>{item.retryCount}</td>
-                    <td style={styles.td}>{item.createdAt}</td>
-                    <td style={styles.td}>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12 }} onClick={() => openModal(item)}>查看</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>事件总数</div>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
           </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, alignItems: 'center' }}>
-            <button disabled={page <= 1} style={{ ...styles.btn, opacity: page <= 1 ? 0.5 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
-            <span style={{ color: '#8892b0', fontSize: 14 }}>第 {page} / {totalPages} 页</span>
-            <button disabled={page >= totalPages} style={{ ...styles.btn, opacity: page >= totalPages ? 0.5 : 1 }} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
+          <div style={{ ...styles.card, borderColor: '#2ed573' }}>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>已投递</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#2ed573' }}>{stats.delivered}</div>
           </div>
-        </>
-      )}
-
-      {modal.visible && modal.item && (
-        <div style={styles.modal} onClick={closeModal}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>事件信封详情</h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: '#8892b0', fontSize: 20, cursor: 'pointer' }}>×</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div><span style={{ color: '#8892b0' }}>信封 ID：</span>{modal.item.envelopeId}</div>
-              <div><span style={{ color: '#8892b0' }}>事件名称：</span>{modal.item.eventName}</div>
-              <div><span style={{ color: '#8892b0' }}>来源：</span>{modal.item.source}</div>
-              <div><span style={{ color: '#8892b0' }}>状态：</span>{modal.item.status}</div>
-              <div><span style={{ color: '#8892b0' }}>重试次数：</span>{modal.item.retryCount}</div>
-              <div><span style={{ color: '#8892b0' }}>创建时间：</span>{modal.item.createdAt}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
-              <button onClick={closeModal} style={{ background: '#2a2a3e', border: '1px solid #3a3a4e', color: '#e0e0e0', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}>关闭</button>
-            </div>
+          <div style={{ ...styles.card, borderColor: '#ff4757' }}>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>投递失败</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#ff4757' }}>{stats.failed}</div>
+          </div>
+          <div style={styles.card}>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>累计重试次数</div>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.totalRetries}</div>
           </div>
         </div>
-      )}
-    </div>
+
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
+          <input
+            style={styles.input}
+            placeholder="搜索事件 ID / 名称 / 来源..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
+          />
+          <select style={styles.select} value={sourceFilter} onChange={e => { setSourceFilter(e.target.value); setPage(1) }}>
+            <option value="">全部来源</option>
+            {sources.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button style={styles.btn} onClick={() => window.location.reload()}>刷新</button>
+        </div>
+
+        {paginated.length === 0 ? (
+          <div style={{ ...styles.card, textAlign: 'center', padding: '48px 24px' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📨</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>无匹配事件</div>
+            <div style={{ color: '#8892b0', fontSize: 14 }}>当前筛选条件下没有事件信封记录，请调整筛选条件。</div>
+          </div>
+        ) : (
+          <>
+            <div style={styles.card}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>信封 ID</th>
+                    <th style={styles.th}>事件名称</th>
+                    <th style={styles.th}>来源</th>
+                    <th style={styles.th}>状态</th>
+                    <th style={styles.th}>重试次数</th>
+                    <th style={styles.th}>创建时间</th>
+                    <th style={styles.th}>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map(item => (
+                    <tr key={item.envelopeId}>
+                      <td style={styles.td}>{item.envelopeId}</td>
+                      <td style={styles.td}>{item.eventName}</td>
+                      <td style={styles.td}>{item.source}</td>
+                      <td style={styles.td}>
+                        <span style={{ color: STATUS_COLORS[item.status] ?? '#e0e0e0', fontWeight: 600 }}>{item.status}</span>
+                      </td>
+                      <td style={styles.td}>{item.retryCount}</td>
+                      <td style={styles.td}>{item.createdAt}</td>
+                      <td style={styles.td}>
+                        <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12 }} onClick={() => openModal(item)}>查看</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, alignItems: 'center' }}>
+              <button disabled={page <= 1} style={{ ...styles.btn, opacity: page <= 1 ? 0.5 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
+              <span style={{ color: '#8892b0', fontSize: 14 }}>第 {page} / {totalPages} 页</span>
+              <button disabled={page >= totalPages} style={{ ...styles.btn, opacity: page >= totalPages ? 0.5 : 1 }} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
+            </div>
+          </>
+        )}
+
+        {modal.visible && modal.item && (
+          <div style={styles.modal} onClick={closeModal}>
+            <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>事件信封详情</h3>
+                <button onClick={closeModal} style={{ background: 'none', border: 'none', color: '#8892b0', fontSize: 20, cursor: 'pointer' }}>×</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div><span style={{ color: '#8892b0' }}>信封 ID：</span>{modal.item.envelopeId}</div>
+                <div><span style={{ color: '#8892b0' }}>事件名称：</span>{modal.item.eventName}</div>
+                <div><span style={{ color: '#8892b0' }}>来源：</span>{modal.item.source}</div>
+                <div><span style={{ color: '#8892b0' }}>状态：</span>{modal.item.status}</div>
+                <div><span style={{ color: '#8892b0' }}>重试次数：</span>{modal.item.retryCount}</div>
+                <div><span style={{ color: '#8892b0' }}>创建时间：</span>{modal.item.createdAt}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+                <button onClick={closeModal} style={{ background: '#2a2a3e', border: '1px solid #3a3a4e', color: '#e0e0e0', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}>关闭</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   )
 }

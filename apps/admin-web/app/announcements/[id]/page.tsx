@@ -18,6 +18,7 @@ import {
   WorkspaceBreadcrumb,
   FormSubmitFeedback,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
@@ -189,17 +190,23 @@ export default function AnnouncementDetailPage() {
   // 未找到
   if (!announcement) {
     return (
-      <main style={{ maxWidth: 860, margin: '0 auto', padding: 32 }}>
-        <WorkspaceBreadcrumb
-          {...buildStandardBreadcrumb({ workspace: 'announcements', detailLabel: '公告详情' })}
-        />
-        <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-          <h2>公告不存在</h2>
-          <p>ID 为 {id} 的公告未找到，可能已被删除或 ID 错误。</p>
-          <SubmitButton label="返回公告列表" variant="primary" onClick={() => router.push('/announcements')} />
-        </div>
-      </main>
+      <AdminPermissionGate
+        requiredPermission="foundation.governance.read"
+        title="公告详情访问受限"
+        description="公告详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看正文、状态流转、编辑内容与删除记录。"
+      >
+        <main style={{ maxWidth: 860, margin: '0 auto', padding: 32 }}>
+          <WorkspaceBreadcrumb
+            {...buildStandardBreadcrumb({ workspace: 'announcements', detailLabel: '公告详情' })}
+          />
+          <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+            <h2>公告不存在</h2>
+            <p>ID 为 {id} 的公告未找到，可能已被删除或 ID 错误。</p>
+            <SubmitButton label="返回公告列表" variant="primary" onClick={() => router.push('/announcements')} />
+          </div>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
@@ -208,10 +215,15 @@ export default function AnnouncementDetailPage() {
   const closureLinks = [...buildStandardClosureLinks({ workspace: 'announcements', detailId: id })];
 
   return (
-    <main style={{ maxWidth: 860, margin: '0 auto', padding: 32 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'announcements', detailLabel: announcement.title })}
-      />
+    <AdminPermissionGate
+      requiredPermission="foundation.governance.read"
+      title="公告详情访问受限"
+      description="公告详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看正文、状态流转、编辑内容与删除记录。"
+    >
+      <main style={{ maxWidth: 860, margin: '0 auto', padding: 32 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'announcements', detailLabel: announcement.title })}
+        />
 
       {/* 反馈 */}
       {submitState === 'success' && (
@@ -425,7 +437,8 @@ export default function AnnouncementDetailPage() {
         caption="复制 / 导出 / 分享公告详情"
       />
 
-      <DetailClosureBar links={closureLinks} />
-    </main>
+        <DetailClosureBar links={closureLinks} />
+      </main>
+    </AdminPermissionGate>
   );
 }

@@ -538,6 +538,13 @@ test('computeStats totalReads 对于全零阅读应返回 0', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('announcements — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+});
+
 describe('Announcements — hooks验证', () => {
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

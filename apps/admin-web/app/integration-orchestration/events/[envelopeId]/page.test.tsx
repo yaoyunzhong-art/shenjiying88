@@ -160,6 +160,13 @@ describe('integration-orchestration/events/[envelopeId] — 防御', () => {
 
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('integration-orchestration/events/[envelopeId] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
 describe('Integration Orchestration / Events — hooks验证', () => {
   it('使用客户端组件 (useEffect)', () => assert.ok(SRC.includes('useEffect'), '应使用 useEffect'));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
@@ -171,7 +178,8 @@ describe('Integration Orchestration / Events — hooks验证', () => {
   it('包含数据结构', () => assert.ok(SRC.includes('{') && SRC.includes('[')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
+  it('包含权限边界组件', () => assert.ok(SRC.includes('AdminPermissionGate')));
+  it('包含弹窗状态管理', () => assert.ok(SRC.includes('modal.visible') && SRC.includes('setModal')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default')));
   it('包含注释说明', () => assert.ok(true));
 });

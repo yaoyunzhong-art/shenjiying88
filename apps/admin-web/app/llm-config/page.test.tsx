@@ -117,6 +117,13 @@ describe('llm-config — 防御', () => {
 
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('llm-config — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+});
+
 describe('Llm Config — hooks验证', () => {
   it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
@@ -124,6 +131,7 @@ describe('Llm Config — hooks验证', () => {
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含逻辑判断', () => assert.ok(true));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
+  it('包含权限边界组件', () => assert.ok(SRC.includes('AdminPermissionGate')));
   it('包含数据格式化', () => assert.ok(true));
   it('包含字符串处理', () => assert.ok(true));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));

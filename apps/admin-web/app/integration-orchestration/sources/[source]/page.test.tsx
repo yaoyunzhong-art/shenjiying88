@@ -355,6 +355,13 @@ describe.skip('SourceDetailPage — 空列表快照', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('integration-orchestration/sources/[source] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+});
+
 describe.skip('Integration Orchestration / Sources — hooks验证', () => {
   it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

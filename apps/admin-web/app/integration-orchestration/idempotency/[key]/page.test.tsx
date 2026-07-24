@@ -259,6 +259,13 @@ describe.skip('integration-orchestration/idempotency/[key]: 业务逻辑', () =>
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('integration-orchestration/idempotency/[key] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
 describe.skip('Integration Orchestration / Idempotency — hooks验证', () => {
   it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

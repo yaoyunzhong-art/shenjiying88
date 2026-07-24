@@ -33,6 +33,17 @@ import {
 // ---- 辅助: 为渲染测试 mock 依赖的组件模块 ----
 
 function setupRenderEnv() {
+  const permissionGatePath = require.resolve('../../components/admin-permission-gate');
+  require.cache[permissionGatePath] = {
+    id: permissionGatePath,
+    filename: permissionGatePath,
+    loaded: true,
+    exports: {
+      __esModule: true,
+      AdminPermissionGate: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    },
+  };
+
   // Mock detail-workspace-registry to support 'announcements'
   const registryPath = require.resolve('../../components/detail-workspace-registry');
   require.cache[registryPath] = {
@@ -487,6 +498,11 @@ test('AnnouncementDetailPage 数组 ID 应取第一个元素', () => {
 // ---- 源代码静态分析 ----
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+
+test('announcements/[id] 接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+});
 
 test('page.tsx 包含 Announcement 接口定义', () => {
   assert.ok(SRC.includes('interface Announcement'));
