@@ -1453,3 +1453,6 @@ export type {
   PrizeCategory,
   RedemptionRecord,
 } from './components/PrizeRedemptionCounter';
+
+// ── XSS 安全工具 ──
+export { sanitizeHtml, sanitizeJsonLd } from './sanitize/index'
