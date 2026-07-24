@@ -120,10 +120,6 @@ export class FinanceController {
         tenantContext: RequestTenantContext,
         query: DailyRevenueQueryDto
       ) => Promise<ReturnType<FinanceService['getDailyRevenue']>>
-      deleteLedgerResolved?: (
-        ledgerId: string,
-        tenantContext: RequestTenantContext
-      ) => Promise<ReturnType<FinanceService['deleteLedger']>>
       finalizeSettlementResolved?: (
         settlementId: string,
         tenantContext: RequestTenantContext

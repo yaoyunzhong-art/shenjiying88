@@ -19,7 +19,7 @@ function makeOrder(overrides: Partial<CashierOrder> & { _orderSuffix?: string } 
     orderId: `order-upgrade-${suffix}`,
     tenantContext: { tenantId: 'tenant-1', brandId: 'brand-1' },
     memberId: `loyalty-upgrade-mem-${suffix}`,
-    amount: 1000,
+    totalAmount: 1000,
     paidAt: new Date().toISOString(),
     channel: 'wechat',
     couponCode: undefined,
@@ -83,7 +83,7 @@ describe('Loyalty 升级触发 (BS-0115)', () => {
     const order = makeOrder({
       _orderSuffix: '002',
       memberId: 'loyalty-upgrade-mem-002',
-      amount: 10
+      totalAmount: 10
     })
     const payment = makePayment({ _orderSuffix: '002', amount: 10 })
 
