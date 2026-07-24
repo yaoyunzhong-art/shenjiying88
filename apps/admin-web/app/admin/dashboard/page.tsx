@@ -14,6 +14,7 @@ import {
   Tabs,
   StatusBadge,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // Mock 数据
@@ -122,6 +123,13 @@ const sectionTitle: React.CSSProperties = {
   margin: '0 0 16px',
   color: '#f1f5f9',
 };
+
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '全局分析仪表盘访问受限',
+  description:
+    '全局分析仪表盘已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看平台级收入、区域分布、租户增长与系统告警。',
+} as const;
 
 // ============================================================
 // 组件
@@ -364,6 +372,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'distribution'>('overview');
 
   useEffect(() => {
     try {
@@ -375,43 +384,65 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  if (loading) return <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></div>;
-  if (error) return <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></div>;
-  if (!data) return <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></div>;
-
-  const
-  const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'distribution'>('overview');
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
+          <div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div>
+        </div>
+      </AdminPermissionGate>
+    );
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
+          <div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div>
+        </div>
+      </AdminPermissionGate>
+    );
+  }
+  if (!data) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
+          <div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div>
+        </div>
+      </AdminPermissionGate>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
-      <PageShell title="全局分析仪表盘" subtitle="总部运营看板 · 实时数据聚合">
-        {/* ==================== 1. 顶部概览 ==================== */}
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-          <StatCard
-            label="总租户数"
-            value={OVERVIEW.totalTenants.toLocaleString()}
-            trend={{ value: OVERVIEW.tenantChange, direction: 'up' }}
-            variant="default"
-          />
-          <StatCard
-            label="总门店数"
-            value={OVERVIEW.totalStores.toLocaleString()}
-            trend={{ value: OVERVIEW.storeChange, direction: 'up' }}
-            variant="default"
-          />
-          <StatCard
-            label="总收入"
-            value={formatMoney(OVERVIEW.totalRevenue)}
-            trend={{ value: OVERVIEW.revenueChange, direction: 'up' }}
-            variant="default"
-          />
-          <StatCard
-            label="活跃用户数"
-            value={OVERVIEW.activeUsers.toLocaleString()}
-            trend={{ value: OVERVIEW.userChange, direction: 'up' }}
-            variant="default"
-          />
-        </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
+        <PageShell title="全局分析仪表盘" subtitle="总部运营看板 · 实时数据聚合">
+          {/* ==================== 1. 顶部概览 ==================== */}
+          <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
+            <StatCard
+              label="总租户数"
+              value={OVERVIEW.totalTenants.toLocaleString()}
+              trend={{ value: OVERVIEW.tenantChange, direction: 'up' }}
+              variant="default"
+            />
+            <StatCard
+              label="总门店数"
+              value={OVERVIEW.totalStores.toLocaleString()}
+              trend={{ value: OVERVIEW.storeChange, direction: 'up' }}
+              variant="default"
+            />
+            <StatCard
+              label="总收入"
+              value={formatMoney(OVERVIEW.totalRevenue)}
+              trend={{ value: OVERVIEW.revenueChange, direction: 'up' }}
+              variant="default"
+            />
+            <StatCard
+              label="活跃用户数"
+              value={OVERVIEW.activeUsers.toLocaleString()}
+              trend={{ value: OVERVIEW.userChange, direction: 'up' }}
+              variant="default"
+            />
+          </div>
 
         {/* ==================== 2&3. 图表区 ==================== */}
         <div style={{ display: 'grid', gap: 20, gridTemplateColumns: '1.5fr 1fr', marginBottom: 24 }}>
@@ -629,7 +660,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
-      </PageShell>
-    </div>
+        </PageShell>
+      </div>
+    </AdminPermissionGate>
   );
 }

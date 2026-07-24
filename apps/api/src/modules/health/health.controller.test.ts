@@ -36,7 +36,7 @@ function makeMockService(overrides?: Partial<MockHealthService>): MockHealthServ
 }
 
 function makeController(serviceOverrides?: Partial<MockHealthService>): HealthController {
-  return new HealthController(makeMockService(serviceOverrides) as never)
+  return new HealthController({} as any, makeMockService(serviceOverrides) as never)
 }
 
 // ── 元数据检查 ──

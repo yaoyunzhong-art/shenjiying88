@@ -20,6 +20,7 @@
 
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from 'react'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 // ==================== 类型定义 ====================
 
@@ -118,6 +119,13 @@ const TREND_CONFIG: Record<string, { symbol: string; color: string }> = {
   DOWN: { symbol: '↓', color: '#ef4444' },
   STABLE: { symbol: '→', color: '#9ca3af' },
 }
+
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '数据分析工作台访问受限',
+  description:
+    '数据分析工作台已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看 Cohort、漏斗、留存健康度与实时事件流。',
+} as const
 
 // ==================== 工具函数 ====================
 
@@ -326,62 +334,68 @@ export default function AnalyticsV2Workbench() {
   // 加载状态
   if (loading) {
     return (
-      <div style={{ padding: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>📊 数据分析工作台</h1>
-        <div style={{ textAlign: 'center', padding: 80, color: '#9ca3af' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-          <div>加载分析数据...</div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>📊 数据分析工作台</h1>
+          <div style={{ textAlign: 'center', padding: 80, color: '#9ca3af' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+            <div>加载分析数据...</div>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
   // 错误状态
   if (error) {
     return (
-      <div style={{ padding: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>📊 数据分析工作台</h1>
-        <div style={{ textAlign: 'center', padding: 80, color: '#ef4444' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-          <div style={{ marginBottom: 12 }}>{error}</div>
-          <button
-            onClick={fetchData}
-            style={{ padding: '8px 20px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', cursor: 'pointer' }}
-          >
-            重新加载
-          </button>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>📊 数据分析工作台</h1>
+          <div style={{ textAlign: 'center', padding: 80, color: '#ef4444' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+            <div style={{ marginBottom: 12 }}>{error}</div>
+            <button
+              onClick={fetchData}
+              style={{ padding: '8px 20px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', cursor: 'pointer' }}
+            >
+              重新加载
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
   return (
-    <div style={{ padding: 32 }}>
-      {/* ===== 头部 ===== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700 }}>📊 数据分析工作台</h1>
-          <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
-            Phase-43 T173 · Tenant: {TENANT}
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 32 }}>
+        {/* ===== 头部 ===== */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700 }}>📊 数据分析工作台</h1>
+            <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+              Phase-43 T173 · Tenant: {TENANT}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {['1d', '7d', '30d'].map(p => (
+              <button
+                key={p}
+                onClick={() => setSelectedPeriod(p)}
+                style={{
+                  padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer',
+                  background: selectedPeriod === p ? '#2563eb' : '#f3f4f6',
+                  color: selectedPeriod === p ? '#fff' : '#374151',
+                  border: 'none',
+                }}
+              >
+                {p}
+              </button>
+            ))}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {['1d', '7d', '30d'].map(p => (
-            <button
-              key={p}
-              onClick={() => setSelectedPeriod(p)}
-              style={{
-                padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer',
-                background: selectedPeriod === p ? '#2563eb' : '#f3f4f6',
-                color: selectedPeriod === p ? '#fff' : '#374151',
-                border: 'none',
-              }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
+      
 
       {/* ===== 核心指标 ===== */}
       <section style={{ marginBottom: 24 }}>
@@ -573,15 +587,16 @@ export default function AnalyticsV2Workbench() {
         </section>
       </div>
 
-      {/* ===== 反模式 v4 提示 ===== */}
-      <section style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 16, fontSize: 13 }}>
-        <h3 style={{ fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>🛡️ 反模式 v4 防御已激活</h3>
-        <ul style={{ color: '#3b82f6', margin: 0, paddingLeft: 20, lineHeight: 1.8, fontSize: 12 }}>
-          <li>event-tracking-pattern: PII 脱敏 + 幂等键 + 5W1H + 服务端时间戳 + properties ≤ 50</li>
-          <li>cohort-bias-pattern: ISO 周对齐 + cohort_size ≥ 10 + 失活 ≠ 流失 + 加权平均</li>
-          <li>cdc-consistency-pattern: watermark 单调递增 + 重放幂等 + DELETED 必须 before</li>
-        </ul>
-      </section>
-    </div>
+        {/* ===== 反模式 v4 提示 ===== */}
+        <section style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 16, fontSize: 13 }}>
+          <h3 style={{ fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>🛡️ 反模式 v4 防御已激活</h3>
+          <ul style={{ color: '#3b82f6', margin: 0, paddingLeft: 20, lineHeight: 1.8, fontSize: 12 }}>
+            <li>event-tracking-pattern: PII 脱敏 + 幂等键 + 5W1H + 服务端时间戳 + properties ≤ 50</li>
+            <li>cohort-bias-pattern: ISO 周对齐 + cohort_size ≥ 10 + 失活 ≠ 流失 + 加权平均</li>
+            <li>cdc-consistency-pattern: watermark 单调递增 + 重放幂等 + DELETED 必须 before</li>
+          </ul>
+        </section>
+      </div>
+    </AdminPermissionGate>
   )
 }

@@ -335,6 +335,17 @@ describe('page.tsx: 组件渲染结构', () => {
       '需要监听窗口 resize 事件'
     );
   });
+
+  it('should integrate AdminPermissionGate with dashboard:read', () => {
+    assert.ok(
+      SRC.includes('AdminPermissionGate'),
+      '需要接入 AdminPermissionGate'
+    );
+    assert.ok(
+      SRC.includes("requiredPermission: 'dashboard:read'"),
+      '需要复用 dashboard:read 权限'
+    );
+  });
 });
 
 // ====================================================================

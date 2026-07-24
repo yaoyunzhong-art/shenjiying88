@@ -375,29 +375,36 @@ describe('analytics-v2 — 页面结构', () => {
     const src = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
     assert.ok(!src.includes('console.log'), '不应有 console.log');
   });
+  it('32. 接入管理员权限边界', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes("requiredPermission: 'dashboard:read'"), '缺少 dashboard:read 权限');
+  });
 });
 
 describe('analytics-v2 — 角色视角', () => {
-  it('32. super_admin 可见全量指标', () => {
+  it('33. super_admin 可见全量指标', () => {
     assert.equal(DEMO_METRICS.length, 8);
   });
 
-  it('33. merchant_admin 关注营收', () => {
+  it('34. merchant_admin 关注营收', () => {
     const rev = DEMO_METRICS.find((m) => m.name === '营收');
     assert.ok(rev);
   });
 
-  it('34. operator 关注实时事件', () => {
+  it('35. operator 关注实时事件', () => {
     const cdc: CDCStatus = { currentWatermark: Date.now(), events: 1248 };
     assert.ok(cdc.events > 0);
   });
 
-  it('35. viewer 只读', () => {
+  it('36. viewer 只读', () => {
     const modules = ['Cohort', 'Funnel', 'Retention', 'Metrics', 'Events'];
     assert.equal(modules.length, 5);
   });
 
-  it('36. auditor 可审查评分趋势', () => {
+  it('37. auditor 可审查评分趋势', () => {
     const changes = [
       { date: '2026-06-01', score: 68 },
       { date: '2026-06-07', score: 70 },
@@ -407,12 +414,12 @@ describe('analytics-v2 — 角色视角', () => {
     assert.ok(changes[2]!.score > changes[0]!.score);
   });
 
-  it('37. analyst 对比 Cohort', () => {
+  it('38. analyst 对比 Cohort', () => {
     const groups = ['2025-W22', '2025-W23', '2025-W24', '2025-W25', '2025-W26'];
     assert.equal(groups.length, 5);
   });
 
-  it('38. developer 查看技术指标', () => {
+  it('39. developer 查看技术指标', () => {
     const series = {
       dau: [{ timestamp: '2026-06-01', value: 1200 }],
       events: [{ timestamp: '2026-06-01', value: 45000 }],
@@ -422,7 +429,7 @@ describe('analytics-v2 — 角色视角', () => {
     assert.ok(Array.isArray(series.events));
   });
 
-  it('39. marketing 分析转化漏斗', () => {
+  it('40. marketing 分析转化漏斗', () => {
     const steps = [
       { stepName: '浏览商品', conversionRate: 1 },
       { stepName: '加入购物车', conversionRate: 0.45 },

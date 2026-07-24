@@ -8,12 +8,20 @@
 import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell, ErrorBoundary, Card, StatCard } from '@m5/ui';
 import DashboardClient from './dashboard-client';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth';
 
 export function isDashboardView(v: string): v is DashboardView {
   return ['overview', 'operations', 'financial', 'growth'].includes(v);
 }
+
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '概览仪表盘访问受限',
+  description:
+    '概览仪表盘已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看门店运营指标、趋势分析与快捷入口。',
+} as const;
 
 interface DashboardStats {
   todayRevenue: number;
@@ -63,29 +71,31 @@ export default async function DashboardPage() {
   return (
     <ErrorBoundary>
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <PageShell
-          title="📊 概览仪表盘"
-          subtitle="门店运营核心指标一览 · 实时数据 · 快速入口"
-        >
-          {/* 视图切换Tab: 总览/运营/财务/增长 */}
-          <DashboardViewTabs />
+        <AdminPermissionGate {...permissionGate}>
+          <PageShell
+            title="📊 概览仪表盘"
+            subtitle="门店运营核心指标一览 · 实时数据 · 快速入口"
+          >
+            {/* 视图切换Tab: 总览/运营/财务/增长 */}
+            <DashboardViewTabs />
 
-          {/* 统计摘要卡片 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-            {summaryCards.map(card => (
-              <Card key={card.label} style={{ padding: 16 }}>
-                <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{card.label}</div>
-                <div style={{ fontSize: 28, fontWeight: 700, margin: '8px 0' }}>{card.value}</div>
-                <div style={{ fontSize: 12, color: card.variant === 'danger' ? '#ef4444' : card.variant === 'warning' ? '#eab308' : '#22c55e' }}>{card.detail}</div>
-              </Card>
-            ))}
-          </div>
+            {/* 统计摘要卡片 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+              {summaryCards.map(card => (
+                <Card key={card.label} style={{ padding: 16 }}>
+                  <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{card.label}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, margin: '8px 0' }}>{card.value}</div>
+                  <div style={{ fontSize: 12, color: card.variant === 'danger' ? '#ef4444' : card.variant === 'warning' ? '#eab308' : '#22c55e' }}>{card.detail}</div>
+                </Card>
+              ))}
+            </div>
 
-          {/* 详细仪表盘客户端组件 */}
-          <Suspense fallback={<LoadingSkeleton variant="card" rows={8} label="加载仪表盘详情..." />}>
-            <DashboardClient stats={stats} />
-          </Suspense>
-        </PageShell>
+            {/* 详细仪表盘客户端组件 */}
+            <Suspense fallback={<LoadingSkeleton variant="card" rows={8} label="加载仪表盘详情..." />}>
+              <DashboardClient stats={stats} />
+            </Suspense>
+          </PageShell>
+        </AdminPermissionGate>
       </main>
     </ErrorBoundary>
   );

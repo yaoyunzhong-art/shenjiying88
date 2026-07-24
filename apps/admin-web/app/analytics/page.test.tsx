@@ -249,6 +249,15 @@ describe('analytics page', () => {
     });
   });
 
+  describe('权限边界', () => {
+    it('应接入管理员权限边界', () => {
+      const src = extractPageSource();
+      assert.ok(src);
+      assert.ok(src.includes('AdminPermissionGate'));
+      assert.ok(src.includes("requiredPermission: 'dashboard:read'"));
+    });
+  });
+
   describe('加载与错误处理', () => {
     it('应使用 LoadingSkeleton 或加载态处理', () => {
       const src = extractPageSource();

@@ -9,6 +9,7 @@ import { TenantGuard } from '../agent/tenant.guard'
 import { TenantOptional } from '../agent/tenant-guard.decorator'
 
 import { Public } from '../foundation/identity-access/public.decorator'
+import { DatabaseBackupService } from './database-backup.service'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -26,13 +27,30 @@ import { HealthService } from './health.service'
 @UseGuards(TenantGuard)
 @Controller('health')
 export class HealthController {
-  constructor(private readonly healthService: HealthService) {}
+  constructor(
+    private readonly backupService: DatabaseBackupService,private readonly healthService: HealthService) {}
 
   @Public()
   @TenantOptional()
   @Get()
   getHealth() {
     return this.healthService.ping()
+  }
+
+  /** 备份状态 */
+  @Get('backup')
+  @Public()
+  @TenantOptional()
+  async getBackupStatus() {
+    return this.backupService.getStatus()
+  }
+
+  /** 手动触发备份 */
+  @Get('backup/trigger')
+  @Public()
+  @TenantOptional()
+  async triggerBackup() {
+    return this.backupService.triggerBackup()
   }
 
   @Public()

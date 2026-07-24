@@ -168,32 +168,36 @@ describe('admin/dashboard — 源码分析', () => {
   it('22. TSC兼容: 无as any', () => {
     assert.ok(!SRC.includes('as any'), '不应包含 as any');
   });
+  it('23. 接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"), '缺少 dashboard:read 权限');
+  });
 });
 
 describe('admin/dashboard — OVERVIEW 数据', () => {
-  it('23. 总租户数 > 0', () => {
+  it('24. 总租户数 > 0', () => {
     assert.ok(OVERVIEW.totalTenants > 0);
   });
-  it('24. 总门店数 > 0', () => {
+  it('25. 总门店数 > 0', () => {
     assert.ok(OVERVIEW.totalStores > 0);
   });
-  it('25. 总收入 > 0', () => {
+  it('26. 总收入 > 0', () => {
     assert.ok(OVERVIEW.totalRevenue > 0);
   });
-  it('26. 活跃用户 > 0', () => {
+  it('27. 活跃用户 > 0', () => {
     assert.ok(OVERVIEW.activeUsers > 0);
   });
-  it('27. 门店/租户比例合理', () => {
+  it('28. 门店/租户比例合理', () => {
     const ratio = OVERVIEW.totalStores / OVERVIEW.totalTenants;
     assert.ok(ratio > 10, `${ratio} — 每租户应有 >10 门店`);
     assert.ok(ratio < 50, `${ratio} — 每租户应有 <50 门店`);
   });
-  it('28. 人均营收 > 0', () => {
+  it('29. 人均营收 > 0', () => {
     const perUser = OVERVIEW.totalRevenue / OVERVIEW.activeUsers;
     assert.ok(perUser > 0);
     assert.ok(Number.isFinite(perUser));
   });
-  it('29. 变更值格式', () => {
+  it('30. 变更值格式', () => {
     assert.ok(OVERVIEW.tenantChange.startsWith('+') || OVERVIEW.tenantChange.startsWith('-'));
     assert.ok(OVERVIEW.revenueChange.includes('%'));
     assert.ok(OVERVIEW.userChange.includes('%'));
@@ -201,61 +205,61 @@ describe('admin/dashboard — OVERVIEW 数据', () => {
 });
 
 describe('admin/dashboard — 门店地理分布', () => {
-  it('30. 区域门店合计 = 1847', () => {
+  it('31. 区域门店合计 = 1847', () => {
     assert.equal(sumRegions(), 1847);
   });
-  it('31. 百分比合计 ≈ 100%', () => {
+  it('32. 百分比合计 ≈ 100%', () => {
     const pct = totalPercentage(REGION_STATS);
     assert.ok(Math.abs(pct - 100) < 1, `百分比合计 ${pct}%`);
   });
-  it('32. 华东为最大区', () => {
+  it('33. 华东为最大区', () => {
     assert.equal(getMaxRegion(REGION_STATS), '华东');
   });
-  it('33. 东北为最小区', () => {
+  it('34. 东北为最小区', () => {
     assert.equal(getMinRegion(REGION_STATS), '东北');
   });
-  it('34. 各区占比非负', () => {
+  it('35. 各区占比非负', () => {
     for (const r of REGION_STATS) {
       assert.ok(r.percentage >= 0, `${r.region} 占比不能为负`);
     }
   });
-  it('35. 各区门店数非负', () => {
+  it('36. 各区门店数非负', () => {
     for (const r of REGION_STATS) {
       assert.ok(r.count >= 0, `${r.region} 门店数不能为负`);
     }
   });
-  it('36. 华东占比 > 20%', () => {
+  it('37. 华东占比 > 20%', () => {
     const east = REGION_STATS.find(r => r.region === '华东')!;
     assert.ok(east.percentage > 20, `华东占比 ${east.percentage}% 应 > 20%`);
   });
 });
 
 describe('admin/dashboard — 新增租户', () => {
-  it('37. 12个月数据完整', () => {
+  it('38. 12个月数据完整', () => {
     assert.equal(NEW_TENANTS_TREND.length, 12);
   });
-  it('38. 累计新增 = 153', () => {
+  it('39. 累计新增 = 153', () => {
     assert.equal(totalNewTenants(), 153);
   });
-  it('39. 平均月新增 ≈ 12.75', () => {
+  it('40. 平均月新增 ≈ 12.75', () => {
     const avg = avgNewTenants();
     assert.ok(avg > 10 && avg < 15, `平均月新增 ${avg}`);
   });
-  it('40. 最大值 = 20 (7月)', () => {
+  it('41. 最大值 = 20 (7月)', () => {
     const max = Math.max(...NEW_TENANTS_TREND.map(d => d.count));
     assert.equal(max, 20);
   });
-  it('41. 最小值 = 7 (10月)', () => {
+  it('42. 最小值 = 7 (10月)', () => {
     const min = Math.min(...NEW_TENANTS_TREND.map(d => d.count));
     assert.equal(min, 7);
   });
-  it('42. 趋势逐月上升', () => {
+  it('43. 趋势逐月上升', () => {
     const half = Math.floor(NEW_TENANTS_TREND.length / 2);
     const firstHalf = NEW_TENANTS_TREND.slice(0, half).reduce((s, d) => s + d.count, 0);
     const secondHalf = NEW_TENANTS_TREND.slice(half).reduce((s, d) => s + d.count, 0);
     assert.ok(secondHalf > firstHalf, '下半年新增应 > 上半年');
   });
-  it('43. 各月新增数 > 0', () => {
+  it('44. 各月新增数 > 0', () => {
     for (const d of NEW_TENANTS_TREND) {
       assert.ok(d.count > 0, `${d.label} 新增数应 > 0`);
     }
@@ -263,32 +267,32 @@ describe('admin/dashboard — 新增租户', () => {
 });
 
 describe('admin/dashboard — 告警分析', () => {
-  it('44. 10条告警记录', () => {
+  it('45. 10条告警记录', () => {
     assert.equal(ALERTS.length, 10);
   });
-  it('45. 严重告警(critical) 4条', () => {
+  it('46. 严重告警(critical) 4条', () => {
     assert.equal(alertCountBySeverity('critical'), 4);
   });
-  it('46. 警告(warning) 4条', () => {
+  it('47. 警告(warning) 4条', () => {
     assert.equal(alertCountBySeverity('warning'), 4);
   });
-  it('47. 信息(info) 2条', () => {
+  it('48. 信息(info) 2条', () => {
     assert.equal(alertCountBySeverity('info'), 2);
   });
-  it('48. 未处理告警至少3条', () => {
+  it('49. 未处理告警至少3条', () => {
     assert.ok(alertCountByStatus('未处理') >= 3);
   });
-  it('49. 处理中 2条', () => {
+  it('50. 处理中 2条', () => {
     assert.equal(alertCountByStatus('处理中'), 2);
   });
-  it('50. 已关闭 2条', () => {
+  it('51. 已关闭 2条', () => {
     assert.equal(alertCountByStatus('已关闭'), 2);
   });
-  it('51. 各告警ID唯一', () => {
+  it('52. 各告警ID唯一', () => {
     const ids = ALERTS.map(a => a.id);
     assert.equal(new Set(ids).size, ids.length);
   });
-  it('52. 各 source 非空字符串', () => {
+  it('53. 各 source 非空字符串', () => {
     for (const a of ALERTS) {
       assert.ok(a.source.length > 0, `告警 ${a.id} source 为空`);
     }
@@ -296,16 +300,16 @@ describe('admin/dashboard — 告警分析', () => {
 });
 
 describe('admin/dashboard — 边界防御', () => {
-  it('53. 门店分布百分比合计精确到100%', () => {
+  it('54. 门店分布百分比合计精确到100%', () => {
     const pct = totalPercentage(REGION_STATS);
     assert.ok(Math.abs(pct - 100) <= 0.1, `百分比 ${pct} 应接近 100`);
   });
-  it('54. 新增租户各月分布均匀（无极端跳跃）', () => {
+  it('55. 新增租户各月分布均匀（无极端跳跃）', () => {
     const max = Math.max(...NEW_TENANTS_TREND.map(d => d.count));
     const min = Math.min(...NEW_TENANTS_TREND.map(d => d.count));
     assert.ok(max - min <= 15, `极差 ${max - min} 应 ≤ 15`);
   });
-  it('55. OVERVIEW 字段完整', () => {
+  it('56. OVERVIEW 字段完整', () => {
     const keys = ['totalTenants', 'totalStores', 'totalRevenue', 'activeUsers', 'tenantChange', 'storeChange', 'revenueChange', 'userChange'];
     for (const k of keys) {
       assert.ok(k in OVERVIEW, `缺少字段 ${k}`);

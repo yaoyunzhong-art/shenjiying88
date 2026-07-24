@@ -20,6 +20,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { buildChartOption } from './reports-utils'
 import type { ReportResult, ReportTab } from './reports-utils'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 declare global {
   interface Window {
@@ -71,6 +72,13 @@ const TAB_ACTIVE: React.CSSProperties = {
   color: '#2563eb',
   borderBottom: '2px solid #2563eb'
 }
+
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '报表中心访问受限',
+  description:
+    '报表中心已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看多维报表、统计汇总、导出能力与缓存治理结果。',
+} as const
 
 // ─── 主页面 ──────────────────────────────────────────────
 
@@ -200,12 +208,43 @@ export default function ReportsPage() {
     }
   }
 
+  if (loading && !report) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+          <div style={{ color: '#6b7280', textAlign: 'center', padding: 96 }}>加载报表数据...</div>
+        </div>
+      </AdminPermissionGate>
+    )
+  }
+
+  if (error && !report) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+          <div style={{ color: '#991b1b', textAlign: 'center', padding: 96 }}>数据获取失败: {error}</div>
+        </div>
+      </AdminPermissionGate>
+    )
+  }
+
+  if (!loading && !error && !report) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+          <div style={{ color: '#6b7280', textAlign: 'center', padding: 96 }}>暂无报表数据</div>
+        </div>
+      </AdminPermissionGate>
+    )
+  }
+
   return (
-    <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: '#111827', margin: 0 }}>📊 报表中心</h1>
-        <p style={{ color: '#6b7280', marginTop: 4 }}>Phase-39 T169 · 10 类内置报表 + 多维聚合 + LRU 缓存</p>
-      </header>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+        <header style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#111827', margin: 0 }}>📊 报表中心</h1>
+          <p style={{ color: '#6b7280', marginTop: 4 }}>Phase-39 T169 · 10 类内置报表 + 多维聚合 + LRU 缓存</p>
+        </header>
 
       {/* 报表统计汇总条 */}
       <div style={{ ...CARD_STYLE, display: 'flex', gap: 16, marginBottom: 16 }} data-testid="stats-summary-bar">
@@ -397,18 +436,18 @@ export default function ReportsPage() {
       </div>
 
       {/* Toast */}
-      {exportToast && (
-        <div style={{ position: 'fixed', top: 24, right: 24, background: '#10b981', color: '#fff', padding: '12px 20px', borderRadius: 8, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1000 }}>
-          ✅ {exportToast}
-        </div>
-      )}
+        {exportToast && (
+          <div style={{ position: 'fixed', top: 24, right: 24, background: '#10b981', color: '#fff', padding: '12px 20px', borderRadius: 8, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1000 }}>
+            ✅ {exportToast}
+          </div>
+        )}
 
-      {error && (
-        <div style={{ position: 'fixed', top: 24, right: 24, background: '#ef4444', color: '#fff', padding: '12px 20px', borderRadius: 8, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1000 }}>
-          ❌ {error}
-        </div>
-      )}
-    </div>
+        {error && (
+          <div style={{ position: 'fixed', top: 24, right: 24, background: '#ef4444', color: '#fff', padding: '12px 20px', borderRadius: 8, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1000 }}>
+            ❌ {error}
+          </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   )
 }
-

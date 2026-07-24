@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell, ErrorBoundary } from '@m5/ui';
 import AnalyticsClient from './analytics-client';
 import AnalysisTabs from './analysis-tabs';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 interface AnalyticsSnapshot {
   periodRevenue: { current: number; previous: number; growth: number };
@@ -23,6 +24,13 @@ interface AnalyticsSnapshot {
 }
 
 export type AnalysisFilter = 'overview' | 'trend' | 'compare' | 'detail';
+
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '数据分析访问受限',
+  description:
+    '数据分析页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看营收、客流、商品销量与趋势分析看板。',
+} as const;
 
 async function loadAnalytics(): Promise<AnalyticsSnapshot> {
   return {
@@ -72,15 +80,17 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   return (
     <ErrorBoundary>
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <PageShell
-          title="📈 数据分析"
-          subtitle="门店运营数据分析 · 营收 · 客流 · 商品销量 · 时段趋势"
-        >
-          <AnalysisTabs activeFilter={activeFilter} />
-          <Suspense fallback={<LoadingSkeleton variant="card" rows={10} label="加载数据分析..." />}>
-            <AnalyticsClient data={data} filter={activeFilter} />
-          </Suspense>
-        </PageShell>
+        <AdminPermissionGate {...permissionGate}>
+          <PageShell
+            title="📈 数据分析"
+            subtitle="门店运营数据分析 · 营收 · 客流 · 商品销量 · 时段趋势"
+          >
+            <AnalysisTabs activeFilter={activeFilter} />
+            <Suspense fallback={<LoadingSkeleton variant="card" rows={10} label="加载数据分析..." />}>
+              <AnalyticsClient data={data} filter={activeFilter} />
+            </Suspense>
+          </PageShell>
+        </AdminPermissionGate>
       </main>
     </ErrorBoundary>
   );

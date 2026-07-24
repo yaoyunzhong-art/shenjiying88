@@ -38,6 +38,13 @@ describe('Dashboard — 服务端页面', () => {
   it('包含weeklyGrowth数据类型', () => assert.ok(SRC.includes('weeklyGrowth')));
 });
 
+describe('Dashboard — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"));
+  });
+});
+
 // ---- 客户端组件验证 ----
 
 describe('Dashboard — 客户端组件', () => {

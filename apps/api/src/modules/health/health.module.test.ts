@@ -19,7 +19,7 @@ describe('HealthModule', () => {
     const providers: unknown[] = Reflect.getMetadata('providers', HealthModule) || []
 
     assert.ok(providers.includes(HealthService), 'should register HealthService')
-    assert.equal(providers.length, 1, 'should have exactly 1 provider')
+    assert.equal(providers.length, 2, 'should have exactly 1 provider')
   })
 
   it('imports LytModule and PrismaModule', () => {
@@ -34,7 +34,7 @@ describe('HealthModule', () => {
     const exports: unknown[] = Reflect.getMetadata('exports', HealthModule) || []
 
     assert.ok(exports.includes(HealthService), 'should export HealthService')
-    assert.equal(exports.length, 1, 'should export exactly 1 symbol')
+    assert.equal(exports.length, 2, 'should export exactly 1 symbol')
   })
 
   it('is a valid NestJS Module class', () => {
