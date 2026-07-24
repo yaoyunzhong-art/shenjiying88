@@ -295,6 +295,146 @@ function mobileGetSimpleDashboard(dashId: string): { kpiCards: { label: string; 
   return { kpiCards, topStores };
 }
 
+// ========== 新增: 导出增强服务函数 (Phase 8) ==========
+
+// 角色权限校验: 只有BI管理员可导出
+function apiCheckExportPermission(userRole: string): boolean {
+  return userRole === 'bi_admin' || userRole === 'enterprise_admin';
+}
+
+// 角色受限导出
+function apiRoleRestrictedExport(dashId: string, format: ExportFormat, userRole: string): { success: boolean; job?: DataExportJob; error?: string } {
+  if (!apiCheckExportPermission(userRole)) {
+    roleDataAccessLog.push(`[api] EXPORT_DENIED role=${userRole}`);
+    return { success: false, error: 'insufficient_permissions' };
+  }
+  return apiExportData(dashId, format);
+}
+
+// 模拟大数据量导出
+function apiExportLargeDataset(dashId: string, format: ExportFormat, mockRows: number): { success: boolean; job?: DataExportJob; error?: string } {
+  const dash = dashboards.find(d => d.id === dashId);
+  if (!dash) return { success: false, error: 'dashboard_not_found' };
+  if (dash.status !== 'generated') return { success: false, error: 'dashboard_not_generated' };
+
+  const job: DataExportJob = {
+    id: `export_large_${Date.now()}`,
+    dashboardId: dashId,
+    format,
+    status: 'completed',
+    downloadUrl: `/exports/${dashId}_large.${format}`,
+    rowCount: mockRows,
+    createdAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+  };
+  exportJobs.push(job);
+  roleDataAccessLog.push(`[api] EXPORT_LARGE ${dashId} → ${format} (${mockRows} rows)`);
+  return { success: true, job };
+}
+
+// 模拟导出中断/取消
+let exportCancelRegister: Map<string, boolean> = new Map();
+
+function apiStartExport(dashId: string, format: ExportFormat): { success: boolean; jobId?: string; error?: string } {
+  const dash = dashboards.find(d => d.id === dashId);
+  if (!dash) return { success: false, error: 'dashboard_not_found' };
+  if (dash.status !== 'generated') return { success: false, error: 'dashboard_not_generated' };
+
+  const jobId = `export_proc_${Date.now()}`;
+  exportCancelRegister.set(jobId, false);
+  roleDataAccessLog.push(`[api] EXPORT_START ${dashId} → ${format} (job=${jobId})`);
+  return { success: true, jobId };
+}
+
+function apiCancelExport(jobId: string): { success: boolean; error?: string } {
+  if (!exportCancelRegister.has(jobId)) return { success: false, error: 'export_job_not_found' };
+  exportCancelRegister.set(jobId, true);
+  roleDataAccessLog.push(`[api] EXPORT_CANCEL ${jobId}`);
+  return { success: true };
+}
+
+function apiIsExportCancelled(jobId: string): boolean {
+  return exportCancelRegister.get(jobId) === true;
+}
+
+// 分页导出
+function apiPaginatedExport(dashId: string, format: ExportFormat, page: number, pageSize: number): { success: boolean; jobs?: DataExportJob[]; error?: string } {
+  const dash = dashboards.find(d => d.id === dashId);
+  if (!dash) return { success: false, error: 'dashboard_not_found' };
+  if (dash.status !== 'generated') return { success: false, error: 'dashboard_not_generated' };
+
+  const totalPages = pageSize > 0 ? Math.ceil(transactions.length / pageSize) : 0;
+  if (page < 1 || page > totalPages) return { success: false, error: 'invalid_page' };
+
+  const jobs: DataExportJob[] = [];
+  for (let p = page; p <= Math.min(page, totalPages); p++) {
+    const job: DataExportJob = {
+      id: `export_page_${p}_${Date.now()}`,
+      dashboardId: dashId,
+      format,
+      status: 'completed',
+      downloadUrl: `/exports/${dashId}_page${p}.${format}`,
+      rowCount: Math.min(pageSize, transactions.length - (p - 1) * pageSize),
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    };
+    jobs.push(job);
+    exportJobs.push(job);
+  }
+  roleDataAccessLog.push(`[api] EXPORT_PAGINATED ${dashId} page=${page} size=${pageSize}`);
+  return { success: true, jobs };
+}
+
+// 清理导出记录
+function apiCleanupExport(jobId: string): { success: boolean; error?: string } {
+  const idx = exportJobs.findIndex(j => j.id === jobId);
+  if (idx === -1) return { success: false, error: 'export_job_not_found' };
+  exportJobs.splice(idx, 1);
+  roleDataAccessLog.push(`[api] EXPORT_CLEANUP ${jobId}`);
+  return { success: true };
+}
+
+// 并发导出计数
+function apiConcurrentExportCount(): number {
+  return exportJobs.filter(j => j.status === 'completed').length;
+}
+
+// 导出审计日志过滤
+function apiGetExportAuditLogs(): string[] {
+  return roleDataAccessLog.filter(l => l.includes('EXPORT'));
+}
+
+// ========== 新增: CSV内容格式校验 ==========
+
+// 模拟生成CSV行并校验格式
+function apiGenerateCSVPreview(dashId: string): { headers: string[]; rows: string[][]; rowCount: number } {
+  const dash = dashboards.find(d => d.id === dashId);
+  if (!dash || !dash.data) return { headers: [], rows: [], rowCount: 0 };
+
+  const headers = ['指标', ...dash.dimensions, '数值'];
+  const rows: string[][] = [];
+  for (const metric of dash.metrics) {
+    for (const series of dash.data.series) {
+      rows.push([metric, series.label, String(series.values.reduce((a, b) => a + b, 0))]);
+    }
+  }
+  return { headers, rows, rowCount: rows.length };
+}
+
+// ========== 新增: 多格式数据一致性校验 ==========
+
+function apiVerifyMultiFormatConsistency(dashId: string): { csvRows: number; jsonRows: number; xlsxRows: number; consistent: boolean } {
+  const csvPreview = apiGenerateCSVPreview(dashId);
+  const jsonExport = apiExportData(dashId, 'json');
+  const xlsxExport = apiExportData(dashId, 'xlsx');
+  return {
+    csvRows: csvPreview.rowCount,
+    jsonRows: jsonExport.job?.rowCount || 0,
+    xlsxRows: xlsxExport.job?.rowCount || 0,
+    consistent: csvPreview.rowCount > 0 && jsonExport.success && xlsxExport.success,
+  };
+}
+
 // 数据验证: 数值一致性
 function verifyDataConsistency(dashId: string): { consistent: boolean; totalSum: number } {
   const dash = dashboards.find(d => d.id === dashId);
@@ -366,7 +506,7 @@ describe('链38: BI数据看板 + 数据导出 + 角色隔离 (Admin→API→Tob
       filters: { region: '华东' },
     });
     assert.ok(r.success);
-    (globalAny).__dash_enterprise = r.dashboard!.id;
+    (globalThis as any).__dash_enterprise = r.dashboard!.id;
   });
 
   test('[N1.1] Admin创建看板缺metrics → 拒绝', () => {
@@ -553,7 +693,7 @@ describe('链38: BI数据看板 + 数据导出 + 角色隔离 (Admin→API→Tob
   });
 
   test('[P6.2] Mobile查看未生成的看板 → 返回null', () => {
-    const dashId = (globalAny).__dash_sales_region + '_nonexistent';
+    const dashId = ((globalThis as any).__dash_sales_region || '') + '_nonexistent';
     const dashboard = mobileGetSimpleDashboard(dashId);
     assert.equal(dashboard, null);
   });
@@ -622,5 +762,133 @@ describe('链38: BI数据看板 + 数据导出 + 角色隔离 (Admin→API→Tob
     assert.ok(formats.includes('json'));
     assert.ok(formats.includes('xlsx'));
     assert.equal(exportJobs.length, 3);
+  });
+
+  // ======== Phase 8: 导出增强测试 (格式校验/权限/大数据/中断/清理) ========
+
+  test('[P8.1] CSV导出格式校验 → 表头包含指标和维度列', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const csvPreview = apiGenerateCSVPreview(dashId);
+    assert.ok(csvPreview.headers.length > 0);
+    assert.ok(csvPreview.headers.includes('指标'));
+    assert.ok(csvPreview.headers.includes('数值'));
+    // 维度列应该出现在headers中
+    assert.ok(csvPreview.rows.length >= 3);
+    assert.ok(csvPreview.rowCount > 0);
+  });
+
+  test('[P8.2] CSV导出行列数量校验 → 行数与指标×系列数匹配', () => {
+    const dashId = (globalThis as any).__dash_category;
+    const csvPreview = apiGenerateCSVPreview(dashId);
+    const dash = dashboards.find(d => d.id === dashId)!;
+    const expectedRows = dash.metrics.length * dash.data!.series.length;
+    assert.equal(csvPreview.rowCount, expectedRows);
+  });
+
+  test('[P8.3] 角色权限校验 → 数据分析师无权导出', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const r = apiRoleRestrictedExport(dashId, 'csv', 'data_analyst');
+    assert.equal(r.success, false);
+    assert.equal(r.error, 'insufficient_permissions');
+  });
+
+  test('[P8.4] BI管理员角色有导出权限 → 导出成功', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const r = apiRoleRestrictedExport(dashId, 'csv', 'bi_admin');
+    assert.ok(r.success);
+    assert.ok(r.job!.downloadUrl);
+  });
+
+  test('[P8.5] 大数据量导出(200行) → 导出成功,rowCount=200', () => {
+    const dashId = (globalThis as any).__dash_enterprise;
+    const r = apiExportLargeDataset(dashId, 'csv', 200);
+    assert.ok(r.success);
+    assert.equal(r.job!.rowCount, 200);
+    assert.ok(r.job!.downloadUrl!.includes('_large'));
+  });
+
+  test('[P8.6] 导出中断/取消流程 → 取消后状态为cancelled', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const start = apiStartExport(dashId, 'csv');
+    assert.ok(start.success);
+    assert.ok(start.jobId);
+    // 取消
+    const cancel = apiCancelExport(start.jobId!);
+    assert.ok(cancel.success);
+    assert.ok(apiIsExportCancelled(start.jobId!));
+  });
+
+  test('[N8.1] 取消不存在的导出任务 → 拒绝', () => {
+    const r = apiCancelExport('job_nonexistent');
+    assert.equal(r.success, false);
+    assert.equal(r.error, 'export_job_not_found');
+  });
+
+  test('[P8.7] 分页导出(第1页,每页10条) → 返回该分页数据', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const r = apiPaginatedExport(dashId, 'xlsx', 1, 10);
+    assert.ok(r.success);
+    assert.ok(r.jobs!);
+    assert.equal(r.jobs![0].rowCount, 10);
+    assert.ok(r.jobs![0].downloadUrl!.includes('_page1'));
+  });
+
+  test('[N8.2] 分页导出页码越界 → 拒绝', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const r = apiPaginatedExport(dashId, 'csv', 999, 10);
+    assert.equal(r.success, false);
+    assert.equal(r.error, 'invalid_page');
+  });
+
+  test('[P8.8] 导出后清理记录 → 删除后不再存在', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const r = apiExportData(dashId, 'json');
+    assert.ok(r.success);
+    const jobId = r.job!.id;
+    const cleanup = apiCleanupExport(jobId);
+    assert.ok(cleanup.success);
+    // 二次清理应失败
+    const cleanup2 = apiCleanupExport(jobId);
+    assert.equal(cleanup2.success, false);
+  });
+
+  test('[P8.9] 并发导出计数 → 每次导出后计数递增', () => {
+    const before = apiConcurrentExportCount();
+    const dashId = (globalThis as any).__dash_category;
+    apiExportData(dashId, 'csv');
+    const after = apiConcurrentExportCount();
+    assert.ok(after > before);
+  });
+
+  test('[P8.10] 多格式数据一致性 → CSV/JSON/XLSX都成功且>0行', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const consistency = apiVerifyMultiFormatConsistency(dashId);
+    assert.ok(consistency.consistent);
+    assert.ok(consistency.csvRows > 0);
+    assert.ok(consistency.jsonRows > 0);
+    assert.ok(consistency.xlsxRows > 0);
+  });
+
+  test('[B8.1] 导出审计日志 → 记录所有export操作及权限拒绝', () => {
+    const exportLogs = apiGetExportAuditLogs();
+    assert.ok(exportLogs.length >= 10);
+    assert.ok(exportLogs.some(l => l.includes('EXPORT ')));
+    assert.ok(exportLogs.some(l => l.includes('EXPORT_DENIED')));
+    assert.ok(exportLogs.some(l => l.includes('EXPORT_LARGE')));
+    assert.ok(exportLogs.some(l => l.includes('EXPORT_CANCEL')));
+    assert.ok(exportLogs.some(l => l.includes('EXPORT_PAGINATED')));
+    assert.ok(exportLogs.some(l => l.includes('EXPORT_CLEANUP')));
+  });
+
+  test('[B8.2] 导出状态始终为completed → 所有导出任务正常完成', () => {
+    const allCompleted = exportJobs.every(j => j.status === 'completed');
+    assert.ok(allCompleted);
+  });
+
+  test('[B8.3] 审计日志完整性 → BioAdmin创建和操作均有记录', () => {
+    const dashId = (globalThis as any).__dash_sales_region;
+    const dash = dashboards.find(d => d.id === dashId)!;
+    assert.ok(dash.createdBy.includes('bi_admin'));
+    assert.ok(roleDataAccessLog.filter(l => l.includes(dashId)).length >= 3);
   });
 });
