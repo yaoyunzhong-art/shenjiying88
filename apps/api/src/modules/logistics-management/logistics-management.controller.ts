@@ -35,9 +35,12 @@ import type {
 } from './logistics-management.entity'
 import type {
   VendorStatus,
+  VendorGrade,
   SupplyOrderStatus,
+  InventoryCategory,
   MaintenanceTaskStatus,
   MaintenanceTaskType,
+  MaintenanceTaskPriority,
 } from './logistics-management.entity'
 
 // 当前 P-30 骨架阶段使用硬编码 tenant; 上线后替换为真实租户上下文
@@ -113,7 +116,7 @@ export class LogisticsManagementController {
       code: body.code,
       name: body.name,
       category: body.category,
-      grade: body.grade as any,
+      grade: body.grade as unknown as VendorGrade,
       contacts: body.contacts.map((c) => ({
         name: c.name,
         phone: c.phone,
@@ -169,7 +172,7 @@ export class LogisticsManagementController {
       storeId: body.storeId,
       itemCode: body.itemCode,
       name: body.name,
-      category: body.category as any,
+      category: body.category as unknown as InventoryCategory,
       specification: body.specification,
       unit: body.unit,
       quantity: body.quantity,
@@ -185,7 +188,7 @@ export class LogisticsManagementController {
   @Get('inventory-items')
   listInventoryItems(@Query() query: QueryInventoryItemDto): InventoryItem[] {
     return this.service.listInventoryItems(MOCK_TENANT_ID, {
-      category: query.category as any,
+      category: query.category as unknown as InventoryCategory | undefined,
       storeId: query.storeId,
       search: query.search,
     })
@@ -234,8 +237,8 @@ export class LogisticsManagementController {
       storeId: body.storeId,
       equipmentName: body.equipmentName,
       equipmentId: body.equipmentId,
-      taskType: body.taskType as any,
-      priority: body.priority as any,
+      taskType: body.taskType as unknown as MaintenanceTaskType,
+      priority: body.priority as unknown as MaintenanceTaskPriority,
       description: body.description,
       assigneeId: body.assigneeId,
       assigneeName: body.assigneeName,

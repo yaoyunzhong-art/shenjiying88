@@ -49,6 +49,8 @@ export interface MemberProfile {
   points: number
   /** 成长值 */
   growthValue?: number
+  /** 6阶18级等级KEY (如 REGULAR_L1), 由 member-level 桥接写入 */
+  memberLevelKey?: string
   /** SVIP 状态 */
   svipStatus?: string
   /** 注册时间 */

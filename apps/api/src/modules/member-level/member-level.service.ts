@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable, Optional, Logger } from '@nestjs/common'
+import { EVENT_BUS_SERVICE, type EventBusService } from '../../infrastructure/event-bus/event-bus.module'
+import type { MemberLevelUpgradeEvent } from './member-level-upgrade.event'
 import {
   MemberLevelTier,
   MemberLevelSub,
@@ -47,6 +49,12 @@ const LEVEL_THRESHOLDS: LevelThreshold[] = [
 
 @Injectable()
 export class MemberLevelService {
+  private readonly logger = new Logger(MemberLevelService.name)
+
+  constructor(
+    @Optional() @Inject(EVENT_BUS_SERVICE) private readonly eventBus?: EventBusService
+  ) {}
+
   /**
    * 根据成长值计算会员等级
    */
@@ -70,9 +78,10 @@ export class MemberLevelService {
   /**
    * 评估成员等级（核心方法）
    * 规则：取满足所有条件的最高等级
+   * BS-0114: 升级后发射 MemberLevelUpgradeEvent
    */
-  evaluateMemberLevel(input: LevelEvaluationInput): LevelInfo {
-    const { memberId, growthValue, totalSpend, totalVisits } = input
+  evaluateMemberLevel(input: LevelEvaluationInput, previousLevelKey?: MemberLevelKey): LevelInfo {
+    const { memberId, growthValue, totalSpend, totalVisits, tenantId } = input
 
     // 从高到低遍历，找到第一个满足所有条件的等级
     let matchedLevel: LevelThreshold | null = null
@@ -109,20 +118,48 @@ export class MemberLevelService {
       matchedLevel.tier === MemberLevelTier.REGULAR &&
       growthValue === 0
 
-    return {
+    const currentLevelKey = `${matchedLevel.tier}_${matchedLevel.sub}` as MemberLevelKey
+    const evaluatedAt = new Date().toISOString()
+
+    const result: LevelInfo = {
       memberId,
       currentTier: matchedLevel.tier,
       currentSub: matchedLevel.sub,
-      currentLevelKey: `${matchedLevel.tier}_${matchedLevel.sub}` as MemberLevelKey,
+      currentLevelKey,
       growthValue,
       totalSpend,
       totalVisits,
       nextLevelThreshold: nextThreshold,
       upgradeProgress,
       benefits: matchedLevel.benefits,
-      evaluatedAt: new Date().toISOString(),
+      evaluatedAt,
       upgraded: !isBaseLevel
     }
+
+    // BS-0114: 当等级发生实际变化时发射升级事件
+    if (previousLevelKey && currentLevelKey !== previousLevelKey) {
+      const event: MemberLevelUpgradeEvent = {
+        eventType: 'member-level.upgraded',
+        timestamp: evaluatedAt,
+        memberId,
+        tenantId,
+        fromLevelKey: previousLevelKey,
+        toLevelKey: currentLevelKey,
+        fromTier: previousLevelKey.split('_')[0] as MemberLevelTier,
+        toTier: matchedLevel.tier,
+        growthValue,
+        totalSpend,
+        totalVisits,
+        newBenefits: matchedLevel.benefits,
+        reason: `成长值 ${growthValue} / 消费 ¥${totalSpend} / 到访 ${totalVisits} 达到 ${currentLevelKey} 门槛`
+      }
+
+      this.eventBus?.publish('member-level.upgraded', event).catch((err: Error) => {
+        this.logger.error(`Failed to emit upgrade event for ${memberId}: ${err.message}`)
+      })
+    }
+
+    return result
   }
 
   /**

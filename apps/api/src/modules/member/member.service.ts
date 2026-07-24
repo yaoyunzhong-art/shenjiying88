@@ -60,6 +60,28 @@ export class MemberService {
     @Optional() @Inject(MarketingMetricsService) private readonly marketingMetricsService?: MarketingMetricsService
   ) {}
 
+  /**
+   * BS-0115: 注入桥接服务用于成长值变更后自动评估等级
+   */
+  private _tierBridge: import('./member-tier-bridge.service').MemberTierBridgeService | null = null
+
+  /**
+   * BS-0115: 设置桥接服务实例（由模块注入或测试手动设置）
+   */
+  setTierBridge(bridge: import('./member-tier-bridge.service').MemberTierBridgeService): void {
+    this._tierBridge = bridge
+  }
+
+  /**
+   * BS-0115: 在 addPoints/revokePoints 后调用桥接评估等级
+   */
+  private syncMemberLevel(profile: MemberProfile): void {
+    if (!this._tierBridge) return
+    const bridge = this._tierBridge
+    const result = bridge.evaluateMemberTier(profile, profile.memberLevelKey as import('../member-level/member-level.entity').MemberLevelKey | undefined)
+    profile.memberLevelKey = result.memberLevelKey
+  }
+
   private getLytMemberSnapshotModel():
     | {
         findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
@@ -1554,6 +1576,7 @@ export class MemberService {
 
   /**
    * 为会员增加积分，自动重新计算等级
+   * BS-0115: 包含 6 阶 18 级桥接评估
    */
   addPoints(memberId: string, points: number): MemberProfile {
     const profile = memberStore.get(memberId)
@@ -1569,6 +1592,9 @@ export class MemberService {
     const newLevel = computeMemberLevel(profile.points)
     profile.level = newLevel
     profile.lastActiveAt = new Date().toISOString()
+
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(profile)
 
     return profile
   }
@@ -1586,6 +1612,9 @@ export class MemberService {
     profile.growthValue = Math.max(0, (profile.growthValue ?? 0) - points)
     profile.level = computeMemberLevel(profile.points)
     profile.lastActiveAt = new Date().toISOString()
+
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(profile)
 
     return profile
   }
@@ -1763,6 +1792,8 @@ export class MemberService {
       snapshot,
       extension
     })
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(hydrated)
     await this.recordMemberMutationHistory({
       memberId,
       tenantContext,
@@ -1844,6 +1875,8 @@ export class MemberService {
       snapshot,
       extension
     })
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(hydrated)
     await this.recordMemberMutationHistory({
       memberId,
       tenantContext,
