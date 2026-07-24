@@ -16,11 +16,19 @@ initTracing();
 
 const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1';
 const QUIET_NEST_LOG_CONTEXTS = new Set(['RouterExplorer', 'RoutesResolver', 'InstanceLoader']);
+const QUIET_NEST_LOG_MESSAGES = new Set([
+  'Starting Nest application...',
+  'Nest application successfully started',
+  'Nest microservice successfully started',
+]);
 const SHOULD_LOG_NEST_ROUTE_MAP = process.env.DEBUG_NEST_ROUTES === '1';
 
 function createNestLoggerAdapter(logger: StructuredLoggerService): NestLoggerService {
-  const shouldSkip = (context?: string): boolean =>
-    !SHOULD_LOG_NEST_ROUTE_MAP && typeof context === 'string' && QUIET_NEST_LOG_CONTEXTS.has(context);
+  const shouldSkip = (context: string | undefined, messageText: string): boolean => {
+    if (!SHOULD_LOG_NEST_ROUTE_MAP && typeof context === 'string' && QUIET_NEST_LOG_CONTEXTS.has(context)) return true;
+    if (!SHOULD_LOG_INIT_DEBUG && QUIET_NEST_LOG_MESSAGES.has(messageText)) return true;
+    return false;
+  };
 
   const extractContext = (optionalParams: unknown[]): string | undefined => {
     const last = optionalParams.at(-1);
@@ -33,7 +41,13 @@ function createNestLoggerAdapter(logger: StructuredLoggerService): NestLoggerSer
     optionalParams: unknown[] = [],
   ): void => {
     const context = extractContext(optionalParams);
-    if (shouldSkip(context)) return;
+    const rawText =
+      message instanceof Error
+        ? message.message
+        : typeof message === 'string'
+          ? message
+          : 'nest logger event';
+    if (shouldSkip(context, rawText)) return;
 
     const extras = context ? optionalParams.slice(0, -1) : optionalParams;
     const payload: Record<string, unknown> = context ? { context } : {};
@@ -50,31 +64,24 @@ function createNestLoggerAdapter(logger: StructuredLoggerService): NestLoggerSer
       payload.extra = extras;
     }
 
-    const text =
-      message instanceof Error
-        ? message.message
-        : typeof message === 'string'
-          ? message
-          : 'nest logger event';
-
     switch (level) {
       case 'warn':
-        logger.warn(payload, text);
+        logger.warn(payload, rawText);
         return;
       case 'error':
-        logger.error(payload, text);
+        logger.error(payload, rawText);
         return;
       case 'debug':
-        logger.debug(payload, text);
+        logger.debug(payload, rawText);
         return;
       case 'trace':
-        logger.trace(payload, text);
+        logger.trace(payload, rawText);
         return;
       case 'fatal':
-        logger.fatal(payload, text);
+        logger.fatal(payload, rawText);
         return;
       default:
-        logger.info(payload, text);
+        logger.info(payload, rawText);
     }
   };
 
@@ -105,12 +112,15 @@ function createNestLoggerAdapter(logger: StructuredLoggerService): NestLoggerSer
  */
 async function bootstrap() {
   const logger = new StructuredLoggerService({ serviceName: 'm5-api-bootstrap' });
+  const nestLogger = createNestLoggerAdapter(logger);
   if (SHOULD_LOG_INIT_DEBUG) {
     console.log('[bootstrap] creating Nest app');
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: createNestLoggerAdapter(logger),
+    bufferLogs: true,
   });
+  app.useLogger(nestLogger);
+  app.flushLogs();
   if (SHOULD_LOG_INIT_DEBUG) {
     console.log('[bootstrap] Nest app created');
   }
