@@ -2,6 +2,14 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Tabs, Empty, Progress, Modal, Divider, message, DatePicker } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店分析访问受限',
+  description:
+    '门店分析页已接入管理员本地 session，只有具备 store:read 的账号才能查看营收趋势、客流分布与经营明细数据。',
+} as const;
 
 const REVENUE_DATA = [
   { day:'07/07', revenue:14500, traffic:320, deviceUsage:'82%', newMember:12, avgOrder:45 },
@@ -64,8 +72,9 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ color: '#f8fafc', margin: 0 }}>📊 经营分析</h2>
@@ -176,7 +185,8 @@ export default function AnalyticsPage() {
             </div>
           </Space>}
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
