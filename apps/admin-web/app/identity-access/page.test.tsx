@@ -224,3 +224,10 @@ describe('Identity Access — hooks验证', () => {
   it('策略契约包含 boundPermissions', () => assert.ok(SRC.includes('boundPermissions')));
   it('编辑表单包含 permissionsInput', () => assert.ok(SRC.includes('permissionsInput')));
 });
+
+describe('identity-access — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});

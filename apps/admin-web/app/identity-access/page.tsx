@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -166,6 +167,13 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   color: active ? '#60a5fa' : '#94a3b8', fontWeight: active ? 600 : 400,
 });
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '身份访问控制访问受限',
+  description:
+    '身份认证与访问控制页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看认证策略、角色绑定与权限配置。',
+} as const;
+
 // ============================================================
 // 页面组件
 // ============================================================
@@ -267,148 +275,150 @@ export default function IdentityAccessPage() {
   ], [stats]);
 
   return (
-    <div style={S.page}>
-      <h1 style={S.title}>🔐 身份认证与访问控制</h1>
-      <p style={S.subtitle}>认证策略管理（OAuth/SAML/JWT/自定义），支持搜索、类型筛选、CRUD操作。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={S.page}>
+        <h1 style={S.title}>🔐 身份认证与访问控制</h1>
+        <p style={S.subtitle}>认证策略管理（OAuth/SAML/JWT/自定义），支持搜索、类型筛选、CRUD操作。</p>
 
-      {/* 统计卡片 */}
-      <div style={S.statsRow}>
-        {statCards.map(s => (
-          <div key={s.label} style={S.statCard}>
-            <div style={S.statLabel}>{s.label}</div>
-            <div style={S.statValue}>{s.value}</div>
-            <div style={S.statSub}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* 工具栏 */}
-      <div style={S.toolBar}>
-        <div style={S.filterRow}>
-          <input style={S.searchInput} placeholder="🔍 搜索策略名称/描述/类型..." value={search} onChange={e => { setSearch(e.target.value); safeSetPage(1); }} />
-          <select style={S.select} value={typeFilter} onChange={e => { setTypeFilter(e.target.value); safeSetPage(1); }}>
-            <option value="all">全部类型</option>
-            {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(['all', 'active', 'inactive'] as const).map(s => (
-              <button key={s} style={tabStyle(statusFilter === s)} onClick={() => { setStatusFilter(s); safeSetPage(1); }}>
-                {s === 'all' ? '全部' : STATUS_LABELS[s]}
-              </button>
-            ))}
-          </div>
+        {/* 统计卡片 */}
+        <div style={S.statsRow}>
+          {statCards.map(s => (
+            <div key={s.label} style={S.statCard}>
+              <div style={S.statLabel}>{s.label}</div>
+              <div style={S.statValue}>{s.value}</div>
+              <div style={S.statSub}>{s.sub}</div>
+            </div>
+          ))}
         </div>
-        <button style={btnPrimary} onClick={openCreate}>+ 新增策略</button>
-      </div>
 
-      {/* 列表 */}
-      {pagedPolicies.length === 0 ? (
-        <div style={S.emptyState}>
-          <div style={S.emptyIcon}>🔐</div>
-          <div style={S.emptyText}>暂无匹配的认证策略</div>
-          <button style={{ ...btnGhost, marginTop: 12 }} onClick={resetFilter}>清除筛选</button>
+        {/* 工具栏 */}
+        <div style={S.toolBar}>
+          <div style={S.filterRow}>
+            <input style={S.searchInput} placeholder="🔍 搜索策略名称/描述/类型..." value={search} onChange={e => { setSearch(e.target.value); safeSetPage(1); }} />
+            <select style={S.select} value={typeFilter} onChange={e => { setTypeFilter(e.target.value); safeSetPage(1); }}>
+              <option value="all">全部类型</option>
+              {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['all', 'active', 'inactive'] as const).map(s => (
+                <button key={s} style={tabStyle(statusFilter === s)} onClick={() => { setStatusFilter(s); safeSetPage(1); }}>
+                  {s === 'all' ? '全部' : STATUS_LABELS[s]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button style={btnPrimary} onClick={openCreate}>+ 新增策略</button>
         </div>
-      ) : (
-        <table style={S.table}>
-          <thead>
-            <tr>
-              <th style={S.th}>策略名称</th>
-              <th style={S.th}>类型</th>
-              <th style={S.th}>描述</th>
-              <th style={S.th}>绑定角色</th>
-              <th style={S.th}>绑定权限</th>
-              <th style={S.th}>状态</th>
-              <th style={S.th}>更新时间</th>
-              <th style={S.th}>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedPolicies.map(p => (
-              <tr key={p.id}>
-                <td style={{ ...S.td, fontWeight: 500, color: '#e2e8f0' }}>{p.name}</td>
-                <td style={S.td}><span style={typeTagStyle(p.type)}>{p.type}</span></td>
-                <td style={{ ...S.td, fontSize: 12, color: '#94a3b8', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</td>
-                <td style={S.td}>{p.boundRoles.map(r => <span key={r} style={roleTagStyle}>{r}</span>)}</td>
-                <td style={S.td}>
-                  {p.boundPermissions.length > 0 ? p.boundPermissions.map(permission => (
-                    <span key={permission} style={permissionTagStyle}>{permission}</span>
-                  )) : <span style={{ color: '#64748b' }}>暂无权限</span>}
-                </td>
-                <td style={S.td}><span style={statusTagStyle(p.status)}>● {STATUS_LABELS[p.status]}</span></td>
-                <td style={{ ...S.td, fontSize: 12 }}>{p.updatedAt}</td>
-                <td style={S.actionCell}>
-                  <button style={btnGhost} onClick={() => openEdit(p)}>编辑</button>
-                  <button style={btnDanger} onClick={() => handleDelete(p.id)}>删除</button>
-                </td>
+
+        {/* 列表 */}
+        {pagedPolicies.length === 0 ? (
+          <div style={S.emptyState}>
+            <div style={S.emptyIcon}>🔐</div>
+            <div style={S.emptyText}>暂无匹配的认证策略</div>
+            <button style={{ ...btnGhost, marginTop: 12 }} onClick={resetFilter}>清除筛选</button>
+          </div>
+        ) : (
+          <table style={S.table}>
+            <thead>
+              <tr>
+                <th style={S.th}>策略名称</th>
+                <th style={S.th}>类型</th>
+                <th style={S.th}>描述</th>
+                <th style={S.th}>绑定角色</th>
+                <th style={S.th}>绑定权限</th>
+                <th style={S.th}>状态</th>
+                <th style={S.th}>更新时间</th>
+                <th style={S.th}>操作</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {pagedPolicies.map(p => (
+                <tr key={p.id}>
+                  <td style={{ ...S.td, fontWeight: 500, color: '#e2e8f0' }}>{p.name}</td>
+                  <td style={S.td}><span style={typeTagStyle(p.type)}>{p.type}</span></td>
+                  <td style={{ ...S.td, fontSize: 12, color: '#94a3b8', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</td>
+                  <td style={S.td}>{p.boundRoles.map(r => <span key={r} style={roleTagStyle}>{r}</span>)}</td>
+                  <td style={S.td}>
+                    {p.boundPermissions.length > 0 ? p.boundPermissions.map(permission => (
+                      <span key={permission} style={permissionTagStyle}>{permission}</span>
+                    )) : <span style={{ color: '#64748b' }}>暂无权限</span>}
+                  </td>
+                  <td style={S.td}><span style={statusTagStyle(p.status)}>● {STATUS_LABELS[p.status]}</span></td>
+                  <td style={{ ...S.td, fontSize: 12 }}>{p.updatedAt}</td>
+                  <td style={S.actionCell}>
+                    <button style={btnGhost} onClick={() => openEdit(p)}>编辑</button>
+                    <button style={btnDanger} onClick={() => handleDelete(p.id)}>删除</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
-      {/* 分页 */}
-      {filteredPolicies.length > 0 && (
-        <div style={S.paginationRow}>
-          <span>共 {filteredPolicies.length} 条，第 {page}/{totalPages} 页</span>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button style={S.pageBtn} disabled={page <= 1} onClick={() => safeSetPage(page - 1)}>上一页</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} style={p === page ? S.pageBtnActive : S.pageBtn} onClick={() => safeSetPage(p)}>{p}</button>
-            ))}
-            <button style={S.pageBtn} disabled={page >= totalPages} onClick={() => safeSetPage(page + 1)}>下一页</button>
-          </div>
-        </div>
-      )}
-
-      {/* 新增/编辑弹窗 */}
-      {showModal && (
-        <div style={S.modalOverlay} onClick={closeModal}>
-          <div style={S.modal} onClick={e => e.stopPropagation()}>
-            <div style={S.modalTitle}>{editingId ? '编辑策略' : '新增策略'}</div>
-
-            <div style={S.formField}>
-              <label style={S.formLabel}>策略名称 *</label>
-              <input style={S.formInput} value={formData.name} onChange={e => handleFormChange('name', e.target.value)} placeholder="例如: 微信OAuth登录" />
-            </div>
-
-            <div style={S.formRow}>
-              <div style={{ flex: 1 }}>
-                <label style={S.formLabel}>认证类型</label>
-                <select style={S.formInput} value={formData.type} onChange={e => handleFormChange('type', e.target.value as PolicyType)}>
-                  {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={S.formLabel}>状态</label>
-                <select style={S.formInput} value={formData.status} onChange={e => handleFormChange('status', e.target.value as PolicyStatus)}>
-                  <option value="active">启用</option>
-                  <option value="inactive">禁用</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={S.formField}>
-              <label style={S.formLabel}>描述</label>
-              <input style={S.formInput} value={formData.description} onChange={e => handleFormChange('description', e.target.value)} placeholder="策略描述" />
-            </div>
-
-            <div style={S.formField}>
-              <label style={S.formLabel}>绑定角色（逗号分隔）</label>
-              <input style={S.formInput} value={rolesInput} onChange={e => setRolesInput(e.target.value)} placeholder="例如: admin, employee, customer" />
-            </div>
-
-            <div style={S.formField}>
-              <label style={S.formLabel}>绑定权限（逗号分隔）</label>
-              <input style={S.formInput} value={permissionsInput} onChange={e => setPermissionsInput(e.target.value)} placeholder="例如: identity:login, identity:session:write" />
-            </div>
-
-            <div style={S.formBtnRow}>
-              <button style={btnGhost} onClick={closeModal}>取消</button>
-              <button style={btnPrimary} onClick={handleSave}>{editingId ? '保存修改' : '确认新增'}</button>
+        {/* 分页 */}
+        {filteredPolicies.length > 0 && (
+          <div style={S.paginationRow}>
+            <span>共 {filteredPolicies.length} 条，第 {page}/{totalPages} 页</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button style={S.pageBtn} disabled={page <= 1} onClick={() => safeSetPage(page - 1)}>上一页</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} style={p === page ? S.pageBtnActive : S.pageBtn} onClick={() => safeSetPage(p)}>{p}</button>
+              ))}
+              <button style={S.pageBtn} disabled={page >= totalPages} onClick={() => safeSetPage(page + 1)}>下一页</button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* 新增/编辑弹窗 */}
+        {showModal && (
+          <div style={S.modalOverlay} onClick={closeModal}>
+            <div style={S.modal} onClick={e => e.stopPropagation()}>
+              <div style={S.modalTitle}>{editingId ? '编辑策略' : '新增策略'}</div>
+
+              <div style={S.formField}>
+                <label style={S.formLabel}>策略名称 *</label>
+                <input style={S.formInput} value={formData.name} onChange={e => handleFormChange('name', e.target.value)} placeholder="例如: 微信OAuth登录" />
+              </div>
+
+              <div style={S.formRow}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.formLabel}>认证类型</label>
+                  <select style={S.formInput} value={formData.type} onChange={e => handleFormChange('type', e.target.value as PolicyType)}>
+                    {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.formLabel}>状态</label>
+                  <select style={S.formInput} value={formData.status} onChange={e => handleFormChange('status', e.target.value as PolicyStatus)}>
+                    <option value="active">启用</option>
+                    <option value="inactive">禁用</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={S.formField}>
+                <label style={S.formLabel}>描述</label>
+                <input style={S.formInput} value={formData.description} onChange={e => handleFormChange('description', e.target.value)} placeholder="策略描述" />
+              </div>
+
+              <div style={S.formField}>
+                <label style={S.formLabel}>绑定角色（逗号分隔）</label>
+                <input style={S.formInput} value={rolesInput} onChange={e => setRolesInput(e.target.value)} placeholder="例如: admin, employee, customer" />
+              </div>
+
+              <div style={S.formField}>
+                <label style={S.formLabel}>绑定权限（逗号分隔）</label>
+                <input style={S.formInput} value={permissionsInput} onChange={e => setPermissionsInput(e.target.value)} placeholder="例如: identity:login, identity:session:write" />
+              </div>
+
+              <div style={S.formBtnRow}>
+                <button style={btnGhost} onClick={closeModal}>取消</button>
+                <button style={btnPrimary} onClick={handleSave}>{editingId ? '保存修改' : '确认新增'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }

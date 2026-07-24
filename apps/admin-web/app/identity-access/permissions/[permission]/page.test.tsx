@@ -160,3 +160,10 @@ describe('Identity Access / Permissions — hooks验证', () => {
   it('包含默认导出', () => assert.ok(SRC.includes('export default')));
   it('包含注释说明', () => assert.ok(true));
 });
+
+describe('identity-access/permissions/[permission] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
