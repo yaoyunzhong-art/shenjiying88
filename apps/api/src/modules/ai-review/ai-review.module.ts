@@ -20,7 +20,7 @@
  *
  * ✅ 已注册到 app.module.ts (Phase-19 · Pulse-80)
  *   - 模块已定义,可被 import
- *   - service 内部 TODO 由 Pulse-73 接入 (真实 API key + 启动连接)
+ *   - Pulse-73 醒神完成: LLM multi-provider (Claude/DeepSeek/OpenAI noop)
  */
 
 import { Module, Global } from '@nestjs/common'

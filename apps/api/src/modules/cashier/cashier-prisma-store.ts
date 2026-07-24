@@ -13,7 +13,6 @@ export class CashierPrismaStore implements ICashierStore {
   constructor(private readonly prisma: PrismaService) {}
 
   async saveOrder(order: CashierOrder): Promise<void> {
-    // TODO: 实现 Prisma upsert
     // 先在 cashier 模块 prisma schema 建表
     throw new Error('Not implemented yet')
   }

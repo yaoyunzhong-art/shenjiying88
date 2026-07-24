@@ -12,7 +12,7 @@
  *   3. 启动时 QdrantClientWrapper.onModuleInit 自动 ensureCollection
  *
  * ⚠️  当前 skeleton 状态:
- *   - 模块已定义,可被 import (但 service 内部 TODO 未实现)
+ *   - Pulse-71 醒神完成: service 已实现 Cache→Embed→Search→Rerank 全链
  *   - 不在 app.module.ts 中注册 (避免启动报错),由 Pulse-71 接入
  */
 
