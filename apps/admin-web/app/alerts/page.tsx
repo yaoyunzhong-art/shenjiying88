@@ -11,6 +11,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { loadAdminGovernanceReadModel } from '../bootstrap';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { AdminAlertsClient } from './alerts-client';
 
 export const metadata: Metadata = {
@@ -57,20 +58,27 @@ function AlertsErrorFallback() {
   return (
     <EmptyState
       title="告警加载异常"
-      description="无法加载治理告警数据，请检查 foundation.write 权限或后端服务可达性，稍后重试。"
+      description="无法加载治理告警数据，请检查 foundation.governance.read 权限或后端服务可达性，稍后重试。"
       action={<a href="/alerts">重试</a>}
     />
   );
 }
 
 export default async function AdminAlertsPage() {
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '治理告警中心访问受限',
+    description:
+      '治理告警中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看治理告警、数据交付模式与联动详情。',
+  } as const;
+
   let governance;
   try {
     governance = await loadAdminGovernanceReadModel();
   } catch {
     // 回退到空状态
     return (
-      <>
+      <AdminPermissionGate {...permissionGate}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -84,13 +92,13 @@ export default async function AdminAlertsPage() {
           }}
         />
         <AlertsEmptyState />
-      </>
+      </AdminPermissionGate>
     );
   }
 
   if (!governance || (!governance.alerts?.length && governance.deliveryMode === 'fallback')) {
     return (
-      <>
+      <AdminPermissionGate {...permissionGate}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -104,12 +112,12 @@ export default async function AdminAlertsPage() {
           }}
         />
         <AlertsEmptyState />
-      </>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <>
+    <AdminPermissionGate {...permissionGate}>
       {/* JSON-LD 结构化数据 */}
       <script
         type="application/ld+json"
@@ -154,6 +162,6 @@ export default async function AdminAlertsPage() {
         告警计数基于治理模型生成的审计/审批/安全/运行时事件。
         最后更新时间: {governance.generatedAt ?? '—'}。
       </div>
-    </>
+    </AdminPermissionGate>
   );
 }

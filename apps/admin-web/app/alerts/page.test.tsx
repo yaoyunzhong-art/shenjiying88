@@ -183,4 +183,8 @@ describe('Alerts — hooks验证', () => {
   it('包含字符串处理', () => assert.ok(true));
   it('包含默认导出', () => assert.ok(SRC.includes('export default')));
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
 });

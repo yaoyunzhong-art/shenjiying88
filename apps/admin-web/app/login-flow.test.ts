@@ -39,6 +39,9 @@ async function simulateLogin(username: string, password: string): Promise<LoginR
       'dashboard:read',
       'dashboard:operations:read',
       'dashboard:growth:read',
+      'foundation.governance.read',
+      'workbench.read',
+      'store:read',
       'settings:read',
       'identity-access:write',
       'user:write',
@@ -57,6 +60,9 @@ test('login flow: correct credentials return token role and permissions', async 
   assert.equal(result.role, 'super_admin');
   assert.ok(Array.isArray(result.permissions));
   assert.ok(result.permissions.includes('dashboard:read'));
+  assert.ok(result.permissions.includes('foundation.governance.read'));
+  assert.ok(result.permissions.includes('workbench.read'));
+  assert.ok(result.permissions.includes('store:read'));
 });
 
 test('login flow: whitespace-only username is rejected as empty', async () => {
@@ -143,7 +149,10 @@ describe('login-flow — L2 边界与逻辑细化', () => {
     assert.equal(result.token, 'mock-jwt-token');
     assert.equal(result.role, 'super_admin');
     assert.ok(result.permissions.includes('identity-access:write'));
+    assert.ok(result.permissions.includes('foundation.governance.read'));
     assert.ok(result.permissions.includes('settings:read'));
+    assert.ok(result.permissions.includes('workbench.read'));
+    assert.ok(result.permissions.includes('store:read'));
     assert.ok(typeof result.token === 'string', 'token 应为字符串');
     assert.ok(result.token.length > 0, 'token 不为空');
   });

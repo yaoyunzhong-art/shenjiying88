@@ -108,6 +108,12 @@ describe('workbench — 文件结构', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
     assert.ok(source.includes('export default async'));
   });
+
+  it('4. 接入管理员权限边界', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('AdminPermissionGate'));
+    assert.ok(source.includes('requiredPermission="workbench.read"'));
+  });
 });
 
 /* ══════════════════════════════════════════════════════════

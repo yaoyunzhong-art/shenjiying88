@@ -24,6 +24,10 @@ describe('Dashboard — 正例', () => {
   it('应包含 loading skeleton', () => assert.ok(SRC.includes('LoadingSkeleton')));
   it('应包含 GovernanceLinkedOverview', () => assert.ok(SRC.includes('GovernanceLinkedOverview')));
   it('应包含 WorkbenchList', () => assert.ok(SRC.includes('WorkbenchList')));
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="dashboard:read"'));
+  });
 });
 
 // ---- 防御 ----

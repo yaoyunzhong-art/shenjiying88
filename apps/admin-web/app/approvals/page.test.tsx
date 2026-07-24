@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import fs from 'node:fs';
 import { render, screen, cleanup } from '@testing-library/react';
+import { clearAdminSession, storeAdminSession } from '../lib/admin-session';
 import ApprovalsPage from './page';
 
 // ===================== 类型定义 =====================
@@ -535,6 +536,11 @@ describe('活动审批页 — 组件结构', () => {
     assert.ok(SRC.includes('export default function ApprovalsPage'));
   });
 
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+
   it('包含注释说明文档', () => {
     assert.ok(SRC.includes('/**'));
   });
@@ -572,7 +578,22 @@ describe('活动审批页 — 组件结构', () => {
  * 通过 afterEach(cleanup) 确保每次渲染后清理 DOM，防止测试间干扰
  */
 describe('活动审批页 — React 渲染', () => {
+  beforeEach(() => {
+    clearAdminSession();
+    storeAdminSession({
+      accessToken: 'test-access-token',
+      refreshToken: 'test-refresh-token',
+      user: {
+        userId: 'admin:test',
+        username: 'admin',
+        role: 'super_admin',
+        permissions: ['foundation.governance.read'],
+      },
+    });
+  });
+
   afterEach(() => {
+    clearAdminSession();
     cleanup();
   });
 

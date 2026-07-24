@@ -8,6 +8,7 @@
  * Tab筛选: 待审批/已处理/全部
  */
 import { useCallback, useMemo, useState } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ---- 类型定义 ----
 
@@ -247,7 +248,12 @@ export default function ApprovalsPage() {
   };
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate
+      requiredPermission="foundation.governance.read"
+      title="治理审批中心访问受限"
+      description="治理审批中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看审批待办、统计摘要与审批动作。"
+    >
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
       {/* 页面标题 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -342,7 +348,8 @@ export default function ApprovalsPage() {
           ))}
         </div>
       )}
-    </main>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

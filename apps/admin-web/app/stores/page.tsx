@@ -50,6 +50,7 @@ import {
 } from '../stores-data';
 
 import { loadAdminStoreList } from '../stores-view-model';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { useDetailActions } from '../components/use-detail-actions';
 import { deriveScopedCapabilityActionItem, type GatedCapabilityActionItem } from '../lyt-capability-access';
 import { StoreCapabilityActionStrip } from '../components/store-capability-action-strip';
@@ -763,9 +764,15 @@ function StoresPageFallback() {
 
 export default function StoresPage() {
   return (
-    <Suspense fallback={<StoresPageFallback />}>
-      <StoresPageContent />
-    </Suspense>
+    <AdminPermissionGate
+      requiredPermission="store:read"
+      title="门店中心访问受限"
+      description="门店管理中心已接入管理员本地 session，只有具备 store:read 的账号才能查看门店列表、风险分布与批量动作。"
+    >
+      <Suspense fallback={<StoresPageFallback />}>
+        <StoresPageContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 

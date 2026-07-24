@@ -15,6 +15,8 @@ import { render, cleanup } from '@testing-library/react';
 import RoleWorkbenchPage from './page';
 import fs from 'node:fs';
 
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+
 /* ── 类型 ── */
 
 type AccessLevel = 'full' | 'read' | 'none';
@@ -157,6 +159,13 @@ describe.skip('workbench-[role]: 页面渲染 (async 组件, 缺 React 19)', () 
     const { container } = setup();
     const text = container.textContent ?? '';
     assert.ok(text.length > 0);
+  });
+});
+
+describe('workbench-[role]: 权限边界', () => {
+  it('角色详情页接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="workbench.read"'));
   });
 });
 

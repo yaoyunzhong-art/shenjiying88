@@ -11,6 +11,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+
 /* ── 类型 ── */
 
 type WorkbenchChannel = 'PAD' | 'POS' | 'KDS' | 'MOBILE';
@@ -218,6 +220,13 @@ describe('pad-workbench: 类型与数据完整性', () => {
     assert.ok(Array.isArray(cd.recommendedSequence));
     assert.ok(Array.isArray(cd.highRiskEntrypoints));
     assert.ok(Array.isArray(cd.governanceTouchpoints));
+  });
+});
+
+describe('pad-workbench: 权限边界', () => {
+  it('详情页接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="workbench.read"'));
   });
 });
 

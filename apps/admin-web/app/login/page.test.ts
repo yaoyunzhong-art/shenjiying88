@@ -55,6 +55,9 @@ async function mockLoginApi(formData: LoginFormData): Promise<LoginResult> {
       'dashboard:read',
       'dashboard:operations:read',
       'dashboard:growth:read',
+      'foundation.governance.read',
+      'workbench.read',
+      'store:read',
       'settings:read',
       'identity-access:write',
       'user:write',
@@ -123,6 +126,9 @@ describe('login-page: 正例 (positive cases)', () => {
       assert.strictEqual(result.role, 'super_admin');
       assert.ok(Array.isArray(result.permissions));
       assert.ok(result.permissions.includes('dashboard:read'));
+      assert.ok(result.permissions.includes('foundation.governance.read'));
+      assert.ok(result.permissions.includes('workbench.read'));
+      assert.ok(result.permissions.includes('store:read'));
       assert.ok(result.token.length > 0);
     });
   });
@@ -260,6 +266,9 @@ describe('login-page: 边界 (boundary cases)', () => {
     assert.ok(['super_admin', 'admin', 'user'].includes(result.role) === false || result.role === 'super_admin');
     assert.strictEqual(result.role, 'super_admin');
     assert.ok(result.permissions.includes('identity-access:write'));
+    assert.ok(result.permissions.includes('foundation.governance.read'));
     assert.ok(result.permissions.includes('settings:read'));
+    assert.ok(result.permissions.includes('workbench.read'));
+    assert.ok(result.permissions.includes('store:read'));
   });
 });

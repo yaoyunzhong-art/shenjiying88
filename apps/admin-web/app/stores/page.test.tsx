@@ -45,6 +45,12 @@ describe('stores — 正例', () => {
     assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
   });
 
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes('requiredPermission="store:read"'), '缺少 store:read 权限边界');
+  });
+
   it('应从 stores-data.ts 导入 STORE_STATUS_MAP', () => {
     const src = readSource();
     assert.ok(src.includes('STORE_STATUS_MAP') && !src.includes('export const STORE_STATUS_MAP'),
