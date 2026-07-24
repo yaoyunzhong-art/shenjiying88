@@ -79,6 +79,13 @@ interface MockFinanceService {
   getDailyRevenue: (ctx: RequestTenantContext, query: DailyRevenueQueryDto) => DailyRevenue
   recordTransactionRevenue: (ctx: RequestTenantContext, params: { orderId: string; transactionId: string; amount: number; description: string; category?: string }) => Promise<Ledger>
   recordTransactionRefund: (ctx: RequestTenantContext, params: { orderId: string; transactionId: string; amount: number; description: string }) => Promise<Ledger>
+  deleteLedger: (id: string, ctx: RequestTenantContext) => { success: boolean }
+}
+
+interface MockArchivalService {
+  archive: (ctx: RequestTenantContext, dto: import('./finance.dto').CreateArchivalDto) => Promise<import('./finance.entity').FinanceArchival>
+  listArchivals: (ctx: RequestTenantContext, query?: import('./finance.dto').ArchivalQueryDto) => import('./finance.entity').FinanceArchival[]
+  getArchival: (id: string, ctx: RequestTenantContext) => import('./finance.entity').FinanceArchival
 }
 
 function makeMockService(): MockFinanceService {

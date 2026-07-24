@@ -35,7 +35,6 @@ import request from 'supertest';
 import type { NextFunction, Request, Response } from 'express';
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor';
 import { FinanceService, resetFinanceServiceTestState } from './finance.service';
-import { FinanceService } from './finance.service'
 import { FinanceArchivalService } from './finance-archival.service'
 import { FinanceController } from './finance.controller';
 import { FinanceReportController } from './finance-report.controller';
