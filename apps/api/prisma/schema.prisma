@@ -2515,3 +2515,43 @@ model LogisticsKPI {
   @@index([tenantId, period])
   @@map("logistics_kpi")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 未成年保护 (Minor Protection)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model MinorIdentityVerification {
+  id              String   @id
+  tenantId        String
+  memberId        String
+  method          String
+  identityNumber  String
+  name            String
+  isMinor         Boolean
+  birthday        String
+  guardianConsent Boolean  @default(false)
+  verifiedAt      DateTime
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, memberId])
+  @@map("minor_identity_verification")
+}
+
+model MinorAccessLog {
+  id             String   @id
+  tenantId       String
+  memberId       String
+  action         String
+  checkResult    String
+  timeRestricted Boolean  @default(false)
+  blockedReason  String   @default("")
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, createdAt])
+  @@map("minor_access_log")
+}
