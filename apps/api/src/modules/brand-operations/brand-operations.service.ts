@@ -155,7 +155,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     assetStore.set(asset.id, asset)
-    this.logger.log(`Created brand asset ${asset.id} (${asset.type})`)
+    this.logger.debug(`Created brand asset ${asset.id} (${asset.type})`)
     return asset
   }
 
@@ -234,7 +234,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     campaignStore.set(campaign.id, campaign)
-    this.logger.log(`Created brand campaign ${campaign.id}: "${campaign.title}"`)
+    this.logger.debug(`Created brand campaign ${campaign.id}: "${campaign.title}"`)
     return campaign
   }
 
@@ -330,7 +330,7 @@ export class BrandOperationsService {
       records.push(record)
     }
 
-    this.logger.log(`Synced campaign ${campaignId} to ${records.length} stores`)
+    this.logger.debug(`Synced campaign ${campaignId} to ${records.length} stores`)
     return records
   }
 
@@ -414,7 +414,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     templateStore.set(template.id, template)
-    this.logger.log(`Created campaign template ${template.id}: "${template.name}"`)
+    this.logger.debug(`Created campaign template ${template.id}: "${template.name}"`)
     return template
   }
 
@@ -657,7 +657,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     collaborationStore.set(collab.id, collab)
-    this.logger.log(`Created collaboration ${collab.id}: "${collab.title}"`)
+    this.logger.debug(`Created collaboration ${collab.id}: "${collab.title}"`)
     return collab
   }
 
@@ -783,7 +783,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     campaignScheduleStore.set(schedule.id, schedule)
-    this.logger.log(`Created campaign schedule ${schedule.id}: ${input.action} campaign ${input.campaignId} at ${input.scheduledAt}`)
+    this.logger.debug(`Created campaign schedule ${schedule.id}: ${input.action} campaign ${input.campaignId} at ${input.scheduledAt}`)
     return { ...schedule }
   }
 
@@ -838,7 +838,7 @@ export class BrandOperationsService {
         }
         s.status = 'executed'
         s.executedAt = now
-        this.logger.log(`Executed campaign schedule ${s.id}: ${s.action} campaign ${s.campaignId}`)
+        this.logger.debug(`Executed campaign schedule ${s.id}: ${s.action} campaign ${s.campaignId}`)
       } catch (error: any) {
         s.status = 'failed'
         s.errorMessage = error.message
@@ -892,7 +892,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     revenueShareStore.set(record.id, record)
-    this.logger.log(`Calculated revenue share ${record.id}: partner=${partnerShare} our=${ourShare}`)
+    this.logger.debug(`Calculated revenue share ${record.id}: partner=${partnerShare} our=${ourShare}`)
     return { ...record }
   }
 
@@ -1122,7 +1122,7 @@ export class BrandOperationsService {
     // 模拟异步生成
     this.generateExportData(record.id, input.tenantId, input.scope, input.format)
 
-    this.logger.log(`Export requested: ${record.id} scope=${input.scope} format=${input.format}`)
+    this.logger.debug(`Export requested: ${record.id} scope=${input.scope} format=${input.format}`)
     return { ...record }
   }
 
@@ -1236,7 +1236,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     collaborationContractStore.set(contract.id, contract)
-    this.logger.log(`Created collaboration contract ${contract.id}: ${contract.contractNumber}`)
+    this.logger.debug(`Created collaboration contract ${contract.id}: ${contract.contractNumber}`)
     return { ...contract, parties: [...contract.parties] }
   }
 
@@ -1344,7 +1344,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     campaignABTestStore.set(abTest.id, abTest)
-    this.logger.log(`Created A/B test ${abTest.id}: ${abTest.name} with ${abTest.variants.length} variants`)
+    this.logger.debug(`Created A/B test ${abTest.id}: ${abTest.name} with ${abTest.variants.length} variants`)
     return this.cloneABTest(abTest)
   }
 
@@ -1678,7 +1678,7 @@ export class BrandOperationsService {
       expiresAt,
     }
     recycleBinStore.set(item.id, item)
-    this.logger.log(`Soft deleted ${input.entityType} ${input.entityId} to recycle bin`)
+    this.logger.debug(`Soft deleted ${input.entityType} ${input.entityId} to recycle bin`)
     return { ...item }
   }
 
@@ -1707,7 +1707,7 @@ export class BrandOperationsService {
 
       item.restoredAt = new Date().toISOString()
       recycleBinStore.set(id, item)
-      this.logger.log(`Restored ${item.entityType} ${item.entityId} from recycle bin`)
+      this.logger.debug(`Restored ${item.entityType} ${item.entityId} from recycle bin`)
     } catch (error: any) {
       throw new Error(`Failed to restore entity: ${error.message}`)
     }
@@ -1751,7 +1751,7 @@ export class BrandOperationsService {
       }
     }
     if (count > 0) {
-      this.logger.log(`Cleaned ${count} expired recycle bin items`)
+      this.logger.debug(`Cleaned ${count} expired recycle bin items`)
     }
     return count
   }
@@ -1873,7 +1873,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     brandChannelStore.set(channel.id, channel)
-    this.logger.log(`Created brand channel ${channel.id}: "${channel.name}"`)
+    this.logger.debug(`Created brand channel ${channel.id}: "${channel.name}"`)
     return { ...channel }
   }
 
@@ -1965,7 +1965,7 @@ export class BrandOperationsService {
       updatedAt: now,
     }
     brandKPIStore.set(kpi.id, kpi)
-    this.logger.log(`Created brand KPI ${kpi.id}: "${kpi.name}"`)
+    this.logger.debug(`Created brand KPI ${kpi.id}: "${kpi.name}"`)
     return { ...kpi }
   }
 

@@ -86,7 +86,7 @@ export class LogisticsManagementService {
       updatedAt: now,
     }
     supplyOrderStore.set(order.id, order)
-    this.logger.log(`Created supply order ${order.id}: ${order.orderNumber}`)
+    this.logger.debug(`Created supply order ${order.id}: ${order.orderNumber}`)
     return { ...order, items: [...order.items] }
   }
 
@@ -170,7 +170,7 @@ export class LogisticsManagementService {
       updatedAt: now,
     }
     supplyVendorStore.set(vendor.id, vendor)
-    this.logger.log(`Created supply vendor ${vendor.id}: ${vendor.name}`)
+    this.logger.debug(`Created supply vendor ${vendor.id}: ${vendor.name}`)
     return { ...vendor, contacts: [...vendor.contacts], mainProducts: [...vendor.mainProducts] }
   }
 
@@ -255,7 +255,7 @@ export class LogisticsManagementService {
       updatedAt: now,
     }
     inventoryItemStore.set(item.id, item)
-    this.logger.log(`Created inventory item ${item.id}: ${item.name}`)
+    this.logger.debug(`Created inventory item ${item.id}: ${item.name}`)
     return { ...item }
   }
 
@@ -368,7 +368,7 @@ export class LogisticsManagementService {
       updatedAt: now,
     }
     maintenanceTaskStore.set(task.id, task)
-    this.logger.log(`Created maintenance task ${task.id}: ${task.equipmentName}`)
+    this.logger.debug(`Created maintenance task ${task.id}: ${task.equipmentName}`)
     return { ...task }
   }
 
