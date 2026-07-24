@@ -79,6 +79,13 @@ interface MockFinanceService {
   getDailyRevenue: (ctx: RequestTenantContext, query: DailyRevenueQueryDto) => DailyRevenue
   recordTransactionRevenue: (ctx: RequestTenantContext, params: { orderId: string; transactionId: string; amount: number; description: string; category?: string }) => Promise<Ledger>
   recordTransactionRefund: (ctx: RequestTenantContext, params: { orderId: string; transactionId: string; amount: number; description: string }) => Promise<Ledger>
+  deleteLedger: (id: string, ctx: RequestTenantContext) => { success: boolean }
+}
+
+interface MockArchivalService {
+  archive: (ctx: RequestTenantContext, dto: import('./finance.dto').CreateArchivalDto) => Promise<import('./finance.entity').FinanceArchival>
+  listArchivals: (ctx: RequestTenantContext, query?: import('./finance.dto').ArchivalQueryDto) => import('./finance.entity').FinanceArchival[]
+  getArchival: (id: string, ctx: RequestTenantContext) => import('./finance.entity').FinanceArchival
 }
 
 function makeMockService(): MockFinanceService {
@@ -310,13 +317,87 @@ function makeMockService(): MockFinanceService {
       category: 'refund',
       recordedAt: new Date().toISOString(),
       createdAt: new Date().toISOString()
-    })
+    }),
+    deleteLedger: (_id, _ctx) => ({ success: true })
   }
 }
 
-function makeController(serviceOverrides?: Partial<MockFinanceService>): FinanceController {
-  const base = makeMockService()
-  return new FinanceController({ ...base, ...serviceOverrides } as never)
+function makeMockArchivalService(): MockArchivalService {
+  return {
+    archive: async (_ctx, dto) => ({
+      id: 'archival-mock-1',
+      tenantId: _ctx.tenantId,
+      brandId: _ctx.brandId,
+      storeId: dto.storeId ?? _ctx.storeId,
+      periodStart: dto.periodStart,
+      periodEnd: dto.periodEnd,
+      settlementId: dto.settlementId,
+      type: dto.type ?? 'MANUAL',
+      status: 'ARCHIVED' as import('./finance.entity').ArchivalStatus,
+      snapshot: {
+        totalRevenue: 0,
+        totalExpense: 0,
+        totalRefund: 0,
+        netRevenue: 0,
+        ledgerCount: 0,
+        revenueLedgerCount: 0,
+        expenseLedgerCount: 0,
+        refundLedgerCount: 0,
+        settlement: {
+          totalRevenue: 0,
+          totalExpense: 0,
+          netProfit: 0,
+          settlementStatus: 'CONFIRMED'
+        }
+      },
+      version: 1,
+      archivedBy: dto.archivedBy,
+      archivedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
+    listArchivals: () => [],
+    getArchival: (id, ctx) => ({
+      id,
+      tenantId: ctx.tenantId,
+      brandId: ctx.brandId,
+      storeId: ctx.storeId,
+      periodStart: '2026-06-01T00:00:00Z',
+      periodEnd: '2026-06-30T23:59:59Z',
+      settlementId: 'stl-mock-1',
+      type: 'MANUAL',
+      status: 'ARCHIVED' as import('./finance.entity').ArchivalStatus,
+      snapshot: {
+        totalRevenue: 5000,
+        totalExpense: 1000,
+        totalRefund: 0,
+        netRevenue: 4000,
+        ledgerCount: 2,
+        revenueLedgerCount: 1,
+        expenseLedgerCount: 1,
+        refundLedgerCount: 0,
+        settlement: {
+          totalRevenue: 5000,
+          totalExpense: 1000,
+          netProfit: 4000,
+          settlementStatus: 'CONFIRMED'
+        }
+      },
+      version: 1,
+      archivedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
+  }
+}
+
+function makeController(serviceOverrides?: Partial<MockFinanceService>, archivalOverrides?: Partial<MockArchivalService>): FinanceController {
+  const baseService = makeMockService()
+  const baseArchival = makeMockArchivalService()
+  return new FinanceController(
+    { ...baseService, ...serviceOverrides } as never,
+    { ...baseArchival, ...archivalOverrides } as never
+  )
 }
 
 const CTX = tenantCtx()

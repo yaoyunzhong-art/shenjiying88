@@ -14,6 +14,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { FinanceArchivalService } from './finance-archival.service';
 import { FinanceController } from './finance.controller'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
 import { LedgerType, AccountType, InvoiceType } from './finance.entity'
@@ -29,7 +30,7 @@ const tenantCtx: RequestTenantContext = {
 function createController() {
   resetFinanceServiceTestState()
   const service = new FinanceService()
-  return new FinanceController(service)
+  return new FinanceController(service, new FinanceArchivalService(service))
 }
 
 // ──────────────────────────────────────────────────────────────────────
