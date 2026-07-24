@@ -162,6 +162,38 @@ describe('TRACING_CONFIG', () => {
     vi.resetModules();
   });
 
+  it('开发环境未显式配置 exporter 时应默认静默', async () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    const previousEnableTracing = process.env.ENABLE_TRACING;
+    const previousExporter = process.env.OTEL_TRACES_EXPORTER;
+    vi.resetModules();
+    process.env.NODE_ENV = 'development';
+    delete process.env.ENABLE_TRACING;
+    delete process.env.OTEL_TRACES_EXPORTER;
+
+    const mod = await import('./tracing');
+    assert.equal(mod.TRACING_CONFIG.exporter, 'none');
+
+    if (previousNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnv;
+    }
+
+    if (previousEnableTracing === undefined) {
+      delete process.env.ENABLE_TRACING;
+    } else {
+      process.env.ENABLE_TRACING = previousEnableTracing;
+    }
+
+    if (previousExporter === undefined) {
+      delete process.env.OTEL_TRACES_EXPORTER;
+    } else {
+      process.env.OTEL_TRACES_EXPORTER = previousExporter;
+    }
+    vi.resetModules();
+  });
+
   it('initTracing 幂等且不抛错', async () => {
     const mod = await import('./tracing');
     mod.initTracing();

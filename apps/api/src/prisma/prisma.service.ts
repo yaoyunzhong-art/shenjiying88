@@ -10,10 +10,12 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
 import { createRlsExtension } from '../modules/rls/rls.middleware-prisma'
 
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
+
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[debug:init] PrismaService.onModuleInit begin')
     }
 
@@ -44,7 +46,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       )
       return
     }
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[debug:init] PrismaService.onModuleInit end')
     }
   }

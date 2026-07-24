@@ -38,7 +38,8 @@ import {
   CreateInvoiceDto,
   InvoiceQueryDto,
   RevenueSummaryQueryDto,
-  DailyRevenueQueryDto
+  DailyRevenueQueryDto,
+  CreateArchivalDto
 } from './finance.dto'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
@@ -1256,5 +1257,168 @@ describe('[finance] Resolved 读链 — Controller 委托', () => {
     const result = await ctrl.disputeSettlement('stl-dispute', CTX)
     assert.equal(result.settlementStatus, SettlementStatus.Disputed)
     assert.equal(resolvedCalled, true)
+  })
+})
+
+// ── DELETE /finance/ledgers — 删除流水 ──
+
+describe('[finance] DELETE /finance/ledgers/:ledgerId — 删除流水', () => {
+  it('删除存在的流水', () => {
+    const ctrl = makeController()
+    const result = ctrl.deleteLedger('ledger-1', CTX)
+    assert.ok(result.success)
+  })
+
+  it('优先走 deleteLedgerResolved', async () => {
+    let resolvedCalled = false
+    const ctrl = makeController({
+      deleteLedger: () => {
+        throw new Error('should not use sync deleteLedger')
+      },
+      deleteLedgerResolved: async (ledgerId: string, _ctx: RequestTenantContext) => {
+        resolvedCalled = ledgerId === 'ledger-resolved'
+        return { success: true }
+      }
+    } as Partial<MockFinanceService> & {
+      deleteLedgerResolved: (ledgerId: string, ctx: RequestTenantContext) => Promise<{ success: boolean }>
+    })
+
+    const result = await ctrl.deleteLedger('ledger-resolved', CTX)
+    assert.equal(result.success, true)
+    assert.equal(resolvedCalled, true)
+  })
+})
+
+// ── POST /finance/settlements/:id/finalize — 结算闭合 ──
+
+describe('[finance] POST /finance/settlements/:settlementId/finalize — 结算闭合', () => {
+  it('结算闭合委托 confirmSettlement', async () => {
+    let confirmCalled = false
+    const ctrl = makeController({
+      confirmSettlement: (settlementId: string, _ctx: RequestTenantContext) => {
+        confirmCalled = settlementId === 'stl-finalize'
+        return {
+          id: 'stl-finalize',
+          tenantId: 't',
+          startDate: '2020-01-01T00:00:00.000Z',
+          endDate: '2020-12-31T23:59:59.999Z',
+          totalRevenue: 5000,
+          totalExpense: 2000,
+          netProfit: 3000,
+          settlementStatus: SettlementStatus.Confirmed,
+          settledAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        }
+      }
+    })
+
+    const result = await ctrl.finalizeSettlement('stl-finalize', CTX)
+    assert.equal(result.settlementStatus, SettlementStatus.Confirmed)
+    assert.equal(confirmCalled, true)
+  })
+})
+
+// ── Archival — 核算归档 ──
+
+describe('[finance] POST /finance/archivals — 创建归档', () => {
+  it('创建归档委托 archivalService.archive', async () => {
+    let archiveCalled = false
+    const ctrl = makeController({}, {
+      archive: async (ctx: RequestTenantContext, dto: import('./finance.dto').CreateArchivalDto) => {
+        archiveCalled = dto.settlementId === 'stl-archival'
+        return {
+          id: 'archival-1',
+          tenantId: ctx.tenantId,
+          brandId: ctx.brandId,
+          storeId: dto.storeId ?? ctx.storeId,
+          periodStart: dto.periodStart,
+          periodEnd: dto.periodEnd,
+          settlementId: dto.settlementId,
+          type: dto.type ?? 'MANUAL',
+          status: 'ARCHIVED' as import('./finance.entity').ArchivalStatus,
+          snapshot: {
+            totalRevenue: 0, totalExpense: 0, totalRefund: 0, netRevenue: 0,
+            ledgerCount: 0, revenueLedgerCount: 0, expenseLedgerCount: 0, refundLedgerCount: 0,
+            settlement: { totalRevenue: 0, totalExpense: 0, netProfit: 0, settlementStatus: 'CONFIRMED' }
+          },
+          version: 1,
+          archivedBy: dto.archivedBy,
+          archivedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      }
+    })
+
+    const dto = Object.assign(new CreateArchivalDto(), {
+      settlementId: 'stl-archival',
+      periodStart: '2026-06-01T00:00:00.000Z',
+      periodEnd: '2026-06-30T23:59:59.999Z',
+    })
+    const result = await ctrl.createArchival(CTX, dto)
+    assert.equal(result.settlementId, 'stl-archival')
+    assert.equal(archiveCalled, true)
+  })
+})
+
+describe('[finance] GET /finance/archivals — 归档列表', () => {
+  it('委托 archivalService.listArchivals', () => {
+    let listCalled = false
+    const ctrl = makeController({}, {
+      listArchivals: (_ctx: RequestTenantContext, _query?: import('./finance.dto').ArchivalQueryDto) => {
+        listCalled = true
+        return []
+      }
+    })
+    ctrl.listArchivals(CTX)
+    assert.equal(listCalled, true)
+  })
+})
+
+describe('[finance] GET /finance/archivals/:archivalId — 归档详情', () => {
+  it('委托 archivalService.getArchival', () => {
+    let getCalled = false
+    const ctrl = makeController({}, {
+      getArchival: (id: string, _ctx: RequestTenantContext) => {
+        getCalled = id === 'archival-detail'
+        return {
+          id: 'archival-detail',
+          tenantId: 't', brandId: '', storeId: '',
+          periodStart: '', periodEnd: '', settlementId: '',
+          type: 'MANUAL', status: 'ARCHIVED' as import('./finance.entity').ArchivalStatus,
+          snapshot: {
+            totalRevenue: 0, totalExpense: 0, totalRefund: 0, netRevenue: 0,
+            ledgerCount: 0, revenueLedgerCount: 0, expenseLedgerCount: 0, refundLedgerCount: 0,
+            settlement: { totalRevenue: 0, totalExpense: 0, netProfit: 0, settlementStatus: '' }
+          },
+          version: 1,
+          archivedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as import('./finance.entity').FinanceArchival
+      }
+    })
+    const result = ctrl.getArchival('archival-detail', CTX)
+    assert.equal(result.id, 'archival-detail')
+    assert.equal(getCalled, true)
+  })
+})
+
+// ── Revenue Alias ──
+
+describe('[finance] GET /finance/revenue-summary — 营收汇总别名路由', () => {
+  it('转发到 getRevenueSummary', async () => {
+    const ctrl = makeController()
+    const result = await ctrl.getRevenueSummaryAlias(CTX)
+    assert.equal(result.totalRevenue, 10000)
+  })
+})
+
+describe('[finance] GET /finance/daily-revenue — 日营收别名路由', () => {
+  it('转发到 getDailyRevenue', async () => {
+    const ctrl = makeController()
+    const dto = Object.assign(new DailyRevenueQueryDto(), { date: '2026-06-15' })
+    const result = await ctrl.getDailyRevenueAlias(CTX, dto)
+    assert.equal(result.date, '2026-06-15')
   })
 })

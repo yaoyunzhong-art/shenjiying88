@@ -4,7 +4,7 @@
  * 设计目标:
  *   - 零代码侵入:用 auto-instrumentation 自动捕获 HTTP/Express/NestJS/Prisma spans
  *   - W3C trace context 透传:从 traceparent header 解析,注入到下游
- *   - 灵活导出:开发模式 console exporter,生产 OTLP/HTTP exporter
+ *   - 灵活导出:开发模式默认静默,生产 OTLP/HTTP exporter,本地可显式开启 console
  *   - 优雅降级:OTel SDK 初始化失败时,业务不受影响 (catch error + log)
  *
  * 使用:
@@ -12,7 +12,7 @@
  *   设置环境变量:
  *     OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
  *     OTEL_SERVICE_NAME=m5-api
- *     OTEL_TRACES_EXPORTER=otlp  (默认) | console | none
+ *     OTEL_TRACES_EXPORTER=otlp | console | none
  *     NODE_ENV=production         (生产模式自动启用)
  */
 
@@ -36,7 +36,7 @@ const TRACING_ENABLED = !['false', '0', 'off', 'no'].includes(
 );
 const TRACES_EXPORTER = (
   TRACING_ENABLED
-    ? process.env.OTEL_TRACES_EXPORTER ?? (DEPLOYMENT_ENV === 'production' ? 'otlp' : 'console')
+    ? process.env.OTEL_TRACES_EXPORTER ?? (DEPLOYMENT_ENV === 'production' ? 'otlp' : 'none')
     : 'none'
 ).toLowerCase();
 const OTLP_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318';

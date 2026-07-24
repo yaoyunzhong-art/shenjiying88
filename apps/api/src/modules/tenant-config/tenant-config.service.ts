@@ -42,6 +42,8 @@ import {
 import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigRepository, type ConfigAuditLogInput } from './tenant-config.repository'
 
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
+
 const SUPPORTED_I18N_LOCALES = ['zh-CN', 'en-US', 'ja-JP'] as const
 
 @Injectable()
@@ -145,7 +147,7 @@ export class TenantConfigService implements OnModuleInit {
    * P1-F1: 同步构建二级索引 (从 instances 派生, O(n) 一次)
    */
   async onModuleInit(): Promise<void> {
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[debug:init] TenantConfigService.onModuleInit begin')
     }
     if (!this.repo) return
@@ -164,7 +166,7 @@ export class TenantConfigService implements OnModuleInit {
       // eslint-disable-next-line no-console
       console.warn('[TenantConfigService] warm-up failed:', (err as Error).message)
     } finally {
-      if (process.env.NODE_ENV !== 'production') {
+      if (SHOULD_LOG_INIT_DEBUG) {
         console.log('[debug:init] TenantConfigService.onModuleInit end')
       }
     }
