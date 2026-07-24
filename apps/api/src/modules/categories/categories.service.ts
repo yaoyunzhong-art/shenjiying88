@@ -11,7 +11,7 @@ export class CategoriesService {
 
   constructor() {
     this.reset();
-    this.logger.log(`已加载 ${this.categories.length} 个商品分类`);
+    this.logger.debug(`已加载 ${this.categories.length} 个商品分类`);
   }
 
   /** 重置到种子数据（测试辅助） */

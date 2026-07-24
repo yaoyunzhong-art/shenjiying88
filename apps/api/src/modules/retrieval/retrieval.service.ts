@@ -47,7 +47,7 @@ export class RetrievalService {
     private readonly embedder: EmbeddingService,
     @Optional() @Inject(CACHE_SERVICE) private readonly cache?: CacheService
   ) {
-    this.logger.log('RetrievalService initialized (Phase-19 skeleton)')
+    this.logger.debug('RetrievalService initialized (Phase-19 skeleton)')
   }
 
   /**

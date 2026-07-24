@@ -85,7 +85,7 @@ export class QdrantClientWrapper implements IQdrantClient, OnModuleDestroy {
   constructor(
     @Inject(retrievalConfig.KEY) private readonly cfg: ConfigType<typeof retrievalConfig>
   ) {
-    this.logger.log(`QdrantClientWrapper initialized for ${this.cfg.qdrant.host}:${this.cfg.qdrant.port}`)
+    this.logger.debug(`QdrantClientWrapper initialized for ${this.cfg.qdrant.host}:${this.cfg.qdrant.port}`)
   }
 
   /**

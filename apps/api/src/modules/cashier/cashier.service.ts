@@ -27,6 +27,7 @@ import {
 
 /** 模块级单例 MemoryStore（向后兼容：保持与旧 module-level Maps 相同的行为） */
 const globalMemoryStore = new CashierMemoryStore()
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
 
 @Injectable()
 export class CashierService {
@@ -199,7 +200,9 @@ export class CashierService {
       }
     }
 
-    console.log(`[CashierSeed] Loaded ${seedMembers.length} members (NODE_ENV=${process.env.NODE_ENV ?? 'undefined'})`)
+    if (SHOULD_LOG_INIT_DEBUG) {
+      console.log(`[CashierSeed] Loaded ${seedMembers.length} members (NODE_ENV=${process.env.NODE_ENV ?? 'undefined'})`)
+    }
   }
 
   private async ensureMemberExists(memberId: string, tenantContext: RequestTenantContext) {

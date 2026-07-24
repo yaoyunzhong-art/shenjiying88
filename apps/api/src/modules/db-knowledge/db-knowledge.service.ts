@@ -12,6 +12,8 @@
 import { Injectable } from '@nestjs/common'
 import { getPgPool } from '../../database/pg-pool'
 
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
+
 // ── 类型定义 ─────────────────────────────────────────────
 
 export interface KnowledgeDoc {
@@ -180,7 +182,9 @@ export class DbKnowledgeService {
         }
       }
     }
-    console.log('[DbKnowledgeService] ✅ Migration applied')
+    if (SHOULD_LOG_INIT_DEBUG) {
+      console.log('[DbKnowledgeService] ✅ Migration applied')
+    }
   }
 
   /**

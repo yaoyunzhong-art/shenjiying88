@@ -22,7 +22,7 @@ export class MonitorScheduler {
   private lastScanTimestamp: string | null = null
 
   constructor(private readonly collector: MonitorCollectorService) {
-    this.logger.log('MonitorScheduler 初始化，扫描间隔2h，全量扫描每天04:00')
+    this.logger.debug('MonitorScheduler 初始化，扫描间隔2h，全量扫描每天04:00')
   }
 
   /**

@@ -555,3 +555,38 @@
   - `CostTrackerService` initialized 提示
   - `CampaignTriggerService` subscribed 提示
   - `ReconciliationCron` / `FinanceSettlementCron` / `OutboxRelay` started 提示
+
+### 启动确认型 service 日志再收一刀
+
+- `apps/api/src/modules/bootstrap/bootstrap.service.ts`
+  - `模块状态: ...` 与 `系统进入运行态` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/intelligence/monitor-scheduler.ts`
+  - `MonitorScheduler 初始化...` 已从 `info` 降为 `debug`
+  - cron 真正开始/完成扫描日志保持不变
+- `apps/api/src/modules/push/channels/dual-channel-router.ts`
+  - `Channel registered: ...` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/ai-review/llm/cost-tracker.service.ts`
+  - `CostTracker initialized: ...` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/campaign/trigger.service.ts`
+  - `Subscribed to ${count} trigger events` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/finance/reconciliation/reconciliation.cron.ts`
+  - `ReconciliationCron started ...` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/finance/finance-settlement.cron.ts`
+  - `FinanceSettlementCron started ...` 已从 `info` 降为 `debug`
+- `apps/api/src/modules/foundation/outbox/outbox.relay.ts`
+  - `OutboxRelay started ...` 已从 `info` 降为 `debug`
+- fresh runtime 再次复验：
+  - 启动探针端口：`3142`
+  - 默认日志中仍保留：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `EventBufferService` dual-write 提示
+    - `QdrantClientWrapper` / `EmbeddingService` 的 skeleton 提示
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+  - 默认日志中已不再出现上述 8 条启动确认型 service 提示
+- 当前剩余更显眼的默认启动日志已缩窄为：
+  - `NestFactory` 的 `Starting Nest application...`
+  - `EventBufferService` 的 dual-write 提示
+  - `GatewayAnalyticsService` 的 `log source connected`
+  - `NestApplication` 的 `Nest application successfully started`

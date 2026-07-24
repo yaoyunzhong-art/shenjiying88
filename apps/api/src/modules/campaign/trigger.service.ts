@@ -61,7 +61,7 @@ export class CampaignTriggerService implements OnModuleInit, OnModuleDestroy {
       });
       this.subscribed.push(ev);
     }
-    this.logger.log(`Subscribed to ${this.subscribed.length} trigger events`);
+    this.logger.debug(`Subscribed to ${this.subscribed.length} trigger events`);
   }
 
   onModuleDestroy(): void {

@@ -249,7 +249,7 @@ export class RbacService {
       this.permissions.set(perm.permissionKey, perm)
     }
 
-    this.logger.log(`Initialized ${this.roles.size} roles and ${this.permissions.size} permissions`)
+    this.logger.debug(`Initialized ${this.roles.size} roles and ${this.permissions.size} permissions`)
   }
 
   private extractResourceType(resource: string): string {

@@ -92,7 +92,7 @@ export class AIReviewService {
     private readonly factory: LLMProviderFactory,
     private readonly costTracker: CostTrackerService
   ) {
-    this.logger.log('AIReviewService initialized (Phase-19 skeleton)')
+    this.logger.debug('AIReviewService initialized (Phase-19 skeleton)')
   }
 
   // ─── 主入口: PR Diff 评审 ─────────────────────────────────────────

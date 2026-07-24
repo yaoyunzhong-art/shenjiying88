@@ -23,7 +23,7 @@ export class DualChannelRouter {
    */
   register(channel: PushChannel): void {
     this.channels.set(channel.name, channel)
-    this.logger.log(`[Router] Channel registered: ${channel.name}`)
+    this.logger.debug(`[Router] Channel registered: ${channel.name}`)
   }
 
   /**

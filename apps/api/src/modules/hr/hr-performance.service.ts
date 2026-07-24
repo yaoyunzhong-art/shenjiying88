@@ -276,7 +276,7 @@ export class HrPerformanceService implements OnModuleInit {
 
   onModuleInit(): void {
     seedData()
-    this.logger.log(`Seeded ${templateStore.size} performance templates, ${evaluationStore.size} evaluations`)
+    this.logger.debug(`Seeded ${templateStore.size} performance templates, ${evaluationStore.size} evaluations`)
   }
 
   // ─────────────────────────────────────────────────────────────────

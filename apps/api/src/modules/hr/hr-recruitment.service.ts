@@ -243,7 +243,7 @@ export class HrRecruitmentService implements OnModuleInit {
 
   onModuleInit(): void {
     seedData()
-    this.logger.log(`Seeded ${positionStore.size} positions, ${candidateStore.size} candidates, ${referralStore.size} referrals`)
+    this.logger.debug(`Seeded ${positionStore.size} positions, ${candidateStore.size} candidates, ${referralStore.size} referrals`)
   }
 
   // ─────────────────────────────────────────────────────────────────

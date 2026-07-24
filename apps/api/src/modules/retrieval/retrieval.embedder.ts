@@ -52,7 +52,7 @@ export class EmbeddingService implements IEmbedder, OnModuleInit {
   constructor(
     @Inject(retrievalConfig.KEY) private readonly cfg: ConfigType<typeof retrievalConfig>
   ) {
-    this.logger.log(`EmbeddingService initialized for ${this.cfg.embedder.provider}`)
+    this.logger.debug(`EmbeddingService initialized for ${this.cfg.embedder.provider}`)
   }
 
   get provider(): string {

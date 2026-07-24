@@ -154,7 +154,7 @@ export class HrService implements OnModuleInit {
 
   onModuleInit(): void {
     seedData()
-    this.logger.log(`Seeded ${employeeStore.size} employees`)
+    this.logger.debug(`Seeded ${employeeStore.size} employees`)
   }
 
   // ─────────────────────────────────────────────────────────────────

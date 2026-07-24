@@ -219,7 +219,7 @@ export class TeamBuildingService implements OnModuleInit {
 
   onModuleInit(): void {
     seedPlans()
-    this.logger.log(`Seeded ${planStore.size} team-building plans`)
+    this.logger.debug(`Seeded ${planStore.size} team-building plans`)
   }
 
   // ═══════════════════════════════════════════════════════════════════
