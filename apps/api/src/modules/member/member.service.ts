@@ -1576,6 +1576,7 @@ export class MemberService {
 
   /**
    * 为会员增加积分，自动重新计算等级
+   * BS-0115: 包含 6 阶 18 级桥接评估
    */
   addPoints(memberId: string, points: number): MemberProfile {
     const profile = memberStore.get(memberId)

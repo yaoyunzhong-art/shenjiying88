@@ -11,7 +11,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { FinanceArchivalService } from './finance-archival.service';
+import { FinanceService } from './finance.service'
+import { FinanceArchivalService } from './finance-archival.service'
 import { FinanceController } from './finance.controller'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
 import { 

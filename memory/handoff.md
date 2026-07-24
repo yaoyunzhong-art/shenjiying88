@@ -418,3 +418,24 @@
 - 结论：
   - 当前 dev runtime 已无“冒号后空白”的降级日志尾巴
   - `ConfigInstance` 与 `CustomDomain` 缺表提示都已稳定为单行、可读、可检索摘要
+
+### OpenTelemetry 启动噪音已静默化
+
+- `apps/api/src/modules/observability/tracing/tracing.ts`
+  - 开发环境未显式设置 `OTEL_TRACES_EXPORTER` 时，默认值已从 `console` 收为 `none`
+  - 生产环境仍保持默认 `otlp`
+  - 若本地需要看 span，仍可显式设置 `OTEL_TRACES_EXPORTER=console`
+- `apps/api/src/modules/observability/tracing/tracing.service.test.ts`
+  - 已新增定向测试，锁住“开发环境默认静默”的口径
+  - 定向验证已通过：`pnpm exec vitest run src/modules/observability/tracing/tracing.service.test.ts`
+  - 结果：`1` 个测试文件、`12` 条用例全部通过
+- fresh runtime 运行态已复验：
+  - 端口：`3127`
+  - API 正常启动，日志可见：
+    - `LOG [TenantConfigRepository] [loadAllInstances] skipped persistence preload: The table "public.ConfigInstance" does not exist in the current database.`
+    - `LOG [DomainResolutionService] load custom domains skipped: The table "public.CustomDomain" does not exist in the current database.`
+    - `INFO: m5-api started`
+  - 原先刷屏的 OpenTelemetry `tcp.connect` span 对象日志已不再出现
+- 结论：
+  - 当前 dev runtime 已无 OTel console exporter 带来的大段对象噪音
+  - tracing 默认口径调整为“本地静默、显式开启、生产 OTLP”

@@ -78,6 +78,7 @@ export class MemberLevelService {
   /**
    * 评估成员等级（核心方法）
    * 规则：取满足所有条件的最高等级
+   * BS-0114: 升级后发射 MemberLevelUpgradeEvent
    */
   evaluateMemberLevel(input: LevelEvaluationInput, previousLevelKey?: MemberLevelKey): LevelInfo {
     const { memberId, growthValue, totalSpend, totalVisits, tenantId } = input

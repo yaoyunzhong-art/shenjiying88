@@ -124,6 +124,10 @@ export class FinanceController {
         ledgerId: string,
         tenantContext: RequestTenantContext
       ) => Promise<ReturnType<FinanceService['deleteLedger']>>
+      finalizeSettlementResolved?: (
+        settlementId: string,
+        tenantContext: RequestTenantContext
+      ) => Promise<ReturnType<FinanceService['confirmSettlement']>>
     }
   }
 
@@ -305,6 +309,9 @@ export class FinanceController {
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
   ) {
+    if (this.resolvedFinanceService.finalizeSettlementResolved) {
+      return this.resolvedFinanceService.finalizeSettlementResolved(settlementId, tenantContext)
+    }
     return this.financeService.confirmSettlement(settlementId, tenantContext)
   }
 
