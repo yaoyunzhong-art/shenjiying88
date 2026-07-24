@@ -187,6 +187,7 @@ describe('auth.contract.ts 合约定义验证', () => {
         userId: 'u-001',
         tenantId: 't-default',
         roles: ['store_manager'],
+        permissions: ['store:read'],
       }
       expect(user.roles).toContain('store_manager')
       expect(user.nickname).toBeUndefined()
@@ -200,6 +201,7 @@ describe('auth.contract.ts 合约定义验证', () => {
         email: 'manager@store.com',
         nickname: '张店长',
         roles: ['store_manager', 'operations'],
+        permissions: ['store:read', 'store:update'],
         avatar: 'https://cdn.example.com/avatars/u-002.png',
       }
       expect(user.nickname).toBe('张店长')
@@ -211,6 +213,7 @@ describe('auth.contract.ts 合约定义验证', () => {
         userId: 'u-003',
         tenantId: 't-multi',
         roles: ['store_manager', 'marketing', 'hr'],
+        permissions: ['marketing:campaigns', 'hr:read', 'store:read'],
       }
       expect(user.roles.length).toBe(3)
       expect(user.roles.includes('marketing')).toBe(true)
@@ -221,8 +224,10 @@ describe('auth.contract.ts 合约定义验证', () => {
         userId: 'u-004',
         tenantId: 't-default',
         roles: [],
+        permissions: [],
       }
       expect(user.roles).toEqual([])
+      expect(user.permissions).toEqual([])
     })
   })
 
@@ -286,6 +291,7 @@ describe('auth.contract.ts 合约定义验证', () => {
           userId: 'u-001',
           tenantId: 't-default',
           roles: ['store_manager'],
+          permissions: [],
         },
         tokens: {
           accessToken: 'at_test',
@@ -433,7 +439,7 @@ describe('auth.contract.ts 合约定义验证', () => {
     it('认证结果可 JSON 序列化', () => {
       const result: AuthResultContract = {
         success: true,
-        user: { userId: 'u1', tenantId: 't1', roles: ['admin'] },
+        user: { userId: 'u1', tenantId: 't1', roles: ['admin'], permissions: [] },
         tokens: { accessToken: 'at', refreshToken: 'rt', expiresIn: 3600, tokenType: 'Bearer' },
       }
       const json = JSON.stringify(result)

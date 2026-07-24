@@ -128,6 +128,7 @@ describe('AuthService', () => {
       )
       expect(result.success).toBe(true)
       expect(result.user!.userId).toBe('admin_001')
+      expect(result.user!.permissions).toEqual(['*'])
     })
 
     it('should login successfully via email+password', async () => {

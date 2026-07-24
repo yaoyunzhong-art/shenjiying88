@@ -137,7 +137,7 @@ echo "log_file=$LOG_FILE"
 
 (
   cd "$API_DIR"
-  LOG_PRETTY=false API_PORT="$PORT" node --require ts-node/register --require tsconfig-paths/register src/main.ts
+  exec env LOG_PRETTY=false API_PORT="$PORT" node --require ts-node/register --require tsconfig-paths/register src/main.ts
 ) >"$LOG_FILE" 2>&1 &
 SERVER_PID="$!"
 

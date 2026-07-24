@@ -309,6 +309,7 @@ describe('AuthController', () => {
       })
       expect(result.success).toBe(true)
       expect(result.data.user.userId).toBe('admin_001')
+      expect(result.data.user.permissions).toEqual(['*'])
     })
 
     it('✓ 正例: 邮箱+密码登录成功', async () => {
@@ -450,6 +451,7 @@ describe('AuthController', () => {
       expect(result.data.userId).toBe('admin_001')
       expect(result.data.nickname).toBe('超级管理员')
       expect(result.data.roles).toContain('PLATFORM_ADMIN')
+      expect(result.data.permissions).toEqual(['*'])
     })
 
     it('✗ 反例: 无 Token 返回 401', async () => {

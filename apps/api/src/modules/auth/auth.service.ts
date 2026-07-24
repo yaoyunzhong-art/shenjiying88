@@ -348,6 +348,7 @@ export class AuthService {
       email: user.email,
       nickname: user.nickname,
       roles: user.roles,
+      permissions: user.permissions,
       avatar: user.avatar,
     }
   }

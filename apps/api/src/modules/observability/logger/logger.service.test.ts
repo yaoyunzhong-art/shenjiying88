@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 /**
  * Logger Service Unit Tests
  *
@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  */
 
 import assert from 'node:assert/strict';
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { LoggerService, resolvePrettyMode } from './logger.service';
 import { attachRequestContext } from './request-context.middleware';
 

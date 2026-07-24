@@ -119,6 +119,26 @@ describe('Auth HTTP E2E', () => {
     await app.close()
   })
 
+  it('POST /auth/login/password 成功返回 user permissions', async () => {
+    const res = await postPasswordLogin(app, {
+      mobile: '13800138000',
+      password: 'password123',
+      loginType: LoginType.MOBILE_PASSWORD,
+    })
+
+    assert.equal(res.status, 200)
+    const payload = unwrapBodyData<{
+      user?: {
+        userId?: string
+        roles?: string[]
+        permissions?: string[]
+      }
+    }>(res)
+    assert.equal(payload.user?.userId, 'admin_001')
+    assert.deepEqual(payload.user?.roles, ['PLATFORM_ADMIN'])
+    assert.deepEqual(payload.user?.permissions, ['*'])
+  })
+
   it('POST /auth/login/password 第 5 次错误密码返回 AUTH_005 锁定', async () => {
     for (let i = 1; i <= 4; i++) {
       const res = await postPasswordLogin(app, {
