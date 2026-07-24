@@ -32,11 +32,19 @@ import {
   deriveScopedCapabilityActionItem,
   type GatedCapabilityActionItem
 } from '../lyt-capability-access';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { StoreCapabilityActionStrip } from '../components/store-capability-action-strip';
 import { loadAdminMemberList } from '../members-view-model';
 import { StoreCapabilityGatingBanner } from '../components/store-capability-gating-banner';
 import { useStoreCapabilityGating } from '../components/use-store-capability-gating';
 import { useDetailActions } from '../components/use-detail-actions';
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员管理访问受限',
+  description:
+    '会员管理中心已接入管理员本地 session，只有具备 member:read 的账号才能查看会员档案、等级筛选与消费统计结果。',
+} as const;
 
 // ---- 工具函数 ----
 
@@ -939,9 +947,11 @@ function QuickActionLink({
 
 export default function MembersPage() {
   return (
-    <Suspense fallback={<MembersPageFallback />}>
-      <MembersPageContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<MembersPageFallback />}>
+        <MembersPageContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 
