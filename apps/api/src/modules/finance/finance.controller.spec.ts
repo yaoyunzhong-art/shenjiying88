@@ -8,6 +8,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import assert from 'node:assert/strict';
 import type { RequestTenantContext } from '../tenant/tenant.types';
+import { FinanceService } from './finance.service';
+import { FinanceArchivalService } from './finance-archival.service';
+import { FinanceController } from './finance.controller';
 
 // ── 模拟装饰器 ──
 
@@ -505,7 +508,7 @@ describe('FinanceController', () => {
   let controller: FinanceController;
 
   beforeEach(() => {
-    controller = new FinanceController();
+    controller = new FinanceController(new FinanceService(), new FinanceArchivalService(new FinanceService()));
   });
 
   // ═══════════ 装饰器元数据 ═══════════
