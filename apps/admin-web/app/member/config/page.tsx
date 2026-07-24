@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface MemberConfig {
   points: {
@@ -43,6 +44,13 @@ interface Toast {
   type: 'success' | 'error'
   message: string
 }
+
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '会员配置中心访问受限',
+  description:
+    '会员配置中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看积分规则、等级阈值与生命周期配置。',
+} as const
 
 export default function MemberConfigPage() {
   const [config, setConfig] = useState<MemberConfig | null>(null)
@@ -155,191 +163,197 @@ export default function MemberConfigPage() {
   }
 
   if (loading || !config) {
-    return <div style={{ padding: 24 }}>加载中...</div>
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 24 }}>加载中...</div>
+      </AdminPermissionGate>
+    )
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 900, margin: '0 auto', fontFamily: 'system-ui' }}>
-      <h1>会员配置中心</h1>
-      <p style={{ color: '#666' }}>Phase-36 T166-1 · 大飞哥 D1-D5 决策可调</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, maxWidth: 900, margin: '0 auto', fontFamily: 'system-ui' }}>
+        <h1>会员配置中心</h1>
+        <p style={{ color: '#666' }}>Phase-36 T166-1 · 大飞哥 D1-D5 决策可调</p>
 
-      {/* Toast */}
-      {toast && (
-        <div
-          style={{
-            padding: 12,
-            margin: '12px 0',
-            borderRadius: 4,
-            background: toast.type === 'success' ? '#d4edda' : '#f8d7da',
-            color: toast.type === 'success' ? '#155724' : '#721c24'
-          }}
-        >
-          {toast.message}
-        </div>
-      )}
+        {/* Toast */}
+        {toast && (
+          <div
+            style={{
+              padding: 12,
+              margin: '12px 0',
+              borderRadius: 4,
+              background: toast.type === 'success' ? '#d4edda' : '#f8d7da',
+              color: toast.type === 'success' ? '#155724' : '#721c24'
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
 
-      {/* 分区 1: 积分比例 (D3) */}
-      <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
-        <legend><strong>积分比例 (D3)</strong></legend>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
-          <label>
-            赚取比例 (1 元 = N 积分)
-            <input
-              type="number"
-              min="0.01"
-              step="0.1"
-              value={config.points.earnRate}
-              onChange={(e) => updatePoints('earnRate', parseFloat(e.target.value))}
-              style={{ width: '100%', padding: 8, marginTop: 4 }}
-            />
-          </label>
-          <label>
-            兑换比例 (N 积分 = 1 元)
-            <input
-              type="number"
-              min="1"
-              step="10"
-              value={config.points.redeemRate}
-              onChange={(e) => updatePoints('redeemRate', parseInt(e.target.value, 10))}
-              style={{ width: '100%', padding: 8, marginTop: 4 }}
-            />
-          </label>
-          <label>
-            积分过期天数 (0 = 永不过期)
-            <input
-              type="number"
-              min="0"
-              value={config.points.expiryDays}
-              onChange={(e) => updatePoints('expiryDays', parseInt(e.target.value, 10))}
-              style={{ width: '100%', padding: 8, marginTop: 4 }}
-            />
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', marginTop: 28 }}>
-            <input
-              type="checkbox"
-              checked={config.points.enabled}
-              onChange={(e) => updatePoints('enabled', e.target.checked)}
-              style={{ marginRight: 8 }}
-            />
-            启用积分功能
-          </label>
-        </div>
-      </fieldset>
-
-      {/* 分区 2: 等级阈值 (D2) */}
-      <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
-        <legend><strong>等级阈值 (D2 · 累计积分门槛)</strong></legend>
-        <p style={{ color: '#666', fontSize: 12, marginTop: 8 }}>
-          必须单调递增: Bronze ≤ Silver ≤ Gold ≤ Platinum ≤ Diamond
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginTop: 12 }}>
-          {(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'] as const).map((lv) => (
-            <label key={lv}>
-              {lv}
+        {/* 分区 1: 积分比例 (D3) */}
+        <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
+          <legend><strong>积分比例 (D3)</strong></legend>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
+            <label>
+              赚取比例 (1 元 = N 积分)
               <input
                 type="number"
-                min="0"
-                value={config.levels.thresholds[lv]}
-                onChange={(e) => updateThreshold(lv, parseInt(e.target.value, 10))}
+                min="0.01"
+                step="0.1"
+                value={config.points.earnRate}
+                onChange={(e) => updatePoints('earnRate', parseFloat(e.target.value))}
                 style={{ width: '100%', padding: 8, marginTop: 4 }}
               />
             </label>
-          ))}
-        </div>
-      </fieldset>
+            <label>
+              兑换比例 (N 积分 = 1 元)
+              <input
+                type="number"
+                min="1"
+                step="10"
+                value={config.points.redeemRate}
+                onChange={(e) => updatePoints('redeemRate', parseInt(e.target.value, 10))}
+                style={{ width: '100%', padding: 8, marginTop: 4 }}
+              />
+            </label>
+            <label>
+              积分过期天数 (0 = 永不过期)
+              <input
+                type="number"
+                min="0"
+                value={config.points.expiryDays}
+                onChange={(e) => updatePoints('expiryDays', parseInt(e.target.value, 10))}
+                style={{ width: '100%', padding: 8, marginTop: 4 }}
+              />
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', marginTop: 28 }}>
+              <input
+                type="checkbox"
+                checked={config.points.enabled}
+                onChange={(e) => updatePoints('enabled', e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              启用积分功能
+            </label>
+          </div>
+        </fieldset>
 
-      {/* 分区 3: 生命周期 (D4) */}
-      <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
-        <legend><strong>休眠判定 (D4)</strong></legend>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
-          <label>
-            Dormant 阈值 (天未访问)
+        {/* 分区 2: 等级阈值 (D2) */}
+        <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
+          <legend><strong>等级阈值 (D2 · 累计积分门槛)</strong></legend>
+          <p style={{ color: '#666', fontSize: 12, marginTop: 8 }}>
+            必须单调递增: Bronze ≤ Silver ≤ Gold ≤ Platinum ≤ Diamond
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginTop: 12 }}>
+            {(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'] as const).map((lv) => (
+              <label key={lv}>
+                {lv}
+                <input
+                  type="number"
+                  min="0"
+                  value={config.levels.thresholds[lv]}
+                  onChange={(e) => updateThreshold(lv, parseInt(e.target.value, 10))}
+                  style={{ width: '100%', padding: 8, marginTop: 4 }}
+                />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* 分区 3: 生命周期 (D4) */}
+        <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
+          <legend><strong>休眠判定 (D4)</strong></legend>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
+            <label>
+              Dormant 阈值 (天未访问)
+              <input
+                type="number"
+                min="1"
+                value={config.lifecycle.dormantDays}
+                onChange={(e) => updateLifecycle('dormantDays', parseInt(e.target.value, 10))}
+                style={{ width: '100%', padding: 8, marginTop: 4 }}
+              />
+            </label>
+            <label>
+              Expired 阈值 (天未访问)
+              <input
+                type="number"
+                min="1"
+                value={config.lifecycle.churnedDays}
+                onChange={(e) => updateLifecycle('churnedDays', parseInt(e.target.value, 10))}
+                style={{ width: '100%', padding: 8, marginTop: 4 }}
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        {/* 分区 4: 变更原因 + 操作 */}
+        <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
+          <legend><strong>变更说明 + 操作</strong></legend>
+          <label style={{ display: 'block', marginBottom: 12 }}>
+            变更原因 (必填, 用于审计)
             <input
-              type="number"
-              min="1"
-              value={config.lifecycle.dormantDays}
-              onChange={(e) => updateLifecycle('dormantDays', parseInt(e.target.value, 10))}
+              type="text"
+              value={changeReason}
+              onChange={(e) => setChangeReason(e.target.value)}
+              placeholder="例: 618 大促积分加倍"
               style={{ width: '100%', padding: 8, marginTop: 4 }}
             />
           </label>
-          <label>
-            Expired 阈值 (天未访问)
-            <input
-              type="number"
-              min="1"
-              value={config.lifecycle.churnedDays}
-              onChange={(e) => updateLifecycle('churnedDays', parseInt(e.target.value, 10))}
-              style={{ width: '100%', padding: 8, marginTop: 4 }}
-            />
-          </label>
-        </div>
-      </fieldset>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                padding: '10px 24px',
+                background: '#007bff',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1
+              }}
+            >
+              {saving ? '保存中...' : '保存配置'}
+            </button>
+            <button
+              onClick={handleReset}
+              style={{
+                padding: '10px 24px',
+                background: '#6c757d',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer'
+              }}
+            >
+              重置为默认
+            </button>
+            <button
+              onClick={fetchConfig}
+              style={{
+                padding: '10px 24px',
+                background: '#fff',
+                color: '#333',
+                border: '1px solid #ddd',
+                borderRadius: 4,
+                cursor: 'pointer'
+              }}
+            >
+              刷新
+            </button>
+          </div>
+        </fieldset>
 
-      {/* 分区 4: 变更原因 + 操作 */}
-      <fieldset style={{ margin: '20px 0', padding: 16, borderRadius: 4, border: '1px solid #ddd' }}>
-        <legend><strong>变更说明 + 操作</strong></legend>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          变更原因 (必填, 用于审计)
-          <input
-            type="text"
-            value={changeReason}
-            onChange={(e) => setChangeReason(e.target.value)}
-            placeholder="例: 618 大促积分加倍"
-            style={{ width: '100%', padding: 8, marginTop: 4 }}
-          />
-        </label>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              padding: '10px 24px',
-              background: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.6 : 1
-            }}
-          >
-            {saving ? '保存中...' : '保存配置'}
-          </button>
-          <button
-            onClick={handleReset}
-            style={{
-              padding: '10px 24px',
-              background: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer'
-            }}
-          >
-            重置为默认
-          </button>
-          <button
-            onClick={fetchConfig}
-            style={{
-              padding: '10px 24px',
-              background: '#fff',
-              color: '#333',
-              border: '1px solid #ddd',
-              borderRadius: 4,
-              cursor: 'pointer'
-            }}
-          >
-            刷新
-          </button>
-        </div>
-      </fieldset>
-
-      {/* 当前值快照 */}
-      <details style={{ marginTop: 20 }}>
-        <summary style={{ cursor: 'pointer', color: '#666' }}>查看当前配置 (JSON)</summary>
-        <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 4, overflow: 'auto' }}>
-          {JSON.stringify(config, null, 2)}
-        </pre>
-      </details>
-    </div>
+        {/* 当前值快照 */}
+        <details style={{ marginTop: 20 }}>
+          <summary style={{ cursor: 'pointer', color: '#666' }}>查看当前配置 (JSON)</summary>
+          <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 4, overflow: 'auto' }}>
+            {JSON.stringify(config, null, 2)}
+          </pre>
+        </details>
+      </div>
+    </AdminPermissionGate>
   )
 }

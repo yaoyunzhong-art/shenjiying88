@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 // ── 类型 ──
 
@@ -62,6 +63,7 @@ function searchTools(tools: ToolItem[], query: string): ToolItem[] {
 }
 
 const ALL_CATEGORIES = ['数据查询', '资金操作', '库存管理', '通知', '营销', '履约'];
+const SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
 
 // ===================================================================
 describe('AgentTools — 统计聚合', () => {
@@ -166,5 +168,12 @@ describe('AgentTools — 数据完整性', () => {
     for (const t of SEED_TOOLS.filter(t => t.riskLevel === 'high')) {
       assert.ok(t.description.length > 0, `${t.name}: high-risk tool needs description`);
     }
+  });
+});
+
+describe('agents/tools — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 });

@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 // ── 类型 ──
 
@@ -39,6 +40,7 @@ const SEED_SESSIONS: SessionItem[] = [
 // ── 可接受的状态集合 ──
 
 const VALID_STATUSES = ['pending', 'running', 'completed', 'failed', 'cancelled'];
+const SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
 
 // ── 辅助函数 ──
 
@@ -184,5 +186,12 @@ describe('AgentSessions — 边界', () => {
   it('empty input 搜索不抛异常', () => {
     assert.doesNotThrow(() => searchSessions([], ''));
     assert.doesNotThrow(() => searchSessions(SEED_SESSIONS, '   '));
+  });
+});
+
+describe('agents/sessions — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 });

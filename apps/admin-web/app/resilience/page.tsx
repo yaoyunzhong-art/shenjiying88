@@ -13,6 +13,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, PageShell, ErrorBoundary } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { loadResilienceOperationsSnapshot } from '../resilience-view-model';
 import ResilienceWorkspaceClient from './resilience-workspace-client';
 
@@ -33,6 +34,13 @@ const DEFAULT_STATS = [
   { label: '重试策略', value: '—', color: '#94a3b8' },
   { label: '恢复计划', value: '—', color: '#94a3b8' },
 ];
+
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '强韧性作战台访问受限',
+  description:
+    '强韧性作战台已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看可观测信号、重试策略与恢复计划治理信息。',
+} as const;
 
 /** 加载占位 — 3 列统计 + 3 个 Tab 区 */
 function ResilienceLoadingFallback() {
@@ -88,14 +96,18 @@ export default async function ResiliencePage() {
     snapshot = await loadResilienceOperationsSnapshot({ cache: 'no-store' });
   } catch {
     return (
-      <>
+      <AdminPermissionGate {...permissionGate}>
         <ResilienceErrorFallback />
-      </>
+      </AdminPermissionGate>
     );
   }
 
   if (!snapshot) {
-    return <ResilienceEmptyState />;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <ResilienceEmptyState />
+      </AdminPermissionGate>
+    );
   }
 
   const overview = snapshot.overview;
@@ -125,7 +137,7 @@ export default async function ResiliencePage() {
     : DEFAULT_STATS;
 
   return (
-    <>
+    <AdminPermissionGate {...permissionGate}>
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -208,6 +220,6 @@ export default async function ResiliencePage() {
           </div>
         </PageShell>
       </main>
-    </>
+    </AdminPermissionGate>
   );
 }

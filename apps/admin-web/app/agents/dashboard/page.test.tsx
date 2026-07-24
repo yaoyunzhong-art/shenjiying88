@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 // ── 类型 ──
 
@@ -40,6 +41,8 @@ interface AgentDashboardSnapshot {
   error?: string;
   timestamp: string;
 }
+
+const SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
 
 // ── 排序工具 ──
 
@@ -214,5 +217,12 @@ describe('AgentDashboard — 降级/错误', () => {
       deliveryMode: 'fallback', error: 'API timeout', timestamp: '',
     };
     assert.equal(snap.error, 'API timeout');
+  });
+});
+
+describe('agents/dashboard — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 });

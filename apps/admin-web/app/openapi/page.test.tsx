@@ -382,3 +382,10 @@ describe('dailyUsageLogic', () => {
     assert.ok(overage >= 0);
   });
 });
+
+describe('openapi — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});

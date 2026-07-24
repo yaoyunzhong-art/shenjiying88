@@ -176,3 +176,10 @@ describe('Intelligence Dashboard', () => {
     assert.ok(content.includes('\u6761\u65B0\u544A\u8B66'))
   })
 })
+
+describe('intelligence — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})
