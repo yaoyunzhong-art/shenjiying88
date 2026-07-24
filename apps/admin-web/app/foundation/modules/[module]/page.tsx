@@ -17,6 +17,7 @@ import {
   Badge, BreadcrumbPageHeader, DetailClosureBar, PageShell, Result, StatusBadge, Typography,
 } from '@m5/ui';
 import { readFoundationModuleDetailParam } from '@m5/types';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface ModuleSnapshot {
   moduleKey: string;
@@ -85,6 +86,13 @@ const KNOWN_MODULES: Record<string, { name: string; purpose: string; status: str
   },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: 'Foundation 模块详情访问受限',
+  description:
+    'Foundation 模块详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模块职责、能力清单、契约关系与治理基线。',
+} as const;
+
 function loadMockModule(moduleKey: string): ModuleSnapshot {
   if (!moduleKey) return { moduleKey: '', notFound: true, module: null };
   const mod = KNOWN_MODULES[moduleKey];
@@ -99,19 +107,39 @@ export default async function FoundationModuleDetailPage({ params }: PageProps) 
 
   const resolved = await params;
   const moduleKey = readParam(resolved.module);
-  if (_loading) return <div>加载中...</div>;
-  if (_error) return <div>数据获取失败: {_error}</div>;
-  if (!moduleKey) return <div>暂无数据</div>;
+  if (_loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (_error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {_error}</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (!moduleKey) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    );
+  }
   const snapshot = loadMockModule(moduleKey);
 
   if (snapshot.notFound || !snapshot.module) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <PageShell title="Foundation 模块不存在" subtitle="该模块 key 不在当前 foundation blueprint 范围内。">
-          <Result status="404" title="模块未找到" subTitle={`模块 key "${moduleKey}" 不存在`}
-            extra={<a href="/foundation" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回模块列表</a>} />
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <PageShell title="Foundation 模块不存在" subtitle="该模块 key 不在当前 foundation blueprint 范围内。">
+            <Result status="404" title="模块未找到" subTitle={`模块 key "${moduleKey}" 不存在`}
+              extra={<a href="/foundation" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回模块列表</a>} />
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
@@ -119,50 +147,52 @@ export default async function FoundationModuleDetailPage({ params }: PageProps) 
   const statusCfg = STATUS_MAP[module.status] ?? { label: module.status, variant: 'default' as const };
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell title={`Foundation 模块：${module.name}`} subtitle="查看模块职责、能力、契约、消费方依赖与治理基线。">
-        <BreadcrumbPageHeader breadcrumbs={[{ label: 'Foundation 模块', href: '/foundation/modules' }, { label: module.name }]} title={module.name} />
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <div className="flex gap-2 items-center mb-5">
-            <h3 className="text-base font-semibold text-white">基本信息</h3>
-            <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
-          </div>
-          <DetailRow label="模块 Key"><span className="font-mono text-sm text-blue-400">{module.key}</span></DetailRow>
-          <DetailRow label="名称"><span className="text-sm">{module.name}</span></DetailRow>
-          <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
-          <DetailRow label="职责"><span className="text-sm text-slate-300">{module.purpose}</span></DetailRow>
-        </div>
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <h3 className="text-base font-semibold text-white mb-4">能力列表</h3>
-          {module.capabilities.map((cap) => (
-            <div key={cap.key} className="mb-4 pb-4 border-b border-slate-700 last:border-b-0 last:mb-0 last:pb-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm text-white">{cap.name}</span>
-                <Badge variant={cap.status === 'active' ? 'success' : 'default'}>{cap.status}</Badge>
-              </div>
-              <ul className="list-disc list-inside text-xs text-slate-400 space-y-0.5">
-                {cap.responsibilities.map((r, i) => <li key={i}>{r}</li>)}
-              </ul>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title={`Foundation 模块：${module.name}`} subtitle="查看模块职责、能力、契约、消费方依赖与治理基线。">
+          <BreadcrumbPageHeader breadcrumbs={[{ label: 'Foundation 模块', href: '/foundation/modules' }, { label: module.name }]} title={module.name} />
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <div className="flex gap-2 items-center mb-5">
+              <h3 className="text-base font-semibold text-white">基本信息</h3>
+              <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
             </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white/5 border border-slate-700 rounded-xl p-4">
-            <h4 className="text-xs font-semibold text-slate-400 mb-2">入向合约</h4>
-            {module.inboundContracts.length > 0 ? module.inboundContracts.map((c, i) => (
-              <div key={i} className="text-sm font-mono text-slate-300 py-1">{c}</div>
-            )) : <span className="text-xs text-slate-500">无入向合约</span>}
+            <DetailRow label="模块 Key"><span className="font-mono text-sm text-blue-400">{module.key}</span></DetailRow>
+            <DetailRow label="名称"><span className="text-sm">{module.name}</span></DetailRow>
+            <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
+            <DetailRow label="职责"><span className="text-sm text-slate-300">{module.purpose}</span></DetailRow>
           </div>
-          <div className="bg-white/5 border border-slate-700 rounded-xl p-4">
-            <h4 className="text-xs font-semibold text-slate-400 mb-2">出向合约</h4>
-            {module.outboundContracts.length > 0 ? module.outboundContracts.map((c, i) => (
-              <div key={i} className="text-sm font-mono text-slate-300 py-1">{c}</div>
-            )) : <span className="text-xs text-slate-500">无出向合约</span>}
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <h3 className="text-base font-semibold text-white mb-4">能力列表</h3>
+            {module.capabilities.map((cap) => (
+              <div key={cap.key} className="mb-4 pb-4 border-b border-slate-700 last:border-b-0 last:mb-0 last:pb-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm text-white">{cap.name}</span>
+                  <Badge variant={cap.status === 'active' ? 'success' : 'default'}>{cap.status}</Badge>
+                </div>
+                <ul className="list-disc list-inside text-xs text-slate-400 space-y-0.5">
+                  {cap.responsibilities.map((r, i) => <li key={i}>{r}</li>)}
+                </ul>
+              </div>
+            ))}
           </div>
-        </div>
-        <DetailClosureBar links={[{ key: 'list', title: 'Foundation 模块列表', subtitle: '返回 Foundation 模块管理', href: '/foundation/modules' }]} />
-      </PageShell>
-    </main>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-white/5 border border-slate-700 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-slate-400 mb-2">入向合约</h4>
+              {module.inboundContracts.length > 0 ? module.inboundContracts.map((c, i) => (
+                <div key={i} className="text-sm font-mono text-slate-300 py-1">{c}</div>
+              )) : <span className="text-xs text-slate-500">无入向合约</span>}
+            </div>
+            <div className="bg-white/5 border border-slate-700 rounded-xl p-4">
+              <h4 className="text-xs font-semibold text-slate-400 mb-2">出向合约</h4>
+              {module.outboundContracts.length > 0 ? module.outboundContracts.map((c, i) => (
+                <div key={i} className="text-sm font-mono text-slate-300 py-1">{c}</div>
+              )) : <span className="text-xs text-slate-500">无出向合约</span>}
+            </div>
+          </div>
+          <DetailClosureBar links={[{ key: 'list', title: 'Foundation 模块列表', subtitle: '返回 Foundation 模块管理', href: '/foundation/modules' }]} />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

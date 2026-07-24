@@ -17,6 +17,7 @@ import {
   Badge, BreadcrumbPageHeader, DetailClosureBar, PageShell, Result, StatusBadge,
 } from '@m5/ui';
 import { readResilienceRecoveryPlanDetailParam } from '@m5/types';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface RecoverySnapshot {
   resource: string;
@@ -63,6 +64,13 @@ const KNOWN_PLANS: Record<string, { resourceName: string; rto: string; rpo: stri
   'message-queue': { resourceName: '消息队列', rto: '10min', rpo: '2min', dependencies: ['Kafka Brokers', 'ZooKeeper', 'Schema Registry'], drillWindow: '每季度第二个周三 02:00-04:00', runbook: '/runbooks/mq-recovery.md', status: 'expired', lastDrillAt: '2026-03-20', description: '消息队列故障切换' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '恢复计划详情访问受限',
+  description:
+    '恢复计划详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看 RTO、RPO、依赖关系、演练窗口与 Runbook。',
+} as const;
+
 function loadMockPlan(resource: string): RecoverySnapshot {
   if (!resource) return { resource: '', notFound: true, plan: null };
   const p = KNOWN_PLANS[resource];
@@ -77,12 +85,14 @@ export default async function ResilienceRecoveryPlanDetailPage({ params }: PageP
 
   if (snapshot.notFound || !snapshot.plan) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <PageShell title="恢复计划不存在" subtitle="该资源不在当前 resilience 范围内，可能未登记恢复计划。">
-          <Result status="404" title="恢复计划未找到" subTitle={`资源 "${resource}" 未登记恢复计划`}
-            extra={<a href="/resilience/recovery" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回恢复计划列表</a>} />
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <PageShell title="恢复计划不存在" subtitle="该资源不在当前 resilience 范围内，可能未登记恢复计划。">
+            <Result status="404" title="恢复计划未找到" subTitle={`资源 "${resource}" 未登记恢复计划`}
+              extra={<a href="/resilience/recovery" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回恢复计划列表</a>} />
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
@@ -90,37 +100,39 @@ export default async function ResilienceRecoveryPlanDetailPage({ params }: PageP
   const statusCfg = STATUS_MAP[plan.status] ?? { label: plan.status, variant: 'default' as const };
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell title={`恢复计划：${plan.resourceName}`} subtitle="查看 RTO / RPO、依赖、演练时间窗与 Runbook。">
-        <BreadcrumbPageHeader breadcrumbs={[{ label: '恢复计划', href: '/resilience/recovery' }, { label: plan.resourceName }]} title={plan.resourceName} />
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <div className="flex gap-2 items-center mb-5">
-            <h3 className="text-base font-semibold text-white">基本信息</h3>
-            <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title={`恢复计划：${plan.resourceName}`} subtitle="查看 RTO / RPO、依赖、演练时间窗与 Runbook。">
+          <BreadcrumbPageHeader breadcrumbs={[{ label: '恢复计划', href: '/resilience/recovery' }, { label: plan.resourceName }]} title={plan.resourceName} />
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <div className="flex gap-2 items-center mb-5">
+              <h3 className="text-base font-semibold text-white">基本信息</h3>
+              <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
+            </div>
+            <DetailRow label="资源名"><span className="font-mono text-sm text-blue-400">{plan.resourceName}</span></DetailRow>
+            <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
+            <DetailRow label="描述"><span className="text-sm text-slate-300">{plan.description}</span></DetailRow>
+            <DetailRow label="RTO"><span className="font-mono text-sm text-emerald-400">{plan.rto}</span></DetailRow>
+            <DetailRow label="RPO"><span className="font-mono text-sm text-amber-400">{plan.rpo}</span></DetailRow>
+            <DetailRow label="演练时间窗"><span className="text-sm text-slate-400">{plan.drillWindow}</span></DetailRow>
+            <DetailRow label="上次演练"><span className="text-sm font-mono text-slate-400">{plan.lastDrillAt}</span></DetailRow>
           </div>
-          <DetailRow label="资源名"><span className="font-mono text-sm text-blue-400">{plan.resourceName}</span></DetailRow>
-          <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
-          <DetailRow label="描述"><span className="text-sm text-slate-300">{plan.description}</span></DetailRow>
-          <DetailRow label="RTO"><span className="font-mono text-sm text-emerald-400">{plan.rto}</span></DetailRow>
-          <DetailRow label="RPO"><span className="font-mono text-sm text-amber-400">{plan.rpo}</span></DetailRow>
-          <DetailRow label="演练时间窗"><span className="text-sm text-slate-400">{plan.drillWindow}</span></DetailRow>
-          <DetailRow label="上次演练"><span className="text-sm font-mono text-slate-400">{plan.lastDrillAt}</span></DetailRow>
-        </div>
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <h3 className="text-base font-semibold text-white mb-3">依赖关系</h3>
-          <div className="flex flex-wrap gap-2">{plan.dependencies.map((dep) => (<Badge key={dep} variant="info">{dep}</Badge>))}</div>
-        </div>
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <h3 className="text-base font-semibold text-white mb-3">RTO / RPO 指标</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-800 rounded-lg p-4"><div className="text-[11px] text-slate-400 mb-1">RTO (恢复时间目标)</div><div className="text-2xl font-bold font-mono text-emerald-400">{plan.rto}</div></div>
-            <div className="bg-slate-800 rounded-lg p-4"><div className="text-[11px] text-slate-400 mb-1">RPO (恢复点目标)</div><div className="text-2xl font-bold font-mono text-amber-400">{plan.rpo}</div></div>
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <h3 className="text-base font-semibold text-white mb-3">依赖关系</h3>
+            <div className="flex flex-wrap gap-2">{plan.dependencies.map((dep) => (<Badge key={dep} variant="info">{dep}</Badge>))}</div>
           </div>
-        </div>
-        <DetailRow label="Runbook"><span className="font-mono text-sm text-blue-400">{plan.runbook}</span></DetailRow>
-        <div className="mt-6"><DetailClosureBar links={[{ key: 'list', title: '恢复计划列表', subtitle: '返回 Resilience 恢复管理', href: '/resilience/recovery' }]} /></div>
-      </PageShell>
-    </main>
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <h3 className="text-base font-semibold text-white mb-3">RTO / RPO 指标</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-800 rounded-lg p-4"><div className="text-[11px] text-slate-400 mb-1">RTO (恢复时间目标)</div><div className="text-2xl font-bold font-mono text-emerald-400">{plan.rto}</div></div>
+              <div className="bg-slate-800 rounded-lg p-4"><div className="text-[11px] text-slate-400 mb-1">RPO (恢复点目标)</div><div className="text-2xl font-bold font-mono text-amber-400">{plan.rpo}</div></div>
+            </div>
+          </div>
+          <DetailRow label="Runbook"><span className="font-mono text-sm text-blue-400">{plan.runbook}</span></DetailRow>
+          <div className="mt-6"><DetailClosureBar links={[{ key: 'list', title: '恢复计划列表', subtitle: '返回 Resilience 恢复管理', href: '/resilience/recovery' }]} /></div>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

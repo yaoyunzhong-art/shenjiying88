@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import { AdminPermissionGate } from '../../../components/admin-permission-gate'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -46,6 +47,13 @@ const STATUS_COLORS: Record<string, string> = {
   inactive: '#57606f',
 }
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '重试策略详情访问受限',
+  description:
+    '重试策略详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看重试上限、退避策略、恢复动作与升级目标。',
+} as const
+
 export default function ResilienceRetryPolicyDetailPage() {
   // 三态条件渲染
   const [loading, setLoading] = useState(true)
@@ -59,9 +67,27 @@ export default function ResilienceRetryPolicyDetailPage() {
 
   useEffect(() => { setLoading(false) }, [])
 
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!SEED_POLICIES || SEED_POLICIES.length === 0) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (!SEED_POLICIES || SEED_POLICIES.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    )
+  }
 
   const filtered = useMemo(() => {
     let result = SEED_POLICIES
@@ -96,132 +122,134 @@ export default function ResilienceRetryPolicyDetailPage() {
   }, [])
 
   return (
-    <div style={styles.container}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>重试策略</h1>
-        <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看重试上限、退避策略、恢复动作与升级目标。</p>
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>重试策略</h1>
+          <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看重试上限、退避策略、恢复动作与升级目标。</p>
+        </div>
 
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-        <div style={styles.card}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>策略总数</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#2ed573' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>启用中</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#2ed573' }}>{stats.active}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#ffa502' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>暂停</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#ffa502' }}>{stats.paused}</div>
-        </div>
-        <div style={styles.card}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>平均最大重试</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.avgMaxRetries}</div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
-        <input
-          style={styles.input}
-          placeholder="搜索策略 key / 能力 / 恢复动作..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-        />
-        <select style={{ ...styles.input, width: 130, cursor: 'pointer' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}>
-          <option value="">全部状态</option>
-          <option value="active">启用</option>
-          <option value="paused">暂停</option>
-          <option value="inactive">停用</option>
-        </select>
-        <button style={styles.btn} onClick={() => window.location.reload()}>刷新</button>
-      </div>
-
-      {paginated.length === 0 ? (
-        <div style={{ ...styles.card, textAlign: 'center', padding: '48px 24px' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔄</div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>无匹配策略</div>
-          <div style={{ color: '#8892b0', fontSize: 14 }}>该策略 key 不在当前 resilience 范围内，请检查筛选条件。</div>
-        </div>
-      ) : (
-        <>
+        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
           <div style={styles.card}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>策略 Key</th>
-                  <th style={styles.th}>能力</th>
-                  <th style={styles.th}>最大重试</th>
-                  <th style={styles.th}>退避策略</th>
-                  <th style={styles.th}>恢复动作</th>
-                  <th style={styles.th}>升级目标</th>
-                  <th style={styles.th}>状态</th>
-                  <th style={styles.th}>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map(item => (
-                  <tr key={item.key}>
-                    <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 13 }}>{item.key}</td>
-                    <td style={styles.td}>{item.capability}</td>
-                    <td style={styles.td}>{item.maxRetries}</td>
-                    <td style={{ ...styles.td, fontSize: 13 }}>{item.backoff}</td>
-                    <td style={{ ...styles.td, fontSize: 13 }}>{item.recoveryAction}</td>
-                    <td style={styles.td}>{item.escalationTarget}</td>
-                    <td style={styles.td}>
-                      <span style={{ color: STATUS_COLORS[item.status] ?? '#e0e0e0', fontWeight: 600 }}>{item.status}</span>
-                    </td>
-                    <td style={styles.td}>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => openModal('view', item)}>查看</button>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#2ed573', marginRight: 6 }} onClick={() => openModal('edit', item)}>编辑</button>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#e63946' }} onClick={() => openModal('delete', item)}>删除</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>策略总数</div>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
           </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, alignItems: 'center' }}>
-            <button disabled={page <= 1} style={{ ...styles.btn, opacity: page <= 1 ? 0.5 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
-            <span style={{ color: '#8892b0', fontSize: 14 }}>第 {page} / {totalPages} 页</span>
-            <button disabled={page >= totalPages} style={{ ...styles.btn, opacity: page >= totalPages ? 0.5 : 1 }} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
+          <div style={{ ...styles.card, borderColor: '#2ed573' }}>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>启用中</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#2ed573' }}>{stats.active}</div>
           </div>
-        </>
-      )}
-
-      {modal.visible && modal.item && (
-        <div style={styles.modal} onClick={closeModal}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                {modal.mode === 'view' ? '策略详情' : modal.mode === 'edit' ? '编辑策略' : '删除策略'}
-              </h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: '#8892b0', fontSize: 20, cursor: 'pointer' }}>×</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div><span style={{ color: '#8892b0' }}>策略 Key：</span>{modal.item.key}</div>
-              <div><span style={{ color: '#8892b0' }}>能力：</span>{modal.item.capability}</div>
-              <div><span style={{ color: '#8892b0' }}>最大重试：</span>{modal.item.maxRetries}</div>
-              <div><span style={{ color: '#8892b0' }}>退避策略：</span>{modal.item.backoff}</div>
-              <div><span style={{ color: '#8892b0' }}>恢复动作：</span>{modal.item.recoveryAction}</div>
-              <div><span style={{ color: '#8892b0' }}>升级目标：</span>{modal.item.escalationTarget}</div>
-              <div><span style={{ color: '#8892b0' }}>状态：</span>{modal.item.status}</div>
-              {modal.mode === 'edit' && (
-                <div style={{ marginTop: 12 }}>
-                  <input style={{ ...styles.input, width: '100%', boxSizing: 'border-box' }} defaultValue={`maxRetries=${modal.item.maxRetries}`} placeholder="修改参数..." />
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
-              <button onClick={closeModal} style={{ background: '#2a2a3e', border: '1px solid #3a3a4e', color: '#e0e0e0', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}>取消</button>
-              <button onClick={() => { closeModal() }} style={styles.btn}>
-                {modal.mode === 'view' ? '关闭' : modal.mode === 'edit' ? '保存' : '确认删除'}
-              </button>
-            </div>
+          <div style={{ ...styles.card, borderColor: '#ffa502' }}>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>暂停</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#ffa502' }}>{stats.paused}</div>
+          </div>
+          <div style={styles.card}>
+            <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>平均最大重试</div>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.avgMaxRetries}</div>
           </div>
         </div>
-      )}
-    </div>
+
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
+          <input
+            style={styles.input}
+            placeholder="搜索策略 key / 能力 / 恢复动作..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
+          />
+          <select style={{ ...styles.input, width: 130, cursor: 'pointer' }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}>
+            <option value="">全部状态</option>
+            <option value="active">启用</option>
+            <option value="paused">暂停</option>
+            <option value="inactive">停用</option>
+          </select>
+          <button style={styles.btn} onClick={() => window.location.reload()}>刷新</button>
+        </div>
+
+        {paginated.length === 0 ? (
+          <div style={{ ...styles.card, textAlign: 'center', padding: '48px 24px' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔄</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>无匹配策略</div>
+            <div style={{ color: '#8892b0', fontSize: 14 }}>该策略 key 不在当前 resilience 范围内，请检查筛选条件。</div>
+          </div>
+        ) : (
+          <>
+            <div style={styles.card}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>策略 Key</th>
+                    <th style={styles.th}>能力</th>
+                    <th style={styles.th}>最大重试</th>
+                    <th style={styles.th}>退避策略</th>
+                    <th style={styles.th}>恢复动作</th>
+                    <th style={styles.th}>升级目标</th>
+                    <th style={styles.th}>状态</th>
+                    <th style={styles.th}>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map(item => (
+                    <tr key={item.key}>
+                      <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 13 }}>{item.key}</td>
+                      <td style={styles.td}>{item.capability}</td>
+                      <td style={styles.td}>{item.maxRetries}</td>
+                      <td style={{ ...styles.td, fontSize: 13 }}>{item.backoff}</td>
+                      <td style={{ ...styles.td, fontSize: 13 }}>{item.recoveryAction}</td>
+                      <td style={styles.td}>{item.escalationTarget}</td>
+                      <td style={styles.td}>
+                        <span style={{ color: STATUS_COLORS[item.status] ?? '#e0e0e0', fontWeight: 600 }}>{item.status}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => openModal('view', item)}>查看</button>
+                        <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#2ed573', marginRight: 6 }} onClick={() => openModal('edit', item)}>编辑</button>
+                        <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#e63946' }} onClick={() => openModal('delete', item)}>删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, alignItems: 'center' }}>
+              <button disabled={page <= 1} style={{ ...styles.btn, opacity: page <= 1 ? 0.5 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
+              <span style={{ color: '#8892b0', fontSize: 14 }}>第 {page} / {totalPages} 页</span>
+              <button disabled={page >= totalPages} style={{ ...styles.btn, opacity: page >= totalPages ? 0.5 : 1 }} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
+            </div>
+          </>
+        )}
+
+        {modal.visible && modal.item && (
+          <div style={styles.modal} onClick={closeModal}>
+            <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+                  {modal.mode === 'view' ? '策略详情' : modal.mode === 'edit' ? '编辑策略' : '删除策略'}
+                </h3>
+                <button onClick={closeModal} style={{ background: 'none', border: 'none', color: '#8892b0', fontSize: 20, cursor: 'pointer' }}>×</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div><span style={{ color: '#8892b0' }}>策略 Key：</span>{modal.item.key}</div>
+                <div><span style={{ color: '#8892b0' }}>能力：</span>{modal.item.capability}</div>
+                <div><span style={{ color: '#8892b0' }}>最大重试：</span>{modal.item.maxRetries}</div>
+                <div><span style={{ color: '#8892b0' }}>退避策略：</span>{modal.item.backoff}</div>
+                <div><span style={{ color: '#8892b0' }}>恢复动作：</span>{modal.item.recoveryAction}</div>
+                <div><span style={{ color: '#8892b0' }}>升级目标：</span>{modal.item.escalationTarget}</div>
+                <div><span style={{ color: '#8892b0' }}>状态：</span>{modal.item.status}</div>
+                {modal.mode === 'edit' && (
+                  <div style={{ marginTop: 12 }}>
+                    <input style={{ ...styles.input, width: '100%', boxSizing: 'border-box' }} defaultValue={`maxRetries=${modal.item.maxRetries}`} placeholder="修改参数..." />
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+                <button onClick={closeModal} style={{ background: '#2a2a3e', border: '1px solid #3a3a4e', color: '#e0e0e0', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}>取消</button>
+                <button onClick={() => { closeModal() }} style={styles.btn}>
+                  {modal.mode === 'view' ? '关闭' : modal.mode === 'edit' ? '保存' : '确认删除'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   )
 }
