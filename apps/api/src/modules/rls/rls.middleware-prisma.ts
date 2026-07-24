@@ -88,6 +88,38 @@ const TENANT_AWARE_MODELS = new Set([
   'AiModelConfig',
   'AiExecutionRecord',
   'ReconciliationReportModel',
+
+  // ── P-47 Brand Operations (11 tables) ──
+  'BrandAsset',
+  'BrandCampaign',
+  'BrandCampaignTemplate',
+  'Collaboration',
+  'CollaborationContract',
+  'CampaignABTest',
+  'CampaignSchedule',
+  'ExportRecord',
+  'BrandChannel',
+  'BrandKPI',
+  'RecycleBinItem',
+
+  // ── P-30 Logistics Management (7 tables) ──
+  'Supplier',
+  'PurchaseOrder',
+  'StockMovement',
+  'StockItem',
+  'MaintenanceTask',
+  'LogisticsKPI',
+  'StockLevel',
+
+  // ── Minor Protection (2 tables) ──
+  'MinorIdentityVerification',
+  'MinorAccessLog',
+
+  // ── Cashier Persistence (4 tables) ──
+  'CashierOrder',
+  'CashierPayment',
+  'CashierMember',
+  'CashierTransaction',
 ])
 
 // ── 查询操作（需要 WHERE tenantId 注入） ──────────────────────
