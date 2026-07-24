@@ -16,6 +16,7 @@ import {
   StatusBadge,
   WorkspaceBreadcrumb,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 常量 ----
 
@@ -95,6 +96,13 @@ interface FieldError {
   field: keyof StoreFormValues;
   message: string;
 }
+
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店编辑访问受限',
+  description:
+    '门店编辑页已接入管理员本地 session，只有具备 store:read 的账号才能修改门店档案、运营配置与风险等级。',
+} as const;
 
 // ---- 验证逻辑 ----
 
@@ -228,18 +236,19 @@ export default function StoreEditFormPage() {
   const isSubmitting = submitState === 'submitting';
 
   return (
-    <PageShell
-      title="编辑门店"
-      subtitle="修改门店基本信息、运营配置与风险等级"
-      breadcrumb={
-        <WorkspaceBreadcrumb
-          workspaceLabel="门店管理"
-          workspaceHref="/stores"
-          detailLabel="编辑门店"
-        />
-      }
-    >
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="编辑门店"
+        subtitle="修改门店基本信息、运营配置与风险等级"
+        breadcrumb={
+          <WorkspaceBreadcrumb
+            workspaceLabel="门店管理"
+            workspaceHref="/stores"
+            detailLabel="编辑门店"
+          />
+        }
+      >
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
         {/* 成功反馈 */}
         {submitState === 'success' && (
           <FormSubmitFeedback
@@ -489,7 +498,8 @@ export default function StoreEditFormPage() {
             </div>
           </form>
         )}
-      </div>
-    </PageShell>
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

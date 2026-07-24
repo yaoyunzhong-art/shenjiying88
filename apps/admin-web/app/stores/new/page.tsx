@@ -17,6 +17,7 @@ import {
   type FormPageField,
   type FormPageSubmitResult,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 类型 ----
 
@@ -35,6 +36,13 @@ interface StoreFormData {
   brandCount: string;
   notes: string;
 }
+
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '新建门店访问受限',
+  description:
+    '新建门店页已接入管理员本地 session，只有具备 store:read 的账号才能填写门店资料、配置初始状态并提交创建表单。',
+} as const;
 
 // ---- 进度指示器 ----
 
@@ -326,16 +334,18 @@ export default function StoreNewPage() {
   };
 
   return (
-    <FormPageScaffold
-      fields={FIELDS}
-      meta={meta}
-      onSubmit={handleSubmit}
-      onSuccess={handleSuccess}
-      backUrl="/stores"
-      submitLabel="创建门店"
-      submitVariant="primary"
-      topActions={<StoreFormProgress currentStep={currentStep} />}
-      onChange={handleChange}
-    />
+    <AdminPermissionGate {...permissionGate}>
+      <FormPageScaffold
+        fields={FIELDS}
+        meta={meta}
+        onSubmit={handleSubmit}
+        onSuccess={handleSuccess}
+        backUrl="/stores"
+        submitLabel="创建门店"
+        submitVariant="primary"
+        topActions={<StoreFormProgress currentStep={currentStep} />}
+        onChange={handleChange}
+      />
+    </AdminPermissionGate>
   );
 }
