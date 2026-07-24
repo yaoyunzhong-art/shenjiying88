@@ -249,8 +249,8 @@ describe('Resilience / Signals — hooks验证', () => {
   it('包含数据结构', () => assert.ok(SRC.includes('{') && SRC.includes('[')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
+  it('包含分页状态', () => assert.ok(SRC.includes('totalPages') && SRC.includes('setPage')));
+  it('包含详情弹窗', () => assert.ok(SRC.includes('modal.visible') && SRC.includes('信号详情')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default')));
   it('包含注释说明', () => assert.ok(true));
 });

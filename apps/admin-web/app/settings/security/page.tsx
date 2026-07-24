@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 const PASSWORD_POLICIES = [
   { key: '最小密码长度', value: '8 位' },
@@ -53,6 +54,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '安全设置访问受限',
+  description:
+    '安全设置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看密码策略、登录保护、IP 白名单与审计配置。',
+} as const;
+
 export default function SecurityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,53 +72,63 @@ export default function SecurityPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>
+      </AdminPermissionGate>
+    );
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>
+      </AdminPermissionGate>
+    );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🔒 安全设置</h1>
-      <p style={styles.subtitle}>系统安全策略与防护配置。管理密码强度要求、登录保护机制、IP访问控制及安全审计日志。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🔒 安全设置</h1>
+        <p style={styles.subtitle}>系统安全策略与防护配置。管理密码强度要求、登录保护机制、IP访问控制及安全审计日志。</p>
 
-      {/* 密码策略 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🔑 密码策略</h2>
-        <div style={styles.configList}>
-          {PASSWORD_POLICIES.length === 0 ? (
-            <div style={styles.empty}><div style={{ fontSize: 14 }}>暂无数据</div></div>
-          ) : (
-            PASSWORD_POLICIES.map(item => (
+        {/* 密码策略 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🔑 密码策略</h2>
+          <div style={styles.configList}>
+            {PASSWORD_POLICIES.length === 0 ? (
+              <div style={styles.empty}><div style={{ fontSize: 14 }}>暂无数据</div></div>
+            ) : (
+              PASSWORD_POLICIES.map(item => (
+                <div key={item.key} style={styles.configItem}><span style={styles.configKey}>{item.key}</span><span style={styles.configValue}>{item.value}</span></div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* 登录保护 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🛡️ 登录保护</h2>
+          <div style={styles.configList}>
+            {LOGIN_PROTECTION.map(item => (
               <div key={item.key} style={styles.configItem}><span style={styles.configKey}>{item.key}</span><span style={styles.configValue}>{item.value}</span></div>
-            ))
-          )}
+            ))}
+          </div>
+        </div>
+
+        {/* 安全要求 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>✅ 安全合规要求</h2>
+          <ul style={styles.checklist}>
+            {COMPLIANCE_ITEMS.map(item => (
+              <li key={item.label} style={styles.checkItem(item.enabled)}>
+                {item.enabled ? '✓' : '○'} {item.label}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-
-      {/* 登录保护 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🛡️ 登录保护</h2>
-        <div style={styles.configList}>
-          {LOGIN_PROTECTION.map(item => (
-            <div key={item.key} style={styles.configItem}><span style={styles.configKey}>{item.key}</span><span style={styles.configValue}>{item.value}</span></div>
-          ))}
-        </div>
-      </div>
-
-      {/* 安全要求 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>✅ 安全合规要求</h2>
-        <ul style={styles.checklist}>
-          {COMPLIANCE_ITEMS.map(item => (
-            <li key={item.label} style={styles.checkItem(item.enabled)}>
-              {item.enabled ? '✓' : '○'} {item.label}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

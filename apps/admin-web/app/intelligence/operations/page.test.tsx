@@ -205,3 +205,10 @@ describe('Operations Page', () => {
     assert.ok(!content.includes('as any'))
   })
 })
+
+describe('intelligence/operations — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})

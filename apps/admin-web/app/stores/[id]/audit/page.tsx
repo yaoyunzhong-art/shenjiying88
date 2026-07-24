@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Tooltip, Empty, Tabs, Input } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const AUDIT_DATA = [
   { id: 'AL-001', operator: '系统', action: '登录', target: 'admin-web', detail: 'IP: 192.168.1.100', time: '2026-07-13 22:00', level: 'info' },
@@ -37,6 +38,13 @@ const COLUMNS = [
   },
 ];
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '门店审计日志访问受限',
+  description:
+    '门店审计日志页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看操作记录、统计分析与审计报告。',
+} as const;
+
 export default function AuditPage() {
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -55,71 +63,73 @@ export default function AuditPage() {
   const infoCount = AUDIT_DATA.filter(d => d.level === 'info').length;
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ color: '#f8fafc', margin: 0 }}>🔍 审计日志</h2>
-          <Button type="primary" onClick={() => setShowReport(true)}>导出审计报告</Button>
-        </div>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ color: '#f8fafc', margin: 0 }}>🔍 审计日志</h2>
+            <Button type="primary" onClick={() => setShowReport(true)}>导出审计报告</Button>
+          </div>
 
-        <Row gutter={[16, 16]}>
-          <Col span={6}><Card size="small"><Statistic title="今日操作" value={AUDIT_DATA.length} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="错误告警" value={errorCount} valueStyle={{ color: '#f87171' }} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="警告" value={warnCount} valueStyle={{ color: '#f59e0b' }} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="普通" value={infoCount} valueStyle={{ color: '#34d399' }} /></Card></Col>
-        </Row>
+          <Row gutter={[16, 16]}>
+            <Col span={6}><Card size="small"><Statistic title="今日操作" value={AUDIT_DATA.length} /></Card></Col>
+            <Col span={6}><Card size="small"><Statistic title="错误告警" value={errorCount} valueStyle={{ color: '#f87171' }} /></Card></Col>
+            <Col span={6}><Card size="small"><Statistic title="警告" value={warnCount} valueStyle={{ color: '#f59e0b' }} /></Card></Col>
+            <Col span={6}><Card size="small"><Statistic title="普通" value={infoCount} valueStyle={{ color: '#34d399' }} /></Card></Col>
+          </Row>
 
-        <Card>
-          <Tabs value={tab} onChange={setTab} style={{ marginBottom: 12 }}>
-            <Tabs.Tab key="list" label="日志列表" />
-            <Tabs.Tab key="analysis" label="统计分析" />
-          </Tabs>
+          <Card>
+            <Tabs value={tab} onChange={setTab} style={{ marginBottom: 12 }}>
+              <Tabs.Tab key="list" label="日志列表" />
+              <Tabs.Tab key="analysis" label="统计分析" />
+            </Tabs>
 
-          {tab === 'list' ? (
-            <>
-              <Space style={{ marginBottom: 12, gap: 8 }} wrap>
-                <span style={{ color: '#94a3b8', fontSize: 13 }}>级别:</span>
-                <Select value={levelFilter} onChange={setLevelFilter} style={{ width: 120 }}
-                  options={[{ value: 'all', label: '全部' }, { value: 'info', label: '普通' }, { value: 'warn', label: '警告' }, { value: 'error', label: '错误' }]} />
-                <Input.Search placeholder="搜索操作人/类型/对象" style={{ width: 260 }} onChange={e => setSearch(e.target.value)} allowClear />
+            {tab === 'list' ? (
+              <>
+                <Space style={{ marginBottom: 12, gap: 8 }} wrap>
+                  <span style={{ color: '#94a3b8', fontSize: 13 }}>级别:</span>
+                  <Select value={levelFilter} onChange={setLevelFilter} style={{ width: 120 }}
+                    options={[{ value: 'all', label: '全部' }, { value: 'info', label: '普通' }, { value: 'warn', label: '警告' }, { value: 'error', label: '错误' }]} />
+                  <Input.Search placeholder="搜索操作人/类型/对象" style={{ width: 260 }} onChange={e => setSearch(e.target.value)} allowClear />
+                </Space>
+                <Table dataSource={filtered} columns={COLUMNS} rowKey="id" pagination={{ pageSize: 8, showSizeChanger: true }} />
+              </>
+            ) : (
+              <Space direction="vertical" style={{ width: '100%', gap: 12 }}>
+                <Row gutter={16}>
+                  <Col span={8}><Card size="small" title="按类型分布">
+                    <div>登录: {AUDIT_DATA.filter(d => d.action === '登录').length}次</div>
+                    <div>配置变更: {AUDIT_DATA.filter(d => d.action.includes('修改') || d.action.includes('配置')).length}次</div>
+                    <div>告警: {AUDIT_DATA.filter(d => d.action.includes('告警')).length}次</div>
+                    <div>备份: {AUDIT_DATA.filter(d => d.action.includes('备份')).length}次</div>
+                  </Card></Col>
+                  <Col span={8}><Card size="small" title="错误趋势">
+                    <div style={{ color: '#f87171' }}>今日: {errorCount}个</div>
+                    <div style={{ color: '#f59e0b' }}>昨日: 3个</div>
+                    <div style={{ color: '#34d399' }}>本周: 12个</div>
+                  </Card></Col>
+                  <Col span={8}><Card size="small" title="活跃操作人">
+                    <div>张三: 2次</div>
+                    <div>系统: 6次</div>
+                    <div>李四: 2次</div>
+                  </Card></Col>
+                </Row>
               </Space>
-              <Table dataSource={filtered} columns={COLUMNS} rowKey="id" pagination={{ pageSize: 8, showSizeChanger: true }} />
-            </>
-          ) : (
-            <Space direction="vertical" style={{ width: '100%', gap: 12 }}>
-              <Row gutter={16}>
-                <Col span={8}><Card size="small" title="按类型分布">
-                  <div>登录: {AUDIT_DATA.filter(d => d.action === '登录').length}次</div>
-                  <div>配置变更: {AUDIT_DATA.filter(d => d.action.includes('修改') || d.action.includes('配置')).length}次</div>
-                  <div>告警: {AUDIT_DATA.filter(d => d.action.includes('告警')).length}次</div>
-                  <div>备份: {AUDIT_DATA.filter(d => d.action.includes('备份')).length}次</div>
-                </Card></Col>
-                <Col span={8}><Card size="small" title="错误趋势">
-                  <div style={{ color: '#f87171' }}>今日: {errorCount}个</div>
-                  <div style={{ color: '#f59e0b' }}>昨日: 3个</div>
-                  <div style={{ color: '#34d399' }}>本周: 12个</div>
-                </Card></Col>
-                <Col span={8}><Card size="small" title="活跃操作人">
-                  <div>张三: 2次</div>
-                  <div>系统: 6次</div>
-                  <div>李四: 2次</div>
-                </Card></Col>
-              </Row>
-            </Space>
-          )}
-        </Card>
+            )}
+          </Card>
 
-        <Modal title="导出审计报告" open={showReport} onCancel={() => setShowReport(false)}
-          onOk={() => { message.success('审计报告生成中…'); setShowReport(false); }}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div>将导出以下数据:</div>
-            <div>· 操作日志: {AUDIT_DATA.length}条</div>
-            <div>· 错误告警: {errorCount}条</div>
-            <div>· 警告: {warnCount}条</div>
-            <div style={{ color: '#94a3b8', fontSize: 13 }}>报告将以PDF格式发送至管理员邮箱</div>
-          </Space>
-        </Modal>
-      </Space>
-    </PageShell>
+          <Modal title="导出审计报告" open={showReport} onCancel={() => setShowReport(false)}
+            onOk={() => { message.success('审计报告生成中…'); setShowReport(false); }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div>将导出以下数据:</div>
+              <div>· 操作日志: {AUDIT_DATA.length}条</div>
+              <div>· 错误告警: {errorCount}条</div>
+              <div>· 警告: {warnCount}条</div>
+              <div style={{ color: '#94a3b8', fontSize: 13 }}>报告将以PDF格式发送至管理员邮箱</div>
+            </Space>
+          </Modal>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

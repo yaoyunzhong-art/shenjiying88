@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 interface ChoiceOption {
   id: string; label: string; description: string; pros: string[]
@@ -116,13 +117,38 @@ const MOCK_HISTORICAL_CASES: HistoricalCase[] = [
   { year: 2026, month: 4, activityName: '周末主题赛', storeCount: 10, avgTrafficIncrease: '+30%', avgRevenueIncrease: '+24%', note: '春季活动参与率提升' },
 ]
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '运营参谋访问受限',
+  description:
+    '运营参谋页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看 AI 选择题、同城竞品证据与历史案例。',
+} as const
+
 export default function OperationsPage() {
   // 三态条件渲染
   const [loading, _setLoading] = useState(false)
   const [error, _setError] = useState<string | null>(null)
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!MOCK_QUESTIONS || MOCK_QUESTIONS.length === 0) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    )
+  }
+  if (!MOCK_QUESTIONS || MOCK_QUESTIONS.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    )
+  }
 
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
@@ -144,128 +170,130 @@ export default function OperationsPage() {
   const districts = city ? CITY_DISTRICTS[city] || ['中心区'] : []
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">💡 运营参谋</h1>
-      <p className="text-gray-500 mb-6">AI为你提供多个可行方案，你来做选择题，不做填空题。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-6xl mx-auto">
+        <h1 className="text-2xl font-bold mb-2">💡 运营参谋</h1>
+        <p className="text-gray-500 mb-6">AI为你提供多个可行方案，你来做选择题，不做填空题。</p>
 
-      {/* 城市选择器 */}
-      <div className="bg-blue-50 border border-blue-100 rounded p-3 mb-4 flex items-center gap-4">
-        <span className="text-sm font-medium text-blue-700">🎯 同城数据参考:</span>
-        <select value={city} onChange={e => { setCity(e.target.value); setDistrict('') }}
-          className="border rounded px-2 py-1 text-sm bg-white">
-          <option value="">选择城市</option>
-          {CITY_OPTIONS.map(c => <option key={c}>{c}</option>)}
-        </select>
-        <select value={district} onChange={e => setDistrict(e.target.value)}
-          className="border rounded px-2 py-1 text-sm bg-white" disabled={!city}>
-          <option value="">选择区域</option>
-          {districts.map(d => <option key={d}>{d}</option>)}
-        </select>
-        {city && district && (
-          <span className="text-xs text-green-600">✅ 正在使用{city}{district}的竞品数据</span>
-        )}
-        {(!city || !district) && (
-          <span className="text-xs text-blue-500">选择城市+区域后可获取同城竞品参考</span>
-        )}
-      </div>
-
-      {/* 分类筛选 */}
-      <div className="flex gap-2 mb-3 flex-wrap">
-        <button onClick={() => setActiveCategory('ALL')}
-          className={`px-3 py-1 rounded text-sm ${activeCategory === 'ALL' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>全部</button>
-        {categories.map(c => (
-          <button key={c} onClick={() => setActiveCategory(c)}
-            className={`px-3 py-1 rounded text-sm ${activeCategory === c ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-            {CATEGORY_LABELS[c] || c}
-          </button>
-        ))}
-      </div>
-
-      {/* 历史案例切换 */}
-      {activeCategory === 'activity' && (
-        <div className="flex items-center gap-2 mb-4">
-          <button onClick={() => setShowHistorical(false)}
-            className={`px-3 py-1 rounded text-sm ${!showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>📝 选择题模式</button>
-          <button onClick={() => setShowHistorical(true)}
-            className={`px-3 py-1 rounded text-sm ${showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>📊 历史案例模式</button>
+        {/* 城市选择器 */}
+        <div className="bg-blue-50 border border-blue-100 rounded p-3 mb-4 flex items-center gap-4">
+          <span className="text-sm font-medium text-blue-700">🎯 同城数据参考:</span>
+          <select value={city} onChange={e => { setCity(e.target.value); setDistrict('') }}
+            className="border rounded px-2 py-1 text-sm bg-white">
+            <option value="">选择城市</option>
+            {CITY_OPTIONS.map(c => <option key={c}>{c}</option>)}
+          </select>
+          <select value={district} onChange={e => setDistrict(e.target.value)}
+            className="border rounded px-2 py-1 text-sm bg-white" disabled={!city}>
+            <option value="">选择区域</option>
+            {districts.map(d => <option key={d}>{d}</option>)}
+          </select>
+          {city && district && (
+            <span className="text-xs text-green-600">✅ 正在使用{city}{district}的竞品数据</span>
+          )}
+          {(!city || !district) && (
+            <span className="text-xs text-blue-500">选择城市+区域后可获取同城竞品参考</span>
+          )}
         </div>
-      )}
 
-      {/* 历史案例视图 */}
-      {showHistorical && activeCategory === 'activity' && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="font-bold text-lg mb-4">📊 同城活动历史案例</h3>
-          <p className="text-xs text-gray-500 mb-4">基于同城竞品的历史活动效果数据</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="py-2 pr-4">时间</th><th className="py-2 pr-4">活动类型</th>
-                  <th className="py-2 pr-4">竞品采用</th><th className="py-2 pr-4">客流增长</th>
-                  <th className="py-2 pr-4">收入增长</th><th className="py-2 pr-4">备注</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK_HISTORICAL_CASES.map((h, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="py-2 pr-4 text-gray-600">{h.year}.{String(h.month).padStart(2,'0')}</td>
-                    <td className="py-2 pr-4 font-medium">{h.activityName}</td>
-                    <td className="py-2 pr-4">{h.storeCount}家</td>
-                    <td className="py-2 pr-4 text-green-600">{h.avgTrafficIncrease}</td>
-                    <td className="py-2 pr-4 text-blue-600">{h.avgRevenueIncrease}</td>
-                    <td className="py-2 pr-4 text-gray-500 text-xs">{h.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* AI建议 */}
-      {aiAdvice && !showHistorical && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6 whitespace-pre-line text-sm text-blue-800">
-          {aiAdvice}
-        </div>
-      )}
-
-      {/* 问题列表 */}
-      {!showHistorical && (
-        <div className="space-y-6">
-          {filtered.map(q => (
-            <div key={q.id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-gray-400">{CATEGORY_LABELS[q.category]}</span>
-              </div>
-              <h3 className="font-bold text-lg mb-1">{q.question}</h3>
-              <p className="text-xs text-blue-600 mb-4">💡 {q.aiSuggestion}</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {q.options.map(opt => {
-                  const isSelected = selected[q.id] === opt.id
-                  return (
-                    <button key={opt.id} onClick={() => handleSelect(q.id, opt.id)}
-                      className={`text-left border-2 rounded-lg p-4 transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-bold text-sm">{opt.label}</span>
-                        {isSelected && <span className="text-blue-600 text-xs">✓ 已选</span>}
-                      </div>
-                      <p className="text-xs text-gray-600 mb-2">{opt.description}</p>
-                      {opt.dataEvidence && (
-                        <p className="text-xs text-orange-600 mb-2">📋 {opt.dataEvidence}</p>
-                      )}
-                      <div className="flex gap-1 flex-wrap mb-2">
-                        {opt.pros.map(p => <span key={p} className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">+{p}</span>)}
-                        {opt.cons.map(c => <span key={c} className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">-{c}</span>)}
-                      </div>
-                      <p className="text-xs text-gray-400">📊 {opt.estimatedEffect}</p>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+        {/* 分类筛选 */}
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <button onClick={() => setActiveCategory('ALL')}
+            className={`px-3 py-1 rounded text-sm ${activeCategory === 'ALL' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>全部</button>
+          {categories.map(c => (
+            <button key={c} onClick={() => setActiveCategory(c)}
+              className={`px-3 py-1 rounded text-sm ${activeCategory === c ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+              {CATEGORY_LABELS[c] || c}
+            </button>
           ))}
         </div>
-      )}
-    </div>
+
+        {/* 历史案例切换 */}
+        {activeCategory === 'activity' && (
+          <div className="flex items-center gap-2 mb-4">
+            <button onClick={() => setShowHistorical(false)}
+              className={`px-3 py-1 rounded text-sm ${!showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>📝 选择题模式</button>
+            <button onClick={() => setShowHistorical(true)}
+              className={`px-3 py-1 rounded text-sm ${showHistorical ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>📊 历史案例模式</button>
+          </div>
+        )}
+
+        {/* 历史案例视图 */}
+        {showHistorical && activeCategory === 'activity' && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 className="font-bold text-lg mb-4">📊 同城活动历史案例</h3>
+            <p className="text-xs text-gray-500 mb-4">基于同城竞品的历史活动效果数据</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="py-2 pr-4">时间</th><th className="py-2 pr-4">活动类型</th>
+                    <th className="py-2 pr-4">竞品采用</th><th className="py-2 pr-4">客流增长</th>
+                    <th className="py-2 pr-4">收入增长</th><th className="py-2 pr-4">备注</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MOCK_HISTORICAL_CASES.map((h, idx) => (
+                    <tr key={idx} className="border-b hover:bg-gray-50">
+                      <td className="py-2 pr-4 text-gray-600">{h.year}.{String(h.month).padStart(2,'0')}</td>
+                      <td className="py-2 pr-4 font-medium">{h.activityName}</td>
+                      <td className="py-2 pr-4">{h.storeCount}家</td>
+                      <td className="py-2 pr-4 text-green-600">{h.avgTrafficIncrease}</td>
+                      <td className="py-2 pr-4 text-blue-600">{h.avgRevenueIncrease}</td>
+                      <td className="py-2 pr-4 text-gray-500 text-xs">{h.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* AI建议 */}
+        {aiAdvice && !showHistorical && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6 whitespace-pre-line text-sm text-blue-800">
+            {aiAdvice}
+          </div>
+        )}
+
+        {/* 问题列表 */}
+        {!showHistorical && (
+          <div className="space-y-6">
+            {filtered.map(q => (
+              <div key={q.id} className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-gray-400">{CATEGORY_LABELS[q.category]}</span>
+                </div>
+                <h3 className="font-bold text-lg mb-1">{q.question}</h3>
+                <p className="text-xs text-blue-600 mb-4">💡 {q.aiSuggestion}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {q.options.map(opt => {
+                    const isSelected = selected[q.id] === opt.id
+                    return (
+                      <button key={opt.id} onClick={() => handleSelect(q.id, opt.id)}
+                        className={`text-left border-2 rounded-lg p-4 transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-sm">{opt.label}</span>
+                          {isSelected && <span className="text-blue-600 text-xs">✓ 已选</span>}
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">{opt.description}</p>
+                        {opt.dataEvidence && (
+                          <p className="text-xs text-orange-600 mb-2">📋 {opt.dataEvidence}</p>
+                        )}
+                        <div className="flex gap-1 flex-wrap mb-2">
+                          {opt.pros.map(p => <span key={p} className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">+{p}</span>)}
+                          {opt.cons.map(c => <span key={c} className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded">-{c}</span>)}
+                        </div>
+                        <p className="text-xs text-gray-400">📊 {opt.estimatedEffect}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   )
 }

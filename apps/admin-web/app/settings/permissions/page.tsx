@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface RolePreview {
   name: string;
@@ -50,6 +51,13 @@ const styles: Record<string, React.CSSProperties> = {
   loading: { textAlign: 'center' as const, padding: '80px 24px', color: '#94a3b8' },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '权限管理访问受限',
+  description:
+    '权限管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看角色定义、资源权限数与继承规则。',
+} as const;
+
 export default function PermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,63 +69,75 @@ export default function PermissionsPage() {
   }, []);
 
   if (loading) {
-    return <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...styles.page, ...styles.loading }}><div style={{ fontSize: 14 }}>加载中...</div></div>
+      </AdminPermissionGate>
+    );
   }
 
   if (error) {
-    return <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...styles.page, ...styles.error }}><div style={{ fontSize: 14 }}>错误: {error}</div></div>
+      </AdminPermissionGate>
+    );
   }
 
   if (ROLES.length === 0) {
     return (
-      <div style={styles.page}>
-        <h1 style={styles.title}>🔑 权限管理</h1>
-        <p style={styles.subtitle}>管理用户角色与权限分配。</p>
-        <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={styles.page}>
+          <h1 style={styles.title}>🔑 权限管理</h1>
+          <p style={styles.subtitle}>管理用户角色与权限分配。</p>
+          <div style={styles.empty}><div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div></div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🔑 权限管理</h1>
-      <p style={styles.subtitle}>管理用户角色与权限分配。基于角色的访问控制（RBAC），支持角色继承、资源级权限配置与循环依赖检测。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🔑 权限管理</h1>
+        <p style={styles.subtitle}>管理用户角色与权限分配。基于角色的访问控制（RBAC），支持角色继承、资源级权限配置与循环依赖检测。</p>
 
-      {/* 角色列表 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>👥 角色定义</h2>
-        <p style={styles.sectionText}>当前系统内置及自定义角色。系统角色拥有全部权限，不可删除。</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>角色名称</th>
-              <th style={styles.th}>描述</th>
-              <th style={styles.th}>类型</th>
-              <th style={styles.th}>资源权限数</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ROLES.map(r => (
-              <tr key={r.name}>
-                <td style={{ ...styles.td, fontWeight: 600 }}>{r.name}</td>
-                <td style={styles.td}>{r.description}</td>
-                <td style={styles.td}><span style={styles.tag(r.isSystem ? '#3b82f6' : '#94a3b8')}>{r.isSystem ? '系统' : '自定义'}</span></td>
-                <td style={styles.td}>{r.resourceCount} / 7</td>
+        {/* 角色列表 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>👥 角色定义</h2>
+          <p style={styles.sectionText}>当前系统内置及自定义角色。系统角色拥有全部权限，不可删除。</p>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>角色名称</th>
+                <th style={styles.th}>描述</th>
+                <th style={styles.th}>类型</th>
+                <th style={styles.th}>资源权限数</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {ROLES.map(r => (
+                <tr key={r.name}>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{r.name}</td>
+                  <td style={styles.td}>{r.description}</td>
+                  <td style={styles.td}><span style={styles.tag(r.isSystem ? '#3b82f6' : '#94a3b8')}>{r.isSystem ? '系统' : '自定义'}</span></td>
+                  <td style={styles.td}>{r.resourceCount} / 7</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* 权限继承规则 */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🔗 权限继承规则</h2>
-        <ul style={styles.ruleList}>
-          {INHERITANCE_RULES.map((rule, i) => (
-            <li key={i} style={styles.ruleItem}>{rule}</li>
-          ))}
-        </ul>
+        {/* 权限继承规则 */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🔗 权限继承规则</h2>
+          <ul style={styles.ruleList}>
+            {INHERITANCE_RULES.map((rule, i) => (
+              <li key={i} style={styles.ruleItem}>{rule}</li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, InputNumber, Switch, Input, Modal, message, Select, Progress, Tabs, Divider, Empty } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Setting { key: string; label: string; type: string; value: any; desc: string; category: string; }
 const SETTINGS: Setting[] = [
@@ -33,6 +34,13 @@ const REAL_TIME = [
   { label:'今日营收', value:12800, prefix:'¥', color:'#34d399' },
 ];
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '门店运营参数访问受限',
+  description:
+    '门店运营参数页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看营业参数、实时统计与配置变更。',
+} as const;
+
 export default function OperationsPage() {
   const [activeTab, setActiveTab] = useState<string>('营业时间');
   const [showEdit, setShowEdit] = useState<Setting | null>(null);
@@ -42,90 +50,92 @@ export default function OperationsPage() {
   const handleSave = () => { setSaved(true); message.success('所有设置已保存'); };
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
-        <h2 style={{ color: '#f8fafc', margin: 0 }}>⚙️ 运营管理</h2>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+          <h2 style={{ color: '#f8fafc', margin: 0 }}>⚙️ 运营管理</h2>
 
-        <Row gutter={16}>
-          {REAL_TIME.map(rt => (
-            <Col key={rt.label} span={4}>
-              <Card size="small">
-                <Statistic title={rt.label}
-                  value={rt.prefix ? `${rt.prefix}${rt.value}` : rt.suffix ? `${rt.value}${rt.suffix}` : rt.value}
-                  valueStyle={{ color: rt.color }} />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-
-        <Card>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #1e293b', paddingBottom: 8 }}>
-            {CATEGORIES.map(t => (
-              <div key={t} onClick={() => setActiveTab(t)} style={{
-                padding: '6px 16px', borderRadius: 6, cursor: 'pointer', fontSize: 14,
-                background: activeTab === t ? '#334155' : 'transparent', color: activeTab === t ? '#f8fafc' : '#94a3b8',
-                transition: 'all 0.2s',
-              }}>{t}</div>
+          <Row gutter={16}>
+            {REAL_TIME.map(rt => (
+              <Col key={rt.label} span={4}>
+                <Card size="small">
+                  <Statistic title={rt.label}
+                    value={rt.prefix ? `${rt.prefix}${rt.value}` : rt.suffix ? `${rt.value}${rt.suffix}` : rt.value}
+                    valueStyle={{ color: rt.color }} />
+                </Card>
+              </Col>
             ))}
-          </div>
+          </Row>
 
-          {grouped(CATEGORIES).filter(g => g.category === activeTab).map(g => (
-            <div key={g.category}>
-              {g.items.map(s => (
-                <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(148,163,184,0.08)', cursor: 'pointer' }}
-                  onClick={() => handleEdit(s)}>
-                  <div>
-                    <div style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 500 }}>{s.label}</div>
-                    <div style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>{s.desc}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: '#fbbf24', fontSize: 16, fontWeight: 600 }}>
-                      {s.type === 'switch' ? (s.value ? '🟢 已开启' : '🔴 已关闭') :
-                       s.type === 'number' ? (typeof s.value === 'number' && s.value < 1 ? `${(s.value * 100).toFixed(0)}%` : s.value) :
-                       String(s.value)}
-                    </span>
-                    <Button size="small" type="link" onClick={(e) => { e.stopPropagation(); handleEdit(s); }}>编辑</Button>
-                  </div>
-                </div>
+          <Card>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #1e293b', paddingBottom: 8 }}>
+              {CATEGORIES.map(t => (
+                <div key={t} onClick={() => setActiveTab(t)} style={{
+                  padding: '6px 16px', borderRadius: 6, cursor: 'pointer', fontSize: 14,
+                  background: activeTab === t ? '#334155' : 'transparent', color: activeTab === t ? '#f8fafc' : '#94a3b8',
+                  transition: 'all 0.2s',
+                }}>{t}</div>
               ))}
             </div>
-          ))}
-        </Card>
 
-        <Card>
-          <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-            <div>
-              <Tag color={saved ? 'green' : 'default'} style={{ marginRight: 8 }}>配置状态: {saved ? '已保存' : '有未保存修改'}</Tag>
-              <span style={{ color: '#64748b', fontSize: 12 }}>共 {SETTINGS.length} 项配置 · {CATEGORIES.length} 个分类</span>
-            </div>
-            <Space>
-              <Button onClick={() => { message.info('已重置未保存修改'); setSaved(false); }}>重置</Button>
-              <Button>恢复默认</Button>
-              <Button>导出配置</Button>
-              <Button type="primary" onClick={handleSave}>保存全部</Button>
+            {grouped(CATEGORIES).filter(g => g.category === activeTab).map(g => (
+              <div key={g.category}>
+                {g.items.map(s => (
+                  <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(148,163,184,0.08)', cursor: 'pointer' }}
+                    onClick={() => handleEdit(s)}>
+                    <div>
+                      <div style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 500 }}>{s.label}</div>
+                      <div style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>{s.desc}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#fbbf24', fontSize: 16, fontWeight: 600 }}>
+                        {s.type === 'switch' ? (s.value ? '🟢 已开启' : '🔴 已关闭') :
+                         s.type === 'number' ? (typeof s.value === 'number' && s.value < 1 ? `${(s.value * 100).toFixed(0)}%` : s.value) :
+                         String(s.value)}
+                      </span>
+                      <Button size="small" type="link" onClick={(e) => { e.stopPropagation(); handleEdit(s); }}>编辑</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </Card>
+
+          <Card>
+            <Space style={{ justifyContent: 'space-between', width: '100%' }}>
+              <div>
+                <Tag color={saved ? 'green' : 'default'} style={{ marginRight: 8 }}>配置状态: {saved ? '已保存' : '有未保存修改'}</Tag>
+                <span style={{ color: '#64748b', fontSize: 12 }}>共 {SETTINGS.length} 项配置 · {CATEGORIES.length} 个分类</span>
+              </div>
+              <Space>
+                <Button onClick={() => { message.info('已重置未保存修改'); setSaved(false); }}>重置</Button>
+                <Button>恢复默认</Button>
+                <Button>导出配置</Button>
+                <Button type="primary" onClick={handleSave}>保存全部</Button>
+              </Space>
             </Space>
-          </Space>
-        </Card>
+          </Card>
 
-        <Modal title={`编辑参数 - ${showEdit?.label || ''}`} open={!!showEdit} onCancel={() => setShowEdit(null)} onOk={() => { message.success(`参数 [${showEdit?.label}] 已更新`); setShowEdit(null); setSaved(false); }} okText="保存">
-          {showEdit && <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ background: 'rgba(148,163,184,0.06)', borderRadius: 8, padding: 12 }}>
-              <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 4 }}>说明</div>
-              <div style={{ color: '#e2e8f0', fontSize: 14 }}>{showEdit.desc}</div>
-            </div>
-            <Divider />
-            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>当前值</div>
-            {showEdit.type === 'switch'
-              ? <Select value={showEdit.value ? 'true' : 'false'} style={{ width: 120 }}>
-                  <Select.Option value="true">开启</Select.Option>
-                  <Select.Option value="false">关闭</Select.Option>
-                </Select>
-              : showEdit.type === 'number'
-                ? <InputNumber style={{ width: '100%' }} value={showEdit.value} />
-                : <Input value={String(showEdit.value)} />}
-          </Space>}
-        </Modal>
-      </Space>
-    </PageShell>
+          <Modal title={`编辑参数 - ${showEdit?.label || ''}`} open={!!showEdit} onCancel={() => setShowEdit(null)} onOk={() => { message.success(`参数 [${showEdit?.label}] 已更新`); setShowEdit(null); setSaved(false); }} okText="保存">
+            {showEdit && <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ background: 'rgba(148,163,184,0.06)', borderRadius: 8, padding: 12 }}>
+                <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 4 }}>说明</div>
+                <div style={{ color: '#e2e8f0', fontSize: 14 }}>{showEdit.desc}</div>
+              </div>
+              <Divider />
+              <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 8 }}>当前值</div>
+              {showEdit.type === 'switch'
+                ? <Select value={showEdit.value ? 'true' : 'false'} style={{ width: 120 }}>
+                    <Select.Option value="true">开启</Select.Option>
+                    <Select.Option value="false">关闭</Select.Option>
+                  </Select>
+                : showEdit.type === 'number'
+                  ? <InputNumber style={{ width: '100%' }} value={showEdit.value} />
+                  : <Input value={String(showEdit.value)} />}
+            </Space>}
+          </Modal>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

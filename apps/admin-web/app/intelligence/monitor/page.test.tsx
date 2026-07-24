@@ -195,3 +195,10 @@ describe('Monitor Page', () => {
     assert.ok(!content.includes('as any'))
   })
 })
+
+describe('intelligence/monitor — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})
