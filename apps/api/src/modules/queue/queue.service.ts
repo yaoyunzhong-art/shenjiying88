@@ -131,6 +131,11 @@ export class QueueService {
     entry.priority = input.priority ?? 0
     entry.estimatedWaitMin = estimatedWaitMin
     entry.remark = input.remark
+
+    // WP-12A: 双模排队 source + channel
+    entry.source = input.source ?? QueueSource.Onsite
+    entry.channel = input.channel ?? QueueChannel.Terminal
+
     entry.createdAt = now
     entry.updatedAt = now
 

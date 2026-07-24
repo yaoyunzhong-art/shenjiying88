@@ -36,14 +36,14 @@ describe('TerminalModule', () => {
     expect(controllers).toHaveLength(1)
   })
 
-  it('Provider 数量应为 1', () => {
+  it('Provider 数量应为 3 (TerminalService + TerminalMqttService + TerminalSignService)', () => {
     const providers = Reflect.getMetadata('providers', TerminalModule) || []
-    expect(providers).toHaveLength(1)
+    expect(providers).toHaveLength(3)
   })
 
-  it('Export 数量应为 1', () => {
+  it('Export 数量应为 3 (TerminalService + TerminalMqttService + TerminalSignService)', () => {
     const exports = Reflect.getMetadata('exports', TerminalModule) || []
-    expect(exports).toHaveLength(1)
+    expect(exports).toHaveLength(3)
   })
 
   it('不应导入外部模块', () => {
