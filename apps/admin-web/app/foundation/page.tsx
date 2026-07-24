@@ -7,6 +7,7 @@ import {
   SearchFilterInput, Modal, message, StatusBadge, Tabs,
   Progress, type DataTableColumn,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ── 类型 ──────────────────────────────────────────────
 type ModuleStatus = 'healthy' | 'warning' | 'error' | 'unknown';
@@ -71,6 +72,12 @@ const columns: DataTableColumn<ModuleInfo>[] = [
 export default function FoundationPage() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: 'Foundation 总览访问受限',
+    description:
+      'Foundation 总览页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模块目录、治理基线、健康分与消费者依赖。',
+  } as const;
 
   const filtered = useMemo(() => MOCK_MODULES.filter((m) => {
     if (search) {
@@ -93,8 +100,9 @@ export default function FoundationPage() {
   const unhealthy = useMemo(() => MOCK_MODULES.filter((m) => m.status === 'warning' || m.status === 'error'), []);
 
   return (
-    <PageShell title="🏗️ Foundation 总览">
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="🏗️ Foundation 总览">
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0, fontSize: 20 }}>模块目录 · 治理基线 · 消费者依赖</h2>
           <Space>
@@ -197,7 +205,8 @@ export default function FoundationPage() {
             </div>
           </div>
         </Card>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

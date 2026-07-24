@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 // ── 类型 ──
 
@@ -178,5 +179,14 @@ describe('ApprovalsTicket — 边界', () => {
   it('空列表查询不抛异常', () => {
     assert.doesNotThrow(() => computeStats([]));
     assert.doesNotThrow(() => getApprovalById(''));
+  });
+});
+
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+
+describe('approvals/[ticket] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 });

@@ -492,6 +492,13 @@ describe('getSourceIcon — 来源图标', () => {
 
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('audit-trail/records/[auditId] — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
 describe('Audit Trail / Records — hooks验证', () => {
   it('包含useState等hook', () => assert.ok(SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

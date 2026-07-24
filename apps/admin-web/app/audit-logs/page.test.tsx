@@ -13,6 +13,11 @@ const PAGE = resolve(import.meta.dirname, 'page.tsx')
 const content = fs.readFileSync(PAGE, 'utf-8')
 
 describe('audit-logs', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+
   // ── 页面存在与导出 ──
   it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
   it('包含 default export', () => { assert.ok(content.includes('export default')) })

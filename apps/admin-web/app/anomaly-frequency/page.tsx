@@ -14,6 +14,7 @@ import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { AnomalyFrequencyClient } from './anomaly-frequency-client';
 import { loadAdminGovernanceReadModel } from '../bootstrap';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 export const metadata: Metadata = {
   title: '异常时序频率 - M5 指挥台',
@@ -179,14 +180,21 @@ function AnomalyFrequencyEmptyState() {
 }
 
 export default async function AnomalyFrequencyPage() {
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '异常频率访问受限',
+    description:
+      '异常时序频率页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看治理告警时序、严重度筛选与处理率统计。',
+  } as const;
+
   let governance;
   try {
     governance = await loadAdminGovernanceReadModel();
   } catch {
     return (
-      <>
+      <AdminPermissionGate {...permissionGate}>
         <AnomalyFrequencyErrorFallback />
-      </>
+      </AdminPermissionGate>
     );
   }
 
@@ -194,21 +202,22 @@ export default async function AnomalyFrequencyPage() {
     ((governance as any)?.alerts as unknown[])?.length ?? 0;
 
   return (
-    <>
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: '异常时序频率监控',
-            applicationCategory: 'BusinessApplication',
-            description:
-              '门店/系统异常的时间分布监控。支持严重程度和时间范围筛选。',
-          }),
-        }}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <>
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: '异常时序频率监控',
+              applicationCategory: 'BusinessApplication',
+              description:
+                '门店/系统异常的时间分布监控。支持严重程度和时间范围筛选。',
+            }),
+          }}
+        />
 
       {/* 统计摘要 */}
       <AnomalySummaryCards governance={governance} />
@@ -228,23 +237,24 @@ export default async function AnomalyFrequencyPage() {
       </ErrorBoundary>
 
       {/* 底部说明 */}
-      <div
-        style={{
-          marginTop: 24,
-          padding: '8px 16px',
-          borderRadius: 8,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(148,163,184,0.08)',
-          fontSize: 12,
-          color: '#94a3b8',
-          lineHeight: 1.6,
-        }}
-      >
-        <strong style={{ color: '#e2e8f0' }}>数据说明</strong>
-        <br />
-        异常数据来源：M5 平台治理告警模型。时序图表展示各时间段的异常事件分布密度。
-        严重异常（红）需要立即关注，警告异常（黄）建议 24 小时内处理。
-      </div>
-    </>
+        <div
+          style={{
+            marginTop: 24,
+            padding: '8px 16px',
+            borderRadius: 8,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(148,163,184,0.08)',
+            fontSize: 12,
+            color: '#94a3b8',
+            lineHeight: 1.6,
+          }}
+        >
+          <strong style={{ color: '#e2e8f0' }}>数据说明</strong>
+          <br />
+          异常数据来源：M5 平台治理告警模型。时序图表展示各时间段的异常事件分布密度。
+          严重异常（红）需要立即关注，警告异常（黄）建议 24 小时内处理。
+        </div>
+      </>
+    </AdminPermissionGate>
   );
 }

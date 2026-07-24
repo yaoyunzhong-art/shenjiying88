@@ -24,6 +24,7 @@ import {
   buildMemberOperationsSourceDetailHref,
 } from '../../members-view-model';
 import { buildAuditTrailHref as buildApprovalAuditTrailHref } from '../../audit-trail-view-model';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
@@ -120,6 +121,12 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ ticke
     memberContext?.memberId && memberContext.sourcePaymentId
       ? buildMemberOperationsSourceDetailHref(memberContext.memberId, 'payment', memberContext.sourcePaymentId)
       : null;
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '审批详情访问受限',
+    description:
+      '审批详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看审批动作、执行轨迹、审计日志与治理回执。',
+  } as const;
 
   async function refresh(nextTicket?: string) {
     const nextSnapshot = await loadGovernanceApprovalDetail(nextTicket ?? ticket);
@@ -191,10 +198,11 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ ticke
   }
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'approvals', detailLabel: approval?.ticket ?? ticket })}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'approvals', detailLabel: approval?.ticket ?? ticket })}
+        />
       <div style={{ marginBottom: 24 }}>
         <a href={adminGovernanceApprovalsRoute.backHref} style={{ color: '#93c5fd', textDecoration: 'none', fontSize: 13 }}>
           返回审批列表
@@ -423,16 +431,17 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ ticke
         </>
       ) : null}
 
-      <DetailActionBar
-        actions={detailActions}
-        heading="详情收口动作"
-        caption="复制 / 导出 / 分享当前审批单详情"
-      />
+        <DetailActionBar
+          actions={detailActions}
+          heading="详情收口动作"
+          caption="复制 / 导出 / 分享当前审批单详情"
+        />
 
-      <DetailClosureBar
-        links={buildStandardClosureLinks({ workspace: 'approvals', detailId: ticket })}
-      />
-    </main>
+        <DetailClosureBar
+          links={buildStandardClosureLinks({ workspace: 'approvals', detailId: ticket })}
+        />
+      </main>
+    </AdminPermissionGate>
   );
 }
 

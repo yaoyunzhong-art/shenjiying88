@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useMemo, useCallback } from 'react'
+import { AdminPermissionGate } from '../../../components/admin-permission-gate'
 
 const styles = {
   container: { padding: '24px', maxWidth: '1200px', margin: '0 auto', background: '#0f0f1a', color: '#e0e0e0', minHeight: '100vh' },
@@ -53,13 +54,19 @@ export default function ConfigurationOperationDetailPage() {
   const [modal, setModal] = useState<ModalState>({ visible: false, item: null })
   const [page, setPage] = useState(1)
   const pageSize = 6
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '配置操作边界访问受限',
+    description:
+      '配置操作边界页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看 RBAC、审批条件、审计等级与治理深链。',
+  } as const
 
   // 三态条件渲染
   const [loading, _setLoading] = useState(false)
   const [error, _setError] = useState<string | null>(null)
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!SEED_OPERATIONS || SEED_OPERATIONS.length === 0) return <div>暂无数据</div>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
+  if (!SEED_OPERATIONS || SEED_OPERATIONS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>;
 
   const filtered = useMemo(() => {
     let result = SEED_OPERATIONS
@@ -95,11 +102,12 @@ export default function ConfigurationOperationDetailPage() {
   }, [])
 
   return (
-    <div style={styles.container}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>配置操作边界</h1>
-        <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看单一操作的 RBAC 与审批边界，并深链到治理审批/审计/Foundation 上下文。</p>
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>配置操作边界</h1>
+          <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>查看单一操作的 RBAC 与审批边界，并深链到治理审批/审计/Foundation 上下文。</p>
+        </div>
 
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
         <div style={styles.card}>
@@ -206,6 +214,7 @@ export default function ConfigurationOperationDetailPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

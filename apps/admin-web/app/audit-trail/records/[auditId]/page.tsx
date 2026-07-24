@@ -17,6 +17,7 @@ import {
   LoadingSkeleton, PageShell, Result, StatusBadge, Typography,
 } from '@m5/ui';
 import { readAuditTrailRecordDetailParam } from '@m5/types';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface AuditTrailSnapshot {
   auditId: string;
@@ -79,15 +80,23 @@ export default async function AuditTrailRecordDetailPage({ params }: PageProps) 
   const resolved = await params;
   const auditId = readParam(resolved.auditId);
   const snapshot = loadMockSnapshot(auditId ?? '');
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '审计记录详情访问受限',
+    description:
+      '审计记录详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看事件摘要、详情 payload 与关联审计链路。',
+  } as const;
 
   if (snapshot.notFound || !snapshot.record) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <PageShell title="审计记录不存在" subtitle="该 auditId 不在当前审计范围内。">
-          <Result status="404" title="记录未找到" subTitle={`ID "${auditId}" 的审计记录不存在`}
-            extra={<a href="/audit-trail" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回审计列表</a>} />
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <PageShell title="审计记录不存在" subtitle="该 auditId 不在当前审计范围内。">
+            <Result status="404" title="记录未找到" subTitle={`ID "${auditId}" 的审计记录不存在`}
+              extra={<a href="/audit-trail" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回审计列表</a>} />
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
@@ -96,36 +105,38 @@ export default async function AuditTrailRecordDetailPage({ params }: PageProps) 
   const eventLabel = EVENT_LABELS[record.eventType] ?? record.eventType;
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell title={`审计记录：${eventLabel}`} subtitle="查看事件级别、操作人、来源、详情 payload 与关联审计记录。">
-        <BreadcrumbPageHeader
-          breadcrumbs={[{ label: '审计列表', href: '/audit-trail' }, { label: eventLabel }]}
-          title={eventLabel}
-        />
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <div className="flex gap-2 items-center mb-5">
-            <h3 className="text-base font-semibold text-white">基本信息</h3>
-            <Badge variant={(record.severity === 'error' ? 'error' : record.severity === 'warning' ? 'warning' : 'info') as 'error' | 'warning' | 'info'}>{eventLabel}</Badge>
-            <StatusBadge label={severity.label} variant={severity.variant} />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title={`审计记录：${eventLabel}`} subtitle="查看事件级别、操作人、来源、详情 payload 与关联审计记录。">
+          <BreadcrumbPageHeader
+            breadcrumbs={[{ label: '审计列表', href: '/audit-trail' }, { label: eventLabel }]}
+            title={eventLabel}
+          />
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <div className="flex gap-2 items-center mb-5">
+              <h3 className="text-base font-semibold text-white">基本信息</h3>
+              <Badge variant={(record.severity === 'error' ? 'error' : record.severity === 'warning' ? 'warning' : 'info') as 'error' | 'warning' | 'info'}>{eventLabel}</Badge>
+              <StatusBadge label={severity.label} variant={severity.variant} />
+            </div>
+            <DetailRow label="事件类型"><span className="font-mono text-sm">{record.eventType}</span></DetailRow>
+            <DetailRow label="操作人"><span className="font-mono text-sm text-blue-400">{record.operator}</span></DetailRow>
+            <DetailRow label="来源"><span className="text-sm">{record.source}</span></DetailRow>
+            <DetailRow label="级别"><StatusBadge label={severity.label} variant={severity.variant} /></DetailRow>
+            <DetailRow label="时间"><span className="text-sm font-mono text-slate-400">{record.createdAt}</span></DetailRow>
+            <DetailRow label="摘要"><span className="text-sm">{record.summary}</span></DetailRow>
+            <DetailRow label="详情 Payload">
+              <pre className="text-xs font-mono bg-slate-800 p-3 rounded-lg overflow-x-auto text-slate-300">
+                {JSON.stringify(record.details, null, 2)}
+              </pre>
+            </DetailRow>
           </div>
-          <DetailRow label="事件类型"><span className="font-mono text-sm">{record.eventType}</span></DetailRow>
-          <DetailRow label="操作人"><span className="font-mono text-sm text-blue-400">{record.operator}</span></DetailRow>
-          <DetailRow label="来源"><span className="text-sm">{record.source}</span></DetailRow>
-          <DetailRow label="级别"><StatusBadge label={severity.label} variant={severity.variant} /></DetailRow>
-          <DetailRow label="时间"><span className="text-sm font-mono text-slate-400">{record.createdAt}</span></DetailRow>
-          <DetailRow label="摘要"><span className="text-sm">{record.summary}</span></DetailRow>
-          <DetailRow label="详情 Payload">
-            <pre className="text-xs font-mono bg-slate-800 p-3 rounded-lg overflow-x-auto text-slate-300">
-              {JSON.stringify(record.details, null, 2)}
-            </pre>
-          </DetailRow>
-        </div>
-        <div className="flex gap-3 mb-6">
-          <Button variant="secondary" onClick={() => window.location.href = '/audit-trail'}>返回列表</Button>
-        </div>
-        <DetailClosureBar links={[{ key: 'list', title: '审计列表', subtitle: '返回审计日志列表', href: '/audit-trail' }]} />
-      </PageShell>
-    </main>
+          <div className="flex gap-3 mb-6">
+            <Button variant="secondary" onClick={() => window.location.href = '/audit-trail'}>返回列表</Button>
+          </div>
+          <DetailClosureBar links={[{ key: 'list', title: '审计列表', subtitle: '返回审计日志列表', href: '/audit-trail' }]} />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

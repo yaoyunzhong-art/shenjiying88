@@ -16,6 +16,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ==================== 类型定义 ====================
 
@@ -250,6 +251,12 @@ export default function AuditLogsPage() {
   const [tab, setTab] = useState<'all' | 'failure'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '日志审计访问受限',
+    description:
+      '日志审计页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看操作日志、失败筛选与审计明细。',
+  } as const;
 
   const stats = useMemo(() => computeStats(logs), [logs]);
 
@@ -279,12 +286,13 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32, minHeight: '100vh' }}>
-      {/* 页面标题 */}
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>📋 审计日志</h1>
-        <p style={{ fontSize: 13, color: '#64748b' }}>查看所有管理员操作审计记录，支持筛选、搜索和实时刷新</p>
-      </header>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32, minHeight: '100vh' }}>
+        {/* 页面标题 */}
+        <header style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>📋 审计日志</h1>
+          <p style={{ fontSize: 13, color: '#64748b' }}>查看所有管理员操作审计记录，支持筛选、搜索和实时刷新</p>
+        </header>
 
       {/* 概览统计 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
@@ -505,7 +513,8 @@ export default function AuditLogsPage() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </AdminPermissionGate>
   );
 }
 
