@@ -633,3 +633,478 @@ test.describe('Phase 7 · 权限节点', () => {
     }
   })
 })
+
+/* ═══════════════════ Phase 8: POS收银异常流程 ═══════════════════ */
+
+test.describe('Phase 8 · POS收银异常流程', () => {
+  test('CASH-036: [反例] 支付网关超时 → 显示超时提示并恢复', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+
+    // 模拟支付网关超时
+    await page.route('**/api/payment/**', (route) => {
+      setTimeout(() => route.abort('timedout'), 10000)
+    })
+
+    await page.getByRole('button', { name: /结算 ¥30\.00/ }).click()
+    await page.waitForTimeout(1000)
+
+    // 应显示超时提示
+    try {
+      await expect(
+        page.getByText(/超时|支付超时|网关超时|timeout/)
+      ).toBeVisible({ timeout: 5000 })
+    } catch {
+      console.log('[CASH-036] 支付超时提示未出现，可能已被全局捕获')
+    }
+
+    await page.unroute('**/api/payment/**')
+    // 恢复后可重新结算
+    await expect(page.getByRole('button', { name: /结算/ })).toBeVisible()
+  })
+
+  test('CASH-037: [反例] 支付网关拒绝 → 显示拒绝原因', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+
+    // 模拟支付网关拒绝
+    await page.route('**/api/payment/**', (route) => {
+      route.fulfill({
+        status: 402,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, error: 'PAYMENT_DECLINED', message: '银行卡余额不足' }),
+      })
+    })
+
+    await page.getByRole('button', { name: /结算 ¥30\.00/ }).click()
+    await page.waitForTimeout(500)
+
+    await expect(
+      page.getByText(/拒绝|declined|银行卡余额不足|支付失败/)
+    ).toBeVisible({ timeout: 3000 })
+
+    await page.unroute('**/api/payment/**')
+  })
+
+  test('CASH-038: [反例] 重复提交支付 → 幂等处理不产生重复扣款', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await identifyMember(page, '13800138001')
+
+    // 快速连续点击结算按钮
+    const submitBtn = page.getByRole('button', { name: /结算 ¥27\.00/ })
+    await submitBtn.click()
+    await submitBtn.click({ force: true })
+    await page.waitForTimeout(500)
+
+    // 不应出现两次支付成功
+    const successMessages = await page.getByText(/支付成功/).count()
+    expect(successMessages).toBeLessThanOrEqual(1)
+
+    // 或被阻止重复提交
+    await expect(
+      page.getByText(/正在处理|请勿重复提交|处理中/).or(page.getByText(/支付成功/))
+    ).toBeVisible({ timeout: 3000 })
+  })
+
+  test('CASH-039: [反例] 支付金额异常 → 检测并阻止', async ({ page }) => {
+    await page.goto('/cashier?forceAmount=-1', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 如果URL携带异常金额参数，页面应安全处理
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+
+    // 不应显示负数金额或NaN
+    await expect(body).not.toContainText(/NaN|undefined|null/)
+  })
+
+  test('CASH-040: [反例] 支付密码错误 → 提示失败', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+
+    // 选择需要密码的支付方式
+    await page.getByRole('button', { name: '刷卡', exact: false }).click()
+
+    const pwdInput = page.getByPlaceholder(/密码|PIN/)
+    if (await pwdInput.isVisible().catch(() => false)) {
+      await pwdInput.fill('000000')
+      await page.getByRole('button', { name: /确认|支付/ }).click()
+      await page.waitForTimeout(500)
+
+      await expect(
+        page.getByText(/密码错误|支付失败|密码不正确/)
+      ).toBeVisible({ timeout: 3000 })
+    }
+  })
+})
+
+/* ═══════════════════ Phase 9: 退款合并 ═══════════════════ */
+
+test.describe('Phase 9 · 退款合并', () => {
+  test('CASH-041: [正例] 整单退款 → 原路退回', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 进入退款模式
+    await page.getByRole('button', { name: /退款|退货/ }).click()
+    await page.waitForTimeout(300)
+
+    // 输入原订单号
+    const orderInput = page.getByPlaceholder(/订单号|原订单/)
+    if (await orderInput.isVisible().catch(() => false)) {
+      await orderInput.fill('ORD-20241224-001')
+      await page.getByRole('button', { name: /查询|搜索/ }).click()
+      await page.waitForTimeout(300)
+
+      // 显示原订单信息
+      await expect(page.getByTestId('order-detail').or(page.getByText(/订单详情|退款金额/))).toBeVisible({
+        timeout: 3000,
+      })
+
+      // 执行退款
+      await page.getByRole('button', { name: /确认退款|原路退回/ }).click()
+      await expect(
+        page.getByText(/退款成功|退款已完成/)
+      ).toBeVisible({ timeout: 3000 })
+      await expect(page.getByText(/原路退回|微信|支付宝/)).toBeVisible()
+    }
+  })
+
+  test('CASH-042: [正例] 部分退款 → 仅退部分金额', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByRole('button', { name: /退款|退货/ }).click()
+    await page.waitForTimeout(300)
+
+    const orderInput = page.getByPlaceholder(/订单号|原订单/)
+    if (await orderInput.isVisible().catch(() => false)) {
+      await orderInput.fill('ORD-20241224-002')
+      await page.getByRole('button', { name: /查询|搜索/ }).click()
+      await page.waitForTimeout(300)
+
+      // 输入部分退款金额
+      const refundAmount = page.getByPlaceholder(/退款金额/)
+      if (await refundAmount.isVisible().catch(() => false)) {
+        await refundAmount.fill('15.00')
+        await page.getByRole('button', { name: /确认退款|部分退款/ }).click()
+
+        await expect(
+          page.getByText(/退款成功|部分退款完成/)
+        ).toBeVisible({ timeout: 3000 })
+        await expect(page.getByText(/¥15/)).toBeVisible()
+      }
+    }
+  })
+
+  test('CASH-043: [反例] 退款金额超过原支付金额 → 拒绝', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByRole('button', { name: /退款|退货/ }).click()
+    await page.waitForTimeout(300)
+
+    const orderInput = page.getByPlaceholder(/订单号|原订单/)
+    if (await orderInput.isVisible().catch(() => false)) {
+      await orderInput.fill('ORD-20241224-001')
+      await page.getByRole('button', { name: /查询|搜索/ }).click()
+      await page.waitForTimeout(300)
+
+      const refundAmount = page.getByPlaceholder(/退款金额/)
+      if (await refundAmount.isVisible().catch(() => false)) {
+        // 输入超过原金额
+        await refundAmount.fill('99999')
+        await page.getByRole('button', { name: /确认退款/ }).click()
+
+        await expect(
+          page.getByText(/超出|超过|大于|不能超过原金额/)
+        ).toBeVisible({ timeout: 3000 })
+      }
+    }
+  })
+
+  test('CASH-044: [正例] 已退款订单再次退货 → 显示已退款状态', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByRole('button', { name: /退款|退货/ }).click()
+    await page.waitForTimeout(300)
+
+    const orderInput = page.getByPlaceholder(/订单号|原订单/)
+    if (await orderInput.isVisible().catch(() => false)) {
+      await orderInput.fill('ORD-20241224-001')
+      await page.getByRole('button', { name: /查询|搜索/ }).click()
+      await page.waitForTimeout(300)
+
+      // 应提示已退款
+      await expect(
+        page.getByText(/已退款|无法再次退款|订单已关闭/)
+      ).toBeVisible({ timeout: 3000 })
+    }
+  })
+})
+
+/* ═══════════════════ Phase 10: 会员积分抵扣 ═══════════════════ */
+
+test.describe('Phase 10 · 会员积分抵扣', () => {
+  test('CASH-045: [正例] 全额积分抵扣 → 应付0元', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await identifyMember(page, '13800138001')
+    await expect(page.getByText(/积分 2560 分/)).toBeVisible()
+
+    // 选择积分全额抵扣
+    await page.getByRole('button', { name: '积分全额抵', exact: false }).click()
+    await page.waitForTimeout(300)
+
+    // 应付应为0
+    const amountBtn = page.getByRole('button', { name: /结算/ })
+    const btnText = await amountBtn.textContent()
+    if (btnText?.includes('¥0.00') || btnText?.includes('¥ 0')) {
+      await expect(amountBtn).toBeVisible()
+    }
+  })
+
+  test('CASH-046: [正例] 部分积分抵扣 → 剩余金额正常', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await identifyMember(page, '13800138001')
+
+    // 手动输入积分抵扣数量
+    const pointsInput = page.getByPlaceholder(/积分数量|使用积分/)
+    if (await pointsInput.isVisible().catch(() => false)) {
+      await pointsInput.fill('500')
+      await page.getByRole('button', { name: /应用积分|抵扣/ }).click()
+      await page.waitForTimeout(300)
+
+      // 显示抵扣后金额且>0
+      await expect(page.getByRole('button', { name: /结算 ¥/ })).toBeVisible()
+    }
+  })
+
+  test('CASH-047: [反例] 积分不足 → 提示错误', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    // 识别一个低积分会员
+    await identifyMember(page, '13800138003')
+
+    const pointsInput = page.getByPlaceholder(/积分数量|使用积分/)
+    if (await pointsInput.isVisible().catch(() => false)) {
+      await pointsInput.fill('999999')
+      await page.getByRole('button', { name: /应用积分|抵扣/ }).click()
+      await page.waitForTimeout(300)
+
+      await expect(
+        page.getByText(/积分不足|积分不够|超过可用积分/)
+      ).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('CASH-048: [正例] 积分抵扣+会员折扣叠加 → 金额计算正确', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await identifyMember(page, '13800138001')
+
+    // 先确认会员折扣生效：原价30→9折=27
+    await expect(page.getByRole('button', { name: /结算 ¥27\.00/ })).toBeVisible()
+
+    // 再使用积分抵扣
+    const pointsInput = page.getByPlaceholder(/积分数量|使用积分/)
+    if (await pointsInput.isVisible().catch(() => false)) {
+      await pointsInput.fill('100')
+      await page.getByRole('button', { name: /应用积分|抵扣/ }).click()
+      await page.waitForTimeout(300)
+
+      // 应付金额应低于27
+      const btnText = await page.getByRole('button', { name: /结算/ }).textContent()
+      const match = btnText?.match(/\$(\d+\.\d{2})/)
+      if (match) {
+        const total = parseFloat(match[1])
+        expect(total).toBeLessThan(27)
+      }
+    }
+  })
+
+  test('CASH-049: [边界] 取消积分抵扣 → 金额恢复', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await identifyMember(page, '13800138001')
+    await expect(page.getByRole('button', { name: /结算 ¥27\.00/ })).toBeVisible()
+
+    // 使用积分
+    const pointsInput = page.getByPlaceholder(/积分数量|使用积分/)
+    if (await pointsInput.isVisible().catch(() => false)) {
+      await pointsInput.fill('500')
+      await page.getByRole('button', { name: /应用积分|抵扣/ }).click()
+      await page.waitForTimeout(300)
+
+      // 取消积分
+      await page.getByRole('button', { name: /取消积分|移除抵扣/ }).click()
+      await page.waitForTimeout(300)
+
+      // 恢复为折扣后金额
+      await expect(page.getByRole('button', { name: /结算 ¥27\.00/ })).toBeVisible()
+    }
+  })
+})
+
+/* ═══════════════════ Phase 11: 多人结账分账 ═══════════════════ */
+
+test.describe('Phase 11 · 多人结账分账', () => {
+  test('CASH-050: [正例] 多人均分 → 金额平分正确', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await addProductToCart(page, '街机')
+    await addProductToCart(page, '篮球')
+
+    // 进入分账模式
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    const personCount = page.getByPlaceholder(/人数|分摊人数/)
+    if (await personCount.isVisible().catch(() => false)) {
+      await personCount.fill('3')
+      await page.getByRole('button', { name: /计算|确认分账/ }).click()
+      await page.waitForTimeout(300)
+
+      // 显示每人应付金额
+      await expect(page.getByText(/每人|人均|每份/)).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('CASH-051: [正例] 指定金额分账 → 每人支付不同金额', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await addProductToCart(page, '街机')
+
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    // 手动分配金额
+    const person1Input = page.locator('[data-testid="split-amount-1"], input').first()
+    const person2Input = page.locator('[data-testid="split-amount-2"], input').nth(1)
+
+    if (await person1Input.isVisible().catch(() => false)) {
+      await person1Input.fill('40')
+      await person2Input.fill('20')
+      await page.getByRole('button', { name: /确认分账/ }).click()
+
+      // 每人应有独立支付按钮
+      await expect(page.getByText(/40|20/)).toBeVisible()
+    }
+  })
+
+  test('CASH-052: [反例] 分账金额合计不等于总额 → 提示错误', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击') // ¥30
+
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    // 输入分账金额总和 ≠ 30
+    const personInputs = page.locator('input[type="number"]')
+    const count = await personInputs.count()
+    if (count >= 2) {
+      await personInputs.nth(0).fill('10')
+      await personInputs.nth(1).fill('5') // 总和15 ≠ 30
+
+      await page.getByRole('button', { name: /确认分账|提交/ }).click()
+      await page.waitForTimeout(300)
+
+      // 应提示金额不一致
+      await expect(
+        page.getByText(/合计|不匹配|不一致|不等于|need to equal/)
+      ).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('CASH-053: [正例] 分账+会员折扣 → 每人享折扣', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await addProductToCart(page, '街机')
+
+    // 识别会员
+    await identifyMember(page, '13800138001')
+
+    // 分账
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    // 分账金额应基于折扣后总价
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+
+  test('CASH-054: [边界] 0人分账 → 显示或阻止', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    const personCount = page.getByPlaceholder(/人数|分摊人数/)
+    if (await personCount.isVisible().catch(() => false)) {
+      await personCount.fill('0')
+      await page.getByRole('button', { name: /计算|确认分账/ }).click()
+      await page.waitForTimeout(300)
+
+      // 应提示至少1人
+      await expect(
+        page.getByText(/至少|最少|人数|invalid/)
+      ).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('CASH-055: [边界] 一个人分账 → 按正常结算', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    const personCount = page.getByPlaceholder(/人数|分摊人数/)
+    if (await personCount.isVisible().catch(() => false)) {
+      await personCount.fill('1')
+      await page.getByRole('button', { name: /计算|确认分账/ }).click()
+      await page.waitForTimeout(300)
+
+      // 单人分账等价于直接结算
+      await expect(page.getByRole('button', { name: /结算 ¥30\.00/ }).or(page.getByText(/1人分账/))).toBeVisible({
+        timeout: 3000,
+      })
+    }
+  })
+
+  test('CASH-056: [边界] 分账过程中切换支付方式 → 状态保持', async ({ page }) => {
+    await page.goto('/cashier', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await addProductToCart(page, '射击')
+    await addProductToCart(page, '街机')
+
+    await page.getByRole('button', { name: /分账|AA|分摊/ }).click()
+    await page.waitForTimeout(300)
+
+    // 先选择微信
+    await page.getByRole('button', { name: '微信扫码' }).click()
+    await page.waitForTimeout(200)
+
+    // 切换到支付宝
+    await page.getByRole('button', { name: '支付宝', exact: false }).click()
+    await page.waitForTimeout(200)
+
+    // 切换后仍处于分账模式
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})

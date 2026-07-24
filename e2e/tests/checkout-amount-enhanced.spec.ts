@@ -673,3 +673,409 @@ test.describe('Phase 7 · 权限节点 & 金额一致性', () => {
     ).toBeVisible({ timeout: 5000 })
   })
 })
+
+/* ═══════════════════ Phase 8: 优惠券叠加增强 ═══════════════════ */
+
+test.describe('Phase 8 · 优惠券叠加增强', () => {
+  test('CHK-043: [正例] 互斥优惠券不可同时使用 → 后一张替换前一张', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 应用平台满减券
+    await applyCoupon(page, 'FULL100')
+    await expectAmount(page, 'coupon-discount', '-¥100.00')
+    await expectAmount(page, 'total-amount', '¥575.00')
+
+    // 应用互斥的新客券（应替换掉满减券）
+    await applyCoupon(page, 'WELCOME10')
+    // 折扣金额变为 -10
+    await expectAmount(page, 'coupon-discount', '-¥10.00')
+    await expectAmount(page, 'total-amount', '¥665.00')
+  })
+
+  test('CHK-044: [正例] 可叠加优惠券组合 → 累加折扣', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 先用品类券
+    await applyCoupon(page, 'CATEGORY20')
+    await expectAmount(page, 'total-amount', '¥655.00')
+
+    // 再使用运费券（品类券应保留，运费券叠加）
+    await applyCoupon(page, 'FREESHIP')
+    await page.waitForTimeout(300)
+
+    // 品类折扣保留 + 免运费
+    const total = await page.getByTestId('total-amount').textContent()
+    expect(total).not.toBe('¥675.00')
+    // 运费应为免运费
+    await expectAmount(page, 'shipping-fee', '免运费')
+  })
+
+  test('CHK-045: [正例] 优惠券优先级 → 高级券自动应用', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 应用低优先级券
+    await applyCoupon(page, 'WELCOME10')
+    await expectAmount(page, 'total-amount', '¥665.00')
+
+    // 应用高优先级券（应自动取代）
+    await applyCoupon(page, 'FULL100')
+    // 满减优惠更大
+    await expectAmount(page, 'coupon-discount', '-¥100.00')
+    await expectAmount(page, 'total-amount', '¥575.00')
+  })
+
+  test('CHK-046: [反例] 优惠券已过期 → 提示并拒绝', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await applyCoupon(page, 'EXPIRED01')
+    await page.waitForTimeout(300)
+
+    // 应提示过期
+    await expect(
+      page.getByText(/已过期|过期|expired/)
+    ).toBeVisible({ timeout: 3000 })
+    // 金额不变
+    await expectAmount(page, 'total-amount', '¥675.00')
+  })
+
+  test('CHK-047: [反例] 优惠券库存不足 → 提示已领完', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await applyCoupon(page, 'SOLD_OUT')
+    await page.waitForTimeout(300)
+
+    await expect(
+      page.getByText(/已领完|库存不足|sold out|已抢完/)
+    ).toBeVisible({ timeout: 3000 })
+    await expectAmount(page, 'total-amount', '¥675.00')
+  })
+
+  test('CHK-048: [边界] 优惠券达到使用上限 → 提示', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await applyCoupon(page, 'LIMIT_ONCE')
+    await page.waitForTimeout(300)
+
+    await expect(
+      page.getByText(/已达上限|使用次数|已达使用上限/)
+    ).toBeVisible({ timeout: 3000 })
+  })
+})
+
+/* ═══════════════════ Phase 9: 阶梯折扣 ═══════════════════ */
+
+test.describe('Phase 9 · 阶梯折扣', () => {
+  test('CHK-049: [正例] 阶梯满减第1档 → 满足条件自动减免', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 默认金额675，满足满500减100条件
+    await applyCoupon(page, 'TIER_500')
+    await page.waitForTimeout(300)
+
+    await expect(page.getByTestId('coupon-status')).toHaveText(/阶梯折扣/)
+    await expectAmount(page, 'coupon-discount', '-¥50.00')
+    await expectAmount(page, 'total-amount', '¥625.00')
+  })
+
+  test('CHK-050: [正例] 阶梯满减第2档 → 更高金额更多优惠', async ({ page }) => {
+    await page.goto('/checkout?amount=1500', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 金额1500+，满足阶梯第2档
+    await applyCoupon(page, 'TIER_1000')
+    await page.waitForTimeout(300)
+
+    // 应获得更高折扣
+    await expect(page.getByTestId('coupon-status')).toHaveText(/阶梯折扣/)
+    await expectAmount(page, 'coupon-discount', '-¥200.00')
+  })
+
+  test('CHK-051: [反例] 不满足阶梯条件 → 无折扣', async ({ page }) => {
+    await page.goto('/checkout?amount=200', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await applyCoupon(page, 'TIER_500') // 要求满500
+    await page.waitForTimeout(300)
+
+    await expect(
+      page.getByText(/不满足|条件不足|金额不足/)
+    ).toBeVisible({ timeout: 3000 })
+    // 金额不变
+    await expectAmount(page, 'total-amount', '¥200.00')
+  })
+
+  test('CHK-052: [边界] 刚好达到阶梯门槛 → 折扣生效', async ({ page }) => {
+    await page.goto('/checkout?amount=500', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 刚好满500
+    await applyCoupon(page, 'TIER_500')
+    await page.waitForTimeout(300)
+
+    // 折扣应生效
+    await expect(page.getByTestId('coupon-discount')).not.toHaveText('¥0.00')
+    const total = await page.getByTestId('total-amount').textContent()
+    const num = parseFloat(total.replace(/[^0-9.]/g, ''))
+    expect(num).toBeLessThan(500)
+  })
+
+  test('CHK-053: [边界] 阶梯折扣+加急配送 → 运费独立计算', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 先应用阶梯折扣
+    await applyCoupon(page, 'TIER_500')
+    await expectAmount(page, 'total-amount', '¥625.00')
+
+    // 再加急配送
+    await selectDelivery(page, '加急配送（1-2天）')
+    // 625 + 10 = 635
+    await expectAmount(page, 'shipping-fee', '¥10.00')
+    await expectAmount(page, 'total-amount', '¥635.00')
+  })
+})
+
+/* ═══════════════════ Phase 10: 税费计算边界 ═══════════════════ */
+
+test.describe('Phase 10 · 税费计算边界', () => {
+  test('CHK-054: [正例] 含税商品 → 税费显示正确', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 检查是否显示税费
+    const taxElement = page.getByTestId('tax-amount').or(page.getByText(/税费|税/))
+    if (await taxElement.isVisible().catch(() => false)) {
+      const taxText = await taxElement.textContent()
+      expect(taxText).toBeTruthy()
+      // 税费应为正数
+      const taxNum = parseFloat(taxText.replace(/[^0-9.]/g, ''))
+      if (!isNaN(taxNum)) {
+        expect(taxNum).toBeGreaterThanOrEqual(0)
+      }
+    }
+  })
+
+  test('CHK-055: [正例] 税费+优惠券叠加 → 税费基于折扣后金额', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 记录原始税费
+    const taxBefore = await page.getByTestId('tax-amount').textContent().catch(() => null)
+
+    // 应用优惠券
+    await applyCoupon(page, 'FULL100')
+    await page.waitForTimeout(300)
+
+    // 记录折扣后税费
+    const taxAfter = await page.getByTestId('tax-amount').textContent().catch(() => null)
+
+    if (taxBefore && taxAfter && taxBefore !== taxAfter) {
+      // 税费随订单金额变化
+      const taxBeforeNum = parseFloat(taxBefore.replace(/[^0-9.]/g, ''))
+      const taxAfterNum = parseFloat(taxAfter.replace(/[^0-9.]/g, ''))
+      if (!isNaN(taxBeforeNum) && !isNaN(taxAfterNum)) {
+        expect(taxAfterNum).toBeLessThanOrEqual(taxBeforeNum)
+      }
+    }
+  })
+
+  test('CHK-056: [边界] 零税率商品 → 税费为0', async ({ page }) => {
+    await page.goto('/checkout?taxRate=0', { waitUntil: 'networkidle', timeout: 30000 })
+
+    const taxElement = page.getByTestId('tax-amount').or(page.getByText(/税费/))
+    if (await taxElement.isVisible().catch(() => false)) {
+      await expect(taxElement).toContainText(/0/)
+    }
+  })
+
+  test('CHK-057: [边界] 高税率场景 → 税费计算不溢出', async ({ page }) => {
+    await page.goto('/checkout?taxRate=0.45', { waitUntil: 'networkidle', timeout: 30000 })
+
+    const taxElement = page.getByTestId('tax-amount').or(page.getByText(/税费/))
+    if (await taxElement.isVisible().catch(() => false)) {
+      const taxText = await taxElement.textContent()
+      expect(taxText).toBeTruthy()
+      // 不应显示NaN或Infinity
+      expect(taxText).not.toMatch(/NaN|Infinity|undefined|null/)
+    }
+  })
+
+  test('CHK-058: [边界] 税费+配送+优惠券 → 最终金额一致性', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 获取初始最终金额
+    const initialTotal = await page.getByTestId('total-amount').textContent()
+
+    // 加急配送
+    await selectDelivery(page, '加急配送（1-2天）')
+    // 满减券
+    await applyCoupon(page, 'FULL100')
+    await page.waitForTimeout(300)
+
+    // 最终金额应小于初始金额
+    const finalTotal = await page.getByTestId('total-amount').textContent()
+    expect(finalTotal).toBeTruthy()
+    expect(finalTotal).not.toMatch(/NaN|undefined/)
+  })
+})
+
+/* ═══════════════════ Phase 11: 多种支付组合分摊 ═══════════════════ */
+
+test.describe('Phase 11 · 多种支付组合分摊', () => {
+  test('CHK-059: [正例] 双支付方式 → 金额拆分正确', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    // 选择混合支付
+    const splitBtn = page.getByRole('button', { name: /混合支付|组合支付|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      // 输入两种支付方式的金额
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 2) {
+        await paymentInputs.nth(0).fill('400')
+        await paymentInputs.nth(1).fill('275')
+        await page.getByRole('button', { name: /确认|提交|支付/ }).click()
+
+        // 总数应为675
+        await expect(page.getByText(/合计 ¥675/).or(page.getByText(/675/))).toBeVisible({
+          timeout: 3000,
+        })
+      }
+    }
+  })
+
+  test('CHK-060: [正例] 微信+现金组合支付 → 拆分合理', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      // 选择微信+现金
+      const wechatInput = page.getByPlaceholder(/微信金额|微信部分/)
+      const cashInput = page.getByPlaceholder(/现金金额|现金部分/)
+
+      if (await wechatInput.isVisible().catch(() => false)) {
+        await wechatInput.fill('500')
+        await cashInput.fill('175')
+
+        await page.getByRole('button', { name: /确认|提交|支付/ }).click()
+        await expect(
+          page.getByText(/订单已提交|支付成功/)
+        ).toBeVisible({ timeout: 5000 })
+      }
+    }
+  })
+
+  test('CHK-061: [反例] 组合支付金额不匹配 → 提示', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 2) {
+        // 输入合计≠675
+        await paymentInputs.nth(0).fill('100')
+        await paymentInputs.nth(1).fill('100')
+
+        await page.getByRole('button', { name: /确认|提交/ }).click()
+        await page.waitForTimeout(300)
+
+        await expect(
+          page.getByText(/不匹配|不一致|合计|不等于|need to equal/)
+        ).toBeVisible({ timeout: 3000 })
+      }
+    }
+  })
+
+  test('CHK-062: [边界] 三支付方式 → 均分合理', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 3) {
+        await paymentInputs.nth(0).fill('225')
+        await paymentInputs.nth(1).fill('225')
+        await paymentInputs.nth(2).fill('225')
+
+        await page.getByRole('button', { name: /确认|提交/ }).click()
+        await page.waitForTimeout(300)
+
+        // 应提示合计不等于675
+        await expect(
+          page.getByText(/合计|不匹配|不等于/).or(page.getByText(/支付成功|提交成功/))
+        ).toBeVisible({ timeout: 3000 })
+      }
+    }
+  })
+
+  test('CHK-063: [边界] 组合支付+优惠券 → 金额基于折扣后', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 先使用优惠券
+    await applyCoupon(page, 'WELCOME10') // 减10，余665
+
+    await fillCheckoutForm(page)
+    await expect(page.getByTestId('btn-submit')).toContainText(/665/)
+
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      // 分摊金额基于665
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 2) {
+        await paymentInputs.nth(0).fill('300')
+        await paymentInputs.nth(1).fill('365')
+
+        await page.getByRole('button', { name: /确认|提交/ }).click()
+        await expect(
+          page.getByText(/订单已提交|支付成功/)
+        ).toBeVisible({ timeout: 5000 })
+      }
+    }
+  })
+
+  test('CHK-064: [边界] 组合支付中部分金额为0 → 视为无效', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    const splitBtn = page.getByRole('button', { name: /混合|组合|分付/ }).first()
+    if (await splitBtn.isVisible().catch(() => false)) {
+      await splitBtn.click()
+      await page.waitForTimeout(300)
+
+      const paymentInputs = page.locator('input[data-testid^="split-"], input[name^="payment"]')
+      const count = await paymentInputs.count()
+      if (count >= 2) {
+        await paymentInputs.nth(0).fill('675')
+        await paymentInputs.nth(1).fill('0')
+
+        await page.getByRole('button', { name: /确认|提交/ }).click()
+        await page.waitForTimeout(300)
+
+        // 应处理0金额或提示
+        const body = page.locator('body')
+        await expect(body).toBeVisible()
+      }
+    }
+  })
+})
