@@ -11,6 +11,11 @@ const SOURCE = resolve(__dirname, 'page.tsx');
 const SRC = readFileSync(SOURCE, 'utf-8');
 
 describe('capability — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+
   it('应导出 CapabilityAccessPage', () => assert.ok(SRC.includes('export default function CapabilityAccessPage')));
   it('应包含权限管理标题', () => assert.ok(SRC.includes('权限管理')));
   it('应包含角色数据', () => assert.ok(SRC.includes('ROLE_DATA') || SRC.includes('role')));

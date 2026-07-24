@@ -83,6 +83,13 @@ describe.skip('capability-access: 页面渲染', () => {
   });
 });
 
+describe('capability-access: 权限边界', () => {
+  it('源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+});
+
 describe.skip('capability-access: 数据类型', () => {
   it('RoleData has all fields', () => {
     const r: RoleData = { id: 'R-99', name: '测试', users: 1, permissions: '全部', desc: '测试', scope: '全局', status: 'active' };

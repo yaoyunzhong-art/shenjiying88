@@ -18,6 +18,12 @@ function readSource(): string {
 // ---- 正例 ----
 
 describe('analytics — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes("requiredPermission: 'store:read'"), '应复用 store:read 权限');
+  });
+
   it('应导出一个默认组件 AnalyticsPage', () => {
     const src = readSource();
     assert.ok(src.includes('export default function AnalyticsPage'), '缺少默认导出组件');
