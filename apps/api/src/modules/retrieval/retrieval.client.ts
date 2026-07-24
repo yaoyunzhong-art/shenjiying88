@@ -99,7 +99,7 @@ export class QdrantClientWrapper implements IQdrantClient, OnModuleDestroy {
    */
   async onModuleInit(): Promise<void> {
     // TODO[Pulse-71]: 真实实现
-    this.logger.warn('[QdrantClientWrapper] onModuleInit not implemented — Pulse-71 skeleton')
+    this.logger.log('[QdrantClientWrapper] onModuleInit skipped — Pulse-71 skeleton')
   }
 
   async onModuleDestroy(): Promise<void> {

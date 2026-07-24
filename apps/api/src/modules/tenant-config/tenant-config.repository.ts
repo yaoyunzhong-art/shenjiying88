@@ -54,7 +54,7 @@ export class TenantConfigRepository {
       return rows.map(this.rowToInstance)
     } catch (err) {
       if (this.shouldUsePersistenceFallback(err)) {
-        this.logger.log(`[loadAllInstances] skipped persistence preload: ${(err as Error).message}`)
+        this.logger.log(`[loadAllInstances] skipped persistence preload: ${this.describePersistenceFallback(err)}`)
         return []
       }
       this.logger.error(`[loadAllInstances] failed: ${(err as Error).message}`)
@@ -166,7 +166,7 @@ export class TenantConfigRepository {
       return rows.map(this.rowToAuditLog)
     } catch (err) {
       if (this.shouldUsePersistenceFallback(err)) {
-        this.logger.warn(`[loadAuditLogs] skipped DB audit read for tenant=${tenantId}: ${(err as Error).message}`)
+        this.logger.warn(`[loadAuditLogs] skipped DB audit read for tenant=${tenantId}: ${this.describePersistenceFallback(err)}`)
         return []
       }
       this.logger.error(`[loadAuditLogs] failed for tenant=${tenantId}: ${(err as Error).message}`)
@@ -188,7 +188,7 @@ export class TenantConfigRepository {
       return rows.map(this.rowToAuditLog)
     } catch (err) {
       if (this.shouldUsePersistenceFallback(err)) {
-        this.logger.warn(`[findAuditByConfigId] skipped DB audit read for ${configId}: ${(err as Error).message}`)
+        this.logger.warn(`[findAuditByConfigId] skipped DB audit read for ${configId}: ${this.describePersistenceFallback(err)}`)
         return []
       }
       this.logger.error(`[findAuditByConfigId] failed for ${configId}: ${(err as Error).message}`)
@@ -202,6 +202,27 @@ export class TenantConfigRepository {
         ? (error as { code?: unknown }).code
         : undefined
     return code === 'P2021' || code === 'P1010' || code === 'P1001'
+  }
+
+  private describePersistenceFallback(error: unknown): string {
+    const code =
+      typeof error === 'object' && error && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined
+    const message =
+      typeof error === 'object' && error && 'message' in error
+        ? (error as { message?: unknown }).message
+        : undefined
+
+    if (typeof message === 'string' && message.trim().length > 0) {
+      const tableMessage = message.match(/The table `[^`]+` does not exist in the current database\./)?.[0]
+      if (tableMessage) return tableMessage
+      return message.replace(/\s+/g, ' ').trim()
+    }
+    if (typeof code === 'string' && code.length > 0) {
+      return `Prisma persistence unavailable (${code})`
+    }
+    return 'Prisma persistence unavailable'
   }
 
   // ============ Row → Entity Mappers ============

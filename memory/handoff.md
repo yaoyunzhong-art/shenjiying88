@@ -382,3 +382,39 @@
   - 本地开发场景下缺表提示已从 `warn` 收敛为普通 `log`
 - 结论：
   - 当前 dev runtime 口径已从“编译阻塞 + foundation 500”推进到“可启动、可出文档、foundation 三连全绿、剩余缺表仅降级提示”
+
+### Retrieval skeleton 启动噪音已收敛
+
+- `apps/api/src/modules/retrieval/retrieval.client.ts`
+  - `QdrantClientWrapper.onModuleInit()` 的骨架提示已从 `warn` 收敛为普通 `log`
+  - 当前口径为：`[QdrantClientWrapper] onModuleInit skipped — Pulse-71 skeleton`
+- `apps/api/src/modules/retrieval/retrieval.embedder.ts`
+  - `EmbeddingService.onModuleInit()` 的骨架提示已从 `warn` 收敛为普通 `log`
+  - 当前口径为：`[EmbeddingService] onModuleInit skipped — Pulse-71 skeleton`
+- fresh runtime 运行态已复验：
+  - 端口：`3123`
+  - 日志中可见：
+    - `LOG [QdrantClientWrapper] [QdrantClientWrapper] onModuleInit skipped — Pulse-71 skeleton`
+    - `LOG [EmbeddingService] [EmbeddingService] onModuleInit skipped — Pulse-71 skeleton`
+    - `INFO: m5-api started`
+- 结论：
+  - retrieval 模块当前仍明确处于 Pulse-71 skeleton 阶段
+  - 但“预期未实现”已不再作为异常级别噪音污染本地 dev 启动日志
+
+### 缺表降级日志文案已最终收口
+
+- `apps/api/src/modules/tenant-config/tenant-config.repository.ts`
+  - `describePersistenceFallback()` 已优先提取 Prisma 的表不存在单句
+  - 若无该单句，则把原始 message 压平成单行，避免 `loadAllInstances` 冒号后看似空白
+- `apps/api/src/modules/saas-advanced/domain-resolution.service.ts`
+  - `describePersistenceFallback()` 已同步采用同一单行摘要口径
+  - `load custom domains skipped` 不再被多行 Prisma 文本冲散
+- fresh runtime 运行态已复验：
+  - 端口：`3125`
+  - 日志中可见：
+    - `LOG [TenantConfigRepository] [loadAllInstances] skipped persistence preload: The table "public.ConfigInstance" does not exist in the current database.`
+    - `LOG [DomainResolutionService] load custom domains skipped: The table "public.CustomDomain" does not exist in the current database.`
+    - `INFO: m5-api started`
+- 结论：
+  - 当前 dev runtime 已无“冒号后空白”的降级日志尾巴
+  - `ConfigInstance` 与 `CustomDomain` 缺表提示都已稳定为单行、可读、可检索摘要
