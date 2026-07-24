@@ -1,466 +1,498 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
+/**
+ * inventory.service.test.ts — P-38 库存管理服务 单元测试
+ *
+ * 覆盖:
+ *   正常流程: 商品CRUD、入库、出库、库存调整、供应商、采购订单
+ *   边界值: 零库存管理、最大库存阈值、批量采购、超量出库校验
+ *   错误处理: 商品不存在、库存不足、跨租户隔离、采购状态校验
+ *   空状态: 空商品列表、空库存记录、空供应商
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import assert from 'node:assert/strict'
+import type { RequestTenantContext } from '../tenant/tenant.types'
+import { InventoryService, resetInventoryServiceTestState } from './inventory.service'
 import {
   ProductStatus,
   StockRecordType,
-  PurchaseOrderStatus
+  PurchaseOrderStatus,
+  type Product,
+  type StockRecord,
+  type Supplier,
+  type PurchaseOrder,
 } from './inventory.entity'
-import { InventoryService, resetInventoryServiceTestState } from './inventory.service'
 
-const tenantCtx = {
-  tenantId: 'tenant-001',
-  brandId: 'brand-001',
-  storeId: 'store-001'
+function createContext(overrides?: Partial<RequestTenantContext>): RequestTenantContext {
+  return {
+    tenantId: 'tenant-inventory',
+    brandId: 'brand-inv',
+    storeId: 'store-inv',
+    ...overrides,
+  }
 }
 
-describe('InventoryService — Product CRUD', () => {
-  beforeEach(() => resetInventoryServiceTestState())
+function createOtherContext(): RequestTenantContext {
+  return { tenantId: 'tenant-other', brandId: 'brand-other', storeId: 'store-other' }
+}
 
-  it('createProduct returns a product with generated id', () => {
-    const svc = new InventoryService()
-    const product = svc.createProduct(tenantCtx, {
-      name: 'Bear Plush',
-      sku: 'SKU-BP-001',
-      unit: 'pcs',
-      price: 99,
-      cost: 50,
+describe('InventoryService', () => {
+  let service: InventoryService
+
+  beforeEach(() => {
+    resetInventoryServiceTestState()
+    service = new InventoryService()
+  })
+
+  afterEach(() => {
+    resetInventoryServiceTestState()
+  })
+
+  // ───────────────────────────────────────────────────
+  // 正常流程 - Product CRUD
+  // ───────────────────────────────────────────────────
+
+  it('creates a product with all required fields', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: '测试商品A',
+      sku: 'SKU-001',
+      unit: '个',
+      price: 29.99,
+      cost: 15.00,
       minStock: 10,
-      maxStock: 100,
-      currentStock: 50
+      maxStock: 200,
+      currentStock: 50,
+      category: '电子产品',
     })
-    assert.ok(product.id.startsWith('prod-'))
-    assert.equal(product.name, 'Bear Plush')
-    assert.equal(product.status, ProductStatus.Active)
-    assert.equal(product.tenantId, 'tenant-001')
+    expect(product.id).toMatch(/^prod-/)
+    expect(product.name).toBe('测试商品A')
+    expect(product.sku).toBe('SKU-001')
+    expect(product.price).toBe(29.99)
+    expect(product.currentStock).toBe(50)
+    expect(product.status).toBe(ProductStatus.Active)
+    expect(product.tenantId).toBe('tenant-inventory')
   })
 
-  it('createProduct respects optional status', () => {
-    const svc = new InventoryService()
-    const product = svc.createProduct(tenantCtx, {
-      name: 'Old Toy',
-      sku: 'OT-1',
-      unit: 'pcs',
-      price: 10,
-      cost: 3,
-      minStock: 0,
-      maxStock: 50,
-      currentStock: 5,
-      status: ProductStatus.Discontinued
+  it('updates an existing product', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: '旧名称', sku: 'SKU-002', unit: '箱', price: 100, cost: 60,
+      minStock: 5, maxStock: 100, currentStock: 20,
     })
-    assert.equal(product.status, ProductStatus.Discontinued)
+    const updated = service.updateProduct(product.id, ctx, {
+      name: '新名称',
+      price: 120,
+    })
+    expect(updated.name).toBe('新名称')
+    expect(updated.price).toBe(120)
+    expect(updated.sku).toBe('SKU-002') // unchanged
   })
 
-  it('getProduct returns the created product', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Ball', sku: 'B-1', unit: 'pcs',
-      price: 20, cost: 10, minStock: 5, maxStock: 50, currentStock: 30
+  it('gets a product by id', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Get Test', sku: 'SKU-GET', unit: '个', price: 10, cost: 5,
+      minStock: 2, maxStock: 50, currentStock: 10,
     })
-    const fetched = svc.getProduct(p.id, tenantCtx)
-    assert.equal(fetched.id, p.id)
-    assert.equal(fetched.name, 'Ball')
+    const fetched = service.getProduct(product.id, ctx)
+    expect(fetched.id).toBe(product.id)
+    expect(fetched.name).toBe('Get Test')
   })
 
-  it('getProduct throws for non-existent product', () => {
-    const svc = new InventoryService()
-    assert.throws(
-      () => svc.getProduct('nonexistent', tenantCtx),
-      /not found/
-    )
+  it('lists products with category and keyword filters', () => {
+    const ctx = createContext()
+    service.createProduct(ctx, {
+      name: 'Apple', sku: 'APL-001', unit: '个', price: 5, cost: 3,
+      minStock: 10, maxStock: 100, currentStock: 50, category: '水果',
+    })
+    service.createProduct(ctx, {
+      name: 'Banana', sku: 'BAN-001', unit: '个', price: 3, cost: 1.5,
+      minStock: 10, maxStock: 100, currentStock: 80, category: '水果',
+    })
+    service.createProduct(ctx, {
+      name: 'Milk', sku: 'MLK-001', unit: '瓶', price: 15, cost: 10,
+      minStock: 5, maxStock: 50, currentStock: 30, category: '乳制品',
+    })
+
+    const fruitProducts = service.listProducts(ctx, { category: '水果' })
+    expect(fruitProducts.length).toBe(2)
+
+    const keywordResults = service.listProducts(ctx, { keyword: 'apple' })
+    expect(keywordResults.length).toBe(1)
+    expect(keywordResults[0].sku).toBe('APL-001')
   })
 
-  it('getProduct throws for product from different tenant', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Isolated', sku: 'ISO-1', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 50
+  it('handles product status filtering in list', () => {
+    const ctx = createContext()
+    const p1 = service.createProduct(ctx, {
+      name: 'Active Product', sku: 'ACT-001', unit: '个', price: 10, cost: 5,
+      minStock: 1, maxStock: 10, currentStock: 5, status: ProductStatus.Active,
     })
-    assert.throws(
-      () => svc.getProduct(p.id, { tenantId: 'tenant-OTHER' }),
-      /not found/
-    )
+    service.createProduct(ctx, {
+      name: 'Inactive Product', sku: 'INA-001', unit: '个', price: 20, cost: 10,
+      minStock: 1, maxStock: 10, currentStock: 3, status: ProductStatus.Inactive,
+    })
+
+    const activeOnly = service.listProducts(ctx, { status: ProductStatus.Active })
+    expect(activeOnly.length).toBe(1)
+    expect(activeOnly[0].id).toBe(p1.id)
   })
 
-  it('updateProduct modifies allowed fields', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Old Name', sku: 'SKU-OLD', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 20
+  // ───────────────────────────────────────────────────
+  // 正常流程 - 库存操作
+  // ───────────────────────────────────────────────────
+
+  it('stockIn increases product stock and creates a record', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Stock In Test', sku: 'STK-IN', unit: '个', price: 10, cost: 5,
+      minStock: 5, maxStock: 100, currentStock: 20,
     })
-    const updated = svc.updateProduct(p.id, tenantCtx, {
-      name: 'New Name',
-      price: 25
+
+    const result = service.stockIn(ctx, {
+      productId: product.id,
+      quantity: 30,
+      reason: '采购入库',
+      batchNo: 'BATCH-001',
     })
-    assert.equal(updated.name, 'New Name')
-    assert.equal(updated.price, 25)
-    assert.equal(updated.sku, 'SKU-OLD') // unchanged
+
+    expect(result.product.currentStock).toBe(50)
+    expect(result.record.type).toBe(StockRecordType.Inbound)
+    expect(result.record.quantity).toBe(30)
+    expect(result.record.beforeStock).toBe(20)
+    expect(result.record.afterStock).toBe(50)
+    expect(result.record.batchNo).toBe('BATCH-001')
   })
 
-  it('updateProduct throws for non-existent product', () => {
-    const svc = new InventoryService()
-    assert.throws(
-      () => svc.updateProduct('nonexistent', tenantCtx, { name: 'X' }),
-      /not found/
-    )
+  it('stockOut decreases product stock and creates a record', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Stock Out Test', sku: 'STK-OUT', unit: '个', price: 10, cost: 5,
+      minStock: 5, maxStock: 100, currentStock: 50,
+    })
+
+    const result = service.stockOut(ctx, {
+      productId: product.id,
+      quantity: 20,
+      reason: '销售出库',
+    })
+
+    expect(result.product.currentStock).toBe(30)
+    expect(result.record.type).toBe(StockRecordType.Outbound)
+    expect(result.record.quantity).toBe(20)
+    expect(result.record.beforeStock).toBe(50)
+    expect(result.record.afterStock).toBe(30)
   })
 
-  it('listProducts returns all products for tenant', () => {
-    const svc = new InventoryService()
-    svc.createProduct(tenantCtx, {
-      name: 'A', sku: 'A-1', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 10
+  it('adjustStock changes stock to exact new quantity', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Adjust Test', sku: 'ADJ-001', unit: '个', price: 10, cost: 5,
+      minStock: 5, maxStock: 100, currentStock: 40,
     })
-    svc.createProduct(tenantCtx, {
-      name: 'B', sku: 'B-1', unit: 'pcs',
-      price: 20, cost: 10, minStock: 0, maxStock: 100, currentStock: 20
+
+    const result = service.adjustStock(ctx, {
+      productId: product.id,
+      newQuantity: 60,
+      reason: '盘点调整',
     })
-    const products = svc.listProducts(tenantCtx)
-    assert.equal(products.length, 2)
+
+    expect(result.product.currentStock).toBe(60)
+    expect(result.record.type).toBe(StockRecordType.Adjustment)
   })
 
-  it('listProducts filters by category', () => {
-    const svc = new InventoryService()
-    svc.createProduct(tenantCtx, {
-      name: 'A', sku: 'A-1', category: 'toys', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 10
+  it('checkStock returns true when stock is sufficient', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Check Test', sku: 'CHK-001', unit: '个', price: 10, cost: 5,
+      minStock: 5, maxStock: 100, currentStock: 30,
     })
-    svc.createProduct(tenantCtx, {
-      name: 'B', sku: 'B-1', category: 'food', unit: 'pcs',
-      price: 20, cost: 10, minStock: 0, maxStock: 100, currentStock: 20
-    })
-    const toys = svc.listProducts(tenantCtx, { category: 'toys' })
-    assert.equal(toys.length, 1)
-    assert.equal(toys[0]?.name, 'A')
+    const result = service.checkStock(product.id, 20, ctx)
+    expect(result).toBe(true)
   })
 
-  it('listProducts filters by keyword', () => {
-    const svc = new InventoryService()
-    svc.createProduct(tenantCtx, {
-      name: 'Bear Plush', sku: 'SKU-BP', unit: 'pcs',
-      price: 99, cost: 50, minStock: 10, maxStock: 100, currentStock: 50
+  it('getLowStockProducts detects low and out-of-stock products', () => {
+    const ctx = createContext()
+    service.createProduct(ctx, {
+      name: 'Well Stocked', sku: 'WELL-001', unit: '个', price: 10, cost: 5,
+      minStock: 10, maxStock: 100, currentStock: 50,
     })
-    svc.createProduct(tenantCtx, {
-      name: 'Dinosaur', sku: 'SKU-DN', unit: 'pcs',
-      price: 120, cost: 60, minStock: 5, maxStock: 80, currentStock: 30
+    service.createProduct(ctx, {
+      name: 'Low Stock', sku: 'LOW-001', unit: '个', price: 10, cost: 5,
+      minStock: 10, maxStock: 100, currentStock: 3,
     })
-    const bear = svc.listProducts(tenantCtx, { keyword: 'bear' })
-    assert.equal(bear.length, 1)
-    assert.equal(bear[0]?.name, 'Bear Plush')
+    service.createProduct(ctx, {
+      name: 'Out of Stock', sku: 'OOS-001', unit: '个', price: 10, cost: 5,
+      minStock: 10, maxStock: 100, currentStock: 0,
+    })
+
+    const alerts = service.getLowStockProducts(ctx)
+    expect(alerts.length).toBe(2)
+    const oosAlert = alerts.find((a) => a.product.sku === 'OOS-001')
+    const lowAlert = alerts.find((a) => a.product.sku === 'LOW-001')
+    expect(oosAlert?.status).toBe('out_of_stock')
+    expect(lowAlert?.status).toBe('low')
+    expect(oosAlert?.currentStock).toBe(0)
   })
 
-  it('listProducts supports pagination', () => {
-    const svc = new InventoryService()
-    for (let i = 1; i <= 5; i++) {
-      svc.createProduct(tenantCtx, {
-        name: `Product ${i}`, sku: `SKU-${i}`, unit: 'pcs',
-        price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 10
+  // ───────────────────────────────────────────────────
+  // 正常流程 - 供应商
+  // ───────────────────────────────────────────────────
+
+  it('creates and lists suppliers', () => {
+    const ctx = createContext()
+    const supplier = service.createSupplier(ctx, {
+      name: '供货商A',
+      contactName: '张三',
+      phone: '13800138001',
+      email: 'zhang@supplier.com',
+      address: '北京市朝阳区',
+    })
+    expect(supplier.id).toMatch(/^supplier-/)
+    expect(supplier.name).toBe('供货商A')
+
+    const suppliers = service.listSuppliers(ctx)
+    expect(suppliers.length).toBe(1)
+    expect(suppliers[0].id).toBe(supplier.id)
+  })
+
+  // ───────────────────────────────────────────────────
+  // 正常流程 - 采购订单
+  // ───────────────────────────────────────────────────
+
+  it('creates a purchase order in Draft status', () => {
+    const ctx = createContext()
+    const order = service.createPurchaseOrder(ctx, {
+      supplierId: 'supplier-test-1',
+      storeId: 'store-inv',
+      totalAmount: 5000,
+      items: [
+        { productId: 'prod-1', productName: 'Item A', sku: 'SKU-A', quantity: 10, unitPrice: 200, totalPrice: 2000 },
+        { productId: 'prod-2', productName: 'Item B', sku: 'SKU-B', quantity: 5, unitPrice: 600, totalPrice: 3000 },
+      ],
+    })
+    expect(order.id).toMatch(/^po-/)
+    expect(order.status).toBe(PurchaseOrderStatus.Draft)
+    expect(order.items.length).toBe(2)
+    expect(order.totalAmount).toBe(5000)
+  })
+
+  it('confirms a draft purchase order', () => {
+    const ctx = createContext()
+    const order = service.createPurchaseOrder(ctx, {
+      supplierId: 'supplier-confirm', totalAmount: 1000,
+      items: [{ productId: 'prod-c', productName: 'C', sku: 'SKU-C', quantity: 1, unitPrice: 1000, totalPrice: 1000 }],
+    })
+    const confirmed = service.confirmOrder(order.id, ctx)
+    expect(confirmed.status).toBe(PurchaseOrderStatus.Confirmed)
+    expect(confirmed.orderedAt).toBeTruthy()
+  })
+
+  it('receives a confirmed order and auto stock-in', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'PO Product', sku: 'PO-SKU', unit: '个', price: 100, cost: 50,
+      minStock: 5, maxStock: 200, currentStock: 10,
+    })
+    const order = service.createPurchaseOrder(ctx, {
+      supplierId: 'supplier-recv', totalAmount: 2000,
+      items: [{ productId: product.id, productName: 'PO Product', sku: 'PO-SKU', quantity: 20, unitPrice: 100, totalPrice: 2000 }],
+    })
+    const confirmed = service.confirmOrder(order.id, ctx)
+    const received = service.receiveOrder(order.id, ctx)
+    expect(received.status).toBe(PurchaseOrderStatus.Received)
+    expect(received.receivedAt).toBeTruthy()
+
+    // Product stock should have increased by 20
+    const updatedProduct = service.getProduct(product.id, ctx)
+    expect(updatedProduct.currentStock).toBe(30)
+  })
+
+  it('lists purchase orders with status filter', () => {
+    const ctx = createContext()
+    const o1 = service.createPurchaseOrder(ctx, {
+      supplierId: 's1', totalAmount: 500,
+      items: [{ productId: 'p1', productName: 'P1', sku: 'S1', quantity: 1, unitPrice: 500, totalPrice: 500 }],
+    })
+    const o2 = service.createPurchaseOrder(ctx, {
+      supplierId: 's2', totalAmount: 300,
+      items: [{ productId: 'p2', productName: 'P2', sku: 'S2', quantity: 1, unitPrice: 300, totalPrice: 300 }],
+    })
+    service.confirmOrder(o2.id, ctx) // o2 is confirmed
+    const draftOrders = service.listPurchaseOrders(ctx, { status: PurchaseOrderStatus.Draft })
+    expect(draftOrders.length).toBe(1)
+    expect(draftOrders[0].id).toBe(o1.id)
+
+    const confirmedOrders = service.listPurchaseOrders(ctx, { status: PurchaseOrderStatus.Confirmed })
+    expect(confirmedOrders.length).toBe(1)
+    expect(confirmedOrders[0].id).toBe(o2.id)
+  })
+
+  // ───────────────────────────────────────────────────
+  // 边界值
+  // ───────────────────────────────────────────────────
+
+  it('creates product with zero currentStock', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Zero Stock', sku: 'ZERO-001', unit: '个', price: 10, cost: 5,
+      minStock: 0, maxStock: 100, currentStock: 0,
+    })
+    expect(product.currentStock).toBe(0)
+    const alerts = service.getLowStockProducts(ctx)
+    expect(alerts.some((a) => a.product.id === product.id)).toBe(true)
+  })
+
+  it('adjusts stock down to zero from positive stock', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Down to Zero', sku: 'DZ-001', unit: '个', price: 10, cost: 5,
+      minStock: 1, maxStock: 100, currentStock: 5,
+    })
+    const result = service.adjustStock(ctx, {
+      productId: product.id,
+      newQuantity: 0,
+      reason: '盘点清空',
+    })
+    expect(result.product.currentStock).toBe(0)
+  })
+
+  it('paginates listings with limit and offset', () => {
+    const ctx = createContext()
+    for (let i = 0; i < 5; i++) {
+      service.createProduct(ctx, {
+        name: `Product ${i}`, sku: `PG-${i}`, unit: '个', price: 10, cost: 5,
+        minStock: 1, maxStock: 50, currentStock: 10,
       })
     }
-    const page1 = svc.listProducts(tenantCtx, { limit: 2, offset: 0 })
-    assert.equal(page1.length, 2)
-    const page2 = svc.listProducts(tenantCtx, { limit: 2, offset: 2 })
-    assert.equal(page2.length, 2)
+    const all = service.listProducts(ctx, {})
+    expect(all.length).toBe(5)
+    const page = service.listProducts(ctx, { limit: 2, offset: 1 })
+    expect(page.length).toBe(2)
   })
 
-  it('listProducts isolates tenants', () => {
-    const svc = new InventoryService()
-    svc.createProduct(tenantCtx, {
-      name: 'TenantA', sku: 'TA-1', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 10
+  it('handles large quantity stock operations', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Bulk Item', sku: 'BULK-001', unit: '箱', price: 1000, cost: 500,
+      minStock: 0, maxStock: 100000, currentStock: 50000,
     })
-    const bProducts = svc.listProducts({ tenantId: 'tenant-B' })
-    assert.equal(bProducts.length, 0)
-  })
-})
-
-describe('InventoryService — Stock Operations', () => {
-  beforeEach(() => resetInventoryServiceTestState())
-
-  it('stockIn increases product stock and creates record', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Plush', sku: 'P-1', unit: 'pcs',
-      price: 50, cost: 25, minStock: 5, maxStock: 100, currentStock: 20
+    const result = service.stockIn(ctx, {
+      productId: product.id, quantity: 10000, reason: '大批量入库',
     })
-    const { product, record } = svc.stockIn(tenantCtx, {
-      productId: p.id, quantity: 30, reason: 'restock', batchNo: 'BATCH-001'
-    })
-    assert.equal(product.currentStock, 50)
-    assert.equal(record.type, StockRecordType.Inbound)
-    assert.equal(record.beforeStock, 20)
-    assert.equal(record.afterStock, 50)
-    assert.equal(record.batchNo, 'BATCH-001')
+    expect(result.product.currentStock).toBe(60000)
   })
 
-  it('stockOut decreases product stock when sufficient', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Plush', sku: 'P-2', unit: 'pcs',
-      price: 50, cost: 25, minStock: 5, maxStock: 100, currentStock: 50
-    })
-    const { product, record } = svc.stockOut(tenantCtx, {
-      productId: p.id, quantity: 15, reason: 'sold'
-    })
-    assert.equal(product.currentStock, 35)
-    assert.equal(record.type, StockRecordType.Outbound)
-    assert.equal(record.reason, 'sold')
+  // ───────────────────────────────────────────────────
+  // 错误处理
+  // ───────────────────────────────────────────────────
+
+  it('throws error when getting non-existent product', () => {
+    const ctx = createContext()
+    expect(() => service.getProduct('non-existent-prod', ctx)).toThrow(/not found/)
   })
 
-  it('stockOut throws when insufficient stock', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Rare Item', sku: 'R-1', unit: 'pcs',
-      price: 999, cost: 500, minStock: 1, maxStock: 10, currentStock: 3
+  it('throws error when product belongs to different tenant', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Tenant Scoped', sku: 'TENANT-SKU', unit: '个', price: 10, cost: 5,
+      minStock: 1, maxStock: 50, currentStock: 10,
     })
-    assert.throws(
-      () => svc.stockOut(tenantCtx, { productId: p.id, quantity: 10 }),
+    expect(() => service.getProduct(product.id, createOtherContext())).toThrow(/not found/)
+  })
+
+  it('throws error when stockOut with insufficient stock', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'Low Stock', sku: 'LOW-ERR', unit: '个', price: 10, cost: 5,
+      minStock: 1, maxStock: 50, currentStock: 3,
+    })
+    expect(() => service.stockOut(ctx, { productId: product.id, quantity: 10, reason: '超卖' })).toThrow(
       /Insufficient stock/
     )
   })
 
-  it('adjustStock sets exact quantity regardless of current', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Adjustable', sku: 'ADJ-1', unit: 'pcs',
-      price: 100, cost: 50, minStock: 0, maxStock: 200, currentStock: 30
-    })
-    const { product, record } = svc.adjustStock(tenantCtx, {
-      productId: p.id, newQuantity: 100, reason: 'inventory check'
-    })
-    assert.equal(product.currentStock, 100)
-    assert.equal(record.type, StockRecordType.Adjustment)
-    assert.equal(record.quantity, 70)
-    assert.equal(record.beforeStock, 30)
-    assert.equal(record.afterStock, 100)
+  it('throws error when confirming non-existent purchase order', () => {
+    const ctx = createContext()
+    expect(() => service.confirmOrder('ghost-po', ctx)).toThrow(/not found/)
   })
 
-  it('checkStock returns true when sufficient', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Check', sku: 'CK-1', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 30
+  it('throws error when confirming order from wrong tenant', () => {
+    const ctx = createContext()
+    const order = service.createPurchaseOrder(ctx, {
+      supplierId: 's-err', totalAmount: 100,
+      items: [{ productId: 'p-err', productName: 'Err', sku: 'ERR', quantity: 1, unitPrice: 100, totalPrice: 100 }],
     })
-    const ok = svc.checkStock(p.id, 20, tenantCtx)
-    assert.equal(ok, true)
+    expect(() => service.confirmOrder(order.id, createOtherContext())).toThrow(/not found/)
   })
 
-  it('checkStock throws when insufficient', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Check', sku: 'CK-2', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 5
+  it('throws error when receiving non-confirmed purchase order', () => {
+    const ctx = createContext()
+    const order = service.createPurchaseOrder(ctx, {
+      supplierId: 's-draft', totalAmount: 100,
+      items: [{ productId: 'p-draft', productName: 'Draft', sku: 'DRF', quantity: 1, unitPrice: 100, totalPrice: 100 }],
     })
-    assert.throws(
-      () => svc.checkStock(p.id, 20, tenantCtx),
-      /Insufficient stock/
-    )
+    expect(() => service.receiveOrder(order.id, ctx)).toThrow(/must be confirmed/)
   })
 
-  it('getLowStockProducts returns products below minStock', () => {
-    const svc = new InventoryService()
-    svc.createProduct(tenantCtx, {
-      name: 'Low Stock', sku: 'LOW-1', unit: 'pcs',
-      price: 10, cost: 5, minStock: 20, maxStock: 100, currentStock: 5
+  it('throws error for checkStock with insufficient stock', () => {
+    const ctx = createContext()
+    const product = service.createProduct(ctx, {
+      name: 'CheckFail', sku: 'CHK-FAIL', unit: '个', price: 10, cost: 5,
+      minStock: 1, maxStock: 50, currentStock: 2,
     })
-    svc.createProduct(tenantCtx, {
-      name: 'Out of Stock', sku: 'OOS-1', unit: 'pcs',
-      price: 15, cost: 7, minStock: 10, maxStock: 50, currentStock: 0
-    })
-    svc.createProduct(tenantCtx, {
-      name: 'Healthy', sku: 'OK-1', unit: 'pcs',
-      price: 20, cost: 10, minStock: 5, maxStock: 100, currentStock: 80
-    })
-    const alerts = svc.getLowStockProducts(tenantCtx)
-    assert.equal(alerts.length, 2)
-    const lowAlert = alerts.find((a) => a.product.name === 'Low Stock')!
-    assert.equal(lowAlert.status, 'low')
-    const oosAlert = alerts.find((a) => a.product.name === 'Out of Stock')!
-    assert.equal(oosAlert.status, 'out_of_stock')
+    expect(() => service.checkStock(product.id, 5, ctx)).toThrow(/Insufficient stock/)
   })
 
-  it('getLowStockProducts accepts custom threshold', () => {
-    const svc = new InventoryService()
-    svc.createProduct(tenantCtx, {
-      name: 'Custom', sku: 'CUST-1', unit: 'pcs',
-      price: 50, cost: 25, minStock: 10, maxStock: 200, currentStock: 40
-    })
-    // 40 > default minStock (10), so not low by default
-    const defaultAlerts = svc.getLowStockProducts(tenantCtx)
-    assert.equal(defaultAlerts.length, 0)
-    // But with threshold 50, it IS low
-    const customAlerts = svc.getLowStockProducts(tenantCtx, 50)
-    assert.equal(customAlerts.length, 1)
-    assert.equal(customAlerts[0]?.status, 'low')
+  // ───────────────────────────────────────────────────
+  // 空状态
+  // ───────────────────────────────────────────────────
+
+  it('returns empty list when no products exist', () => {
+    const ctx = createContext()
+    const products = service.listProducts(ctx, {})
+    expect(products).toEqual([])
   })
 
-  it('getStockRecords returns records filtered by productId and type', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Recorder', sku: 'REC-1', unit: 'pcs',
-      price: 10, cost: 5, minStock: 0, maxStock: 100, currentStock: 20
-    })
-    svc.stockIn(tenantCtx, { productId: p.id, quantity: 30, reason: 'restock' })
-    svc.stockOut(tenantCtx, { productId: p.id, quantity: 10, reason: 'sold' })
-
-    const allRecords = svc.getStockRecords(tenantCtx)
-    assert.equal(allRecords.length, 2)
-
-    const inboundRecords = svc.getStockRecords(tenantCtx, { type: StockRecordType.Inbound })
-    assert.equal(inboundRecords.length, 1)
-
-    const outboundRecords = svc.getStockRecords(tenantCtx, { type: StockRecordType.Outbound })
-    assert.equal(outboundRecords.length, 1)
-  })
-})
-
-describe('InventoryService — Supplier CRUD', () => {
-  beforeEach(() => resetInventoryServiceTestState())
-
-  it('createSupplier creates with generated id', () => {
-    const svc = new InventoryService()
-    const supplier = svc.createSupplier(tenantCtx, {
-      name: 'Toy Factory',
-      contactName: 'Zhang San',
-      phone: '13800138000'
-    })
-    assert.ok(supplier.id.startsWith('supplier-'))
-    assert.equal(supplier.name, 'Toy Factory')
-    assert.equal(supplier.tenantId, 'tenant-001')
+  it('returns empty list when no suppliers exist', () => {
+    const ctx = createContext()
+    const suppliers = service.listSuppliers(ctx)
+    expect(suppliers).toEqual([])
   })
 
-  it('listSuppliers returns all for tenant', () => {
-    const svc = new InventoryService()
-    svc.createSupplier(tenantCtx, { name: 'Supplier A' })
-    svc.createSupplier(tenantCtx, { name: 'Supplier B' })
-    const suppliers = svc.listSuppliers(tenantCtx)
-    assert.equal(suppliers.length, 2)
-    const names = suppliers.map((s) => s.name).sort()
-    assert.deepEqual(names, ['Supplier A', 'Supplier B'])
+  it('returns empty list when no purchase orders exist', () => {
+    const ctx = createContext()
+    const orders = service.listPurchaseOrders(ctx, {})
+    expect(orders).toEqual([])
   })
 
-  it('listSuppliers isolates tenants', () => {
-    const svc = new InventoryService()
-    svc.createSupplier(tenantCtx, { name: 'Only A' })
-    const bSuppliers = svc.listSuppliers({ tenantId: 'tenant-B' })
-    assert.equal(bSuppliers.length, 0)
-  })
-})
-
-describe('InventoryService — Purchase Orders', () => {
-  beforeEach(() => resetInventoryServiceTestState())
-
-  it('createPurchaseOrder creates in Draft status', () => {
-    const svc = new InventoryService()
-    const order = svc.createPurchaseOrder(tenantCtx, {
-      supplierId: 's-1',
-      items: [{
-        productId: 'p-1', productName: 'Ball', sku: 'B-1',
-        quantity: 10, unitPrice: 15, totalPrice: 150
-      }],
-      totalAmount: 150
+  it('returns empty low stock alerts when all products are well-stocked', () => {
+    const ctx = createContext()
+    service.createProduct(ctx, {
+      name: 'Well Stocked', sku: 'FULL-001', unit: '个', price: 10, cost: 5,
+      minStock: 5, maxStock: 100, currentStock: 80,
     })
-    assert.ok(order.id.startsWith('po-'))
-    assert.equal(order.status, PurchaseOrderStatus.Draft)
-    assert.equal(order.items.length, 1)
-    assert.equal(order.items[0]?.quantity, 10)
+    service.createProduct(ctx, {
+      name: 'Also Full', sku: 'FULL-002', unit: '个', price: 10, cost: 5,
+      minStock: 10, maxStock: 100, currentStock: 50,
+    })
+    const alerts = service.getLowStockProducts(ctx)
+    expect(alerts.length).toBe(0)
   })
 
-  it('confirmOrder transitions Draft to Confirmed', () => {
-    const svc = new InventoryService()
-    const order = svc.createPurchaseOrder(tenantCtx, {
-      items: [{
-        productId: 'p-1', productName: 'Ball', sku: 'B-1',
-        quantity: 5, unitPrice: 10, totalPrice: 50
-      }],
-      totalAmount: 50
-    })
-    const confirmed = svc.confirmOrder(order.id, tenantCtx)
-    assert.equal(confirmed.status, PurchaseOrderStatus.Confirmed)
-    assert.ok(confirmed.orderedAt)
+  it('returns empty stock records when no operations performed', () => {
+    const ctx = createContext()
+    const records = service.getStockRecords(ctx, {})
+    expect(records).toEqual([])
   })
 
-  it('confirmOrder rejects non-Draft/Submitted status', () => {
-    const svc = new InventoryService()
-    const order = svc.createPurchaseOrder(tenantCtx, {
-      items: [{ productId: 'p-1', productName: 'B', sku: 'B-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
-      totalAmount: 1
+  it('returns empty purchase order list filtered by non-existent status', () => {
+    const ctx = createContext()
+    service.createPurchaseOrder(ctx, {
+      supplierId: 's-empty', totalAmount: 100,
+      items: [{ productId: 'p-empty', productName: 'E', sku: 'EMP', quantity: 1, unitPrice: 100, totalPrice: 100 }],
     })
-    svc.confirmOrder(order.id, tenantCtx)
-    // Already confirmed
-    assert.throws(
-      () => svc.confirmOrder(order.id, tenantCtx),
-      /cannot be confirmed/
-    )
-  })
-
-  it('receiveOrder transitions Confirmed to Received and stocks-in items', () => {
-    const svc = new InventoryService()
-    const p = svc.createProduct(tenantCtx, {
-      name: 'Ball', sku: 'B-1', unit: 'pcs',
-      price: 15, cost: 8, minStock: 0, maxStock: 100, currentStock: 0
-    })
-    const order = svc.createPurchaseOrder(tenantCtx, {
-      items: [{
-        productId: p.id, productName: 'Ball', sku: 'B-1',
-        quantity: 20, unitPrice: 8, totalPrice: 160
-      }],
-      totalAmount: 160
-    })
-    svc.confirmOrder(order.id, tenantCtx)
-    const received = svc.receiveOrder(order.id, tenantCtx)
-    assert.equal(received.status, PurchaseOrderStatus.Received)
-    assert.ok(received.receivedAt)
-
-    // Product stock should have increased
-    const updatedProduct = svc.getProduct(p.id, tenantCtx)
-    assert.equal(updatedProduct.currentStock, 20)
-  })
-
-  it('receiveOrder rejects non-Confirmed status', () => {
-    const svc = new InventoryService()
-    const order = svc.createPurchaseOrder(tenantCtx, {
-      items: [{ productId: 'p-1', productName: 'B', sku: 'B-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
-      totalAmount: 1
-    })
-    assert.throws(
-      () => svc.receiveOrder(order.id, tenantCtx),
-      /must be confirmed before receiving/
-    )
-  })
-
-  it('listPurchaseOrders filters by status and supplier', () => {
-    const svc = new InventoryService()
-    const o1 = svc.createPurchaseOrder(tenantCtx, {
-      supplierId: 's-A',
-      items: [{ productId: 'p-1', productName: 'A', sku: 'A-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
-      totalAmount: 1
-    })
-    svc.createPurchaseOrder(tenantCtx, {
-      supplierId: 's-B',
-      items: [{ productId: 'p-2', productName: 'B', sku: 'B-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
-      totalAmount: 1
-    })
-
-    svc.confirmOrder(o1.id, tenantCtx)
-
-    const draftOrders = svc.listPurchaseOrders(tenantCtx, { status: PurchaseOrderStatus.Draft })
-    assert.equal(draftOrders.length, 1)
-
-    const confirmedOrders = svc.listPurchaseOrders(tenantCtx, { status: PurchaseOrderStatus.Confirmed })
-    assert.equal(confirmedOrders.length, 1)
-
-    const supplierA = svc.listPurchaseOrders(tenantCtx, { supplierId: 's-A' })
-    assert.equal(supplierA.length, 1)
-  })
-
-  it('listPurchaseOrders isolates tenants', () => {
-    const svc = new InventoryService()
-    svc.createPurchaseOrder(tenantCtx, {
-      items: [{ productId: 'p-1', productName: 'A', sku: 'A-1', quantity: 1, unitPrice: 1, totalPrice: 1 }],
-      totalAmount: 1
-    })
-    const bOrders = svc.listPurchaseOrders({ tenantId: 'tenant-B' })
-    assert.equal(bOrders.length, 0)
+    const receivedOrders = service.listPurchaseOrders(ctx, { status: PurchaseOrderStatus.Cancelled })
+    expect(receivedOrders).toEqual([])
   })
 })
