@@ -1,59 +1,49 @@
 # P-47/P-30 Prisma 持久化手稿 (V23 Day5 首件)
 
-## 目标
-将 brand-operations.service.ts 和 logistics-management.service.ts 的 in-memory Map store 迁移为 Prisma entity
+> 🟢 **23:22 更新: Prisma schema 已就位**
 
-## 必须先做的（0号依赖）
+## 状态
+- ✅ **Prisma schema 15 entities 已写入** (commit `2ab98da82`)
+- ✅ `prisma validate` 通过
+- ✅ `prisma generate` 通过
+- ✅ TSC 零错误
+- ⏳ 还需要: `prisma migrate dev`
 
-### 1. Prisma schema model 定义
-文件: `apps/api/prisma/schema.prisma`
+## 已写入的 Entity
 
-```
-model BrandAsset {
-  id        String   @id @default(cuid())
-  tenantId  String
-  type      String
-  url       String
-  name      String
-  metadata  Json?
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+### P-47 (11 entities)
+BrandAsset, BrandCampaign, BrandCampaignTemplate, Collaboration,
+BrandChannel, BrandKPI, RecycleBinItem, CollaborationContract,
+CampaignABTest, ExportRecord, CampaignSchedule
 
-  @@index([tenantId, type])
-  @@index([tenantId, isDeleted])
-}
+### P-30 (6 entities)
+Supplier, PurchaseOrder, StockMovement, StockItem,
+MaintenanceTask, LogisticsKPI
 
-model BrandCampaign {
-  id          String   @id @default(cuid())
-  tenantId    String
-  title       String
-  description String
-  status      String   @default("draft")
-  storeIds    Json     // string[]
-  startDate   DateTime
-  endDate     DateTime
-  createdBy   String
-  approvedBy  String?
-  rejectedBy  String?
-  rejectReason String?
-  publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+## 今日必做 (7/25 截止!)
 
-  @@index([tenantId, status])
-  @@index([tenantId, startDate, endDate])
-}
-```
-
-### 2. Migration
+### Step 1: Migration
 ```bash
-cd apps/api && npx prisma migrate dev --name add-brand-ops-logistics
+cd apps/api
+pnpm exec prisma migrate dev --name add-brand-ops-logistics
 ```
 
-### 3. Store 适配
-在 `brand-operations.service.ts` 中新增 `private brandAssetStore: InMemoryStore<BrandAsset>` → 替换为 PrismaService
+### Step 2: Store 适配 (最大工作量)
+- `brand-operations.service.ts`: 15处 InMemoryStore<BrandAsset> → PrismaService
+- `logistics-management.service.ts`: 6处 InMemoryStore<Supplier> → PrismaService
 
-模式: 保持InMemoryStore作为fallback + prismaService
+### Step 3: Controller/Test 不变
+- 已有controller全量CRUD端点完整 → 接口层不动
+- 已有222+63测试 → 无修改
+- 仅改service内部store实现
+
+## 推荐策略
+```typescript
+// 渐进式迁移: 保留InMemory fallback
+private brandAssetStore: PrismaService['brandAsset']
+
+constructor(private prisma: PrismaService) {
+  this.brandAssetStore = prisma.brandAsset
+}
+```
 
