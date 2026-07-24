@@ -11,6 +11,7 @@ import { CashierSseController } from './cashier.sse'
 import { CashierEventEmitter } from './cashier.events'
 import { CashierService } from './cashier.service'
 import { CashierOrderEntity, CashierPaymentEntity } from './cashier.entity'
+import { CashierPrismaStore } from './cashier.prisma-store'
 import { PaymentChannelRegistry } from './ports/payment-channel.registry'
 import { PaymentChannelBootstrap } from './ports/payment-channel.bootstrap'
 import { CashierToLytBridge } from './bridges/cashier-to-lyt.bridge'
@@ -62,6 +63,7 @@ import { CommercialBillingModule } from '../foundation/commercial-billing/commer
   ],
   controllers: [CashierController, CashierBillingController, CashierSseController],
   providers: [
+    CashierPrismaStore,
     CashierService,
     OrderService,
     PaymentService,

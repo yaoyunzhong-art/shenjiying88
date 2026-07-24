@@ -4,6 +4,7 @@ import type { PaymentMethod } from '@m5/types'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CACHE_SERVICE, type CacheService } from '../../infrastructure/cache/cache.module'
+import { CashierPrismaStore } from './cashier.prisma-store'
 import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
@@ -46,7 +47,8 @@ export class CashierService {
     @Optional() @InjectRepository(CashierPaymentEntity)
     private readonly paymentRepo?: Repository<CashierPaymentEntity>,
     @Optional() @Inject('CASHIER_STORE')
-    private readonly store?: ICashierStore
+    private readonly store?: ICashierStore,
+    @Optional() private readonly prismaStore?: CashierPrismaStore
   ) {
     this.seedIfNeeded()
   }

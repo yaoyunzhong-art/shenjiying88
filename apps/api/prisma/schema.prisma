@@ -2555,3 +2555,95 @@ model MinorAccessLog {
   @@index([tenantId, createdAt])
   @@map("minor_access_log")
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+// Cashier 订单持久化 (RQ-20260720-011)
+// ═══════════════════════════════════════════════════════════════
+
+model CashierOrder {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  tenantId        String
+  brandId         String?
+  storeId         String?
+  memberId        String
+  items           Json?
+  currency        String   @default("CNY")
+  totalAmount     Decimal  @default(0) @db.Decimal(12, 2)
+  couponCode      String?
+  blindboxPlanId  String?
+  blindboxQuantity Int?
+  status          String   @default("CREATED")
+  latestPaymentId String?
+  source          String   @default("memory")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  paidAt          DateTime?
+  closedAt        DateTime?
+  closeReason     String?
+  closedBy        String?
+  closeNote       String?
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, status])
+  @@map("cashier_orders")
+}
+
+model CashierPayment {
+  id                String   @id @default(cuid())
+  paymentId         String   @unique
+  orderId           String
+  externalPaymentId String?
+  channel           String
+  amount            Decimal  @db.Decimal(12, 2)
+  status            String   @default("PENDING")
+  qrCodeUrl         String?
+  paymentUrl        String?
+  expiresAt         DateTime?
+  transactionNo     String?
+  sourceEventName   String?
+  failureReason     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime?
+
+  @@index([orderId])
+  @@index([paymentId, status])
+  @@map("cashier_payments")
+}
+
+model CashierMember {
+  id        String   @id @default(cuid())
+  memberId  String   @unique
+  phone     String
+  name      String
+  memberNo  String?
+  tier      String   @default("Bronze")
+  points    Int      @default(0)
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+  @@map("cashier_members")
+}
+
+model CashierTransaction {
+  id        String   @id @default(cuid())
+  txnId     String   @unique
+  orderId   String?
+  orderNo   String?
+  memberId  String
+  amount    Decimal  @db.Decimal(12, 2)
+  type      String
+  status    String
+  txnDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([orderId])
+  @@map("cashier_transactions")
+}
