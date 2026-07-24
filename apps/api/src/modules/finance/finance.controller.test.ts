@@ -1263,9 +1263,9 @@ describe('[finance] Resolved 读链 — Controller 委托', () => {
 // ── DELETE /finance/ledgers — 删除流水 ──
 
 describe('[finance] DELETE /finance/ledgers/:ledgerId — 删除流水', () => {
-  it('删除存在的流水', () => {
+  it('删除存在的流水', async () => {
     const ctrl = makeController()
-    const result = ctrl.deleteLedger('ledger-1', CTX)
+    const result = await ctrl.deleteLedger('ledger-1', CTX)
     assert.ok(result.success)
   })
 
