@@ -32,6 +32,14 @@ import {
   type OrderStatus,
   type OrderChannel,
 } from '../orders-data';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'order:read',
+  title: '订单管理访问受限',
+  description:
+    '订单管理中心已接入管理员本地 session，只有具备 order:read 的账号才能查看订单列表、状态流转与渠道统计结果。',
+} as const;
 
 // ── API 客户端 (client-side singleton) ──
 
@@ -712,9 +720,11 @@ function OrdersPageContent() {
 
 export default function OrdersPage() {
   return (
-    <Suspense fallback={<OrdersPageFallback />}>
-      <OrdersPageContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<OrdersPageFallback />}>
+        <OrdersPageContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 

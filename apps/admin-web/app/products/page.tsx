@@ -32,9 +32,17 @@ import {
   deriveScopedCapabilityActionItem,
   type GatedCapabilityActionItem
 } from '../lyt-capability-access';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { StoreCapabilityActionStrip } from '../components/store-capability-action-strip';
 import { StoreCapabilityGatingBanner } from '../components/store-capability-gating-banner';
 import { useStoreCapabilityGating } from '../components/use-store-capability-gating';
+
+const permissionGate = {
+  requiredPermission: 'product:read',
+  title: '商品管理访问受限',
+  description:
+    '商品管理中心已接入管理员本地 session，只有具备 product:read 的账号才能查看商品列表、库存概览与品类筛选结果。',
+} as const;
 
 // ---- 毛利率配色 ----
 
@@ -707,9 +715,11 @@ function ProductsPageContent() {
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={<ProductsPageFallback />}>
-      <ProductsPageContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<ProductsPageFallback />}>
+        <ProductsPageContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 
