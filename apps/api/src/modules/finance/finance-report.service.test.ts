@@ -24,6 +24,7 @@ import {
   ExportReportDto,
   FilterReportDto,
   ReportType,
+  ExportFormat,
 } from './dto/create-report.dto'
 
 function createContext(overrides?: Partial<RequestTenantContext>): RequestTenantContext {
@@ -409,7 +410,7 @@ describe('FinanceReportService', () => {
     })
     // The report might still complete with zero data
     if (report.status === 'COMPLETED') {
-      const exportInput: ExportReportDto = { format: 'JSON' }
+      const exportInput: ExportReportDto = { format: ExportFormat.JSON }
       const result = reportService.exportReport(report.id, ctx, exportInput)
       expect(result.content).toBeTruthy()
     }
