@@ -602,3 +602,104 @@
 - 当前最后剩余的框架级/nest默认噪音仅剩两条 NestApplication/NestFactory 自身日志
   （这两条属于 NestJS 核心 logger 框架自身，改掉需要替换 NestFactory.create 的 logger 实例
     已在 main.ts 中集成 pino logger，后续可通过 logger: createNestLoggerAdapter(logger) 完全消灭）
+
+### 当前磁盘状态复核（2026-07-24 22:14）
+
+- 重新按当前磁盘状态复核发现：
+  - `apps/api/src/modules/agent/event-buffer.service.ts`
+    - `EventStore enabled for dual-write` 当前已是 `debug` 口径
+  - `apps/api/src/modules/gateway/gateway-analytics.service.ts`
+    - `GatewayAnalyticsService: log source connected` 当前已是 `debug` 口径
+- fresh runtime 再次复验：
+  - 启动探针端口：`3142`
+  - 默认日志中未再出现：
+    - `EventStore enabled for dual-write`
+    - `GatewayAnalyticsService: log source connected`
+  - 当前启动输出仍保留：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` 的 skeleton 提示
+    - `NestFactory` 的 `Starting Nest application...`
+    - `NestApplication` 的 `Nest application successfully started`
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+- 结论：
+  - `final-custom-startup-log-cleanup` 在当前磁盘状态下已完成闭环
+  - runtime 收口主线已进入“仅剩 NestFactory/NestApplication 两条框架默认启动提示待评估是否继续静默”的阶段
+
+### NestFactory / NestApplication 默认启动提示已收口
+
+- `apps/api/src/main.ts`
+  - `NestFactory.create()` 已改为 `bufferLogs: true`
+  - 在 app 创建后显式执行 `app.useLogger(nestLogger)` + `app.flushLogs()`
+  - 启动期缓冲日志现在会统一经过 `createNestLoggerAdapter()`，从而应用既有的静默规则
+  - 顺手修复了 adapter 中 `warn/error` 分支误用未定义变量 `text` 的问题，避免后续告警日志链路再炸
+- fresh runtime 再次复验：
+  - 启动探针端口：`3143`
+  - 默认日志中已不再出现：
+    - `Starting Nest application...`
+    - `Nest application successfully started`
+  - 当前保留的启动输出为：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` 的 skeleton 提示
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+- 结论：
+  - 当前 runtime 默认启动日志中，低价值的 Nest 框架启动提示已全部收口
+  - 启动噪音主线已从“继续消噪”推进到“仅保留必要摘要与真实启动成功信号”的稳定阶段
+
+### 稳定态守护抽样（3144）
+
+- fresh runtime 持续运行复验：
+  - 端口：`3144`
+  - 默认启动日志保持稳定，仅保留：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` skeleton 提示
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+- 关键 HTTP 抽样结果：
+  - `GET http://127.0.0.1:3144/api/v1/health/ping` → `200`
+  - `GET http://127.0.0.1:3144/docs` → `200`
+  - `GET http://127.0.0.1:3144/api/v1/foundation/bootstrap` + `x-tenant-id: demo-tenant` → `401`
+- `foundation/bootstrap` 的响应体保持守卫语义一致：
+  - `This endpoint is not publicly accessible. Mark with @Public() or provide authentication.`
+- 结论：
+  - 本轮启动日志收口没有破坏基础存活能力
+  - `docs` 与裸探活端点可正常访问
+  - `foundation/bootstrap` 仍保持非公开边界，说明守卫语义未被 runtime 降噪改动误伤
+
+### 本地启动日志基线脚本已固化
+
+- 新增脚本：
+  - `scripts/verify-local-api-startup-baseline.sh`
+- 脚本职责：
+  - 自动拉起 `apps/api`
+  - 校验关键保留日志：
+    - `m5-api started`
+    - `foundation blueprint endpoint`
+    - `swagger docs endpoint`
+  - 校验关键禁止日志不再回归：
+    - `Starting Nest application...`
+    - `Nest application successfully started`
+    - `GatewayAnalyticsService: log source connected`
+    - `EventStore enabled for dual-write`
+    - mock payment bootstrap skip 提示
+    - `RouterExplorer` / `RoutesResolver` / `InstanceLoader` 启动枚举
+  - 抽样验证关键 HTTP 边界：
+    - `GET /api/v1/health/ping` → `200`
+    - `GET /docs` → `200`
+    - `GET /api/v1/foundation/bootstrap` + `x-tenant-id` only → `401`
+- 运行态验证：
+  - 执行：`bash scripts/verify-local-api-startup-baseline.sh --port 3146`
+  - 结果：全量断言通过，启动轮询输出已收敛为无 `curl: (7)` 噪音
+  - 保留日志观察值与当前稳定态一致：
+    - `TenantConfigRepository` / `DomainResolutionService` 缺表单行摘要
+    - `QdrantClientWrapper` / `EmbeddingService` skeleton 提示
+    - `INFO: m5-api started`
+    - `INFO: foundation blueprint endpoint`
+    - `INFO: swagger docs endpoint`
+- 结论：
+  - runtime 启动日志基线已从“口头约定”升级为“可复跑脚本”
+  - 后续若并行改动导致噪音回归，可直接用该脚本做第一道回归闸门

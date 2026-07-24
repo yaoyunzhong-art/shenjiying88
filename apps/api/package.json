@@ -12,7 +12,8 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:migrate:status": "prisma migrate status --schema prisma/schema.prisma",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:startup-baseline": "bash ../../scripts/verify-local-api-startup-baseline.sh"
   },
   "dependencies": {
     "@m5/domain": "workspace:*",

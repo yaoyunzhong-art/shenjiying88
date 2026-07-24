@@ -28,6 +28,12 @@ scripts/
 | **安全扫描** | `security-*`、`rls-scan.sh` | 安全基线扫描与渗透测试 |
 | **CI/开发辅助** | `morning-dev-*`、`afternoon-dev-*`、`nightly-*` | 日常开发任务编排 |
 
+## 本地主线验证
+
+- `verify-local-api-startup-baseline.sh`
+  - 用于固化当前 `apps/api` 的本地启动日志基线
+  - 自动拉起 API、校验关键保留/禁止日志，并抽样验证 `health/ping`、`docs`、`foundation/bootstrap`
+
 ## 使用方式
 
 ```bash

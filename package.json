@@ -16,6 +16,7 @@
     "e2e:l3": "playwright test --project=l3-baseline",
     "e2e:l3:headed": "playwright test --project=l3-baseline --headed",
     "e2e:report": "playwright show-report",
+    "verify:api:startup-baseline": "bash scripts/verify-local-api-startup-baseline.sh",
     "cutover:drill": "bash scripts/run-cutover-drill.sh",
     "g8:gate": "pnpm g8:preflight:prod && pnpm g8:recheck && pnpm g8:status",
     "g8:ready": "bash scripts/run-g8-formal-window-ready.sh --env-file infra/k8s/templates/m5-public-endpoints.env.example --release-env-file infra/k8s/templates/m5-release-images.env.example --refresh-acr-regcred --window-id formal-window-$(date +%Y%m%d-%H%M%S) --log-root infra/k8s/cutover-logs",

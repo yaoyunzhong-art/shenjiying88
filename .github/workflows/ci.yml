@@ -110,6 +110,34 @@ jobs:
           TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
   # ──────────────────────────────────────────────────────────
+  # Job 2.5: API 启动日志基线 + 最小 HTTP 边界
+  # ──────────────────────────────────────────────────────────
+  startup-baseline:
+    name: 🚦 API Startup Baseline
+    needs: [typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify local API startup baseline
+        run: pnpm verify:api:startup-baseline
+
+  # ──────────────────────────────────────────────────────────
   # Job 3: L0 级 E2E 关键链 (纯代码级, 不启动服务/浏览器)
   #   cashier    — 收银 POS 最小闭环     (*跳过*: 需 Playwright 浏览器)
   #   payment    — 结算金额链            (*跳过*: 需 Playwright 浏览器)
