@@ -15,6 +15,11 @@ import {
   WorkspaceBreadcrumb,
 } from '@m5/ui';
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Form - 神机营' }
+
+
 import { URGENCY_LABEL, URGENCY_LEVELS, TYPE_LABEL, TRANSFER_TYPES } from '../stock-transfer-data';
 
 // ---- 表单字段定义 ----

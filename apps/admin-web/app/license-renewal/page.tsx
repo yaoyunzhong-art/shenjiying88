@@ -51,6 +51,11 @@ import {
 import { Popconfirm } from 'antd'
 import type { RenewalStrategy, RenewalRecord, RenewalQueryDto } from './types'
 import { renewalApi } from './api'
+
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'License Renewal - 神机营' }
+
 import dayjs from 'dayjs'
 
 const { Option } = Select
