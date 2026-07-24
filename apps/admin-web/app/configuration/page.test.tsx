@@ -213,10 +213,17 @@ describe('ConfigurationPage — 查询构建', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('configuration — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+});
+
 describe('Configuration — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
+  it('是客户端组件', () => assert.ok(SRC.includes("'use client'")));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
+  it('包含核心 hooks', () => assert.ok(SRC.includes('useState') && SRC.includes('useMemo') && SRC.includes('useCallback')));
   it('包含数组数据', () => assert.ok(SRC.includes('[') || SRC.includes('...')));
   it('包含条件判断', () => assert.ok(SRC.includes('if')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));

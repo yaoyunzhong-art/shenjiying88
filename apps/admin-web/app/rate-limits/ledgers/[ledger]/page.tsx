@@ -17,6 +17,7 @@ import {
   Badge, BreadcrumbPageHeader, DetailClosureBar, PageShell, Progress, Result, StatusBadge,
 } from '@m5/ui';
 import { readRateLimitsLedgerDetailParam } from '@m5/types';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface LedgerSnapshot {
   ledgerId: string;
@@ -73,15 +74,23 @@ export default async function RateLimitsLedgerDetailPage({ params }: PageProps) 
   const resolved = await params;
   const ledgerId = readParam(resolved.ledger);
   const snapshot = loadMockLedger(ledgerId ?? '');
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '配额账本详情访问受限',
+    description:
+      '配额账本详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看主题、限额、重置时间与使用趋势。',
+  } as const;
 
   if (snapshot.notFound || !snapshot.record) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <PageShell title="配额账本不存在" subtitle="该账本不在当前 rate-limits 范围内。">
-          <Result status="404" title="账本未找到" subTitle={`账本 "${ledgerId}" 不存在`}
-            extra={<a href="/rate-limits/ledgers" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回账本列表</a>} />
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <PageShell title="配额账本不存在" subtitle="该账本不在当前 rate-limits 范围内。">
+            <Result status="404" title="账本未找到" subTitle={`账本 "${ledgerId}" 不存在`}
+              extra={<a href="/rate-limits/ledgers" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回账本列表</a>} />
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
@@ -90,47 +99,49 @@ export default async function RateLimitsLedgerDetailPage({ params }: PageProps) 
   const usagePercent = record.limit > 0 ? Math.round((record.usedQuota / record.limit) * 100) : 0;
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell title={`配额账本：${record.subjectKey}`} subtitle="查看主题、策略、已用额度与重置时间。">
-        <BreadcrumbPageHeader breadcrumbs={[{ label: '配额账本', href: '/rate-limits/ledgers' }, { label: record.subjectKey }]} title={record.subjectKey} />
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <div className="flex gap-2 items-center mb-5">
-            <h3 className="text-base font-semibold text-white">基本信息</h3>
-            <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
-          </div>
-          <DetailRow label="主题 Key"><span className="font-mono text-sm text-blue-400">{record.subjectKey}</span></DetailRow>
-          <DetailRow label="策略编码"><span className="font-mono text-sm">{record.policyCode}</span></DetailRow>
-          <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
-          <DetailRow label="已用额度"><span className="font-mono text-sm">{record.usedQuota.toLocaleString()}</span></DetailRow>
-          <DetailRow label="总限额"><span className="font-mono text-sm">{record.limit.toLocaleString()}</span></DetailRow>
-          <DetailRow label="剩余额度">
-            <span className={`font-mono text-sm ${record.remaining === 0 ? 'text-red-400' : 'text-green-400'}`}>
-              {record.remaining.toLocaleString()}
-            </span>
-          </DetailRow>
-        </div>
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <h3 className="text-base font-semibold text-white mb-3">额度使用情况</h3>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-sm text-slate-300 w-16">{record.usedQuota.toLocaleString()}</span>
-            <div className="flex-1 h-3 bg-slate-700 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-blue-500'}`}
-                style={{ width: `${usagePercent}%` }} />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title={`配额账本：${record.subjectKey}`} subtitle="查看主题、策略、已用额度与重置时间。">
+          <BreadcrumbPageHeader breadcrumbs={[{ label: '配额账本', href: '/rate-limits/ledgers' }, { label: record.subjectKey }]} title={record.subjectKey} />
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <div className="flex gap-2 items-center mb-5">
+              <h3 className="text-base font-semibold text-white">基本信息</h3>
+              <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
             </div>
-            <span className="text-sm text-slate-300 w-16 text-right">{record.limit.toLocaleString()}</span>
+            <DetailRow label="主题 Key"><span className="font-mono text-sm text-blue-400">{record.subjectKey}</span></DetailRow>
+            <DetailRow label="策略编码"><span className="font-mono text-sm">{record.policyCode}</span></DetailRow>
+            <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
+            <DetailRow label="已用额度"><span className="font-mono text-sm">{record.usedQuota.toLocaleString()}</span></DetailRow>
+            <DetailRow label="总限额"><span className="font-mono text-sm">{record.limit.toLocaleString()}</span></DetailRow>
+            <DetailRow label="剩余额度">
+              <span className={`font-mono text-sm ${record.remaining === 0 ? 'text-red-400' : 'text-green-400'}`}>
+                {record.remaining.toLocaleString()}
+              </span>
+            </DetailRow>
           </div>
-          <div className="flex justify-between text-xs text-slate-500">
-            <span>使用率: {usagePercent}%</span>
-            <span>窗口: {record.windowSize}</span>
-            <span>重置: {record.resetAt}</span>
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <h3 className="text-base font-semibold text-white mb-3">额度使用情况</h3>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-sm text-slate-300 w-16">{record.usedQuota.toLocaleString()}</span>
+              <div className="flex-1 h-3 bg-slate-700 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                  style={{ width: `${usagePercent}%` }} />
+              </div>
+              <span className="text-sm text-slate-300 w-16 text-right">{record.limit.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>使用率: {usagePercent}%</span>
+              <span>窗口: {record.windowSize}</span>
+              <span>重置: {record.resetAt}</span>
+            </div>
           </div>
-        </div>
-        <DetailRow label="窗口大小"><span className="text-sm">{record.windowSize}</span></DetailRow>
-        <DetailRow label="重置时间"><span className="text-sm font-mono text-slate-400">{record.resetAt}</span></DetailRow>
-        <DetailRow label="更新时间"><span className="text-sm font-mono text-slate-400">{record.updatedAt}</span></DetailRow>
-        <div className="mt-6"><DetailClosureBar links={[{ key: 'list', title: '配额账本列表', subtitle: '返回 Rate Limits 配额管理', href: '/rate-limits/ledgers' }]} /></div>
-      </PageShell>
-    </main>
+          <DetailRow label="窗口大小"><span className="text-sm">{record.windowSize}</span></DetailRow>
+          <DetailRow label="重置时间"><span className="text-sm font-mono text-slate-400">{record.resetAt}</span></DetailRow>
+          <DetailRow label="更新时间"><span className="text-sm font-mono text-slate-400">{record.updatedAt}</span></DetailRow>
+          <div className="mt-6"><DetailClosureBar links={[{ key: 'list', title: '配额账本列表', subtitle: '返回 Rate Limits 配额管理', href: '/rate-limits/ledgers' }]} /></div>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

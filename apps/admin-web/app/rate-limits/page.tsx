@@ -16,6 +16,7 @@ import { Suspense } from 'react';
 import { PageShell, ErrorBoundary } from '@m5/ui';
 import type { QuotaLedgerStatus } from '@m5/types';
 import { loadRateLimitWorkspace } from '../rate-limits-view-model';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import RateLimitsWorkspaceClient from './rate-limits-workspace-client';
 
 export const dynamic = 'force-dynamic';
@@ -141,20 +142,26 @@ export default async function RateLimitsPage({
   searchParams,
 }: RateLimitsPageProps) {
   return (
-    <PageShell
-      title="⏱️ 限流与配额管理"
-      subtitle="限流策略与配额账本 — healthy/warning/blocked 三态分桶 · 支持 ALL 通配查询"
+    <AdminPermissionGate
+      requiredPermission="foundation.governance.read"
+      title="限流与配额管理访问受限"
+      description="限流与配额管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看策略、配额账本与健康分桶。"
     >
-      <ErrorBoundary
-        name="RateLimitsErrorBoundary"
-        severity="block"
-        description="限流工作台加载异常，请刷新重试"
-        retryLabel="重试加载"
+      <PageShell
+        title="⏱️ 限流与配额管理"
+        subtitle="限流策略与配额账本 — healthy/warning/blocked 三态分桶 · 支持 ALL 通配查询"
       >
-        <Suspense fallback={<LoadingSkeleton />}>
-          <RateLimitsContent searchParams={searchParams} />
-        </Suspense>
-      </ErrorBoundary>
-    </PageShell>
+        <ErrorBoundary
+          name="RateLimitsErrorBoundary"
+          severity="block"
+          description="限流工作台加载异常，请刷新重试"
+          retryLabel="重试加载"
+        >
+          <Suspense fallback={<LoadingSkeleton />}>
+            <RateLimitsContent searchParams={searchParams} />
+          </Suspense>
+        </ErrorBoundary>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

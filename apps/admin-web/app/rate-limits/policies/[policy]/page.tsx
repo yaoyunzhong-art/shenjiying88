@@ -18,6 +18,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Badge, BreadcrumbPageHeader, DetailClosureBar, PageShell, Result, StatusBadge,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface PolicySnapshot {
   policyId: string;
@@ -78,6 +79,12 @@ export default function RateLimitsPolicyDetailPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<PolicySnapshot | null>(null);
   const [policyId, setPolicyId] = useState<string | null>(null);
+  const permissionGate = {
+    requiredPermission: 'foundation.governance.read',
+    title: '限流策略详情访问受限',
+    description:
+      '限流策略详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看作用域、算法、限额与匹配账本。',
+  } as const;
 
   useEffect(() => {
     let cancelled = false;
@@ -105,32 +112,38 @@ export default function RateLimitsPolicyDetailPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8' }}>
-          <div style={{ fontSize: 14 }}>加载中...</div>
-        </div>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8' }}>
+            <div style={{ fontSize: 14 }}>加载中...</div>
+          </div>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   if (error) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#ef4444' }}>
-          <div style={{ fontSize: 14 }}>错误: {error}</div>
-        </div>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <div style={{ textAlign: 'center', padding: '48px 24px', color: '#ef4444' }}>
+            <div style={{ fontSize: 14 }}>错误: {error}</div>
+          </div>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   if (!snapshot || snapshot.notFound || !snapshot.record) {
     return (
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-        <PageShell title="限流策略不存在" subtitle="该策略不在当前 rate-limits 范围内。">
-          <Result status="404" title="策略未找到" subTitle={`策略 "${policyId}" 不存在`}
-            extra={<a href="/rate-limits/policies" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回策略列表</a>} />
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+          <PageShell title="限流策略不存在" subtitle="该策略不在当前 rate-limits 范围内。">
+            <Result status="404" title="策略未找到" subTitle={`策略 "${policyId}" 不存在`}
+              extra={<a href="/rate-limits/policies" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回策略列表</a>} />
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
@@ -138,46 +151,48 @@ export default function RateLimitsPolicyDetailPage({ params }: PageProps) {
   const statusCfg = STATUS_MAP[record.status] ?? { label: record.status, variant: 'default' as const };
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell title={`限流策略：${record.code}`} subtitle="查看作用域、周期、限额、算法与匹配的配额账本。">
-        <BreadcrumbPageHeader breadcrumbs={[{ label: '限流策略', href: '/rate-limits/policies' }, { label: record.code }]} title={record.name} />
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <div className="flex gap-2 items-center mb-5">
-            <h3 className="text-base font-semibold text-white">基本信息</h3>
-            <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title={`限流策略：${record.code}`} subtitle="查看作用域、周期、限额、算法与匹配的配额账本。">
+          <BreadcrumbPageHeader breadcrumbs={[{ label: '限流策略', href: '/rate-limits/policies' }, { label: record.code }]} title={record.name} />
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <div className="flex gap-2 items-center mb-5">
+              <h3 className="text-base font-semibold text-white">基本信息</h3>
+              <StatusBadge label={statusCfg.label} variant={statusCfg.variant} />
+            </div>
+            <DetailRow label="策略编码"><span className="font-mono text-sm text-blue-400">{record.code}</span></DetailRow>
+            <DetailRow label="策略名称"><span className="text-sm">{record.name}</span></DetailRow>
+            <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
+            <DetailRow label="描述"><span className="text-sm text-slate-300">{record.description}</span></DetailRow>
+            <DetailRow label="作用域"><span className="font-mono text-sm text-slate-400">{record.scope}</span></DetailRow>
+            <DetailRow label="时间窗口"><span className="text-sm">{record.windowSize}</span></DetailRow>
+            <DetailRow label="限额"><span className="font-mono text-sm">{record.limit.toLocaleString()} 次</span></DetailRow>
+            <DetailRow label="算法"><Badge variant="info">{record.algorithm}</Badge></DetailRow>
+            <DetailRow label="匹配账本数"><span className="text-sm">{record.matchedLedgers}</span></DetailRow>
+            <DetailRow label="创建时间"><span className="text-sm font-mono text-slate-400">{record.createdAt}</span></DetailRow>
+            <DetailRow label="更新时间"><span className="text-sm font-mono text-slate-400">{record.updatedAt}</span></DetailRow>
           </div>
-          <DetailRow label="策略编码"><span className="font-mono text-sm text-blue-400">{record.code}</span></DetailRow>
-          <DetailRow label="策略名称"><span className="text-sm">{record.name}</span></DetailRow>
-          <DetailRow label="状态"><StatusBadge label={statusCfg.label} variant={statusCfg.variant} /></DetailRow>
-          <DetailRow label="描述"><span className="text-sm text-slate-300">{record.description}</span></DetailRow>
-          <DetailRow label="作用域"><span className="font-mono text-sm text-slate-400">{record.scope}</span></DetailRow>
-          <DetailRow label="时间窗口"><span className="text-sm">{record.windowSize}</span></DetailRow>
-          <DetailRow label="限额"><span className="font-mono text-sm">{record.limit.toLocaleString()} 次</span></DetailRow>
-          <DetailRow label="算法"><Badge variant="info">{record.algorithm}</Badge></DetailRow>
-          <DetailRow label="匹配账本数"><span className="text-sm">{record.matchedLedgers}</span></DetailRow>
-          <DetailRow label="创建时间"><span className="text-sm font-mono text-slate-400">{record.createdAt}</span></DetailRow>
-          <DetailRow label="更新时间"><span className="text-sm font-mono text-slate-400">{record.updatedAt}</span></DetailRow>
-        </div>
-        <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
-          <h3 className="text-base font-semibold text-white mb-3">策略配置</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slate-800 rounded-lg p-4 text-center">
-              <div className="text-[11px] text-slate-400 mb-1">时间窗口</div>
-              <div className="text-lg font-bold font-mono text-white">{record.windowSize}</div>
-            </div>
-            <div className="bg-slate-800 rounded-lg p-4 text-center">
-              <div className="text-[11px] text-slate-400 mb-1">限额</div>
-              <div className="text-lg font-bold font-mono text-blue-400">{record.limit.toLocaleString()}</div>
-            </div>
-            <div className="bg-slate-800 rounded-lg p-4 text-center">
-              <div className="text-[11px] text-slate-400 mb-1">算法</div>
-              <div className="text-lg font-bold font-mono text-green-400">{record.algorithm}</div>
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
+            <h3 className="text-base font-semibold text-white mb-3">策略配置</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-slate-800 rounded-lg p-4 text-center">
+                <div className="text-[11px] text-slate-400 mb-1">时间窗口</div>
+                <div className="text-lg font-bold font-mono text-white">{record.windowSize}</div>
+              </div>
+              <div className="bg-slate-800 rounded-lg p-4 text-center">
+                <div className="text-[11px] text-slate-400 mb-1">限额</div>
+                <div className="text-lg font-bold font-mono text-blue-400">{record.limit.toLocaleString()}</div>
+              </div>
+              <div className="bg-slate-800 rounded-lg p-4 text-center">
+                <div className="text-[11px] text-slate-400 mb-1">算法</div>
+                <div className="text-lg font-bold font-mono text-green-400">{record.algorithm}</div>
+              </div>
             </div>
           </div>
-        </div>
-        <DetailClosureBar links={[{ key: 'list', title: '限流策略列表', subtitle: '返回 Rate Limits 策略管理', href: '/rate-limits/policies' }]} />
-      </PageShell>
-    </main>
+          <DetailClosureBar links={[{ key: 'list', title: '限流策略列表', subtitle: '返回 Rate Limits 策略管理', href: '/rate-limits/policies' }]} />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 
