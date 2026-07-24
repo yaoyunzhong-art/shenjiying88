@@ -70,6 +70,11 @@ const DEFAULT_IMPORT_CONFIG: ImportConfig = {
 /* ============================================================ */
 
 describe('member-import: 数据类型', () => {
+  it('源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'member:read'"));
+  });
+
   it('ImportRecord has all fields', () => {
     const r: ImportRecord = {
       row: 1, name: '张三', phone: '13800001111', email: 'z@e.com',

@@ -9,6 +9,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // ─── 类型 ────────────────────────────────────────────
 
@@ -58,6 +60,8 @@ const MARKET_OPTIONS = [
   { value: 'kr-default', label: '韩国' },
   { value: 'de-default', label: '德国' },
 ];
+
+const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
 const MOCK_RECORDS: ImportRecord[] = [
   { row: 1, name: '张三', phone: '13800001111', email: 'zhangsan@example.com', tier: 'gold', storeName: '朝阳大悦城旗舰店', marketCode: 'cn-mainland', notes: '新入职员工推荐', validationErrors: [], isValid: true },
@@ -119,6 +123,13 @@ function isValidFileType(filename: string): boolean {
 }
 
 // ─── 测试套件 ────────────────────────────────────────
+
+describe('members/import — 权限边界', () => {
+  it('0. 源码接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'member:read'"));
+  });
+});
 
 describe('members/import — 记录数据结构', () => {
   it('1. 12 条模拟记录（正例）', () => {

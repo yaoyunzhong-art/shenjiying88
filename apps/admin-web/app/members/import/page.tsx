@@ -28,6 +28,7 @@ import {
   type MemberTier,
   type MemberStatus,
 } from '../../members-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 导入数据类型 ----
 
@@ -90,6 +91,13 @@ const MARKET_OPTIONS = [
 
 // 模拟列映射
 const CSV_HEADERS = ['姓名', '手机号', '邮箱', '等级', '门店', '市场', '备注'];
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员批量导入访问受限',
+  description:
+    '会员批量导入页已接入管理员本地 session，只有具备 member:read 的账号才能查看导入配置、预览结果与导入进度。',
+} as const;
 
 // ---- 导入状态标签 ----
 
@@ -311,17 +319,18 @@ export default function ImportMemberPage() {
   }, [stage, searchTerm]);
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: 32 }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="会员管理"
-        workspaceHref="/members"
-        extraSegments={[{ label: '批量导入' }]}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: 32 }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="会员管理"
+          workspaceHref="/members"
+          extraSegments={[{ label: '批量导入' }]}
+        />
 
-      <PageShell
-        title="批量导入会员"
-        subtitle="通过 CSV / Excel 文件批量创建或更新会员档案"
-      >
+        <PageShell
+          title="批量导入会员"
+          subtitle="通过 CSV / Excel 文件批量创建或更新会员档案"
+        >
         {/* ---- 第一阶段：上传 ---- */}
         {stage === 'upload' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -768,8 +777,9 @@ export default function ImportMemberPage() {
             </div>
           </div>
         )}
-      </PageShell>
-    </div>
+        </PageShell>
+      </div>
+    </AdminPermissionGate>
   );
 }
 

@@ -16,6 +16,11 @@ const CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'users-client.tsx')
 import UsersClient from './users-client';
 
 describe('users/page.tsx — 页面源码契约', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+
   it('页面为客户端组件', () => assert.ok(SRC.includes("'use client'")));
   it('导出默认 UsersPage 组件', () => assert.ok(SRC.includes('export default function UsersPage')));
   it('PageShell 布局存在', () => assert.ok(SRC.includes('<PageShell')));

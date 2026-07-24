@@ -29,6 +29,11 @@ describe('categories/page — 页面结构与导出', () => {
     assert.ok(existsSync(PAGE), 'page.tsx 文件缺失');
   });
 
+  it('应接入管理员权限边界', () => {
+    assertIncludes(SRC, 'AdminPermissionGate');
+    assertIncludes(SRC, "requiredPermission: 'product:read'");
+  });
+
   it('应包含 use client 指令', () => {
     assertIncludes(SRC, "'use client'");
   });

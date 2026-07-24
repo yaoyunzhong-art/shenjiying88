@@ -22,6 +22,8 @@ import {
   type DataTableSortConfig,
 } from '@m5/ui';
 
+import { AdminPermissionGate } from '../components/admin-permission-gate';
+
 import {
   type CategoryItem,
   MOCK_CATEGORIES,
@@ -30,6 +32,13 @@ import {
   getCategoryUniqueParents,
   computeCategoryStats,
 } from '../categories-data';
+
+const permissionGate = {
+  requiredPermission: 'product:read',
+  title: '分类管理访问受限',
+  description:
+    '分类管理页已接入管理员本地 session，只有具备 product:read 的账号才能查看分类列表、统计面板与商品目录结构。',
+} as const;
 
 function buildColumns(
   onRowClick: (item: CategoryItem) => void,
@@ -182,58 +191,60 @@ export default function CategoriesListPage() {
   }, [router]);
 
   return (
-    <PageShell
-      title="分类管理"
-      subtitle="商品管理 / 分类管理"
-      actions={
-        <DetailActionBar
-          actions={[
-            { label: '新建分类', key: 'add', variant: 'primary' as const, onClick: () => handleAction('add') },
-          ]}
-        />
-      }
-    >
-      {/* 统计面板 */}
-      <CategoryStatsPanel data={data} />
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="max-w-xs">
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索分类名称、编码…"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Tabs
-            items={[
-              { key: 'all', label: `全部 (${data.length})` },
-              { key: 'root', label: `一级分类 (${data.filter(i => !i.parentName).length})` },
-              { key: 'leaf', label: `子分类 (${data.filter(i => i.parentName).length})` },
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="分类管理"
+        subtitle="商品管理 / 分类管理"
+        actions={
+          <DetailActionBar
+            actions={[
+              { label: '新建分类', key: 'add', variant: 'primary' as const, onClick: () => handleAction('add') },
             ]}
-            activeKey={statusFilter ?? 'all'}
-            onChange={handleStatusFilter}
+          />
+        }
+      >
+        {/* 统计面板 */}
+        <CategoryStatsPanel data={data} />
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="max-w-xs">
+            <SearchFilterInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="搜索分类名称、编码…"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Tabs
+              items={[
+                { key: 'all', label: `全部 (${data.length})` },
+                { key: 'root', label: `一级分类 (${data.filter(i => !i.parentName).length})` },
+                { key: 'leaf', label: `子分类 (${data.filter(i => i.parentName).length})` },
+              ]}
+              activeKey={statusFilter ?? 'all'}
+              onChange={handleStatusFilter}
+            />
+          </div>
+        </div>
+
+        <DataTable
+          columns={columns as DataTableColumn<unknown>[]}
+          data={pageItems as unknown[]}
+          rowKey={(row: unknown) => (row as CategoryItem).id}
+          sort={sortConfig}
+          onSortChange={setSortConfig as (value: React.SetStateAction<DataTableSortConfig | null>) => void}
+          emptyText="暂无分类数据"
+          onRowClick={(row: unknown) => onRowClick(row as CategoryItem)}
+        />
+
+        <div className="mt-4 flex justify-end">
+          <Pagination
+            page={page}
+            total={total}
+            onPageChange={setPage}
           />
         </div>
-      </div>
-
-      <DataTable
-        columns={columns as DataTableColumn<unknown>[]}
-        data={pageItems as unknown[]}
-        rowKey={(row: unknown) => (row as CategoryItem).id}
-        sort={sortConfig}
-        onSortChange={setSortConfig as (value: React.SetStateAction<DataTableSortConfig | null>) => void}
-        emptyText="暂无分类数据"
-        onRowClick={(row: unknown) => onRowClick(row as CategoryItem)}
-      />
-
-      <div className="mt-4 flex justify-end">
-        <Pagination
-          page={page}
-          total={total}
-          onPageChange={setPage}
-        />
-      </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
