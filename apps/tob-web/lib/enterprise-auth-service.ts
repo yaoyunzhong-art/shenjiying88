@@ -53,6 +53,7 @@ export interface EnterpriseUser {
   mobile?: string;
   nickname?: string;
   roles: string[];
+  permissions: string[];
   avatar?: string;
 }
 
