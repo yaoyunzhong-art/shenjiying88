@@ -55,6 +55,7 @@ describe('[Enterprise] 企业登录流程', () => {
     assert.ok(user.tenantId, '应有 tenantId');
     assert.ok(Array.isArray(user.roles), 'roles 应为数组');
     assert.ok(user.roles.length > 0, '应有至少一个角色');
+    assert.ok(Array.isArray(user.permissions), 'permissions 应为数组');
   });
 
   test('1.3 [反例] 空密码登录 → 失败', async () => {
@@ -164,6 +165,7 @@ describe('[Enterprise] Token生命周期', () => {
     assert.ok(result.data, '应有用户数据');
     assert.ok(result.data!.userId);
     assert.ok(result.data!.tenantId);
+    assert.ok(Array.isArray(result.data!.permissions), '应返回 permissions 数组');
   });
 
   test('3.3 [反例] 无效Token获取用户 → 返回错误', async () => {

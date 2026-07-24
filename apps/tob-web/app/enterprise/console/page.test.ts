@@ -116,6 +116,17 @@ describe('Enterprise user auth service', () => {
   });
 });
 
+describe('Enterprise console permissions', () => {
+  it('should render permissions section in account info', async () => {
+    // 直接读取源文件（RSC 无法 .toString()）
+    const fs = await import('fs/promises');
+    const source = await fs.readFile('./app/enterprise/console/page.tsx', 'utf-8');
+    assert.ok(source.includes('权限'), 'page should render permissions label');
+    assert.ok(source.includes('user?.permissions?.length'), 'page should read EnterpriseUser.permissions');
+    assert.ok(source.includes('暂无权限'), 'page should handle empty permissions');
+  });
+});
+
 // 页面中使用的角色枚举检查
 describe('Enterprise console roles', () => {
   const validRoles = ['tenant_admin', 'brand_manager', 'store_manager', 'staff'];

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormField, useFormSubmit, FormSubmitFeedback, SubmitButton } from '@m5/ui';
 import { enterpriseAuthService, type EnterpriseLoginResponse } from '../../../lib/enterprise-auth-service';
+import { storeEnterpriseSession } from '../lib/enterprise-session';
 import { useEnterpriseFormFields } from '../lib/use-enterprise-form-fields';
 import { email as emailValidator, passwordMin } from '../lib/enterprise-validators';
 import { EnterpriseAuthPage } from '../components/EnterpriseAuthPage';
@@ -27,10 +28,11 @@ export default function EnterpriseLoginPage() {
       });
 
       if (result.success && result.data) {
-        // 保存Token到localStorage
-        localStorage.setItem('enterprise_access_token', result.data.accessToken);
-        localStorage.setItem('enterprise_refresh_token', result.data.refreshToken);
-        localStorage.setItem('enterprise_user', JSON.stringify(result.data.user));
+        storeEnterpriseSession({
+          accessToken: result.data.accessToken,
+          refreshToken: result.data.refreshToken,
+          user: result.data.user,
+        });
 
         // 跳转到企业控制台
         router.push('/enterprise/console');
