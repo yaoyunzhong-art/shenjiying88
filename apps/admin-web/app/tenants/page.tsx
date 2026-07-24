@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageShell, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
+import { AdminPermissionGate } from '../components/admin-permission-gate';
+
 // ── 类型 ──
 
 export type TenantTier = 'free' | 'starter' | 'business' | 'enterprise' | 'premium';
@@ -64,6 +66,13 @@ export function formatMoney(amount: number): string {
 // ── URL-pattern Response Registry (可测试 mock) ──
 
 const API_BASE = '/api/tenants';
+
+const permissionGate = {
+  requiredPermission: 'tenant:read',
+  title: '租户管理访问受限',
+  description:
+    '租户管理页已接入管理员本地 session，只有具备 tenant:read 的账号才能查看租户列表、状态分布与区域经营概览。',
+} as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ResponseHandler = (body?: any) => { ok: boolean; data: unknown; message: string };
@@ -317,92 +326,98 @@ export default function TenantsPage() {
   // 加载状态
   if (loading) {
     return (
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <PageShell title="租户管理" subtitle="加载中...">
-          <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>加载租户数据中...</div>
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+          <PageShell title="租户管理" subtitle="加载中...">
+            <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>加载租户数据中...</div>
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   // 错误状态
   if (error) {
     return (
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <PageShell title="租户管理" subtitle="数据加载失败">
-          <div style={{ textAlign: 'center', padding: 60, color: '#ef4444' }}>
-            <p>加载失败: {error}</p>
-            <button onClick={loadTenants} style={{ marginTop: 16, padding: '8px 20px', borderRadius: 8, border: '1px solid #475569', background: '#1e293b', color: '#e2e8f0', cursor: 'pointer' }}>重试</button>
-          </div>
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+          <PageShell title="租户管理" subtitle="数据加载失败">
+            <div style={{ textAlign: 'center', padding: 60, color: '#ef4444' }}>
+              <p>加载失败: {error}</p>
+              <button onClick={loadTenants} style={{ marginTop: 16, padding: '8px 20px', borderRadius: 8, border: '1px solid #475569', background: '#1e293b', color: '#e2e8f0', cursor: 'pointer' }}>重试</button>
+            </div>
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="租户管理" subtitle={`${stats.total}个租户 · 累计营收${formatMoney(stats.revenue)}`}>
-        {tenants.length > 0 && <StatBar stats={stats} />}
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell title="租户管理" subtitle={`${stats.total}个租户 · 累计营收${formatMoney(stats.revenue)}`}>
+          {tenants.length > 0 && <StatBar stats={stats} />}
 
-        <div style={{ marginBottom: 16 }}>
-          <Tabs
-            items={[
-              { key: 'list', label: '📋 租户列表' },
-              { key: 'analytics', label: '📊 数据分析' },
-            ]}
-            activeKey={tab}
-            onChange={t => setTab(t as typeof tab)}
-            variant="pills"
-          />
-        </div>
+          <div style={{ marginBottom: 16 }}>
+            <Tabs
+              items={[
+                { key: 'list', label: '📋 租户列表' },
+                { key: 'analytics', label: '📊 数据分析' },
+              ]}
+              activeKey={tab}
+              onChange={t => setTab(t as typeof tab)}
+              variant="pills"
+            />
+          </div>
 
-        {tab === 'list' && (
-          <>
-            <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索租户名称/编码/联系人/区域..." />
-            <div style={{ marginTop: 12 }}>
-              <Tabs
-                items={[
-                  { key: 'ALL', label: '全部', count: filteredItems.length },
-                  ...(['active', 'trial', 'suspended', 'expired'] as TenantStatus[]).map(s => ({
-                    key: s,
-                    label: STATUS_CONFIG[s].label,
-                    count: filteredItems.filter(t => t.status === s).length,
-                  })),
-                ]}
-                activeKey={statusFilter}
-                onChange={setStatusFilter}
-                variant="pills"
-                size="sm"
+          {tab === 'list' && (
+            <>
+              <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索租户名称/编码/联系人/区域..." />
+              <div style={{ marginTop: 12 }}>
+                <Tabs
+                  items={[
+                    { key: 'ALL', label: '全部', count: filteredItems.length },
+                    ...(['active', 'trial', 'suspended', 'expired'] as TenantStatus[]).map(s => ({
+                      key: s,
+                      label: STATUS_CONFIG[s].label,
+                      count: filteredItems.filter(t => t.status === s).length,
+                    })),
+                  ]}
+                  activeKey={statusFilter}
+                  onChange={setStatusFilter}
+                  variant="pills"
+                  size="sm"
+                />
+              </div>
+              <DataTable
+                title={`租户列表 (${sorted.length})`}
+                columns={columns}
+                items={pageItems}
+                rowKey={i => i.id}
+                sort={sortConfig}
+                onSortChange={setSortConfig}
+                striped
+                compact
               />
-            </div>
-            <DataTable
-              title={`租户列表 (${sorted.length})`}
-              columns={columns}
-              items={pageItems}
-              rowKey={i => i.id}
-              sort={sortConfig}
-              onSortChange={setSortConfig}
-              striped
-              compact
-            />
-            <Pagination
-              page={pagination.page}
-              pageSize={pagination.pageSize}
-              total={sorted.length}
-              onPageChange={pagination.setPage}
-              onPageSizeChange={pagination.setPageSize}
-            />
-          </>
-        )}
+              <Pagination
+                page={pagination.page}
+                pageSize={pagination.pageSize}
+                total={sorted.length}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
+              />
+            </>
+          )}
 
-        {tab === 'analytics' && (
-          <>
-            <TierDistribution stats={stats} />
-            <RegionDistribution tenants={tenants} />
-          </>
-        )}
-      </PageShell>
-    </main>
+          {tab === 'analytics' && (
+            <>
+              <TierDistribution stats={stats} />
+              <RegionDistribution tenants={tenants} />
+            </>
+          )}
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 
