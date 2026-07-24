@@ -1,11 +1,13 @@
 /**
  * 未成年保护 Controller
  */
-import { Controller, Get, Post, Body, Param, Query, NotFoundException } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, NotFoundException, UseGuards } from '@nestjs/common'
+import { TenantGuard } from '../agent/tenant.guard'
 import { MinorProtectionService } from './minor-protection.service'
 import type { IdentityVerifyMethod, MinorProtectionConfig } from './minor-protection.entity'
 
 @Controller('minor-protection')
+@UseGuards(TenantGuard)
 export class MinorProtectionController {
   constructor(private readonly service: MinorProtectionService) {}
 
