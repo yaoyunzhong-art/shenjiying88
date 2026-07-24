@@ -1,5 +1,10 @@
 'use client'
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Payment Channels - 神机营' }
+
+
 import { useCallback, useEffect, useState } from 'react'
 
 // ─── 类型定义 ──────────────────────────────────────

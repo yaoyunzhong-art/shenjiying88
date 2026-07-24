@@ -7,6 +7,11 @@
  */
 
 import { useState, useMemo, Suspense } from 'react';
+
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Suppliers - 神机营' }
+
 import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
 type SupStatus = 'active'|'inactive'|'blacklisted'|'pending';

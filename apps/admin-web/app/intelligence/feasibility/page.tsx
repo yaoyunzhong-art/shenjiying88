@@ -1,5 +1,10 @@
 'use client'
 
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: 'Feasibility - 神机营' }
+
+
 import { useState, useMemo } from 'react'
 
 interface FeasibilityReport {
