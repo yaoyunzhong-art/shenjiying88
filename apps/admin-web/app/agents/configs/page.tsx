@@ -20,6 +20,7 @@ import {
   SearchFilterInput, Select, StatCard, StatusBadge,
   usePagination, useSortedItems, type DataTableColumn, type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { loadAgentConfigs } from '../agent-view-model';
 import AgentConfigsClient from './agent-configs-client';
 
@@ -64,6 +65,13 @@ const MODEL_OPTS = [
   { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
   { value: 'claude-3-haiku', label: 'Claude 3 Haiku' },
 ];
+
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: 'Agent 配置中心访问受限',
+  description:
+    'Agent 配置中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模型配置、启停状态与批量治理能力。',
+} as const;
 
 function fmtTimeout(ms: number): string {
   if (ms >= 60000) return `${(ms / 60000).toFixed(0)}min`;
@@ -144,71 +152,73 @@ export default function AgentConfigsPage() {
 
   // ---- 渲染 ----
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="Agent 配置中心"
-        subtitle="管理 ReAct Agent 的 system prompt、模型选择、最大步数、允许工具与超时,作为 Agent 运行时的基础配置。"
-      >
-        {/* 统计卡片 */}
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
-          <StatCard label="配置总数" value={configs.length} helper="全部 Agent 配置" />
-          <StatCard label="已启用" value={enabledCount} helper="可被会话调用" tone="success" />
-          <StatCard label="已禁用" value={disabledCount} helper="已下线" tone="neutral" />
-          <StatCard label="启用反思" value={reflectionCount} helper="enableReflection" tone="info" />
-        </div>
-
-        {/* 操作栏 */}
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <div className="flex-1 min-w-[240px]">
-            <SearchFilterInput placeholder="搜索 Agent 名称或模型..." value={search}
-              onChange={(v) => { setSearch(v); pagination.setPage(1); }} />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="Agent 配置中心"
+          subtitle="管理 ReAct Agent 的 system prompt、模型选择、最大步数、允许工具与超时,作为 Agent 运行时的基础配置。"
+        >
+          {/* 统计卡片 */}
+          <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
+            <StatCard label="配置总数" value={configs.length} helper="全部 Agent 配置" />
+            <StatCard label="已启用" value={enabledCount} helper="可被会话调用" tone="success" />
+            <StatCard label="已禁用" value={disabledCount} helper="已下线" tone="neutral" />
+            <StatCard label="启用反思" value={reflectionCount} helper="enableReflection" tone="info" />
           </div>
-          <Select options={MODEL_OPTS} value={modelFilter}
-            onChange={(v) => { setModelFilter(v); pagination.setPage(1); }} placeholder="模型" />
-          <span className="text-xs text-slate-500">共 {filtered.length} / {configs.length} 条</span>
-        </div>
 
-        {/* 状态切换 */}
-        <div className="flex gap-2 mb-3">
-          {[
-            { k: 'all', l: '全部', c: configs.length },
-            { k: 'enabled', l: '启用', c: enabledCount },
-            { k: 'disabled', l: '禁用', c: disabledCount },
-          ].map((tab) => (
-            <button key={tab.k}
-              onClick={() => { setActiveTab(tab.k); pagination.setPage(1); setSearch(''); setModelFilter(''); }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab.k ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}>
-              {tab.l} ({tab.c})
-            </button>
-          ))}
-          <div className="flex-1" />
-          <span className="text-xs text-slate-500 py-2">工具总数: {totalTools} · 平均超时: {avgTimeout}s</span>
-        </div>
+          {/* 操作栏 */}
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <SearchFilterInput placeholder="搜索 Agent 名称或模型..." value={search}
+                onChange={(v) => { setSearch(v); pagination.setPage(1); }} />
+            </div>
+            <Select options={MODEL_OPTS} value={modelFilter}
+              onChange={(v) => { setModelFilter(v); pagination.setPage(1); }} placeholder="模型" />
+            <span className="text-xs text-slate-500">共 {filtered.length} / {configs.length} 条</span>
+          </div>
 
-        {/* 数据表格 */}
-        <DataTable<AgentConfigBrief>
-          columns={cols}
-          rows={pageItems}
-          sort={sortConfig}
-          onSortChange={setSortConfig}
-          emptyText={search || modelFilter ? '未找到匹配的 Agent 配置' : '暂无 Agent 配置数据'}
-          rowKey={(r) => r.id}
-        />
+          {/* 状态切换 */}
+          <div className="flex gap-2 mb-3">
+            {[
+              { k: 'all', l: '全部', c: configs.length },
+              { k: 'enabled', l: '启用', c: enabledCount },
+              { k: 'disabled', l: '禁用', c: disabledCount },
+            ].map((tab) => (
+              <button key={tab.k}
+                onClick={() => { setActiveTab(tab.k); pagination.setPage(1); setSearch(''); setModelFilter(''); }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === tab.k ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}>
+                {tab.l} ({tab.c})
+              </button>
+            ))}
+            <div className="flex-1" />
+            <span className="text-xs text-slate-500 py-2">工具总数: {totalTools} · 平均超时: {avgTimeout}s</span>
+          </div>
 
-        {/* 分页 */}
-        <div className="flex justify-end mt-4">
-          <Pagination
-            page={pagination.page}
-            pageSize={pagination.pageSize}
-            total={sorted.length}
-            onPageChange={pagination.setPage}
-            onPageSizeChange={pagination.setPageSize}
+          {/* 数据表格 */}
+          <DataTable<AgentConfigBrief>
+            columns={cols}
+            rows={pageItems}
+            sort={sortConfig}
+            onSortChange={setSortConfig}
+            emptyText={search || modelFilter ? '未找到匹配的 Agent 配置' : '暂无 Agent 配置数据'}
+            rowKey={(r) => r.id}
           />
-        </div>
-      </PageShell>
-    </main>
+
+          {/* 分页 */}
+          <div className="flex justify-end mt-4">
+            <Pagination
+              page={pagination.page}
+              pageSize={pagination.pageSize}
+              total={sorted.length}
+              onPageChange={pagination.setPage}
+              onPageSizeChange={pagination.setPageSize}
+            />
+          </div>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

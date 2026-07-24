@@ -9,6 +9,7 @@
  */
 
 import React, { useState } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -125,6 +126,13 @@ const styles: Record<string, React.CSSProperties> = {
   fieldGroupTitle: { fontSize: 15, fontWeight: 600, color: '#e2e8f0', marginBottom: 12, marginTop: 24 },
 };
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '自定义字段访问受限',
+  description:
+    '自定义字段页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看字段定义、分组筛选与创建编辑能力。',
+} as const;
+
 // ============================================================
 // 辅助函数
 // ============================================================
@@ -239,193 +247,195 @@ export default function CustomFieldsPage() {
   }
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>📋 自定义字段管理</h1>
-      <p style={styles.subtitle}>
-        管理各业务场景的自定义字段。支持 {FIELD_GROUPS.length} 个字段分组、
-        {FIELD_TYPE_LABEL ? Object.keys(FIELD_TYPE_LABEL).length : 0} 种字段类型，
-        按需创建、编辑和调整排序。
-      </p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>📋 自定义字段管理</h1>
+        <p style={styles.subtitle}>
+          管理各业务场景的自定义字段。支持 {FIELD_GROUPS.length} 个字段分组、
+          {FIELD_TYPE_LABEL ? Object.keys(FIELD_TYPE_LABEL).length : 0} 种字段类型，
+          按需创建、编辑和调整排序。
+        </p>
 
-      {/* 统计卡片 */}
-      <div style={styles.statsRow}>
-        <div style={styles.statCard('rgba(30, 41, 59, 0.8)')}>
-          <div style={styles.statLabel}>字段总数</div>
-          <div style={styles.statValue}>{totalFields}</div>
+        {/* 统计卡片 */}
+        <div style={styles.statsRow}>
+          <div style={styles.statCard('rgba(30, 41, 59, 0.8)')}>
+            <div style={styles.statLabel}>字段总数</div>
+            <div style={styles.statValue}>{totalFields}</div>
+          </div>
+          <div style={styles.statCard('rgba(34, 197, 94, 0.08)')}>
+            <div style={styles.statLabel}>已启用</div>
+            <div style={{ ...styles.statValue, color: '#22c55e' }}>{enabledCount}</div>
+          </div>
+          <div style={styles.statCard('rgba(59, 130, 246, 0.08)')}>
+            <div style={styles.statLabel}>必填字段</div>
+            <div style={{ ...styles.statValue, color: '#60a5fa' }}>{requiredCount}</div>
+          </div>
+          <div style={styles.statCard('rgba(71, 85, 105, 0.08)')}>
+            <div style={styles.statLabel}>已停用</div>
+            <div style={{ ...styles.statValue, color: '#475569' }}>{disabledCount}</div>
+          </div>
         </div>
-        <div style={styles.statCard('rgba(34, 197, 94, 0.08)')}>
-          <div style={styles.statLabel}>已启用</div>
-          <div style={{ ...styles.statValue, color: '#22c55e' }}>{enabledCount}</div>
-        </div>
-        <div style={styles.statCard('rgba(59, 130, 246, 0.08)')}>
-          <div style={styles.statLabel}>必填字段</div>
-          <div style={{ ...styles.statValue, color: '#60a5fa' }}>{requiredCount}</div>
-        </div>
-        <div style={styles.statCard('rgba(71, 85, 105, 0.08)')}>
-          <div style={styles.statLabel}>已停用</div>
-          <div style={{ ...styles.statValue, color: '#475569' }}>{disabledCount}</div>
-        </div>
-      </div>
 
-      {/* 操作栏 */}
-      <div style={styles.toolbar}>
-        <div style={styles.groupFilter}>
-          <span style={styles.groupChip(activeGroup === null)} onClick={() => setActiveGroup(null)}>全部</span>
-          {FIELD_GROUPS.map(g => (
-            <span key={g} style={styles.groupChip(activeGroup === g)} onClick={() => setActiveGroup(g)}>{g}</span>
-          ))}
+        {/* 操作栏 */}
+        <div style={styles.toolbar}>
+          <div style={styles.groupFilter}>
+            <span style={styles.groupChip(activeGroup === null)} onClick={() => setActiveGroup(null)}>全部</span>
+            {FIELD_GROUPS.map(g => (
+              <span key={g} style={styles.groupChip(activeGroup === g)} onClick={() => setActiveGroup(g)}>{g}</span>
+            ))}
+          </div>
+          <input
+            type="text"
+            placeholder="🔍 搜索字段名称/标识..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            style={{ ...styles.formInput, width: 240 }}
+          />
+          <button style={styles.addBtn} onClick={openCreateModal}>+ 新增字段</button>
         </div>
-        <input
-          type="text"
-          placeholder="🔍 搜索字段名称/标识..."
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          style={{ ...styles.formInput, width: 240 }}
-        />
-        <button style={styles.addBtn} onClick={openCreateModal}>+ 新增字段</button>
-      </div>
 
-      {/* 字段列表表格 */}
-      <div>
-        {FIELD_GROUPS.map(group => {
-          const groupFields = filtered.filter(f => f.group === group);
-          if (groupFields.length === 0 && activeGroup === null && !searchText) return null;
-          if (activeGroup && activeGroup !== group) return null;
-          if (groupFields.length === 0) return null;
+        {/* 字段列表表格 */}
+        <div>
+          {FIELD_GROUPS.map(group => {
+            const groupFields = filtered.filter(f => f.group === group);
+            if (groupFields.length === 0 && activeGroup === null && !searchText) return null;
+            if (activeGroup && activeGroup !== group) return null;
+            if (groupFields.length === 0) return null;
 
-          return (
-            <div key={group}>
-              <h3 style={{ ...styles.fieldGroupTitle, display: 'flex', alignItems: 'center', gap: 8 }}>
-                📁 {group}
-                <span style={{ fontSize: 12, color: '#64748b', fontWeight: 400 }}>({groupFields.length})</span>
-              </h3>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>排序</th>
-                    <th style={styles.th}>字段名称</th>
-                    <th style={styles.th}>标识</th>
-                    <th style={styles.th}>类型</th>
-                    <th style={styles.th}>必填</th>
-                    <th style={styles.th}>状态</th>
-                    <th style={styles.th}>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupFields.map(f => (
-                    <tr key={f.id}>
-                      <td style={styles.td}>{f.sortOrder}</td>
-                      <td style={{ ...styles.td, fontWeight: 600 }}>{f.name}</td>
-                      <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 12 }}>{f.key}</td>
-                      <td style={styles.td}>
-                        <span style={styles.typeBadge(FIELD_TYPE_COLOR[f.type])}>{FIELD_TYPE_LABEL[f.type]}</span>
-                      </td>
-                      <td style={styles.td}>{f.required ? '是' : '否'}</td>
-                      <td style={styles.td}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={styles.enabledDot(f.enabled)} />
-                          {f.enabled ? '启用' : '停用'}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <button style={styles.actionBtn} onClick={() => openEditModal(f)}>编辑</button>
-                        <button style={styles.actionBtn} onClick={() => toggleEnabled(f.id)}>
-                          {f.enabled ? '停用' : '启用'}
-                        </button>
-                      </td>
+            return (
+              <div key={group}>
+                <h3 style={{ ...styles.fieldGroupTitle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  📁 {group}
+                  <span style={{ fontSize: 12, color: '#64748b', fontWeight: 400 }}>({groupFields.length})</span>
+                </h3>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>排序</th>
+                      <th style={styles.th}>字段名称</th>
+                      <th style={styles.th}>标识</th>
+                      <th style={styles.th}>类型</th>
+                      <th style={styles.th}>必填</th>
+                      <th style={styles.th}>状态</th>
+                      <th style={styles.th}>操作</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        })}
+                  </thead>
+                  <tbody>
+                    {groupFields.map(f => (
+                      <tr key={f.id}>
+                        <td style={styles.td}>{f.sortOrder}</td>
+                        <td style={{ ...styles.td, fontWeight: 600 }}>{f.name}</td>
+                        <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 12 }}>{f.key}</td>
+                        <td style={styles.td}>
+                          <span style={styles.typeBadge(FIELD_TYPE_COLOR[f.type])}>{FIELD_TYPE_LABEL[f.type]}</span>
+                        </td>
+                        <td style={styles.td}>{f.required ? '是' : '否'}</td>
+                        <td style={styles.td}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={styles.enabledDot(f.enabled)} />
+                            {f.enabled ? '启用' : '停用'}
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          <button style={styles.actionBtn} onClick={() => openEditModal(f)}>编辑</button>
+                          <button style={styles.actionBtn} onClick={() => toggleEnabled(f.id)}>
+                            {f.enabled ? '停用' : '启用'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
 
-        {filtered.length === 0 && (
-          <div style={styles.emptyRow}>
-            {searchText ? '未找到匹配的字段，请调整搜索条件' : '该分组下暂无自定义字段'}
+          {filtered.length === 0 && (
+            <div style={styles.emptyRow}>
+              {searchText ? '未找到匹配的字段，请调整搜索条件' : '该分组下暂无自定义字段'}
+            </div>
+          )}
+        </div>
+
+        {/* 创建/编辑弹窗 */}
+        {showModal && (
+          <div style={styles.modalOverlay} onClick={closeModal}>
+            <div style={styles.modal} onClick={e => e.stopPropagation()}>
+              <h2 style={styles.modalTitle}>{editingField ? '编辑字段' : '新增字段'}</h2>
+
+              {formError && (
+                <div style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13, marginBottom: 16 }}>
+                  ⚠️ {formError}
+                </div>
+              )}
+
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>字段名称 *</label>
+                  <input style={styles.formInput} value={formData.name || ''} onChange={e => handleFormChange('name', e.target.value)} placeholder="例如：会员生日" />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>字段标识 *</label>
+                  <input style={styles.formInput} value={formData.key || ''} onChange={e => handleFormChange('key', e.target.value)} placeholder="例如：member_birthday" readOnly={!!editingField} />
+                </div>
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>显示标签</label>
+                  <input style={styles.formInput} value={formData.label || ''} onChange={e => handleFormChange('label', e.target.value)} />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>字段类型</label>
+                  <select style={styles.formSelect} value={formData.type || 'text'} onChange={e => handleFormChange('type', e.target.value)} disabled={!!editingField}>
+                    {Object.entries(FIELD_TYPE_LABEL).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>所属分组</label>
+                  <select style={styles.formSelect} value={formData.group || '基本信息'} onChange={e => handleFormChange('group', e.target.value)}>
+                    {FIELD_GROUPS.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>排序号</label>
+                  <input type="number" style={styles.formInput} value={formData.sortOrder || fields.length + 1} onChange={e => handleFormChange('sortOrder', parseInt(e.target.value) || 1)} />
+                </div>
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>
+                    <input type="checkbox" checked={formData.required || false} onChange={e => handleFormChange('required', e.target.checked)} /> 必填字段
+                  </label>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>
+                    <input type="checkbox" checked={formData.enabled !== false} onChange={e => handleFormChange('enabled', e.target.checked)} /> 启用字段
+                  </label>
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>占位提示</label>
+                <input style={styles.formInput} value={formData.placeholder || ''} onChange={e => handleFormChange('placeholder', e.target.value)} />
+              </div>
+
+              <div style={styles.modalFooter}>
+                <button style={styles.cancelBtn} onClick={closeModal}>取消</button>
+                <button style={styles.submitBtn} onClick={handleSubmit}>{editingField ? '保存修改' : '创建字段'}</button>
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      {/* 创建/编辑弹窗 */}
-      {showModal && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>{editingField ? '编辑字段' : '新增字段'}</h2>
-
-            {formError && (
-              <div style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 8, color: '#ef4444', fontSize: 13, marginBottom: 16 }}>
-                ⚠️ {formError}
-              </div>
-            )}
-
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>字段名称 *</label>
-                <input style={styles.formInput} value={formData.name || ''} onChange={e => handleFormChange('name', e.target.value)} placeholder="例如：会员生日" />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>字段标识 *</label>
-                <input style={styles.formInput} value={formData.key || ''} onChange={e => handleFormChange('key', e.target.value)} placeholder="例如：member_birthday" readOnly={!!editingField} />
-              </div>
-            </div>
-
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>显示标签</label>
-                <input style={styles.formInput} value={formData.label || ''} onChange={e => handleFormChange('label', e.target.value)} />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>字段类型</label>
-                <select style={styles.formSelect} value={formData.type || 'text'} onChange={e => handleFormChange('type', e.target.value)} disabled={!!editingField}>
-                  {Object.entries(FIELD_TYPE_LABEL).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>所属分组</label>
-                <select style={styles.formSelect} value={formData.group || '基本信息'} onChange={e => handleFormChange('group', e.target.value)}>
-                  {FIELD_GROUPS.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>排序号</label>
-                <input type="number" style={styles.formInput} value={formData.sortOrder || fields.length + 1} onChange={e => handleFormChange('sortOrder', parseInt(e.target.value) || 1)} />
-              </div>
-            </div>
-
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  <input type="checkbox" checked={formData.required || false} onChange={e => handleFormChange('required', e.target.checked)} /> 必填字段
-                </label>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>
-                  <input type="checkbox" checked={formData.enabled !== false} onChange={e => handleFormChange('enabled', e.target.checked)} /> 启用字段
-                </label>
-              </div>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>占位提示</label>
-              <input style={styles.formInput} value={formData.placeholder || ''} onChange={e => handleFormChange('placeholder', e.target.value)} />
-            </div>
-
-            <div style={styles.modalFooter}>
-              <button style={styles.cancelBtn} onClick={closeModal}>取消</button>
-              <button style={styles.submitBtn} onClick={handleSubmit}>{editingField ? '保存修改' : '创建字段'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </AdminPermissionGate>
   );
 }

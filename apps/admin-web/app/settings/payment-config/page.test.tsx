@@ -46,4 +46,8 @@ describe('settings/payment-config', () => {
   it('包含通道概览 section', () => { assert.ok(content.includes('通道概览')) })
   it('包含结算配置 section', () => { assert.ok(content.includes('结算配置') || content.includes('结算周期')) })
   it('包含费率信息', () => { assert.ok(content.includes('费率') || content.includes('feeRate')) })
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
 })

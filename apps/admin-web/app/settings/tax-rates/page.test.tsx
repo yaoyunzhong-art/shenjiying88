@@ -47,4 +47,8 @@ describe('settings/tax-rates', () => {
   it('包含品类税率表 section', () => { assert.ok(content.includes('品类税率表') || content.includes('品类税率')) })
   it('包含税务规则 section', () => { assert.ok(content.includes('税务规则')) })
   it('包含计税方式说明', () => { assert.ok(content.includes('计税方式') || content.includes('价外税')) })
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
 })

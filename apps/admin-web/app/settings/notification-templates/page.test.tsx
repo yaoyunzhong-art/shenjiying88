@@ -14,6 +14,7 @@ import React from 'react';
 import { render, cleanup, waitFor, act } from '@testing-library/react';
 import NotificationTemplatesPage from './page';
 import fs from 'node:fs';
+const ADMIN_USER_KEY = 'admin_user';
 
 /* ── 类型 ── */
 
@@ -70,7 +71,16 @@ function extractVariables(template: string): string[] {
 
 async function setupAfterLoad() {
   cleanup();
+  window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
+    userId: 'admin:test',
+    username: 'template-admin',
+    role: 'super-admin',
+    permissions: ['foundation.governance.read'],
+  }));
   const view = render(React.createElement(NotificationTemplatesPage));
+  await act(async () => {
+    await new Promise(r => setTimeout(r, 0));
+  });
   await act(async () => {
     await new Promise(r => setTimeout(r, 0));
   });
@@ -234,4 +244,8 @@ describe('Settings / Notification Templates — hooks验证', () => {
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
 });

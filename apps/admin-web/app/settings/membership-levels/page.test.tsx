@@ -59,4 +59,8 @@ describe('settings/membership-levels', () => {
     const benefits = Array.from(content.matchAll(/benefits:/g))
     assert.equal(benefits.length, 5, `got ${benefits.length} benefits`) // interface field + 4 data items
   })
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
 })

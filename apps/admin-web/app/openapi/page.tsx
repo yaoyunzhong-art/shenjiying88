@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 interface APIKey {
   id: string
@@ -87,6 +88,13 @@ const ENV_COLOR: Record<string, string> = {
   SANDBOX: 'bg-green-100 text-green-700'
 }
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '开放 API 工作台访问受限',
+  description:
+    '开放 API 工作台已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看 API Key、Webhook、沙箱与签名治理配置。',
+} as const
+
 export default function OpenAPIWorkbench() {
   const [tab, setTab] = useState<'keys' | 'webhooks' | 'sandboxes' | 'usage' | 'sign'>('keys')
   const [tenantId] = useState('t-demo')
@@ -161,52 +169,58 @@ export default function OpenAPIWorkbench() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">加载中…</div>
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div className="p-8 text-center text-gray-500">加载中…</div>
+      </AdminPermissionGate>
+    )
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">🔌 开放 API 工作台</h1>
-      <p className="text-gray-500 mb-6">API Key + Webhook + 沙箱 + 限流配额 + HMAC 签名</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2">🔌 开放 API 工作台</h1>
+        <p className="text-gray-500 mb-6">API Key + Webhook + 沙箱 + 限流配额 + HMAC 签名</p>
 
-      {/* API 状态统计条 */}
-      <ApiStatsBar
-        apiKeyCount={apiKeys.length}
-        activeSubscriptions={webhooks.filter(w => w.status === 'ACTIVE').length}
-        todayCalls={usageReport?.totalUsageToday ?? 0}
-        anomalyCount={deliveries.filter(d => d.status === 'FAILED').length + deadLetters.length}
-      />
+        {/* API 状态统计条 */}
+        <ApiStatsBar
+          apiKeyCount={apiKeys.length}
+          activeSubscriptions={webhooks.filter(w => w.status === 'ACTIVE').length}
+          todayCalls={usageReport?.totalUsageToday ?? 0}
+          anomalyCount={deliveries.filter(d => d.status === 'FAILED').length + deadLetters.length}
+        />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b">
-        {[
-          { id: 'keys', label: '🔑 API Keys', count: apiKeys.length },
-          { id: 'webhooks', label: '🪝 Webhooks', count: webhooks.length },
-          { id: 'sandboxes', label: '📦 沙箱', count: sandboxes.length },
-          { id: 'usage', label: '📊 用量配额', count: 0 },
-          { id: 'sign', label: '🔐 签名验证', count: 0 }
-        ].map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id as any)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-              tab === t.id
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t.label} {t.count > 0 && <span className="ml-1 text-xs">({t.count})</span>}
-          </button>
-        ))}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b">
+          {[
+            { id: 'keys', label: '🔑 API Keys', count: apiKeys.length },
+            { id: 'webhooks', label: '🪝 Webhooks', count: webhooks.length },
+            { id: 'sandboxes', label: '📦 沙箱', count: sandboxes.length },
+            { id: 'usage', label: '📊 用量配额', count: 0 },
+            { id: 'sign', label: '🔐 签名验证', count: 0 }
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id as any)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                tab === t.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.label} {t.count > 0 && <span className="ml-1 text-xs">({t.count})</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {tab === 'keys' && <KeysTab keys={apiKeys} />}
+        {tab === 'webhooks' && <WebhooksTab subs={webhooks} deliveries={deliveries} deadLetters={deadLetters} />}
+        {tab === 'sandboxes' && <SandboxesTab sandboxes={sandboxes} />}
+        {tab === 'usage' && <UsageTab report={usageReport} />}
+        {tab === 'sign' && <SignTab />}
       </div>
-
-      {/* Tab Content */}
-      {tab === 'keys' && <KeysTab keys={apiKeys} />}
-      {tab === 'webhooks' && <WebhooksTab subs={webhooks} deliveries={deliveries} deadLetters={deadLetters} />}
-      {tab === 'sandboxes' && <SandboxesTab sandboxes={sandboxes} />}
-      {tab === 'usage' && <UsageTab report={usageReport} />}
-      {tab === 'sign' && <SignTab />}
-    </div>
+    </AdminPermissionGate>
   )
 }
 

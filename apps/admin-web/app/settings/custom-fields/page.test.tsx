@@ -242,4 +242,8 @@ describe('settings/custom-fields', () => {
   it('预定义字段包含 date 类型', () => { assert.ok(content.includes("type: 'date'")) })
   it('预定义字段包含 boolean 类型', () => { assert.ok(content.includes("type: 'boolean'")) })
   it('预定义字段包含 multi_select 类型', () => { assert.ok(content.includes("type: 'multi_select'")) })
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
 })

@@ -11,9 +11,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
 import NotificationsPage from './page';
 import fs from 'node:fs';
+const ADMIN_USER_KEY = 'admin_user';
 
 /* ── 类型 ── */
 
@@ -101,26 +102,35 @@ function validateQuietPeriods(periods: QuietPeriod[]): string[] {
 
 /* ── 辅助 ── */
 
-function setup() {
+async function setup() {
   cleanup();
-  return render(React.createElement(NotificationsPage));
+  window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
+    userId: 'admin:test',
+    username: 'notification-admin',
+    role: 'super-admin',
+    permissions: ['foundation.governance.read'],
+  }));
+  const view = render(React.createElement(NotificationsPage));
+  await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+  await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+  return view;
 }
 
 /* ============================================================ */
 
 describe('notifications: 页面渲染', () => {
-  it('renders title', () => {
-    const { container } = setup();
+  it('renders title', async () => {
+    const { container } = await setup();
     assert.ok(container.querySelector('h1')?.textContent?.includes('通知设置'));
   });
 
-  it('renders description', () => {
-    const { container } = setup();
+  it('renders description', async () => {
+    const { container } = await setup();
     assert.ok(container.textContent?.includes('通知'));
   });
 
-  it('renders without error', () => {
-    assert.doesNotThrow(() => setup());
+  it('renders without error', async () => {
+    await assert.doesNotReject(() => setup());
   });
 
   it.skip('has padding layout (跳检: happy-dom无内联样式)', () => {
@@ -128,8 +138,8 @@ describe('notifications: 页面渲染', () => {
     const _pad = (container.firstElementChild as HTMLElement)?.style?.padding ?? ''; assert.ok(!_pad || _pad.includes('24px'), 'padding should be 24px or empty');
   });
 
-  it('has single h1', () => {
-    const { container } = setup();
+  it('has single h1', async () => {
+    const { container } = await setup();
     assert.equal(container.querySelectorAll('h1').length, 1);
   });
 
@@ -137,14 +147,14 @@ describe('notifications: 页面渲染', () => {
     assert.equal(typeof NotificationsPage, 'function');
   });
 
-  it('renders table with rule categories', () => {
-    const { container } = setup();
+  it('renders table with rule categories', async () => {
+    const { container } = await setup();
     const rows = container.querySelectorAll('tbody tr');
     assert.ok(rows.length >= 4, 'should render at least 4 rule rows');
   });
 
-  it('renders channel section cards', () => {
-    const { container } = setup();
+  it('renders channel section cards', async () => {
+    const { container } = await setup();
     const body = container.textContent ?? '';
     assert.ok(body.includes('Push 推送'), 'push channel');
     assert.ok(body.includes('短信'), 'sms channel');
@@ -152,8 +162,8 @@ describe('notifications: 页面渲染', () => {
     assert.ok(body.includes('App内'), 'in-app channel');
   });
 
-  it('renders enabled/disabled status for each rule', () => {
-    const { container } = setup();
+  it('renders enabled/disabled status for each rule', async () => {
+    const { container } = await setup();
     const tags = container.querySelectorAll('span[style*="#22c55e"], span[style*="#ef4444"]');
     assert.ok(tags.length >= 5, 'each rule should have a status indicator');
   });
@@ -356,4 +366,8 @@ describe('Settings / Notifications — hooks验证', () => {
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
 });

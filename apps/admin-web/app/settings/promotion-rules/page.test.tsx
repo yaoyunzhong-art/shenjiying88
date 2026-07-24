@@ -52,4 +52,8 @@ describe('settings/promotion-rules', () => {
       assert.ok(content.includes(t), `missing promotion type: ${t}`)
     }
   })
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
 })

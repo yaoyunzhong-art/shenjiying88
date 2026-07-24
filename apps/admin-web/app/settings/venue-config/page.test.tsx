@@ -49,4 +49,8 @@ describe('settings/venue-config', () => {
   it('包含营业时间 section', () => { assert.ok(content.includes('营业时间') || content.includes('09:00')) })
   it('包含设施列表 section', () => { assert.ok(content.includes('设施列表')) })
   it('工作日营业时间包含 09:00', () => { assert.ok(content.includes('09:00')) })
+  it('接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  })
 })
