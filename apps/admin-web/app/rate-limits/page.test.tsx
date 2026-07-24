@@ -312,6 +312,13 @@ describe('rate-limits — 边界与反例', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+describe('rate-limits — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+  });
+});
+
 describe('Rate Limits — hooks验证', () => {
   it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
