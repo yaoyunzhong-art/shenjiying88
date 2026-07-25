@@ -12,6 +12,7 @@ import {
   PageShell, StatCard, StatusBadge, DetailActionBar, DetailClosureBar,
   InfoRow, CopyToClipboard, WorkspaceBreadcrumb, Tabs
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
 type MemberStatus = 'active' | 'inactive' | 'frozen' | 'expired';
@@ -37,6 +38,13 @@ const STATUS_MAP: Record<MemberStatus, { label: string; variant: 'success' | 'ne
 const TIER_LABELS: Record<MemberTier, string> = { normal: '普通会员', silver: '银卡', gold: '金卡', diamond: '钻石', platinum: '至尊' };
 const TIER_COLORS: Record<MemberTier, string> = { normal: '#6b7280', silver: '#94a3b8', gold: '#eab308', diamond: '#3b82f6', platinum: '#8b5cf6' };
 function fm(a: number): string { return `¥${a.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`; }
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员详情访问受限',
+  description:
+    '会员详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看档案、积分、充值与到店记录。',
+} as const;
 
 function mockMember(id: string): MemberDetail {
   return { id, name: '张明', phone: '13812345678', gender: 'male', birthday: '1995-06-15', email: 'zhangming@example.com', wechat: 'zm_wechat', memberNo: `M5-${id}`, tier: 'diamond', status: 'active', joinDate: '2024-03-10', lastActive: '2026-07-11', totalPoints: 24850, availablePoints: 12350, totalRecharge: 18600, balance: 3520, totalSpent: 15820, visitCount: 86, avgSpend: 184, referrer: '李娜', tags: ['高消费', '周末活跃', '生日会员'], notes: '喜欢夹娃娃机和赛车' };
@@ -64,12 +72,13 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
   const visits = useMemo(() => mockVisits(), []);
   const [tab, setTab] = useState<'overview'|'points'|'recharge'|'visits'>('overview');
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!member || !points || !recharges || !visits) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!member || !points || !recharges || !visits) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   return (
-    <main style={{ maxWidth: 1020, margin: '24px auto', padding: '0 16px' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1020, margin: '24px auto', padding: '0 16px' }}>
       <WorkspaceBreadcrumb {...buildStandardBreadcrumb({ workspace: 'members', detailLabel: member.name })} />
       <PageShell title={member.name} subtitle={`${member.memberNo} · ${TIER_LABELS[member.tier]}`}>
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
@@ -186,7 +195,8 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
         <DetailActionBar actions={[]} heading="操作" caption="详情收口" />
         <DetailClosureBar links={buildStandardClosureLinks({ workspace: 'members', detailId: id })} />
       </PageShell>
-    </main>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

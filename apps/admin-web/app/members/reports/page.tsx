@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   DataTable, Pagination, SearchFilterInput, StatusBadge, PageShell, Tabs, FilterChips, StatCard, usePagination, useSearchFilter, type DataTableColumn, type DataTableSortConfig, InfoRow } from '@m5/ui';
@@ -98,6 +99,13 @@ function formatMoney(amount: number): string {
   return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
 }
 
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员数据报告访问受限',
+  description:
+    '会员数据报告页已接入管理员本地 session，只有具备 member:read 的账号才能查看增长分析、RFM 分群、活跃度与 LTV 指标。',
+} as const;
+
 export default function MemberReportsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -106,9 +114,9 @@ export default function MemberReportsPage() {
   const activity = useMemo(() => generateActivity(), []);
   const [tab, setTab] = useState<'overview' | 'rfm' | 'trend'>('overview');
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!metrics || metrics.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!metrics || metrics.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const latest = metrics[0]!;
   const totals = useMemo(() => ({
@@ -116,7 +124,8 @@ export default function MemberReportsPage() {
   }), [metrics]);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
       <PageShell title="会员数据报告" subtitle="增长分析 · RFM分群 · 活跃度 · 留存与LTV">
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
           <div style={cardStyle}>
@@ -285,7 +294,8 @@ export default function MemberReportsPage() {
           </>
         )}
       </PageShell>
-    </main>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

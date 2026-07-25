@@ -7,6 +7,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 import {
   DetailShell,
@@ -145,6 +146,13 @@ const STATUS_OPTIONS: { label: string; value: string }[] = [
   { label: '仅内部可见', value: 'hidden' },
 ];
 
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员等级详情访问受限',
+  description:
+    '会员等级详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级规则、状态流转与编辑信息。',
+} as const;
+
 // ─── 辅助函数 ────────────────────────────────────────
 
 function formatDate(iso: string): string {
@@ -281,31 +289,34 @@ export default function MemberTierDetailPage() {
 
   if (!tier) {
     return (
-      <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
-        <h2 style={{ color: '#ef4444' }}>等级不存在</h2>
-        <p>未找到 ID 为「{tierId}」的会员等级</p>
-        <button
-          onClick={() => router.push('/members/tiers')}
-          style={{
-            marginTop: 16,
-            padding: '8px 20px',
-            background: '#3b82f6',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
-        >
-          返回等级列表
-        </button>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+          <h2 style={{ color: '#ef4444' }}>等级不存在</h2>
+          <p>未找到 ID 为「{tierId}」的会员等级</p>
+          <button
+            onClick={() => router.push('/members/tiers')}
+            style={{
+              marginTop: 16,
+              padding: '8px 20px',
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            返回等级列表
+          </button>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   // ── 渲染 ──────────────────────────────────────────
 
   return (
-    <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
       <WorkspaceBreadcrumb
         workspaceLabel="会员管理"
         workspaceHref="/members"
@@ -534,7 +545,8 @@ export default function MemberTierDetailPage() {
           </div>
         </Dialog>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }
 

@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { MemberTierDistribution } from '@m5/ui';
 import type { MemberTier } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ─── 模拟数据 ──────────────────────────────────────────
 
@@ -15,6 +16,13 @@ const MOCK_TIERS: MemberTier[] = [
   { tier: '普通会员', key: 'regular', count: 2340, growth: -0.08 },
 ];
 
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员等级访问受限',
+  description:
+    '会员等级页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级分布、趋势和筛选结果。',
+} as const;
+
 // ─── 页面组件 ─────────────────────────────────────────
 
 export default function MemberTiersPage() {
@@ -22,9 +30,9 @@ export default function MemberTiersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { setLoading(false) }, []);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!MOCK_TIERS || MOCK_TIERS.length === 0) return <div>暂无数据</div>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
+  if (!MOCK_TIERS || MOCK_TIERS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>;
 
   const [showTrends, setShowTrends] = useState(true);
   const [selectedTier, setSelectedTier] = useState<MemberTier | null>(null);
@@ -42,7 +50,8 @@ export default function MemberTiersPage() {
   };
 
   return (
-    <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
       {/* 页面标题 */}
       <div
         style={{
@@ -159,6 +168,7 @@ export default function MemberTiersPage() {
       >
         点击等级卡片可查看详情，再次点击取消筛选
       </p>
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }
