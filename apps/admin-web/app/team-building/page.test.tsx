@@ -5,6 +5,7 @@
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
 import React from 'react';
 import { render, screen, cleanup, act, fireEvent } from '@testing-library/react';
 
@@ -18,10 +19,20 @@ import {
 } from './page';
 import type { TeamBuildingRecord, ActivityStatus, ActivityType } from './page';
 
+const SRC = fs.readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+
 // ===== 辅助函数 =====
 
 async function renderPage() {
   const mod = await import('./page');
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['foundation.governance.read'],
+    }),
+  );
   const view = render(React.createElement(mod.default));
   await act(async () => {
     await new Promise((r) => setTimeout(r, 0));
@@ -158,6 +169,11 @@ describe('TeamBuilding 组件渲染', () => {
   it('应导出默认函数组件', async () => {
     const mod = await import('./page');
     assert.equal(typeof mod.default, 'function');
+  });
+
+  it('应接入管理员权限边界', async () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 
   it('组件名应包含 TeamBuilding', async () => {

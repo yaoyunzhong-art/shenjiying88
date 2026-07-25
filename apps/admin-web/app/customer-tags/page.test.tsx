@@ -317,6 +317,10 @@ const SOURCE_CONTENT = readSource();
 
 describe('Customer Tags — hooks验证', () => {
   const src = SOURCE_CONTENT
+  it('应接入管理员权限边界', () => {
+    assert.ok(src.includes('AdminPermissionGate'))
+    assert.ok(src.includes("requiredPermission: 'member:read'"))
+  })
   it('包含useState声明', () => assert.ok(src.includes('const [') && src.includes('useState')))
   it('包含JSX返回', () => assert.ok(src.includes('return (') || src.includes('return <')))
   it('包含事件处理器', () => assert.ok(src.includes('onClick={') || src.includes('onChange={')))

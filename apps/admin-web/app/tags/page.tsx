@@ -11,7 +11,9 @@
 
 'use client';
 
+import React from 'react';
 import { useCallback, useMemo, useState } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
   Button,
   Tabs,
@@ -122,9 +124,9 @@ function EmptyStateSVG({ onReset }: { onReset: () => void }) {
 
 
 const permissionGate = {
-  requiredPermission: 'tags:read',
-  title: 'tags 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 tags:read 权限的账号可访问。',
+  requiredPermission: 'member:read',
+  title: '客户标签访问受限',
+  description: '客户标签页已接入管理员本地 session，只有具备 member:read 的账号才能查看标签分布、使用情况与会员关联统计。',
 } as const
 
 export default function TagsPage() {
@@ -177,10 +179,11 @@ export default function TagsPage() {
   // ── 渲染 ──
 
   return (
-    <PageShell
-      title="客户标签"
-      subtitle="管理客户标签体系，按分类查看标签分布与使用情况"
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="客户标签"
+        subtitle="管理客户标签体系，按分类查看标签分布与使用情况"
+      >
       {/* 概览统计 */}
       <div
         style={{
@@ -294,17 +297,18 @@ export default function TagsPage() {
       )}
 
       {/* 底部提示 */}
-      <div
-        style={{
-          marginTop: 16,
-          fontSize: 12,
-          color: '#64748b',
-          textAlign: 'center',
-        }}
-      >
-        共 {tags.length} 个标签 · 按分类视图筛选 · 关联会员数为实时数据
-      </div>
-    </PageShell>
+        <div
+          style={{
+            marginTop: 16,
+            fontSize: 12,
+            color: '#64748b',
+            textAlign: 'center',
+          }}
+        >
+          共 {tags.length} 个标签 · 按分类视图筛选 · 关联会员数为实时数据
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

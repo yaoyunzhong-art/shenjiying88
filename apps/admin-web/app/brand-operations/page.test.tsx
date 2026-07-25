@@ -9,6 +9,12 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf-8');
 
 // ── 类型 ──
 
@@ -119,6 +125,11 @@ function computeCampaignStats(items: BrandCampaign[]) {
 
 // ===================================================================
 describe('BrandOperations — 品牌资产', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'brands:read'"));
+  });
+
   it('资产类型映射完整——四种类型均有中文标签', () => {
     const types: AssetType[] = ['logo', 'banner', 'video', 'copy'];
     for (const t of types) {

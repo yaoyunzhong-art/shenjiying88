@@ -24,6 +24,14 @@ const source = fs.readFileSync(PAGE, 'utf-8')
 // 辅助: 封装渲染
 function setup() {
   cleanup()
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['foundation.governance.read'],
+    }),
+  )
   return render(React.createElement(HrPage))
 }
 
@@ -34,6 +42,11 @@ function setup() {
 describe('页面源码分析', () => {
   it('[正例] 页面文件存在', () => {
     assert.ok(fs.existsSync(PAGE))
+  })
+
+  it('[正例] 应接入管理员权限边界', () => {
+    assert.ok(source.includes('AdminPermissionGate'))
+    assert.ok(source.includes("requiredPermission: 'foundation.governance.read'"))
   })
 
   it('[正例] 包含 default export', () => {

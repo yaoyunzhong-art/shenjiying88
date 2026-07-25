@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   DataTable,
@@ -188,9 +189,9 @@ const LABEL_STYLE: React.CSSProperties = {
 
 
 const permissionGate = {
-  requiredPermission: 'team-building:read',
-  title: 'team-building 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 team-building:read 权限的账号可访问。',
+  requiredPermission: 'foundation.governance.read',
+  title: '团建活动访问受限',
+  description: '团建活动管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看活动统计、预算与组织信息。',
 } as const
 
 export default function TeamBuildingPage() {
@@ -343,46 +344,51 @@ export default function TeamBuildingPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
-        <div style={{ fontSize: 14, marginBottom: 12 }}>加载中...</div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
+          <div style={{ fontSize: 14, marginBottom: 12 }}>加载中...</div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: 32, color: '#ef4444', textAlign: 'center' }}>
-        <div style={{ fontSize: 14, marginBottom: 12 }}>错误: {error}</div>
-        <button
-          onClick={handleRetry}
-          style={{
-            padding: '8px 20px',
-            background: 'rgba(239,68,68,0.15)',
-            color: '#f87171',
-            border: '1px solid rgba(239,68,68,0.3)',
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontSize: 13,
-          }}
-        >
-          重试
-        </button>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 32, color: '#ef4444', textAlign: 'center' }}>
+          <div style={{ fontSize: 14, marginBottom: 12 }}>错误: {error}</div>
+          <button
+            onClick={handleRetry}
+            style={{
+              padding: '8px 20px',
+              background: 'rgba(239,68,68,0.15)',
+              color: '#f87171',
+              border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            重试
+          </button>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   // ===== 主渲染 =====
 
   return (
-    <div>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <div>
+        <header
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 24,
+          }}
+        >
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>
             🎯 团建活动管理
@@ -502,11 +508,11 @@ export default function TeamBuildingPage() {
       )}
 
       {/* 新建活动弹窗 */}
-      <Modal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        title="新建团建活动"
-      >
+        <Modal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          title="新建团建活动"
+        >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '8px 0' }}>
           {/* 活动名称 */}
           <div>
@@ -678,8 +684,9 @@ export default function TeamBuildingPage() {
             确认创建
           </Button>
         </div>
-      </Modal>
-    </div>
+        </Modal>
+      </div>
+    </AdminPermissionGate>
   );
 }
 

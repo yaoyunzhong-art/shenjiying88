@@ -4,12 +4,19 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const PAGE = 'apps/admin-web/app/tags/page.tsx'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const PAGE = path.resolve(__dirname, 'page.tsx')
 const content = fs.readFileSync(PAGE, 'utf-8')
 
 describe('tags 客户标签管理页面', () => {
   it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
+  it('应接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'member:read'"))
+  })
   it('包含default export', () => { assert.ok(content.includes('export default')) })
   it('包含useState', () => { assert.ok(content.includes('useState')) })
   it('包含PageShell', () => { assert.ok(content.includes('PageShell')) })

@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   FormField,
@@ -115,9 +116,9 @@ function TagBadge({ color, name }: { color: string; name: string }) {
 
 
 const permissionGate = {
-  requiredPermission: 'customer-tags:read',
-  title: 'customer-tags 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 customer-tags:read 权限的账号可访问。',
+  requiredPermission: 'member:read',
+  title: '客户画像标签访问受限',
+  description: '客户画像标签页已接入管理员本地 session，只有具备 member:read 的账号才能查看标签画像、覆盖统计与维护动作。',
 } as const
 
 export default function CustomerTagsPage() {
@@ -226,12 +227,13 @@ export default function CustomerTagsPage() {
   // ---- 渲染 ----
 
   return (
-    <PageShell title="客户画像标签管理">
-      <WorkspaceBreadcrumb
-        workspaceLabel="客户管理"
-        workspaceHref="/"
-        detailLabel="标签管理"
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="客户画像标签管理">
+        <WorkspaceBreadcrumb
+          workspaceLabel="客户管理"
+          workspaceHref="/"
+          detailLabel="标签管理"
+        />
 
       {/* 反馈 */}
       {submitState === 'success' && (
@@ -530,12 +532,13 @@ export default function CustomerTagsPage() {
       </div>
 
       {/* 停用标签记录 */}
-      {tags.filter((t) => !t.enabled).length > 0 && (
-        <div style={{ marginTop: 16, padding: 14, background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 8, fontSize: 13 }}>
-          <span style={{ fontWeight: 600 }}>⏸️ 停用标签提醒:</span>{' '}
-          {tags.filter((t) => !t.enabled).length} 个标签已停用，涉及 {tags.filter((t) => !t.enabled).reduce((s, t) => s + t.memberCount, 0).toLocaleString()} 名会员
-        </div>
-      )}
-    </PageShell>
+        {tags.filter((t) => !t.enabled).length > 0 && (
+          <div style={{ marginTop: 16, padding: 14, background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 8, fontSize: 13 }}>
+            <span style={{ fontWeight: 600 }}>⏸️ 停用标签提醒:</span>{' '}
+            {tags.filter((t) => !t.enabled).length} 个标签已停用，涉及 {tags.filter((t) => !t.enabled).reduce((s, t) => s + t.memberCount, 0).toLocaleString()} 名会员
+          </div>
+        )}
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -196,9 +197,9 @@ const styles: Record<string, React.CSSProperties> = {
 
 
 const permissionGate = {
-  requiredPermission: 'hr:read',
-  title: 'hr 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 hr:read 权限的账号可访问。',
+  requiredPermission: 'foundation.governance.read',
+  title: 'HR 管理访问受限',
+  description: 'HR 管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看员工档案、组织筛选与维护动作。',
 } as const
 
 export default function HrPage() {
@@ -295,9 +296,10 @@ export default function HrPage() {
   }, []);
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>👥 HR 管理</h1>
-      <p style={styles.subtitle}>员工信息管理，支持新增、编辑、删除、搜索与筛选。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>👥 HR 管理</h1>
+        <p style={styles.subtitle}>员工信息管理，支持新增、编辑、删除、搜索与筛选。</p>
 
       {/* 概览统计 */}
       <div style={styles.statsRow}>
@@ -396,10 +398,10 @@ export default function HrPage() {
       )}
 
       {/* 新增/编辑 弹窗 */}
-      {showModal && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <div style={styles.modalTitle}>{editingId ? '编辑员工' : '新增员工'}</div>
+        {showModal && (
+          <div style={styles.modalOverlay} onClick={closeModal}>
+            <div style={styles.modal} onClick={e => e.stopPropagation()}>
+              <div style={styles.modalTitle}>{editingId ? '编辑员工' : '新增员工'}</div>
 
             <div style={styles.formField}>
               <label style={styles.formLabel}>姓名 *</label>
@@ -449,15 +451,16 @@ export default function HrPage() {
               <input style={styles.formInput} value={formData.emergencyContact || ''} onChange={e => handleFormChange('emergencyContact', e.target.value)} placeholder="姓名 手机号" />
             </div>
 
-            <div style={styles.formBtnRow}>
-              <button style={btnGhost} onClick={closeModal}>取消</button>
-              <button style={btnPrimary} onClick={handleSave}>
-                {editingId ? '保存修改' : '确认新增'}
-              </button>
+              <div style={styles.formBtnRow}>
+                <button style={btnGhost} onClick={closeModal}>取消</button>
+                <button style={btnPrimary} onClick={handleSave}>
+                  {editingId ? '保存修改' : '确认新增'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }

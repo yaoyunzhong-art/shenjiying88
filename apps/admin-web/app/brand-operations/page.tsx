@@ -7,6 +7,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { PageShell, StatCard, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, StatusBadge, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
 // ── 类型 ───────────────────────────────────────────────────────────────────
@@ -72,9 +73,9 @@ const STATUS_DOT = { dot: true } as const;
 
 
 const permissionGate = {
-  requiredPermission: 'brand-operations:read',
-  title: 'brand-operations 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 brand-operations:read 权限的账号可访问。',
+  requiredPermission: 'brands:read',
+  title: '品牌运营访问受限',
+  description: '品牌运营页已接入管理员本地 session，只有具备 brands:read 的账号才能查看品牌资产、活动与联名合作信息。',
 } as const
 
 export default function BrandOperationsPage() {
@@ -90,13 +91,14 @@ export default function BrandOperationsPage() {
   }), []);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="品牌运营管理" subtitle={`${stats.assets}个素材 · ${stats.campaigns}个活动 · ${stats.collaborations}个合作`}>
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
-          <StatCard label="品牌素材" value={stats.assets} />
-          <StatCard label="品牌活动" value={stats.campaigns} />
-          <StatCard label="联名合作" value={stats.collaborations} />
-        </div>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell title="品牌运营管理" subtitle={`${stats.assets}个素材 · ${stats.campaigns}个活动 · ${stats.collaborations}个合作`}>
+          <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
+            <StatCard label="品牌素材" value={stats.assets} />
+            <StatCard label="品牌活动" value={stats.campaigns} />
+            <StatCard label="联名合作" value={stats.collaborations} />
+          </div>
 
         <Tabs
           items={[
@@ -108,11 +110,12 @@ export default function BrandOperationsPage() {
           onChange={(k) => setTab(k as typeof tab)}
         />
 
-        {tab === 'campaigns' && <CampaignsTab campaigns={mockCampaigns} />}
-        {tab === 'assets' && <AssetsTab assets={mockAssets} />}
-        {tab === 'collaborations' && <CollaborationsTab collabs={mockCollaborations} />}
-      </PageShell>
-    </main>
+          {tab === 'campaigns' && <CampaignsTab campaigns={mockCampaigns} />}
+          {tab === 'assets' && <AssetsTab assets={mockAssets} />}
+          {tab === 'collaborations' && <CollaborationsTab collabs={mockCollaborations} />}
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 
