@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test'
-import assert from 'node:assert/strict'
+import { describe, it, expect } from 'vitest'
 
 /**
  * cross-module-e2e-50-tenant-rls-auth.test.ts
@@ -44,9 +43,9 @@ describe('E2E-50: 多租户全链', () => {
     ]
     const aRecords = rlsFilter('tenant-a', allRecords)
 
-    assert.equal(aRecords.length, 2)
-    assert.ok(aRecords.every((r) => r.tenantId === 'tenant-a'))
-    assert.equal(aRecords.find((r) => r.id === '2'), undefined, '不可见 B 租户数据')
+    expect(aRecords.length).toBe(2)
+    expect(aRecords.every((r) => r.tenantId === 'tenant-a')).toBe(true)
+    expect(aRecords.find((r) => r.id === '2')).toBeUndefined()
   })
 
   it('正例: B 租户隔离同样生效', () => {
@@ -57,16 +56,16 @@ describe('E2E-50: 多租户全链', () => {
     ]
     const bRecords = rlsFilter('tenant-b', allRecords)
 
-    assert.equal(bRecords.length, 2)
-    assert.ok(bRecords.every((r) => r.tenantId === 'tenant-b'))
-    assert.equal(bRecords.find((r) => r.id === '1'), undefined, '不可见 A 租户数据')
+    expect(bRecords.length).toBe(2)
+    expect(bRecords.every((r) => r.tenantId === 'tenant-b')).toBe(true)
+    expect(bRecords.find((r) => r.id === '1')).toBeUndefined()
   })
 
   it('正例: @Public() 端点无需认证即可访问', () => {
     const req: TenantRequest = { tenantId: '', userId: '', role: '', headers: {} }
     const result = checkAuth('/api/v1/health', req, 'public')
 
-    assert.equal(result.allowed, true)
+    expect(result.allowed).toBe(true)
   })
 
   it('正例: 认证保护端点携带有效 token 可访问', () => {
@@ -78,7 +77,7 @@ describe('E2E-50: 多租户全链', () => {
     }
     const result = checkAuth('/api/v1/orders', req, 'authenticated')
 
-    assert.equal(result.allowed, true)
+    expect(result.allowed).toBe(true)
   })
 
   // ── 反例: 越权与未认证 ──
@@ -87,8 +86,8 @@ describe('E2E-50: 多租户全链', () => {
     const req: TenantRequest = { tenantId: '', userId: '', role: '', headers: {} }
     const result = checkAuth('/api/v1/members', req, 'authenticated')
 
-    assert.equal(result.allowed, false)
-    assert.equal(result.reason, '未认证')
+    expect(result.allowed).toBe(false)
+    expect(result.reason).toBe('未认证')
   })
 
   it('反例: 无 tenantId 的请求不可操作租户资源', () => {
@@ -99,7 +98,7 @@ describe('E2E-50: 多租户全链', () => {
     const noTenantRequest = '' as string
     const accessible = tenantResources.filter((r) => r.tenantId === noTenantRequest)
 
-    assert.equal(accessible.length, 0, '无租户上下文时不可操作任何租户资源')
+    expect(accessible.length).toBe(0)
   })
 
   it('反例: A 租户无法通过 ID 直接查询 B 租户资源', () => {
@@ -110,7 +109,7 @@ describe('E2E-50: 多租户全链', () => {
     const requestingTenant = 'tenant-a'
 
     const canAccess = targetResource.tenantId === requestingTenant
-    assert.equal(canAccess, false, '跨租户 ID 查询应被拦截')
+    expect(canAccess).toBe(false)
   })
 
   it('边界: 超级管理员可跨租户只读查询', () => {
@@ -122,16 +121,13 @@ describe('E2E-50: 多租户全链', () => {
     // 超级管理员查看全租户审计数据（只读不写）
     const accessible = isSuperAdmin ? allTenantData : rlsFilter('', allTenantData)
 
-    assert.equal(accessible.length, 2)
-    assert.deepEqual(accessible, allTenantData)
+    expect(accessible.length).toBe(2)
+    expect(accessible).toEqual(allTenantData)
   })
 
   it('边界: 跨租户写操作无论角色均拒绝', () => {
-    const targetTenantId = 'tenant-b'
-    const requestingTenantId = 'tenant-a'
-
     // 即使是管理员也不允许跨租户写入
     const crossTenantWrite = false
-    assert.equal(crossTenantWrite, false, '跨租户写入必须拒绝')
+    expect(crossTenantWrite).toBe(false)
   })
 })
