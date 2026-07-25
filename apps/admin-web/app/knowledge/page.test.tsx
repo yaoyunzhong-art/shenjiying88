@@ -326,6 +326,11 @@ describe('KnowledgePage — 正例', () => {
       assert.ok(/<\/ErrorBoundary>/.test(sourceContent));
     });
 
+    it('应接入管理员权限边界', () => {
+      assert.ok(/AdminPermissionGate/.test(sourceContent));
+      assert.ok(/requiredPermission:\s*'foundation\.governance\.read'/.test(sourceContent));
+    });
+
     it('使用 PageShell 且 title 为 "📚 知识库"', () => {
       assert.ok(/title="📚 知识库"/.test(sourceContent));
     });
