@@ -9,6 +9,8 @@
 
 import React, { useState, useCallback, use } from 'react';
 
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
+
 import {
   DetailClosureBar,
   DetailShell,
@@ -157,6 +159,11 @@ export default function PurchaseOrderDetailPage({
   const statusInfo = PURCHASE_ORDER_STATUS_MAP[status];
 
   return (
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
     <DetailShell
       title={item.orderNo}
       subtitle={`供应商: ${item.supplierName} | 门店: ${item.storeCode} | 部门: ${item.department}`}
@@ -476,6 +483,7 @@ export default function PurchaseOrderDetailPage({
         ]}
       />
     </DetailShell>
+    </AdminPermissionGate>
   );
 }
 

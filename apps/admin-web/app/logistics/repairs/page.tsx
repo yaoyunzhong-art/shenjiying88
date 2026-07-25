@@ -13,6 +13,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
+
 // ─── 类型 ──────────────────────────────────────
 
 type RepairStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'pending_verify' | 'verified'
@@ -69,6 +71,11 @@ export default function RepairsPage() {
   }, [repairs, statusFilter])
 
   return (
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">维修工单</h1>
@@ -145,5 +152,6 @@ export default function RepairsPage() {
         </div>
       )}
     </div>
+    </AdminPermissionGate>
   )
 }
