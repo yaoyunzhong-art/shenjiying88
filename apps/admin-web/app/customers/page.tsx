@@ -7,7 +7,6 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  * 功能: 列表展示、搜索、状态/等级筛选、数据统计
  * 三态: loading/empty/error
  */
-'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 

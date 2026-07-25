@@ -7,7 +7,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
  * 角色视角: 👤采购管理 / 供应链
  * 类型: B-页面创建 / 表单页
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import {

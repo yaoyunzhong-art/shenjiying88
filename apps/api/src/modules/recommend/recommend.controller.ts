@@ -116,6 +116,7 @@ export class RecommendController {
    * 更新会员偏好
    */
   @Post('preferences')
+  // TODO(types): prefAdapter.update expects full MemberPreference; body shape varies by caller
   updatePreferences(@Body() body: MemberPreference): { updated: boolean } {
     if (!body.tenantId || !body.memberId) {
       throw new BadRequestException('tenantId, memberId required')

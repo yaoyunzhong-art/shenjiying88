@@ -6,7 +6,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
  *
  * 功能: 新建客户信息表单，含验证、提交、反馈
  */
-'use client'
 
 import React, { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'

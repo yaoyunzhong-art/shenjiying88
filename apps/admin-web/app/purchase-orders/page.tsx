@@ -6,7 +6,6 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  * 角色视角：管理员 / 采购 / 店长
  * 功能：列表搜索、状态/紧急程度筛选、统计看板、分页浏览
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

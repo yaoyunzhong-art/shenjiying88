@@ -1,4 +1,3 @@
-// 🧾 对账管理 · 支付对账/差异处理/报表生成
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tooltip, DatePicker, Tabs, Progress } from '@m5/ui';
@@ -54,7 +53,6 @@ export default function ReconciliationPage() {
   if (error) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#ef4444' }}>数据获取失败: {error}</div></PageShell>;
   if (!data || data.length === 0) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#94a3b8' }}>暂无数据</div></PageShell>;
 
-  const
   const [filter, setFilter] = useState('all');
   const [methodFilter, setMethodFilter] = useState('all');
   const [showPerf, setShowPerf] = useState(false);
