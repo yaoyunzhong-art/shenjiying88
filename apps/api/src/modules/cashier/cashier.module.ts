@@ -18,6 +18,7 @@ import { CashierToLytBridge } from './bridges/cashier-to-lyt.bridge'
 import { LytToCashierBridge } from './bridges/lyt-to-cashier.bridge'
 import { InventoryItemModule } from '../inventory/inventory-item.module'
 import { CommercialBillingModule } from '../foundation/commercial-billing/commercial-billing.module'
+import { CashierTransactionModule } from './cashier-transaction'
 
 /**
  * P0-A1: Cache-aside 模式持久化
@@ -59,7 +60,8 @@ import { CommercialBillingModule } from '../foundation/commercial-billing/commer
 @Module({
   imports: [
     TypeOrmModule.forFeature([CashierOrderEntity, CashierPaymentEntity]),
-    MemberModule, LoyaltyModule, InventoryItemModule, CommercialBillingModule
+    MemberModule, LoyaltyModule, InventoryItemModule, CommercialBillingModule,
+    CashierTransactionModule,  // Day6: 收银流水持久化
   ],
   controllers: [CashierController, CashierBillingController, CashierSseController],
   providers: [
@@ -101,7 +103,8 @@ import { CommercialBillingModule } from '../foundation/commercial-billing/commer
     CashierEventEmitter,
     PaymentChannelRegistry,  // P0-2.5: 暴露给其他模块
     CashierToLytBridge,  // P1-1.2: 暴露给 OrderService
-    LytToCashierBridge  // P1-1.3: 暴露给 Webhook 路由
+    LytToCashierBridge,  // P1-1.3: 暴露给 Webhook 路由
+    CashierTransactionModule,  // Day6: 暴露给其他模块
   ]
 })
 export class CashierModule {}
