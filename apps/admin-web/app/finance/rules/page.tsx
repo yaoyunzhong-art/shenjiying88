@@ -304,389 +304,395 @@ export default function FinanceRulesPage() {
   const totalAbnormal = rules.filter(r => r.enabled && r.applyRate != null && r.applyRate < 50).length
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* 标题区 */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">财务规则管理</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            管理对账、审批、审计、结算等模块的自动规则配置
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={loadRules}
-            className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
-          >
-            刷新
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-          >
-            + 新建规则
-          </button>
-        </div>
+      <div>
+      <h1 className="text-2xl font-bold text-gray-900">财务规则管理</h1>
+      <p className="text-sm text-gray-500 mt-1">
+      管理对账、审批、审计、结算等模块的自动规则配置
+      </p>
+      </div>
+      <div className="flex items-center gap-2">
+      <button
+      onClick={loadRules}
+      className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+      >
+      刷新
+      </button>
+      <button
+      onClick={() => setShowCreateModal(true)}
+      className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+      >
+      + 新建规则
+      </button>
+      </div>
       </div>
 
       {/* 错误提示 */}
       {error && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-yellow-800 text-sm">{error}</p>
-        </div>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+      <p className="text-yellow-800 text-sm">{error}</p>
+      </div>
       )}
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-5 gap-4">
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">总规则</p>
-          <p className="text-2xl font-bold mt-1">{rules.length}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">已启用</p>
-          <p className="text-2xl font-bold mt-1 text-green-600">{totalEnabled}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">已禁用</p>
-          <p className="text-2xl font-bold mt-1 text-gray-400">{rules.length - totalEnabled}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">异常</p>
-          <p className="text-2xl font-bold mt-1 text-orange-600">{totalAbnormal}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">模块</p>
-          <p className="text-2xl font-bold mt-1 text-blue-600">{new Set(rules.map(r => r.module)).size}</p>
-        </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">总规则</p>
+      <p className="text-2xl font-bold mt-1">{rules.length}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">已启用</p>
+      <p className="text-2xl font-bold mt-1 text-green-600">{totalEnabled}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">已禁用</p>
+      <p className="text-2xl font-bold mt-1 text-gray-400">{rules.length - totalEnabled}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">异常</p>
+      <p className="text-2xl font-bold mt-1 text-orange-600">{totalAbnormal}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">模块</p>
+      <p className="text-2xl font-bold mt-1 text-blue-600">{new Set(rules.map(r => r.module)).size}</p>
+      </div>
       </div>
 
       {/* Tab + 模块筛选 */}
       <div className="flex items-center justify-between border-b border-gray-200">
-        <nav className="flex space-x-4">
-          {(['active', 'inactive', 'all'] as ViewMode[]).map(mode => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-                viewMode === mode
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {{ active: '已启用', inactive: '已禁用', all: '全部' }[mode]}
-            </button>
-          ))}
-        </nav>
-        <div className="flex items-center gap-2 pb-2">
-          <label className="text-xs text-gray-500">模块筛选:</label>
-          <select
-            value={moduleFilter}
-            onChange={e => setModuleFilter(e.target.value as ModuleFilter)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
-          >
-            <option value="ALL">全部模块</option>
-            <option value="RECONCILIATION">对账</option>
-            <option value="APPROVAL">审批</option>
-            <option value="AUDIT">审计</option>
-            <option value="SETTLEMENT">结算</option>
-          </select>
-        </div>
+      <nav className="flex space-x-4">
+      {(['active', 'inactive', 'all'] as ViewMode[]).map(mode => (
+      <button
+      key={mode}
+      onClick={() => setViewMode(mode)}
+      className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
+      viewMode === mode
+      ? 'border-blue-500 text-blue-600'
+      : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+      >
+      {{ active: '已启用', inactive: '已禁用', all: '全部' }[mode]}
+      </button>
+      ))}
+      </nav>
+      <div className="flex items-center gap-2 pb-2">
+      <label className="text-xs text-gray-500">模块筛选:</label>
+      <select
+      value={moduleFilter}
+      onChange={e => setModuleFilter(e.target.value as ModuleFilter)}
+      className="border border-gray-300 rounded px-2 py-1 text-sm"
+      >
+      <option value="ALL">全部模块</option>
+      <option value="RECONCILIATION">对账</option>
+      <option value="APPROVAL">审批</option>
+      <option value="AUDIT">审计</option>
+      <option value="SETTLEMENT">结算</option>
+      </select>
+      </div>
       </div>
 
       {/* 规则列表 */}
       <div className="space-y-4">
-        {filteredRules.length === 0 ? (
-          <div className="bg-white border rounded-lg p-12 text-center text-gray-400">
-            <p className="text-lg mb-1">暂无规则</p>
-            <p className="text-sm">当前筛选条件下没有匹配的财务规则</p>
-          </div>
-        ) : (
-          filteredRules.map(rule => (
-            <div key={rule.id} className="bg-white border rounded-lg p-5">
-              {editingId === rule.id ? (
-                /* ── 编辑模式 ── */
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">规则名称</label>
-                      <input
-                        type="text"
-                        value={editForm.name ?? ''}
-                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                        className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">匹配字段</label>
-                      <input
-                        type="text"
-                        value={editForm.matchField ?? ''}
-                        onChange={e => setEditForm({ ...editForm, matchField: e.target.value })}
-                        className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">容差金额 (分)</label>
-                      <input
-                        type="number"
-                        value={editForm.toleranceCents ?? 0}
-                        onChange={e => setEditForm({ ...editForm, toleranceCents: Number(e.target.value) })}
-                        className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">自动处理阈值 (分)</label>
-                      <input
-                        type="number"
-                        value={editForm.autoApplyThresholdCents ?? 0}
-                        onChange={e => setEditForm({ ...editForm, autoApplyThresholdCents: Number(e.target.value) })}
-                        className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">优先级</label>
-                      <input
-                        type="number"
-                        value={editForm.priority ?? 0}
-                        onChange={e => setEditForm({ ...editForm, priority: Number(e.target.value) })}
-                        className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={editForm.enabled ?? false}
-                          onChange={e => setEditForm({ ...editForm, enabled: e.target.checked })}
-                          className="rounded"
-                        />
-                        启用
-                      </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={editForm.autoApply ?? false}
-                          onChange={e => setEditForm({ ...editForm, autoApply: e.target.checked })}
-                          className="rounded"
-                        />
-                        自动处理
-                      </label>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
-                    <textarea
-                      value={editForm.description ?? ''}
-                      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                      rows={2}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleSave(rule.id)}
-                      disabled={saving}
-                      className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {saving ? '保存中...' : '保存'}
-                    </button>
-                    <button
-                      onClick={() => { setEditingId(null); setEditForm({}) }}
-                      className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
-                    >
-                      取消
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* ── 展示模式 ── */
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ backgroundColor: moduleColor(rule.module) }}
-                        />
-                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-                          {moduleLabel(rule.module)}
-                        </span>
-                        <h3 className="text-base font-medium text-gray-900">{rule.name}</h3>
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                          rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          {rule.enabled ? '已启用' : '已禁用'}
-                        </span>
-                        {rule.autoApply && (
-                          <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                            自动处理
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">{rule.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                        <span>字段: {rule.matchField}</span>
-                        <span>容差: {formatMoney(rule.toleranceCents)}</span>
-                        <span>阈值: {formatMoney(rule.autoApplyThresholdCents)}</span>
-                        <span>优先级: #{rule.priority}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 ml-4">
-                      {rule.applyRate != null && (
-                        <div className="text-right">
-                          <p className="text-lg font-bold">{formatPercent(rule.applyRate)}</p>
-                          <p className="text-xs text-gray-400">应用率</p>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleToggle(rule.id)}
-                        className={`px-3 py-1 rounded text-xs font-medium ${
-                          rule.enabled
-                            ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                            : 'bg-green-50 text-green-700 hover:bg-green-100'
-                        }`}
-                      >
-                        {rule.enabled ? '禁用' : '启用'}
-                      </button>
-                      <button
-                        onClick={() => startEdit(rule)}
-                        className="px-3 py-1 rounded text-xs font-medium bg-gray-50 text-gray-600 hover:bg-gray-100"
-                      >
-                        编辑
-                      </button>
-                    </div>
-                  </div>
-                  {rule.lastAppliedCount != null && (
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <span>上次应用: {rule.lastAppliedCount} 次</span>
-                        <span>更新于 {new Date(rule.updatedAt).toLocaleString('zh-CN')}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))
-        )}
+      {filteredRules.length === 0 ? (
+      <div className="bg-white border rounded-lg p-12 text-center text-gray-400">
+      <p className="text-lg mb-1">暂无规则</p>
+      <p className="text-sm">当前筛选条件下没有匹配的财务规则</p>
+      </div>
+      ) : (
+      filteredRules.map(rule => (
+      <div key={rule.id} className="bg-white border rounded-lg p-5">
+      {editingId === rule.id ? (
+      /* ── 编辑模式 ── */
+      <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">规则名称</label>
+      <input
+      type="text"
+      value={editForm.name ?? ''}
+      onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">匹配字段</label>
+      <input
+      type="text"
+      value={editForm.matchField ?? ''}
+      onChange={e => setEditForm({ ...editForm, matchField: e.target.value })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">容差金额 (分)</label>
+      <input
+      type="number"
+      value={editForm.toleranceCents ?? 0}
+      onChange={e => setEditForm({ ...editForm, toleranceCents: Number(e.target.value) })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">自动处理阈值 (分)</label>
+      <input
+      type="number"
+      value={editForm.autoApplyThresholdCents ?? 0}
+      onChange={e => setEditForm({ ...editForm, autoApplyThresholdCents: Number(e.target.value) })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">优先级</label>
+      <input
+      type="number"
+      value={editForm.priority ?? 0}
+      onChange={e => setEditForm({ ...editForm, priority: Number(e.target.value) })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div className="flex items-center gap-4">
+      <label className="flex items-center gap-2 text-sm">
+      <input
+      type="checkbox"
+      checked={editForm.enabled ?? false}
+      onChange={e => setEditForm({ ...editForm, enabled: e.target.checked })}
+      className="rounded"
+      />
+      启用
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+      <input
+      type="checkbox"
+      checked={editForm.autoApply ?? false}
+      onChange={e => setEditForm({ ...editForm, autoApply: e.target.checked })}
+      className="rounded"
+      />
+      自动处理
+      </label>
+      </div>
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
+      <textarea
+      value={editForm.description ?? ''}
+      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      rows={2}
+      />
+      </div>
+      <div className="flex items-center gap-3">
+      <button
+      onClick={() => handleSave(rule.id)}
+      disabled={saving}
+      className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+      >
+      {saving ? '保存中...' : '保存'}
+      </button>
+      <button
+      onClick={() => { setEditingId(null); setEditForm({}) }}
+      className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+      >
+      取消
+      </button>
+      </div>
+      </div>
+      ) : (
+      /* ── 展示模式 ── */
+      <div>
+      <div className="flex items-start justify-between">
+      <div className="flex-1">
+      <div className="flex items-center gap-2">
+      <span
+      className="inline-block w-2 h-2 rounded-full"
+      style={{ backgroundColor: moduleColor(rule.module) }}
+      />
+      <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+      {moduleLabel(rule.module)}
+      </span>
+      <h3 className="text-base font-medium text-gray-900">{rule.name}</h3>
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+      rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+      }`}>
+      {rule.enabled ? '已启用' : '已禁用'}
+      </span>
+      {rule.autoApply && (
+      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+      自动处理
+      </span>
+      )}
+      </div>
+      <p className="text-sm text-gray-500 mt-1">{rule.description}</p>
+      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+      <span>字段: {rule.matchField}</span>
+      <span>容差: {formatMoney(rule.toleranceCents)}</span>
+      <span>阈值: {formatMoney(rule.autoApplyThresholdCents)}</span>
+      <span>优先级: #{rule.priority}</span>
+      </div>
+      </div>
+      <div className="flex items-center gap-3 ml-4">
+      {rule.applyRate != null && (
+      <div className="text-right">
+      <p className="text-lg font-bold">{formatPercent(rule.applyRate)}</p>
+      <p className="text-xs text-gray-400">应用率</p>
+      </div>
+      )}
+      <button
+      onClick={() => handleToggle(rule.id)}
+      className={`px-3 py-1 rounded text-xs font-medium ${
+      rule.enabled
+      ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+      : 'bg-green-50 text-green-700 hover:bg-green-100'
+      }`}
+      >
+      {rule.enabled ? '禁用' : '启用'}
+      </button>
+      <button
+      onClick={() => startEdit(rule)}
+      className="px-3 py-1 rounded text-xs font-medium bg-gray-50 text-gray-600 hover:bg-gray-100"
+      >
+      编辑
+      </button>
+      </div>
+      </div>
+      {rule.lastAppliedCount != null && (
+      <div className="mt-3 pt-3 border-t">
+      <div className="flex items-center justify-between text-xs text-gray-400">
+      <span>上次应用: {rule.lastAppliedCount} 次</span>
+      <span>更新于 {new Date(rule.updatedAt).toLocaleString('zh-CN')}</span>
+      </div>
+      </div>
+      )}
+      </div>
+      )}
+      </div>
+      ))
+      )}
       </div>
 
       {/* 全局设置提示 */}
       <div className="bg-gray-50 border rounded-lg p-4 text-sm text-gray-500">
-        <p className="font-medium text-gray-700 mb-1">规则执行策略</p>
-        <p>财务规则按模块分组，同一模块内按优先级顺序执行。匹配成功后不再尝试后续规则。超出容差范围的差异自动标记为"待人工审核"。</p>
+      <p className="font-medium text-gray-700 mb-1">规则执行策略</p>
+      <p>财务规则按模块分组，同一模块内按优先级顺序执行。匹配成功后不再尝试后续规则。超出容差范围的差异自动标记为"待人工审核"。</p>
       </div>
 
       {/* ── 新建规则模态框 ── */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[520px] max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">新建财务规则</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">规则名称 *</label>
-                <input
-                  type="text"
-                  value={createForm.name}
-                  onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
-                  placeholder="输入规则名称"
-                  className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
-                <textarea
-                  value={createForm.description}
-                  onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
-                  placeholder="规则描述"
-                  className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                  rows={2}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">模块</label>
-                  <select
-                    value={createForm.module}
-                    onChange={e => setCreateForm({ ...createForm, module: e.target.value as FinanceRule['module'] })}
-                    className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                  >
-                    <option value="RECONCILIATION">对账</option>
-                    <option value="APPROVAL">审批</option>
-                    <option value="AUDIT">审计</option>
-                    <option value="SETTLEMENT">结算</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">匹配字段</label>
-                  <input
-                    type="text"
-                    value={createForm.matchField}
-                    onChange={e => setCreateForm({ ...createForm, matchField: e.target.value })}
-                    placeholder="orderNo"
-                    className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">容差 (分)</label>
-                  <input
-                    type="number"
-                    value={createForm.toleranceCents}
-                    onChange={e => setCreateForm({ ...createForm, toleranceCents: Number(e.target.value) })}
-                    className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">优先级</label>
-                  <input
-                    type="number"
-                    value={createForm.priority}
-                    onChange={e => setCreateForm({ ...createForm, priority: Number(e.target.value) })}
-                    className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={createForm.enabled}
-                    onChange={e => setCreateForm({ ...createForm, enabled: e.target.checked })}
-                    className="rounded"
-                  />
-                  创建后启用
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={createForm.autoApply}
-                    onChange={e => setCreateForm({ ...createForm, autoApply: e.target.checked })}
-                    className="rounded"
-                  />
-                  自动处理
-                </label>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={saving || !createForm.name}
-                className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? '创建中...' : '创建'}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 w-[520px] max-h-[90vh] overflow-y-auto">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">新建财务规则</h3>
+      <div className="space-y-4">
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">规则名称 *</label>
+      <input
+      type="text"
+      value={createForm.name}
+      onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
+      placeholder="输入规则名称"
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">描述</label>
+      <textarea
+      value={createForm.description}
+      onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
+      placeholder="规则描述"
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      rows={2}
+      />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">模块</label>
+      <select
+      value={createForm.module}
+      onChange={e => setCreateForm({ ...createForm, module: e.target.value as FinanceRule['module'] })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      >
+      <option value="RECONCILIATION">对账</option>
+      <option value="APPROVAL">审批</option>
+      <option value="AUDIT">审计</option>
+      <option value="SETTLEMENT">结算</option>
+      </select>
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">匹配字段</label>
+      <input
+      type="text"
+      value={createForm.matchField}
+      onChange={e => setCreateForm({ ...createForm, matchField: e.target.value })}
+      placeholder="orderNo"
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">容差 (分)</label>
+      <input
+      type="number"
+      value={createForm.toleranceCents}
+      onChange={e => setCreateForm({ ...createForm, toleranceCents: Number(e.target.value) })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">优先级</label>
+      <input
+      type="number"
+      value={createForm.priority}
+      onChange={e => setCreateForm({ ...createForm, priority: Number(e.target.value) })}
+      className="border border-gray-300 rounded px-3 py-1.5 w-full text-sm"
+      />
+      </div>
+      </div>
+      <div className="flex items-center gap-4">
+      <label className="flex items-center gap-2 text-sm">
+      <input
+      type="checkbox"
+      checked={createForm.enabled}
+      onChange={e => setCreateForm({ ...createForm, enabled: e.target.checked })}
+      className="rounded"
+      />
+      创建后启用
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+      <input
+      type="checkbox"
+      checked={createForm.autoApply}
+      onChange={e => setCreateForm({ ...createForm, autoApply: e.target.checked })}
+      className="rounded"
+      />
+      自动处理
+      </label>
+      </div>
+      </div>
+      <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t">
+      <button
+      onClick={() => setShowCreateModal(false)}
+      className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+      >
+      取消
+      </button>
+      <button
+      onClick={handleCreate}
+      disabled={saving || !createForm.name}
+      className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+      >
+      {saving ? '创建中...' : '创建'}
+      </button>
+      </div>
+      </div>
+      </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

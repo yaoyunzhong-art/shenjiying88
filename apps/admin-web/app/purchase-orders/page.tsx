@@ -260,65 +260,71 @@ export default function PurchaseOrdersPage() {
   const tabs = useMemo(() => buildTabs(stats), [stats]);
 
   return (
-    <PageShell
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <PageShell
       title="采购单管理"
       description="管理门店采购订单，包括审批、收货流程跟踪"
-    >
+      >
       {/* 统计卡片 */}
       <StatsCards stats={stats} />
 
       {/* 搜索 + ActionBar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, maxWidth: 380, minWidth: 200 }}>
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索采购单号 / 供应商 / 联系人..."
-            width="100%"
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: '#64748b' }}>
-            共 {sorted.length} 条
-          </span>
-          <SubmitButton onClick={handleCreateNew}>
-            ＋ 新建采购单
-          </SubmitButton>
-        </div>
+      <div style={{ flex: 1, maxWidth: 380, minWidth: 200 }}>
+      <SearchFilterInput
+      value={searchTerm}
+      onChange={setSearchTerm}
+      placeholder="搜索采购单号 / 供应商 / 联系人..."
+      width="100%"
+      />
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <span style={{ fontSize: 11, color: '#64748b' }}>
+      共 {sorted.length} 条
+      </span>
+      <SubmitButton onClick={handleCreateNew}>
+      ＋ 新建采购单
+      </SubmitButton>
+      </div>
       </div>
 
       {/* 状态 Tabs */}
       <Tabs<PurchaseOrderStatus | 'all'>
-        items={tabs}
-        activeKey={activeTab}
-        onChange={(key) => {
-          setActiveTab(key);
-          pagination.setPage(1);
-          setSelectedIds([]);
-        }}
+      items={tabs}
+      activeKey={activeTab}
+      onChange={(key) => {
+      setActiveTab(key);
+      pagination.setPage(1);
+      setSelectedIds([]);
+      }}
       />
 
       {/* 数据表格 */}
       <DataTable<PurchaseOrderItem>
-        columns={columns}
-        rows={pageItems}
-        sort={sortConfig}
-        onSortChange={setSortConfig}
-        onRowClick={handleRowClick}
-        emptyText={searchTerm ? '未找到匹配的采购单' : '暂无采购单数据'}
-        rowKey={(row: PurchaseOrderItem) => row.id}
+      columns={columns}
+      rows={pageItems}
+      sort={sortConfig}
+      onSortChange={setSortConfig}
+      onRowClick={handleRowClick}
+      emptyText={searchTerm ? '未找到匹配的采购单' : '暂无采购单数据'}
+      rowKey={(row: PurchaseOrderItem) => row.id}
       />
 
       {/* 分页 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-        <Pagination
-          page={pagination.page}
-          pageSize={pagination.pageSize}
-          total={sorted.length}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-        />
+      <Pagination
+      page={pagination.page}
+      pageSize={pagination.pageSize}
+      total={sorted.length}
+      onPageChange={pagination.setPage}
+      onPageSizeChange={pagination.setPageSize}
+      />
       </div>
-    </PageShell>
-  );
+      </PageShell>
+    </AdminPermissionGate>
+  )
 }

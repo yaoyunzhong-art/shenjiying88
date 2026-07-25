@@ -390,386 +390,392 @@ export default function FinancePayoutsPage() {
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif', maxWidth: 1200, margin: '0 auto' }}>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif', maxWidth: 1200, margin: '0 auto' }}>
       {/* 标题 */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>💰 提现管理</h1>
-        <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0 0' }}>
-          Phase-38 · 提现审核 · 状态机 · 金额单位: 分
-        </p>
+      <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>💰 提现管理</h1>
+      <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0 0' }}>
+      Phase-38 · 提现审核 · 状态机 · 金额单位: 分
+      </p>
       </div>
 
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
-        {[
-          { label: '提现总笔数', value: stats.total, color: '#374151' },
-          { label: '待审核', value: stats.pending, color: '#92400e' },
-          { label: '提现总额', value: formatAmount(stats.totalAmountCents), color: '#065f46' },
-          { label: '待处理金额', value: formatAmount(stats.pendingAmountCents), color: '#1e40af' },
-        ].map((card, i) => (
-          <div
-            key={i}
-            style={{
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              padding: '16px',
-            }}
-          >
-            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>{card.label}</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: card.color, margin: '8px 0 0 0' }}>
-              {card.value}
-            </p>
-          </div>
-        ))}
+      {[
+      { label: '提现总笔数', value: stats.total, color: '#374151' },
+      { label: '待审核', value: stats.pending, color: '#92400e' },
+      { label: '提现总额', value: formatAmount(stats.totalAmountCents), color: '#065f46' },
+      { label: '待处理金额', value: formatAmount(stats.pendingAmountCents), color: '#1e40af' },
+      ].map((card, i) => (
+      <div
+      key={i}
+      style={{
+      background: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: 8,
+      padding: '16px',
+      }}
+      >
+      <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>{card.label}</p>
+      <p style={{ fontSize: 22, fontWeight: 700, color: card.color, margin: '8px 0 0 0' }}>
+      {card.value}
+      </p>
+      </div>
+      ))}
       </div>
 
       {/* 操作栏 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          style={{
-            padding: '6px 12px',
-            borderRadius: 6,
-            border: '1px solid #d1d5db',
-            fontSize: 14,
-            background: 'white',
-          }}
-        >
-          <option value="all">全部状态</option>
-          <option value="PENDING">待审核</option>
-          <option value="APPROVED">已通过</option>
-          <option value="REJECTED">已拒绝</option>
-          <option value="PROCESSING">处理中</option>
-          <option value="COMPLETED">已完成</option>
-          <option value="FAILED">打款失败</option>
-        </select>
-        <select
-          value={filterMethod}
-          onChange={(e) => setFilterMethod(e.target.value)}
-          style={{
-            padding: '6px 12px',
-            borderRadius: 6,
-            border: '1px solid #d1d5db',
-            fontSize: 14,
-            background: 'white',
-          }}
-        >
-          <option value="all">全部方式</option>
-          <option value="BANK">银行卡</option>
-          <option value="ALIPAY">支付宝</option>
-          <option value="WECHAT">微信</option>
-        </select>
-        <button
-          onClick={fetchPayouts}
-          style={{
-            padding: '6px 16px',
-            borderRadius: 6,
-            border: '1px solid #d1d5db',
-            background: 'white',
-            cursor: 'pointer',
-            fontSize: 14,
-            color: '#374151',
-          }}
-        >
-          刷新
-        </button>
-        <span style={{ fontSize: 13, color: '#9ca3af', marginLeft: 'auto' }}>
-          共 {filteredPayouts.length} 条
-        </span>
+      <select
+      value={filterStatus}
+      onChange={(e) => setFilterStatus(e.target.value)}
+      style={{
+      padding: '6px 12px',
+      borderRadius: 6,
+      border: '1px solid #d1d5db',
+      fontSize: 14,
+      background: 'white',
+      }}
+      >
+      <option value="all">全部状态</option>
+      <option value="PENDING">待审核</option>
+      <option value="APPROVED">已通过</option>
+      <option value="REJECTED">已拒绝</option>
+      <option value="PROCESSING">处理中</option>
+      <option value="COMPLETED">已完成</option>
+      <option value="FAILED">打款失败</option>
+      </select>
+      <select
+      value={filterMethod}
+      onChange={(e) => setFilterMethod(e.target.value)}
+      style={{
+      padding: '6px 12px',
+      borderRadius: 6,
+      border: '1px solid #d1d5db',
+      fontSize: 14,
+      background: 'white',
+      }}
+      >
+      <option value="all">全部方式</option>
+      <option value="BANK">银行卡</option>
+      <option value="ALIPAY">支付宝</option>
+      <option value="WECHAT">微信</option>
+      </select>
+      <button
+      onClick={fetchPayouts}
+      style={{
+      padding: '6px 16px',
+      borderRadius: 6,
+      border: '1px solid #d1d5db',
+      background: 'white',
+      cursor: 'pointer',
+      fontSize: 14,
+      color: '#374151',
+      }}
+      >
+      刷新
+      </button>
+      <span style={{ fontSize: 13, color: '#9ca3af', marginLeft: 'auto' }}>
+      共 {filteredPayouts.length} 条
+      </span>
       </div>
 
       {/* 提现列表 */}
       {filteredPayouts.length === 0 ? (
-        <div
-          style={{
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: 8,
-            padding: 48,
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ fontSize: 16, color: '#9ca3af', margin: 0 }}>暂无符合条件的提现记录</p>
-          <p style={{ fontSize: 13, color: '#d1d5db', margin: '8px 0 0 0' }}>
-            {filterStatus !== 'all' || filterMethod !== 'all' ? '尝试调整筛选条件' : '目前没有提现申请'}
-          </p>
-        </div>
+      <div
+      style={{
+      background: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: 8,
+      padding: 48,
+      textAlign: 'center',
+      }}
+      >
+      <p style={{ fontSize: 16, color: '#9ca3af', margin: 0 }}>暂无符合条件的提现记录</p>
+      <p style={{ fontSize: 13, color: '#d1d5db', margin: '8px 0 0 0' }}>
+      {filterStatus !== 'all' || filterMethod !== 'all' ? '尝试调整筛选条件' : '目前没有提现申请'}
+      </p>
+      </div>
       ) : (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>提现单号</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>申请人</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>金额</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>方式</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>账户</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>状态</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>申请时间</th>
-                <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPayouts.map((p) => {
-                const accountDisplay = p.method === 'BANK'
-                  ? `${p.bankName || ''} ${p.bankCardNo || ''}`
-                  : p.method === 'ALIPAY'
-                    ? p.alipayAccount || '-'
-                    : p.wechatAccount || '-'
+      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+      <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>提现单号</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>申请人</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>金额</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>方式</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>账户</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>状态</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>申请时间</th>
+      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {filteredPayouts.map((p) => {
+      const accountDisplay = p.method === 'BANK'
+      ? `${p.bankName || ''} ${p.bankCardNo || ''}`
+      : p.method === 'ALIPAY'
+      ? p.alipayAccount || '-'
+      : p.wechatAccount || '-'
 
-                const colorInfo = STATUS_COLORS[p.status]
+      const colorInfo = STATUS_COLORS[p.status]
 
-                return (
-                  <tr key={p.id} style={{ borderTop: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>{p.id}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 14 }}>{p.applicant}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 14, fontWeight: 600 }}>
-                      {formatAmount(p.amountCents, p.currency)}
-                    </td>
-                    <td style={{ padding: '10px 12px', fontSize: 13 }}>{METHOD_LABELS[p.method]}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 12, color: '#6b7280', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {accountDisplay}
-                    </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '2px 8px',
-                          borderRadius: 12,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          background: colorInfo.bg,
-                          color: colorInfo.fg,
-                        }}
-                      >
-                        {STATUS_LABELS[p.status]}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 12px', fontSize: 12, color: '#6b7280' }}>
-                      {formatDate(p.createdAt)}
-                    </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {STATUS_TRANSITIONS[p.status]?.includes('APPROVED') && (
-                          <button
-                            onClick={() => handleReviewOpen(p, 'APPROVED')}
-                            style={{
-                              padding: '3px 8px',
-                              borderRadius: 4,
-                              border: 'none',
-                              background: '#10b981',
-                              color: 'white',
-                              fontSize: 11,
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                            }}
-                          >
-                            通过
-                          </button>
-                        )}
-                        {STATUS_TRANSITIONS[p.status]?.includes('REJECTED') && (
-                          <button
-                            onClick={() => handleReviewOpen(p, 'REJECTED')}
-                            style={{
-                              padding: '3px 8px',
-                              borderRadius: 4,
-                              border: 'none',
-                              background: '#ef4444',
-                              color: 'white',
-                              fontSize: 11,
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                            }}
-                          >
-                            拒绝
-                          </button>
-                        )}
-                        {!STATUS_TRANSITIONS[p.status]?.length && (
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>-</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      return (
+      <tr key={p.id} style={{ borderTop: '1px solid #e5e7eb' }}>
+      <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>{p.id}</td>
+      <td style={{ padding: '10px 12px', fontSize: 14 }}>{p.applicant}</td>
+      <td style={{ padding: '10px 12px', fontSize: 14, fontWeight: 600 }}>
+      {formatAmount(p.amountCents, p.currency)}
+      </td>
+      <td style={{ padding: '10px 12px', fontSize: 13 }}>{METHOD_LABELS[p.method]}</td>
+      <td style={{ padding: '10px 12px', fontSize: 12, color: '#6b7280', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {accountDisplay}
+      </td>
+      <td style={{ padding: '10px 12px' }}>
+      <span
+      style={{
+      display: 'inline-block',
+      padding: '2px 8px',
+      borderRadius: 12,
+      fontSize: 12,
+      fontWeight: 600,
+      background: colorInfo.bg,
+      color: colorInfo.fg,
+      }}
+      >
+      {STATUS_LABELS[p.status]}
+      </span>
+      </td>
+      <td style={{ padding: '10px 12px', fontSize: 12, color: '#6b7280' }}>
+      {formatDate(p.createdAt)}
+      </td>
+      <td style={{ padding: '10px 12px' }}>
+      <div style={{ display: 'flex', gap: 4 }}>
+      {STATUS_TRANSITIONS[p.status]?.includes('APPROVED') && (
+      <button
+      onClick={() => handleReviewOpen(p, 'APPROVED')}
+      style={{
+      padding: '3px 8px',
+      borderRadius: 4,
+      border: 'none',
+      background: '#10b981',
+      color: 'white',
+      fontSize: 11,
+      cursor: 'pointer',
+      fontWeight: 600,
+      }}
+      >
+      通过
+      </button>
+      )}
+      {STATUS_TRANSITIONS[p.status]?.includes('REJECTED') && (
+      <button
+      onClick={() => handleReviewOpen(p, 'REJECTED')}
+      style={{
+      padding: '3px 8px',
+      borderRadius: 4,
+      border: 'none',
+      background: '#ef4444',
+      color: 'white',
+      fontSize: 11,
+      cursor: 'pointer',
+      fontWeight: 600,
+      }}
+      >
+      拒绝
+      </button>
+      )}
+      {!STATUS_TRANSITIONS[p.status]?.length && (
+      <span style={{ fontSize: 11, color: '#9ca3af' }}>-</span>
+      )}
+      </div>
+      </td>
+      </tr>
+      )
+      })}
+      </tbody>
+      </table>
+      </div>
       )}
 
       {/* 审核对话框 */}
       {reviewTarget && reviewAction && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => { setReviewTarget(null); setReviewAction(null); }}
-        >
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 12,
-              padding: 24,
-              width: 400,
-              maxWidth: '90%',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>
-              {reviewAction === 'APPROVED' ? '✓ 确认通过' : '✗ 确认拒绝'}
-            </h3>
+      <div
+      style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.4)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      }}
+      onClick={() => { setReviewTarget(null); setReviewAction(null); }}
+      >
+      <div
+      style={{
+      background: 'white',
+      borderRadius: 12,
+      padding: 24,
+      width: 400,
+      maxWidth: '90%',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+      }}
+      onClick={(e) => e.stopPropagation()}
+      >
+      <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>
+      {reviewAction === 'APPROVED' ? '✓ 确认通过' : '✗ 确认拒绝'}
+      </h3>
 
-            <div style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 14, color: '#374151', margin: 0 }}>
-                提现单 <strong>{reviewTarget.id}</strong>
-              </p>
-              <p style={{ fontSize: 14, color: '#374151', margin: '4px 0 0' }}>
-                申请人: {reviewTarget.applicant} · 金额: {formatAmount(reviewTarget.amountCents)}
-              </p>
-            </div>
+      <div style={{ marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: '#374151', margin: 0 }}>
+      提现单 <strong>{reviewTarget.id}</strong>
+      </p>
+      <p style={{ fontSize: 14, color: '#374151', margin: '4px 0 0' }}>
+      申请人: {reviewTarget.applicant} · 金额: {formatAmount(reviewTarget.amountCents)}
+      </p>
+      </div>
 
-            {reviewAction === 'REJECTED' && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                  拒绝原因 <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <textarea
-                  value={reviewNote}
-                  onChange={(e) => setReviewNote(e.target.value)}
-                  placeholder="请填写拒绝原因..."
-                  rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: 6,
-                    border: '1px solid #d1d5db',
-                    fontSize: 14,
-                    resize: 'vertical',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-            )}
+      {reviewAction === 'REJECTED' && (
+      <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+      拒绝原因 <span style={{ color: '#ef4444' }}>*</span>
+      </label>
+      <textarea
+      value={reviewNote}
+      onChange={(e) => setReviewNote(e.target.value)}
+      placeholder="请填写拒绝原因..."
+      rows={3}
+      style={{
+      width: '100%',
+      padding: '8px 10px',
+      borderRadius: 6,
+      border: '1px solid #d1d5db',
+      fontSize: 14,
+      resize: 'vertical',
+      boxSizing: 'border-box',
+      }}
+      />
+      </div>
+      )}
 
-            {reviewAction === 'APPROVED' && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                  审核备注（可选）
-                </label>
-                <textarea
-                  value={reviewNote}
-                  onChange={(e) => setReviewNote(e.target.value)}
-                  placeholder="审核备注..."
-                  rows={2}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: 6,
-                    border: '1px solid #d1d5db',
-                    fontSize: 14,
-                    resize: 'vertical',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-            )}
+      {reviewAction === 'APPROVED' && (
+      <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+      审核备注（可选）
+      </label>
+      <textarea
+      value={reviewNote}
+      onChange={(e) => setReviewNote(e.target.value)}
+      placeholder="审核备注..."
+      rows={2}
+      style={{
+      width: '100%',
+      padding: '8px 10px',
+      borderRadius: 6,
+      border: '1px solid #d1d5db',
+      fontSize: 14,
+      resize: 'vertical',
+      boxSizing: 'border-box',
+      }}
+      />
+      </div>
+      )}
 
-            {reviewAction === 'APPROVED' && (
-              <div
-                style={{
-                  padding: 12,
-                  background: '#d1fae5',
-                  borderRadius: 6,
-                  marginBottom: 16,
-                  fontSize: 13,
-                  color: '#065f46',
-                }}
-              >
-                审核通过后将进入打款流程，请确认账户信息无误。
-              </div>
-            )}
+      {reviewAction === 'APPROVED' && (
+      <div
+      style={{
+      padding: 12,
+      background: '#d1fae5',
+      borderRadius: 6,
+      marginBottom: 16,
+      fontSize: 13,
+      color: '#065f46',
+      }}
+      >
+      审核通过后将进入打款流程，请确认账户信息无误。
+      </div>
+      )}
 
-            {reviewAction === 'REJECTED' && (
-              <div
-                style={{
-                  padding: 12,
-                  background: '#fee2e2',
-                  borderRadius: 6,
-                  marginBottom: 16,
-                  fontSize: 13,
-                  color: '#991b1b',
-                }}
-              >
-                拒绝后申请人可修改信息后重新提交。
-              </div>
-            )}
+      {reviewAction === 'REJECTED' && (
+      <div
+      style={{
+      padding: 12,
+      background: '#fee2e2',
+      borderRadius: 6,
+      marginBottom: 16,
+      fontSize: 13,
+      color: '#991b1b',
+      }}
+      >
+      拒绝后申请人可修改信息后重新提交。
+      </div>
+      )}
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setReviewTarget(null); setReviewAction(null); }}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 6,
-                  border: '1px solid #d1d5db',
-                  background: 'white',
-                  color: '#374151',
-                  cursor: 'pointer',
-                  fontSize: 14,
-                }}
-              >
-                取消
-              </button>
-              <button
-                onClick={handleReviewConfirm}
-                disabled={processingReview || (reviewAction === 'REJECTED' && !reviewNote.trim())}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: reviewAction === 'APPROVED' ? '#10b981' : '#ef4444',
-                  color: 'white',
-                  fontWeight: 600,
-                  cursor: processingReview ? 'not-allowed' : 'pointer',
-                  fontSize: 14,
-                  opacity: processingReview ? 0.7 : 1,
-                }}
-              >
-                {processingReview ? '处理中...' : reviewAction === 'APPROVED' ? '确认通过' : '确认拒绝'}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+      <button
+      onClick={() => { setReviewTarget(null); setReviewAction(null); }}
+      style={{
+      padding: '8px 20px',
+      borderRadius: 6,
+      border: '1px solid #d1d5db',
+      background: 'white',
+      color: '#374151',
+      cursor: 'pointer',
+      fontSize: 14,
+      }}
+      >
+      取消
+      </button>
+      <button
+      onClick={handleReviewConfirm}
+      disabled={processingReview || (reviewAction === 'REJECTED' && !reviewNote.trim())}
+      style={{
+      padding: '8px 20px',
+      borderRadius: 6,
+      border: 'none',
+      background: reviewAction === 'APPROVED' ? '#10b981' : '#ef4444',
+      color: 'white',
+      fontWeight: 600,
+      cursor: processingReview ? 'not-allowed' : 'pointer',
+      fontSize: 14,
+      opacity: processingReview ? 0.7 : 1,
+      }}
+      >
+      {processingReview ? '处理中...' : reviewAction === 'APPROVED' ? '确认通过' : '确认拒绝'}
+      </button>
+      </div>
+      </div>
+      </div>
       )}
 
       {/* Toast 容器 */}
       <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 1001, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              padding: '12px 20px',
-              borderRadius: 8,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              minWidth: 260,
-              background: t.type === 'success' ? '#d1fae5' : t.type === 'error' ? '#fee2e2' : '#dbeafe',
-              color: t.type === 'success' ? '#065f46' : t.type === 'error' ? '#991b1b' : '#1e40af',
-              fontWeight: 500,
-              fontSize: 14,
-            }}
-          >
-            {t.message}
-          </div>
-        ))}
+      {toasts.map((t) => (
+      <div
+      key={t.id}
+      style={{
+      padding: '12px 20px',
+      borderRadius: 8,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      minWidth: 260,
+      background: t.type === 'success' ? '#d1fae5' : t.type === 'error' ? '#fee2e2' : '#dbeafe',
+      color: t.type === 'success' ? '#065f46' : t.type === 'error' ? '#991b1b' : '#1e40af',
+      fontWeight: 500,
+      fontSize: 14,
+      }}
+      >
+      {t.message}
       </div>
-    </div>
+      ))}
+      </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

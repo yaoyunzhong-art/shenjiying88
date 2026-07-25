@@ -180,210 +180,216 @@ export default function SupplierFormPage() {
   const isSubmitting = submitState === 'submitting';
 
   return (
-    <PageShell
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <PageShell
       title="创建供应商"
       subtitle="填写供应商信息，提交后进入审核流程"
       breadcrumb={
-        <WorkspaceBreadcrumb
-          workspaceLabel="供应商管理"
-          workspaceHref="/suppliers"
-          detailLabel="创建供应商"
-        />
+      <WorkspaceBreadcrumb
+      workspaceLabel="供应商管理"
+      workspaceHref="/suppliers"
+      detailLabel="创建供应商"
+      />
       }
-    >
+      >
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        {/* 成功反馈 */}
-        {submitState === 'success' && (
-          <FormSubmitFeedback
-            success="供应商已提交 — 供应商信息已成功提交，等待审核。"
-            onDismissSuccess={resetSubmit}
-          />
-        )}
+      {/* 成功反馈 */}
+      {submitState === 'success' && (
+      <FormSubmitFeedback
+      success="供应商已提交 — 供应商信息已成功提交，等待审核。"
+      onDismissSuccess={resetSubmit}
+      />
+      )}
 
-        {/* 失败反馈 */}
-        {submitState === 'error' && (
-          <FormSubmitFeedback
-            error="提交失败"
-            onRetry={onSubmit}
-            onDismissError={resetSubmit}
-          />
-        )}
+      {/* 失败反馈 */}
+      {submitState === 'error' && (
+      <FormSubmitFeedback
+      error="提交失败"
+      onRetry={onSubmit}
+      onDismissError={resetSubmit}
+      />
+      )}
 
-        {/* 表单主体 */}
-        {submitState !== 'success' && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onSubmit();
-            }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-          >
-            {/* 基本信息 */}
-            <section>
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
-                基本信息
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div data-field="name">
-                  <FormField label="供应商名称 *" error={getFieldError('name')}>
-                    <input
-                      type="text"
-                      value={values.name}
-                      onChange={setValue('name')}
-                      placeholder="例：绿源食品有限公司"
-                      disabled={isSubmitting}
-                      style={inputStyle(getFieldError('name'))}
-                    />
-                  </FormField>
-                </div>
-                <div data-field="code">
-                  <FormField label="供应商编码 *" error={getFieldError('code')}>
-                    <input
-                      type="text"
-                      value={values.code}
-                      onChange={setValue('code')}
-                      placeholder="例：SUP-XXX"
-                      disabled={isSubmitting}
-                      style={inputStyle(getFieldError('code'))}
-                    />
-                  </FormField>
-                </div>
-                <div data-field="category">
-                  <FormField label="品类 *">
-                    <select
-                      value={values.category}
-                      onChange={setValue('category')}
-                      disabled={isSubmitting}
-                      style={{ ...inputStyle(), minHeight: 40 }}
-                    >
-                      {SUPPLIER_CATEGORY_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </FormField>
-                </div>
-                <div data-field="status">
-                  <FormField label="状态 *">
-                    <select
-                      value={values.status}
-                      onChange={setValue('status')}
-                      disabled={isSubmitting}
-                      style={{ ...inputStyle(), minHeight: 40 }}
-                    >
-                      {SUPPLIER_STATUS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </FormField>
-                </div>
-              </div>
-            </section>
-
-            {/* 联系信息 */}
-            <section>
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
-                联系信息
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div data-field="contactPerson">
-                  <FormField label="联系人 *" error={getFieldError('contactPerson')}>
-                    <input
-                      type="text"
-                      value={values.contactPerson}
-                      onChange={setValue('contactPerson')}
-                      placeholder="例：王建国"
-                      disabled={isSubmitting}
-                      style={inputStyle(getFieldError('contactPerson'))}
-                    />
-                  </FormField>
-                </div>
-                <div data-field="contactPhone">
-                  <FormField label="联系电话 *" error={getFieldError('contactPhone')}>
-                    <input
-                      type="text"
-                      value={values.contactPhone}
-                      onChange={setValue('contactPhone')}
-                      placeholder="例：13800010001"
-                      disabled={isSubmitting}
-                      style={inputStyle(getFieldError('contactPhone'))}
-                    />
-                  </FormField>
-                </div>
-                <div data-field="email" style={{ gridColumn: '1 / -1' }}>
-                  <FormField label="邮箱 *" error={getFieldError('email')}>
-                    <input
-                      type="email"
-                      value={values.email}
-                      onChange={setValue('email')}
-                      placeholder="例：contact@company.com"
-                      disabled={isSubmitting}
-                      style={inputStyle(getFieldError('email'))}
-                    />
-                  </FormField>
-                </div>
-              </div>
-            </section>
-
-            {/* 其他信息 */}
-            <section>
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
-                其他信息
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div data-field="creditRating">
-                  <FormField label="信用评级">
-                    <select
-                      value={values.creditRating}
-                      onChange={setValue('creditRating')}
-                      disabled={isSubmitting}
-                      style={{ ...inputStyle(), minHeight: 40 }}
-                    >
-                      <option value="AAA">AAA</option>
-                      <option value="AA">AA</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                    </select>
-                  </FormField>
-                </div>
-                <div /> {/* 空占位 */}
-                <div data-field="address" style={{ gridColumn: '1 / -1' }}>
-                  <FormField label="地址 *" error={getFieldError('address')}>
-                    <textarea
-                      value={values.address}
-                      onChange={setValue('address')}
-                      placeholder="例：北京市大兴区生物医药基地"
-                      disabled={isSubmitting}
-                      rows={3}
-                      style={{ ...inputStyle(getFieldError('address')), resize: 'vertical', fontFamily: 'inherit' }}
-                    />
-                  </FormField>
-                </div>
-              </div>
-            </section>
-
-            {/* 提交按钮 */}
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid #334155' }}>
-              <SubmitButton
-                variant="secondary"
-                onClick={() => window.history.back()}
-                disabled={isSubmitting}
-              >
-                取消
-              </SubmitButton>
-              <SubmitButton
-                variant="primary"
-                loading={isSubmitting}
-                type="submit"
-              >
-                {isSubmitting ? '提交中…' : '提交审核'}
-              </SubmitButton>
-            </div>
-          </form>
-        )}
+      {/* 表单主体 */}
+      {submitState !== 'success' && (
+      <form
+      onSubmit={(e) => {
+      e.preventDefault();
+      onSubmit();
+      }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+      >
+      {/* 基本信息 */}
+      <section>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
+      基本信息
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div data-field="name">
+      <FormField label="供应商名称 *" error={getFieldError('name')}>
+      <input
+      type="text"
+      value={values.name}
+      onChange={setValue('name')}
+      placeholder="例：绿源食品有限公司"
+      disabled={isSubmitting}
+      style={inputStyle(getFieldError('name'))}
+      />
+      </FormField>
       </div>
-    </PageShell>
-  );
+      <div data-field="code">
+      <FormField label="供应商编码 *" error={getFieldError('code')}>
+      <input
+      type="text"
+      value={values.code}
+      onChange={setValue('code')}
+      placeholder="例：SUP-XXX"
+      disabled={isSubmitting}
+      style={inputStyle(getFieldError('code'))}
+      />
+      </FormField>
+      </div>
+      <div data-field="category">
+      <FormField label="品类 *">
+      <select
+      value={values.category}
+      onChange={setValue('category')}
+      disabled={isSubmitting}
+      style={{ ...inputStyle(), minHeight: 40 }}
+      >
+      {SUPPLIER_CATEGORY_OPTIONS.map((o) => (
+      <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+      </select>
+      </FormField>
+      </div>
+      <div data-field="status">
+      <FormField label="状态 *">
+      <select
+      value={values.status}
+      onChange={setValue('status')}
+      disabled={isSubmitting}
+      style={{ ...inputStyle(), minHeight: 40 }}
+      >
+      {SUPPLIER_STATUS_OPTIONS.map((o) => (
+      <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+      </select>
+      </FormField>
+      </div>
+      </div>
+      </section>
+
+      {/* 联系信息 */}
+      <section>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
+      联系信息
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div data-field="contactPerson">
+      <FormField label="联系人 *" error={getFieldError('contactPerson')}>
+      <input
+      type="text"
+      value={values.contactPerson}
+      onChange={setValue('contactPerson')}
+      placeholder="例：王建国"
+      disabled={isSubmitting}
+      style={inputStyle(getFieldError('contactPerson'))}
+      />
+      </FormField>
+      </div>
+      <div data-field="contactPhone">
+      <FormField label="联系电话 *" error={getFieldError('contactPhone')}>
+      <input
+      type="text"
+      value={values.contactPhone}
+      onChange={setValue('contactPhone')}
+      placeholder="例：13800010001"
+      disabled={isSubmitting}
+      style={inputStyle(getFieldError('contactPhone'))}
+      />
+      </FormField>
+      </div>
+      <div data-field="email" style={{ gridColumn: '1 / -1' }}>
+      <FormField label="邮箱 *" error={getFieldError('email')}>
+      <input
+      type="email"
+      value={values.email}
+      onChange={setValue('email')}
+      placeholder="例：contact@company.com"
+      disabled={isSubmitting}
+      style={inputStyle(getFieldError('email'))}
+      />
+      </FormField>
+      </div>
+      </div>
+      </section>
+
+      {/* 其他信息 */}
+      <section>
+      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#e2e8f0', marginBottom: 16 }}>
+      其他信息
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div data-field="creditRating">
+      <FormField label="信用评级">
+      <select
+      value={values.creditRating}
+      onChange={setValue('creditRating')}
+      disabled={isSubmitting}
+      style={{ ...inputStyle(), minHeight: 40 }}
+      >
+      <option value="AAA">AAA</option>
+      <option value="AA">AA</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      </select>
+      </FormField>
+      </div>
+      <div /> {/* 空占位 */}
+      <div data-field="address" style={{ gridColumn: '1 / -1' }}>
+      <FormField label="地址 *" error={getFieldError('address')}>
+      <textarea
+      value={values.address}
+      onChange={setValue('address')}
+      placeholder="例：北京市大兴区生物医药基地"
+      disabled={isSubmitting}
+      rows={3}
+      style={{ ...inputStyle(getFieldError('address')), resize: 'vertical', fontFamily: 'inherit' }}
+      />
+      </FormField>
+      </div>
+      </div>
+      </section>
+
+      {/* 提交按钮 */}
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid #334155' }}>
+      <SubmitButton
+      variant="secondary"
+      onClick={() => window.history.back()}
+      disabled={isSubmitting}
+      >
+      取消
+      </SubmitButton>
+      <SubmitButton
+      variant="primary"
+      loading={isSubmitting}
+      type="submit"
+      >
+      {isSubmitting ? '提交中…' : '提交审核'}
+      </SubmitButton>
+      </div>
+      </form>
+      )}
+      </div>
+      </PageShell>
+    </AdminPermissionGate>
+  )
 }
 
 // ---- 样式助手 ----

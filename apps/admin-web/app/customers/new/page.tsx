@@ -232,120 +232,126 @@ export default function NewCustomerPage() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto' }}>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
-        新建客户
+      新建客户
       </h1>
 
       <FormField label="客户姓名" error={errors.name}>
-        <input
-          style={inputStyle}
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="请输入客户姓名"
-          aria-label="客户姓名"
-        />
+      <input
+      style={inputStyle}
+      value={formData.name}
+      onChange={(e) => handleChange('name', e.target.value)}
+      placeholder="请输入客户姓名"
+      aria-label="客户姓名"
+      />
       </FormField>
 
       <FormField label="手机号" error={errors.phone}>
-        <input
-          style={inputStyle}
-          value={formData.phone}
-          onChange={(e) => handleChange('phone', e.target.value)}
-          placeholder="请输入11位手机号"
-          aria-label="手机号"
-        />
+      <input
+      style={inputStyle}
+      value={formData.phone}
+      onChange={(e) => handleChange('phone', e.target.value)}
+      placeholder="请输入11位手机号"
+      aria-label="手机号"
+      />
       </FormField>
 
       <FormField label="性别">
-        <select
-          style={selectStyle}
-          value={formData.gender}
-          onChange={(e) => handleChange('gender', e.target.value)}
-          aria-label="性别"
-        >
-          {GENDER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+      <select
+      style={selectStyle}
+      value={formData.gender}
+      onChange={(e) => handleChange('gender', e.target.value)}
+      aria-label="性别"
+      >
+      {GENDER_OPTIONS.map((opt) => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+      </select>
       </FormField>
 
       <FormField label="城市">
-        <input
-          style={inputStyle}
-          value={formData.city}
-          onChange={(e) => handleChange('city', e.target.value)}
-          placeholder="请输入所在城市"
-          aria-label="城市"
-        />
+      <input
+      style={inputStyle}
+      value={formData.city}
+      onChange={(e) => handleChange('city', e.target.value)}
+      placeholder="请输入所在城市"
+      aria-label="城市"
+      />
       </FormField>
 
       <FormField label="客户来源" error={errors.source}>
-        <select
-          style={selectStyle}
-          value={formData.source}
-          onChange={(e) => handleChange('source', e.target.value)}
-          aria-label="客户来源"
-        >
-          <option value="">请选择来源</option>
-          {SOURCE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+      <select
+      style={selectStyle}
+      value={formData.source}
+      onChange={(e) => handleChange('source', e.target.value)}
+      aria-label="客户来源"
+      >
+      <option value="">请选择来源</option>
+      {SOURCE_OPTIONS.map((opt) => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+      </select>
       </FormField>
 
       <FormField label="会员等级" error={errors.memberLevel}>
-        <select
-          style={selectStyle}
-          value={formData.memberLevel}
-          onChange={(e) => handleChange('memberLevel', e.target.value)}
-          aria-label="会员等级"
-        >
-          <option value="">请选择会员等级</option>
-          {LEVEL_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+      <select
+      style={selectStyle}
+      value={formData.memberLevel}
+      onChange={(e) => handleChange('memberLevel', e.target.value)}
+      aria-label="会员等级"
+      >
+      <option value="">请选择会员等级</option>
+      {LEVEL_OPTIONS.map((opt) => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+      </select>
       </FormField>
 
       <FormField label="出生日期" error={errors.birthDate}>
-        <input
-          style={inputStyle}
-          value={formData.birthDate}
-          onChange={(e) => handleChange('birthDate', e.target.value)}
-          placeholder="例如: 1990-01-01"
-          aria-label="出生日期"
-        />
+      <input
+      style={inputStyle}
+      value={formData.birthDate}
+      onChange={(e) => handleChange('birthDate', e.target.value)}
+      placeholder="例如: 1990-01-01"
+      aria-label="出生日期"
+      />
       </FormField>
 
       <FormField label="备注">
-        <textarea
-          style={textareaStyle}
-          value={formData.remark}
-          onChange={(e) => handleChange('remark', e.target.value)}
-          placeholder="可填写客户备注信息"
-          aria-label="备注"
-        />
+      <textarea
+      style={textareaStyle}
+      value={formData.remark}
+      onChange={(e) => handleChange('remark', e.target.value)}
+      placeholder="可填写客户备注信息"
+      aria-label="备注"
+      />
       </FormField>
 
       <FormSubmitFeedback
-        state={{
-          isSubmitting: submitState === 'submitting',
-          successMessage: submitState === 'success' ? '客户创建成功' : undefined,
-          errorMessage: submitError,
-        }}
-        onRetry={handleRetry}
+      state={{
+      isSubmitting: submitState === 'submitting',
+      successMessage: submitState === 'success' ? '客户创建成功' : undefined,
+      errorMessage: submitError,
+      }}
+      onRetry={handleRetry}
       />
 
       <div style={{ marginTop: 24 }}>
-        <SubmitButton
-          onClick={handleSubmit}
-          loading={submitState === 'submitting'}
-          disabled={submitState === 'submitting'}
-        >
-          创建客户
-        </SubmitButton>
+      <SubmitButton
+      onClick={handleSubmit}
+      loading={submitState === 'submitting'}
+      disabled={submitState === 'submitting'}
+      >
+      创建客户
+      </SubmitButton>
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

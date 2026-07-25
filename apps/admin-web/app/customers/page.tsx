@@ -172,91 +172,97 @@ export default function CustomersPage() {
   }
 
   return (
-    <div>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
-        客户管理
+      客户管理
       </h1>
 
       {/* 统计卡片 */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <StatCard label="总客户" value={stats.total} />
-        <StatCard label="活跃客户" value={stats.active} />
-        <StatCard label="累计消费" value={formatCurrency(stats.totalSpent)} />
-        <StatCard label="钻石会员" value={stats.diamond} />
+      <StatCard label="总客户" value={stats.total} />
+      <StatCard label="活跃客户" value={stats.active} />
+      <StatCard label="累计消费" value={formatCurrency(stats.totalSpent)} />
+      <StatCard label="钻石会员" value={stats.diamond} />
       </div>
 
       {/* 筛选栏 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
-        <SearchFilterInput
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="搜索姓名/手机号/城市"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value as CustomerStatus | 'all'); setPage(0) }}
-          style={{
-            padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(148,163,184,0.2)',
-            background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: 14,
-          }}
-          aria-label="状态筛选"
-        >
-          <option value="all">全部状态</option>
-          {CUSTOMER_STATUSES.map((s) => (
-            <option key={s} value={s}>{CUSTOMER_STATUS_MAP[s].label}</option>
-          ))}
-        </select>
-        <select
-          value={levelFilter}
-          onChange={(e) => { setLevelFilter(e.target.value as MemberLevel | 'all'); setPage(0) }}
-          style={{
-            padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(148,163,184,0.2)',
-            background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: 14,
-          }}
-          aria-label="会员等级筛选"
-        >
-          <option value="all">全部等级</option>
-          {MEMBER_LEVELS.map((l) => (
-            <option key={l} value={l}>{MEMBER_LEVEL_MAP[l].label}</option>
-          ))}
-        </select>
+      <SearchFilterInput
+      value={searchTerm}
+      onChange={setSearchTerm}
+      placeholder="搜索姓名/手机号/城市"
+      />
+      <select
+      value={statusFilter}
+      onChange={(e) => { setStatusFilter(e.target.value as CustomerStatus | 'all'); setPage(0) }}
+      style={{
+      padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(148,163,184,0.2)',
+      background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: 14,
+      }}
+      aria-label="状态筛选"
+      >
+      <option value="all">全部状态</option>
+      {CUSTOMER_STATUSES.map((s) => (
+      <option key={s} value={s}>{CUSTOMER_STATUS_MAP[s].label}</option>
+      ))}
+      </select>
+      <select
+      value={levelFilter}
+      onChange={(e) => { setLevelFilter(e.target.value as MemberLevel | 'all'); setPage(0) }}
+      style={{
+      padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(148,163,184,0.2)',
+      background: 'rgba(15,23,42,0.6)', color: '#e2e8f0', fontSize: 14,
+      }}
+      aria-label="会员等级筛选"
+      >
+      <option value="all">全部等级</option>
+      {MEMBER_LEVELS.map((l) => (
+      <option key={l} value={l}>{MEMBER_LEVEL_MAP[l].label}</option>
+      ))}
+      </select>
       </div>
 
       {/* 空态 / 数据表格 */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8', background: 'rgba(15,23,42,0.6)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.1)' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div>
-          <div style={{ fontSize: 14 }}>当前筛选条件下没有客户记录，请调整筛选条件。</div>
-        </div>
+      <div style={{ textAlign: 'center', padding: '48px 24px', color: '#94a3b8', background: 'rgba(15,23,42,0.6)', borderRadius: 12, border: '1px solid rgba(148,163,184,0.1)' }}>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#e2e8f0' }}>暂无数据</div>
+      <div style={{ fontSize: 14 }}>当前筛选条件下没有客户记录，请调整筛选条件。</div>
+      </div>
       ) : (
-        <>
-          <DataTable
-            columns={columns}
-            items={paged}
-            rowKey={(r) => r.id}
-            striped
-          />
+      <>
+      <DataTable
+      columns={columns}
+      items={paged}
+      rowKey={(r) => r.id}
+      striped
+      />
 
-          {/* 分页 */}
-          <div style={{ marginTop: 16, textAlign: 'right', color: '#94a3b8' }}>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i)}
-                style={{
-                  margin: '0 4px', padding: '4px 10px', cursor: 'pointer',
-                  background: i === page ? 'rgba(22,119,255,0.2)' : 'transparent',
-                  border: i === page ? '1px solid #1677ff' : '1px solid rgba(148,163,184,0.3)',
-                  borderRadius: 4, color: i === page ? '#1677ff' : '#94a3b8',
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <span style={{ marginLeft: 8 }}>共 {filtered.length} 条</span>
-          </div>
-        </>
+      {/* 分页 */}
+      <div style={{ marginTop: 16, textAlign: 'right', color: '#94a3b8' }}>
+      {Array.from({ length: totalPages }, (_, i) => (
+      <button
+      key={i}
+      onClick={() => setPage(i)}
+      style={{
+      margin: '0 4px', padding: '4px 10px', cursor: 'pointer',
+      background: i === page ? 'rgba(22,119,255,0.2)' : 'transparent',
+      border: i === page ? '1px solid #1677ff' : '1px solid rgba(148,163,184,0.3)',
+      borderRadius: 4, color: i === page ? '#1677ff' : '#94a3b8',
+      }}
+      >
+      {i + 1}
+      </button>
+      ))}
+      <span style={{ marginLeft: 8 }}>共 {filtered.length} 条</span>
+      </div>
+      </>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

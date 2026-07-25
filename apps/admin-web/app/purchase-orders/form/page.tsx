@@ -257,227 +257,233 @@ export default function PurchaseOrderFormPage() {
   }));
 
   return (
-    <PageShell
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <PageShell
       title="创建采购单"
       description="填写采购信息并提交审批"
       breadcrumb={
-        <WorkspaceBreadcrumb
-          workspaceLabel="采购管理"
-          workspaceHref="/purchase-orders"
-          detailLabel="创建采购单"
-          intermediateLabel=""
-        />
+      <WorkspaceBreadcrumb
+      workspaceLabel="采购管理"
+      workspaceHref="/purchase-orders"
+      detailLabel="创建采购单"
+      intermediateLabel=""
+      />
       }
-    >
+      >
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        {/* ---- 采购类型分类标签 ---- */}
-        <div data-testid="category-tabs" role="tablist" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #e5e7eb', paddingBottom: 0 }}>
-          {PURCHASE_ORDER_CATEGORIES.map((tab) => {
-            const isActive = activeCategory === tab.key;
-            return (
-              <button
-                key={tab.key}
-                role="tab"
-                data-category={tab.key}
-                aria-selected={isActive}
-                onClick={() => handleCategoryChange(tab.key)}
-                disabled={submitState === 'submitting'}
-                style={{
-                  padding: '8px 20px',
-                  border: 'none',
-                  borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
-                  background: 'transparent',
-                  color: isActive ? '#2563eb' : '#6b7280',
-                  fontWeight: isActive ? 600 : 400,
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  marginBottom: -2,
-                  transition: 'all 0.2s',
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <form onSubmit={handleSubmit} noValidate>
-          {/* ---- 供应商信息 ---- */}
-          <FormFieldWithData field="supplierName" label="供应商名称" required error={getFieldError('supplierName')}>
-            <input
-              type="text"
-              value={values.supplierName}
-              onChange={handleChange('supplierName')}
-              placeholder="请输入供应商名称"
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          <FormFieldWithData field="supplierId" label="供应商编号" required error={getFieldError('supplierId')}>
-            <input
-              type="text"
-              value={values.supplierId}
-              onChange={handleChange('supplierId')}
-              placeholder="例如: sp-001"
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          <FormFieldWithData field="contactPerson" label="联系人" required error={getFieldError('contactPerson')}>
-            <input
-              type="text"
-              value={values.contactPerson}
-              onChange={handleChange('contactPerson')}
-              placeholder="请输入联系人姓名"
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          <FormFieldWithData field="contactPhone" label="联系电话" required error={getFieldError('contactPhone')}>
-            <input
-              type="text"
-              value={values.contactPhone}
-              onChange={handleChange('contactPhone')}
-              placeholder="手机号或固话"
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          {/* ---- 采购信息 ---- */}
-          <FormFieldWithData field="department" label="采购部门" required error={getFieldError('department')}>
-            <select
-              value={values.department}
-              onChange={handleChange('department')}
-              disabled={submitState === 'submitting'}
-              style={selectStyle}
-            >
-              <option value="">请选择部门</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </select>
-          </FormFieldWithData>
-
-          <FormFieldWithData field="storeCode" label="所属门店" required error={getFieldError('storeCode')}>
-            <select
-              value={values.storeCode}
-              onChange={handleChange('storeCode')}
-              disabled={submitState === 'submitting'}
-              style={selectStyle}
-            >
-              <option value="">请选择门店</option>
-              {STORE_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </FormFieldWithData>
-
-          <FormFieldWithData field="urgency" label="紧急程度">
-            <select
-              value={values.urgency}
-              onChange={handleChange('urgency')}
-              disabled={submitState === 'submitting'}
-              style={selectStyle}
-            >
-              {urgencyOptions.map((u) => (
-                <option key={u.value} value={u.value}>{u.label}</option>
-              ))}
-            </select>
-          </FormFieldWithData>
-
-          {/* ---- 商品明细 ---- */}
-          <FormFieldWithData field="itemsCount" label="品项数" required error={getFieldError('itemsCount')}>
-            <input
-              type="number"
-              min={1}
-              value={values.itemsCount}
-              onChange={handleChange('itemsCount')}
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          <FormFieldWithData field="totalQuantity" label="总数量" required error={getFieldError('totalQuantity')}>
-            <input
-              type="number"
-              min={1}
-              value={values.totalQuantity}
-              onChange={handleChange('totalQuantity')}
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          <FormFieldWithData field="totalAmount" label="总金额 (元)" required error={getFieldError('totalAmount')}>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={values.totalAmount}
-              onChange={handleChange('totalAmount')}
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          <FormFieldWithData field="expectedDelivery" label="期望到货日期" required error={getFieldError('expectedDelivery')}>
-            <input
-              type="date"
-              value={values.expectedDelivery}
-              onChange={handleChange('expectedDelivery')}
-              disabled={submitState === 'submitting'}
-              style={inputStyle}
-            />
-          </FormFieldWithData>
-
-          {/* ---- 备注 ---- */}
-          <FormFieldWithData field="remark" label="备注">
-            <textarea
-              value={values.remark}
-              onChange={handleChange('remark')}
-              placeholder="采购单备注说明（选填）"
-              disabled={submitState === 'submitting'}
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical' }}
-            />
-          </FormFieldWithData>
-
-          {/* ---- 提交反馈 ---- */}
-          {submitState === 'success' && (
-            <FormSubmitFeedback success="采购单已成功提交，等待审批。" />
-          )}
-          {submitState === 'error' && (
-            <FormSubmitFeedback
-              error="提交失败，请稍后重试。若问题持续请联系 IT 支持。"
-            />
-          )}
-
-          {/* ---- 操作按钮 ---- */}
-          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-            <SubmitButton
-              type="submit"
-              loading={submitState === 'submitting'}
-              disabled={submitState === 'submitting'}
-            >
-              {submitState === 'submitting' ? '提交中...' : '提交采购单'}
-            </SubmitButton>
-            <button
-              type="button"
-              onClick={handleReset}
-              disabled={submitState === 'submitting'}
-              style={cancelBtnStyle}
-            >
-              重置
-            </button>
-          </div>
-        </form>
+      {/* ---- 采购类型分类标签 ---- */}
+      <div data-testid="category-tabs" role="tablist" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #e5e7eb', paddingBottom: 0 }}>
+      {PURCHASE_ORDER_CATEGORIES.map((tab) => {
+      const isActive = activeCategory === tab.key;
+      return (
+      <button
+      key={tab.key}
+      role="tab"
+      data-category={tab.key}
+      aria-selected={isActive}
+      onClick={() => handleCategoryChange(tab.key)}
+      disabled={submitState === 'submitting'}
+      style={{
+      padding: '8px 20px',
+      border: 'none',
+      borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
+      background: 'transparent',
+      color: isActive ? '#2563eb' : '#6b7280',
+      fontWeight: isActive ? 600 : 400,
+      fontSize: 14,
+      cursor: 'pointer',
+      marginBottom: -2,
+      transition: 'all 0.2s',
+      }}
+      >
+      {tab.label}
+      </button>
+      );
+      })}
       </div>
-    </PageShell>
-  );
+
+      <form onSubmit={handleSubmit} noValidate>
+      {/* ---- 供应商信息 ---- */}
+      <FormFieldWithData field="supplierName" label="供应商名称" required error={getFieldError('supplierName')}>
+      <input
+      type="text"
+      value={values.supplierName}
+      onChange={handleChange('supplierName')}
+      placeholder="请输入供应商名称"
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      <FormFieldWithData field="supplierId" label="供应商编号" required error={getFieldError('supplierId')}>
+      <input
+      type="text"
+      value={values.supplierId}
+      onChange={handleChange('supplierId')}
+      placeholder="例如: sp-001"
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      <FormFieldWithData field="contactPerson" label="联系人" required error={getFieldError('contactPerson')}>
+      <input
+      type="text"
+      value={values.contactPerson}
+      onChange={handleChange('contactPerson')}
+      placeholder="请输入联系人姓名"
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      <FormFieldWithData field="contactPhone" label="联系电话" required error={getFieldError('contactPhone')}>
+      <input
+      type="text"
+      value={values.contactPhone}
+      onChange={handleChange('contactPhone')}
+      placeholder="手机号或固话"
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      {/* ---- 采购信息 ---- */}
+      <FormFieldWithData field="department" label="采购部门" required error={getFieldError('department')}>
+      <select
+      value={values.department}
+      onChange={handleChange('department')}
+      disabled={submitState === 'submitting'}
+      style={selectStyle}
+      >
+      <option value="">请选择部门</option>
+      {DEPARTMENTS.map((d) => (
+      <option key={d.value} value={d.value}>{d.label}</option>
+      ))}
+      </select>
+      </FormFieldWithData>
+
+      <FormFieldWithData field="storeCode" label="所属门店" required error={getFieldError('storeCode')}>
+      <select
+      value={values.storeCode}
+      onChange={handleChange('storeCode')}
+      disabled={submitState === 'submitting'}
+      style={selectStyle}
+      >
+      <option value="">请选择门店</option>
+      {STORE_OPTIONS.map((s) => (
+      <option key={s.value} value={s.value}>{s.label}</option>
+      ))}
+      </select>
+      </FormFieldWithData>
+
+      <FormFieldWithData field="urgency" label="紧急程度">
+      <select
+      value={values.urgency}
+      onChange={handleChange('urgency')}
+      disabled={submitState === 'submitting'}
+      style={selectStyle}
+      >
+      {urgencyOptions.map((u) => (
+      <option key={u.value} value={u.value}>{u.label}</option>
+      ))}
+      </select>
+      </FormFieldWithData>
+
+      {/* ---- 商品明细 ---- */}
+      <FormFieldWithData field="itemsCount" label="品项数" required error={getFieldError('itemsCount')}>
+      <input
+      type="number"
+      min={1}
+      value={values.itemsCount}
+      onChange={handleChange('itemsCount')}
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      <FormFieldWithData field="totalQuantity" label="总数量" required error={getFieldError('totalQuantity')}>
+      <input
+      type="number"
+      min={1}
+      value={values.totalQuantity}
+      onChange={handleChange('totalQuantity')}
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      <FormFieldWithData field="totalAmount" label="总金额 (元)" required error={getFieldError('totalAmount')}>
+      <input
+      type="number"
+      min={0}
+      step={0.01}
+      value={values.totalAmount}
+      onChange={handleChange('totalAmount')}
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      <FormFieldWithData field="expectedDelivery" label="期望到货日期" required error={getFieldError('expectedDelivery')}>
+      <input
+      type="date"
+      value={values.expectedDelivery}
+      onChange={handleChange('expectedDelivery')}
+      disabled={submitState === 'submitting'}
+      style={inputStyle}
+      />
+      </FormFieldWithData>
+
+      {/* ---- 备注 ---- */}
+      <FormFieldWithData field="remark" label="备注">
+      <textarea
+      value={values.remark}
+      onChange={handleChange('remark')}
+      placeholder="采购单备注说明（选填）"
+      disabled={submitState === 'submitting'}
+      rows={3}
+      style={{ ...inputStyle, resize: 'vertical' }}
+      />
+      </FormFieldWithData>
+
+      {/* ---- 提交反馈 ---- */}
+      {submitState === 'success' && (
+      <FormSubmitFeedback success="采购单已成功提交，等待审批。" />
+      )}
+      {submitState === 'error' && (
+      <FormSubmitFeedback
+      error="提交失败，请稍后重试。若问题持续请联系 IT 支持。"
+      />
+      )}
+
+      {/* ---- 操作按钮 ---- */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+      <SubmitButton
+      type="submit"
+      loading={submitState === 'submitting'}
+      disabled={submitState === 'submitting'}
+      >
+      {submitState === 'submitting' ? '提交中...' : '提交采购单'}
+      </SubmitButton>
+      <button
+      type="button"
+      onClick={handleReset}
+      disabled={submitState === 'submitting'}
+      style={cancelBtnStyle}
+      >
+      重置
+      </button>
+      </div>
+      </form>
+      </div>
+      </PageShell>
+    </AdminPermissionGate>
+  )
 }
 
 // ---- 内联样式 ----

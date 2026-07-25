@@ -138,124 +138,130 @@ export default function InventoryPage() {
   const lowStockCount = items.filter((i) => i.availableQty <= i.lowStockThreshold).length
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">📦 库存管理</h1>
 
       {/* Tenant 选择器 */}
       <div className="mb-4 flex gap-4 items-center">
-        <label className="text-sm font-medium">租户 ID:</label>
-        <input
-          type="text"
-          value={tenantId}
-          onChange={(e) => setTenantId(e.target.value)}
-          className="border px-2 py-1 rounded"
-        />
-        <button
-          onClick={loadList}
-          className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
-        >
-          刷新
-        </button>
-        <button
-          onClick={() => setShowCreateDialog(true)}
-          className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
-        >
-          + 新建库存
-        </button>
-        {lowStockCount > 0 && (
-          <span className="bg-red-100 text-red-700 px-3 py-1 rounded">
-            ⚠️ {lowStockCount} 项低库存
-          </span>
-        )}
+      <label className="text-sm font-medium">租户 ID:</label>
+      <input
+      type="text"
+      value={tenantId}
+      onChange={(e) => setTenantId(e.target.value)}
+      className="border px-2 py-1 rounded"
+      />
+      <button
+      onClick={loadList}
+      className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+      >
+      刷新
+      </button>
+      <button
+      onClick={() => setShowCreateDialog(true)}
+      className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
+      >
+      + 新建库存
+      </button>
+      {lowStockCount > 0 && (
+      <span className="bg-red-100 text-red-700 px-3 py-1 rounded">
+      ⚠️ {lowStockCount} 项低库存
+      </span>
+      )}
       </div>
 
       {/* 库存列表 */}
       {loading ? (
-        <div className="text-center py-8">加载中...</div>
+      <div className="text-center py-8">加载中...</div>
       ) : items.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">暂无库存项</div>
+      <div className="text-center py-8 text-gray-500">暂无库存项</div>
       ) : (
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-3 py-2 text-left">SKU</th>
-              <th className="border px-3 py-2 text-left">名称</th>
-              <th className="border px-3 py-2 text-right">总量</th>
-              <th className="border px-3 py-2 text-right">可用</th>
-              <th className="border px-3 py-2 text-right">预留</th>
-              <th className="border px-3 py-2 text-right">阈值</th>
-              <th className="border px-3 py-2 text-right">单价(分)</th>
-              <th className="border px-3 py-2 text-center">状态</th>
-              <th className="border px-3 py-2 text-center">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => {
-              const isLow = item.availableQty <= item.lowStockThreshold
-              const isOut = item.availableQty === 0
-              return (
-                <tr key={item.id} className={isOut ? 'bg-red-50' : isLow ? 'bg-yellow-50' : ''}>
-                  <td className="border px-3 py-2 font-mono">{item.sku}</td>
-                  <td className="border px-3 py-2">{item.name}</td>
-                  <td className="border px-3 py-2 text-right">{item.totalQty}</td>
-                  <td className="border px-3 py-2 text-right font-bold">{item.availableQty}</td>
-                  <td className="border px-3 py-2 text-right">{item.reservedQty}</td>
-                  <td className="border px-3 py-2 text-right text-gray-500">{item.lowStockThreshold}</td>
-                  <td className="border px-3 py-2 text-right">{item.unitPriceCents}</td>
-                  <td className="border px-3 py-2 text-center">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        item.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-700'
-                          : item.status === 'ARCHIVED'
-                          ? 'bg-gray-100 text-gray-500'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="border px-3 py-2 text-center">
-                    <button
-                      onClick={() => setSelectedItem(item)}
-                      className="text-blue-500 hover:underline mr-2"
-                    >
-                      操作
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <table className="w-full border-collapse">
+      <thead>
+      <tr className="bg-gray-100">
+      <th className="border px-3 py-2 text-left">SKU</th>
+      <th className="border px-3 py-2 text-left">名称</th>
+      <th className="border px-3 py-2 text-right">总量</th>
+      <th className="border px-3 py-2 text-right">可用</th>
+      <th className="border px-3 py-2 text-right">预留</th>
+      <th className="border px-3 py-2 text-right">阈值</th>
+      <th className="border px-3 py-2 text-right">单价(分)</th>
+      <th className="border px-3 py-2 text-center">状态</th>
+      <th className="border px-3 py-2 text-center">操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {items.map((item) => {
+      const isLow = item.availableQty <= item.lowStockThreshold
+      const isOut = item.availableQty === 0
+      return (
+      <tr key={item.id} className={isOut ? 'bg-red-50' : isLow ? 'bg-yellow-50' : ''}>
+      <td className="border px-3 py-2 font-mono">{item.sku}</td>
+      <td className="border px-3 py-2">{item.name}</td>
+      <td className="border px-3 py-2 text-right">{item.totalQty}</td>
+      <td className="border px-3 py-2 text-right font-bold">{item.availableQty}</td>
+      <td className="border px-3 py-2 text-right">{item.reservedQty}</td>
+      <td className="border px-3 py-2 text-right text-gray-500">{item.lowStockThreshold}</td>
+      <td className="border px-3 py-2 text-right">{item.unitPriceCents}</td>
+      <td className="border px-3 py-2 text-center">
+      <span
+      className={`px-2 py-0.5 rounded text-xs ${
+      item.status === 'ACTIVE'
+      ? 'bg-green-100 text-green-700'
+      : item.status === 'ARCHIVED'
+      ? 'bg-gray-100 text-gray-500'
+      : 'bg-yellow-100 text-yellow-700'
+      }`}
+      >
+      {item.status}
+      </span>
+      </td>
+      <td className="border px-3 py-2 text-center">
+      <button
+      onClick={() => setSelectedItem(item)}
+      className="text-blue-500 hover:underline mr-2"
+      >
+      操作
+      </button>
+      </td>
+      </tr>
+      )
+      })}
+      </tbody>
+      </table>
       )}
 
       {/* Toast */}
       {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg ${
-            toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-          }`}
-        >
-          {toast.msg}
-        </div>
+      <div
+      className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg ${
+      toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      }`}
+      >
+      {toast.msg}
+      </div>
       )}
 
       {/* 操作对话框 */}
       {selectedItem && (
-        <OperationDialog
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onStockIn={handleStockIn}
-          onStockOut={handleStockOut}
-        />
+      <OperationDialog
+      item={selectedItem}
+      onClose={() => setSelectedItem(null)}
+      onStockIn={handleStockIn}
+      onStockOut={handleStockOut}
+      />
       )}
 
       {/* 新建对话框 */}
       {showCreateDialog && (
-        <CreateDialog onClose={() => setShowCreateDialog(false)} onCreate={handleCreate} />
+      <CreateDialog onClose={() => setShowCreateDialog(false)} onCreate={handleCreate} />
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }
 

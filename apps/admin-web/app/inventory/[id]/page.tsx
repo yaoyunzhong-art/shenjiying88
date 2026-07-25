@@ -359,310 +359,316 @@ export default function InventoryDetailPage({
   const statusActions = availableStatusActions(item.status)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <button
-            onClick={() => router.push('/inventory')}
-            className="text-blue-500 hover:underline text-sm mb-1 block"
-          >
-            &larr; 返回库存列表
-          </button>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            {item.name}
-            {renderStatusBadge(item.status)}
-          </h1>
-          <p className="text-gray-500 text-sm font-mono mt-1">SKU: {item.sku} · ID: {item.id}</p>
-        </div>
-        <div className="flex gap-2">
-          {statusActions.map((action) => (
-            <button
-              key={action}
-              onClick={() => handleStatusAction(action)}
-              disabled={saving}
-              className="px-3 py-1 border rounded text-sm hover:bg-gray-50 disabled:opacity-50"
-            >
-              {statusActionLabel(action)}
-            </button>
-          ))}
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={saving}
-            className="px-3 py-1 border border-red-300 text-red-600 rounded text-sm hover:bg-red-50 disabled:opacity-50"
-          >
-            删除
-          </button>
-        </div>
+      <div>
+      <button
+      onClick={() => router.push('/inventory')}
+      className="text-blue-500 hover:underline text-sm mb-1 block"
+      >
+      &larr; 返回库存列表
+      </button>
+      <h1 className="text-2xl font-bold flex items-center gap-2">
+      {item.name}
+      {renderStatusBadge(item.status)}
+      </h1>
+      <p className="text-gray-500 text-sm font-mono mt-1">SKU: {item.sku} · ID: {item.id}</p>
+      </div>
+      <div className="flex gap-2">
+      {statusActions.map((action) => (
+      <button
+      key={action}
+      onClick={() => handleStatusAction(action)}
+      disabled={saving}
+      className="px-3 py-1 border rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+      >
+      {statusActionLabel(action)}
+      </button>
+      ))}
+      <button
+      onClick={() => setShowDeleteConfirm(true)}
+      disabled={saving}
+      className="px-3 py-1 border border-red-300 text-red-600 rounded text-sm hover:bg-red-50 disabled:opacity-50"
+      >
+      删除
+      </button>
+      </div>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b mb-4">
-        {([
-          { key: 'overview' as TabType, label: '概览' },
-          { key: 'movements' as TabType, label: '出入记录' },
-          { key: 'edit' as TabType, label: '编辑' },
-        ]).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 -mb-px border-b-2 text-sm font-medium ${
-              activeTab === tab.key
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {([
+      { key: 'overview' as TabType, label: '概览' },
+      { key: 'movements' as TabType, label: '出入记录' },
+      { key: 'edit' as TabType, label: '编辑' },
+      ]).map((tab) => (
+      <button
+      key={tab.key}
+      onClick={() => setActiveTab(tab.key)}
+      className={`px-4 py-2 -mb-px border-b-2 text-sm font-medium ${
+      activeTab === tab.key
+      ? 'border-blue-500 text-blue-600'
+      : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+      >
+      {tab.label}
+      </button>
+      ))}
       </div>
 
       {/* Tab: Overview */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Basic info card */}
-          <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">基本信息</h3>
-            <dl className="space-y-2">
-              <div className="flex justify-between">
-                <dt className="text-gray-500">租户</dt>
-                <dd className="font-mono text-sm">{item.tenantId}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">SKU</dt>
-                <dd className="font-mono">{item.sku}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">名称</dt>
-                <dd>{item.name}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">计量单位</dt>
-                <dd>{item.unit}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">状态</dt>
-                <dd>{renderStatusBadge(item.status)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">版本</dt>
-                <dd className="font-mono text-sm">{item.version}</dd>
-              </div>
-            </dl>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Basic info card */}
+      <div className="border rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">基本信息</h3>
+      <dl className="space-y-2">
+      <div className="flex justify-between">
+      <dt className="text-gray-500">租户</dt>
+      <dd className="font-mono text-sm">{item.tenantId}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">SKU</dt>
+      <dd className="font-mono">{item.sku}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">名称</dt>
+      <dd>{item.name}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">计量单位</dt>
+      <dd>{item.unit}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">状态</dt>
+      <dd>{renderStatusBadge(item.status)}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">版本</dt>
+      <dd className="font-mono text-sm">{item.version}</dd>
+      </div>
+      </dl>
+      </div>
 
-          {/* Stock info card */}
-          <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">库存信息</h3>
-            <dl className="space-y-2">
-              <div className="flex justify-between">
-                <dt className="text-gray-500">总数量</dt>
-                <dd className="font-bold">{item.totalQty} {item.unit}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">可用数量</dt>
-                <dd className={`font-bold ${item.availableQty <= item.lowStockThreshold ? 'text-red-600' : 'text-green-600'}`}>
-                  {item.availableQty} {item.unit}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">预留数量</dt>
-                <dd>{item.reservedQty} {item.unit}</dd>
-              </div>
-              <div className="flex justify-between pt-2 border-t">
-                <dt className="text-gray-500">低库存阈值</dt>
-                <dd>{item.lowStockThreshold} {item.unit}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">单价</dt>
-                <dd>{formatPrice(item.unitPriceCents)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-gray-500">库存总值</dt>
-                <dd className="font-bold">{formatPrice(item.availableQty * item.unitPriceCents)}</dd>
-              </div>
-            </dl>
-            {item.availableQty <= item.lowStockThreshold && (
-              <div className="mt-3 bg-red-50 text-red-700 px-3 py-2 rounded text-sm">
-                ⚠️ {item.availableQty === 0 ? '库存已耗尽' : '低库存预警，请及时补货'}
-              </div>
-            )}
-          </div>
+      {/* Stock info card */}
+      <div className="border rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">库存信息</h3>
+      <dl className="space-y-2">
+      <div className="flex justify-between">
+      <dt className="text-gray-500">总数量</dt>
+      <dd className="font-bold">{item.totalQty} {item.unit}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">可用数量</dt>
+      <dd className={`font-bold ${item.availableQty <= item.lowStockThreshold ? 'text-red-600' : 'text-green-600'}`}>
+      {item.availableQty} {item.unit}
+      </dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">预留数量</dt>
+      <dd>{item.reservedQty} {item.unit}</dd>
+      </div>
+      <div className="flex justify-between pt-2 border-t">
+      <dt className="text-gray-500">低库存阈值</dt>
+      <dd>{item.lowStockThreshold} {item.unit}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">单价</dt>
+      <dd>{formatPrice(item.unitPriceCents)}</dd>
+      </div>
+      <div className="flex justify-between">
+      <dt className="text-gray-500">库存总值</dt>
+      <dd className="font-bold">{formatPrice(item.availableQty * item.unitPriceCents)}</dd>
+      </div>
+      </dl>
+      {item.availableQty <= item.lowStockThreshold && (
+      <div className="mt-3 bg-red-50 text-red-700 px-3 py-2 rounded text-sm">
+      ⚠️ {item.availableQty === 0 ? '库存已耗尽' : '低库存预警，请及时补货'}
+      </div>
+      )}
+      </div>
 
-          {/* Edge items */}
-          {edgeItems.length > 0 && (
-            <div className="md:col-span-2 border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">关联商品</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {edgeItems.map((e) => (
-                  <div key={e.id} className="border rounded p-2 text-sm">
-                    <div className="font-medium">{e.name}</div>
-                    <div className="text-gray-500 font-mono">{e.sku}</div>
-                    <div className={e.qty <= 3 ? 'text-red-500 font-bold' : 'text-gray-700'}>
-                      库存: {e.qty}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Edge items */}
+      {edgeItems.length > 0 && (
+      <div className="md:col-span-2 border rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">关联商品</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {edgeItems.map((e) => (
+      <div key={e.id} className="border rounded p-2 text-sm">
+      <div className="font-medium">{e.name}</div>
+      <div className="text-gray-500 font-mono">{e.sku}</div>
+      <div className={e.qty <= 3 ? 'text-red-500 font-bold' : 'text-gray-700'}>
+      库存: {e.qty}
+      </div>
+      </div>
+      ))}
+      </div>
+      </div>
+      )}
+      </div>
       )}
 
       {/* Tab: Movements */}
       {activeTab === 'movements' && (
-        <div>
-          {movements.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">暂无出入记录</div>
-          ) : (
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border px-3 py-2 text-left text-sm">时间</th>
-                  <th className="border px-3 py-2 text-left text-sm">类型</th>
-                  <th className="border px-3 py-2 text-right text-sm">数量</th>
-                  <th className="border px-3 py-2 text-left text-sm">原因</th>
-                  <th className="border px-3 py-2 text-left text-sm">操作人</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movements.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50">
-                    <td className="border px-3 py-2 text-sm text-gray-500">
-                      {new Date(m.createdAt).toLocaleString('zh-CN')}
-                    </td>
-                    <td className="border px-3 py-2">
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          m.type === 'STOCK_IN'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
-                        {m.type === 'STOCK_IN' ? '入库' : '出库'}
-                      </span>
-                    </td>
-                    <td className={`border px-3 py-2 text-right font-mono font-bold ${
-                      m.type === 'STOCK_IN' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {m.type === 'STOCK_IN' ? '+' : '-'}{m.qty}
-                    </td>
-                    <td className="border px-3 py-2 text-sm">{m.reason}</td>
-                    <td className="border px-3 py-2 text-sm text-gray-500">{m.performedBy}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+      <div>
+      {movements.length === 0 ? (
+      <div className="text-center py-8 text-gray-500">暂无出入记录</div>
+      ) : (
+      <table className="w-full border-collapse">
+      <thead>
+      <tr className="bg-gray-100">
+      <th className="border px-3 py-2 text-left text-sm">时间</th>
+      <th className="border px-3 py-2 text-left text-sm">类型</th>
+      <th className="border px-3 py-2 text-right text-sm">数量</th>
+      <th className="border px-3 py-2 text-left text-sm">原因</th>
+      <th className="border px-3 py-2 text-left text-sm">操作人</th>
+      </tr>
+      </thead>
+      <tbody>
+      {movements.map((m) => (
+      <tr key={m.id} className="hover:bg-gray-50">
+      <td className="border px-3 py-2 text-sm text-gray-500">
+      {new Date(m.createdAt).toLocaleString('zh-CN')}
+      </td>
+      <td className="border px-3 py-2">
+      <span
+      className={`px-2 py-0.5 rounded text-xs font-medium ${
+      m.type === 'STOCK_IN'
+      ? 'bg-green-100 text-green-700'
+      : 'bg-red-100 text-red-700'
+      }`}
+      >
+      {m.type === 'STOCK_IN' ? '入库' : '出库'}
+      </span>
+      </td>
+      <td className={`border px-3 py-2 text-right font-mono font-bold ${
+      m.type === 'STOCK_IN' ? 'text-green-600' : 'text-red-600'
+      }`}>
+      {m.type === 'STOCK_IN' ? '+' : '-'}{m.qty}
+      </td>
+      <td className="border px-3 py-2 text-sm">{m.reason}</td>
+      <td className="border px-3 py-2 text-sm text-gray-500">{m.performedBy}</td>
+      </tr>
+      ))}
+      </tbody>
+      </table>
+      )}
+      </div>
       )}
 
       {/* Tab: Edit */}
       {activeTab === 'edit' && (
-        <div className="max-w-lg">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">商品名称</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => handleEditFieldChange((v: string | number) => setEditName(v as string), e.target.value)}
-                className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">计量单位</label>
-              <input
-                type="text"
-                value={editUnit}
-                onChange={(e) => handleEditFieldChange((v: string | number) => setEditUnit(v as string), e.target.value)}
-                className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="如: 台 / 个 / 瓶"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">低库存阈值</label>
-                <input
-                  type="number"
-                  value={editThreshold}
-                  onChange={(e) => handleEditFieldChange((v: string | number) => setEditThreshold(v as number), Number(e.target.value))}
-                  min={0}
-                  className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">单价 (分)</label>
-                <input
-                  type="number"
-                  value={editPrice}
-                  onChange={(e) => handleEditFieldChange((v: string | number) => setEditPrice(v as number), Number(e.target.value))}
-                  min={0}
-                  className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
+      <div className="max-w-lg">
+      <div className="space-y-4">
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">商品名称</label>
+      <input
+      type="text"
+      value={editName}
+      onChange={(e) => handleEditFieldChange((v: string | number) => setEditName(v as string), e.target.value)}
+      className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">计量单位</label>
+      <input
+      type="text"
+      value={editUnit}
+      onChange={(e) => handleEditFieldChange((v: string | number) => setEditUnit(v as string), e.target.value)}
+      className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      placeholder="如: 台 / 个 / 瓶"
+      />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">低库存阈值</label>
+      <input
+      type="number"
+      value={editThreshold}
+      onChange={(e) => handleEditFieldChange((v: string | number) => setEditThreshold(v as number), Number(e.target.value))}
+      min={0}
+      className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      </div>
+      <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">单价 (分)</label>
+      <input
+      type="number"
+      value={editPrice}
+      onChange={(e) => handleEditFieldChange((v: string | number) => setEditPrice(v as number), Number(e.target.value))}
+      min={0}
+      className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      </div>
+      </div>
 
-            {hasChanges && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
-                你有未保存的更改
-              </div>
-            )}
+      {hasChanges && (
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
+      你有未保存的更改
+      </div>
+      )}
 
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={handleSave}
-                disabled={saving || !hasChanges}
-                className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? '保存中...' : '保存修改'}
-              </button>
-              <button
-                onClick={() => {
-                  setEditName(item.name)
-                  setEditUnit(item.unit)
-                  setEditThreshold(item.lowStockThreshold)
-                  setEditPrice(item.unitPriceCents)
-                  setHasChanges(false)
-                }}
-                disabled={!hasChanges}
-                className="px-6 py-2 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                重置
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex gap-2 pt-2">
+      <button
+      onClick={handleSave}
+      disabled={saving || !hasChanges}
+      className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+      {saving ? '保存中...' : '保存修改'}
+      </button>
+      <button
+      onClick={() => {
+      setEditName(item.name)
+      setEditUnit(item.unit)
+      setEditThreshold(item.lowStockThreshold)
+      setEditPrice(item.unitPriceCents)
+      setHasChanges(false)
+      }}
+      disabled={!hasChanges}
+      className="px-6 py-2 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+      重置
+      </button>
+      </div>
+      </div>
+      </div>
       )}
 
       {/* Delete confirm dialog */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-lg font-bold mb-2">确认删除</h2>
-            <p className="text-gray-600 mb-4">
-              确定要永久删除 <strong>{item.sku}</strong> ({item.name}) 吗？此操作不可撤销。
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 border rounded hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={saving}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
-              >
-                {saving ? '删除中...' : '确认删除'}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-96">
+      <h2 className="text-lg font-bold mb-2">确认删除</h2>
+      <p className="text-gray-600 mb-4">
+      确定要永久删除 <strong>{item.sku}</strong> ({item.name}) 吗？此操作不可撤销。
+      </p>
+      <div className="flex justify-end gap-2">
+      <button
+      onClick={() => setShowDeleteConfirm(false)}
+      className="px-4 py-2 border rounded hover:bg-gray-50"
+      >
+      取消
+      </button>
+      <button
+      onClick={handleDelete}
+      disabled={saving}
+      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+      >
+      {saving ? '删除中...' : '确认删除'}
+      </button>
+      </div>
+      </div>
+      </div>
       )}
 
       {renderToast()}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

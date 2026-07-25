@@ -369,88 +369,94 @@ export default function ProfitLossPage() {
   })
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">损益表 (P&L)</h1>
-            <p className="text-sm text-gray-500 mt-1">{report.periodLabel}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => loadReport()} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
-          </div>
-        </div>
-        {/* 月份筛选 Tab */}
-        <div className="flex gap-1 mt-3" role="tablist" aria-label="周期筛选">
-          {PERIOD_OPTIONS.map(opt => (
-            <button
-              key={opt.key}
-              role="tab"
-              aria-selected={period === opt.key}
-              data-period-key={opt.key}
-              onClick={() => handlePeriodChange(opt.key)}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                period === opt.key
-                  ? 'bg-blue-600 text-white font-medium'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center justify-between">
+      <div>
+      <h1 className="text-2xl font-bold text-gray-900">损益表 (P&L)</h1>
+      <p className="text-sm text-gray-500 mt-1">{report.periodLabel}</p>
+      </div>
+      <div className="flex items-center gap-3">
+      <button onClick={() => loadReport()} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
+      </div>
+      </div>
+      {/* 月份筛选 Tab */}
+      <div className="flex gap-1 mt-3" role="tablist" aria-label="周期筛选">
+      {PERIOD_OPTIONS.map(opt => (
+      <button
+      key={opt.key}
+      role="tab"
+      aria-selected={period === opt.key}
+      data-period-key={opt.key}
+      onClick={() => handlePeriodChange(opt.key)}
+      className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+      period === opt.key
+      ? 'bg-blue-600 text-white font-medium'
+      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+      >
+      {opt.label}
+      </button>
+      ))}
+      </div>
       </div>
 
       {error && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-yellow-800 text-sm">{error}</p>
-        </div>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+      <p className="text-yellow-800 text-sm">{error}</p>
+      </div>
       )}
 
       {/* 关键指标 */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-700">总收入</p>
-          <p className="text-2xl font-bold mt-1 text-green-800">{fmtShort(totalRevenue)}</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-700">总成本+费用</p>
-          <p className="text-2xl font-bold mt-1 text-red-800">{fmtShort(totalCost + totalExpense)}</p>
-        </div>
-        <div className={netProfit >= 0 ? 'bg-blue-50 border border-blue-200 rounded-lg p-4' : 'bg-red-50 border border-red-200 rounded-lg p-4'}>
-          <p className="text-sm text-blue-700">净利润</p>
-          <p className={`text-2xl font-bold mt-1 ${netProfit >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
-            {fmtShort(netProfit)}
-          </p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">净利率</p>
-          <p className="text-2xl font-bold mt-1">{profitMargin}%</p>
-        </div>
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <p className="text-sm text-green-700">总收入</p>
+      <p className="text-2xl font-bold mt-1 text-green-800">{fmtShort(totalRevenue)}</p>
+      </div>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <p className="text-sm text-red-700">总成本+费用</p>
+      <p className="text-2xl font-bold mt-1 text-red-800">{fmtShort(totalCost + totalExpense)}</p>
+      </div>
+      <div className={netProfit >= 0 ? 'bg-blue-50 border border-blue-200 rounded-lg p-4' : 'bg-red-50 border border-red-200 rounded-lg p-4'}>
+      <p className="text-sm text-blue-700">净利润</p>
+      <p className={`text-2xl font-bold mt-1 ${netProfit >= 0 ? 'text-blue-800' : 'text-red-800'}`}>
+      {fmtShort(netProfit)}
+      </p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">净利率</p>
+      <p className="text-2xl font-bold mt-1">{profitMargin}%</p>
+      </div>
       </div>
 
       {/* 损益表 */}
       <div className="bg-white border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">科目</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">本月</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">上月</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">预算</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">环比</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">预算达成</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {sortedItems.map(item => <PnLRow key={item.label} item={item} />)}
-          </tbody>
-        </table>
+      <table className="w-full">
+      <thead className="bg-gray-50 border-b">
+      <tr>
+      <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">科目</th>
+      <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">本月</th>
+      <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">上月</th>
+      <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">预算</th>
+      <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">环比</th>
+      <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">预算达成</th>
+      </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-100">
+      {sortedItems.map(item => <PnLRow key={item.label} item={item} />)}
+      </tbody>
+      </table>
       </div>
 
       <p className="text-xs text-gray-400 text-right">
-        生成时间: {new Date(report.generatedAt).toLocaleString('zh-CN')}
+      生成时间: {new Date(report.generatedAt).toLocaleString('zh-CN')}
       </p>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

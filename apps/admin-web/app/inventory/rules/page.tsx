@@ -201,140 +201,146 @@ export default function InventoryRulesPage() {
   const reorderCount = rules.filter((r) => r.type === 'REORDER').length
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">⚙️ 库存规则管理</h1>
 
       {/* Tenant 和筛选 */}
       <div className="mb-4 flex gap-4 items-center flex-wrap">
-        <label className="text-sm font-medium">租户 ID:</label>
-        <input
-          type="text"
-          value={tenantId}
-          onChange={(e) => setTenantId(e.target.value)}
-          className="border px-2 py-1 rounded"
-        />
-        <button
-          onClick={loadRules}
-          className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
-        >
-          刷新
-        </button>
-        <button
-          onClick={() => setShowCreateDialog(true)}
-          className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
-        >
-          + 新建规则
-        </button>
+      <label className="text-sm font-medium">租户 ID:</label>
+      <input
+      type="text"
+      value={tenantId}
+      onChange={(e) => setTenantId(e.target.value)}
+      className="border px-2 py-1 rounded"
+      />
+      <button
+      onClick={loadRules}
+      className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+      >
+      刷新
+      </button>
+      <button
+      onClick={() => setShowCreateDialog(true)}
+      className="bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
+      >
+      + 新建规则
+      </button>
 
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value as RuleType | 'all')}
-          className="border px-2 py-1 rounded"
-        >
-          <option value="all">全部规则 ({rules.length})</option>
-          <option value="ALERT">预警规则 ({alertCount})</option>
-          <option value="REORDER">补货规则 ({reorderCount})</option>
-        </select>
+      <select
+      value={filterType}
+      onChange={(e) => setFilterType(e.target.value as RuleType | 'all')}
+      className="border px-2 py-1 rounded"
+      >
+      <option value="all">全部规则 ({rules.length})</option>
+      <option value="ALERT">预警规则 ({alertCount})</option>
+      <option value="REORDER">补货规则 ({reorderCount})</option>
+      </select>
 
-        <span className="text-sm text-gray-500">
-          已启用: {enabledCount}/{rules.length}
-        </span>
+      <span className="text-sm text-gray-500">
+      已启用: {enabledCount}/{rules.length}
+      </span>
       </div>
 
       {/* 规则列表 */}
       {loading ? (
-        <div className="text-center py-8">加载中...</div>
+      <div className="text-center py-8">加载中...</div>
       ) : filteredRules.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          {rules.length === 0 ? '暂无库存规则，点击"新建规则"添加' : '当前筛选条件无匹配规则'}
-        </div>
+      <div className="text-center py-8 text-gray-500">
+      {rules.length === 0 ? '暂无库存规则，点击"新建规则"添加' : '当前筛选条件无匹配规则'}
+      </div>
       ) : (
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-3 py-2 text-left">名称</th>
-              <th className="border px-3 py-2 text-left">类型</th>
-              <th className="border px-3 py-2 text-left">范围</th>
-              <th className="border px-3 py-2 text-left">阈值/触发量</th>
-              <th className="border px-3 py-2 text-center">严重级别</th>
-              <th className="border px-3 py-2 text-center">状态</th>
-              <th className="border px-3 py-2 text-center">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRules.map((rule) => (
-              <tr key={rule.id}>
-                <td className="border px-3 py-2">
-                  <div className="font-medium">{rule.name}</div>
-                  <div className="text-xs text-gray-500">{rule.description}</div>
-                </td>
-                <td className="border px-3 py-2">{TYPE_LABELS[rule.type]}</td>
-                <td className="border px-3 py-2">
-                  {SCOPE_LABELS[rule.scope]}: {rule.scopeValue}
-                </td>
-                <td className="border px-3 py-2">
-                  {rule.type === 'ALERT'
-                    ? `阈值 ${rule.threshold}`
-                    : `触发 ${rule.triggerQty} → 补 ${rule.orderQty} (${rule.supplier})`
-                  }
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  <SeverityBadge severity={rule.severity} />
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  <StatusBadge status={rule.status} />
-                </td>
-                <td className="border px-3 py-2 text-center space-x-2">
-                  <button
-                    onClick={() => setEditingRule(rule)}
-                    className="text-blue-500 hover:underline text-sm"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => handleToggleStatus(rule)}
-                    className="text-orange-500 hover:underline text-sm"
-                  >
-                    {rule.status === 'ENABLED' ? '停用' : '启用'}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(rule.id)}
-                    className="text-red-500 hover:underline text-sm"
-                  >
-                    删除
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <table className="w-full border-collapse">
+      <thead>
+      <tr className="bg-gray-100">
+      <th className="border px-3 py-2 text-left">名称</th>
+      <th className="border px-3 py-2 text-left">类型</th>
+      <th className="border px-3 py-2 text-left">范围</th>
+      <th className="border px-3 py-2 text-left">阈值/触发量</th>
+      <th className="border px-3 py-2 text-center">严重级别</th>
+      <th className="border px-3 py-2 text-center">状态</th>
+      <th className="border px-3 py-2 text-center">操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {filteredRules.map((rule) => (
+      <tr key={rule.id}>
+      <td className="border px-3 py-2">
+      <div className="font-medium">{rule.name}</div>
+      <div className="text-xs text-gray-500">{rule.description}</div>
+      </td>
+      <td className="border px-3 py-2">{TYPE_LABELS[rule.type]}</td>
+      <td className="border px-3 py-2">
+      {SCOPE_LABELS[rule.scope]}: {rule.scopeValue}
+      </td>
+      <td className="border px-3 py-2">
+      {rule.type === 'ALERT'
+      ? `阈值 ${rule.threshold}`
+      : `触发 ${rule.triggerQty} → 补 ${rule.orderQty} (${rule.supplier})`
+      }
+      </td>
+      <td className="border px-3 py-2 text-center">
+      <SeverityBadge severity={rule.severity} />
+      </td>
+      <td className="border px-3 py-2 text-center">
+      <StatusBadge status={rule.status} />
+      </td>
+      <td className="border px-3 py-2 text-center space-x-2">
+      <button
+      onClick={() => setEditingRule(rule)}
+      className="text-blue-500 hover:underline text-sm"
+      >
+      编辑
+      </button>
+      <button
+      onClick={() => handleToggleStatus(rule)}
+      className="text-orange-500 hover:underline text-sm"
+      >
+      {rule.status === 'ENABLED' ? '停用' : '启用'}
+      </button>
+      <button
+      onClick={() => handleDelete(rule.id)}
+      className="text-red-500 hover:underline text-sm"
+      >
+      删除
+      </button>
+      </td>
+      </tr>
+      ))}
+      </tbody>
+      </table>
       )}
 
       {/* Toast */}
       {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg ${
-            toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-          }`}
-        >
-          {toast.msg}
-        </div>
+      <div
+      className={`fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg ${
+      toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      }`}
+      >
+      {toast.msg}
+      </div>
       )}
 
       {/* 编辑对话框 */}
       {editingRule && (
-        <RuleEditDialog
-          rule={editingRule}
-          onClose={() => setEditingRule(null)}
-          onSave={handleUpdate}
-        />
+      <RuleEditDialog
+      rule={editingRule}
+      onClose={() => setEditingRule(null)}
+      onSave={handleUpdate}
+      />
       )}
 
       {/* 新建对话框 */}
       {showCreateDialog && (
-        <RuleCreateDialog onClose={() => setShowCreateDialog(false)} onCreate={handleCreate} />
+      <RuleCreateDialog onClose={() => setShowCreateDialog(false)} onCreate={handleCreate} />
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }
 
