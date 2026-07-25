@@ -15,8 +15,8 @@ import type { Request } from 'express';
 import type { TenantAwareRequest } from '../tenant/tenant.types';
 import { MarketingMetricsService } from './marketing-metrics.service';
 import type { MetricsSnapshot, PrometheusExport } from './marketing-metrics.entity';
-import {
 import { Public } from '../foundation/identity-access/public.decorator'
+import {
   IncrCouponRedemptionDto,
   IncrCouponIssuedDto,
   IncrCampaignTriggerDto,
