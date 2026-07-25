@@ -268,8 +268,8 @@ describe('AuditService (BS-0277 抽样 + 补充)', () => {
       })
       const report = await svc.generateComplianceReport('t_breach')
       expect(report.dataBreaches.length).toBe(2)
-      expect(report.dataBreaches[0].riskLevel).toBe('high')
-      expect(report.dataBreaches[1].riskLevel).toBe('critical')
+      expect((report.dataBreaches[0] as any).riskLevel).toBe('high')
+      expect((report.dataBreaches[1] as any).riskLevel).toBe('critical')
     })
 
     it('low risk 事件不出现在 dataBreaches', async () => {
