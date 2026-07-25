@@ -1,7 +1,8 @@
 // 📅 预约管理 · 场地/设备预约 · 完整预约管理+日历
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Tabs, Empty, Tooltip } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Input, Modal, Tabs, Empty, Tooltip } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const DATA = [

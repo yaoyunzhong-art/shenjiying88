@@ -1,7 +1,8 @@
 // 🛒 采购管理 · 采购订单/供应商/入库 · 完整采购流程
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Progress, Tabs, Empty, Tooltip, Popconfirm } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Input, Modal, Progress, Tabs, Empty, Tooltip, Popconfirm } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Purchase {

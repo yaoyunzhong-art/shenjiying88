@@ -2,7 +2,8 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { buildActorHeaders } from '@m5/sdk';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Progress, Empty, Spin } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Modal, Input, Tabs, Progress, Empty, Spin } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 // P-30 真联调: 清洁排班数据接口 (对齐后端 clean-schedules API)

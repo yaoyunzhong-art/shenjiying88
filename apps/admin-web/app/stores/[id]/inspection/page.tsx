@@ -1,26 +1,8 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { buildActorHeaders } from '@m5/sdk';
-import {
-  Button,
-  Card,
-  Col,
-  Empty,
-  Input,
-  Modal,
-  PageShell,
-  Progress,
-  Row,
-  Select,
-  Space,
-  Statistic,
-  Table,
-  Tabs,
-  Tag,
-  ToastContainer,
-  Tooltip,
-  useToast,
-} from '@m5/ui';
+import { Col, Row } from 'antd';
+import { Button, Card, Empty, Input, Modal, PageShell, Progress, Select, Space, Statistic, Table, Tabs, Tag, ToastContainer, Tooltip, useToast,  } from '@m5/ui';;
 import type { TableColumn } from '@m5/ui';
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 

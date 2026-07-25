@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * AI 场景模拟器 — AI Scenario Simulator Page
  * 功能: 调整参数预测门店运营决策效果，辅助数据驱动经营决策

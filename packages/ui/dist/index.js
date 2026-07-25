@@ -107,7 +107,6 @@ __export(index_exports, {
   Chip: () => Chip,
   CoachDashboard: () => CoachDashboard,
   CodeBlock: () => CodeBlock,
-  Col: () => import_antd.Col,
   Collapse: () => Collapse,
   Collapsible: () => Collapsible,
   ColorPicker: () => ColorPicker,
@@ -165,7 +164,6 @@ __export(index_exports, {
   FilterChips: () => FilterChips,
   FinanceManagerDashboard: () => FinanceManagerDashboard,
   FloatingActionButton: () => FloatingActionButton,
-  Form: () => import_antd.Form,
   FormField: () => FormField,
   FormPageScaffold: () => FormPageScaffold,
   FormSubmitFeedback: () => FormSubmitFeedback,
@@ -282,7 +280,6 @@ __export(index_exports, {
   ReturnGoodsProcessingPanel: () => ReturnGoodsProcessingPanel,
   RichTextEditor: () => RichTextEditor,
   RolePadClient: () => RolePadClient,
-  Row: () => import_antd.Row,
   RuleRecommendationPanel: () => RuleRecommendationPanel,
   RuntimeGovernancePanelTemplate: () => RuntimeGovernancePanelTemplate,
   RuntimeOperationDateTimeReadout: () => RuntimeOperationDateTimeReadout,
@@ -425,7 +422,6 @@ __export(index_exports, {
   joinRuntimeScopeSummary: () => joinRuntimeScopeSummary,
   listPageStatCardStyle: () => listPageStatCardStyle,
   mapFoundationGovernanceAlertsToRecords: () => mapFoundationGovernanceAlertsToRecords,
-  message: () => import_antd.message,
   refreshFoundationAlertSelection: () => refreshFoundationAlertSelection,
   resolveBreakpoint: () => resolveBreakpoint,
   runtimeOperationDetailDemoPresets: () => runtimeOperationDetailDemoPresets,
@@ -4421,12 +4417,12 @@ function ToastContainer({
 var toastCounter = 0;
 function useToast() {
   const [toasts, setToasts] = (0, import_react13.useState)([]);
-  const addToast = (0, import_react13.useCallback)((message2, options) => {
+  const addToast = (0, import_react13.useCallback)((message, options) => {
     const variant = options?.variant ?? "info";
     const durationMs = options?.durationMs ?? 4e3;
     const entry = {
       id: `toast-${++toastCounter}-${Date.now()}`,
-      message: message2,
+      message,
       variant,
       durationMs,
       createdAt: Date.now()
@@ -4445,23 +4441,23 @@ function useToast() {
     setToasts([]);
   }, []);
   const toast = (0, import_react13.useCallback)(
-    (message2, options) => addToast(message2, options),
+    (message, options) => addToast(message, options),
     [addToast]
   );
   const success = (0, import_react13.useCallback)(
-    (message2, options) => addToast(message2, { ...options, variant: "success" }),
+    (message, options) => addToast(message, { ...options, variant: "success" }),
     [addToast]
   );
   const error = (0, import_react13.useCallback)(
-    (message2, options) => addToast(message2, { ...options, variant: "error" }),
+    (message, options) => addToast(message, { ...options, variant: "error" }),
     [addToast]
   );
   const warning = (0, import_react13.useCallback)(
-    (message2, options) => addToast(message2, { ...options, variant: "warning" }),
+    (message, options) => addToast(message, { ...options, variant: "warning" }),
     [addToast]
   );
   const info = (0, import_react13.useCallback)(
-    (message2, options) => addToast(message2, { ...options, variant: "info" }),
+    (message, options) => addToast(message, { ...options, variant: "info" }),
     [addToast]
   );
   return { toasts, success, error, warning, info, toast, dismiss, dismissAll };
@@ -4554,14 +4550,14 @@ function ActionButton({
     try {
       await action.onClick();
       if (onSuccess) {
-        const message2 = action.successToast?.message ?? DEFAULT_SUCCESS_MESSAGES[action.icon ?? "other"];
-        onSuccess(message2, action.successToast);
+        const message = action.successToast?.message ?? DEFAULT_SUCCESS_MESSAGES[action.icon ?? "other"];
+        onSuccess(message, action.successToast);
       }
     } catch (err) {
       if (onError) {
         const fallback = err instanceof Error ? err.message : DEFAULT_ERROR_MESSAGES[action.icon ?? "other"];
-        const message2 = action.errorToast?.message ?? fallback;
-        onError(message2, action.errorToast);
+        const message = action.errorToast?.message ?? fallback;
+        onError(message, action.errorToast);
       }
     } finally {
       setBusy(false);
@@ -8568,19 +8564,19 @@ function formatTime2(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 }
-function ChatBubble({ message: message2, agentName, agentAvatar }) {
-  const isUser = message2.role === "user";
-  const isSystem = message2.role === "system";
+function ChatBubble({ message, agentName, agentAvatar }) {
+  const isUser = message.role === "user";
+  const isSystem = message.role === "system";
   const statusIndicator = (() => {
     if (isSystem) return null;
-    if (message2.status === "sending") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginLeft: 6 }, children: "\u53D1\u9001\u4E2D..." });
-    if (message2.status === "error") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#f87171", marginLeft: 6 }, children: "\u53D1\u9001\u5931\u8D25" });
+    if (message.status === "sending") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#94a3b8", marginLeft: 6 }, children: "\u53D1\u9001\u4E2D..." });
+    if (message.status === "error") return /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { style: { fontSize: 11, color: "#f87171", marginLeft: 6 }, children: "\u53D1\u9001\u5931\u8D25" });
     return null;
   })();
   return /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
     "div",
     {
-      "data-testid": `chat-message-${message2.role}`,
+      "data-testid": `chat-message-${message.role}`,
       style: {
         display: "flex",
         flexDirection: isUser || isSystem ? "row-reverse" : "row",
@@ -8624,7 +8620,7 @@ function ChatBubble({ message: message2, agentName, agentAvatar }) {
                 borderBottomRightRadius: isUser ? 4 : 14,
                 borderBottomLeftRadius: isUser ? 14 : 4
               },
-              children: message2.content
+              children: message.content
             }
           ),
           /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)(
@@ -8641,13 +8637,13 @@ function ChatBubble({ message: message2, agentName, agentAvatar }) {
                 justifyContent: isUser ? "flex-end" : "flex-start"
               },
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { children: formatTime2(message2.timestamp) }),
-                message2.durationMs != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
-                  message2.durationMs,
+                /* @__PURE__ */ (0, import_jsx_runtime36.jsx)("span", { children: formatTime2(message.timestamp) }),
+                message.durationMs != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
+                  message.durationMs,
                   "ms"
                 ] }),
-                message2.tokenUsage != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
-                  message2.tokenUsage,
+                message.tokenUsage != null && /* @__PURE__ */ (0, import_jsx_runtime36.jsxs)("span", { children: [
+                  message.tokenUsage,
                   " tokens"
                 ] }),
                 statusIndicator
@@ -24313,7 +24309,7 @@ function RuntimeOperationToolbar(props) {
   );
 }
 function RuntimePanelFeedback(props) {
-  const { message: message2, receipt, actionError } = props;
+  const { message, receipt, actionError } = props;
   return import_react58.default.createElement(
     "div",
     {
@@ -24326,7 +24322,7 @@ function RuntimePanelFeedback(props) {
         border: actionError ? "1px solid rgba(248,113,113,0.24)" : "1px solid rgba(148,163,184,0.14)"
       }
     },
-    message2 ? import_react58.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message2) : null,
+    message ? import_react58.default.createElement("p", { className: "feedback-message", style: { margin: 0, fontSize: 13, color: "#e2e8f0" } }, message) : null,
     receipt ? import_react58.default.createElement(
       "p",
       { className: "feedback-receipt", style: { margin: "8px 0 0", fontSize: 12, color: "#93c5fd" } },
@@ -24388,7 +24384,7 @@ function useRuntimePanelState(defaultMessage) {
   const [receipt, setReceipt] = import_react58.default.useState(null);
   const [pendingOperation, setPendingOperation] = import_react58.default.useState(null);
   const [actionError, setActionError] = import_react58.default.useState(null);
-  const [message2, setMessage] = import_react58.default.useState(defaultMessage ?? null);
+  const [message, setMessage] = import_react58.default.useState(defaultMessage ?? null);
   const runOperation = import_react58.default.useCallback(async (operation, fn) => {
     setPendingOperation(operation);
     setActionError(null);
@@ -24410,7 +24406,7 @@ function useRuntimePanelState(defaultMessage) {
     setPendingOperation,
     actionError,
     setActionError,
-    message: message2,
+    message,
     setMessage,
     runOperation
   };
@@ -25810,7 +25806,7 @@ function RuntimeGovernancePanelTemplate({
     () => presets.find((item) => item.action === selectedAction) ?? presets[0],
     [presets, selectedAction]
   );
-  const { receipt, pendingOperation, message: message2, actionError, runOperation } = useRuntimePanelState(initialMessage);
+  const { receipt, pendingOperation, message, actionError, runOperation } = useRuntimePanelState(initialMessage);
   const scopeLabel = getReceiptScopeLabel?.(receipt) ?? scopeSummary;
   const submitSelectedAction = import_react64.default.useCallback(async () => {
     if (!activePreset) {
@@ -25907,7 +25903,7 @@ function RuntimeGovernancePanelTemplate({
         })
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(RuntimePanelFeedback, { message: message2, receipt, actionError })
+    /* @__PURE__ */ (0, import_jsx_runtime106.jsx)(RuntimePanelFeedback, { message, receipt, actionError })
   ] });
 }
 
@@ -26688,7 +26684,7 @@ function InfoRow({
 function ConfirmDialog({
   open,
   title,
-  message: message2,
+  message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   variant = "default",
@@ -26727,7 +26723,7 @@ function ConfirmDialog({
           },
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("h3", { style: { fontSize: 16, fontWeight: 600, color: "#f8fafc", margin: "0 0 8px" }, children: title }),
-            /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message2 }),
+            /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("p", { style: { fontSize: 14, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }, children: message }),
             /* @__PURE__ */ (0, import_jsx_runtime112.jsxs)("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 }, children: [
               /* @__PURE__ */ (0, import_jsx_runtime112.jsx)(
                 "button",
@@ -29252,7 +29248,7 @@ var TYPE_STYLES = {
 function InlineNotification({
   type = "info",
   title,
-  message: message2,
+  message,
   closable = false,
   onClose,
   action,
@@ -29308,7 +29304,7 @@ function InlineNotification({
         ),
         /* @__PURE__ */ (0, import_jsx_runtime117.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
           title && /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("strong", { style: { display: "block", marginBottom: 2, fontSize: 14 }, children: title }),
-          /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("span", { children: message2 }),
+          /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("span", { children: message }),
           action && /* @__PURE__ */ (0, import_jsx_runtime117.jsx)("div", { style: { marginTop: 6 }, children: action })
         ] }),
         closable && /* @__PURE__ */ (0, import_jsx_runtime117.jsx)(
@@ -29471,18 +29467,18 @@ function Alert({
 }
 function useAlert(defaultOptions) {
   const [alert, setAlert] = (0, import_react72.useState)(null);
-  const show = (title, message2, variant) => {
+  const show = (title, message, variant) => {
     const resolvedVariant = variant ?? defaultOptions?.variant ?? "info";
-    setAlert({ visible: true, variant: resolvedVariant, title, message: message2 });
+    setAlert({ visible: true, variant: resolvedVariant, title, message });
     const dismissAfter = defaultOptions?.dismissAfterMs;
     if (dismissAfter && dismissAfter > 0) {
       setTimeout(() => setAlert(null), dismissAfter);
     }
   };
-  const info = (title, message2) => show(title, message2, "info");
-  const success = (title, message2) => show(title, message2, "success");
-  const warning = (title, message2) => show(title, message2, "warning");
-  const danger = (title, message2) => show(title, message2, "danger");
+  const info = (title, message) => show(title, message, "info");
+  const success = (title, message) => show(title, message, "success");
+  const warning = (title, message) => show(title, message, "warning");
+  const danger = (title, message) => show(title, message, "danger");
   const dismiss = () => setAlert(null);
   return { alert, show, info, success, warning, danger, dismiss };
 }
@@ -44740,7 +44736,7 @@ function LoadingSkeletonBlock() {
     )) })
   ] });
 }
-function ErrorBlock({ message: message2 }) {
+function ErrorBlock({ message }) {
   return /* @__PURE__ */ (0, import_jsx_runtime168.jsx)(
     "div",
     {
@@ -44753,7 +44749,7 @@ function ErrorBlock({ message: message2 }) {
         color: "#fca5a5",
         lineHeight: 1.5
       },
-      children: message2
+      children: message
     }
   );
 }
@@ -58604,7 +58600,7 @@ var import_jsx_runtime229 = require("react/jsx-runtime");
 function ConfirmActionDialog({
   open,
   title,
-  message: message2,
+  message,
   confirmLabel = "\u786E\u8BA4",
   cancelLabel = "\u53D6\u6D88",
   confirmVariant = "primary",
@@ -58636,7 +58632,7 @@ function ConfirmActionDialog({
           lineHeight: 1.6,
           color: "#475569"
         },
-        children: message2
+        children: message
       }
     ),
     /* @__PURE__ */ (0, import_jsx_runtime229.jsxs)("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [
@@ -59830,7 +59826,7 @@ var SeverityColors = {
   }
 };
 function AnnouncementBanner({
-  message: message2,
+  message,
   severity = "info",
   variant = "banner",
   closable = true,
@@ -59902,7 +59898,7 @@ function AnnouncementBanner({
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)("div", { style: { flex: 1, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { color: colors.text }, children: message2 }),
+          /* @__PURE__ */ (0, import_jsx_runtime237.jsx)("span", { style: { color: colors.text }, children: message }),
           action ? /* @__PURE__ */ (0, import_jsx_runtime237.jsxs)(
             "a",
             {
@@ -73691,7 +73687,6 @@ function sanitizeJsonLd(json) {
   Chip,
   CoachDashboard,
   CodeBlock,
-  Col,
   Collapse,
   Collapsible,
   ColorPicker,
@@ -73749,7 +73744,6 @@ function sanitizeJsonLd(json) {
   FilterChips,
   FinanceManagerDashboard,
   FloatingActionButton,
-  Form,
   FormField,
   FormPageScaffold,
   FormSubmitFeedback,
@@ -73866,7 +73860,6 @@ function sanitizeJsonLd(json) {
   ReturnGoodsProcessingPanel,
   RichTextEditor,
   RolePadClient,
-  Row,
   RuleRecommendationPanel,
   RuntimeGovernancePanelTemplate,
   RuntimeOperationDateTimeReadout,
@@ -74009,7 +74002,6 @@ function sanitizeJsonLd(json) {
   joinRuntimeScopeSummary,
   listPageStatCardStyle,
   mapFoundationGovernanceAlertsToRecords,
-  message,
   refreshFoundationAlertSelection,
   resolveBreakpoint,
   runtimeOperationDetailDemoPresets,

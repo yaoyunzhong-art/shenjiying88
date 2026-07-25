@@ -1,5 +1,8 @@
 // --------------- @m5/ui shared component library ---------------
-export { Col, Descriptions, Form, Row, message } from 'antd';
+// Note: antd v6.5 uses ESM-first exports (Col/Form/Row/message are objects in CJS),
+// making them incompatible with re-export from a CJS package used via transpilePackages.
+// Consumers should import directly from 'antd'.
+export { Descriptions } from 'antd';
 export { ArcadeRevenueCard } from './components/ArcadeRevenueCard';
 export type { ArcadeRevenueCardProps, MachineStats, MachineStatus } from './components/ArcadeRevenueCard';
 

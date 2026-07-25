@@ -1,7 +1,8 @@
 // 💰 财务管理 · 营收/支出/对账/结算 · 完整看板+明细+报表
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Tabs, Input, Select, Modal, message, Progress, Empty } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Tabs, Input, Select, Modal, Progress, Empty } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const permissionGate = {

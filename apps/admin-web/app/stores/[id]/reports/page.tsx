@@ -1,7 +1,8 @@
 // 📈 报表中心 · 经营报表/自定义报表
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Input, Tabs, DatePicker, Progress, Empty, Divider, Modal, message } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select, Input, Tabs, DatePicker, Progress, Empty, Divider, Modal } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Report {

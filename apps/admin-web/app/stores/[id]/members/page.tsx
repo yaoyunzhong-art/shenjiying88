@@ -1,9 +1,8 @@
 // 👥 会员管理 · 会员信息/等级/积分/余额管理 (P-36 店A)
 'use client';
 import { useState, useCallback, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Input, 
-         Modal, Form, Select, Drawer, Descriptions, Divider, Steps, message, 
-         Tabs, Progress, Badge, Empty } from '@m5/ui';
+import { Row, Col, Form, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal, Select, Drawer, Descriptions, Divider, Steps, Tabs, Progress, Badge, Empty } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 // ─── 类型 ──────────────────────────────────────────────────────────

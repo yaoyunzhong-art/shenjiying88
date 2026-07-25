@@ -1,7 +1,8 @@
 // 🛠️ 售后服务 · 客诉/维修/工单管理
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Input, Modal, message, Progress } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select, Input, Modal, Progress } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 type TicketStatus = 'open' | 'processing' | 'resolved' | 'closed';

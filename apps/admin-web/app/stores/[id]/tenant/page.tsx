@@ -1,7 +1,8 @@
 // 🔌 租户管理 · 多租户配置/隔离/迁移
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Empty, Progress } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Modal, Input, Tabs, Empty, Progress } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const TENANTS = [

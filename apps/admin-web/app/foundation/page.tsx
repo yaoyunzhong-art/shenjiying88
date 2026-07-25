@@ -1,12 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import {
-  PageShell, Card, StatCard,
-  DataTable, Button, Space, Tag,
-  SearchFilterInput, Modal, message, StatusBadge, Tabs,
-  Progress, type DataTableColumn,
-} from '@m5/ui';
+import { message } from 'antd';
+import { PageShell, Card, StatCard, DataTable, Button, Space, Tag, SearchFilterInput, Modal, StatusBadge, Tabs, Progress, type DataTableColumn,  } from '@m5/ui';;
 import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ── 类型 ──────────────────────────────────────────────

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tooltip, DatePicker, Tabs, Progress } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Modal, Input, Tooltip, DatePicker, Tabs, Progress } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Record {

@@ -1,7 +1,8 @@
 // 📚 培训管理 · 培训计划/课程/考核 · 完整培训管理
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Modal, Input, message, Progress } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select, Modal, Input, Progress } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Course {

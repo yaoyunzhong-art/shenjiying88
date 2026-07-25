@@ -1,7 +1,8 @@
 // 📅 活动管理 · 门店活动创建/审批/发布 · 看板+列表+日历视图
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, Input, message, Tabs, DatePicker, Empty, Tooltip, Badge, Popconfirm } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Modal, Input, Tabs, DatePicker, Empty, Tooltip, Badge, Popconfirm } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Event {

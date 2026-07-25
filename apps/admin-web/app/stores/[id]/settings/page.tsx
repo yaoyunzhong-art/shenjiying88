@@ -1,6 +1,7 @@
 // ⚙️ 设置中心 · 门店基础参数配置
 'use client'; import { useState } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Switch, Input, Modal, message, Tabs, Divider, Empty, notification } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Switch, Input, Modal, Tabs, Divider, Empty, notification } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface ConfigItem { id:string; label:string; key:string; type:'switch'|'text'|'select'|'number'; value:any; options?:{value:string,label:string}[]; desc:string; category:string; }

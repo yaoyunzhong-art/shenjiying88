@@ -1,7 +1,8 @@
 // 🛡️ 安防管理 · 监控/门禁/告警
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, message, Modal, Progress, Divider, Timeline, Empty } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select, Modal, Progress, Divider, Timeline, Empty } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Alert { id: string; type: string; location: string; time: string; severity: 'low' | 'medium' | 'high' | 'critical'; status: 'pending' | 'handled' | 'ignored'; handler?: string; category: string; resolvedAt?: string; }

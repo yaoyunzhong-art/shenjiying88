@@ -1,7 +1,8 @@
 // 👥 员工管理 · 排班/考勤/绩效
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Input, Modal, Select, message, Avatar, Badge, Progress, DatePicker, Divider, Empty, Tabs } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal, Select, Avatar, Badge, Progress, DatePicker, Divider, Empty, Tabs } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Employee { id: string; name: string; role: string; status: 'on' | 'off' | 'leave'; phone: string; shift: string; joinDate: string; skills: string[]; performance?: string; attendance?: number; emergency?: string; }

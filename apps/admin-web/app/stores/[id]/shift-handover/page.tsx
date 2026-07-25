@@ -1,7 +1,8 @@
 // 🔄 交接班 · 收银/设备/钥匙交接 · 完整交接班管理
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Modal, message, Input, Tabs, Empty, Select, Tooltip } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Modal, Input, Tabs, Empty, Select, Tooltip } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Handover {

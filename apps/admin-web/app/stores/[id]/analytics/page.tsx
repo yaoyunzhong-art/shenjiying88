@@ -1,7 +1,8 @@
 // 📊 经营分析 · 营收/客流/设备/趋势 · 多维分析看板
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Tabs, Empty, Progress, Modal, Divider, message, DatePicker } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Tabs, Empty, Progress, Modal, Divider, DatePicker } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const permissionGate = {

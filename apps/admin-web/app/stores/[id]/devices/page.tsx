@@ -1,7 +1,8 @@
 // 🖥️ 设备管理 · 设备清单/状态/维护 (P-42)
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Modal, Input, message, Progress, Empty, Divider, Timeline } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select, Modal, Input, Progress, Empty, Divider, Timeline } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 type DevStatus = 'online' | 'offline' | 'maintenance' | 'fault';

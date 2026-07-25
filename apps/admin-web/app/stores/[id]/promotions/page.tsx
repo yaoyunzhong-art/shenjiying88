@@ -1,7 +1,8 @@
 // 🎉 促销管理 · 全生命周期管理+效果分析
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Progress, Tabs, Empty, Popconfirm } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Input, Modal, Progress, Tabs, Empty, Popconfirm } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Promo {

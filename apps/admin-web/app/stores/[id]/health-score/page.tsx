@@ -1,7 +1,8 @@
 // ❤️ 健康评分 · 门店综合健康指标 · 多维评分+趋势+建议
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Progress, Tooltip, Tabs, Empty } from '@m5/ui';
+import { Row, Col } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Progress, Tooltip, Tabs, Empty } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const DIMENSIONS = [

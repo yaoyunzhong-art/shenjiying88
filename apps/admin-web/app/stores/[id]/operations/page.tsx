@@ -1,7 +1,8 @@
 // ⚙️ 运营管理 · 营业参数/客流/开关店
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, InputNumber, Switch, Input, Modal, message, Select, Progress, Tabs, Divider, Empty } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Statistic, Table, Tag, Button, Space, InputNumber, Switch, Input, Modal, Select, Progress, Tabs, Divider, Empty } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Setting { key: string; label: string; type: string; value: any; desc: string; category: string; }

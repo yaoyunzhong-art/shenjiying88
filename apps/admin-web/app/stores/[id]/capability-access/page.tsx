@@ -1,7 +1,8 @@
 // 🔐 权限管理 · 角色/用户/功能权限 · 完整角色管理
 'use client';
 import { useState, useMemo } from 'react';
-import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Switch, Empty, Popconfirm, Tooltip } from '@m5/ui';
+import { Row, Col, message } from 'antd';
+import { PageShell, Card, Table, Tag, Button, Space, Statistic, Select, Modal, Input, Tabs, Switch, Empty, Popconfirm, Tooltip } from '@m5/ui';;
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const permissionGate = {
