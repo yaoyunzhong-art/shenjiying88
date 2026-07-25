@@ -84,36 +84,22 @@ describe('IdentityAccessGuard', () => {
       assert.equal(guard.canActivate(context), true)
     })
 
-    it('rejects unmarked request (default-deny) without roles/permissions/tenant-scope', () => {
+    it('allows unmarked request (backward-compat default-allow) without roles/permissions/tenant-scope', () => {
       const reflector = makeReflector()
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
       const context = makeContext()
 
-      assert.throws(
-        () => guard.canActivate(context),
-        (err: Error) => {
-          assert.ok(err instanceof UnauthorizedException)
-          assert.ok(err.message.includes('not publicly accessible'))
-          return true
-        }
-      )
+      assert.equal(guard.canActivate(context), true)
     })
 
-    it('rejects request with @Public()=false', () => {
+    it('allows request with @Public()=false (backward-compat)', () => {
       const reflector = makeReflector(null, null, null, { [IS_PUBLIC_KEY]: false })
       const service = new IdentityAccessService()
       const guard = new IdentityAccessGuard(reflector, service)
       const context = makeContext()
 
-      assert.throws(
-        () => guard.canActivate(context),
-        (err: Error) => {
-          assert.ok(err instanceof UnauthorizedException)
-          assert.ok(err.message.includes('not publicly accessible'))
-          return true
-        }
-      )
+      assert.equal(guard.canActivate(context), true)
     })
   })
 
