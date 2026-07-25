@@ -164,6 +164,7 @@ import { HrModule } from './modules/hr/hr.module';
 import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
 import { MinorProtectionModule } from './modules/minor-protection/minor-protection.module';
 import { StoreModule } from './modules/store/store.module';
+import { StoreFrontModule } from './modules/storefront/storefront.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
 import { NoticeModule } from './modules/notice/notice.module';
@@ -345,6 +346,7 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     BrandOperationsModule,
     MinorProtectionModule,
     StoreModule,
+    StoreFrontModule,
     FeedbackModule,
     ProbationTransferModule,
     NoticeModule,
