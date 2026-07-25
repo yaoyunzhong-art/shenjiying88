@@ -488,15 +488,15 @@ export class ChainAuditService {
     return { verified: this.trails.has(id) }
   }
 
-  getAuditTrail(id: string): any | undefined {
+  getAuditTrail(id: string): AuditTrail | undefined {
     return this.trails.get(id)
   }
 
-  listAuditTrails(): any[] {
+  listAuditTrails(): AuditTrail[] {
     return Array.from(this.trails.values())
   }
 
-  queryAuditTrails(filter: { userId?: string; startTime?: number; endTime?: number }): any[] {
+  queryAuditTrails(filter: { userId?: string; startTime?: number; endTime?: number }): AuditTrail[] {
     let results = Array.from(this.trails.values())
     if (filter.userId) results = results.filter(t => t.userId === filter.userId)
     return results
@@ -506,7 +506,7 @@ export class ChainAuditService {
     return `审计报告\n用户: ${userId}\n时间: ${new Date(startTime).toISOString()} - ${new Date(endTime).toISOString()}`
   }
 
-  alertOnAnomaly(userId: string): any | null {
+  alertOnAnomaly(userId: string): AuditTrail | null {
     const trails = Array.from(this.trails.values()).filter(t => t.userId === userId)
     if (trails.length < 2) return null
     return { userId, reason: 'Rapid consecutive actions detected' }

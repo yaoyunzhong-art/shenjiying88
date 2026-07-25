@@ -523,7 +523,7 @@ class MemoryRepository implements AiModelConfigRepository {
 
 // ============ Row → Entity 映射 ============
 
-function mapPresetRow(row: any): AiModelPreset {
+function mapPresetRow(row: Record<string, unknown>): AiModelPreset {
   return {
     id: row.id,
     presetCode: row.preset_code,
@@ -542,7 +542,7 @@ function mapPresetRow(row: any): AiModelPreset {
   }
 }
 
-function mapStoreConfigRow(row: any): AiModelStoreConfig {
+function mapStoreConfigRow(row: Record<string, unknown>): AiModelStoreConfig {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -564,7 +564,7 @@ function mapStoreConfigRow(row: any): AiModelStoreConfig {
   }
 }
 
-function mapHistoryRow(row: any): AiModelConfigHistory {
+function mapHistoryRow(row: Record<string, unknown>): AiModelConfigHistory {
   return {
     id: row.id,
     configId: row.config_id,

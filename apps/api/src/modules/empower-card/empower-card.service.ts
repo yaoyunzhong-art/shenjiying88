@@ -117,7 +117,7 @@ export class EmpowerCardService {
       'SELECT * FROM empower_card WHERE freshness_score >= $1 ORDER BY freshness_score DESC',
       [minFreshness]
     )
-    return result.rows.map((r: any) => this.rowToEntity(r))
+    return result.rows.map((r: Record<string, unknown>) => this.rowToEntity(r))
   }
 
   // ── 知识检索 ──
@@ -148,7 +148,7 @@ export class EmpowerCardService {
       return { cards: limited, total: limited.length }
     }
     const conditions: string[] = ['freshness_score >= $1']
-    const params: any[] = [minFresh]
+    const params: unknown[] = [minFresh]
     let paramIdx = 2
 
     if (query.tag) {
@@ -169,7 +169,7 @@ export class EmpowerCardService {
     const sql = `SELECT * FROM empower_card WHERE ${where} ORDER BY freshness_score DESC, confidence DESC, quote_count ASC LIMIT ${limit}`
     
     const result = await this.pool.query(sql, params)
-    const cards = result.rows.map((r: any) => this.rowToEntity(r))
+    const cards = result.rows.map((r: Record<string, unknown>) => this.rowToEntity(r))
     
     return { cards, total: cards.length }
   }
@@ -198,7 +198,7 @@ export class EmpowerCardService {
          ORDER BY freshness_score DESC 
          LIMIT ${3 - result.cards.length}`
       )
-      result.cards.push(...extras.rows.map((r: any) => this.rowToEntity(r)))
+      result.cards.push(...extras.rows.map((r: Record<string, unknown>) => this.rowToEntity(r)))
     }
     
     return result.cards
@@ -399,7 +399,7 @@ export class EmpowerCardService {
 
   // ── 辅助 ──
 
-  private rowToEntity(row: any): EmpowerCardEntity {
+  private rowToEntity(row: Record<string, unknown>): EmpowerCardEntity {
     return {
       id: row.id,
       tag: row.tag,

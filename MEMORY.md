@@ -299,3 +299,19 @@ Day16: 6项  | Day17: 8项  | Day18: 5项  | Day19: 1项
 - T2 迁移验证: 16迁移一致
 - L1 前端性能: 4.3/10, 零lazy load, 无WebP, bundle未优化
 - L2 MEMORY汇总Day17-19
+
+## V23 Day19 (2026-07-26)
+- T1 压测准备: PG max=10偏低→建议20-30, 会话用Map非Redis, 限流多层兜底完整
+- T2 迁移安全: 16迁移全绿🟢, 0 DROP/DELETE, 4处低危ALTER(金额精度), 66外键
+- L1 前端性能: 4.3/10🔴 — 零next/dynamic, 无WebP, bundle未优化, 15个force-dynamic
+- L2 MEMORY: Day18+19汇总
+- L3 日总结: 6道门终态 G1-G6绿
+
+## V23 Day20 (2026-07-26)
+- T1 回滚方案审核中
+- T2 代码审查: 86 SQL注入点/3 eval/37 TODO/0硬编码密钥 → B+
+- L1 SEO审计中
+- L2 a11y: 80 aria/13 img缺alt/290 console🔴退化 → D级
+
+## 累计战绩
+Day12:28 + Day13:14 + Day14:12 + Day15:7 + Day16:6 + Day17:6 + Day18:6 + Day19:6 + Day20:4(partial) = **89项**
