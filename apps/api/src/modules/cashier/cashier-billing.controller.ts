@@ -6,6 +6,9 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+} from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
+import {
   Headers,
   Logger,
   Inject
@@ -41,6 +44,7 @@ import type { Bill, PricingPlan, Wallet } from '../foundation/commercial-billing
 @ApiTags('cashier-billing')
 @Controller('cashier/admin/billing')
 @UseGuards(TenantGuard)
+@Public()
 export class CashierBillingController {
   private readonly logger = new Logger(CashierBillingController.name)
 

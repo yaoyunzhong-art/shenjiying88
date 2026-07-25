@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 
 import { TenantContext } from '../tenant/tenant.decorator'
@@ -31,6 +32,7 @@ import { FinanceService } from './finance.service'
 import { FinanceArchivalService } from './finance-archival.service'
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('finance')
 export class FinanceController {
   constructor(

@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -29,6 +30,7 @@ import {
 import { NotificationService } from './notification.service'
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

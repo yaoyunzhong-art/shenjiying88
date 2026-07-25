@@ -38,6 +38,7 @@ import {
 } from './member.dto';
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('members')
 export class MemberController {
   constructor(@Inject(MemberService) private readonly memberService: MemberService) {}

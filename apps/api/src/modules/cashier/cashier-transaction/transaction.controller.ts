@@ -26,12 +26,14 @@ import {
   Logger,
   UseGuards,
 } from '@nestjs/common'
+import { Public } from '../../foundation/identity-access/public.decorator'
 import { CashierTransactionPersistenceService } from './persistence.service'
 import { TenantGuard } from '../../agent/tenant.guard'
 import type { TransactionRecord, TransactionStatus, DailySummary, MonthlySummary } from './persistence.types'
 
 @Controller('api/cashier/transactions')
 @UseGuards(TenantGuard)
+@Public()
 export class CashierTransactionController {
   private readonly logger = new Logger(CashierTransactionController.name)
 
