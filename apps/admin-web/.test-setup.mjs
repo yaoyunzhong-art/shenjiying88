@@ -623,23 +623,12 @@ require.cache[uiPath] = {
 };
 
 // Mock admin-session for AdminPermissionGate tests
-const adminSessionPath = Module._resolveFilename('../lib/admin-session', {
-  id: import.meta.url,
-  filename: import.meta.url,
-  paths: Module._nodeModulePaths(process.cwd()),
-});
-
-// Resolve from the app folder if the relative path doesn't work
-let resolvedAdminSessionPath = adminSessionPath;
-try {
-  if (!require.cache[adminSessionPath]) {
-    // Try resolving from the app directory
-    const appDir = new URL('./app/lib/admin-session.ts', import.meta.url).pathname;
-    resolvedAdminSessionPath = appDir;
-  }
-} catch (e) {
-  // fallback: use the relative resolution
-}
+// Use the absolute path since tsx resolves modules differently
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const adminSessionPath = path.resolve(__dirname, 'app', 'lib', 'admin-session.ts');
 
 const mockAdminUser = {
   userId: 'test-admin-001',
@@ -673,26 +662,23 @@ const mockAdminSession = {
   hasAdminPermission: () => true,
 };
 
-// Monkey-patch requires for the admin-session module so it works with relative imports
+// Monkey-patch require.resolve to intercept admin-session imports
 const origResolve = Module._resolveFilename;
 Module._resolveFilename = function (request, parent) {
-  if (request.endsWith('/lib/admin-session') || request.endsWith('\\lib\\admin-session')) {
-    return resolvedAdminSessionPath;
-  }
-  // Handle app/components/admin-permission-gate.tsx importing '../lib/admin-session'
-  if (request === '../lib/admin-session' || request.includes('/lib/admin-session')) {
-    if (parent && (parent.includes('/components/admin-permission-gate'))) {
-      return resolvedAdminSessionPath;
-    }
+  // Handle admin-session imports from admin-permission-gate or other components
+  if (request.endsWith('/lib/admin-session') ||
+      request.endsWith('\\lib\\admin-session') ||
+      request === '../lib/admin-session') {
+    return adminSessionPath;
   }
   return origResolve.apply(this, arguments);
 };
 
-require.cache[resolvedAdminSessionPath] = {
-  id: resolvedAdminSessionPath,
-  filename: resolvedAdminSessionPath,
+require.cache[adminSessionPath] = {
+  id: adminSessionPath,
+  filename: adminSessionPath,
   loaded: true,
   exports: mockAdminSession,
 };
 
-console.log('[test-setup] happy-dom initialized (ESM), next/navigation + next/link + next/image + @m5/ui mocked');
+console.log('[test-setup] happy-dom initialized (ESM), next/navigation + next/link + next/image + @m5/ui + admin-session mocked');
