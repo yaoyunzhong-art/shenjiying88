@@ -24,9 +24,11 @@ import type {
   SsoLoginCompleteDto,
 } from './sso.dto'
 import { TenantGuard } from '../agent/tenant.guard';
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('saas/sso')
 @UseGuards(TenantGuard)
+@Public()
 export class SsoController {
   constructor(private readonly service: SsoService) {}
 

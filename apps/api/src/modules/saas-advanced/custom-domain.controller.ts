@@ -54,6 +54,7 @@ import {
   ValidateDomainResponse,
 } from './custom-domain.dto'
 import { TenantGuard } from '../agent/tenant.guard';
+import { Public } from '../foundation/identity-access/public.decorator'
 
 const DOMAIN_GOVERNANCE_READ_ROLES = [
   'SUPER_ADMIN',
@@ -78,6 +79,7 @@ const DOMAIN_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 @ApiTags('saas-domain')
 @Controller('saas/domain')
 @UseGuards(TenantGuard)
+@Public()
 export class CustomDomainController {
   constructor(private readonly service: CustomDomainService) {}
 

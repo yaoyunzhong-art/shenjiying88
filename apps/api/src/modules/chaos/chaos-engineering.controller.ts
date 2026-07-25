@@ -30,10 +30,12 @@ import type {
   SystemMetrics,
 } from './chaos-engineering.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('chaos')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
+@Public()
 export class ChaosEngineeringController {
   constructor(
     private readonly experimentService: ChaosExperimentService,

@@ -6,11 +6,13 @@ import { ObservabilityService } from './observability.service'
 import type { CreateAlertRuleRequest, UpdateAlertRuleRequest, AlertRuleResponse } from './metrics.dto'
 import type { ChaosScope, ChaosType } from './chaos-engine'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Injectable()
 @ApiTags('observability')
 @Controller()
 @UseGuards(TenantGuard)
+@Public()
 export class MetricsController {
   constructor(
     @Inject(MetricsService) private readonly metricsService: MetricsService,

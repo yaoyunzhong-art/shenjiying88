@@ -13,9 +13,11 @@ import type {
   InvalidationListResponse, EdgeNodeStatsResponse,
 } from './cdn.dto'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('cdn')
 @UseGuards(TenantGuard)
+@Public()
 export class CdnCacheController {
   /** @internal exposed as public for testing */
   constructor(readonly service: CdnCacheService) {}

@@ -6,6 +6,7 @@ import { ProductAdapter } from './datasources/product.adapter'
 import { PurchaseHistoryAdapter } from './datasources/purchase-history.adapter'
 import { MemberPreferenceAdapter } from './datasources/member-preference.adapter'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 /**
  * Phase-40 T170: RecommendController
@@ -27,6 +28,7 @@ import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('api/recommend')
 @UseGuards(TenantGuard)
+@Public()
 export class RecommendController {
   constructor(
     private readonly engine: RecommendationEngine,

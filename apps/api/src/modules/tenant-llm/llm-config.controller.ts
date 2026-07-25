@@ -21,9 +21,11 @@ import {
   UpdateLLMConfigRequest,
   ApplyLLMConfigRequest,
 } from './llm-config.entity'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('llm')
 @UseGuards(TenantScopeGuard)
+@Public()
 export class TenantLLMController {
   constructor(private readonly llmService: TenantLLMService) {}
 
