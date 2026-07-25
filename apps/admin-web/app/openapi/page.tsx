@@ -201,7 +201,7 @@ export default function OpenAPIWorkbench() {
           ].map(t => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id as any)}
+              onClick={() => setTab(t.id as typeof tab)}
               className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
                 tab === t.id
                   ? 'border-blue-500 text-blue-600'
@@ -351,7 +351,7 @@ function WebhooksTab({ subs, deliveries, deadLetters }: {
         ].map(s => (
           <button
             key={s.id}
-            onClick={() => setView(s.id as any)}
+            onClick={() => setView(s.id as typeof view)}
             className={`px-3 py-1 rounded ${
               view === s.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}

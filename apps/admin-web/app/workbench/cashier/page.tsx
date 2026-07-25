@@ -12,6 +12,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { PageShell, StatCard, StatusBadge, Tabs } from '@m5/ui';
 import { Spin, Empty, message } from 'antd';
 import { getBizClient } from '../../lib/sdk';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface CashierSession { id: string; date: string; startTime: string; endTime: string; openingBalance: number; cashRevenue: number; cardRevenue: number; onlineRevenue: number; refundAmount: number; expectedTotal: number; actualTotal: number; difference: number; transactionCount: number; status: 'open' | 'closed' | 'pending_review'; }
 interface RecentTransaction { id: string; time: string; type: 'sale' | 'recharge' | 'refund'; amount: number; method: string; customer: string; }
@@ -116,9 +117,10 @@ async function loadWorkbenchData(): Promise<WorkbenchData> {
 
 
 const permissionGate = {
-  requiredPermission: 'workbench:cashier:read',
-  title: 'workbench cashier 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 workbench:cashier:read 权限的账号可访问。',
+  requiredPermission: 'workbench.read',
+  title: '收银工作台访问受限',
+  description:
+    '收银工作台已接入管理员本地 session，只有具备 workbench.read 的账号才能查看当班营收、交易流水与快速收银操作。',
 } as const
 
 export default function CashierWorkbenchPage() {
@@ -148,31 +150,36 @@ export default function CashierWorkbenchPage() {
 
   if (loading) {
     return (
-      <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
-        <PageShell title="💳 收银工作台" subtitle="加载中...">
-          <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:400}}>
-            <Spin tip="加载工作台数据..." />
-          </div>
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
+          <PageShell title="💳 收银工作台" subtitle="加载中...">
+            <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:400}}>
+              <Spin tip="加载工作台数据..." />
+            </div>
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   if (!data) {
     return (
-      <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
-        <PageShell title="💳 收银工作台" subtitle="数据加载失败">
-          <Empty description="无法加载收银工作台数据" />
-        </PageShell>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
+          <PageShell title="💳 收银工作台" subtitle="数据加载失败">
+            <Empty description="无法加载收银工作台数据" />
+          </PageShell>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   const { session: s, recentTxns } = data;
 
   return (
-    <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
-      <PageShell title="💳 收银工作台" subtitle={SHIFT_STATUS[s.status]?.l ?? ''}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
+        <PageShell title="💳 收银工作台" subtitle={SHIFT_STATUS[s.status]?.l ?? ''}>
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>当班营收</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(s.expectedTotal)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>{s.transactionCount}笔</div></div>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>现金</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#eab308'}}>{fm(s.cashRevenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>开柜: {fm(s.openingBalance)}</div></div>
@@ -222,8 +229,9 @@ export default function CashierWorkbenchPage() {
           <button style={btnStyle('#eab308','#fbbf24')}>↩️ 退款</button>
           <button style={btnStyle('#ef4444','#fca5a5')}>📋 交接班</button>
         </div>
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

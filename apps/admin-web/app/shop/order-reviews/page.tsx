@@ -25,6 +25,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 type ReviewRating = 1 | 2 | 3 | 4 | 5;
 type ReviewStatus = 'pending' | 'replied' | 'hidden';
@@ -77,8 +78,9 @@ const STATUS_MAP: Record<ReviewStatus, { label: string; variant: 'warning' | 'su
 
 const permissionGate = {
   requiredPermission: 'shop:order-reviews:read',
-  title: 'shop order-reviews 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 shop:order-reviews:read 权限的账号可访问。',
+  title: '订单评价访问受限',
+  description:
+    '订单评价页已接入管理员本地 session，只有具备 shop:order-reviews:read 的账号才能查看评价列表、筛选结果与回复动作。',
 } as const
 
 export default function OrderReviewsPage() {
@@ -128,7 +130,8 @@ export default function OrderReviewsPage() {
   };
 
   return (
-    <PageShell title="📝 订单评价管理" subtitle="订单评价审核与回复管理">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="📝 订单评价管理" subtitle="订单评价审核与回复管理">
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
         <StatCard label="总评价数" value={stats.total.toString()} />
         <StatCard label="待回复" value={stats.pending.toString()} variant="warning" helper="需及时回复" />
@@ -186,6 +189,7 @@ export default function OrderReviewsPage() {
         <strong style={{ color: '#94a3b8' }}>💡 说明</strong><br />
         评价管理规则：差评（评分≤2）需在24小时内首次回复。默认按评价时间倒序排列。批量操作仅对待回复状态生效。
       </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

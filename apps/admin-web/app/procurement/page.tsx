@@ -102,7 +102,7 @@ function OrderFormModal({ onClose, onSave, initial }: {
           </div>
           <div>
             <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 4 }}>优先级</label>
-            <select value={form.priority} onChange={e => setForm(f => ({...f, priority: e.target.value as any}))}
+            <select value={form.priority} onChange={e => setForm(f => ({...f, priority: e.target.value as 'low' | 'medium' | 'high' | 'urgent'}))}
               style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
               <option value="low">低</option><option value="medium">中</option><option value="high">高</option><option value="urgent">紧急</option>
             </select>
@@ -141,7 +141,7 @@ function OrderFormModal({ onClose, onSave, initial }: {
 const STATUS_STEPS = ['draft', 'submitted', 'approved', 'shipped', 'received'] as const;
 
 function OrderTimeline({ status, createdAt, updatedAt }: { status: string; createdAt: string; updatedAt: string }) {
-  const currentIdx = STATUS_STEPS.indexOf(status as any);
+  const currentIdx = STATUS_STEPS.indexOf(status as typeof STATUS_STEPS[number]);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, margin: '12px 0' }}>
       {STATUS_STEPS.map((step, idx) => {

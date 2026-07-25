@@ -9,12 +9,11 @@ import { createBusinessClient } from '@m5/sdk';
 
 function makeBizClient() {
   if (typeof window === 'undefined') return null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const w = window as any;
+  const w = window as unknown as Record<string, unknown> & { __m5_biz_client?: ReturnType<typeof createBusinessClient> };
   if (!w.__m5_biz_client) {
     w.__m5_biz_client = createBusinessClient();
   }
-  return w.__m5_biz_client as ReturnType<typeof createBusinessClient>;
+  return w.__m5_biz_client;
 }
 
 export const biz = makeBizClient();

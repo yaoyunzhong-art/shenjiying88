@@ -207,7 +207,7 @@ export class MinorProtectionService {
       id: createAccessLogId(),
       tenantId,
       memberId,
-      action: action as any,
+      action: action as MinorAccessLog['action'],
       checkResult: result,
       timeRestricted,
       blockedReason,

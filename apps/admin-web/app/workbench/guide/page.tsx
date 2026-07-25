@@ -8,6 +8,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { PageShell, StatCard, StatusBadge, Tabs, DataTable, type DataTableColumn } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 type ServiceType = 'device_help' | 'game_instruction' | 'member_register' | 'complaint' | 'general';
 type ServiceStatus = 'waiting' | 'in_progress' | 'resolved';
@@ -34,16 +35,17 @@ function generateServices(): ServiceItem[] {
 
 
 const permissionGate = {
-  requiredPermission: 'workbench:guide:read',
-  title: 'workbench guide 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 workbench:guide:read 权限的账号可访问。',
+  requiredPermission: 'workbench.read',
+  title: '导玩工作台访问受限',
+  description:
+    '导玩工作台已接入管理员本地 session，只有具备 workbench.read 的账号才能查看服务队列、设备巡检与接待统计。',
 } as const
 
 export default function GuideWorkbenchPage() {
   const [loading, _setLoading] = useState(false);
   const [error, _setError] = useState<string | null>(null);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
   // 数据条件守卫 — 常量mock数据，默认非空
   const isEmpty = false;
   const services = useMemo(() => generateServices(), []);
@@ -60,8 +62,9 @@ export default function GuideWorkbenchPage() {
   ];
 
   return (
-    <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
-      <PageShell title="🎮 导玩员工作台" subtitle="今日客户服务·设备巡检·活动推荐">
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
+        <PageShell title="🎮 导玩员工作台" subtitle="今日客户服务·设备巡检·活动推荐">
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>待服务</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#ef4444'}}>{waitingCount}</div></div>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>已处理</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{resolvedCount}</div></div>
@@ -102,8 +105,9 @@ export default function GuideWorkbenchPage() {
             </div>
           </section>
         </div>
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

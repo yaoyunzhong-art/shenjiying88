@@ -23,6 +23,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型
@@ -94,8 +95,9 @@ const CARD_STYLE: React.CSSProperties = {
 
 const permissionGate = {
   requiredPermission: 'shop:inventory:read',
-  title: 'shop inventory 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 shop:inventory:read 权限的账号可访问。',
+  title: '店铺库存访问受限',
+  description:
+    '店铺库存页已接入管理员本地 session，只有具备 shop:inventory:read 的账号才能查看库存列表、预警统计与分页结果。',
 } as const
 
 export default function InventoryPage() {
@@ -127,7 +129,8 @@ export default function InventoryPage() {
   ];
 
   return (
-    <PageShell title="库存管理" subtitle="商品库存管理与预警配置">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="库存管理" subtitle="商品库存管理与预警配置">
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
         <StatCard label="总SKU数" value={stats.total.toString()} variant="default" />
@@ -187,6 +190,7 @@ export default function InventoryPage() {
           ⚠️ 温馨提示：有 <strong>{stats.lowStock}</strong> 个商品处于低库存状态，<strong>{stats.outOfStock}</strong> 个商品已缺货。建议及时安排补货。
         </div>
       ) : null}
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

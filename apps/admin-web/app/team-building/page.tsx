@@ -248,7 +248,7 @@ export default function TeamBuildingPage() {
       render: (item) => (
         <StatusBadge
           label={ACTIVITY_STATUS_LABEL[item.status]}
-          variant={ACTIVITY_STATUS_VARIANT[item.status] as any}
+          variant={ACTIVITY_STATUS_VARIANT[item.status] as 'success' | 'warning' | 'error' | 'default'}
         />
       ),
     },

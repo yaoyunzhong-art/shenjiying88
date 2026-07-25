@@ -255,7 +255,7 @@ export default function SchedulingPage() {
           ) : (
             <Table
               dataSource={filtered}
-              columns={COLUMNS as any}
+              columns={COLUMNS as Parameters<typeof Table>[0]['columns']}
               rowKey="id"
               pagination={{ pageSize: 10 }}
             />

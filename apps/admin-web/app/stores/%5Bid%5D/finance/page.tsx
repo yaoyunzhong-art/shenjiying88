@@ -53,7 +53,7 @@ export default function FinancePage() {
               {key:'status', header:'状态', render:(r: ReconRow)=>{
                 const v: Record<string,string> = {matched:'已对平,success',partial:'部分匹配,primary',alert:'异常,error'};
                 const [l,va] = (v[r.status]||'未知,default').split(',');
-                return <Tag variant={va as any}>{l}</Tag>;
+                return <Tag variant={va as 'success' | 'primary' | 'error' | 'default'}>{l}</Tag>;
               }},
               {key:'a', header:'操作', render:(r: ReconRow)=><Button size="sm" disabled={r.status==='matched'}>处理</Button>},
             ]}

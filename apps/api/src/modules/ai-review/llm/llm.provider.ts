@@ -71,7 +71,7 @@ export class DeepSeekProvider implements ILLMProvider {
           signal: AbortSignal.timeout(30000),
         })
         if (res.ok) {
-          const data = await res.json() as any
+          const data: Record<string, unknown> & { choices?: Array<{ message?: { content?: string } }>; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } } = await res.json() as Record<string, unknown>
           return {
             content: data.choices?.[0]?.message?.content ?? '',
             provider: 'deepseek',

@@ -16,6 +16,7 @@
 
 import React from 'react'
 import { useCallback, useEffect, useState } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 // ─── 类型定义 ─────────────────────────────────────────────
 
@@ -388,8 +389,9 @@ function ProfitOverviewPanel({ data }: { data: { storeProfit: number; storeMargi
 
 const permissionGate = {
   requiredPermission: 'finance:dashboard:read',
-  title: '财务健康仪表盘 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 finance:dashboard:read 权限的账号可访问。',
+  title: '财务仪表盘访问受限',
+  description:
+    '财务仪表盘已接入管理员本地 session，只有具备 finance:dashboard:read 的账号才能查看营收总览、对账状态与成本分析。',
 } as const
 
 export default function FinanceDashboardPage() {
@@ -432,10 +434,12 @@ export default function FinanceDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64" data-testid="loading-state">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-        <span className="ml-3 text-gray-600">加载财务仪表盘...</span>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div className="flex items-center justify-center h-64" data-testid="loading-state">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+          <span className="ml-3 text-gray-600">加载财务仪表盘...</span>
+        </div>
+      </AdminPermissionGate>
     )
   }
 
@@ -443,18 +447,20 @@ export default function FinanceDashboardPage() {
 
   if (error && !data) {
     return (
-      <div className="p-6" data-testid="error-state">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium">加载失败</h3>
-          <p className="text-red-600 mt-1">{error}</p>
-          <button
-            onClick={loadData}
-            className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            重试
-          </button>
+      <AdminPermissionGate {...permissionGate}>
+        <div className="p-6" data-testid="error-state">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 className="text-red-800 font-medium">加载失败</h3>
+            <p className="text-red-600 mt-1">{error}</p>
+            <button
+              onClick={loadData}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              重试
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
@@ -462,18 +468,20 @@ export default function FinanceDashboardPage() {
 
   if (!data) {
     return (
-      <div className="p-6" data-testid="empty-state">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-500 text-lg">暂无财务数据</p>
-          <p className="text-gray-400 text-sm mt-1">请先完成一笔交易后再查看仪表盘</p>
-          <button
-            onClick={loadData}
-            className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-          >
-            刷新
-          </button>
+      <AdminPermissionGate {...permissionGate}>
+        <div className="p-6" data-testid="empty-state">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+            <p className="text-gray-500 text-lg">暂无财务数据</p>
+            <p className="text-gray-400 text-sm mt-1">请先完成一笔交易后再查看仪表盘</p>
+            <button
+              onClick={loadData}
+              className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              刷新
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
@@ -484,7 +492,8 @@ export default function FinanceDashboardPage() {
     .filter((k) => k !== 'totalCents')
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6" data-testid="dashboard-page">
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-7xl mx-auto space-y-6" data-testid="dashboard-page">
       {/* 标题 */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">财务健康仪表盘</h1>
@@ -620,6 +629,7 @@ export default function FinanceDashboardPage() {
         <ProfitOverviewPanel data={profit} />
         <CostAnalysisPanel data={costAnalysis} />
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

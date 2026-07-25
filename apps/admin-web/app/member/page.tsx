@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -190,8 +191,9 @@ const styles: Record<string, React.CSSProperties> = {
 
 const permissionGate = {
   requiredPermission: 'member:read',
-  title: 'member 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 member:read 权限的账号可访问。',
+  title: '会员旧入口访问受限',
+  description:
+    '会员旧入口页已接入管理员本地 session，只有具备 member:read 的账号才能查看会员列表、筛选条件与维护弹窗。',
 } as const
 
 export default function MemberPage() {
@@ -297,7 +299,8 @@ export default function MemberPage() {
   ], [stats]);
 
   return (
-    <div style={styles.page}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
       <h1 style={styles.title}>👤 会员管理</h1>
       <p style={styles.subtitle}>管理会员信息，支持新增、编辑、删除、搜索、等级与状态筛选。</p>
 
@@ -456,6 +459,7 @@ export default function MemberPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }

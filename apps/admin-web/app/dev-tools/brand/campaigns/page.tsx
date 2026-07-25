@@ -70,7 +70,7 @@ export default function CampaignPage() {
                 const v = r.status;
                 const label = v==='active'?'进行中':v==='paused'?'已暂停':'已结束';
                 const variant = v==='active'?'success':v==='paused'?'warning':'default';
-                return <Tag variant={variant as any}>{label}</Tag>;
+                return <Tag variant={variant as 'success' | 'warning' | 'default'}>{label}</Tag>;
               }},
               {key:'a', header:'操作', render:(r: Campaign)=><Button size="sm" disabled={r.status==='ended'}>分析</Button>},
             ]}

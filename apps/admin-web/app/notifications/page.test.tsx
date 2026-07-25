@@ -337,16 +337,29 @@ describe('notifications — 代码结构', () => {
 let NotificationsPage: React.ComponentType;
 let pageModule: any;
 
+function seedAdminSession() {
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['notifications:read'],
+    }),
+  );
+}
+
 describe('notifications — React 渲染', () => {
   /* 所有测试共享一次动态导入 */
   before(async () => {
     pageModule = await import('./page.tsx');
     NotificationsPage = pageModule.default;
+    seedAdminSession();
   });
 
   /* 每个测试后清理 DOM */
   afterEach(() => {
     cleanup();
+    seedAdminSession();
   });
 
   it('33. render 组件不报错，容器存在', () => {

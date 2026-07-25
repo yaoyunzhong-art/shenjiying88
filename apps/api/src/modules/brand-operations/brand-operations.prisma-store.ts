@@ -98,8 +98,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.brandAsset.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -108,8 +108,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.brandCampaign.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -118,8 +118,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.brandCampaignTemplate.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -128,8 +128,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.collaboration.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -138,8 +138,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.brandChannel.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -148,8 +148,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.brandKPI.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -158,8 +158,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.recycleBinItem.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -168,8 +168,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.exportRecord.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 
@@ -178,8 +178,8 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.campaignSchedule.upsert({
       where: { id },
-      create: entity as any,
-      update: entity as any,
+      create: entity as Record<string, unknown>,
+      update: entity as Record<string, unknown>,
     })
   }
 

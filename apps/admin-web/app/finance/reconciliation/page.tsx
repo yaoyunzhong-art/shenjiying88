@@ -15,6 +15,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 // ─── 类型定义 ─────────────────────────────────────────────
 
@@ -180,8 +181,9 @@ function useAutoRefresh(callback: () => void, intervalMs: number) {
 
 const permissionGate = {
   requiredPermission: 'finance:reconciliation:read',
-  title: '财务对账 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 finance:reconciliation:read 权限的账号可访问。',
+  title: '财务对账访问受限',
+  description:
+    '财务对账页已接入管理员本地 session，只有具备 finance:reconciliation:read 的账号才能查看差异记录、手动对账与导出结果。',
 } as const
 
 export default function ReconciliationPage() {
@@ -364,32 +366,37 @@ export default function ReconciliationPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-        <span className="ml-3 text-gray-600">加载对账数据...</span>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+          <span className="ml-3 text-gray-600">加载对账数据...</span>
+        </div>
+      </AdminPermissionGate>
     )
   }
 
   if (error && !status) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium">加载失败</h3>
-          <p className="text-red-600 mt-1">{error}</p>
-          <button
-            onClick={loadData}
-            className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            重试
-          </button>
+      <AdminPermissionGate {...permissionGate}>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 className="text-red-800 font-medium">加载失败</h3>
+            <p className="text-red-600 mt-1">{error}</p>
+            <button
+              onClick={loadData}
+              className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              重试
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* 标题与操作栏 */}
       <div className="flex items-center justify-between">
         <div>
@@ -766,6 +773,7 @@ export default function ReconciliationPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

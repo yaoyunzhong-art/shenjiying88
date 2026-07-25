@@ -40,15 +40,15 @@ function AnomalySummaryCards({
 }: {
   governance: { alerts: unknown[] };
 }) {
-  const alerts: any[] = (governance as any)?.alerts ?? [];
+  const alerts = governance?.alerts ?? [];
   const total = alerts.length;
   const critical = alerts.filter(
-    (a: any) =>
-      a.severity === 'critical' || a.severity === 'high' || a.severity === 'severe'
+    (a: unknown) =>
+      (a as Record<string, unknown>).severity === 'critical' || (a as Record<string, unknown>).severity === 'high' || (a as Record<string, unknown>).severity === 'severe'
   ).length;
   const resolved = alerts.filter(
-    (a: any) =>
-      a.status === 'resolved' || a.status === 'acknowledged' || a.status === 'closed'
+    (a) =>
+      (a as Record<string, unknown>).status === 'resolved' || (a as Record<string, unknown>).status === 'acknowledged' || (a as Record<string, unknown>).status === 'closed'
   ).length;
   const unresolved = total - resolved;
   const responseRate = total > 0 ? ((resolved / total) * 100).toFixed(0) : '—';
@@ -199,7 +199,7 @@ export default async function AnomalyFrequencyPage() {
   }
 
   const alertCount: number =
-    ((governance as any)?.alerts as unknown[])?.length ?? 0;
+    (governance?.alerts as unknown[])?.length ?? 0;
 
   return (
     <AdminPermissionGate {...permissionGate}>

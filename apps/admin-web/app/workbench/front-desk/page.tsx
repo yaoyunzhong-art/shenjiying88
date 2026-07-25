@@ -18,6 +18,7 @@ import {
   type QuickFnButton,
   type PaymentMethod,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 类型
@@ -62,9 +63,10 @@ function generateQueue(): QueueItem[] {
 
 
 const permissionGate = {
-  requiredPermission: 'workbench:front-desk:read',
-  title: 'workbench front-desk 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 workbench:front-desk:read 权限的账号可访问。',
+  requiredPermission: 'workbench.read',
+  title: '前台工作台访问受限',
+  description:
+    '前台工作台已接入管理员本地 session，只有具备 workbench.read 的账号才能查看收银面板、队列叫号与快捷操作。',
 } as const
 
 export default function FrontDeskWorkbenchPage() {
@@ -181,18 +183,19 @@ export default function FrontDeskWorkbenchPage() {
   ], [todayStats]);
 
   return (
-    <PageShell
-      title="前台操作面板"
-      subtitle="前台收银 / 排队叫号 / 快捷操作"
-      actions={
-        <DetailActionBar
-          actions={[
-            { label: '交班', key: 'shift', variant: 'default' as const, onClick: () => {} },
-            { label: '日结', key: 'daily', variant: 'default' as const, onClick: () => {} },
-          ]}
-        />
-      }
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="前台操作面板"
+        subtitle="前台收银 / 排队叫号 / 快捷操作"
+        actions={
+          <DetailActionBar
+            actions={[
+              { label: '交班', key: 'shift', variant: 'default' as const, onClick: () => {} },
+              { label: '日结', key: 'daily', variant: 'default' as const, onClick: () => {} },
+            ]}
+          />
+        }
+      >
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         {summaryCards.map(card => (
@@ -363,6 +366,7 @@ export default function FrontDeskWorkbenchPage() {
           </div>
         </div>
       )}
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

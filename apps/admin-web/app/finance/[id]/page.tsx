@@ -14,6 +14,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import {
   StatusBadge,
 } from '@m5/ui';
@@ -200,8 +201,9 @@ interface ToastItem {
 
 const permissionGate = {
   requiredPermission: 'finance:id:read',
-  title: 'finance 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 finance:id:read 权限的账号可访问。',
+  title: '支付详情访问受限',
+  description:
+    '支付详情页已接入管理员本地 session，只有具备 finance:id:read 的账号才能查看支付档案、状态流转与退款列表。',
 } as const
 
 export default function FinanceDetailPage() {
@@ -278,7 +280,8 @@ export default function FinanceDetailPage() {
   }, [id, addToast, router]);
 
   return (
-    <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif', maxWidth: 960, margin: '0 auto' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif', maxWidth: 960, margin: '0 auto' }}>
       {/* 面包屑 */}
       <div style={{ marginBottom: 16, fontSize: 14, color: '#6b7280' }}>
         <a
@@ -898,6 +901,7 @@ export default function FinanceDetailPage() {
           to { transform: translateX(0); opacity: 1; }
         }
       `}</style>
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }

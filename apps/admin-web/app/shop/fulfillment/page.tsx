@@ -36,6 +36,7 @@ import {
   useSearchFilter,
   useSortedItems,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ==================== 类型定义 ====================
 
@@ -134,8 +135,9 @@ function formatMoney(amount: number): string {
 
 const permissionGate = {
   requiredPermission: 'shop:fulfillment:read',
-  title: 'shop fulfillment 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 shop:fulfillment:read 权限的账号可访问。',
+  title: '履约管理访问受限',
+  description:
+    '履约管理页已接入管理员本地 session，只有具备 shop:fulfillment:read 的账号才能查看履约单、批量处理与编辑面板。',
 } as const
 
 export default function FulfillmentPage() {
@@ -296,7 +298,8 @@ export default function FulfillmentPage() {
   }, []);
 
   return (
-    <PageShell title="📦 履约管理" subtitle="订单履约流程与配送管理">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="📦 履约管理" subtitle="订单履约流程与配送管理">
       {/* 统计面板 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="履约单总数" value={stats.total.toString()} helper={`代履约 ${stats.pending}`} />
@@ -402,7 +405,8 @@ export default function FulfillmentPage() {
           <SubmitButton label="保存修改" variant="primary" onClick={handleUpdate} />
         </div>
       </Modal>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

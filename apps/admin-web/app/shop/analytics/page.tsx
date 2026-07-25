@@ -20,6 +20,7 @@ import {
   useSearchFilter,
   type DataTableColumn,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型
@@ -152,8 +153,9 @@ function MiniLineChart({
 
 const permissionGate = {
   requiredPermission: 'shop:analytics:read',
-  title: 'shop analytics 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 shop:analytics:read 权限的账号可访问。',
+  title: '店铺分析访问受限',
+  description:
+    '店铺分析页已接入管理员本地 session，只有具备 shop:analytics:read 的账号才能查看销售趋势、商品排行与经营明细。',
 } as const
 
 export default function ShopAnalyticsPage() {
@@ -193,7 +195,8 @@ export default function ShopAnalyticsPage() {
   ];
 
   return (
-    <PageShell title="📊 店铺数据分析" subtitle="店铺经营数据分析与洞察">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="📊 店铺数据分析" subtitle="店铺经营数据分析与洞察">
       {/* 概览卡片 */}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
         <StatCard label="总销售额" value={formatMoney(totalStats.totalRevenue)} trend={{ value: totalStats.revenueChange, positive: totalStats.revenueChange.startsWith('+') }} />
@@ -217,7 +220,7 @@ export default function ShopAnalyticsPage() {
             variant="pills"
           />
         </div>
-        <MiniLineChart data={dailyData as any} dataKey="revenue" height={200} color="#22c55e" />
+        <MiniLineChart data={dailyData} dataKey="revenue" height={200} color="#22c55e" />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 12, color: '#64748b' }}>
           <span>最低日销: {formatMoney(Math.min(...dailyData.map(d => d.revenue)))}</span>
           <span>最高日销: {formatMoney(Math.max(...dailyData.map(d => d.revenue)))}</span>
@@ -287,6 +290,7 @@ export default function ShopAnalyticsPage() {
         总订单: {totalStats.totalOrders} | 
         平均客单价: {formatMoney(totalStats.avgOrderValue)}
       </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

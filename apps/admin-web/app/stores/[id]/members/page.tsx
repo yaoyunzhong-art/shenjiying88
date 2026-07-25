@@ -168,7 +168,7 @@ export default function MembersPage() {
         </Row>
 
         {/* Tabs */}
-        <Tabs activeKey={currentTab} onChange={setCurrentTab as any} items={[
+        <Tabs activeKey={currentTab} onChange={setCurrentTab} items={[
           { key: 'list', label: '会员列表' },
           { key: 'levels', label: '等级分布' },
           { key: 'analytics', label: '数据分析' },

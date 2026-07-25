@@ -13,6 +13,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 // ─── 类型定义 ─────────────────────────────────────────────
 
@@ -124,8 +125,9 @@ function formatDate(iso: string | null): string {
 
 const permissionGate = {
   requiredPermission: 'finance:invoices:read',
-  title: '发票管理 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 finance:invoices:read 权限的账号可访问。',
+  title: '发票管理访问受限',
+  description:
+    '发票管理页已接入管理员本地 session，只有具备 finance:invoices:read 的账号才能查看发票列表、筛选状态与新建弹窗。',
 } as const
 
 export default function FinanceInvoicesPage() {
@@ -188,7 +190,8 @@ export default function FinanceInvoicesPage() {
   }, [form, invoices.length])
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">发票管理</h1>
         <button
@@ -365,6 +368,7 @@ export default function FinanceInvoicesPage() {
           </table>
         </div>
       )}
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

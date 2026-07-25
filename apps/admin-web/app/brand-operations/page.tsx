@@ -105,7 +105,7 @@ export default function BrandOperationsPage() {
             { key: 'collaborations', label: '联名合作' },
           ]}
           activeKey={tab}
-          onChange={(k) => setTab(k as any)}
+          onChange={(k) => setTab(k as typeof tab)}
         />
 
         {tab === 'campaigns' && <CampaignsTab campaigns={mockCampaigns} />}

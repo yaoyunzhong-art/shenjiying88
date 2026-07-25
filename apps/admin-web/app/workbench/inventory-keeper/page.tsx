@@ -19,6 +19,7 @@ import {
   type KeeperQuickAction,
 } from '@m5/ui';
 import { useDetailActions } from '../../components/use-detail-actions';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // Mock 数据
@@ -70,9 +71,10 @@ const MOCK_OUTBOUND_TASKS: OutboundTask[] = [
 
 
 const permissionGate = {
-  requiredPermission: 'workbench:inventory-keeper:read',
-  title: 'workbench inventory-keeper 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 workbench:inventory-keeper:read 权限的账号可访问。',
+  requiredPermission: 'workbench.read',
+  title: '仓管工作台访问受限',
+  description:
+    '仓管工作台已接入管理员本地 session，只有具备 workbench.read 的账号才能查看库存概览、预警列表与出入库任务。',
 } as const
 
 export default function InventoryKeeperWorkbenchPage() {
@@ -105,23 +107,25 @@ export default function InventoryKeeperWorkbenchPage() {
   ], []);
 
   return (
-    <PageShell title="仓管员工作台" subtitle="仓库库存管理与出入库操作">
-      <div style={{ marginBottom: 16 }}>
-        <DetailActionBar
-          actions={actions}
-        />
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="仓管员工作台" subtitle="仓库库存管理与出入库操作">
+        <div style={{ marginBottom: 16 }}>
+          <DetailActionBar
+            actions={actions}
+          />
+        </div>
 
-      <InventoryKeeperDashboard
-        warehouseName="中央配送中心-一号仓库"
-        metrics={MOCK_METRICS}
-        stockAlerts={MOCK_STOCK_ALERTS}
-        inboundTasks={MOCK_INBOUND_TASKS}
-        outboundTasks={MOCK_OUTBOUND_TASKS}
-        quickActions={quickActions}
-        loading={loading}
-        error={error}
-      />
-    </PageShell>
+        <InventoryKeeperDashboard
+          warehouseName="中央配送中心-一号仓库"
+          metrics={MOCK_METRICS}
+          stockAlerts={MOCK_STOCK_ALERTS}
+          inboundTasks={MOCK_INBOUND_TASKS}
+          outboundTasks={MOCK_OUTBOUND_TASKS}
+          quickActions={quickActions}
+          loading={loading}
+          error={error}
+        />
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

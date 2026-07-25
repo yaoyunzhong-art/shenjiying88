@@ -9,10 +9,11 @@ import type { RefundItem } from './refund-types';
 /** API 客户端 (client-side singleton) */
 function getBizClient() {
   if (typeof window === 'undefined') return null;
-  if (!(window as any).__m5_biz_client) {
-    (window as any).__m5_biz_client = createBusinessClient();
+  const w = window as unknown as Record<string, unknown> & { __m5_biz_client?: ReturnType<typeof createBusinessClient> };
+  if (!w.__m5_biz_client) {
+    w.__m5_biz_client = createBusinessClient();
   }
-  return (window as any).__m5_biz_client as ReturnType<typeof createBusinessClient>;
+  return w.__m5_biz_client;
 }
 
 /** 将后端退款记录映射为前端 RefundItem */

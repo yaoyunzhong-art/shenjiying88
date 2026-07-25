@@ -138,7 +138,7 @@ test('🔔 成功提交跳转 /notifications', async () => {
   fillAllFields();
   await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
-  assert.ok((globalThis as any).__routerTracer.pushCalls.some(u => u.includes('/notifications')));
+  assert.ok((globalThis as any).__routerTracer.pushCalls.some((u: string) => u.includes('/notifications')));
 });
 
 test('🔔 标签字段可填写', () => {
@@ -362,7 +362,7 @@ test('🛡️ confirm 确认跳转', () => {
   act(() => { fillInput(/输入通知标题/, '有内容'); });
   (globalThis as any).window.confirm = () => true;
   fireEvent.click(getCancel());
-  assert.ok((globalThis as any).__routerTracer.pushCalls.some(u => u.includes('/notifications')));
+  assert.ok((globalThis as any).__routerTracer.pushCalls.some((u: string) => u.includes('/notifications')));
 });
 
 test('🛡️ 标题纯空格触发必填', async () => {
@@ -420,11 +420,12 @@ test('🛡️ 提交期间 loading', async () => {
  * hooks 静态分析：10 tests
  * ================================================================= */
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-describe('hooks验证', () => {
+
 it('应接入管理员权限边界', () => {
   assert.ok(SRC.includes('AdminPermissionGate'));
   assert.ok(SRC.includes("requiredPermission: 'notifications:read'"));
 });
+
 describe('hooks验证', () => {
   it('useState', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('JSX', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

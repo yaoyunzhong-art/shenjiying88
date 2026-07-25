@@ -13,6 +13,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ==================== 类型定义 ====================
 
@@ -300,8 +301,9 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
 const permissionGate = {
   requiredPermission: 'dev-tools:read',
-  title: 'dev-tools 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dev-tools:read 权限的账号可访问。',
+  title: '开发工具访问受限',
+  description:
+    '开发工具页已接入管理员本地 session，只有具备 dev-tools:read 的账号才能查看工具目录、分类筛选与搜索结果。',
 } as const
 
 export default function DevToolsPage() {
@@ -310,9 +312,9 @@ export default function DevToolsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!DEV_TOOLS || DEV_TOOLS.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!DEV_TOOLS || DEV_TOOLS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const filtered = useMemo(
     () => filterEntries(DEV_TOOLS, searchQuery, categoryFilter),
@@ -332,7 +334,8 @@ export default function DevToolsPage() {
   );
 
   return (
-    <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
       {/* ===== 页面头部 ===== */}
       <header style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700 }}>🛠️ 开发工具</h1>
@@ -508,6 +511,7 @@ export default function DevToolsPage() {
       <div style={{ marginTop: 16, fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>
         开发工具面板 · 品牌运营 / 部署管理 / 开放平台
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }

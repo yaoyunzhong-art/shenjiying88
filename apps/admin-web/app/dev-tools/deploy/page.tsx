@@ -23,7 +23,7 @@ const ENV_OPTIONS = [
 
 function envTag(env: string) {
   const v = env==='production'?'error':env==='staging'?'primary':'default';
-  return <Tag variant={v as any}>{env}</Tag>;
+  return <Tag variant={v as 'error' | 'primary' | 'default'}>{env}</Tag>;
 }
 
 function statusTag(status: string) {
@@ -31,7 +31,7 @@ function statusTag(status: string) {
     success:'success,成功', failed:'error,失败', rolling:'primary,部署中', rollback:'warning,回滚',
   };
   const [v,l] = (m[status]||'default,未知').split(',');
-  return <Tag variant={v as any}>{l}</Tag>;
+  return <Tag variant={v as 'success' | 'error' | 'primary' | 'warning' | 'default'}>{l}</Tag>;
 }
 
 

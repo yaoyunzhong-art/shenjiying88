@@ -161,12 +161,12 @@ export default function StoreReportsPage() {
     if (!col) return filteredRows;
     const dir = sortConfig.direction === 'desc' ? -1 : 1;
     const sorted = [...filteredRows].sort((a, b) => {
-      const aVal = col.sortValue ? col.sortValue(a) : (a as any)[col.dataKey ?? col.key];
-      const bVal = col.sortValue ? col.sortValue(b) : (b as any)[col.dataKey ?? col.key];
+      const aVal = col.sortValue ? col.sortValue(a) : (a as unknown as Record<string, unknown>)[col.dataKey ?? col.key];
+      const bVal = col.sortValue ? col.sortValue(b) : (b as unknown as Record<string, unknown>)[col.dataKey ?? col.key];
       if (aVal == null) return 1;
       if (bVal == null) return -1;
-      if (typeof aVal === 'string') return aVal.localeCompare(bVal) * dir;
-      return ((aVal as number) - (bVal as number)) * dir;
+      if (typeof aVal === 'string') return String(aVal).localeCompare(String(bVal)) * dir;
+      return (Number(aVal) - Number(bVal)) * dir;
     });
     return sorted;
   }, [filteredRows, sortConfig, columns]);

@@ -9,6 +9,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell, StatCard, StatusBadge, DataTable, Pagination, Tabs, DetailActionBar, usePagination, type DataTableColumn } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 类型 ----
 type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
@@ -91,9 +92,10 @@ function mockRevenueHours(): RevenueHour[] {
 
 
 const permissionGate = {
-  requiredPermission: 'workbench:store-manager:read',
-  title: 'workbench store-manager 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 workbench:store-manager:read 权限的账号可访问。',
+  requiredPermission: 'workbench.read',
+  title: '店长工作台访问受限',
+  description:
+    '店长工作台已接入管理员本地 session，只有具备 workbench.read 的账号才能查看运营面板、任务状态与营收走势。',
 } as const
 
 export default function StoreManagerWorkbenchPage() {
@@ -111,8 +113,9 @@ export default function StoreManagerWorkbenchPage() {
   const deviceOnline = 18;
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
-      <PageShell title="👔 店长工作台" subtitle="一键掌握门店运营全貌">
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+        <PageShell title="👔 店长工作台" subtitle="一键掌握门店运营全貌">
         {/* KPI 卡片 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
           {kpi.map(k => (
@@ -254,8 +257,9 @@ export default function StoreManagerWorkbenchPage() {
             })}</tbody>
           </table></>
         )}
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

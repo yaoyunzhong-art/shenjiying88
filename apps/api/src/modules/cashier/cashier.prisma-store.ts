@@ -6,6 +6,7 @@
  * @Optional() 注入 = 无DB时不break
  */
 import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import type { PrismaService } from '../../prisma/prisma.service'
 import type { CashierOrder, CashierPayment, CashierOrderItem } from './cashier.entity'
 
@@ -33,7 +34,7 @@ export class CashierPrismaStore implements OnModuleInit {
           brandId: order.tenantContext.brandId,
           storeId: order.tenantContext.storeId,
           memberId: order.memberId,
-          items: order.items as any,
+          items: order.items as unknown as Prisma.InputJsonValue,
           currency: order.currency,
           totalAmount: order.totalAmount,
           couponCode: order.couponCode,
@@ -117,14 +118,14 @@ export class CashierPrismaStore implements OnModuleInit {
         couponCode: r.couponCode ?? undefined,
         blindboxPlanId: r.blindboxPlanId ?? undefined,
         blindboxQuantity: r.blindboxQuantity ?? undefined,
-        status: r.status as any,
+        status: r.status as CashierOrder['status'],
         latestPaymentId: r.latestPaymentId ?? undefined,
         source: 'memory',
         createdAt: r.createdAt.toISOString(),
         updatedAt: r.updatedAt.toISOString(),
         paidAt: r.paidAt?.toISOString(),
         closedAt: r.closedAt?.toISOString(),
-        closeReason: r.closeReason as any,
+        closeReason: r.closeReason as CashierOrder['closeReason'],
         closedBy: r.closedBy ?? undefined,
         closeNote: r.closeNote ?? undefined,
       }))

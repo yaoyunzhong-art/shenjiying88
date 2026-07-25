@@ -23,6 +23,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -118,8 +119,9 @@ const STATUS_MAP: Record<DiscountStatus, { label: string; variant: 'success' | '
 
 const permissionGate = {
   requiredPermission: 'shop:discount-rules:read',
-  title: 'shop discount-rules 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 shop:discount-rules:read 权限的账号可访问。',
+  title: '折扣规则访问受限',
+  description:
+    '折扣规则页已接入管理员本地 session，只有具备 shop:discount-rules:read 的账号才能查看规则列表、筛选结果与折扣说明。',
 } as const
 
 export default function DiscountRulesPage() {
@@ -175,7 +177,8 @@ export default function DiscountRulesPage() {
   ];
 
   return (
-    <PageShell title="折扣规则" subtitle="管理商品折扣策略与规则">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="折扣规则" subtitle="管理商品折扣策略与规则">
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
         <StatCard label="生效中" value={stats.active.toString()} variant="success" />
@@ -240,6 +243,7 @@ export default function DiscountRulesPage() {
         百分比折扣金额 = 商品原价 × 折扣率，固定金额折扣直接减免。
         规则的适用范围决定了哪些商品/客户可以享受此折扣。
       </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

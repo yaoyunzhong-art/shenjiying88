@@ -105,9 +105,9 @@ describe('refunds — 文件结构', () => {
     assert.equal(fs.existsSync(path.join(__dirname, 'page.tsx')), true);
   });
 
-  it('2. page.tsx 是 Server Component', () => {
+  it('2. page.tsx 是 Client Component', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(!source.includes("'use client'"), '应为 Server Component');
+    assert.ok(source.includes("'use client'"), '应为 Client Component');
   });
 
   it('3. 导出了 async 函数', () => {

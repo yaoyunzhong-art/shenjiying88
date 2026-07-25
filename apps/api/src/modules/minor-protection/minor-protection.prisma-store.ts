@@ -22,7 +22,7 @@ export class MinorProtectionPrismaStore implements OnApplicationBootstrap {
     for (const v of verifications) {
       setVerificationStoreEntry(v.id, {
         id: v.id, tenantId: v.tenantId, memberId: v.memberId,
-        method: v.method as any, identityNumber: v.identityNumber,
+        method: v.method as IdentityVerifyMethod, identityNumber: v.identityNumber,
         name: v.name, isMinor: v.isMinor, birthday: v.birthday,
         guardianConsent: v.guardianConsent, verifiedAt: v.verifiedAt.toISOString(),
         expiresAt: v.expiresAt.toISOString(), createdAt: v.createdAt.toISOString(),
@@ -31,7 +31,7 @@ export class MinorProtectionPrismaStore implements OnApplicationBootstrap {
 
     const logs = await this.prisma?.minorAccessLog.findMany() ?? []
     for (const l of logs) {
-      setAccessLogStoreEntry(l.tenantId, { ...l as any, action: l.action as MinorAccessLog["action"], createdAt: l.createdAt.toISOString() })
+      setAccessLogStoreEntry(l.tenantId, { ...l as Record<string, unknown>, action: l.action as MinorAccessLog["action"], createdAt: l.createdAt.toISOString() })
     }
 
     this.logger.log(`Loaded ${verifications.length} verifications, ${logs.length} access logs`)
