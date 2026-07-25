@@ -20,19 +20,18 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
+  AIScenarioSimulator,
   Button,
   DataTable,
   FormSubmitFeedback,
   PageShell,
   StatCard,
   StatusBadge,
+  type AIScenarioSimulatorProps,
   type DataTableColumn,
+  type ScenarioVariable,
+  type SimulationResult,
 } from '@m5/ui';
-import { AIScenarioSimulator } from '@m5/ui';
-
-
-
-import type { ScenarioVariable, SimulationResult } from '@m5/ui';
 
 // ==================== 类型定义 ====================
 
