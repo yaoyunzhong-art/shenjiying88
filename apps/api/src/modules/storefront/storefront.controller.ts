@@ -181,8 +181,8 @@ export class StoreFrontController {
   }
 
   @Public() @Post('referral/remove-relationship')
-  removeReferralRelationship(@Body() body: { customerPhone: string }) {
-    const removed = this.referral.removeReferralRelationship(body.customerPhone)
+  async removeReferralRelationship(@Body() body: { customerPhone: string }) {
+    const removed = await this.referral.removeReferralRelationship(body.customerPhone)
     return { success: true, data: { removed }, message: removed ? '已解除' : '未找到' }
   }
 }

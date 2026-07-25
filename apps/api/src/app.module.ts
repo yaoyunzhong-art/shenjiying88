@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TrafficGovernanceGuard } from './common/guards/traffic-governance.guard';
+import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { RequestGovernanceService } from './common/governance/request-governance.service';
 import { RequestAuditInterceptor } from './common/interceptors/request-audit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -23,6 +24,7 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { MarketModule } from './modules/market/market.module';
 import { MemberModule } from './modules/member/member.module';
 import { PortalModule } from './modules/portal/portal.module';
+import { CsrfMiddleware } from './modules/security/csrf.middleware';
 import { TenantMiddleware } from './modules/tenant/tenant.middleware';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
@@ -85,6 +87,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { MultimediaModule } from './modules/multimedia/multimedia.module';
 import { FederatedLearningModule } from './modules/federated-learning/federated.module';
 import { PointsModule } from './modules/points/points.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { BrandCustomModule } from './modules/brand-custom/brand-custom.module';
 import { AiSalesModule } from './modules/ai-sales/ai-sales.module';
@@ -195,6 +198,20 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     }),
     CacheModule.forRootInMemory(),
     EventBusModule.forRootInMemory(),
+    ThrottlerModule.forRoot([
+      {
+        name: 'toc',
+        ttl: 60000,        // 60秒窗口
+        limit: (ctx) => {
+          const req = ctx.switchToHttp().getRequest()
+          const method = req.method
+          if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+            return 20  // 写操作: 20次/分钟
+          }
+          return 100  // GET/OPTIONS: 100次/分钟
+        },
+      },
+    ]),
     TypeOrmCompatModule,
     PrismaModule,
     TenantModule,
@@ -357,6 +374,10 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     RequestGovernanceService,
     {
       provide: APP_GUARD,
+      useClass: RateLimitGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: TrafficGovernanceGuard,
     },
     {
@@ -379,6 +400,6 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('*');
+    consumer.apply(CsrfMiddleware, TenantMiddleware).forRoutes('*');
   }
 }
