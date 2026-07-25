@@ -72,6 +72,14 @@ function getStatusCount(staff: StaffMember[], status: StaffStatus): number {
 
 function setup() {
   cleanup();
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['staff:read'],
+    }),
+  );
   const results = render(React.createElement(StaffPage));
   return results;
 }
@@ -462,6 +470,10 @@ describe('staff — 边界与反例', () => {
 const SRC = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
 
 describe('Staff — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'staff:read'"));
+  });
   it('使用 useState', () => assert.ok(SRC.includes('useState')));
   it('使用 useCallback', () => assert.ok(SRC.includes('useCallback')));
   it('包含 JSX 返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

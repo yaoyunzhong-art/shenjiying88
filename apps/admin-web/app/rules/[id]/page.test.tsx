@@ -4,12 +4,19 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const PAGE = 'apps/admin-web/app/rules/[id]/page.tsx'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const PAGE = path.resolve(__dirname, 'page.tsx')
 const content = fs.readFileSync(PAGE, 'utf-8')
 
 describe('rules/[id] 页面', () => {
   it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
+  it('应接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'))
+    assert.ok(content.includes("requiredPermission: 'rules:id:read'"))
+  })
   it('包含default export', () => { assert.ok(content.includes('export default')) })
   it('包含useState/useEffect', () => { assert.ok(content.includes('useState') || content.includes('useEffect')) })
   it('包含loading状态', () => { assert.ok(content.includes('loading') || content.includes('Loading')) })

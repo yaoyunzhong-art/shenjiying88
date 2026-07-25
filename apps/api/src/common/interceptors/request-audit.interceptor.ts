@@ -42,8 +42,8 @@ export class RequestAuditInterceptor implements NestInterceptor {
           // Success — low risk audit
           this.audit?.log({
             eventType: 'api.request' as AuditEventType,
-            actorId: (req as Record<string, unknown>).memberId as string ?? (req as Record<string, unknown>).user?.id as string ?? 'anonymous',
-            actorType: (req as Record<string, unknown>).user ? 'user' : 'system',
+            actorId: (req as unknown as Record<string, unknown>).memberId as string ?? ((req as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined)?.id as string ?? 'anonymous',
+            actorType: (req as unknown as Record<string, unknown>).user ? 'user' : 'system',
             tenantId: req.tenantContext?.tenantId,
             resourceType: moduleName,
             resourceId: path,
@@ -56,8 +56,8 @@ export class RequestAuditInterceptor implements NestInterceptor {
           const riskLevel: RiskLevel = status === 401 || status === 403 ? 'high' : status >= 400 ? 'medium' : 'low'
           this.audit?.log({
             eventType: 'api.error' as AuditEventType,
-            actorId: (req as Record<string, unknown>).memberId as string ?? (req as Record<string, unknown>).user?.id as string ?? 'anonymous',
-            actorType: (req as Record<string, unknown>).user ? 'user' : 'system',
+            actorId: (req as unknown as Record<string, unknown>).memberId as string ?? ((req as unknown as Record<string, unknown>).user as Record<string, unknown> | undefined)?.id as string ?? 'anonymous',
+            actorType: (req as unknown as Record<string, unknown>).user ? 'user' : 'system',
             tenantId: req.tenantContext?.tenantId,
             resourceType: moduleName,
             resourceId: path,

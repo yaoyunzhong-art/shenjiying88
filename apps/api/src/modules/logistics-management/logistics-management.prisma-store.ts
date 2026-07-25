@@ -49,8 +49,8 @@ export class LogisticsManagementPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.supplier.upsert({
       where: { id },
-      create: entity as Record<string, unknown>,
-      update: entity as Record<string, unknown>,
+      create: entity as any,
+      update: entity as any,
     })
   }
 
@@ -59,8 +59,8 @@ export class LogisticsManagementPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.purchaseOrder.upsert({
       where: { id },
-      create: entity as Record<string, unknown>,
-      update: entity as Record<string, unknown>,
+      create: entity as any,
+      update: entity as any,
     })
   }
 
@@ -69,8 +69,8 @@ export class LogisticsManagementPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.stockItem.upsert({
       where: { id },
-      create: entity as Record<string, unknown>,
-      update: entity as Record<string, unknown>,
+      create: entity as any,
+      update: entity as any,
     })
   }
 
@@ -79,8 +79,8 @@ export class LogisticsManagementPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.maintenanceTask.upsert({
       where: { id },
-      create: entity as Record<string, unknown>,
-      update: entity as Record<string, unknown>,
+      create: entity as any,
+      update: entity as any,
     })
   }
 
@@ -89,8 +89,8 @@ export class LogisticsManagementPrismaStore implements OnApplicationBootstrap {
     if (!entity) return
     await this.prisma.logisticsKPI.upsert({
       where: { id },
-      create: entity as Record<string, unknown>,
-      update: entity as Record<string, unknown>,
+      create: entity as any,
+      update: entity as any,
     })
   }
 

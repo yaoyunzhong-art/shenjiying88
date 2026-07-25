@@ -8,6 +8,7 @@
 
 import { use, useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   CombinedDetailPage,
@@ -415,7 +416,8 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
   );
 
   return (
-    <>
+    <AdminPermissionGate {...permissionGate}>
+      <>
       <CombinedDetailPage
         title={ruleState.name}
         subtitle={`${CATEGORY_LABELS[ruleState.category]} · v${ruleState.version}`}
@@ -521,16 +523,17 @@ export default function RuleDetailPage({ params }: { params: Promise<{ id: strin
       </Modal>
 
       {/* 删除确认 */}
-      <ConfirmActionDialog
-        open={showDeleteConfirm}
-        title="确认删除规则"
-        message={`确定要删除规则「${ruleState.name}」吗？此操作不可撤销。`}
-        confirmLabel="确认删除"
-        confirmVariant="danger"
-        loading={loading}
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setShowDeleteConfirm(false)}
-      />
-    </>
+        <ConfirmActionDialog
+          open={showDeleteConfirm}
+          title="确认删除规则"
+          message={`确定要删除规则「${ruleState.name}」吗？此操作不可撤销。`}
+          confirmLabel="确认删除"
+          confirmVariant="danger"
+          loading={loading}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      </>
+    </AdminPermissionGate>
   );
 }

@@ -7,11 +7,14 @@ import { describe, it, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert'
 import React from 'react'
 import { render, screen, cleanup, act } from '@testing-library/react'
+import fs from 'node:fs'
 
 import { MOCK_CRM_CUSTOMERS } from './crm-data'
 
 // ===== 从 page.tsx 提取的辅助函数 =====
 import type { CustomerProfile, CrmCustomerStatus } from './crm-data'
+
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8')
 
 // ─── 辅助函数 ───
 
@@ -146,6 +149,14 @@ describe('CRM 筛选验证', () => {
 
 describe('CrmPage 组件渲染', () => {
   async function renderAfterLoading() {
+    window.localStorage.setItem(
+      'admin_user',
+      JSON.stringify({
+        userId: 'admin:test',
+        role: 'super-admin',
+        permissions: ['crm:read'],
+      }),
+    )
     const mod = await import('./page')
     const view = render(React.createElement(mod.default))
     await act(async () => {
@@ -155,7 +166,14 @@ describe('CrmPage 组件渲染', () => {
   }
 
   beforeEach(() => {
-    // setup
+    window.localStorage.setItem(
+      'admin_user',
+      JSON.stringify({
+        userId: 'admin:test',
+        role: 'super-admin',
+        permissions: ['crm:read'],
+      }),
+    )
   })
 
   afterEach(() => {
@@ -211,5 +229,10 @@ describe('CrmPage 组件渲染', () => {
     const maxScore = container.querySelector('input[aria-label="最高评分"]')
     assert.ok(minScore, 'should render min score input')
     assert.ok(maxScore, 'should render max score input')
+  })
+
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'))
+    assert.ok(SRC.includes("requiredPermission: 'crm:read'"))
   })
 })

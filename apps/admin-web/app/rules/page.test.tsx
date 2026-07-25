@@ -33,6 +33,13 @@ function getExports(): Record<string, unknown> | null {
 describe('rules page', () => {
   beforeEach(() => {});
 
+  it('应接入管理员权限边界', () => {
+    const src = readSrc();
+    assert.ok(src);
+    assert.ok(src.includes('AdminPermissionGate'));
+    assert.ok(src.includes("requiredPermission: 'rules:read'"));
+  });
+
   // ──────────────────────────────────────────
   // 类型定义 — 正例
   // ──────────────────────────────────────────

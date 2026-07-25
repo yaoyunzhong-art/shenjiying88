@@ -10,6 +10,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 import {
   Badge,
@@ -345,44 +346,49 @@ export default function CrmPage() {
   // 三态渲染
   if (!isClient || loading) {
     return (
-      <div style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
-          客户关系管理 (CRM)
-        </h1>
-        <LoadingSkeleton variant="card" rows={4} label="加载 CRM 客户列表..." />
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
+            客户关系管理 (CRM)
+          </h1>
+          <LoadingSkeleton variant="card" rows={4} label="加载 CRM 客户列表..." />
+        </div>
+      </AdminPermissionGate>
     )
   }
 
   if (error) {
     return (
-      <div style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
-          客户关系管理 (CRM)
-        </h1>
-        <div style={{ textAlign: 'center', padding: 48, color: '#ef4444' }}>
-          <div style={{ fontSize: 18, marginBottom: 8 }}>加载失败</div>
-          <div style={{ fontSize: 14, color: '#fca5a5' }}>{error}</div>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              marginTop: 16, padding: '8px 20px', borderRadius: 8, cursor: 'pointer',
-              background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
-              color: '#fca5a5', fontSize: 14,
-            }}
-          >
-            重新加载
-          </button>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
+            客户关系管理 (CRM)
+          </h1>
+          <div style={{ textAlign: 'center', padding: 48, color: '#ef4444' }}>
+            <div style={{ fontSize: 18, marginBottom: 8 }}>加载失败</div>
+            <div style={{ fontSize: 14, color: '#fca5a5' }}>{error}</div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: 16, padding: '8px 20px', borderRadius: 8, cursor: 'pointer',
+                background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
+                color: '#fca5a5', fontSize: 14,
+              }}
+            >
+              重新加载
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminPermissionGate>
     )
   }
 
   return (
-    <div style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
-        客户关系管理 (CRM)
-      </h1>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#e2e8f0' }}>
+          客户关系管理 (CRM)
+        </h1>
 
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
@@ -499,10 +505,11 @@ export default function CrmPage() {
       )}
 
       {/* 详情弹窗 */}
-      <DetailDialog
-        customer={selectedCustomer}
-        onClose={() => setSelectedCustomer(null)}
-      />
-    </div>
+        <DetailDialog
+          customer={selectedCustomer}
+          onClose={() => setSelectedCustomer(null)}
+        />
+      </div>
+    </AdminPermissionGate>
   )
 }

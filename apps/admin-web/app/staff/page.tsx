@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -138,9 +139,10 @@ export default function StaffPage() {
   ];
 
   return (
-    <div style={styles.page} data-refresh-key={refreshKey}>
-      <h1 style={styles.title}>👥 员工管理</h1>
-      <p style={styles.subtitle}>管理各门店人员信息、岗位分配与在职状态。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page} data-refresh-key={refreshKey}>
+        <h1 style={styles.title}>👥 员工管理</h1>
+        <p style={styles.subtitle}>管理各门店人员信息、岗位分配与在职状态。</p>
 
       {/* 概览统计 */}
       <div style={styles.statsRow}>
@@ -176,37 +178,38 @@ export default function StaffPage() {
       </div>
 
       {/* 员工列表 */}
-      {filteredStaff.length === 0 ? (
-        <div style={styles.emptyState} data-testid="empty-state">
-          <div style={styles.emptyIcon}>📋</div>
-          <div style={styles.emptyText}>当前状态暂无员工数据</div>
-        </div>
-      ) : (
-        <table style={styles.table} data-testid="staff-table">
-          <thead>
-            <tr>
-              <th style={styles.th}>姓名</th>
-              <th style={styles.th}>岗位</th>
-              <th style={styles.th}>门店</th>
-              <th style={styles.th}>联系方式</th>
-              <th style={styles.th}>入职时间</th>
-              <th style={styles.th}>状态</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStaff.map(m => (
-              <tr key={m.id}>
-                <td style={styles.td}>{m.name}</td>
-                <td style={styles.td}><span style={postTagStyle(m.post)}>{m.post}</span></td>
-                <td style={styles.td}>{m.store}</td>
-                <td style={styles.td}>{m.phone}</td>
-                <td style={styles.td}>{m.entryDate}</td>
-                <td style={styles.td}><span style={statusTagStyle(m.status)}>● {m.status}</span></td>
+        {filteredStaff.length === 0 ? (
+          <div style={styles.emptyState} data-testid="empty-state">
+            <div style={styles.emptyIcon}>📋</div>
+            <div style={styles.emptyText}>当前状态暂无员工数据</div>
+          </div>
+        ) : (
+          <table style={styles.table} data-testid="staff-table">
+            <thead>
+              <tr>
+                <th style={styles.th}>姓名</th>
+                <th style={styles.th}>岗位</th>
+                <th style={styles.th}>门店</th>
+                <th style={styles.th}>联系方式</th>
+                <th style={styles.th}>入职时间</th>
+                <th style={styles.th}>状态</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+            </thead>
+            <tbody>
+              {filteredStaff.map(m => (
+                <tr key={m.id}>
+                  <td style={styles.td}>{m.name}</td>
+                  <td style={styles.td}><span style={postTagStyle(m.post)}>{m.post}</span></td>
+                  <td style={styles.td}>{m.store}</td>
+                  <td style={styles.td}>{m.phone}</td>
+                  <td style={styles.td}>{m.entryDate}</td>
+                  <td style={styles.td}><span style={statusTagStyle(m.status)}>● {m.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }

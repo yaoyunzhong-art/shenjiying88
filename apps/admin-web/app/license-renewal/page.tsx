@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 import {
   Button,
   Card,
@@ -346,40 +347,41 @@ export default function LicenseRenewalPage() {
   ]
 
   return (
-    <div className="p-6">
-      {/* License statistics cards */}
-      <Row gutter={16} className="mb-4">
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="License 总数"
-              value={licenseStats.total}
-              prefix={<CreditCardOutlined />}
-              valueStyle={{ color: '#1677ff' }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="即将到期（7天内）"
-              value={licenseStats.soonExpiring}
-              prefix={<ExclamationCircleOutlined />}
-              valueStyle={licenseStats.soonExpiring > 0 ? { color: '#faad14' } : { color: '#1677ff' }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title="已过期"
-              value={licenseStats.expired}
-              prefix={<CloseCircleOutlined />}
-              valueStyle={licenseStats.expired > 0 ? { color: '#ff4d4f' } : { color: '#1677ff' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6">
+        {/* License statistics cards */}
+        <Row gutter={16} className="mb-4">
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title="License 总数"
+                value={licenseStats.total}
+                prefix={<CreditCardOutlined />}
+                valueStyle={{ color: '#1677ff' }}
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title="即将到期（7天内）"
+                value={licenseStats.soonExpiring}
+                prefix={<ExclamationCircleOutlined />}
+                valueStyle={licenseStats.soonExpiring > 0 ? { color: '#faad14' } : { color: '#1677ff' }}
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title="已过期"
+                value={licenseStats.expired}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={licenseStats.expired > 0 ? { color: '#ff4d4f' } : { color: '#1677ff' }}
+              />
+            </Card>
+          </Col>
+        </Row>
 
       <Card
         title={
@@ -585,12 +587,13 @@ export default function LicenseRenewalPage() {
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: '#999', marginTop: 16, textAlign: 'center' }}>
-        当前为演示模式，数据每 5 分钟同步一次。实际数据以生产环境为准。
+        <div style={{ fontSize: 12, color: '#999', marginTop: 16, textAlign: 'center' }}>
+          当前为演示模式，数据每 5 分钟同步一次。实际数据以生产环境为准。
+        </div>
+        <div style={{ fontSize: 11, color: '#ccc', marginTop: 4, textAlign: 'center' }}>
+          Phase-41 · Sprint 3 · License Renewal Module
+        </div>
       </div>
-      <div style={{ fontSize: 11, color: '#ccc', marginTop: 4, textAlign: 'center' }}>
-        Phase-41 · Sprint 3 · License Renewal Module
-      </div>
-    </div>
+    </AdminPermissionGate>
   )
 }

@@ -184,6 +184,14 @@ function addComment(
 
 describe('合同管理页 — 正例', () => {
   beforeEach(() => {
+    window.localStorage.setItem(
+      'admin_user',
+      JSON.stringify({
+        userId: 'admin:test',
+        role: 'super-admin',
+        permissions: ['contracts:read'],
+      }),
+    );
     resetRegistry();
     mockFetchOk('/api/contracts/sign', { id: 'CT-001', status: 'in_progress' });
     mockFetchOk('/api/contracts/comment', { id: 'CT-001', comment: '已确认条款', createdAt: new Date().toISOString() });
@@ -644,6 +652,11 @@ describe('合同管理页 — 组件结构', () => {
     new URL('page.tsx', import.meta.url),
     'utf-8',
   );
+
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'contracts:read'"));
+  });
 
   it('包含 use client 指令', () => {
     assert.ok(SRC.includes("'use client'"));

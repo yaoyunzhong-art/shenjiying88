@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: 'Contracts - 神机营' }
  * Tab筛选: 全部/待签/执行中/已到期
  */
 import { useCallback, useMemo, useState } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ---- 类型定义 ----
 
@@ -219,16 +220,17 @@ export default function ContractsPage() {
   };
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      {/* 页面标题 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#e2e8f0' }}>📑 合同管理</h1>
-          <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 14 }}>
-            管理所有合同，追踪合同状态和到期情况
-          </p>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+        {/* 页面标题 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#e2e8f0' }}>📑 合同管理</h1>
+            <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: 14 }}>
+              管理所有合同，追踪合同状态和到期情况
+            </p>
+          </div>
         </div>
-      </div>
 
       {/* 合同总览统计条: 总合同/待签/执行中/已到期 */}
       <div
@@ -275,28 +277,29 @@ export default function ContractsPage() {
         })}
       </div>
 
-      {/* 合同列表 */}
-      {isEmpty ? (
-        <EmptyState tabKey={tabKey} tabLabel={tabLabel[tabKey]} />
-      ) : (
-        <div style={{ display: 'grid', gap: 12 }}>
-          {filtered.map((item) => (
-            <ContractCard
-              key={item.id}
-              item={item}
-              reviewOpen={reviewOpen[item.id] ?? false}
-              reviewText={reviewTexts[item.id] ?? ''}
-              reviewSubmitting={reviewSubmitting[item.id] ?? false}
-              isSigning={signingId === item.id}
-              onToggleReview={() => toggleReview(item.id)}
-              onReviewTextChange={(t) => setReviewText(item.id, t)}
-              onSubmitReview={() => submitReview(item.id)}
-              onSign={() => handleSign(item.id)}
-            />
-          ))}
-        </div>
-      )}
-    </main>
+        {/* 合同列表 */}
+        {isEmpty ? (
+          <EmptyState tabKey={tabKey} tabLabel={tabLabel[tabKey]} />
+        ) : (
+          <div style={{ display: 'grid', gap: 12 }}>
+            {filtered.map((item) => (
+              <ContractCard
+                key={item.id}
+                item={item}
+                reviewOpen={reviewOpen[item.id] ?? false}
+                reviewText={reviewTexts[item.id] ?? ''}
+                reviewSubmitting={reviewSubmitting[item.id] ?? false}
+                isSigning={signingId === item.id}
+                onToggleReview={() => toggleReview(item.id)}
+                onReviewTextChange={(t) => setReviewText(item.id, t)}
+                onSubmitReview={() => submitReview(item.id)}
+                onSign={() => handleSign(item.id)}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+    </AdminPermissionGate>
   );
 }
 

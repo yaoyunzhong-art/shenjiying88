@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap, Optional } from "@nestjs/common"
 import { PrismaService } from '../../prisma/prisma.service'
-import type { IdentityVerificationRecord, MinorAccessLog } from './minor-protection.entity'
+import type { IdentityVerificationRecord, IdentityVerifyMethod, MinorAccessLog } from './minor-protection.entity'
 import { setVerificationStoreEntry, setAccessLogStoreEntry, clearVerificationStore, clearAccessLogStore } from './minor-protection.service'
 
 @Injectable()
@@ -31,7 +31,7 @@ export class MinorProtectionPrismaStore implements OnApplicationBootstrap {
 
     const logs = await this.prisma?.minorAccessLog.findMany() ?? []
     for (const l of logs) {
-      setAccessLogStoreEntry(l.tenantId, { ...l as Record<string, unknown>, action: l.action as MinorAccessLog["action"], createdAt: l.createdAt.toISOString() })
+      setAccessLogStoreEntry(l.tenantId, { ...l as unknown as Record<string, unknown>, action: l.action, createdAt: l.createdAt.toISOString() } as MinorAccessLog)
     }
 
     this.logger.log(`Loaded ${verifications.length} verifications, ${logs.length} access logs`)

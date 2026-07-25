@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   DetailActionBar,
@@ -210,43 +211,48 @@ export default function StaffDetailPage() {
   // 加载中 + 不存在
   if (!id) {
     return (
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
-        <p>未指定员工 ID。</p>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
+          <p>未指定员工 ID。</p>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   if (!detail) {
     return (
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
-        <div style={{ textAlign: 'center', marginTop: 80 }}>
-          <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>员工不存在</p>
-          <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
-            未找到员工 {id} 的信息。
-          </p>
-          <button
-            onClick={() => router.push('/staff')}
-            style={backButtonStyle}
-          >
-            ← 返回员工列表
-          </button>
-        </div>
-      </main>
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
+          <div style={{ textAlign: 'center', marginTop: 80 }}>
+            <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>员工不存在</p>
+            <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
+              未找到员工 {id} 的信息。
+            </p>
+            <button
+              onClick={() => router.push('/staff')}
+              style={backButtonStyle}
+            >
+              ← 返回员工列表
+            </button>
+          </div>
+        </main>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: '0 auto', padding: 32 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'staff', detailLabel: detail.name })}
-      />
-      <DetailShell
-        title={detail.name}
-        subtitle={detail.code}
-        onBack={() => router.push('/staff')}
-        backLabel="返回员工列表"
-        actions={operations}
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: 32 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'staff', detailLabel: detail.name })}
+        />
+        <DetailShell
+          title={detail.name}
+          subtitle={detail.code}
+          onBack={() => router.push('/staff')}
+          backLabel="返回员工列表"
+          actions={operations}
+        >
         {/* ─┬─ 编辑模式 ─────────────────── */}
         {editing ? (
           <article style={sectionCardStyle}>
@@ -441,45 +447,46 @@ export default function StaffDetailPage() {
             />
           </>
         )}
-      </DetailShell>
+        </DetailShell>
 
-      <DetailClosureBar
-        links={buildStandardClosureLinks({ workspace: 'staff', detailId: detail.id })}
-      />
+        <DetailClosureBar
+          links={buildStandardClosureLinks({ workspace: 'staff', detailId: detail.id })}
+        />
 
-      {/* ── 状态流转确认弹窗 ── */}
-      <ConfirmDialog
-        open={statusFlowOpen}
-        title="确认状态变更"
-        message={
-          pendingStatus === 'resigned'
-            ? `确认将 ${detail.name} 标记为「已离职」？此操作不可逆，员工将失去系统访问权限。`
-            : `确认将 ${detail.name} 的状态变更为「${STAFF_STATUS_MAP[pendingStatus!]?.label ?? ''}」？`
-        }
-        confirmLabel="确认变更"
-        cancelLabel="取消"
-        variant={pendingStatus === 'resigned' ? 'danger' : 'default'}
-        loading={statusSaving}
-        onConfirm={confirmStatusFlow}
-        onCancel={() => {
-          setStatusFlowOpen(false);
-          setPendingStatus(null);
-        }}
-      />
+        {/* ── 状态流转确认弹窗 ── */}
+        <ConfirmDialog
+          open={statusFlowOpen}
+          title="确认状态变更"
+          message={
+            pendingStatus === 'resigned'
+              ? `确认将 ${detail.name} 标记为「已离职」？此操作不可逆，员工将失去系统访问权限。`
+              : `确认将 ${detail.name} 的状态变更为「${STAFF_STATUS_MAP[pendingStatus!]?.label ?? ''}」？`
+          }
+          confirmLabel="确认变更"
+          cancelLabel="取消"
+          variant={pendingStatus === 'resigned' ? 'danger' : 'default'}
+          loading={statusSaving}
+          onConfirm={confirmStatusFlow}
+          onCancel={() => {
+            setStatusFlowOpen(false);
+            setPendingStatus(null);
+          }}
+        />
 
-      {/* ── 删除确认弹窗 ── */}
-      <ConfirmDialog
-        open={deleteOpen}
-        title="删除员工"
-        message={`确认永久删除 ${detail.name}（${detail.code}）？此操作不可撤销。`}
-        confirmLabel="确认删除"
-        cancelLabel="取消"
-        variant="danger"
-        loading={deleting}
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteOpen(false)}
-      />
-    </main>
+        {/* ── 删除确认弹窗 ── */}
+        <ConfirmDialog
+          open={deleteOpen}
+          title="删除员工"
+          message={`确认永久删除 ${detail.name}（${detail.code}）？此操作不可撤销。`}
+          confirmLabel="确认删除"
+          cancelLabel="取消"
+          variant="danger"
+          loading={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteOpen(false)}
+        />
+      </main>
+    </AdminPermissionGate>
   );
 }
 

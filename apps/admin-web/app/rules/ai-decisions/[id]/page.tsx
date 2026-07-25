@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useCallback, use, useEffect } from 'react';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 import {
   DetailShell,
@@ -124,9 +125,27 @@ export default function AiDecisionDetailPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { setLoading(false) }, []);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!id) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (!id) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    );
+  }
 
   const [detail, setDetail] = useState<AiDecisionDetail>(() => mockDetail(id));
   const [isRetrying, setIsRetrying] = useState(false);
@@ -180,12 +199,13 @@ export default function AiDecisionDetailPage({ params }: { params: Promise<{ id:
   ];
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: '24px 32px' }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="策略规则"
-        workspaceHref="/rules"
-        detailLabel={`AI 决策 #${id.slice(0, 8)}`}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: '24px 32px' }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="策略规则"
+          workspaceHref="/rules"
+          detailLabel={`AI 决策 #${id.slice(0, 8)}`}
+        />
 
       <DetailShell
         title={`AI 决策执行详情`}
@@ -333,26 +353,27 @@ export default function AiDecisionDetailPage({ params }: { params: Promise<{ id:
         </section>
 
         {/* ---- 反馈信息 ---- */}
-        {feedback && (
-          <div style={{
-            padding: '12px 16px',
-            borderRadius: 8,
-            background: feedback.ok ? '#f0fdf4' : '#fef2f2',
-            border: `1px solid ${feedback.ok ? '#bbf7d0' : '#fecaca'}`,
-            color: feedback.ok ? '#166534' : '#991b1b',
-            fontSize: 14,
-            marginBottom: 24,
-          }}>
-            <span>{feedback.message}</span>
-            <button
-              onClick={() => setFeedback(null)}
-              style={{ marginLeft: 16, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              关闭
-            </button>
-          </div>
-        )}
-      </DetailShell>
-    </main>
+          {feedback && (
+            <div style={{
+              padding: '12px 16px',
+              borderRadius: 8,
+              background: feedback.ok ? '#f0fdf4' : '#fef2f2',
+              border: `1px solid ${feedback.ok ? '#bbf7d0' : '#fecaca'}`,
+              color: feedback.ok ? '#166534' : '#991b1b',
+              fontSize: 14,
+              marginBottom: 24,
+            }}>
+              <span>{feedback.message}</span>
+              <button
+                onClick={() => setFeedback(null)}
+                style={{ marginLeft: 16, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                关闭
+              </button>
+            </div>
+          )}
+        </DetailShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

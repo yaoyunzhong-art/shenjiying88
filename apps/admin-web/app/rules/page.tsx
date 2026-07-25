@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   DataTable,
@@ -203,9 +204,27 @@ export default function RulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { setLoading(false) }, []);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (!MOCK_RULES || MOCK_RULES.length === 0) return <div>暂无数据</div>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>加载中...</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>数据获取失败: {error}</div>
+      </AdminPermissionGate>
+    );
+  }
+  if (!MOCK_RULES || MOCK_RULES.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <div>暂无数据</div>
+      </AdminPermissionGate>
+    );
+  }
 
   const [statusFilter, setStatusFilter] = useState<RuleStatus | 'ALL'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<RuleCategory | 'ALL'>('ALL');
@@ -336,8 +355,9 @@ export default function RulesPage() {
   }, []);
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <PageShell title="规则管理" subtitle={`共 ${stats.total} 条规则 · ${stats.enabled} 条启用 · ${stats.critical} 条严重优先级`}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+        <PageShell title="规则管理" subtitle={`共 ${stats.total} 条规则 · ${stats.enabled} 条启用 · ${stats.critical} 条严重优先级`}>
         {/* 统计卡片 */}
         <div
           style={{
@@ -528,14 +548,15 @@ export default function RulesPage() {
         />
 
         {/* 分页 */}
-        <Pagination
-          page={pagination.page}
-          pageSize={pagination.pageSize}
-          total={sortedItems.length}
-          onPageChange={pagination.setPage}
-          onPageSizeChange={pagination.setPageSize}
-        />
-      </PageShell>
-    </main>
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={sortedItems.length}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
