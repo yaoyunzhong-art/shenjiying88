@@ -116,7 +116,7 @@ export class RecommendController {
    * 更新会员偏好
    */
   @Post('preferences')
-  updatePreferences(@Body() body: any): { updated: boolean } {
+  updatePreferences(@Body() body: Record<string, unknown>): { updated: boolean } {
     if (!body.tenantId || !body.memberId) {
       throw new BadRequestException('tenantId, memberId required')
     }

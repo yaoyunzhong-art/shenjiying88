@@ -11,8 +11,8 @@ export class TaxController {
   constructor(private readonly service: TaxService) {}
 
   @Post('calculate')
-  calculate(@Body() body: any) { return this.service.calculate(body) }
+  calculate(@Body() body: Record<string, unknown>) { return this.service.calculate(body) }
 
   @Post('calculate/batch')
-  calculateBatch(@Body() body: any) { return this.service.calculateBatch(body) }
+  calculateBatch(@Body() body: Record<string, unknown>) { return this.service.calculateBatch(body) }
 }

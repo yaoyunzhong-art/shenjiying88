@@ -141,7 +141,7 @@ export class IntelligenceController {
    * POST /intelligence/device-recommendation
    */
   @Post('device-recommendation')
-  async deviceRecommendation(@Body() body: any) {
+  async deviceRecommendation(@Body() body: Record<string, unknown>) {
     if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
     if (!body.area || body.area <= 0) throw new BadRequestException('面积必须大于0')
     if (!body.budget || body.budget <= 0) throw new BadRequestException('预算必须大于0')
@@ -159,7 +159,7 @@ export class IntelligenceController {
    * POST /intelligence/renovation-plan
    */
   @Post('renovation-plan')
-  async renovationPlan(@Body() body: any) {
+  async renovationPlan(@Body() body: Record<string, unknown>) {
     if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
     if (!body.area || body.area <= 0) throw new BadRequestException('面积必须大于0')
     if (!body.tier) throw new BadRequestException('档次不能为空（经济/标准/精装/豪华）')
@@ -176,7 +176,7 @@ export class IntelligenceController {
    * POST /intelligence/pricing-strategy
    */
   @Post('pricing-strategy')
-  async pricingStrategy(@Body() body: any) {
+  async pricingStrategy(@Body() body: Record<string, unknown>) {
     if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
     if (!body.district?.trim()) throw new BadRequestException('区域不能为空')
     if (!body.scenario?.trim()) throw new BadRequestException('场景不能为空')
@@ -194,7 +194,7 @@ export class IntelligenceController {
    * POST /intelligence/marketing-campaign
    */
   @Post('marketing-campaign')
-  async marketingCampaign(@Body() body: any) {
+  async marketingCampaign(@Body() body: Record<string, unknown>) {
     if (!body.city?.trim()) throw new BadRequestException('城市不能为空')
     if (!body.district?.trim()) throw new BadRequestException('区域不能为空')
     if (!body.season?.trim()) throw new BadRequestException('季节不能为空')

@@ -8,9 +8,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Brands - 神机营' }
 
 import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 import { AdminPermissionGate } from '../components/admin-permission-gate';

@@ -8,9 +8,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'New - 神机营' }
 
 
 import {

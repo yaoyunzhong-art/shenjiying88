@@ -12,22 +12,11 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  * - 空状态 / 加载中 / 搜索无结果 / 错误回退
  * - JSON-LD 结构化数据
  */
-import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { getDevices } from './devices-data';
 import { DeviceListClient } from './device-list-client';
 
-export const metadata: Metadata = {
-  title: '设备管理 - M5 指挥台',
-  description:
-    '门店设备在线状态监控与固件管理。支持在线/离线/故障状态筛选，设备总数、在线率、故障率统计。支持批量固件升级和远程诊断。',
-  openGraph: {
-    title: '设备管理 | 门店设备监控',
-    description: '门店设备在线状态监控与固件管理，支持状态筛选和批量操作',
-    type: 'website',
-  },
-};
 
 /** 模拟设备统计摘要 */
 function DeviceSummaryStats({ devices }: { devices: unknown[] }) {

@@ -1,8 +1,6 @@
 'use client';
 
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Contracts - 神机营' }
 
 
 /**

@@ -30,9 +30,7 @@ import {
 } from '@m5/ui';
 import { AIScenarioSimulator } from '@m5/ui';
 
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Ai Scenario Simulator - 神机营' }
 
 import type { ScenarioVariable, SimulationResult } from '@m5/ui';
 

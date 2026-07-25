@@ -56,7 +56,7 @@ export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) {}
 
   @Post('inspections')
-  create(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+  create(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
     return this.logisticsService.createInspectionTask({
       tenantId,
       storeId: body.storeId,
@@ -112,7 +112,7 @@ export class LogisticsController {
   }
 
   @Post('clean-schedules')
-  createCleanSchedule(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+  createCleanSchedule(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
     return this.logisticsService.createCleanSchedule({
       tenantId,
       storeId: body.storeId,
@@ -171,7 +171,7 @@ export class LogisticsController {
 
   @Post('repairs')
   @RequirePermissions(LOGISTICS_REPAIRS_READ_PERMISSION)
-  createRepairOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+  createRepairOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
     return this.logisticsService.createRepairOrder({
       tenantId,
       storeId: body.storeId,
@@ -248,7 +248,7 @@ export class LogisticsController {
   }
 
   @Post('material-requests')
-  createMaterialRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+  createMaterialRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
     return this.logisticsService.createMaterialRequest({
       tenantId,
       storeId: body.storeId,
@@ -309,7 +309,7 @@ export class LogisticsController {
   // ═══════════════════════════════════════════
 
   @Post('maintenance-orders')
-  createMaintenanceOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+  createMaintenanceOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
     return this.logisticsService.createMaintenanceOrder({
       tenantId,
       storeId: body.storeId,
@@ -368,7 +368,7 @@ export class LogisticsController {
   // ═══════════════════════════════════════════
 
   @Post('procurement-requests')
-  createProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
+  createProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
     return this.logisticsService.createProcurementRequest({
       tenantId,
       storeId: body.storeId,
@@ -482,7 +482,7 @@ export class LogisticsController {
   updateSupplier(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
-    @Body() body: any
+    @Body() body: Record<string, unknown>
   ) {
     return this.logisticsService.updateSupplier(id, tenantId, body)
   }
@@ -668,7 +668,7 @@ export class LogisticsController {
   updateSchedulePlan(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
-    @Body() body: any
+    @Body() body: Record<string, unknown>
   ) {
     return this.logisticsService.updateSchedulePlan(id, tenantId, body)
   }
@@ -802,7 +802,7 @@ export class LogisticsController {
   updateRepairKnowledge(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
-    @Body() body: any
+    @Body() body: Record<string, unknown>
   ) {
     return this.logisticsService.updateRepairKnowledge(id, tenantId, body)
   }
@@ -836,7 +836,7 @@ export class LogisticsController {
   updateConsumableAlertRule(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
-    @Body() body: any
+    @Body() body: Record<string, unknown>
   ) {
     return this.logisticsService.updateConsumableAlertRule(id, tenantId, body)
   }
