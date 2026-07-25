@@ -21,6 +21,7 @@ import {
   type OrderStatus,
 } from '../../orders-data';
 import Link from 'next/link';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 金额格式化 ----
 
@@ -144,15 +145,18 @@ function OrderDetailContent() {
 
 
 const permissionGate = {
-  requiredPermission: 'orders:id:read',
-  title: 'orders 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 orders:id:read 权限的账号可访问。',
+  requiredPermission: 'order:read',
+  title: '订单详情访问受限',
+  description:
+    '订单详情页已接入管理员本地 session，只有具备 order:read 的账号才能查看订单信息、状态流转与客户明细。',
 } as const
 
 export default function OrderDetailPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 32, color: '#cbd5e1' }}>加载订单详情...</div>}>
-      <OrderDetailContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<div style={{ padding: 32, color: '#cbd5e1' }}>加载订单详情...</div>}>
+        <OrderDetailContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }

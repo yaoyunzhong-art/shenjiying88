@@ -9,6 +9,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 // ── 类型 ──
 
@@ -70,6 +71,13 @@ function filterByStatus(campaigns: CampaignActivity[], status: CampaignStatus | 
   if (status === 'all') return campaigns;
   return campaigns.filter(c => c.status === status);
 }
+
+const SRC = readFileSync(require.resolve('./page'), 'utf-8');
+
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'campaign-rules:read'"));
+});
 
 // ===================================================================
 describe('CampaignRules — 活动数据', () => {

@@ -17,6 +17,7 @@ import {
   useFormSubmit,
   type DetailShellAction
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
@@ -116,9 +117,10 @@ async function submitBrandEdit(form: EditFormData): Promise<{ success: boolean }
 
 
 const permissionGate = {
-  requiredPermission: 'brands:id:read',
-  title: 'brands 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 brands:id:read 权限的账号可访问。',
+  requiredPermission: 'brands:read',
+  title: '品牌详情访问受限',
+  description:
+    '品牌详情页已接入管理员本地 session，只有具备 brands:read 的账号才能查看品牌档案、编辑表单与收口动作。',
 } as const
 
 export default function BrandDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -220,20 +222,21 @@ export default function BrandDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'brands', detailLabel: brand.name })}
-      />
-      <DetailShell
-        title={brand.name}
-        subtitle={`${brand.code} · ${brand.marketCode}`}
-        breadcrumbs={[
-          { label: '品牌管理', href: '/brands' },
-          { label: brand.name },
-        ]}
-      backLink={{ label: '返回品牌列表', href: '/brands' }}
-      actions={actions}
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'brands', detailLabel: brand.name })}
+        />
+        <DetailShell
+          title={brand.name}
+          subtitle={`${brand.code} · ${brand.marketCode}`}
+          breadcrumbs={[
+            { label: '品牌管理', href: '/brands' },
+            { label: brand.name },
+          ]}
+        backLink={{ label: '返回品牌列表', href: '/brands' }}
+        actions={actions}
+      >
       {/* 统计数据卡片 */}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
         <StatCard label="运营状态" value={statusInfo.label} helper={brand.lastDeployed} />
@@ -380,12 +383,13 @@ export default function BrandDetailPage({ params }: { params: Promise<{ id: stri
           heading="详情收口动作"
           caption="复制 / 导出 / 分享当前品牌详情"
         />
+        </div>
+      </DetailShell>
+      <DetailClosureBar
+        links={buildStandardClosureLinks({ workspace: 'brands', detailId: brand.id })}
+      />
       </div>
-    </DetailShell>
-    <DetailClosureBar
-      links={buildStandardClosureLinks({ workspace: 'brands', detailId: brand.id })}
-    />
-    </div>
+    </AdminPermissionGate>
   );
 }
 

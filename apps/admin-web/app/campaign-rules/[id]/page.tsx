@@ -12,6 +12,7 @@ import {
   SearchFilterInput, Select, StatusBadge, Tabs, DataTable,
   usePagination, useSortedItems, type DataTableColumn, type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface CampaignActivity {
   id: string; name: string; description: string;
@@ -216,9 +217,10 @@ function EditPanel({ activity, onClose, onSave, onDelete, onStatusChange }: {
 
 
 const permissionGate = {
-  requiredPermission: 'campaign-rules:id:read',
-  title: 'campaign-rules 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 campaign-rules:id:read 权限的账号可访问。',
+  requiredPermission: 'campaign-rules:read',
+  title: '活动详情访问受限',
+  description:
+    '活动详情页已接入管理员本地 session，只有具备 campaign-rules:read 的账号才能查看活动列表、编辑面板与状态动作。',
 } as const
 
 export default function CampaignRuleDetailPage() {
@@ -250,8 +252,9 @@ export default function CampaignRuleDetailPage() {
   const pageItems = pg.paginate(sorted);
 
   return (
-    <PageShell title="营销活动管理" description="管理全部营销活动，支持创建、编辑与状态切换">
-      <div className="flex gap-3 mb-4 flex-wrap">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="营销活动管理" description="管理全部营销活动，支持创建、编辑与状态切换">
+        <div className="flex gap-3 mb-4 flex-wrap">
         {[
           { l: '活动总数', v: st.t, c: 'text-blue-400' },
           { l: '进行中', v: st.a, c: 'text-emerald-400' },
@@ -265,7 +268,7 @@ export default function CampaignRuleDetailPage() {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
         <div className="flex-1 min-w-[180px]">
           <SearchFilterInput placeholder="搜索活动名称/描述..." value={search}
             onChange={(v) => { setSearch(v); pg.setPage(1); }} />
@@ -277,24 +280,25 @@ export default function CampaignRuleDetailPage() {
         <Button variant="secondary" onClick={() => { setActs(MOCK); setSearch(''); setSf(''); setTf(''); setTab('all'); pg.setPage(1); }}>刷新</Button>
         <Button variant="primary" onClick={() => setShowCreate(true)}>+ 创建</Button>
       </div>
-      <Tabs items={[{ key: 'all', label: '全部', count: st.t }, { key: 'active', label: '进行中', count: st.a }, { key: 'draft', label: '草稿', count: st.d }, { key: 'ended', label: '已结束', count: st.e }]} activeKey={tab}
-        onChange={(k) => { setTab(k); pg.setPage(1); setSearch(''); setSf(''); setTf(''); }} />
-      <DataTable<CampaignActivity> columns={cols} rows={pageItems} sort={sc} onSortChange={setSc}
-        onRowClick={(item) => setEditAct(item)}
-        emptyText={search || sf || tf ? '未找到匹配的活动' : '暂无活动数据'} rowKey={(r) => r.id} />
-      <div className="flex justify-end mt-4">
-        <Pagination page={pg.page} pageSize={pg.pageSize} total={sorted.length}
-          onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} />
-      </div>
-      <CreateModal open={showCreate} onClose={() => setShowCreate(false)}
-        onCreate={(a) => { setActs((prev) => [a, ...prev]); setShowCreate(false); }} />
-      {editAct && <EditPanel activity={editAct} onClose={() => setEditAct(null)}
-        onSave={(u) => { setActs((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditAct(null); }}
-        onDelete={(id) => { setActs((prev) => prev.filter((x) => x.id !== id)); setEditAct(null); }}
-        onStatusChange={(id, s) => setActs((prev) => prev.map((x) => x.id === id ? { ...x, status: s } : x))} />}
-      <div className="mt-6">
-        <DetailClosureBar links={[{ key: 'list', title: '活动列表', subtitle: '返回营销活动管理首页', href: '/campaign-rules' }]} />
-      </div>
-    </PageShell>
+        <Tabs items={[{ key: 'all', label: '全部', count: st.t }, { key: 'active', label: '进行中', count: st.a }, { key: 'draft', label: '草稿', count: st.d }, { key: 'ended', label: '已结束', count: st.e }]} activeKey={tab}
+          onChange={(k) => { setTab(k); pg.setPage(1); setSearch(''); setSf(''); setTf(''); }} />
+        <DataTable<CampaignActivity> columns={cols} rows={pageItems} sort={sc} onSortChange={setSc}
+          onRowClick={(item) => setEditAct(item)}
+          emptyText={search || sf || tf ? '未找到匹配的活动' : '暂无活动数据'} rowKey={(r) => r.id} />
+        <div className="flex justify-end mt-4">
+          <Pagination page={pg.page} pageSize={pg.pageSize} total={sorted.length}
+            onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} />
+        </div>
+        <CreateModal open={showCreate} onClose={() => setShowCreate(false)}
+          onCreate={(a) => { setActs((prev) => [a, ...prev]); setShowCreate(false); }} />
+        {editAct && <EditPanel activity={editAct} onClose={() => setEditAct(null)}
+          onSave={(u) => { setActs((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditAct(null); }}
+          onDelete={(id) => { setActs((prev) => prev.filter((x) => x.id !== id)); setEditAct(null); }}
+          onStatusChange={(id, s) => setActs((prev) => prev.map((x) => x.id === id ? { ...x, status: s } : x))} />}
+        <div className="mt-6">
+          <DetailClosureBar links={[{ key: 'list', title: '活动列表', subtitle: '返回营销活动管理首页', href: '/campaign-rules' }]} />
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

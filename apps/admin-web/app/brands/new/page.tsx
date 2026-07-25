@@ -19,6 +19,7 @@ import {
   type FormPageField,
   type FormPageSubmitResult,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 类型 ----
 
@@ -312,9 +313,10 @@ function BrandTypeTags({
 
 
 const permissionGate = {
-  requiredPermission: 'brands:new:read',
-  title: 'brands new 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 brands:new:read 权限的账号可访问。',
+  requiredPermission: 'brands:read',
+  title: '新建品牌访问受限',
+  description:
+    '新建品牌页已接入管理员本地 session，只有具备 brands:read 的账号才能查看品牌表单、类型配置与提交反馈。',
 } as const
 
 export default function BrandNewPage() {
@@ -353,17 +355,19 @@ export default function BrandNewPage() {
   };
 
   return (
-    <div data-testid="brand-new-page">
-      <BrandTypeTags value={brandType} onChange={setBrandType} />
-      <FormPageScaffold
-        fields={fields}
-        meta={meta}
-        onSubmit={handleSubmit}
-        onSuccess={handleSuccess}
-        backUrl="/brands"
-        submitLabel="创建品牌"
-        submitVariant="primary"
-      />
-    </div>
+    <AdminPermissionGate {...permissionGate}>
+      <div data-testid="brand-new-page">
+        <BrandTypeTags value={brandType} onChange={setBrandType} />
+        <FormPageScaffold
+          fields={fields}
+          meta={meta}
+          onSubmit={handleSubmit}
+          onSuccess={handleSuccess}
+          backUrl="/brands"
+          submitLabel="创建品牌"
+          submitVariant="primary"
+        />
+      </div>
+    </AdminPermissionGate>
   );
 }

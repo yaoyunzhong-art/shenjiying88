@@ -300,6 +300,11 @@ describe('order-detail: 业务逻辑', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'order:read'"));
+});
+
 describe('Orders — hooks验证', () => {
   it('包含useMemo等hook', () => assert.ok(SRC.includes('useMemo')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

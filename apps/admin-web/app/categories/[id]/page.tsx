@@ -27,14 +27,16 @@ import {
   getCategoryStatusLabel,
   getCategoryStatusVariant,
 } from '../../categories-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 type TabKey = 'basic' | 'children';
 
 
 const permissionGate = {
-  requiredPermission: 'categories:id:read',
-  title: 'categories 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 categories:id:read 权限的账号可访问。',
+  requiredPermission: 'product:read',
+  title: '分类详情访问受限',
+  description:
+    '分类详情页已接入管理员本地 session，只有具备 product:read 的账号才能查看分类信息、子分类关系与维护动作。',
 } as const
 
 export default function CategoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -80,21 +82,23 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
 
   if (!item) {
     return (
-      <DetailShell
-        title="分类未找到"
-        breadcrumbs={[
-          { label: '商品管理', href: '/products' },
-          { label: '分类管理', href: '/categories' },
-          { label: '未找到' },
-        ]}
-      >
-        <div className="p-8 text-center text-gray-500">该分类不存在或已被删除</div>
-        <DetailClosureBar
-          links={[
-            { key: 'back-categories', title: '分类管理', subtitle: '返回分类列表', href: '/categories' },
+      <AdminPermissionGate {...permissionGate}>
+        <DetailShell
+          title="分类未找到"
+          breadcrumbs={[
+            { label: '商品管理', href: '/products' },
+            { label: '分类管理', href: '/categories' },
+            { label: '未找到' },
           ]}
-        />
-      </DetailShell>
+        >
+          <div className="p-8 text-center text-gray-500">该分类不存在或已被删除</div>
+          <DetailClosureBar
+            links={[
+              { key: 'back-categories', title: '分类管理', subtitle: '返回分类列表', href: '/categories' },
+            ]}
+          />
+        </DetailShell>
+      </AdminPermissionGate>
     );
   }
 
@@ -102,109 +106,111 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ id: s
   const statusItem = CATEGORY_STATUS_MAP[item.status as CategoryStatus] ?? CATEGORY_STATUS_MAP.active;
 
   return (
-    <DetailShell
-      title={item.name}
-      subtitle={`编码: ${item.code}`}
-      breadcrumbs={[
-        { label: '商品管理', href: '/products' },
-        { label: '分类管理', href: '/categories' },
-        { label: item.name },
-      ]}
-      actions={[{ key: 'status', label: statusItem.label, variant: statusItem.variant as 'primary' | 'secondary' | 'danger' }]}
-    >
-      <div className="mb-6 flex gap-4 border-b border-gray-700 pb-2">
-        <button
-          type="button"
-          className={`px-3 py-1.5 text-sm font-medium rounded-t ${tab === 'basic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-          onClick={() => setTab('basic')}
-        >
-          基本信息
-        </button>
-        <button
-          type="button"
-          className={`px-3 py-1.5 text-sm font-medium rounded-t ${tab === 'children' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-          onClick={() => setTab('children')}
-        >
-          子分类 ({childCategories.length})
-        </button>
-      </div>
-      {tab === 'basic' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <FormField label="分类名称" required>
-              <input
-                className="w-full rounded border px-3 py-2 text-sm"
-                value={form.name}
-                onChange={e => handleFieldChange('name', e.target.value)}
-                placeholder="输入分类名称"
-              />
-            </FormField>
-            <FormField label="分类编码">
-              <input
-                className="w-full rounded border bg-gray-50 px-3 py-2 text-sm text-gray-500"
-                value={form.code}
-                disabled
-              />
-            </FormField>
-            <FormField label="上级分类">
-              <InfoRow label="上级分类" value={item.parentName ?? '—（一级分类）'} />
-            </FormField>
-            <FormField label="排序权重">
-              <input
-                className="w-full rounded border px-3 py-2 text-sm"
-                type="number"
-                value={form.sortOrder}
-                onChange={e => handleFieldChange('sortOrder', parseInt(e.target.value) || 0)}
-              />
-            </FormField>
-            <FormField label="关联商品数">
-              <InfoRow label="商品数" value={String(item.productCount)} />
-            </FormField>
-            <FormField label="创建时间">
-              <InfoRow label="创建时间" value={new Date(item.createdAt).toLocaleDateString('zh-CN')} />
-            </FormField>
-          </div>
-
-          <FormSubmitFeedback state={state} />
-
-          <div className="flex items-center gap-3">
-            <SubmitButton loading={submitting} onClick={handleSave}>保存修改</SubmitButton>
-            <SubmitButton variant="secondary" onClick={handleToggleStatus}>
-              {form.status === 'active' ? '停用分类' : '启用分类'}
-            </SubmitButton>
-            <SubmitButton variant="danger" onClick={handleDelete}>删除分类</SubmitButton>
-          </div>
-        </div>
-      )}
-
-      {tab === 'children' && (
-        <div>
-          {childCategories.length === 0 ? (
-            <div className="py-8 text-center text-gray-400">暂无子分类</div>
-          ) : (
-            <ul className="divide-y">
-              {childCategories.map(child => (
-                <li key={child.id} className="flex items-center justify-between py-3">
-                  <div>
-                    <span className="font-medium">{child.name}</span>
-                    <span className="ml-2 text-sm text-gray-500">({child.code})</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500">{child.productCount} 件商品</span>
-                    <StatusBadge variant={getCategoryStatusVariant(child.status)} label={getCategoryStatusLabel(child.status)} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      <DetailClosureBar
-        links={[
-          { key: 'back-categories', title: '分类管理', subtitle: '返回分类列表', href: '/categories' },
+    <AdminPermissionGate {...permissionGate}>
+      <DetailShell
+        title={item.name}
+        subtitle={`编码: ${item.code}`}
+        breadcrumbs={[
+          { label: '商品管理', href: '/products' },
+          { label: '分类管理', href: '/categories' },
+          { label: item.name },
         ]}
-      />
-    </DetailShell>
+        actions={[{ key: 'status', label: statusItem.label, variant: statusItem.variant as 'primary' | 'secondary' | 'danger' }]}
+      >
+        <div className="mb-6 flex gap-4 border-b border-gray-700 pb-2">
+          <button
+            type="button"
+            className={`px-3 py-1.5 text-sm font-medium rounded-t ${tab === 'basic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            onClick={() => setTab('basic')}
+          >
+            基本信息
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1.5 text-sm font-medium rounded-t ${tab === 'children' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            onClick={() => setTab('children')}
+          >
+            子分类 ({childCategories.length})
+          </button>
+        </div>
+        {tab === 'basic' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <FormField label="分类名称" required>
+                <input
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={form.name}
+                  onChange={e => handleFieldChange('name', e.target.value)}
+                  placeholder="输入分类名称"
+                />
+              </FormField>
+              <FormField label="分类编码">
+                <input
+                  className="w-full rounded border bg-gray-50 px-3 py-2 text-sm text-gray-500"
+                  value={form.code}
+                  disabled
+                />
+              </FormField>
+              <FormField label="上级分类">
+                <InfoRow label="上级分类" value={item.parentName ?? '—（一级分类）'} />
+              </FormField>
+              <FormField label="排序权重">
+                <input
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  type="number"
+                  value={form.sortOrder}
+                  onChange={e => handleFieldChange('sortOrder', parseInt(e.target.value) || 0)}
+                />
+              </FormField>
+              <FormField label="关联商品数">
+                <InfoRow label="商品数" value={String(item.productCount)} />
+              </FormField>
+              <FormField label="创建时间">
+                <InfoRow label="创建时间" value={new Date(item.createdAt).toLocaleDateString('zh-CN')} />
+              </FormField>
+            </div>
+
+            <FormSubmitFeedback state={state} />
+
+            <div className="flex items-center gap-3">
+              <SubmitButton loading={submitting} onClick={handleSave}>保存修改</SubmitButton>
+              <SubmitButton variant="secondary" onClick={handleToggleStatus}>
+                {form.status === 'active' ? '停用分类' : '启用分类'}
+              </SubmitButton>
+              <SubmitButton variant="danger" onClick={handleDelete}>删除分类</SubmitButton>
+            </div>
+          </div>
+        )}
+
+        {tab === 'children' && (
+          <div>
+            {childCategories.length === 0 ? (
+              <div className="py-8 text-center text-gray-400">暂无子分类</div>
+            ) : (
+              <ul className="divide-y">
+                {childCategories.map(child => (
+                  <li key={child.id} className="flex items-center justify-between py-3">
+                    <div>
+                      <span className="font-medium">{child.name}</span>
+                      <span className="ml-2 text-sm text-gray-500">({child.code})</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-500">{child.productCount} 件商品</span>
+                      <StatusBadge variant={getCategoryStatusVariant(child.status)} label={getCategoryStatusLabel(child.status)} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <DetailClosureBar
+          links={[
+            { key: 'back-categories', title: '分类管理', subtitle: '返回分类列表', href: '/categories' },
+          ]}
+        />
+      </DetailShell>
+    </AdminPermissionGate>
   );
 }

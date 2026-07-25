@@ -33,6 +33,7 @@ import {
   usePagination,
   useSortedItems,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,8 +188,9 @@ function buildColumns(): DataTableColumn<DecisionRecord>[] {
 
 const permissionGate = {
   requiredPermission: 'ai-decision:read',
-  title: 'ai-decision 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 ai-decision:read 权限的账号可访问。',
+  title: 'AI 决策中心访问受限',
+  description:
+    'AI 决策中心页已接入管理员本地 session，只有具备 ai-decision:read 的账号才能查看决策记录、批量操作与规则创建。',
 } as const
 
 export default function AiDecisionPage() {
@@ -309,11 +311,12 @@ export default function AiDecisionPage() {
   }, []);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
-      <PageShell
-        title="AI 决策中心"
-        subtitle="AI 规则引擎决策事件面板 — 查看命中规则、置信度分析、决策快照与建议操作"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+        <PageShell
+          title="AI 决策中心"
+          subtitle="AI 规则引擎决策事件面板 — 查看命中规则、置信度分析、决策快照与建议操作"
+        >
         {/* 统计卡片 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', marginBottom: 24 }}>
           <StatCard label="决策总数" value={stats.total.toString()} helper="今日" />
@@ -398,8 +401,8 @@ export default function AiDecisionPage() {
         </div>
 
         {/* 创建规则 Modal */}
-        <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="创建决策规则" width={560}>
-          <div style={{ display: 'grid', gap: 14 }}>
+          <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="创建决策规则" width={560}>
+            <div style={{ display: 'grid', gap: 14 }}>
             <FormField label="规则名称" error={formErrors.ruleName} required>
               <input
                 type="text"
@@ -458,12 +461,13 @@ export default function AiDecisionPage() {
             </FormField>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-            <SubmitButton label="取消" variant="secondary" onClick={() => setShowCreateModal(false)} />
-            <SubmitButton label="创建规则" variant="primary" onClick={handleCreate} />
-          </div>
-        </Modal>
-      </PageShell>
-    </main>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <SubmitButton label="取消" variant="secondary" onClick={() => setShowCreateModal(false)} />
+              <SubmitButton label="创建规则" variant="primary" onClick={handleCreate} />
+            </div>
+          </Modal>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

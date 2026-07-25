@@ -25,6 +25,7 @@ import {
   type ProductItem,
   type ProductStatus,
 } from '../../products-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 查找商品 ----
 
@@ -619,9 +620,10 @@ function ProductDetailContent({ product }: { product: ProductItem }) {
 
 
 const permissionGate = {
-  requiredPermission: 'products:id:read',
-  title: 'products 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 products:id:read 权限的账号可访问。',
+  requiredPermission: 'product:read',
+  title: '商品详情访问受限',
+  description:
+    '商品详情页已接入管理员本地 session，只有具备 product:read 的账号才能查看商品档案、库存卡片与编辑动作。',
 } as const
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -629,10 +631,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const product = getProductById(id);
 
   if (!product) {
-    return <ProductNotFound id={id} />;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <ProductNotFound id={id} />
+      </AdminPermissionGate>
+    );
   }
 
-  return <ProductDetailContent product={product} />;
+  return (
+    <AdminPermissionGate {...permissionGate}>
+      <ProductDetailContent product={product} />
+    </AdminPermissionGate>
+  );
 }
 
 // ---- 样式 ----

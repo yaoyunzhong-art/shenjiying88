@@ -15,6 +15,7 @@
  */
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it, test } from 'node:test';
 
 import React from 'react';
@@ -29,6 +30,14 @@ const BrandNewPage = (PageMod as any).default ?? PageMod;
 
 function setupTest() {
   cleanup();
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['brands:read'],
+    }),
+  );
   const { container } = render(React.createElement(BrandNewPage));
   return { container };
 }
@@ -37,6 +46,13 @@ function clickTag(label: string) {
   const tag = screen.getByText(label, { selector: 'button' });
   return tag;
 }
+
+const SRC = readFileSync(require.resolve('./page'), 'utf-8');
+
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'brands:read'"));
+});
 
 /* =================================================================
  * 正例 (Happy Path)

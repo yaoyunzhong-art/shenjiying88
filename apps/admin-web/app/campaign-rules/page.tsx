@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -197,8 +198,9 @@ const styles: Record<string, React.CSSProperties> = {
 
 const permissionGate = {
   requiredPermission: 'campaign-rules:read',
-  title: 'campaign-rules 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 campaign-rules:read 权限的账号可访问。',
+  title: '活动规则管理访问受限',
+  description:
+    '活动规则管理页已接入管理员本地 session，只有具备 campaign-rules:read 的账号才能查看规则列表、筛选条件与规则弹窗。',
 } as const
 
 export default function CampaignRulesPage() {
@@ -301,9 +303,10 @@ export default function CampaignRulesPage() {
   ], [stats]);
 
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>🏷️ 活动规则</h1>
-      <p style={styles.subtitle}>管理活动营销规则（满减/折扣/赠品/返券/积分加倍），支持搜索、类型筛选、CRUD操作。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.page}>
+        <h1 style={styles.title}>🏷️ 活动规则</h1>
+        <p style={styles.subtitle}>管理活动营销规则（满减/折扣/赠品/返券/积分加倍），支持搜索、类型筛选、CRUD操作。</p>
 
       {/* 统计卡片 */}
       <div style={styles.statsRow}>
@@ -393,10 +396,10 @@ export default function CampaignRulesPage() {
       )}
 
       {/* 弹窗 */}
-      {showModal && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <div style={styles.modalTitle}>{editingId ? '编辑规则' : '新增规则'}</div>
+        {showModal && (
+          <div style={styles.modalOverlay} onClick={closeModal}>
+            <div style={styles.modal} onClick={e => e.stopPropagation()}>
+              <div style={styles.modalTitle}>{editingId ? '编辑规则' : '新增规则'}</div>
 
             <div style={styles.formField}>
               <label style={styles.formLabel}>规则名称 *</label>
@@ -442,13 +445,14 @@ export default function CampaignRulesPage() {
               </div>
             </div>
 
-            <div style={styles.formBtnRow}>
-              <button style={btnGhost} onClick={closeModal}>取消</button>
-              <button style={btnPrimary} onClick={handleSave}>{editingId ? '保存修改' : '确认新增'}</button>
+              <div style={styles.formBtnRow}>
+                <button style={btnGhost} onClick={closeModal}>取消</button>
+                <button style={btnPrimary} onClick={handleSave}>{editingId ? '保存修改' : '确认新增'}</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }

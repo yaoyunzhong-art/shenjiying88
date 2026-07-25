@@ -33,6 +33,7 @@ import {
   getUniqueChannels,
   getUniqueEventTypes,
 } from './mock-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 列定义 ----
 
@@ -123,9 +124,10 @@ function buildColumns(): DataTableColumn<ActivityItem>[] {
 
 
 const permissionGate = {
-  requiredPermission: 'member:activities:read',
-  title: 'member activities 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 member:activities:read 权限的账号可访问。',
+  requiredPermission: 'member:read',
+  title: '会员活动历史访问受限',
+  description:
+    '会员活动历史页已接入管理员本地 session，只有具备 member:read 的账号才能查看活动记录、筛选条件与统计面板。',
 } as const
 
 export default function MemberActivitiesPage() {
@@ -143,9 +145,9 @@ export default function MemberActivitiesPage() {
     }
   }, []);
 
-  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
-  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
-  if (!data || data.length === 0) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main></AdminPermissionGate>;
+  if (!data || data.length === 0) return <AdminPermissionGate {...permissionGate}><main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main></AdminPermissionGate>;
 
   const searchFields = useMemo<(keyof ActivityItem)[]>(
     () => ['id', 'memberName', 'memberPhone', 'description'],
@@ -209,11 +211,12 @@ export default function MemberActivitiesPage() {
   });
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="会员活动历史"
-        subtitle="追踪会员积分变动、等级升降、优惠券发放和资料修改记录。"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="会员活动历史"
+          subtitle="追踪会员积分变动、等级升降、优惠券发放和资料修改记录。"
+        >
         {/* 统计卡片 */}
         <div
           style={{
@@ -413,13 +416,14 @@ export default function MemberActivitiesPage() {
           onPageSizeChange={pagination.setPageSize}
         />
 
-        <DetailActionBar
-          actions={actions}
-          heading="工作台收口动作"
-          caption="复制 / 导出 / 分享当前活动筛选快照"
-        />
-      </PageShell>
-    </main>
+          <DetailActionBar
+            actions={actions}
+            heading="工作台收口动作"
+            caption="复制 / 导出 / 分享当前活动筛选快照"
+          />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

@@ -13,6 +13,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Brands - 神机营' }
 
 import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 type BrandStatus = 'active'|'inactive'|'pending';
 type BrandCategory = 'game'|'food'|'merchandise'|'service'|'entertainment';
@@ -55,8 +56,9 @@ function buildColumns(): DataTableColumn<Brand>[] {
 
 const permissionGate = {
   requiredPermission: 'brands:read',
-  title: 'brands 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 brands:read 权限的账号可访问。',
+  title: '品牌管理访问受限',
+  description:
+    '品牌管理页已接入管理员本地 session，只有具备 brands:read 的账号才能查看品牌列表、筛选统计与合作信息。',
 } as const
 
 export default function BrandsPage() {
@@ -74,9 +76,9 @@ export default function BrandsPage() {
     }
   }, []);
 
-  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
-  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
-  if (!data || data.length === 0) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main></AdminPermissionGate>;
+  if (!data || data.length === 0) return <AdminPermissionGate {...permissionGate}><main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main></AdminPermissionGate>;
 
   const stats = useMemo(()=>({
     total:brands.length,active:brands.filter(b=>b.status==='active').length,
@@ -99,23 +101,25 @@ export default function BrandsPage() {
   const pageItems=pagination.paginate(sorted);
 
   return (
-    <main style={{maxWidth:1200,margin:'0 auto',padding:32}}>
-      <PageShell title="品牌运营管理" subtitle={`${stats.total}个品牌 · 年营收${fm(stats.revenue)} · ${stats.stores}家门店`}>
-        <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(3,1fr)',marginBottom:20}}>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>品牌总数</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{stats.total}</div><div style={{marginTop:4,fontSize:12,color:'#22c55e'}}>合作中: {stats.active} · 洽谈: {stats.pending}</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>总营收</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(stats.revenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>平均毛利率: {stats.avgMargin}%</div></div>
-          <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>品牌分布</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{(Object.keys(BC) as BrandCategory[]).map(c=>brands.filter(b=>b.category===c).length).reduce((s,c)=>s+c,0)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>{(Object.keys(BC) as BrandCategory[]).filter(c=>brands.filter(b=>b.category===c).length>0).map(c=>`${BC[c]}:${brands.filter(b=>b.category===c).length}`).join(' · ')}</div></div>
-        </div>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{maxWidth:1200,margin:'0 auto',padding:32}}>
+        <PageShell title="品牌运营管理" subtitle={`${stats.total}个品牌 · 年营收${fm(stats.revenue)} · ${stats.stores}家门店`}>
+          <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(3,1fr)',marginBottom:20}}>
+            <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>品牌总数</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{stats.total}</div><div style={{marginTop:4,fontSize:12,color:'#22c55e'}}>合作中: {stats.active} · 洽谈: {stats.pending}</div></div>
+            <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>总营收</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(stats.revenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>平均毛利率: {stats.avgMargin}%</div></div>
+            <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>品牌分布</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#3b82f6'}}>{(Object.keys(BC) as BrandCategory[]).map(c=>brands.filter(b=>b.category===c).length).reduce((s,c)=>s+c,0)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>{(Object.keys(BC) as BrandCategory[]).filter(c=>brands.filter(b=>b.category===c).length>0).map(c=>`${BC[c]}:${brands.filter(b=>b.category===c).length}`).join(' · ')}</div></div>
+          </div>
 
-        <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索品牌名称/编码/联系人..." />
-        <div style={{marginTop:12,display:'flex',gap:16,flexWrap:'wrap'}}>
-          <div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>品类</div><Tabs items={[{key:'ALL',label:'全部',count:filteredItems.length},...(Object.keys(BC) as BrandCategory[]).map(c=>({key:c,label:BC[c],count:filteredItems.filter(b=>b.category===c).length}))]} activeKey={catFilter} onChange={setCatFilter} variant="pills" size="sm" /></div>
-          <div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>状态</div><Tabs items={[{key:'ALL',label:'全部',count:catFiltered.length},...(['active','inactive','pending'] as BrandStatus[]).map(s=>({key:s,label:BS[s].l,count:catFiltered.filter(b=>b.status===s).length}))]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
-        </div>
-        <DataTable title={`品牌 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />
-        <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
-      </PageShell>
-    </main>
+          <SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索品牌名称/编码/联系人..." />
+          <div style={{marginTop:12,display:'flex',gap:16,flexWrap:'wrap'}}>
+            <div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>品类</div><Tabs items={[{key:'ALL',label:'全部',count:filteredItems.length},...(Object.keys(BC) as BrandCategory[]).map(c=>({key:c,label:BC[c],count:filteredItems.filter(b=>b.category===c).length}))]} activeKey={catFilter} onChange={setCatFilter} variant="pills" size="sm" /></div>
+            <div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>状态</div><Tabs items={[{key:'ALL',label:'全部',count:catFiltered.length},...(['active','inactive','pending'] as BrandStatus[]).map(s=>({key:s,label:BS[s].l,count:catFiltered.filter(b=>b.status===s).length}))]} activeKey={statusFilter} onChange={setStatusFilter} variant="pills" size="sm" /></div>
+          </div>
+          <DataTable title={`品牌 (${sorted.length})`} columns={columns} items={pageItems} rowKey={i=>i.id} sort={sortConfig} onSortChange={setSortConfig} striped compact />
+          <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

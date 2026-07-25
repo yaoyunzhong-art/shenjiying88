@@ -14,6 +14,7 @@ import {
   type FormPageField,
   type FormPageSubmitResult,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface CategoryFormData {
   name: string;
@@ -33,9 +34,10 @@ const PARENT_OPTIONS = [
 
 
 const permissionGate = {
-  requiredPermission: 'categories:new:read',
-  title: 'categories new 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 categories:new:read 权限的账号可访问。',
+  requiredPermission: 'product:read',
+  title: '新建分类访问受限',
+  description:
+    '新建分类页已接入管理员本地 session，只有具备 product:read 的账号才能查看分类表单、父级关系与创建反馈。',
 } as const
 
 export default function NewCategoryPage() {
@@ -44,8 +46,8 @@ export default function NewCategoryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
 
   const fields = useMemo<FormPageField[]>(() => {
     return [
@@ -117,15 +119,17 @@ export default function NewCategoryPage() {
   };
 
   return (
-    <FormPageScaffold
-      meta={{
-        title: '新建分类',
-      }}
-      fields={fields}
-      onSubmit={handleSubmit}
-      submitLabel="创建分类"
-      backUrl="/categories"
-      cancelHref="/categories"
-    />
+    <AdminPermissionGate {...permissionGate}>
+      <FormPageScaffold
+        meta={{
+          title: '新建分类',
+        }}
+        fields={fields}
+        onSubmit={handleSubmit}
+        submitLabel="创建分类"
+        backUrl="/categories"
+        cancelHref="/categories"
+      />
+    </AdminPermissionGate>
   );
 }
