@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface VenueRecord {
   name: string
@@ -36,6 +37,13 @@ const styles = {
 }
 const PAGE_SIZE = 5
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '场馆排名访问受限',
+  description:
+    '场馆排名报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看场馆营收、订单、评分与热门服务排名。',
+} as const
+
 export default function VenueRankingPage() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'revenue' | 'orders' | 'rating'>('revenue')
@@ -43,9 +51,9 @@ export default function VenueRankingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!SEED || SEED.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ revenue: s.revenue + r.revenue, orders: s.orders + r.orders, members: s.members + r.members }), { revenue: 0, orders: 0, members: 0 })
@@ -67,7 +75,8 @@ export default function VenueRankingPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', margin: 0 }}>🏆 场馆排名报表</h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -123,6 +132,7 @@ export default function VenueRankingPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

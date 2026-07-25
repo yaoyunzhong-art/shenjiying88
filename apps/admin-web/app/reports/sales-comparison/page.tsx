@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface ComparisonRecord {
   period: string
@@ -33,15 +34,22 @@ const styles = {
   td: { padding: '10px 12px', borderBottom: '1px solid #2a2a3e', fontSize: '14px' },
 }
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '销售对比访问受限',
+  description:
+    '销售对比报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看周期对比、增长率与趋势表现。',
+} as const
+
 export default function SalesComparisonPage() {
   const [search, setSearch] = useState('')
   const [periodFilter, setPeriodFilter] = useState<string>('all')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!SEED || SEED.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const filtered = useMemo(() => {
     let list = SEED
@@ -51,7 +59,8 @@ export default function SalesComparisonPage() {
   }, [search, periodFilter])
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', margin: 0 }}>📊 销售对比报表</h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -116,6 +125,7 @@ export default function SalesComparisonPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

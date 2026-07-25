@@ -22,6 +22,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 类型
@@ -93,6 +94,13 @@ const SECTION_TITLE: React.CSSProperties = {
   color: '#f1f5f9',
 };
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '营收报表访问受限',
+  description:
+    '营收报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看每日营收趋势、同比环比与收入来源分析。',
+} as const;
+
 function formatMoney(n: number): string {
   return n >= 10000 ? `¥${(n / 10000).toFixed(1)}万` : `¥${n.toLocaleString()}`;
 }
@@ -135,9 +143,9 @@ export default function RevenuePage() {
   const [error, setError] = useState<string | null>(null)
   const [days, setDays] = useState(30);
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!MOCK_DATA || MOCK_DATA.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!MOCK_DATA || MOCK_DATA.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
 
   const data = MOCK_DATA.slice(-days);
@@ -146,7 +154,8 @@ export default function RevenuePage() {
   const yearChange = calcPercent(MONTH_TOTAL, PREV_YEAR_MONTH);
 
   return (
-    <PageShell title="📈 营收报表" subtitle="每日营收趋势与同比环比分析">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="📈 营收报表" subtitle="每日营收趋势与同比环比分析">
       {/* 统计卡片 */}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
         <StatCard label="今日营收" value={formatMoney(TODAY.revenue)} trend={{ value: dailyChange, positive: dailyChange.startsWith('+') }} />
@@ -260,6 +269,7 @@ export default function RevenuePage() {
       <div style={{ padding: '12px 16px', borderRadius: 8, background: 'rgba(148,163,184,0.05)', border: '1px solid rgba(148,163,184,0.1)', fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
         数据来源: 各门店系统自动上报 | 更新时间: 每日 08:00 | 同比数据基于去年同月同期
       </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

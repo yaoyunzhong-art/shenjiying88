@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface StoreRecord {
   name: string
@@ -36,6 +37,13 @@ const styles = {
 }
 const PAGE_SIZE = 5
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '门店汇总访问受限',
+  description:
+    '门店汇总报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看门店排名、营收、订单与会员汇总。',
+} as const
+
 export default function StoreSummaryPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
@@ -43,9 +51,9 @@ export default function StoreSummaryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!SEED || SEED.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ orders: s.orders + r.orders, revenue: s.revenue + r.revenue, members: s.members + r.members }), { orders: 0, revenue: 0, members: 0 })
@@ -63,7 +71,8 @@ export default function StoreSummaryPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', margin: 0 }}>🏪 门店汇总报表</h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -148,6 +157,7 @@ export default function StoreSummaryPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

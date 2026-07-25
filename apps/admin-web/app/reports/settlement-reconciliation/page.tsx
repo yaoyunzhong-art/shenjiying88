@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface SettlementRecord {
   id: string
@@ -41,6 +42,13 @@ const styles = {
 }
 const PAGE_SIZE = 5
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '结算对账访问受限',
+  description:
+    '结算对账报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看结算金额、平台费用与对账状态。',
+} as const
+
 export default function SettlementReconciliationPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'settled' | 'pending' | 'disputed'>('all')
@@ -48,9 +56,9 @@ export default function SettlementReconciliationPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!SEED || SEED.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ revenue: s.revenue + r.totalRevenue, settlement: s.settlement + r.netSettlement, fee: s.fee + r.platformFee + r.commission }), { revenue: 0, settlement: 0, fee: 0 })
@@ -68,7 +76,8 @@ export default function SettlementReconciliationPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', margin: 0 }}>💰 结算对账报表</h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -126,6 +135,7 @@ export default function SettlementReconciliationPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

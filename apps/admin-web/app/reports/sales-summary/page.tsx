@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 // ─── Types ──────────────────────────────────────
 
@@ -43,6 +44,13 @@ const styles = {
 }
 const PAGE_SIZE = 5
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '销售汇总访问受限',
+  description:
+    '销售汇总报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看订单、收入、净收入与每日销售明细。',
+} as const
+
 export default function SalesSummaryPage() {
   const [search, setSearch] = useState('')
   const [period, setPeriod] = useState<Period>('week')
@@ -50,9 +58,9 @@ export default function SalesSummaryPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!SEED || SEED.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ orders: s.orders + r.orders, revenue: s.revenue + r.revenue, refunds: s.refunds + r.refunds, netRevenue: s.netRevenue + r.netRevenue }), { orders: 0, revenue: 0, refunds: 0, netRevenue: 0 })
@@ -71,7 +79,8 @@ export default function SalesSummaryPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', margin: 0 }}>📊 销售汇总报表</h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -166,6 +175,7 @@ export default function SalesSummaryPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

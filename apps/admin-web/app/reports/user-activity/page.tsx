@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface ActivityRecord {
   date: string
@@ -35,15 +36,22 @@ const styles = {
 }
 const PAGE_SIZE = 5
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: '用户活跃访问受限',
+  description:
+    '用户活跃报表页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看活跃趋势、会话表现与热门功能。',
+} as const
+
 export default function UserActivityPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!SEED || SEED.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!SEED || SEED.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const stats = useMemo(() => {
     const total = SEED.reduce((s, r) => ({ users: s.users + r.activeUsers, sessions: s.sessions + r.sessions, duration: s.duration + r.avgDuration, newUsers: s.newUsers + r.newUsers }), { users: 0, sessions: 0, duration: 0, newUsers: 0 })
@@ -59,7 +67,8 @@ export default function UserActivityPage() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', margin: 0 }}>📱 用户活跃报表</h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -119,6 +128,7 @@ export default function UserActivityPage() {
           </>
         )}
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }
