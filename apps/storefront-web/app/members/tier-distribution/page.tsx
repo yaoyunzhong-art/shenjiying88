@@ -139,7 +139,7 @@ export default function MemberTierDistributionPage() {
             showTotal
             showTrends
             onTierClick={(tier) => {
-              console.log(`[TierDistribution] 点击等级:`, tier.key);
+              if (process.env.NODE_ENV === 'development') console.debug(`[TierDistribution] 点击等级:`, tier.key);
             }}
           />
         </Card>
