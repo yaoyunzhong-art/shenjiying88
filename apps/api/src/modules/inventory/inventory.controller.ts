@@ -10,6 +10,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
 
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -26,6 +30,9 @@ import {
   PurchaseOrderQueryDto
 } from './inventory.dto'
 import { InventoryService } from './inventory.service'
+
+const STOCK_TRANSFER_READ_PERMISSION = 'stock-transfer:read'
+const STOCK_TRANSFER_FORM_PERMISSION = 'stock-transfer:form:read'
 
 @UseGuards(TenantGuard)
 @Controller('inventory')
@@ -70,6 +77,8 @@ export class InventoryController {
   // ─── Stock Operations ─────────────────────────────────
 
   @Post('stock/in')
+  @RequireTenantScope()
+  @RequirePermissions(STOCK_TRANSFER_FORM_PERMISSION)
   stockIn(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: StockInDto
@@ -78,6 +87,8 @@ export class InventoryController {
   }
 
   @Post('stock/out')
+  @RequireTenantScope()
+  @RequirePermissions(STOCK_TRANSFER_FORM_PERMISSION)
   stockOut(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: StockOutDto
@@ -86,6 +97,8 @@ export class InventoryController {
   }
 
   @Post('stock/adjust')
+  @RequireTenantScope()
+  @RequirePermissions(STOCK_TRANSFER_FORM_PERMISSION)
   adjustStock(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: AdjustStockDto
@@ -94,6 +107,8 @@ export class InventoryController {
   }
 
   @Get('stock/check/:productId')
+  @RequireTenantScope()
+  @RequirePermissions(STOCK_TRANSFER_READ_PERMISSION)
   checkStock(
     @Param('productId') productId: string,
     @Query('qty') qty: string,
@@ -105,6 +120,8 @@ export class InventoryController {
   }
 
   @Get('stock/low-products')
+  @RequireTenantScope()
+  @RequirePermissions(STOCK_TRANSFER_READ_PERMISSION)
   getLowStockProducts(
     @TenantContext() tenantContext: RequestTenantContext,
     @Query('threshold') threshold?: string
@@ -114,10 +131,13 @@ export class InventoryController {
   }
 
   @Get('stock/records')
+  @RequireTenantScope()
+  @RequirePermissions(STOCK_TRANSFER_READ_PERMISSION)
   getStockRecords(
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: StockRecordQueryDto = {} as StockRecordQueryDto
   ) {
+    return this.inventoryService.getStockRecords(tenantContext, query)
     return this.inventoryService.getStockRecords(tenantContext, query)
   }
 

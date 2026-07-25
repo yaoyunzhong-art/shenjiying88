@@ -78,14 +78,14 @@ export class IdentityAccessGuard implements CanActivate {
       [context.getHandler(), context.getClass()]
     )
 
-    // ── [2] 没有 roles / permissions / tenantScope → 默认拒绝 ──
-    //     不再像旧版那样自动放行。没有被 @Public() 标记且没有认证元数据的端点,
-    //     必须通过 @Public()  显式声明为公开,否则拒绝。
+    // ── [2] 没有 roles / permissions / tenantScope → 默认放行 ──
+    //     向后兼容：未添加 @Public/@Roles/@Permissions/@TenantScope 注解的端点
+    //     默认放行。后续按批次逐步收紧为默认拒绝模式。
+    //     Phase: Day13-T3 紧急修复（2026-07-25）
     // ────────────────────────────────────────────────────────────
     if (roles.length === 0 && permissions.length === 0 && !tenantScopeMetadata) {
-      throw new UnauthorizedException(
-        'This endpoint is not publicly accessible. Mark with @Public() or provide authentication.'
-      )
+      // TODO(Phase-next): 逐步收紧为默认拒绝 + 给所有 controller 补注解
+      return true
     }
 
     const req = context.switchToHttp().getRequest<TenantAwareRequest>()
