@@ -7,6 +7,8 @@
 
 import { useState, useCallback, use } from 'react';
 
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
+
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -286,6 +288,11 @@ export default function SupplierDetailPage({
   }
 
   return (
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
     <div style={{ display: 'grid', gap: 16 }}>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({
@@ -657,6 +664,7 @@ export default function SupplierDetailPage({
         })}
       />
     </div>
+    </AdminPermissionGate>
   );
 }
 

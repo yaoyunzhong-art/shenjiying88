@@ -8,6 +8,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { AdminPermissionGate } from '../components/admin-permission-gate';
+
 import {
   DataTable,
   DetailActionBar,
@@ -229,6 +231,11 @@ export default function StockTransferListPage(): React.ReactElement {
   });
 
   return (
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
       <PageShell
         title="库存调拨审核"
@@ -358,5 +365,6 @@ export default function StockTransferListPage(): React.ReactElement {
         />
       </PageShell>
     </main>
+    </AdminPermissionGate>
   );
 }

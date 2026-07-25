@@ -12,6 +12,8 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Suppliers - 神机营' }
 
+import { AdminPermissionGate } from '../components/admin-permission-gate';
+
 import { PageShell, StatCard, StatusBadge, Tabs, SearchFilterInput, DataTable, Pagination, usePagination, useSearchFilter, useSortedItems, type DataTableColumn, type DataTableSortConfig } from '@m5/ui';
 
 type SupStatus = 'active'|'inactive'|'blacklisted'|'pending';
@@ -77,6 +79,11 @@ export default function StoreSuppliersPage() {
   const pageItems=pagination.paginate(sorted);
 
   return (
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
     <main style={{maxWidth:1200,margin:'0 auto',padding:32}}>
       <PageShell title="🏭 供应商管理" subtitle={`${stats.active}家合作中 · 累计${fm(stats.totalAmount)}`}>
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
@@ -101,6 +108,7 @@ export default function StoreSuppliersPage() {
         <Pagination page={pagination.page} pageSize={pagination.pageSize} total={sorted.length} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
       </PageShell>
     </main>
+    </AdminPermissionGate>
   );
 }
 
