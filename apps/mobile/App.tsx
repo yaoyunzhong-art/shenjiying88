@@ -51,7 +51,7 @@ const App: React.FC = () => {
     );
     // 监听网络状态变化
     const unsubscribe = NetInfo.addEventListener((state) => {
-      console.log('[net] connection:', state.isConnected, state.type);
+      if (__DEV__) console.debug('[net] connection:', state.isConnected, state.type);
     });
     return () => unsubscribe();
   }, [restoreSession]);

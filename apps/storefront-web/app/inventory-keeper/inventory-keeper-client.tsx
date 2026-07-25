@@ -94,7 +94,7 @@ const QUICK_ACTIONS: KeeperQuickAction[] = [
 
 export function InventoryKeeperClient() {
   const handleQuickAction = (key: string) => {
-    console.log(`[inventory-keeper] quick action: ${key}`);
+    if (process.env.NODE_ENV === 'development') console.debug(`[inventory-keeper] quick action: ${key}`);
     // In production, navigate or open modal
     if (key === 'new_inbound') {
       window.location.href = '/stock/new';
