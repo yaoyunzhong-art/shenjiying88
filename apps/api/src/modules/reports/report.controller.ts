@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { randomUUID } from 'node:crypto'
 import {
   type ReportDefinition,
@@ -64,6 +65,7 @@ interface QueryParams {
 
 @Controller('api/reports')
 @UseGuards(TenantGuard)
+@Public()
 export class ReportController {
   private definitions = new Map<string, ReportDefinition>()
 
