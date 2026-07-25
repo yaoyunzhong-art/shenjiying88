@@ -63,7 +63,7 @@ export default function MonitorPage() {
       setSummary(data)
     } catch (err) {
       0
-      if (typeof window !== "undefined") console.warn("[monitor] API不可用, 使用降级数据")
+      if (typeof window !== "undefined" && process.env.NODE_ENV === 'development') console.warn("[monitor] API不可用, 使用降级数据")
       setSummary(generateMockData())
     } finally {
       setLoading(false)

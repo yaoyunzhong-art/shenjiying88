@@ -58,7 +58,7 @@ async function fetchOrders(): Promise<Order[]> {
       contact: order.memberPhone ?? order.contact,
     }));
   } catch (e) {
-    console.warn('[OrdersPage] SDK fetch failed, fallback to seed data', e);
+    if (process.env.NODE_ENV === 'development') console.warn('[OrdersPage] SDK fetch failed, fallback to seed data', e);
     return [];
   }
 }

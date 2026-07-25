@@ -377,7 +377,7 @@ export default function MemberCardPage() {
         });
       }
     } catch (error) {
-      console.error('Load data error:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Load data error:', error);
     } finally {
       setLoading(false);
     }

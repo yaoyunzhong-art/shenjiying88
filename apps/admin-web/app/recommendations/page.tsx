@@ -288,7 +288,7 @@ export default function RecommendationsPage() {
       const data = mockSummary(tenantId, false)
       setSummary(data)
     } catch (err) {
-      console.error('[recommendations] fetch summary failed:', err)
+      if (process.env.NODE_ENV === 'development') console.error('[recommendations] fetch summary failed:', err)
     } finally {
       setLoading(false)
     }
@@ -315,7 +315,7 @@ export default function RecommendationsPage() {
       if (el && renderer) {
         chartRefs.current[tab] = renderer(echarts, el, summary)
       }
-    }).catch(err => console.error('[recommendations] echarts load failed:', err))
+    }).catch(err => { if (process.env.NODE_ENV === 'development') console.error('[recommendations] echarts load failed:', err) })
     return () => { cancelled = true }
   }, [summary, tab])
 

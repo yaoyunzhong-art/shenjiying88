@@ -124,7 +124,7 @@ export default function ReportsPage() {
   useEffect(() => {
     loadECharts()
       .then(() => setEchartsReady(true))
-      .catch((e) => console.error('ECharts load failed:', e))
+      .catch((e) => { if (process.env.NODE_ENV === 'development') console.error('ECharts load failed:', e) })
   }, [])
 
   useEffect(() => {
