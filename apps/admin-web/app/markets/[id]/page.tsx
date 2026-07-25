@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, use } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   DetailActionBar,
@@ -118,9 +119,9 @@ async function submitMarketEdit(form: EditFormData): Promise<{ success: boolean 
 
 
 const permissionGate = {
-  requiredPermission: 'markets:id:read',
+  requiredPermission: 'dashboard:read',
   title: 'markets 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 markets:id:read 权限的账号可访问。',
+  description: '该页面已接入管理员权限管控，仅具备 dashboard:read 权限的账号可访问。',
 } as const
 
 export default function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -225,20 +226,21 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'markets', detailLabel: market.name })}
-      />
-      <DetailShell
-        title={market.name}
-        subtitle={`${market.code} · ${regionInfo.label}区域`}
-      breadcrumbs={[
-        { label: '市场管理', href: '/markets' },
-        { label: market.name },
-      ]}
-      backLink={{ label: '返回市场列表', href: '/markets' }}
-      actions={actions}
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'markets', detailLabel: market.name })}
+        />
+        <DetailShell
+          title={market.name}
+          subtitle={`${market.code} · ${regionInfo.label}区域`}
+          breadcrumbs={[
+            { label: '市场管理', href: '/markets' },
+            { label: market.name },
+          ]}
+          backLink={{ label: '返回市场列表', href: '/markets' }}
+          actions={actions}
+        >
       {/* 统计数据卡片 */}
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
         <StatCard label="运营状态" value={statusInfo.label} helper={market.lastDeployed} />
@@ -354,59 +356,60 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
         </section>
       ) : null}
 
-      {/* 详情信息卡片 */}
-      <div
-        style={{
-          borderRadius: 16,
-          padding: 24,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          marginBottom: 24,
-        }}
-      >
-        <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>市场信息</h2>
-        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-          <InfoRow label="市场编码" value={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{market.code}<CopyToClipboard text={market.code} size="sm" iconOnly /></span>} />
-          <InfoRow label="市场名称" value={market.name} />
-          <InfoRow
-            label="运营状态"
-            value={<StatusBadge label={statusInfo.label} variant={statusInfo.variant} size="sm" dot />}
-          />
-          <InfoRow
-            label="区域"
-            value={<StatusBadge label={regionInfo.label} variant={regionInfo.variant} size="sm" />}
-          />
-          <InfoRow label="语言" value={market.locale} />
-          <InfoRow label="默认语言" value={market.defaultLanguage} />
-          <InfoRow label="支持语言" value={market.supportedLanguages.join(', ')} />
-          <InfoRow label="货币" value={market.currency} />
-          <InfoRow label="时区" value={market.timezone} />
-          <InfoRow label="关联租户数" value={`${market.tenantCount} 个`} />
-          <InfoRow label="关联品牌数" value={`${market.brandCount} 个`} />
-          <InfoRow label="关联门店数" value={`${market.storeCount} 个`} />
-          <InfoRow label="联系电话" value={market.contactPhone} />
-          <InfoRow label="联系邮箱" value={market.contactEmail} />
-          <InfoRow label="注册时间" value={market.registeredAt} />
-          <InfoRow label="最后部署" value={market.lastDeployed} />
-        </div>
-        {market.description ? (
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>市场简介</div>
-            <div style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.6 }}>{market.description}</div>
-          </div>
-        ) : null}
+          {/* 详情信息卡片 */}
+          <div
+            style={{
+              borderRadius: 16,
+              padding: 24,
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+              marginBottom: 24,
+            }}
+          >
+            <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700 }}>市场信息</h2>
+            <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+              <InfoRow label="市场编码" value={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{market.code}<CopyToClipboard text={market.code} size="sm" iconOnly /></span>} />
+              <InfoRow label="市场名称" value={market.name} />
+              <InfoRow
+                label="运营状态"
+                value={<StatusBadge label={statusInfo.label} variant={statusInfo.variant} size="sm" dot />}
+              />
+              <InfoRow
+                label="区域"
+                value={<StatusBadge label={regionInfo.label} variant={regionInfo.variant} size="sm" />}
+              />
+              <InfoRow label="语言" value={market.locale} />
+              <InfoRow label="默认语言" value={market.defaultLanguage} />
+              <InfoRow label="支持语言" value={market.supportedLanguages.join(', ')} />
+              <InfoRow label="货币" value={market.currency} />
+              <InfoRow label="时区" value={market.timezone} />
+              <InfoRow label="关联租户数" value={`${market.tenantCount} 个`} />
+              <InfoRow label="关联品牌数" value={`${market.brandCount} 个`} />
+              <InfoRow label="关联门店数" value={`${market.storeCount} 个`} />
+              <InfoRow label="联系电话" value={market.contactPhone} />
+              <InfoRow label="联系邮箱" value={market.contactEmail} />
+              <InfoRow label="注册时间" value={market.registeredAt} />
+              <InfoRow label="最后部署" value={market.lastDeployed} />
+            </div>
+            {market.description ? (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>市场简介</div>
+                <div style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.6 }}>{market.description}</div>
+              </div>
+            ) : null}
 
-        <DetailActionBar
-          actions={detailActions}
-          heading="详情收口动作"
-          caption="复制 / 导出 / 分享当前市场详情"
+            <DetailActionBar
+              actions={detailActions}
+              heading="详情收口动作"
+              caption="复制 / 导出 / 分享当前市场详情"
+            />
+          </div>
+        </DetailShell>
+        <DetailClosureBar
+          links={buildStandardClosureLinks({ workspace: 'markets', detailId: market.id })}
         />
       </div>
-    </DetailShell>
-    <DetailClosureBar
-      links={buildStandardClosureLinks({ workspace: 'markets', detailId: market.id })}
-    />
-    </div>
+    </AdminPermissionGate>
   );
 }
 

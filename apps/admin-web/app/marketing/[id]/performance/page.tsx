@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback, use } from 'react';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 import {
   PageShell,
   StatCard,
@@ -221,25 +222,29 @@ export default function CampaignPerformancePage({ params }: { params: Promise<{ 
 
   if (loading) {
     return (
-      <PageShell title="活动性能分析">
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
-          <div>加载活动性能数据中...</div>
-        </div>
-      </PageShell>
+      <AdminPermissionGate {...permissionGate}>
+        <PageShell title="活动性能分析">
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+            <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
+            <div>加载活动性能数据中...</div>
+          </div>
+        </PageShell>
+      </AdminPermissionGate>
     );
   }
 
   if (error || !analytics) {
     return (
-      <PageShell title="活动性能分析">
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <div style={{ color: '#ef4444', fontSize: '1.2rem', marginBottom: '1rem' }}>{error || '数据加载失败'}</div>
-          <button onClick={retry} style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-            重新加载
-          </button>
-        </div>
-      </PageShell>
+      <AdminPermissionGate {...permissionGate}>
+        <PageShell title="活动性能分析">
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div style={{ color: '#ef4444', fontSize: '1.2rem', marginBottom: '1rem' }}>{error || '数据加载失败'}</div>
+            <button onClick={retry} style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+              重新加载
+            </button>
+          </div>
+        </PageShell>
+      </AdminPermissionGate>
     );
   }
 
@@ -258,8 +263,9 @@ export default function CampaignPerformancePage({ params }: { params: Promise<{ 
   ];
 
   return (
-    <PageShell title={`${analytics.campaignName} — 性能分析`}>
-      <div style={{ padding: '1.5rem 0' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title={`${analytics.campaignName} — 性能分析`}>
+        <div style={{ padding: '1.5rem 0' }}>
         {/* 面包屑 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: '0.85rem', color: '#6b7280' }}>
           {crumbs.map((item, i) => (
@@ -479,8 +485,9 @@ export default function CampaignPerformancePage({ params }: { params: Promise<{ 
             </div>
           </div>
         )}
-      </div>
-    </PageShell>
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

@@ -15,6 +15,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
   Button,
   DataTable,
@@ -292,8 +293,9 @@ export default function StockOperationsPage() {
   }, []);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="📦 库存操作中心" subtitle="入库·出库·调拨·退货">
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell title="📦 库存操作中心" subtitle="入库·出库·调拨·退货">
         {/* 统计面板 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
           <StatCard label="操作单总数" value={stats.total.toString()} helper={`已完成: ${stats.completed}`} />
@@ -388,29 +390,30 @@ export default function StockOperationsPage() {
         </Modal>
 
         {/* 库存统计汇总 */}
-        <div style={{ marginTop: 16, padding: 14, background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>📦 库存操作汇总</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 11, color: '#6b7280' }}>入库单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'purchase_in').length}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#6b7280' }}>出库单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'sale_out' || o.type === 'damage_out').length}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#6b7280' }}>调拨单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'transfer_out' || o.type === 'transfer_in').length}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#6b7280' }}>退货单</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'return_in').length}</div>
+          <div style={{ marginTop: 16, padding: 14, background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13 }}>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>📦 库存操作汇总</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>入库单</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'purchase_in').length}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>出库单</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'sale_out' || o.type === 'damage_out').length}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>调拨单</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'transfer_out' || o.type === 'transfer_in').length}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>退货单</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{sorted.filter((o) => o.type === 'return_in').length}</div>
+              </div>
             </div>
           </div>
-        </div>
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

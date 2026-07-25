@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   DataTable,
@@ -397,9 +398,11 @@ const permissionGate = {
 
 export default function TrainingPage() {
   return (
-    <Suspense fallback={<TrainingPageFallback />}>
-      <TrainingPageContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<TrainingPageFallback />}>
+        <TrainingPageContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 

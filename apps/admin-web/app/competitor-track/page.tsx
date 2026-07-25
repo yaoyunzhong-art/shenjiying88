@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ============================================================
 // 类型定义
@@ -362,29 +363,34 @@ export default function CompetitorTrackPage() {
   // ---- 加载态 ----
   if (loading) {
     return (
-      <div style={{ ...S.page, ...S.loadingCard }}>
-        <div style={{ fontSize: 40, opacity: 0.4 }}>🔄</div>
-        <div style={{ fontSize: 14, color: '#94a3b8' }}>正在加载竞品数据...</div>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...S.page, ...S.loadingCard }}>
+          <div style={{ fontSize: 40, opacity: 0.4 }}>🔄</div>
+          <div style={{ fontSize: 14, color: '#94a3b8' }}>正在加载竞品数据...</div>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   // ---- 错误态 ----
   if (error) {
     return (
-      <div style={{ ...S.page, ...S.errorCard }}>
-        <div style={{ fontSize: 40 }}>⚠️</div>
-        <div style={{ fontSize: 16, color: '#ef4444', fontWeight: 600 }}>加载失败</div>
-        <div style={{ fontSize: 14, color: '#f87171' }}>{error}</div>
-        <button style={btnPrimary} onClick={() => window.location.reload()}>重试</button>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ ...S.page, ...S.errorCard }}>
+          <div style={{ fontSize: 40 }}>⚠️</div>
+          <div style={{ fontSize: 16, color: '#ef4444', fontWeight: 600 }}>加载失败</div>
+          <div style={{ fontSize: 14, color: '#f87171' }}>{error}</div>
+          <button style={btnPrimary} onClick={() => window.location.reload()}>重试</button>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <div style={S.page}>
-      <h1 style={S.title}>🔍 竞品跟踪</h1>
-      <p style={S.subtitle}>品牌竞品监控看板，覆盖评分、价格区间、抖音热度等维度，辅助市场决策。</p>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={S.page}>
+        <h1 style={S.title}>🔍 竞品跟踪</h1>
+        <p style={S.subtitle}>品牌竞品监控看板，覆盖评分、价格区间、抖音热度等维度，辅助市场决策。</p>
 
       {/* 统计卡片 */}
       <div style={S.statsRow}>
@@ -506,13 +512,14 @@ export default function CompetitorTrackPage() {
       )}
 
       {/* 详情弹窗 */}
-      {detailTarget && (
-        <CompetitorDetailModal
-          competitor={detailTarget}
-          onClose={() => setDetailTarget(null)}
-        />
-      )}
-    </div>
+        {detailTarget && (
+          <CompetitorDetailModal
+            competitor={detailTarget}
+            onClose={() => setDetailTarget(null)}
+          />
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }
 

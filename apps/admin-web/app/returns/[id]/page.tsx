@@ -6,6 +6,7 @@
 'use client';
 
 import { use, useState, useCallback } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -264,12 +265,14 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
 
   if (!detail) {
     return (
-      <DetailShell title="退换货详情" subtitle="记录不存在或已被删除">
-        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>
-          <p>该退换货申请记录不存在或已被删除</p>
-          <SubmitButton onClick={() => window.history.back()}>返回列表</SubmitButton>
-        </div>
-      </DetailShell>
+      <AdminPermissionGate {...permissionGate}>
+        <DetailShell title="退换货详情" subtitle="记录不存在或已被删除">
+          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+            <p>该退换货申请记录不存在或已被删除</p>
+            <SubmitButton onClick={() => window.history.back()}>返回列表</SubmitButton>
+          </div>
+        </DetailShell>
+      </AdminPermissionGate>
     );
   }
 
@@ -295,11 +298,12 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
   ];
 
   return (
-    <DetailShell
-      title={`退换单 ${detail.id}`}
-      subtitle={`订单 ${detail.orderNo}`}
-      actions={shellActions}
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <DetailShell
+        title={`退换单 ${detail.id}`}
+        subtitle={`订单 ${detail.orderNo}`}
+        actions={shellActions}
+      >
       {/* 状态提示 */}
       {statusMessage && (
         <FormSubmitFeedback
@@ -415,26 +419,27 @@ export default function ReturnDetailPage({ params }: { params: Promise<{ id: str
 
       {/* 删除确认弹窗 */}
 
-      {confirmDelete && (
-        <div style={{
-          position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(0,0,0,0.6)', zIndex: 1000,
-        }}>
+        {confirmDelete && (
           <div style={{
-            background: '#1e293b', borderRadius: 12, padding: 24, maxWidth: 400, width: '90%',
-            border: '1px solid rgba(148,163,184,0.15)',
+            position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)', zIndex: 1000,
           }}>
-            <h3 style={{ color: '#f87171', marginBottom: 12, fontSize: 16 }}>确认删除</h3>
-            <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 20 }}>
-              确定要删除退换单 <strong style={{ color: '#e2e8f0' }}>{detail.id}</strong> 吗？此操作不可撤销。
-            </p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <SubmitButton variant="secondary" onClick={() => setConfirmDelete(false)}>取消</SubmitButton>
-              <SubmitButton onClick={handleDelete} loading={submitting}>确认删除</SubmitButton>
+            <div style={{
+              background: '#1e293b', borderRadius: 12, padding: 24, maxWidth: 400, width: '90%',
+              border: '1px solid rgba(148,163,184,0.15)',
+            }}>
+              <h3 style={{ color: '#f87171', marginBottom: 12, fontSize: 16 }}>确认删除</h3>
+              <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 20 }}>
+                确定要删除退换单 <strong style={{ color: '#e2e8f0' }}>{detail.id}</strong> 吗？此操作不可撤销。
+              </p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <SubmitButton variant="secondary" onClick={() => setConfirmDelete(false)}>取消</SubmitButton>
+                <SubmitButton onClick={handleDelete} loading={submitting}>确认删除</SubmitButton>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </DetailShell>
+        )}
+      </DetailShell>
+    </AdminPermissionGate>
   );
 }

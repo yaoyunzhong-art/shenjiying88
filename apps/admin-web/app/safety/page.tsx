@@ -15,6 +15,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
   Button,
   DataTable,
@@ -318,14 +319,15 @@ export default function SafetyPage() {
   }, []);
 
   return (
-    <PageShell title="🛡️ 安全记录" subtitle="安全事件、隐患与整改跟踪">
-      {/* 统计摘要卡片 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-        <StatCard label="已处理告警" value={stats.processed.toString()} variant="success" helper={`已解决 ${stats.resolved} · 已关闭 ${stats.closed}`} />
-        <StatCard label="未处理告警" value={stats.unprocessed.toString()} variant="warning" helper={`待处理 ${stats.open} · 调查中 ${stats.investigating}`} />
-        <StatCard label="总告警数" value={stats.total.toString()} helper={`严重 ${stats.critical}`} />
-        <StatCard label="今日新增" value={stats.todayNew.toString()} variant={stats.todayNew > 0 ? 'warning' : undefined} />
-      </div>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="🛡️ 安全记录" subtitle="安全事件、隐患与整改跟踪">
+        {/* 统计摘要卡片 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+          <StatCard label="已处理告警" value={stats.processed.toString()} variant="success" helper={`已解决 ${stats.resolved} · 已关闭 ${stats.closed}`} />
+          <StatCard label="未处理告警" value={stats.unprocessed.toString()} variant="warning" helper={`待处理 ${stats.open} · 调查中 ${stats.investigating}`} />
+          <StatCard label="总告警数" value={stats.total.toString()} helper={`严重 ${stats.critical}`} />
+          <StatCard label="今日新增" value={stats.todayNew.toString()} variant={stats.todayNew > 0 ? 'warning' : undefined} />
+        </div>
 
       {/* 统计面板 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
@@ -418,19 +420,20 @@ export default function SafetyPage() {
       </Modal>
 
       {/* 安全合规概览 */}
-      <div style={{ marginTop: 16, padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 13 }}>
-        <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>🛡️ 安全合规概览</div>
-        <div style={{ display: 'flex', gap: 16, color: '#15803d' }}>
-          <span>待处理: {stats.open} 项</span>
-          <span>调查中: {stats.investigating} 项</span>
-          <span>已解决: {stats.resolved} 项</span>
-          <span>已关闭: {stats.closed} 项</span>
+        <div style={{ marginTop: 16, padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', fontSize: 13 }}>
+          <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>🛡️ 安全合规概览</div>
+          <div style={{ display: 'flex', gap: 16, color: '#15803d' }}>
+            <span>待处理: {stats.open} 项</span>
+            <span>调查中: {stats.investigating} 项</span>
+            <span>已解决: {stats.resolved} 项</span>
+            <span>已关闭: {stats.closed} 项</span>
+          </div>
+          <div style={{ fontSize: 12, color: '#16a34a', marginTop: 4 }}>
+            总体完成率: {stats.total > 0 ? Math.round(((stats.resolved + stats.closed) / stats.total) * 100) : 0}%
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: '#16a34a', marginTop: 4 }}>
-          总体完成率: {stats.total > 0 ? Math.round(((stats.resolved + stats.closed) / stats.total) * 100) : 0}%
-        </div>
-      </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

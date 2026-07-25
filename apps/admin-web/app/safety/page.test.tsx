@@ -82,6 +82,12 @@ describe('safety page', () => {
       assert.ok(src);
       assert.ok(src.includes('export default'));
     });
+    it('应接入管理员权限边界', () => {
+      const src = readSrc();
+      assert.ok(src);
+      assert.ok(src.includes('AdminPermissionGate'));
+      assert.ok(src.includes("requiredPermission: 'safety:read'"));
+    });
     it('应包含页面标题', () => {
       const src = readSrc();
       assert.ok(src);

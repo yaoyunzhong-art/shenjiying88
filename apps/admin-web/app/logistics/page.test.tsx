@@ -9,6 +9,9 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ── 类型 ──
 
@@ -97,8 +100,15 @@ function filterByUrgency(orders: LogisticsOrder[], urgency: LogisticsUrgency | '
   return orders.filter(o => o.urgency === urgency);
 }
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+
 // ===================================================================
 describe('Logistics — 状态与紧急程度', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'logistics:read'"));
+  });
   it('七种采购单状态映射完整', () => {
     const statuses: LogisticsOrderStatus[] = ['draft', 'pending_approval', 'approved', 'ordered', 'partial_delivery', 'received', 'cancelled'];
     for (const s of statuses) {

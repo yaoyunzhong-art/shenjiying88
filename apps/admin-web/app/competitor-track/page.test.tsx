@@ -16,6 +16,10 @@ describe('competitor-track', () => {
   // ── 页面存在与导出 ──
   it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)); });
   it('包含 default export', () => { assert.ok(content.includes('export default')); });
+  it('应接入管理员权限边界', () => {
+    assert.ok(content.includes('AdminPermissionGate'));
+    assert.ok(content.includes("requiredPermission: 'competitor-track:read'"));
+  });
   it('仅一个 export default', () => {
     const matches = content.match(/export default/g);
     assert.equal(matches?.length, 1);

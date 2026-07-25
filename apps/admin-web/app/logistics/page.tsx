@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   DataTable,
@@ -461,12 +462,13 @@ export default function LogisticsPage() {
   const tabs = useMemo(() => buildTabs(stats), [stats]);
 
   return (
-    <PageShell
-      title="后勤配送管理"
-      description="管理门店采购配送订单，跟踪配送状态与签收记录"
-    >
-      {/* 统计卡片 */}
-      <StatsCards stats={stats} />
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="后勤配送管理"
+        description="管理门店采购配送订单，跟踪配送状态与签收记录"
+      >
+        {/* 统计卡片 */}
+        <StatsCards stats={stats} />
 
       {/* 搜索 + ActionBar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -519,9 +521,10 @@ export default function LogisticsPage() {
       </div>
 
       {/* 详情侧面板 */}
-      {detailOrder && (
-        <OrderDetailPanel order={detailOrder} onClose={() => setDetailOrder(null)} />
-      )}
-    </PageShell>
+        {detailOrder && (
+          <OrderDetailPanel order={detailOrder} onClose={() => setDetailOrder(null)} />
+        )}
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

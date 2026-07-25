@@ -9,6 +9,9 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
@@ -28,6 +31,9 @@ import {
   type TrainingStatus,
   type TrainingTabKey,
 } from '../training-data';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf-8');
 
 /* ══════════════════════════════════════════════════════════
    URL-pattern responseRegistry (fetch mock for future use)
@@ -331,6 +337,10 @@ describe('training-data: 边界', () => {
    ══════════════════════════════════════════════════════════ */
 
 describe('training-page: 页面结构 (静态分析)', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'training:read'"));
+  });
   it('导出默认组件', () => {
     const src = require('fs').readFileSync(require('path').join(__dirname, 'page.tsx'), 'utf-8');
     assert.ok(src.includes('export default'));
