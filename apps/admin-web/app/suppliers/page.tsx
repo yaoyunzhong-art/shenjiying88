@@ -8,9 +8,6 @@
 
 import { useState, useMemo, Suspense } from 'react';
 
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = { title: 'Suppliers - 神机营' }
 
 import { AdminPermissionGate } from '../components/admin-permission-gate';
 

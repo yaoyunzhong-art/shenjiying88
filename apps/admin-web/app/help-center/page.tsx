@@ -12,22 +12,11 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  * - 热门文章置顶 + 最新更新提示
  * - 空状态 / 加载中 / 搜索无结果
  */
-import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { getHelpArticles } from './help-center-data';
 import { HelpCenterClient } from './help-center-client';
 
-export const metadata: Metadata = {
-  title: '帮助中心 - M5 指挥台',
-  description:
-    '平台操作指南、常见问题和技术文档。按分类浏览或搜索关键词快速定位帮助文档。',
-  openGraph: {
-    title: '帮助中心 | M5 指挥台文档',
-    description: '平台操作指南、常见问题和技术文档',
-    type: 'website',
-  },
-};
 
 /** 帮助文档分类配置 */
 const HELP_CATEGORIES = [

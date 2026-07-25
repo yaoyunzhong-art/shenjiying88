@@ -13,22 +13,11 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  * - 统计概览：待处理 / 已完成 / 维修中
  * - 空状态 / 加载中 / 搜索无结果 / 错误回退
  */
-import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { getReturns } from './return-data';
 import { ReturnListClient } from './return-list-client';
 
-export const metadata: Metadata = {
-  title: '退换货管理 - M5 指挥台',
-  description:
-    '管理门店退换货申请审批与处理流程，支持仅退款、换货、维修等多种退换类型。状态筛选、订单号搜索，统计待处理和已完成退换货。',
-  openGraph: {
-    title: '退换货管理 | 门店退换处理',
-    description: '管理门店退换货审批与处理流程，支持仅退款、换货、维修等多种类型',
-    type: 'website',
-  },
-};
 
 /** 退换货统计摘要 */
 function ReturnSummaryCards({ returns }: { returns: unknown[] }) {
