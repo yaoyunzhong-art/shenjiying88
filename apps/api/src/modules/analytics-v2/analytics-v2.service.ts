@@ -168,7 +168,7 @@ export class AnalyticsV2Service {
           return { eventId: event.eventId, accepted: false, reason: 'collect_rejected' }
         }
         return { eventId: event.eventId, accepted: true }
-      } catch (err: any) {
+      } catch (err: unknown) {
         return { eventId: event.eventId, accepted: false, reason: err.message || 'unknown_error' }
       }
     })

@@ -61,7 +61,7 @@ export class FallbackService {
             this.logger.warn(`Fallback from ${errors.map(e => e.provider).join('->')} to ${provider.name}`)
           }
           return result
-        } catch (e: any) {
+        } catch (e: unknown) {
           errors.push({ provider: provider.name, error: e.message })
           if (attempt === this.MAX_RETRIES - 1) break
         }

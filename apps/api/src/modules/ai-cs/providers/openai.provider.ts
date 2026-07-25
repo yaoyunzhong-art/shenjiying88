@@ -42,7 +42,7 @@ export class OpenAIProvider extends BaseAIProvider {
         available: this.healthy,
         latencyMs: Date.now() - start
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.healthy = false
       return { available: false, errorMessage: e.message }
     }
@@ -64,7 +64,7 @@ export class OpenAIProvider extends BaseAIProvider {
       const confidence = this.estimateConfidence(lastUserMsg)
 
       return this.buildResponse(content, 'openai', start, 100, confidence)
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.healthy = false
       throw new Error(`OpenAI failed: ${e.message}`)
     }

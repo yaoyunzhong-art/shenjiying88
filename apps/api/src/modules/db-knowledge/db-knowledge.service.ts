@@ -175,7 +175,7 @@ export class DbKnowledgeService {
     for (const stmt of statements) {
       try {
         await this.pool!.query(stmt)
-      } catch (e: any) {
+      } catch (e: unknown) {
         // 忽略 "already exists" 错误
         if (!e.message?.includes('already exists')) {
           throw e

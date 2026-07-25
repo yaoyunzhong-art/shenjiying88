@@ -859,7 +859,7 @@ export class BrandOperationsService {
         s.status = 'executed'
         s.executedAt = now
         this.logger.debug(`Executed campaign schedule ${s.id}: ${s.action} campaign ${s.campaignId}`)
-      } catch (error: any) {
+      } catch (error: unknown) {
         s.status = 'failed'
         s.errorMessage = error.message
         this.logger.warn(`Failed campaign schedule ${s.id}: ${error.message}`)
@@ -1183,7 +1183,7 @@ export class BrandOperationsService {
       record.completedAt = new Date().toISOString()
       exportRecordStore.set(id, record)
     if (this.prismaStore) void this.prismaStore.persistExportRecord(id)
-    } catch (error: any) {
+    } catch (error: unknown) {
       record.status = 'failed'
       record.errorMessage = error.message
       exportRecordStore.set(id, record)
@@ -1736,7 +1736,7 @@ export class BrandOperationsService {
       item.restoredAt = new Date().toISOString()
       recycleBinStore.set(id, item)
       this.logger.debug(`Restored ${item.entityType} ${item.entityId} from recycle bin`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Failed to restore entity: ${error.message}`)
     }
 

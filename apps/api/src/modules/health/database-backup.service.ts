@@ -91,7 +91,7 @@ export class DatabaseBackupService implements OnModuleInit {
       await this.cleanup()
 
       return filepath
-    } catch (err: any) {
+    } catch (err: unknown) {
       // 降级: 如果 pg_dump 不可用，记录警告但不崩溃
       if (err.message?.includes('command not found') || err.message?.includes('ENOENT')) {
         this.logger.warn('pg_dump 未安装，备份降级为 SQL 文件导出 (仅测试环境)')
@@ -156,7 +156,7 @@ export class DatabaseBackupService implements OnModuleInit {
         await unlink(join(BACKUP_DIR, backups[i]))
         this.logger.log(`🗑️  删除旧备份: ${backups[i]}`)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.logger.warn(`清理失败: ${err.message}`)
     }
   }

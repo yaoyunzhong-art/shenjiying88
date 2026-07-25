@@ -66,7 +66,7 @@ export class GiftCardController {
         tenantId,
       })
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -84,7 +84,7 @@ export class GiftCardController {
     try {
       const card = this.giftCardService.activate(cardId, body.operatorId)
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -107,7 +107,7 @@ export class GiftCardController {
         remark: body.remark,
       })
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -131,7 +131,7 @@ export class GiftCardController {
         remark: body.remark,
       })
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -149,7 +149,7 @@ export class GiftCardController {
     try {
       const card = this.giftCardService.freeze(cardId, body.operatorId, body.remark)
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -167,7 +167,7 @@ export class GiftCardController {
     try {
       const card = this.giftCardService.unfreeze(cardId, body.operatorId, body.remark)
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -185,7 +185,7 @@ export class GiftCardController {
     try {
       const card = this.giftCardService.cancel(cardId, body.operatorId, body.remark)
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -208,7 +208,7 @@ export class GiftCardController {
         body.remark,
       )
       return { success: true, data: card }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }
@@ -252,7 +252,7 @@ export class GiftCardController {
     try {
       const txs = this.giftCardService.getTransactions(cardId)
       return { success: true, data: txs, total: txs.length }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { success: false, message: err.message }
     }
   }

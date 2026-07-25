@@ -187,7 +187,7 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
         healthCheckOk,
       }
       
-    } catch(error: any){
+    } catch (error: unknown){
       const latencyMs = Date.now() - startTime
       this.logger.error(`Hot reload failed: ${error.message}`, error.stack)
       
@@ -263,7 +263,7 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
       // 只要返回了响应(无论状态码)就认为 endpoint 可访问
       return true
       
-    } catch(error: any){
+    } catch (error: unknown){
       // HEAD 请求失败,尝试更宽松的检查
       try {
         // 验证 API key 格式

@@ -85,7 +85,7 @@ export class VenueDataService {
       try {
         const result = await pool.query('SELECT id, name, city, region, category, rating FROM venues WHERE city = $1 LIMIT 50', [city])
         return result.rows.map((r: any) => ({ ...r, price: null, equipment: null }))
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.logger.warn(`DB query failed for city=${city}: ${e.message}, falling back`)
       }
     }
@@ -153,7 +153,7 @@ export class VenueDataService {
           brand: r.brand,
           status: r.status,
         }))
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.logger.warn(`DB device query failed for city=${city}: ${e.message}, falling back`)
       }
     }

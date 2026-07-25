@@ -552,7 +552,7 @@ export class CustomDomainService {
       })
       this.domainResolution?.upsertFromMapping(updated)
       return updated
-    } catch (err: any) {
+    } catch (err: unknown) {
       await this.persistStatusUpdate(issuing, {
         status: 'ssl_failed',
         certificateStatus: 'FAILED',
@@ -748,7 +748,7 @@ export class CustomDomainService {
   ): Promise<RecommendPrimaryDomainResponse> {
     try {
       return await this.recommendPrimary(query)
-    } catch (error: any) {
+    } catch (error: unknown) {
       return this.buildFailedRecommendation(query, error)
     }
   }

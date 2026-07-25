@@ -94,7 +94,7 @@ export class AllianceDataService {
     // 尝试处理
     try {
       this.processCallback(id)
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.logger.warn(`Callback ${id} processing failed: ${err.message}`)
       record.processStatus = 'failed'
       record.processResult = err.message

@@ -249,7 +249,7 @@ export class CouponService {
         amount: Number(coupon.value),
         redemptionId,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // check() 不递增,所以无需 decrement 回滚
       // CouponBusinessError -> 透传 code;其他 -> COUPON_NOT_FOUND
       if (err instanceof CouponBusinessError) {

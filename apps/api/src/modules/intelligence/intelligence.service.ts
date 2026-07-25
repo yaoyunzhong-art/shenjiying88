@@ -926,7 +926,7 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
             moduleMapping: 'intelligence.scout',
           })
           entries++
-        } catch (err: any) {
+        } catch (err: unknown) {
           this.logger.warn('知识卡片创建失败(city=' + city + '): ' + err.message)
         }
       }

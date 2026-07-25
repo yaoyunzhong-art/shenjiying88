@@ -181,7 +181,7 @@ export class WebhookDispatcher {
           delivery.nextRetryAt = new Date(Date.now() + this.getNextRetryDelay(delivery.attempts)).toISOString()
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       delivery.errorMessage = err.message || 'unknown_error'
       if (this.isMaxAttemptsReached(delivery.attempts)) {
         delivery.status = 'DEAD_LETTER'
