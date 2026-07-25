@@ -9,7 +9,9 @@ import {
 import { InspectionType } from './quality-inspection.entity'
 import { QualityInspectionService } from './quality-inspection.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
+@Public()
 @Controller('quality-inspections')
 @UseGuards(TenantGuard)
 export class QualityInspectionController {
@@ -116,3 +118,4 @@ export class QualityInspectionController {
     return this.inspectionService.getInspectionsByItems(itemName, tenantContext.tenantId)
   }
 }
+

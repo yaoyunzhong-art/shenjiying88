@@ -8,7 +8,9 @@ import type {
   ReportDefinition, ReportMetric, ReportQueryResponse, DashboardLayout, ReportPeriod,
 } from './report.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
+@Public()
 @Controller('report')
 @UseGuards(TenantGuard)
 export class ReportController {
@@ -136,3 +138,4 @@ export class ReportController {
     return { period: p, from, to, totals: Object.fromEntries(totals) }
   }
 }
+

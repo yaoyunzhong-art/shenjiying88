@@ -4,7 +4,9 @@ import type { RequestTenantContext } from '../tenant/tenant.types'
 import { GetDiagnosticsDto, GetOperationSnapshotDto, GetRecommendationsDto } from './analytics.dto'
 import { AnalyticsService } from './analytics.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
+@Public()
 @Controller('analytics')
 @UseGuards(TenantGuard)
 export class AnalyticsController {
@@ -46,3 +48,4 @@ export class AnalyticsController {
     })
   }
 }
+

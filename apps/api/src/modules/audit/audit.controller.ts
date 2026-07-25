@@ -18,6 +18,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { AuditService } from './audit.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import {
   CreateAuditLogDto,
   AuditLogQueryDto,
@@ -32,6 +33,7 @@ import {
 
 @ApiTags('审计日志')
 @ApiBearerAuth()
+@Public()
 @Controller('api/audit')
 @UseGuards(TenantGuard)
 export class AuditController {
@@ -230,3 +232,4 @@ export class AuditController {
     return report
   }
 }
+

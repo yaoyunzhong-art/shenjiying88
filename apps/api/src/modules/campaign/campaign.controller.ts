@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -31,6 +32,7 @@ import {
 import { CampaignService } from './campaign.service'
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('campaigns')
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
@@ -121,3 +123,4 @@ export class CampaignController {
     return this.campaignService.evaluateTriggers({ ...body, tenantContext })
   }
 }
+

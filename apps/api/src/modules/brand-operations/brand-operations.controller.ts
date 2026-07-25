@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { BrandOperationsService } from './brand-operations.service'
 import {
   CreateBrandAssetDto,
@@ -106,6 +107,7 @@ const MOCK_TENANT_ID = 'tenant-1'
 const MOCK_BRAND_ID = 'brand-1'
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('brand-operations')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class BrandOperationsController {
@@ -930,3 +932,4 @@ export class BrandOperationsController {
     return this.service.getBrandKPISummary(MOCK_TENANT_ID)
   }
 }
+

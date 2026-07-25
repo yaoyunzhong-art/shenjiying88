@@ -27,6 +27,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import {
   CurrentActor,
   type CurrentActorValue
@@ -45,6 +46,7 @@ function resolveActorName(actorContext: CurrentActorValue, fallback?: string) {
 }
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('inventory/purchase')
 export class InventoryPurchaseController {
   private readonly logger = new Logger(InventoryPurchaseController.name)
@@ -678,3 +680,4 @@ export class InventoryPurchaseController {
     })
   }
 }
+

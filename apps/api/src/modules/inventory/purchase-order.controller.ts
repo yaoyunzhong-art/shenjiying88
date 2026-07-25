@@ -22,11 +22,13 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PurchaseOrderService } from './purchase-order.service'
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('inventory/purchase-orders')
 export class PurchaseOrderController {
   private readonly logger = new Logger(PurchaseOrderController.name)
@@ -88,3 +90,4 @@ export class PurchaseOrderController {
     })
   }
 }
+

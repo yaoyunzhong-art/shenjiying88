@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import {
   InventoryItemService,
   type CreateInventoryItemInput,
@@ -34,6 +35,7 @@ interface TenantQuery { tenantId?: string }
 interface StockQuery { tenantId?: string; qty?: number }
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('api/inventory/items')
 export class InventoryItemController {
   constructor(@Inject(InventoryItemService) private readonly svc: InventoryItemService) {}
@@ -125,3 +127,4 @@ export class InventoryItemController {
     return this.svc.getAuditLog(id, q.tenantId)
   }
 }
+

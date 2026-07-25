@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 import {
   RequirePermissions,
   RequireTenantScope
@@ -35,6 +36,7 @@ const STOCK_TRANSFER_READ_PERMISSION = 'stock-transfer:read'
 const STOCK_TRANSFER_FORM_PERMISSION = 'stock-transfer:form:read'
 
 @UseGuards(TenantGuard)
+@Public()
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
@@ -190,3 +192,4 @@ export class InventoryController {
     return this.inventoryService.listPurchaseOrders(tenantContext, query)
   }
 }
+
