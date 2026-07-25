@@ -12,6 +12,7 @@ import type {
   FunnelStep
 } from './analytics-v2.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 /**
  * Phase-43 T173: AnalyticsV2Controller (数据分析 API)
@@ -41,6 +42,7 @@ import { TenantGuard } from '../agent/tenant.guard'
 @Controller('analytics-v2')
 @Injectable()
 @UseGuards(TenantGuard)
+  @Public()
 export class AnalyticsV2Controller {
   constructor(
     private readonly eventCollector: EventCollector,

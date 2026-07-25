@@ -16,9 +16,11 @@ import {
 } from './store-revenue-report.dto'
 import { StoreRevenueReportService } from './store-revenue-report.service'
 import { TenantGuard } from '../agent/tenant.guard';
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('revenue-reports')
 @UseGuards(TenantGuard)
+  @Public()
 export class StoreRevenueReportController {
   constructor(private readonly reportService: StoreRevenueReportService) {}
 

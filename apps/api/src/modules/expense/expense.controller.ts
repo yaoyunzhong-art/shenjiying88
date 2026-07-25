@@ -11,9 +11,11 @@ import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException,
 import { ExpenseService } from './expense.service'
 import type { ExpenseReimbursement, ExpenseCategory, ExpenseStatus } from './expense.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('expense')
 @UseGuards(TenantGuard)
+  @Public()
 export class ExpenseController {
   constructor(private readonly service: ExpenseService) {}
 

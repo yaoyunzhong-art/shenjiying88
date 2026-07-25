@@ -12,9 +12,11 @@ import {
 } from './contract-manager.dto'
 import { ContractManagerService } from './contract-manager.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('contracts')
 @UseGuards(TenantGuard)
+  @Public()
 export class ContractManagerController {
   constructor(private readonly contractService: ContractManagerService) {}
 

@@ -4,9 +4,11 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common'
 import { AttendanceService } from './attendance.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('attendance')
 @UseGuards(TenantGuard)
+  @Public()
 export class AttendanceController {
   constructor(private readonly service: AttendanceService) {}
 

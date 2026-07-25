@@ -16,6 +16,7 @@ import type { TenantAwareRequest } from '../tenant/tenant.types';
 import { MarketingMetricsService } from './marketing-metrics.service';
 import type { MetricsSnapshot, PrometheusExport } from './marketing-metrics.entity';
 import {
+import { Public } from '../foundation/identity-access/public.decorator'
   IncrCouponRedemptionDto,
   IncrCouponIssuedDto,
   IncrCampaignTriggerDto,
@@ -25,6 +26,7 @@ import {
 
 @UseGuards(TenantGuard)
 @Controller('marketing-metrics')
+  @Public()
 export class MarketingMetricsController {
   constructor(private readonly metricsService: MarketingMetricsService) {}
 

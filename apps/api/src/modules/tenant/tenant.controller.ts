@@ -9,10 +9,12 @@ import { TenantLifecycleStatus, TenantStatusReason } from './tenant-lifecycle.en
 import type { TenantQuota, TenantQuotaUsage, QuotaCheckResult } from './tenant-quota.entity'
 import type { TenantLifecycleRecord } from './tenant-lifecycle.entity'
 import { TenantGuard } from '../agent/tenant.guard';
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('tenant')
 @UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  @Public()
 export class TenantController {
   constructor(
     private readonly tenantService: TenantService,

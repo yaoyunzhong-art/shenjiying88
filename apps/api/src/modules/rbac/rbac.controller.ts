@@ -11,9 +11,11 @@ import {
   RegisterProtectedActionDto,
 } from './rbac.dto'
 import { TenantGuard } from '../agent/tenant.guard'
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('rbac')
 @UseGuards(TenantGuard)
+  @Public()
 export class RBACController {
   constructor(private readonly rbacService: RBACService) {}
 

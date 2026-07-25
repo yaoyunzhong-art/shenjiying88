@@ -28,9 +28,11 @@ import {
 import { BUILTIN_WEBHOOK_EVENTS, type WebhookEventType } from './webhook.entity'
 import { webhookEventBus } from './webhook.eventbus'
 import { TenantGuard } from '../agent/tenant.guard';
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('webhook')
 @UseGuards(TenantGuard)
+  @Public()
 export class WebhookController {
   constructor(private readonly service: WebhookService) {}
 

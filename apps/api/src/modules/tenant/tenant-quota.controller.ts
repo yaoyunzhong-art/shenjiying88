@@ -27,10 +27,12 @@ import { TenantQuotaService } from './tenant-quota.service'
 import { TenantQuotaParamsDto, UpdateTenantQuotaDto } from './tenant-quota.dto'
 import type { TenantQuota, TenantQuotaUsage } from './tenant-quota.entity'
 import { TenantGuard } from '../agent/tenant.guard';
+import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('tenants')
 @UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  @Public()
 export class TenantQuotaController {
   constructor(private readonly tenantQuotaService: TenantQuotaService) {}
 
