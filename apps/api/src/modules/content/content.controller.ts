@@ -18,6 +18,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { ContentService } from './content.service';
 import {
   CreateContentDto,
@@ -29,8 +33,13 @@ import {
 } from './content.dto';
 import type { ContentEntity } from './content.entity';
 
+const CONTENT_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const CONTENT_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
+
 @UseGuards(TenantGuard)
 @Controller('content')
+@RequireTenantScope()
+@RequirePermissions(CONTENT_GOVERNANCE_READ_PERMISSION)
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
@@ -57,6 +66,7 @@ export class ContentController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(CONTENT_GOVERNANCE_WRITE_PERMISSION)
   async create(@Body() dto: CreateContentDto): Promise<{ data: ContentResponseDto }> {
     const entity = await this.contentService.create({
       title: dto.title,
@@ -124,6 +134,7 @@ export class ContentController {
    * 更新内容
    */
   @Put(':id')
+  @RequirePermissions(CONTENT_GOVERNANCE_WRITE_PERMISSION)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateContentDto,
@@ -148,6 +159,7 @@ export class ContentController {
    * 发布内容
    */
   @Post(':id/publish')
+  @RequirePermissions(CONTENT_GOVERNANCE_WRITE_PERMISSION)
   async publish(
     @Param('id') id: string,
     @Body() dto: PublishContentDto,
@@ -166,6 +178,7 @@ export class ContentController {
    * 归档内容
    */
   @Post(':id/archive')
+  @RequirePermissions(CONTENT_GOVERNANCE_WRITE_PERMISSION)
   async archive(
     @Param('id') id: string,
   ): Promise<{ data: ContentResponseDto } | { success: false; message: string }> {
@@ -180,6 +193,7 @@ export class ContentController {
    * 删除内容（软删除）
    */
   @Delete(':id')
+  @RequirePermissions(CONTENT_GOVERNANCE_WRITE_PERMISSION)
   async remove(
     @Param('id') id: string,
   ): Promise<{ success: boolean; message: string }> {

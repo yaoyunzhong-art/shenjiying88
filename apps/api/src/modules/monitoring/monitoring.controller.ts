@@ -2,9 +2,18 @@ import { Controller, Get, Post, Body, Param, BadRequestException, Query, UseGuar
 import { MonitoringService } from './monitoring.service'
 import type { MetricPoint, AlertRule, Alert, AlertSeverity } from './monitoring.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const MONITORING_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const MONITORING_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('monitoring')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(MONITORING_GOVERNANCE_READ_PERMISSION)
 export class MonitoringController {
   constructor(private readonly service: MonitoringService) {}
 
@@ -14,11 +23,13 @@ export class MonitoringController {
   }
 
   @Post('metrics/record')
+  @RequirePermissions(MONITORING_GOVERNANCE_WRITE_PERMISSION)
   record(@Body() body: Omit<MetricPoint, 'timestamp'>) {
     return this.service.recordMetric(body)
   }
 
   @Post('metrics/record-batch')
+  @RequirePermissions(MONITORING_GOVERNANCE_WRITE_PERMISSION)
   recordBatch(@Body() body: { points: Omit<MetricPoint, 'timestamp'>[] }) {
     return this.service.recordMetricsBatch(body.points)
   }
@@ -39,11 +50,13 @@ export class MonitoringController {
   }
 
   @Post('rules/create')
+  @RequirePermissions(MONITORING_GOVERNANCE_WRITE_PERMISSION)
   createRule(@Body() body: Omit<AlertRule, 'id' | 'createdAt' | 'updatedAt'>) {
     return this.service.createAlertRule(body)
   }
 
   @Post('rules/:id/update')
+  @RequirePermissions(MONITORING_GOVERNANCE_WRITE_PERMISSION)
   updateRule(@Param('id') id: string, @Body() body: Partial<AlertRule>) {
     const r = this.service.updateAlertRule(id, body)
     if (!r) throw new BadRequestException(`Rule ${id} not found`)
@@ -57,6 +70,7 @@ export class MonitoringController {
   }
 
   @Post('alerts/:id/silence')
+  @RequirePermissions(MONITORING_GOVERNANCE_WRITE_PERMISSION)
   silence(@Param('id') id: string, @Body() body: { durationSec: number; operator: string; reason?: string }) {
     const a = this.service.silenceAlert(id, body.durationSec, body.operator, body.reason)
     if (!a) throw new BadRequestException(`Alert ${id} not found`)

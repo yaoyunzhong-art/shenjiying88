@@ -9,13 +9,23 @@ import {
 import { ReservationStatus } from './reservation.entity'
 import { ReservationService } from './reservation.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const RESERVATION_STORE_READ_PERMISSION = 'store:read'
+const RESERVATION_STORE_WRITE_PERMISSION = 'store:update'
 
 @Controller('reservations')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(RESERVATION_STORE_READ_PERMISSION)
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
   @Post()
+  @RequirePermissions(RESERVATION_STORE_WRITE_PERMISSION)
   createReservation(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateReservationDto
@@ -114,6 +124,7 @@ export class ReservationController {
   }
 
   @Patch(':id')
+  @RequirePermissions(RESERVATION_STORE_WRITE_PERMISSION)
   updateReservation(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('id') id: string,
@@ -146,6 +157,7 @@ export class ReservationController {
   }
 
   @Delete(':id')
+  @RequirePermissions(RESERVATION_STORE_WRITE_PERMISSION)
   cancelReservation(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('id') id: string,

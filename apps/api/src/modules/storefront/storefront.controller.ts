@@ -28,6 +28,7 @@ import { Public } from '../foundation/identity-access/public.decorator'
 import { StoreFrontService } from './storefront.service'
 import { CouponService } from './coupon.service'
 import { NotificationService } from './notification.service'
+import { ReferralTrackingService } from './referral-tracking.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { CancelBookingDto, RescheduleBookingDto } from './dto/cancellation.dto'
 
@@ -38,6 +39,7 @@ export class StoreFrontController {
     private readonly storeFrontService: StoreFrontService,
     private readonly couponService: CouponService,
     private readonly notification: NotificationService,
+    private readonly referral: ReferralTrackingService,
   ) {}
 
   // ── 1. 门店信息 ────────────────────────────────────────────
@@ -220,5 +222,89 @@ export class StoreFrontController {
   getPackages(@Query('storeSlug') storeSlug?: string) {
     const packages = this.storeFrontService.getPackages(storeSlug)
     return { success: true, data: { total: packages.length, items: packages } }
+  }
+
+  // ── 11. 推广码生成 ─────────────────────────────────────
+
+  @Public()
+  @Post('referral/create-code')
+  @ApiOperation({ summary: '创建推广码（员工/KOL/客户）' })
+  createReferralCode(@Body() body: {
+    type: 'employee' | 'kol' | 'customer'
+    referrerId: string
+    referrerName: string
+    storeSlug: string
+    channel: 'wechat' | 'douyin' | 'xiaohongshu' | 'weibo'
+  }) {
+    const code = this.referral.createCode(body)
+    return { success: true, data: code }
+  }
+
+  // ── 12. 扫码归因 ───────────────────────────────────────
+
+  @Public()
+  @Post('referral/scan')
+  @ApiOperation({ summary: '推广码扫码归因（无感）' })
+  trackReferralScan(@Body() body: { code: string; customerPhone: string }) {
+    const record = this.referral.trackScan(body.code, body.customerPhone)
+    return { success: true, data: record }
+  }
+
+  // ── 13. 转化追踪 ───────────────────────────────────────
+
+  @Public()
+  @Post('referral/conversion')
+  @ApiOperation({ summary: '推广转化追踪（消费后调用）' })
+  trackReferralConversion(@Body() body: { customerPhone: string; orderAmount: number }) {
+    const record = this.referral.trackConversion(body.customerPhone, body.orderAmount)
+    return { success: true, data: record }
+  }
+
+  // ── 14. 排行榜 ─────────────────────────────────────────
+
+  @Public()
+  @Get('referral/leaderboard/:storeSlug')
+  @ApiOperation({ summary: '推广排行榜' })
+  getReferralLeaderboard(
+    @Param('storeSlug') storeSlug: string,
+    @Query('period') period?: 'daily' | 'weekly' | 'monthly' | 'quarterly',
+  ) {
+    const leaderboard = this.referral.getLeaderboard(storeSlug, period ?? 'monthly')
+    return { success: true, data: leaderboard }
+  }
+
+  // ── 15. 推广者面板 ─────────────────────────────────────
+
+  @Public()
+  @Get('referral/dashboard/:referrerId')
+  @ApiOperation({ summary: '推广者个人面板' })
+  getReferrerDashboard(@Param('referrerId') referrerId: string) {
+    const dashboard = this.referral.getReferrerDashboard(referrerId)
+    return { success: true, data: dashboard }
+  }
+
+  // ── 16. KOL达人链接生成 ────────────────────────────────
+
+  @Public()
+  @Post('referral/kol-link')
+  @ApiOperation({ summary: '生成KOL达人专属推广链接' })
+  createKolLink(@Body() body: {
+    kolId: string
+    kolName: string
+    platform: 'douyin' | 'xiaohongshu' | 'weibo' | 'bilibili'
+    storeSlug: string
+  }) {
+    const link = this.referral.createKolLink(body.kolId, body.kolName, body.platform, body.storeSlug)
+    return { success: true, data: link }
+  }
+
+  // ── 17. 推广关系解除 ───────────────────────────────────
+
+  @Public()
+  @Post('referral/remove-relationship')
+  @ApiOperation({ summary: '解除推广关系' })
+  removeReferralRelationship(@Body() body: { customerPhone: string }) {
+    const removed = this.referral.removeReferralRelationship(body.customerPhone)
+    return { success: true, data: { removed }, message: removed ? '关系已解除' : '未找到推广关系' }
   }
 }
