@@ -63,6 +63,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false
   },
+  experimental: {
+    workerThreads: false,
+  },
 
   // V23 Day15 L1: 安全响应头
   async headers() {
