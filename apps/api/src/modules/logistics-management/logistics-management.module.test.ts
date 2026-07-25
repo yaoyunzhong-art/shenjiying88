@@ -1,5 +1,5 @@
-import { describe, it, expect, assert } from 'vitest'
 import 'reflect-metadata'
+import { describe, it, expect, assert } from 'vitest'
 import { LogisticsManagementModule } from './logistics-management.module'
 import { LogisticsManagementController } from './logistics-management.controller'
 import { LogisticsManagementService } from './logistics-management.service'

@@ -166,9 +166,33 @@ export default function StockTransferListPage(): React.ReactElement {
     }
   }, []);
 
-  if (loading) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div></main>;
-  if (error) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div></main>;
-  if (!data || data.length === 0) return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}><div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div></main>;
+  if (loading) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+          <div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>加载中...</div>
+        </main>
+      </AdminPermissionGate>
+    );
+  }
+  if (error) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+          <div style={{ color: '#ef4444', textAlign: 'center', padding: 64 }}>数据获取失败: {error}</div>
+        </main>
+      </AdminPermissionGate>
+    );
+  }
+  if (!data || data.length === 0) {
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+          <div style={{ color: '#94a3b8', textAlign: 'center', padding: 64 }}>暂无数据</div>
+        </main>
+      </AdminPermissionGate>
+    );
+  }
 
   const router = useRouter();
 

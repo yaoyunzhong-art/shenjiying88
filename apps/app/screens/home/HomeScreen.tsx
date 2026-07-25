@@ -193,7 +193,7 @@ export function HomeScreen() {
         </View>
       ) : (
         mockTasks.map((task) => (
-          <TouchableOpacity key={task.id} style={styles.taskItem} onPress={() => { /* TODO: navigate to task detail */ }}>
+          <TouchableOpacity key={task.id} style={styles.taskItem} onPress={() => { /* TODO(NAV): navigate to task detail */ }}>
             <View
               style={[
                 styles.taskDot,

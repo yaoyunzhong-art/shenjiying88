@@ -541,7 +541,134 @@ describe('OrderService', () => {
   })
 
   // ═════════════════════════════════════════════════════════════
-  // 7. 完整生命周期
+  // 7. 错误/边界
+  // ═════════════════════════════════════════════════════════════
+
+  describe('error handling & edge cases', () => {
+    it('should throw on DRAFT → FULFILLED (skip PENDING+PAID)', () => {
+      const order = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      expect(() => service.fulfill(order.id, TENANT_A)).toThrow(BadRequestException)
+    })
+
+    it('should throw on DRAFT → REFUNDED (skip all)', () => {
+      const order = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      expect(() => service.applyRefund(order.id, 100, TENANT_A)).toThrow(BadRequestException)
+    })
+
+    it('should throw on nonexistent order for cancel', () => {
+      expect(() => service.cancel('ORD-fake-99999', TENANT_A, 'test'))
+        .toThrow(NotFoundException)
+    })
+
+    it('should throw on nonexistent order for fulfill', () => {
+      expect(() => service.fulfill('ORD-fake-99999', TENANT_A)).toThrow(NotFoundException)
+    })
+
+    it('should throw on nonexistent order for markPaid', () => {
+      expect(() => service.markPaid('ORD-fake-99999', 5000, 'CASH', TENANT_A))
+        .toThrow(NotFoundException)
+    })
+
+    it('should throw on DRAFT → submit for nonexistent', () => {
+      expect(() => service.submit('ORD-fake-99999', TENANT_A)).toThrow(NotFoundException)
+    })
+
+    it('should keep correct schedule: FULFILLED → cannot cancel', () => {
+      const order = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      service.submit(order.id, TENANT_A)
+      service.markPaid(order.id, order.totalCents, 'CASH', TENANT_A)
+      service.fulfill(order.id, TENANT_A)
+      expect(() => service.cancel(order.id, TENANT_A, 'late')).toThrow(BadRequestException)
+    })
+
+    it('should handle zero-quantity items gracefully via totalCents', () => {
+      const input = makeInput({
+        items: [{ productId: 'x', quantity: 0, unitPriceCents: 500 }],
+      })
+      const order = service.create(input, { tenantId: TENANT_A, userId: USER_1 })
+      // subtotal = 0 * 500 = 0, total = 0
+      expect(order.totalCents).toBe(0)
+      expect(order.subtotalCents).toBe(0)
+    })
+
+    it('should throw when DRAFT order is submitted from another tenant', () => {
+      const order = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      expect(() => service.submit(order.id, TENANT_B)).toThrow(BadRequestException)
+    })
+
+    it('should throw when PENDING order is canceled from another tenant', () => {
+      const order = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      service.submit(order.id, TENANT_A)
+      expect(() => service.cancel(order.id, TENANT_B, 'bad actor'))
+        .toThrow(BadRequestException)
+    })
+
+    it('should return empty items when order not found', () => {
+      const items = service.getItems('ORD-fake-99999', TENANT_A)
+      expect(items).toEqual([])
+    })
+
+    it('should throw on refund without being paid first', () => {
+      const order = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      service.submit(order.id, TENANT_A)
+      // not paid yet — FULFILLED is also blocked, and REFUNDED is not in PENDING's allowed transitions
+      expect(() => service.applyRefund(order.id, 100, TENANT_A)).toThrow(BadRequestException)
+    })
+
+    it('should keep _clear and _size helpers working', () => {
+      service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      expect(service._size()).toBe(2)
+      service._clear()
+      expect(service._size()).toBe(0)
+    })
+
+    it('should expose idempotency via repeated creates with same clientOrderId different users', () => {
+      const input = makeInput()
+      const o1 = service.create(input, { tenantId: TENANT_A, userId: 'user-a' })
+      const o2 = service.create(input, { tenantId: TENANT_A, userId: 'user-b' })
+      expect(o2.id).toBe(o1.id)
+      // createdBy stays from first creation
+      expect(o2.createdBy).toBe('user-a')
+    })
+
+    it('should have discountCents default to 0 in order items', () => {
+      const input = makeInput({
+        items: [{ productId: 'x', quantity: 1, unitPriceCents: 1000 }],
+      })
+      const order = service.create(input, { tenantId: TENANT_A, userId: USER_1 })
+      const items = service.getItems(order.id, TENANT_A)
+      expect(items[0].discountCents).toBe(0)
+    })
+
+    it('should include taxCents defaulted to 0 when not provided', () => {
+      const input = makeInput({ items: [{ productId: 'taxed', quantity: 1, unitPriceCents: 1000 }] })
+      const order = service.create(input, { tenantId: TENANT_A, userId: USER_1 })
+      expect(order.taxCents).toBe(0)
+      expect(order.totalCents).toBe(1000)
+    })
+
+    it('should apply discount on totalCents correctly', () => {
+      const input = makeInput({
+        items: [{ productId: 'd1', quantity: 2, unitPriceCents: 1500 }],
+        discountCents: 1500,
+        taxCents: 300,
+      })
+      // subtotal = 3000, total = 3000 - 1500 + 300 = 1800
+      const order = service.create(input, { tenantId: TENANT_A, userId: USER_1 })
+      expect(order.totalCents).toBe(1800)
+    })
+
+    it('should generate unique order IDs sequentially', () => {
+      const o1 = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      const o2 = service.create(makeInput(), { tenantId: TENANT_A, userId: USER_1 })
+      expect(o1.id).not.toBe(o2.id)
+      expect(o1.id).toMatch(/^ORD-\d{8}-\d{5}$/)
+    })
+  })
+
+  // ═════════════════════════════════════════════════════════════
+  // 8. 完整生命周期
   // ═════════════════════════════════════════════════════════════
 
   describe('full lifecycle (happy path)', () => {

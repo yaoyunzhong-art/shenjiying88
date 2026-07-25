@@ -456,7 +456,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => {
-                // TODO: 跳转忘记密码页面
+                // TODO(AUTH): 跳转忘记密码页面
               }}
               style={{
                 background: 'none',
