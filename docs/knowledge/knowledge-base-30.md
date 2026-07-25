@@ -190,3 +190,33 @@ finance-reconciliation测试helper `createTxn`缺`externalTransactionId`字段�
 **来源**: 54专家团G2安全+G7租户 联合审计
 **路径**: `apps/api/prisma/migrations/20260725185300_add_tenant_id_to_cashier_tables/`
 **摘要**: CashierPayment/CashierMember/CashierTransaction 三表补 tenantId + @@index，迁移策略: 先加NULL→填默认值→改NOT NULL。
+
+### KB-037: TOC开发中"能力审计缺失"反模式
+**来源**: 54专家团30轮评审
+**教训**: 在已有215+文件的能力体系上重写了374行重复代码
+**预防**: V23 V2.0流程强制Gate 0 — 任何新模块启动前必须先审计已有系统能力矩阵
+**路径**: `docs/knowledge/v23-development-flow-v2.md`
+
+### KB-038: @Public()端点安全四维度
+**维度**: 认证(@Public声明) + Rate Limit + CSRF + 数据隔离(tenantId)
+**规范**: 新端点必须同时声明四维度状态，不能只标@Public()
+
+### KB-039: 预约系统时段并发保护模式
+**方案**: DB唯一约束 `@@unique([date, timeSlot, serviceId])` + 乐观锁 version字段
+**参考**: queue/ 模块已有类似双模排队实现
+
+### KB-040: 前端组件库复用清单
+**已有组件**: PerformanceRanking, StatCard, MemberMarketerDashboard, SalespersonToolPanel 等
+**规范**: 任何UI需求先 `grep "export" packages/ui/src/index.tsx`，PRD含"组件复用决策"章节
+
+### KB-041: Mock→生产迁移时机规范
+**反模式**: "先用mock,以后改" — TOC预约数据在内存Map, 重启丢失
+**规范**: Phase 1 编码阶段即引入真实DB访问
+
+### KB-042: 54专家团评审轮次演进规律
+**发现**: 1轮发现50%问题, 3轮80%, 10轮+交叉验证95%+
+**规律**: 逐组深度(1-10)→交叉验证(11-20)→方案生成(21-30)
+
+### KB-043: TOC单店数据闭环路径
+**完整链路**: 浏览→预约→支付→推送→会员→核销→归因 (7节点)
+**现状**: 仅预约节点有实现, 其余6节点待对接已有系统

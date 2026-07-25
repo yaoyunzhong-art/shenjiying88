@@ -1,9 +1,15 @@
 // session.controller.test.ts · 会话控制器测试
 // Phase-FP P10 · 2026-07-08
 
+import 'reflect-metadata'
+import assert from 'node:assert/strict'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { SessionController } from './session.controller'
 import { SessionService } from './session.service'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
 
 describe('SessionController', () => {
   let controller: SessionController
@@ -12,6 +18,47 @@ describe('SessionController', () => {
   beforeEach(() => {
     service = new SessionService()
     controller = new SessionController(service)
+  })
+
+  describe('权限元数据验证', () => {
+    const resolvePermissions = (handler: Function) =>
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+      ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, SessionController)
+
+    const resolveTenantScope = (handler: Function) =>
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+      ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, SessionController)
+
+    const readHandlers = [
+      SessionController.prototype.validateSession,
+      SessionController.prototype.getUserSessions,
+      SessionController.prototype.getSession,
+    ]
+
+    const writeHandlers = [
+      SessionController.prototype.createSession,
+      SessionController.prototype.revokeSession,
+      SessionController.prototype.revokeAllUserSessions,
+      SessionController.prototype.deleteSession,
+    ]
+
+    it('all routes should require tenant scope', () => {
+      ;[...readHandlers, ...writeHandlers].forEach((handler) => {
+        assert.deepEqual(resolveTenantScope(handler), {})
+      })
+    })
+
+    it('read routes should reuse identity-access:read', () => {
+      readHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['identity-access:read'])
+      })
+    })
+
+    it('write routes should reuse identity-access:write', () => {
+      writeHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['identity-access:write'])
+      })
+    })
   })
 
   // ─── 正例：创建会话 ───
