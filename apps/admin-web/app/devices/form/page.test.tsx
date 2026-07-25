@@ -55,6 +55,14 @@ function isValidIP(ip: string): boolean {
 
 function setup() {
   cleanup();
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['devices:form:read'],
+    }),
+  );
   return render(<DeviceFormPage />);
 }
 
@@ -298,6 +306,10 @@ describe('devices/form: 业务逻辑', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Devices / Form — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'devices:form:read'"));
+  });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onSubmit={')));

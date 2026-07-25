@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   FormField,
@@ -166,24 +167,25 @@ export default function DeviceFormPage() {
   const resetSubmit = useCallback(() => setSubmitState('idle'), []);
 
   return (
-    <PageShell
-      title="新建设备"
-      subtitle="添加新设备到门店 — 填写设备信息后提交审核"
-      breadcrumb={
-        <WorkspaceBreadcrumb
-          workspaceLabel="设备管理"
-          workspaceHref="/devices"
-          detailLabel="新建设备"
-        />
-      }
-    >
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        {submitState === 'success' && (
-          <FormSubmitFeedback success="设备已提交 — 等待运维审核。" onDismissSuccess={resetSubmit} />
-        )}
-        {submitState === 'error' && (
-          <FormSubmitFeedback error="提交失败，请重试" onRetry={onSubmit} onDismissError={resetSubmit} />
-        )}
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="新建设备"
+        subtitle="添加新设备到门店 — 填写设备信息后提交审核"
+        breadcrumb={
+          <WorkspaceBreadcrumb
+            workspaceLabel="设备管理"
+            workspaceHref="/devices"
+            detailLabel="新建设备"
+          />
+        }
+      >
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          {submitState === 'success' && (
+            <FormSubmitFeedback success="设备已提交 — 等待运维审核。" onDismissSuccess={resetSubmit} />
+          )}
+          {submitState === 'error' && (
+            <FormSubmitFeedback error="提交失败，请重试" onRetry={onSubmit} onDismissError={resetSubmit} />
+          )}
 
         {submitState !== 'success' && (
           <form
@@ -304,8 +306,9 @@ export default function DeviceFormPage() {
             </div>
           </form>
         )}
-      </div>
-    </PageShell>
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

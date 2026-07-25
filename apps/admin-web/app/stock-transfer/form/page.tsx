@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   FormField,
@@ -143,24 +144,25 @@ export default function StockTransferFormPage() {
   const isSubmitting = submitState === 'submitting';
 
   return (
-    <PageShell
-      title="新建调拨单"
-      subtitle="发起门店或仓库之间的库存调拨申请"
-      breadcrumb={
-        <WorkspaceBreadcrumb
-          workspaceLabel="库存调拨"
-          workspaceHref="/stock-transfer"
-          detailLabel="新建调拨单"
-        />
-      }
-    >
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        {submitState === 'success' && (
-          <FormSubmitFeedback success="调拨单已提交 — 等待仓管审核。" onDismissSuccess={resetSubmit} />
-        )}
-        {submitState === 'error' && (
-          <FormSubmitFeedback error="提交失败，请重试" onRetry={onSubmit} onDismissError={resetSubmit} />
-        )}
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="新建调拨单"
+        subtitle="发起门店或仓库之间的库存调拨申请"
+        breadcrumb={
+          <WorkspaceBreadcrumb
+            workspaceLabel="库存调拨"
+            workspaceHref="/stock-transfer"
+            detailLabel="新建调拨单"
+          />
+        }
+      >
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          {submitState === 'success' && (
+            <FormSubmitFeedback success="调拨单已提交 — 等待仓管审核。" onDismissSuccess={resetSubmit} />
+          )}
+          {submitState === 'error' && (
+            <FormSubmitFeedback error="提交失败，请重试" onRetry={onSubmit} onDismissError={resetSubmit} />
+          )}
 
         {submitState !== 'success' && (
           <form
@@ -313,8 +315,9 @@ export default function StockTransferFormPage() {
             </div>
           </form>
         )}
-      </div>
-    </PageShell>
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

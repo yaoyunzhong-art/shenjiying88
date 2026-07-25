@@ -11,13 +11,19 @@
  */
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import StockTransferDetailClient from '../__details__/stock-transfer-detail-client';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
+
+const permissionGate = {
+  requiredPermission: 'stock-transfer:read',
+  title: '库存调拨详情访问受限',
+  description: '库存调拨详情页已接入管理员本地 session，只有具备 stock-transfer:read 的账号才能查看流程状态、商品明细与操作记录。',
+} as const;
 
 /** 动态生成元数据 */
 async function generateStockTransferMetadata({ params }: PageProps): Promise<Metadata> {
@@ -81,54 +87,60 @@ export default async function StockTransferDetailPage({ params }: PageProps) {
 
   // ID 合法性校验
   if (!id || typeof id !== 'string' || id.length < 1 || id.length > 64) {
-    notFound();
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <StockTransferNotFound transferId={id || 'unknown'} />
+      </AdminPermissionGate>
+    );
   }
 
   return (
-    <>
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Product',
-            name: `库存调拨单 ${id}`,
-            description: '门店间库存调拨单据信息管理与流程操作',
-            category: 'Inventory Transfer',
-          }),
-        }}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <>
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Product',
+              name: `库存调拨单 ${id}`,
+              description: '门店间库存调拨单据信息管理与流程操作',
+              category: 'Inventory Transfer',
+            }),
+          }}
+        />
 
-      {/* 主内容 */}
-      <ErrorBoundary fallback={<StockTransferDetailErrorFallback />}>
-        <Suspense fallback={<StockTransferDetailLoadingFallback />}>
-          <StockTransferDetailClient transferId={id} />
-        </Suspense>
-      </ErrorBoundary>
+        {/* 主内容 */}
+        <ErrorBoundary fallback={<StockTransferDetailErrorFallback />}>
+          <Suspense fallback={<StockTransferDetailLoadingFallback />}>
+            <StockTransferDetailClient transferId={id} />
+          </Suspense>
+        </ErrorBoundary>
 
-      {/* 底部提示 */}
-      <div
-        style={{
-          marginTop: 24,
-          padding: '12px 16px',
-          borderRadius: 8,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(148,163,184,0.08)',
-          fontSize: 12,
-          color: '#94a3b8',
-          lineHeight: 1.6,
-          maxWidth: 1000,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-        }}
-      >
-        <strong style={{ color: '#e2e8f0' }}>调拨流程说明</strong>
-        <br />
-        调拨单需经过：发起方提交 → 接收方审核 → 发货 → 运输 → 签收。
-        运输状态由物流系统自动同步（约每 30 分钟更新一次）。
-        若 48 小时内未更新，建议联系物流承运商确认。
-      </div>
-    </>
+        {/* 底部提示 */}
+        <div
+          style={{
+            marginTop: 24,
+            padding: '12px 16px',
+            borderRadius: 8,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(148,163,184,0.08)',
+            fontSize: 12,
+            color: '#94a3b8',
+            lineHeight: 1.6,
+            maxWidth: 1000,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+        >
+          <strong style={{ color: '#e2e8f0' }}>调拨流程说明</strong>
+          <br />
+          调拨单需经过：发起方提交 → 接收方审核 → 发货 → 运输 → 签收。
+          运输状态由物流系统自动同步（约每 30 分钟更新一次）。
+          若 48 小时内未更新，建议联系物流承运商确认。
+        </div>
+      </>
+    </AdminPermissionGate>
   );
 }
