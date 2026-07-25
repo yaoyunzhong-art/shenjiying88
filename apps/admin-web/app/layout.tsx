@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
+// antd v6 CJS components are lazy objects — Next.js RSC static
+export const dynamic = 'force-dynamic';
+
 // P-49 SEO/GEO 优化: 基础 Metadata 配置
 export const metadata: Metadata = {
   // 基础 SEO
