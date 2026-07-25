@@ -21,6 +21,14 @@ function resetGlobals() {
 function setup() {
   cleanup();
   resetGlobals();
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['notifications:read'],
+    }),
+  );
   return render(React.createElement(NewNotificationPage));
 }
 
@@ -412,6 +420,11 @@ test('🛡️ 提交期间 loading', async () => {
  * hooks 静态分析：10 tests
  * ================================================================= */
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+describe('hooks验证', () => {
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'notifications:read'"));
+});
 describe('hooks验证', () => {
   it('useState', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('JSX', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

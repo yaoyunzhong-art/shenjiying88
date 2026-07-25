@@ -15,6 +15,7 @@ import {
   WorkspaceBreadcrumb,
   useFormSubmit,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 类型 ----
 
@@ -105,9 +106,10 @@ function EditNotFound({ id }: { id: string }) {
 
 
 const permissionGate = {
-  requiredPermission: 'equipment:id:edit:read',
-  title: 'equipment edit 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 equipment:id:edit:read 权限的账号可访问。',
+  requiredPermission: 'equipment:read',
+  title: '编辑设备访问受限',
+  description:
+    '编辑设备页已接入管理员本地 session，只有具备 equipment:read 的账号才能查看设备表单、提交反馈与返回链路。',
 } as const
 
 export default function EquipmentEditPage({
@@ -163,18 +165,23 @@ export default function EquipmentEditPage({
   }, [resetSubmit]);
 
   if (!equipment) {
-    return <EditNotFound id={id} />;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <EditNotFound id={id} />
+      </AdminPermissionGate>
+    );
   }
 
   const typeLabel = ET[equipment.type];
 
   return (
-    <main style={{ maxWidth: 720, margin: '0 auto', padding: 32 }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="设备管理"
-        workspaceHref="/equipment"
-        detailLabel={`编辑 ${equipment.name}`}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 720, margin: '0 auto', padding: 32 }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="设备管理"
+          workspaceHref="/equipment"
+          detailLabel={`编辑 ${equipment.name}`}
+        />
 
       <div
         style={{
@@ -373,8 +380,9 @@ export default function EquipmentEditPage({
             )}
           </div>
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

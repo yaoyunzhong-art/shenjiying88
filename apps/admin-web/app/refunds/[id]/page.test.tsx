@@ -514,6 +514,11 @@ describe('refund-detail: 边界', () => {
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'refunds:read'"));
+});
+
 describe('Refunds — hooks验证', () => {
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

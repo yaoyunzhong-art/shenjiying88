@@ -313,6 +313,11 @@ describe('notifications — 统计函数', () => {
 
 const SRC = readSource();
 
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'notifications:read'"));
+});
+
 describe('notifications — 代码结构', () => {
   it('包含 use client 指令', () => assert.ok(SRC.includes("'use client'"), '应是客户端组件'));
   it('包含 JSX 返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

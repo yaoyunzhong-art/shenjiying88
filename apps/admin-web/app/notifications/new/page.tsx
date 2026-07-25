@@ -14,6 +14,7 @@ import {
   useFormSubmit,
   useToast,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 类型 ----
 
@@ -170,9 +171,10 @@ const textareaStyle: React.CSSProperties = {
 
 
 const permissionGate = {
-  requiredPermission: 'notifications:new:read',
-  title: 'notifications new 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 notifications:new:read 权限的账号可访问。',
+  requiredPermission: 'notifications:read',
+  title: '创建通知访问受限',
+  description:
+    '创建通知页已接入管理员本地 session，只有具备 notifications:read 的账号才能查看通知表单、目标范围与提交反馈。',
 } as const
 
 export default function NewNotificationPage() {
@@ -228,15 +230,16 @@ export default function NewNotificationPage() {
   }, [router, formData]);
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <Breadcrumb
-        items={[
-          { label: '总览', href: '/' },
-          { label: '通知中心', href: '/notifications' },
-          { label: '创建通知' },
-        ]}
-      />
-      <PageShell title="创建通知" description="填写表单创建一条新的系统通知，发布后将推送到指定目标范围。">
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <Breadcrumb
+          items={[
+            { label: '总览', href: '/' },
+            { label: '通知中心', href: '/notifications' },
+            { label: '创建通知' },
+          ]}
+        />
+        <PageShell title="创建通知" description="填写表单创建一条新的系统通知，发布后将推送到指定目标范围。">
         {/* 提交反馈 */}
         {submitState.isSubmitting || submitState.errorMessage || submitState.successMessage ? (
           <div style={{ marginBottom: 16 }}>
@@ -394,7 +397,8 @@ export default function NewNotificationPage() {
             创建通知
           </SubmitButton>
         </div>
-      </PageShell>
-    </div>
+        </PageShell>
+      </div>
+    </AdminPermissionGate>
   );
 }

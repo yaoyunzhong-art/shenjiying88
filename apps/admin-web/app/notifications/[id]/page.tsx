@@ -16,6 +16,7 @@ import {
   useFormSubmit,
   type DetailShellAction
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { useDetailActions } from '../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
@@ -141,9 +142,10 @@ async function submitEdit(form: EditFormData): Promise<{ success: boolean }> {
 
 
 const permissionGate = {
-  requiredPermission: 'notifications:id:read',
-  title: 'notifications 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 notifications:id:read 权限的账号可访问。',
+  requiredPermission: 'notifications:read',
+  title: '通知详情访问受限',
+  description:
+    '通知详情页已接入管理员本地 session，只有具备 notifications:read 的账号才能查看通知内容、详情卡片与收口动作。',
 } as const
 
 export default function NotificationDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -218,20 +220,21 @@ export default function NotificationDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <WorkspaceBreadcrumb
-        {...buildStandardBreadcrumb({ workspace: 'notifications', detailLabel: notice.title })}
-      />
-      <DetailShell
-        title={notice.title}
-        subtitle={`${typeInfo.label}通知 · ${notice.id}`}
-      breadcrumbs={[
-        { label: '通知中心', href: '/notifications' },
-        { label: notice.title },
-      ]}
-      backLink={{ label: '返回通知列表', href: '/notifications' }}
-      actions={actions}
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <WorkspaceBreadcrumb
+          {...buildStandardBreadcrumb({ workspace: 'notifications', detailLabel: notice.title })}
+        />
+        <DetailShell
+          title={notice.title}
+          subtitle={`${typeInfo.label}通知 · ${notice.id}`}
+        breadcrumbs={[
+          { label: '通知中心', href: '/notifications' },
+          { label: notice.title },
+        ]}
+        backLink={{ label: '返回通知列表', href: '/notifications' }}
+        actions={actions}
+      >
       {/* 状态概览 */}
       <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 24 }}>
         <div style={statCardStyle}>
@@ -364,11 +367,12 @@ export default function NotificationDetailPage({ params }: { params: Promise<{ i
           caption="复制 / 导出 / 分享当前通知详情"
         />
       </div>
-    </DetailShell>
-    <DetailClosureBar
-      links={buildStandardClosureLinks({ workspace: 'notifications', detailId: notice.id })}
-    />
-    </div>
+        </DetailShell>
+      <DetailClosureBar
+        links={buildStandardClosureLinks({ workspace: 'notifications', detailId: notice.id })}
+      />
+      </div>
+    </AdminPermissionGate>
   );
 }
 

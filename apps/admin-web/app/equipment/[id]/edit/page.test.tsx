@@ -17,6 +17,11 @@ const __dirname = dirname(__filename);
 
 const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'equipment:read'"));
+});
+
 // ---- 类型 ----
 
 type EquipmentType = 'capsule' | 'claw' | 'cashier' | 'ac' | 'speaker' | 'lightbox' | 'turnstile';

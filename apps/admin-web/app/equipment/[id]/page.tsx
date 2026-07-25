@@ -23,6 +23,7 @@ import {
   useFormSubmit,
   type DetailShellAction,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 const DEFAULT_WORKSPACE_HREF = '/equipment';
 const DEFAULT_BREADCRUMB_LABEL = '设备管理';
@@ -603,9 +604,10 @@ function EquipmentDetailContent({ equipment }: { equipment: EquipmentItem }) {
 
 
 const permissionGate = {
-  requiredPermission: 'equipment:id:read',
-  title: 'equipment 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 equipment:id:read 权限的账号可访问。',
+  requiredPermission: 'equipment:read',
+  title: '设备详情访问受限',
+  description:
+    '设备详情页已接入管理员本地 session，只有具备 equipment:read 的账号才能查看设备档案、状态流转与编辑动作。',
 } as const
 
 export default function EquipmentDetailPage({
@@ -617,10 +619,18 @@ export default function EquipmentDetailPage({
   const equipment = getEquipmentById(id);
 
   if (!equipment) {
-    return <EquipmentNotFound id={id} />;
+    return (
+      <AdminPermissionGate {...permissionGate}>
+        <EquipmentNotFound id={id} />
+      </AdminPermissionGate>
+    );
   }
 
-  return <EquipmentDetailContent equipment={equipment} />;
+  return (
+    <AdminPermissionGate {...permissionGate}>
+      <EquipmentDetailContent equipment={equipment} />
+    </AdminPermissionGate>
+  );
 }
 
 // ---- 样式 ----

@@ -37,6 +37,7 @@ import {
   REFUND_CHANNEL_LABEL,
 } from '../refund-types';
 import { getRefunds } from '../refund-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 状态机: 允许的状态流转
@@ -97,9 +98,10 @@ function formatYuan(amountFen: number): string {
 
 
 const permissionGate = {
-  requiredPermission: 'refunds:id:read',
-  title: 'refunds 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 refunds:id:read 权限的账号可访问。',
+  requiredPermission: 'refunds:read',
+  title: '退款详情访问受限',
+  description:
+    '退款详情页已接入管理员本地 session，只有具备 refunds:read 的账号才能查看退款信息、状态流转与删除动作。',
 } as const
 
 export default function RefundDetailPage() {
@@ -215,39 +217,42 @@ export default function RefundDetailPage() {
 
   if (!refund) {
     return (
-      <PageShell title="退款详情" description="未找到该退款记录">
-        <div
-          style={{
-            textAlign: 'center',
-            padding: 60,
-            color: '#64748b',
-          }}
-        >
-          <p style={{ fontSize: 18, marginBottom: 16 }}>未找到退款记录</p>
-          <p style={{ fontSize: 14, marginBottom: 24 }}>退单号: {id}</p>
-          <button
-            onClick={handleBack}
+      <AdminPermissionGate {...permissionGate}>
+        <PageShell title="退款详情" description="未找到该退款记录">
+          <div
             style={{
-              padding: '10px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#3b82f6',
-              color: '#fff',
-              cursor: 'pointer',
+              textAlign: 'center',
+              padding: 60,
+              color: '#64748b',
             }}
           >
-            返回退款列表
-          </button>
-        </div>
-      </PageShell>
+            <p style={{ fontSize: 18, marginBottom: 16 }}>未找到退款记录</p>
+            <p style={{ fontSize: 14, marginBottom: 24 }}>退单号: {id}</p>
+            <button
+              onClick={handleBack}
+              style={{
+                padding: '10px 24px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#3b82f6',
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              返回退款列表
+            </button>
+          </div>
+        </PageShell>
+      </AdminPermissionGate>
     );
   }
 
   return (
-    <PageShell
-      title={`退款详情 · ${refund.id}`}
-      description={`${REFUND_TYPE_LABEL[refund.type]} — ${refund.customerName}`}
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title={`退款详情 · ${refund.id}`}
+        description={`${REFUND_TYPE_LABEL[refund.type]} — ${refund.customerName}`}
+      >
       {/* 面包屑 */}
       <Breadcrumb
         items={[
@@ -414,7 +419,8 @@ export default function RefundDetailPage() {
       />
 
       {/* Toast 通知 */}
-      <ToastContainer toasts={toasts} onDismiss={dismiss} />
-    </PageShell>
+        <ToastContainer toasts={toasts} onDismiss={dismiss} />
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

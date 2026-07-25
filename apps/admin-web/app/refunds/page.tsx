@@ -19,6 +19,7 @@ import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { getRefunds, loadRefundsFromApi } from './refund-data';
 import type { RefundItem } from './refund-types';
 import { RefundListClient } from './refund-list-client';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 /** 退款统计卡片 */
 function RefundSummaryCards({ refunds }: { refunds: RefundItem[] }) {
@@ -106,8 +107,9 @@ function RefundEmptyState() {
 
 const permissionGate = {
   requiredPermission: 'refunds:read',
-  title: 'refunds 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 refunds:read 权限的账号可访问。',
+  title: '退款管理访问受限',
+  description:
+    '退款管理页已接入管理员本地 session，只有具备 refunds:read 的账号才能查看退款列表、统计摘要与处理说明。',
 } as const
 
 export default function RefundsPage() {
@@ -132,7 +134,8 @@ export default function RefundsPage() {
   }, []);
 
   return (
-    <>
+    <AdminPermissionGate {...permissionGate}>
+      <>
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -183,6 +186,7 @@ export default function RefundsPage() {
         仅退款通常在审核通过后 1-3 个工作日到账。
         退换货申请审核通过后需用户寄回商品。
       </div>
-    </>
+      </>
+    </AdminPermissionGate>
   );
 }

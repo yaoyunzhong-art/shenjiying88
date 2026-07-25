@@ -20,6 +20,11 @@ const EquipmentPage = pageReq.default;
 
 const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
+it('应接入管理员权限边界', () => {
+  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(SRC.includes("requiredPermission: 'equipment:read'"));
+});
+
 // ---- 类型（与 page.tsx 同步） ----
 
 type EquipmentStatus = 'normal' | 'maintaining' | 'scrap_pending' | 'scrapped';

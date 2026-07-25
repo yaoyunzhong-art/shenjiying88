@@ -29,6 +29,7 @@ import {
   Spinner,
 } from '@m5/ui';
 import type { DataTableColumn } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 /* ── 类型定义 ── */
 
@@ -227,8 +228,9 @@ function buildColumns(): DataTableColumn<Notification>[] {
 
 const permissionGate = {
   requiredPermission: 'notifications:read',
-  title: 'notifications 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 notifications:read 权限的账号可访问。',
+  title: '通知管理访问受限',
+  description:
+    '通知管理页已接入管理员本地 session，只有具备 notifications:read 的账号才能查看通知列表、状态筛选与发送统计。',
 } as const
 
 export default function NotificationsPage() {
@@ -263,8 +265,9 @@ export default function NotificationsPage() {
   ];
 
   return (
-    <main style={{ maxWidth: 1060, margin: '0 auto', padding: 32 }}>
-      <PageShell title="📢 通知管理" subtitle="管理和查看系统通知的发送记录">
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1060, margin: '0 auto', padding: 32 }}>
+        <PageShell title="📢 通知管理" subtitle="管理和查看系统通知的发送记录">
         {/* 概览统计 */}
         <div
           style={{
@@ -325,7 +328,8 @@ export default function NotificationsPage() {
             />
           </>
         )}
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

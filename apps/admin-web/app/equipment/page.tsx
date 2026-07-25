@@ -24,6 +24,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 /** 设备状态 */
 export type EquipmentStatus = 'normal' | 'maintaining' | 'scrap_pending' | 'scrapped';
@@ -99,8 +100,9 @@ function warrantyColor(days: number): string {
 
 const permissionGate = {
   requiredPermission: 'equipment:read',
-  title: 'equipment 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 equipment:read 权限的账号可访问。',
+  title: '设备管理访问受限',
+  description:
+    '设备管理页已接入管理员本地 session，只有具备 equipment:read 的账号才能查看设备列表、状态筛选与保修统计。',
 } as const
 
 export default function EquipmentPage() {
@@ -236,8 +238,9 @@ export default function EquipmentPage() {
   const isSearchNoResult = equipment.length > 0 && searchFiltered.length === 0;
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="设备管理" subtitle={`${stats.total}台设备 · ${stats.normal}正常 · ${stats.maintaining}维修中 · ${stats.scrapPending}待报废`}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell title="设备管理" subtitle={`${stats.total}台设备 · ${stats.normal}正常 · ${stats.maintaining}维修中 · ${stats.scrapPending}待报废`}>
         {/* 概览统计 */}
         <div
           style={{
@@ -372,8 +375,9 @@ export default function EquipmentPage() {
           设备状态由门店运维人员定期更新。待报废设备需提交报废审批单。
           保修期剩余不足90天的设备以黄色标记，已过保设备以红色标记。
         </div>
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 
