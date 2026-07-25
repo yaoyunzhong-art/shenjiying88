@@ -2594,6 +2594,7 @@ model CashierOrder {
 model CashierPayment {
   id                String   @id @default(cuid())
   paymentId         String   @unique
+  tenantId          String
   orderId           String
   externalPaymentId String?
   channel           String
@@ -2609,6 +2610,7 @@ model CashierPayment {
   updatedAt         DateTime @updatedAt
   completedAt       DateTime?
 
+  @@index([tenantId])
   @@index([orderId])
   @@index([paymentId, status])
   @@map("cashier_payments")
@@ -2617,6 +2619,7 @@ model CashierPayment {
 model CashierMember {
   id        String   @id @default(cuid())
   memberId  String   @unique
+  tenantId  String
   phone     String
   name      String
   memberNo  String?
@@ -2626,6 +2629,7 @@ model CashierMember {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@index([phone])
   @@map("cashier_members")
 }
@@ -2633,6 +2637,7 @@ model CashierMember {
 model CashierTransaction {
   id        String   @id @default(cuid())
   txnId     String   @unique
+  tenantId  String
   orderId   String?
   orderNo   String?
   memberId  String
@@ -2643,6 +2648,7 @@ model CashierTransaction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tenantId])
   @@index([memberId])
   @@index([orderId])
   @@map("cashier_transactions")
