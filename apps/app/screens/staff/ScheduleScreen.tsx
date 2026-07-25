@@ -126,7 +126,7 @@ export function ScheduleScreen() {
       }`,
       [
         { text: '关闭' },
-        { text: '修改', onPress: () => { /* TODO: open schedule edit modal */ } },
+        { text: '修改', onPress: () => { /* TODO(NAV): open schedule edit modal */ } },
       ]
     );
   };

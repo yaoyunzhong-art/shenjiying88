@@ -139,7 +139,7 @@ export function KnowledgeBaseScreen() {
   };
 
   const handleArticlePress = (article: Article) => {
-    // TODO: navigate to article detail
+    // TODO(NAV): navigate to article detail
   };
 
   if (loading) {

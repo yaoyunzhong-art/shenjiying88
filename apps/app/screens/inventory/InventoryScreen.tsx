@@ -88,7 +88,7 @@ export function InventoryScreen() {
   };
 
   const handleItemPress = (skuId: string) => {
-    // TODO: navigate to item detail
+    // TODO(NAV): navigate to item detail
   };
 
   const renderItem = ({ item }: { item: InventoryItem }) => (

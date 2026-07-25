@@ -293,7 +293,7 @@ export class CouponService {
   }
 
   async triggerByCampaign(campaignId: string, userSegment: string): Promise<{ distributed: number }> {
-    // TODO: Pulse-69 T5
+    // TODO(PULSE69-T5): 实现营销活动触发优惠券分发
     return { distributed: 0 };
   }
 }

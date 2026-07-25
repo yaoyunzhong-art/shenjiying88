@@ -130,7 +130,7 @@ export function TicketWorkplaceScreen() {
   };
 
   const handleTicketPress = (ticket: Ticket) => {
-    // TODO: navigate to ticket detail
+    // TODO(NAV): navigate to ticket detail
   };
 
   if (loading) {

@@ -203,7 +203,7 @@ function applyDelta(usage: TenantQuotaUsage, kind: QuotaResourceKind, delta: num
     case QuotaResourceKind.ApiCall:
       return { ...usage, apiCallsToday: Math.max(0, usage.apiCallsToday + delta), recordedAt: new Date().toISOString() }
     case QuotaResourceKind.Coupon:
-      // ⭐ Phase-17:跨门店优惠券核销配额 (跨门店累计,跨月清零 - TODO:月切逻辑)
+      // TODO(PHASE17): 月切逻辑 - 跨门店优惠券核销配额跨月清零
       return {
         ...usage,
         couponRedemptionsThisMonth: Math.max(0, usage.couponRedemptionsThisMonth + delta),

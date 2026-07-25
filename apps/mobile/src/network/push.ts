@@ -61,7 +61,7 @@ export async function setupNotifications(): Promise<void> {
   // 监听 token 刷新
   messaging().onTokenRefresh((newToken) => {
     pushToken = newToken;
-    // TODO: 上报到后端
+    // TODO(PUSH): 上报push token到后端
     if (__DEV__) console.debug('[push] token refreshed:', newToken);
   });
 
@@ -92,7 +92,7 @@ export async function setupNotifications(): Promise<void> {
   // 用户点击通知
   messaging().onNotificationOpenedApp((remoteMessage) => {
     if (__DEV__) console.debug('[push] opened from background:', remoteMessage);
-    // TODO: 导航到对应页面
+    // TODO(PUSH): 导航到对应消息页面
   });
 
   // 杀死状态点击

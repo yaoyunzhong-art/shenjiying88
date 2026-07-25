@@ -6,7 +6,7 @@ import type { CashierOrder, CashierPayment } from './cashier.entity'
 /**
  * CashierPrismaStore — Prisma 实现的收银台存储（生产环境）
  *
- * TODO: 在 prisma/schema.prisma 中完成 cashier 相关表定义后实现各方法。
+ * TODO(CASHIER): 在 prisma/schema.prisma 完成 cashier 表定义后实现各方法
  */
 @Injectable()
 export class CashierPrismaStore implements ICashierStore {

@@ -27,7 +27,7 @@ import {
  *  - GET  /api/member/cross-tenant/history/:memberId - 查询审计追踪
  *
  * 反模式 v4 防御:
- *  - TenantGuard (TODO: Phase-37 RBAC)
+ *  - TenantGuard (TODO(PHASE37): RBAC guard)
  *  - 操作日志 (link/unlink 记录 performedBy)
  *  - PII 脱敏 (返回前 maskMobile)
  */

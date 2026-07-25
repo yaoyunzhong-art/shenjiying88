@@ -33,7 +33,7 @@ import { MemberDormancyCron, type CronMetrics } from './member-dormancy.cron'
  *  - 跨租户访问防御
  *  - async-try-catch (失败不暴露栈)
  *
- * TODO: 接入 TenantGuard + AdminGuard (Phase-37 RBAC)
+ * TODO(PHASE37): 接入 TenantGuard + AdminGuard RBAC
  */
 @UseGuards(TenantGuard)
 @Controller('api/member/dormancy')
