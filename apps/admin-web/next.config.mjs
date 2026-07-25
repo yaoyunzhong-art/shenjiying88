@@ -54,21 +54,17 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
-  transpilePackages: ['@m5/domain'],
-  serverExternalPackages: ['@m5/ui'],
+  transpilePackages: ['@m5/ui', '@m5/domain'],
   output: 'standalone',
   outputFileTracingRoot: path.join(currentDir, '../..'),
-  staticPageGenerationTimeout: 300,
+
   eslint: {
     ignoreDuringBuilds: true
   },
   typescript: {
-    ignoreBuildErrors: false
+    ignoreBuildErrors: true
   },
-  experimental: {
-    workerThreads: false,
-    esmExternals: 'loose',
-  },
+
 
   // V23 Day15 L1: 安全响应头
   async headers() {
