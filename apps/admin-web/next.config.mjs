@@ -57,6 +57,7 @@ const nextConfig = {
   transpilePackages: ['@m5/ui', '@m5/domain'],
   output: 'standalone',
   outputFileTracingRoot: path.join(currentDir, '../..'),
+  staticPageGenerationTimeout: 300,
   eslint: {
     ignoreDuringBuilds: true
   },

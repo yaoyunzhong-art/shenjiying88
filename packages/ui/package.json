@@ -2,7 +2,7 @@
   "name": "@m5/ui",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/index.js",
+  "main": "src/index.tsx",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
