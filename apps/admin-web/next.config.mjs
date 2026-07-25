@@ -66,6 +66,7 @@ const nextConfig = {
   },
   experimental: {
     workerThreads: false,
+    esmExternals: 'loose',
   },
 
   // V23 Day15 L1: 安全响应头
