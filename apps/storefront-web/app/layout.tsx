@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import React from 'react';
 
+// antd v6 CJS components are lazy objects — bypass RSC static generation
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Shenjiying - Storefront',
   description: 'Foundation alert & runtime operation panel',

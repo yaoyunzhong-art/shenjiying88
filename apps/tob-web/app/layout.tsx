@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import React from 'react';
+
+// antd v6 CJS components are lazy objects — bypass RSC static generation
+export const dynamic = 'force-dynamic';
+
 import {
   PORTAL_DOCUMENT_LANGUAGE_HEADER,
   sanitizeDocumentLanguage,
