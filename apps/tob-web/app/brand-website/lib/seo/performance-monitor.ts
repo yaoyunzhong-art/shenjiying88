@@ -6,8 +6,6 @@
 export interface WebVitalsMetrics {
   lcp?: number; // Largest Contentful Paint (ms)
   fid?: number; // First Input Delay (ms)
-
-const isDev = typeof window !== 'undefined' && process.env.NODE_ENV === 'development';
   cls?: number; // Cumulative Layout Shift
   fcp?: number; // First Contentful Paint (ms)
   ttfb?: number; // Time to First Byte (ms)
@@ -51,6 +49,8 @@ export const WEB_VITALS_THRESHOLDS: PerformanceThresholds = {
   inp: { good: 200, needsImprovement: 500, poor: 500 },
   tt: { good: 200, needsImprovement: 400, poor: 400 },
 };
+
+const isDev = typeof window !== 'undefined' && process.env.NODE_ENV === 'development';
 
 /**
  * 性能监控器类
