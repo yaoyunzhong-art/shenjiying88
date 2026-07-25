@@ -17,7 +17,7 @@ import {
   RequirePermissions,
   RequireTenantScope
 } from '../foundation/identity-access/identity-access.decorator'
-import { LogisticsService } from './logistics.service'
+import { LogisticsService, CreateInspectionTaskInput, CreateCleanScheduleInput, CreateRepairOrderInput, CreateMaterialRequestInput, CreateMaintenanceOrderInput, CreateProcurementRequestInput } from './logistics.service'
 import type {
   CleanScheduleStatus,
   MaintenanceOrderStatus,
@@ -56,7 +56,7 @@ export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) {}
 
   @Post('inspections')
-  create(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
+  create(@Headers('x-tenant-id') tenantId: string, @Body() body: CreateInspectionTaskInput) {
     return this.logisticsService.createInspectionTask({
       tenantId,
       storeId: body.storeId,
@@ -112,7 +112,7 @@ export class LogisticsController {
   }
 
   @Post('clean-schedules')
-  createCleanSchedule(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
+  createCleanSchedule(@Headers('x-tenant-id') tenantId: string, @Body() body: CreateCleanScheduleInput) {
     return this.logisticsService.createCleanSchedule({
       tenantId,
       storeId: body.storeId,
@@ -171,7 +171,7 @@ export class LogisticsController {
 
   @Post('repairs')
   @RequirePermissions(LOGISTICS_REPAIRS_READ_PERMISSION)
-  createRepairOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
+  createRepairOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: CreateRepairOrderInput) {
     return this.logisticsService.createRepairOrder({
       tenantId,
       storeId: body.storeId,
@@ -248,7 +248,7 @@ export class LogisticsController {
   }
 
   @Post('material-requests')
-  createMaterialRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
+  createMaterialRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: CreateMaterialRequestInput) {
     return this.logisticsService.createMaterialRequest({
       tenantId,
       storeId: body.storeId,
@@ -309,7 +309,7 @@ export class LogisticsController {
   // ═══════════════════════════════════════════
 
   @Post('maintenance-orders')
-  createMaintenanceOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
+  createMaintenanceOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: CreateMaintenanceOrderInput) {
     return this.logisticsService.createMaintenanceOrder({
       tenantId,
       storeId: body.storeId,
@@ -368,7 +368,7 @@ export class LogisticsController {
   // ═══════════════════════════════════════════
 
   @Post('procurement-requests')
-  createProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: Record<string, unknown>) {
+  createProcurementRequest(@Headers('x-tenant-id') tenantId: string, @Body() body: CreateProcurementRequestInput) {
     return this.logisticsService.createProcurementRequest({
       tenantId,
       storeId: body.storeId,

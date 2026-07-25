@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Query, Body, BadRequestException, UseGuards } from '@nestjs/common'
-import type { RecommendationRequest, StrategyType } from './recommend.entity'
+import type { RecommendationRequest, StrategyType, MemberPreference } from './recommend.entity'
 import { RecommendationEngine } from './recommendation.engine'
 import { RecommendCacheService } from './recommend-cache.service'
 import { ProductAdapter } from './datasources/product.adapter'
@@ -116,7 +116,7 @@ export class RecommendController {
    * 更新会员偏好
    */
   @Post('preferences')
-  updatePreferences(@Body() body: Record<string, unknown>): { updated: boolean } {
+  updatePreferences(@Body() body: MemberPreference): { updated: boolean } {
     if (!body.tenantId || !body.memberId) {
       throw new BadRequestException('tenantId, memberId required')
     }
