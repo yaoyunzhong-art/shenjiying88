@@ -11,8 +11,10 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { OpenPlatformService } from './open-platform.service';
+import { TenantGuard } from '../agent/tenant.guard';
 import {
   IsvApp,
   IsvDeveloper,
@@ -28,6 +30,7 @@ import {
 } from './open-platform.entity';
 
 @Controller('open-platform')
+@UseGuards(TenantGuard)
 export class OpenPlatformController {
   constructor(private readonly svc: OpenPlatformService) {}
 

@@ -1,10 +1,12 @@
 /**
  * ai.controller.ts — AI 分析 REST API
  */
-import { Controller, Post, Body } from '@nestjs/common'
+import { Controller, Post, Body, UseGuards } from '@nestjs/common'
 import { AiService } from './ai.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai')
+@UseGuards(TenantGuard)
 export class AiController {
   constructor(private readonly service: AiService) {}
 

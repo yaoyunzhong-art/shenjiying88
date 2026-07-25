@@ -7,7 +7,7 @@
 export function Heartbeat({ id }: { id: string }) {
   if (typeof window !== 'undefined') {
     // 发送心跳到监控服务
-    console.log(`[Heartbeat:${id}] Page loaded at ${new Date().toISOString()}`);
+    if (process.env.NODE_ENV === 'development') console.debug(`[Heartbeat:${id}] Page loaded at ${new Date().toISOString()}`);
   }
 
   return null;

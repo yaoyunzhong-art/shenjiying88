@@ -10,9 +10,11 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { BirthdayService } from './birthday.service';
 import { BirthdayCountdownService } from './birthday-countdown.service';
+import { TenantGuard } from '../agent/tenant.guard';
 import {
   BirthdayPlan,
   BirthdayReward,
@@ -24,6 +26,7 @@ import {
 } from './birthday.entity';
 
 @Controller('birthday')
+@UseGuards(TenantGuard)
 export class BirthdayController {
   constructor(
     private readonly svc: BirthdayService,

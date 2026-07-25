@@ -63,7 +63,7 @@ export function useFunnelAnalysis(page: ConversionSource) {
       // 发送滚动深度事件
       if (scrollPercent % 25 === 0) {
         // 每25%发送一次
-        console.log(`[Funnel] Page: ${page}, Scroll: ${scrollPercent}%`);
+        if (process.env.NODE_ENV === 'development') console.debug(`[Funnel] Page: ${page}, Scroll: ${scrollPercent}%`);
       }
     };
 

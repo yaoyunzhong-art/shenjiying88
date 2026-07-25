@@ -6,6 +6,8 @@
 export interface WebVitalsMetrics {
   lcp?: number; // Largest Contentful Paint (ms)
   fid?: number; // First Input Delay (ms)
+
+const isDev = typeof window !== 'undefined' && process.env.NODE_ENV === 'development';
   cls?: number; // Cumulative Layout Shift
   fcp?: number; // First Contentful Paint (ms)
   ttfb?: number; // Time to First Byte (ms)

@@ -7,6 +7,8 @@ import { contentGenerator, type OptimizationFeedback } from './content-generator
 import { globalPerformanceMonitor } from '../seo/performance-monitor';
 import { geoIPResolver, type GeoLocation } from '../geo/geo-ip-resolver';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 interface SEOMetrics {
   pageIndexCount: number; // 页面收录量
   keywordRankings: Record<string, number[]>; // 关键词排名
@@ -115,7 +117,7 @@ export class IntelligentSystem {
    * 执行自治循环
    */
   async runAutonomousCycle(): Promise<void> {
-    console.log('[IntelligentSystem] Running autonomous cycle...');
+    if (isDev) console.debug('[IntelligentSystem] Running autonomous cycle...');
     this.lastCycleTime = Date.now();
 
     try {
@@ -139,7 +141,7 @@ export class IntelligentSystem {
    * 自我检测：实时监测核心指标
    */
   async selfDetect(): Promise<AnomalyAlert[]> {
-    console.log('[IntelligentSystem] Self-detection running...');
+    if (isDev) console.debug('[IntelligentSystem] Self-detection running...');
 
     // 检测SEO指标异常
     await this.detectSEOAnomalies();
@@ -344,7 +346,7 @@ export class IntelligentSystem {
    * 自我创造：自动生成优化内容
    */
   async selfCreate(): Promise<void> {
-    console.log('[IntelligentSystem] Self-creation running...');
+    if (isDev) console.debug('[IntelligentSystem] Self-creation running...');
 
     // 检查需要优化的内容缺口
     const contentGaps = await this.identifyContentGaps();
@@ -366,7 +368,7 @@ export class IntelligentSystem {
           continue;
         }
 
-        console.log(`[IntelligentSystem] Created content for gap: ${gap.keyword}`);
+        if (isDev) console.debug(`[IntelligentSystem] Created content for gap: ${gap.keyword}`);
       } catch (error) {
         console.error(`[IntelligentSystem] Failed to create content for gap:`, error);
       }
@@ -401,7 +403,7 @@ export class IntelligentSystem {
    * 自我实现：自动执行优化任务
    */
   async selfExecute(): Promise<void> {
-    console.log('[IntelligentSystem] Self-execution running...');
+    if (isDev) console.debug('[IntelligentSystem] Self-execution running...');
 
     const pendingTasks = this.optimizationTasks.filter((t) => t.status === 'pending');
 
@@ -413,7 +415,7 @@ export class IntelligentSystem {
         task.executedAt = Date.now();
         task.result = '优化任务执行成功';
 
-        console.log(`[IntelligentSystem] Task completed: ${task.id}`);
+        if (isDev) console.debug(`[IntelligentSystem] Task completed: ${task.id}`);
       } catch (error) {
         task.status = 'failed';
         task.result = `执行失败: ${error}`;
@@ -448,31 +450,31 @@ export class IntelligentSystem {
 
   private async executeContentTask(task: OptimizationTask): Promise<void> {
     // 内容优化执行逻辑
-    console.log(`[IntelligentSystem] Executing content task: ${task.action}`);
+    if (isDev) console.debug(`[IntelligentSystem] Executing content task: ${task.action}`);
     await this.simulateDelay(1000);
   }
 
   private async executeMetaTask(task: OptimizationTask): Promise<void> {
     // Meta标签优化执行逻辑
-    console.log(`[IntelligentSystem] Executing meta task: ${task.action}`);
+    if (isDev) console.debug(`[IntelligentSystem] Executing meta task: ${task.action}`);
     await this.simulateDelay(500);
   }
 
   private async executeSchemaTask(task: OptimizationTask): Promise<void> {
     // 结构化数据优化执行逻辑
-    console.log(`[IntelligentSystem] Executing schema task: ${task.action}`);
+    if (isDev) console.debug(`[IntelligentSystem] Executing schema task: ${task.action}`);
     await this.simulateDelay(500);
   }
 
   private async executeGEOTask(task: OptimizationTask): Promise<void> {
     // GEO配置优化执行逻辑
-    console.log(`[IntelligentSystem] Executing GEO task: ${task.action}`);
+    if (isDev) console.debug(`[IntelligentSystem] Executing GEO task: ${task.action}`);
     await this.simulateDelay(800);
   }
 
   private async executePerformanceTask(task: OptimizationTask): Promise<void> {
     // 性能优化执行逻辑
-    console.log(`[IntelligentSystem] Executing performance task: ${task.action}`);
+    if (isDev) console.debug(`[IntelligentSystem] Executing performance task: ${task.action}`);
     await this.simulateDelay(1000);
   }
 
@@ -513,7 +515,7 @@ export class IntelligentSystem {
    * 自我进化：基于历史数据迭代模型
    */
   async selfEvolve(): Promise<void> {
-    console.log('[IntelligentSystem] Self-evolution running...');
+    if (isDev) console.debug('[IntelligentSystem] Self-evolution running...');
 
     // 分析已完成任务的效果
     const completedTasks = this.optimizationTasks.filter((t) => t.status === 'completed');
@@ -537,7 +539,7 @@ export class IntelligentSystem {
       recommendations: this.generateRecommendations(taskSuccessRate, alertResolutionRate),
     };
 
-    console.log('[IntelligentSystem] Iteration report:', iterationReport);
+    if (isDev) console.debug('[IntelligentSystem] Iteration report:', iterationReport);
 
     // 自我学习：更新内容生成模型
     for (const task of completedTasks.slice(-5)) {

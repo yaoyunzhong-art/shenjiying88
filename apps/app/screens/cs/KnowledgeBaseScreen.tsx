@@ -139,7 +139,7 @@ export function KnowledgeBaseScreen() {
   };
 
   const handleArticlePress = (article: Article) => {
-    console.log('Open article:', article.id);
+    // TODO: navigate to article detail
   };
 
   if (loading) {

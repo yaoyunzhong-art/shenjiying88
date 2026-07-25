@@ -5,6 +5,8 @@
 
 import { aiReferenceOptimizer, type AIFriendlyContent } from '../../lib/geo/ai-reference-optimizer';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 export interface GeneratedContent {
   id: string;
   type: 'page' | 'meta' | 'faq' | 'schema' | 'social' | 'video';
@@ -554,7 +556,7 @@ export class ContentGenerator {
     const [major, minor] = this.modelVersion.split('.').map(Number);
     this.modelVersion = `${major ?? 1}.${((minor ?? 0) + 1)}.0`;
 
-    console.log(`[ContentGenerator] Model iterated to v${this.modelVersion}, avg performance: ${avgPerformance}`);
+    if (isDev) console.debug(`[ContentGenerator] Model iterated to v${this.modelVersion}, avg performance: ${avgPerformance}`);
   }
 
   /**

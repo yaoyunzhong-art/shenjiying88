@@ -1,10 +1,12 @@
 /**
  * attendance.controller.ts — 考勤管理 REST API
  */
-import { Controller, Post, Body } from '@nestjs/common'
+import { Controller, Post, Body, UseGuards } from '@nestjs/common'
 import { AttendanceService } from './attendance.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('attendance')
+@UseGuards(TenantGuard)
 export class AttendanceController {
   constructor(private readonly service: AttendanceService) {}
 
