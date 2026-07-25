@@ -13,9 +13,18 @@ import {
 } from './session.dto'
 import { DeviceInfo } from './session.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const SESSION_IDENTITY_ACCESS_READ_PERMISSION = 'identity-access:read'
+const SESSION_IDENTITY_ACCESS_WRITE_PERMISSION = 'identity-access:write'
 
 @Controller('sessions')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(SESSION_IDENTITY_ACCESS_READ_PERMISSION)
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 
@@ -25,6 +34,7 @@ export class SessionController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(SESSION_IDENTITY_ACCESS_WRITE_PERMISSION)
   createSession(@Body() body: CreateSessionDto): CreateSessionResponseDto {
     if (!body.userId || !body.tenantId) {
       throw new BadRequestException('userId and tenantId are required')
@@ -75,6 +85,7 @@ export class SessionController {
    */
   @Post('revoke')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SESSION_IDENTITY_ACCESS_WRITE_PERMISSION)
   revokeSession(@Body() body: RevokeSessionDto) {
     if (!body.sessionId) {
       throw new BadRequestException('sessionId is required')
@@ -97,6 +108,7 @@ export class SessionController {
    */
   @Post('revoke-all')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SESSION_IDENTITY_ACCESS_WRITE_PERMISSION)
   revokeAllUserSessions(@Body() body: RevokeAllSessionsDto) {
     if (!body.userId) {
       throw new BadRequestException('userId is required')
@@ -181,6 +193,7 @@ export class SessionController {
    */
   @Delete(':sessionId')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SESSION_IDENTITY_ACCESS_WRITE_PERMISSION)
   deleteSession(@Param('sessionId') sessionId: string) {
     if (!sessionId) {
       throw new BadRequestException('sessionId is required')

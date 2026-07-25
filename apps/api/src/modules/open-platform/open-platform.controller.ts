@@ -16,6 +16,10 @@ import {
 import { OpenPlatformService } from './open-platform.service';
 import { TenantGuard } from '../agent/tenant.guard';
 import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+import {
   IsvApp,
   IsvDeveloper,
   IsvAppStatus,
@@ -29,8 +33,13 @@ import {
   SdkLanguage,
 } from './open-platform.entity';
 
+const OPEN_PLATFORM_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
+
 @Controller('open-platform')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(OPEN_PLATFORM_GOVERNANCE_READ_PERMISSION)
 export class OpenPlatformController {
   constructor(private readonly svc: OpenPlatformService) {}
 
@@ -43,6 +52,7 @@ export class OpenPlatformController {
    */
   @Post('developers')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   registerDeveloper(
     @Body() body: {
       name: string;
@@ -80,6 +90,7 @@ export class OpenPlatformController {
    */
   @Post('apps')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   registerApp(
     @Body() body: {
       name: string;
@@ -117,6 +128,7 @@ export class OpenPlatformController {
    */
   @Patch('apps/:id/status')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   updateAppStatus(
     @Param('id') id: string,
     @Body() body: { status: IsvAppStatus; reviewNote?: string; reviewer: string },
@@ -133,6 +145,7 @@ export class OpenPlatformController {
    */
   @Post('keys/generate')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   generateKey(
     @Body() body: { appId: string; createdBy: string },
   ): ApiKeyRecord {
@@ -144,6 +157,7 @@ export class OpenPlatformController {
    */
   @Post('keys/rotate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   rotateKey(
     @Body() body: { keyId: string; createdBy: string },
   ): { old: ApiKeyRecord; new: ApiKeyRecord } {
@@ -155,6 +169,7 @@ export class OpenPlatformController {
    */
   @Post('keys/revoke')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   revokeKey(
     @Body() body: { keyId: string; reason: string },
   ): ApiKeyRecord {
@@ -183,6 +198,7 @@ export class OpenPlatformController {
    */
   @Post('usage/record')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   recordCall(
     @Body() body: {
       appId: string;
@@ -207,6 +223,7 @@ export class OpenPlatformController {
    */
   @Post('billing')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   generateBilling(
     @Body() body: { billingMonth: string; appId: string },
   ): BillingRecord {
@@ -218,6 +235,7 @@ export class OpenPlatformController {
    */
   @Post('billing/:id/settle')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   settleBilling(@Param('id') id: string): BillingRecord {
     return this.svc.settleBilling(id);
   }
@@ -231,6 +249,7 @@ export class OpenPlatformController {
    */
   @Post('sla')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   createSla(
     @Body() body: {
       appId: string;
@@ -264,6 +283,7 @@ export class OpenPlatformController {
    */
   @Post('versions')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   registerApiVersion(
     @Body() body: { version: string; basePath: string; changelog?: string },
   ): ApiVersion {
@@ -275,6 +295,7 @@ export class OpenPlatformController {
    */
   @Post('versions/:id/deprecate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   deprecateVersion(
     @Param('id') id: string,
     @Body() body: { sunsetDate: string },
@@ -299,6 +320,7 @@ export class OpenPlatformController {
    */
   @Post('sdks')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   publishSdk(
     @Body() body: {
       appId: string;
@@ -329,6 +351,7 @@ export class OpenPlatformController {
    */
   @Post('market')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(OPEN_PLATFORM_GOVERNANCE_WRITE_PERMISSION)
   publishToMarket(
     @Body() body: {
       appId: string;

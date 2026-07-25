@@ -10,8 +10,11 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -31,9 +34,13 @@ import {
 import { FinanceService } from './finance.service'
 import { FinanceArchivalService } from './finance-archival.service'
 
+const FINANCE_READ_PERMISSION = 'finance:read'
+const FINANCE_WRITE_PERMISSION = 'finance:*'
+
 @UseGuards(TenantGuard)
-@Public()
 @Controller('finance')
+@RequireTenantScope()
+@RequirePermissions(FINANCE_READ_PERMISSION)
 export class FinanceController {
   constructor(
     @Inject(FinanceService) private readonly financeService: FinanceService,
@@ -132,6 +139,7 @@ export class FinanceController {
   // ── Ledger ──
 
   @Post('ledgers')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   recordLedger(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateLedgerDto
@@ -162,6 +170,7 @@ export class FinanceController {
   }
 
   @Delete('ledgers/:ledgerId')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   deleteLedger(
     @Param('ledgerId') ledgerId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -175,6 +184,7 @@ export class FinanceController {
   // ── Account ──
 
   @Post('accounts')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   createAccount(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateAccountDto
@@ -216,6 +226,7 @@ export class FinanceController {
   }
 
   @Post('accounts/:accountId/freeze')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   freezeAccount(
     @Param('accountId') accountId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -227,6 +238,7 @@ export class FinanceController {
   }
 
   @Post('accounts/:accountId/close')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   closeAccount(
     @Param('accountId') accountId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -240,6 +252,7 @@ export class FinanceController {
   // ── Settlement ──
 
   @Post('settlements')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   createSettlement(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateSettlementDto
@@ -281,6 +294,7 @@ export class FinanceController {
   }
 
   @Post('settlements/:settlementId/confirm')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   confirmSettlement(
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -292,6 +306,7 @@ export class FinanceController {
   }
 
   @Post('settlements/:settlementId/dispute')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   disputeSettlement(
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -303,6 +318,7 @@ export class FinanceController {
   }
 
   @Post('settlements/:settlementId/finalize')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   finalizeSettlement(
     @Param('settlementId') settlementId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -316,6 +332,7 @@ export class FinanceController {
   // ── Invoice ──
 
   @Post('invoices')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   createInvoice(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateInvoiceDto
@@ -349,6 +366,7 @@ export class FinanceController {
   }
 
   @Post('invoices/:invoiceId/issue')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   issueInvoice(
     @Param('invoiceId') invoiceId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -360,6 +378,7 @@ export class FinanceController {
   }
 
   @Post('invoices/:invoiceId/cancel')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   cancelInvoice(
     @Param('invoiceId') invoiceId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -413,6 +432,7 @@ export class FinanceController {
   // ── Archival ──
 
   @Post('archivals')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   createArchival(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateArchivalDto
@@ -439,6 +459,7 @@ export class FinanceController {
   // ── Transaction Integration ──
 
   @Post('transactions/revenue')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   recordTransactionRevenue(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { orderId: string; transactionId: string; amount: number; description: string; category?: string }
@@ -447,6 +468,7 @@ export class FinanceController {
   }
 
   @Post('transactions/refund')
+  @RequirePermissions(FINANCE_WRITE_PERMISSION)
   recordTransactionRefund(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { orderId: string; transactionId: string; amount: number; description: string }
