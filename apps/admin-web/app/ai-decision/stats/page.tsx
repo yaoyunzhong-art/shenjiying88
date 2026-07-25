@@ -19,6 +19,7 @@ import {
   type DonutSlice,
   type GaugeSegment,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- Mock 数据 ---- （正式接入 API 时替换）
 
@@ -79,9 +80,10 @@ const SEGMENTS: GaugeSegment[] = [
 
 
 const permissionGate = {
-  requiredPermission: 'ai-decision:stats:read',
-  title: 'ai-decision stats 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 ai-decision:stats:read 权限的账号可访问。',
+  requiredPermission: 'ai-decision:read',
+  title: 'AI 决策统计访问受限',
+  description:
+    'AI 决策统计页已接入管理员本地 session，只有具备 ai-decision:read 的账号才能查看统计总览、来源构成与规则排行。',
 } as const
 
 export default function AiDecisionStatsPage() {
@@ -118,11 +120,12 @@ export default function AiDecisionStatsPage() {
   const topLift = useMemo(() => [...rules].sort((a, b) => b.liftPercent - a.liftPercent), [rules]);
 
   return (
-    <main style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
-      <PageShell
-        title="AI 决策统计分析"
-        subtitle="决策执行效果总览 — 成功率、来源构成、规则排名与性能监控"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+        <PageShell
+          title="AI 决策统计分析"
+          subtitle="决策执行效果总览 — 成功率、来源构成、规则排名与性能监控"
+        >
         {/* 概览统计卡 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
           <StatCard label="总执行次数" value={stats.total.toLocaleString()} variant="info" />
@@ -192,9 +195,9 @@ export default function AiDecisionStatsPage() {
         </div>
 
         {/* 规则排行表 */}
-        <div style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.12)', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>规则效果排行 (按提升率)</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <div style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.12)', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>规则效果排行 (按提升率)</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
                 <th style={{ textAlign: 'left', padding: '8px 12px', color: '#94a3b8', fontWeight: 500 }}>规则名称</th>
@@ -226,9 +229,10 @@ export default function AiDecisionStatsPage() {
                 );
               })}
             </tbody>
-          </table>
-        </div>
-      </PageShell>
-    </main>
+            </table>
+          </div>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
