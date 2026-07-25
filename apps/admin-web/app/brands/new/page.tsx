@@ -1,9 +1,9 @@
+'use client';
 /**
  * 新建品牌 — Brand Create Form Page (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 📊市场管理
  * 功能: 表单验证、提交、错误处理、品牌类型分类
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 分类管理 — 列表页 (Next.js App Router)
  * 角色视角: 👤运营管理员 / 📊商品管理
  * 功能: 搜索 / 过滤 / 分页 / 状态切换 / 统计面板
  */
-'use client';
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

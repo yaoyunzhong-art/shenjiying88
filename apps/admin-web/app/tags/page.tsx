@@ -1,3 +1,4 @@
+'use client';
 /**
  * 客户标签管理页 — Customer Tag Management Page (Next.js App Router)
  * 功能: 标签列表展示(名称/分类/使用门店数/关联会员数/创建人/创建时间)、Tab筛选、概览统计、空态SVG、刷新
@@ -9,7 +10,6 @@
  *   ✅ PRD标记
  */
 
-'use client';
 
 import React from 'react';
 import { useCallback, useMemo, useState } from 'react';

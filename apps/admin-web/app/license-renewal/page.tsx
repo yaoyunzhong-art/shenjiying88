@@ -1,3 +1,4 @@
+'use client'
 /**
  * Sprint 3 Phase 2 - 自动续费管理页面
  * 
@@ -8,7 +9,6 @@
  * - 续费提醒设置
  */
 
-'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'

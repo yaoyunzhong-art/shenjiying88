@@ -1,3 +1,4 @@
+'use client';
 /**
  * AI 决策统计分析页 — AI Decision Stats Dashboard (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 数据分析师
@@ -8,7 +9,6 @@
  *   - 单规则成功率仪表盘
  *   - 效果排行 (按提升率)
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import {

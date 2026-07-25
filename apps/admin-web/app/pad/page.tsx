@@ -1,3 +1,4 @@
+'use client';
 /**
  * pad/page.tsx — Pad 工作台首页
  * 角色视角: 🖥️ 管理员
@@ -10,7 +11,6 @@
  * - 角色工作台入口网格 (卡片展示)
  * - 统计详情面板 (按角色分类统计)
  */
-'use client';
 
 import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';

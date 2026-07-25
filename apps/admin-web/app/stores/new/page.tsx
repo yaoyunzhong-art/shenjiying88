@@ -1,3 +1,4 @@
+'use client';
 /**
  * 新建门店 — Store Create Form Page (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 📊市场管理
@@ -6,7 +7,6 @@
  * 新增: StoreFormProgress — 表单进度指示器
  * 步骤: 基本信息 → 门店配置 → 人员设置 → 完成
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';

@@ -1,3 +1,4 @@
+'use client'
 /**
  * crm/page.tsx — CRM客户管理列表页 (admin-web)
  *
@@ -7,7 +8,6 @@
  * PRD: docs/knowledge/prd/v23/v23-prd-crm-management.md
  * API 端点: GET /api/crm/customers, GET /api/crm/customers/:id, GET /api/crm/stats
  */
-'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminPermissionGate } from '../components/admin-permission-gate'

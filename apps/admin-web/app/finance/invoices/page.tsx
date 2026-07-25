@@ -1,3 +1,4 @@
+'use client'
 /**
  * P-38 / B2 发票管理页面
  *
@@ -10,7 +11,6 @@
  * 路由: /finance/invoices
  */
 
-'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminPermissionGate } from '../../components/admin-permission-gate'

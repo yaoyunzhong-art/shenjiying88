@@ -1,9 +1,9 @@
+'use client';
 /**
  * 后勤配送管理页 — Logistics Management Page
  * 角色视角：后勤主管 / 配送员 / 仓库管理员
  * 功能：采购单列表、搜索筛选、状态看板、三态覆盖
  */
-'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { AdminPermissionGate } from '../components/admin-permission-gate';

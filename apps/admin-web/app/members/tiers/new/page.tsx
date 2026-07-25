@@ -1,9 +1,9 @@
+'use client';
 /**
  * 新建会员等级 — Membership Tier Create Form Page (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 📊会员管理
  * 功能: 表单验证、提交、错误处理、UI反馈
  */
-'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 会员等级详情 — Member Tier Detail Page (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 📊会员管理
  * 功能: 查看等级详情、编辑、删除、状态流转
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

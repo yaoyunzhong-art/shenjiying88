@@ -1,3 +1,4 @@
+'use client';
 /**
  * 退款管理 — Refund List Page (Next.js App Router)
  * P1-3 共享层收口: API 优先加载, 不可用时回落 mock
@@ -10,7 +11,6 @@
  * - 统计概览：待处理 / 已退款总额 / 今日新增
  * - 空状态 / 加载中 / 搜索无结果 / 错误回退
  */
-'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import type { Metadata } from 'next';

@@ -1,3 +1,4 @@
+'use client'
 /**
  * P-30 维修工单管理页面
  *
@@ -9,7 +10,6 @@
  * 路由: /logistics/repairs
  */
 
-'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 门店编辑表单页 — Store Edit Form Page (Next.js App Router Page)
  * 功能: 编辑门店信息，含字段验证、提交、错误处理
  * 角色视角: 👤运营管理员 / 📊市场管理
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

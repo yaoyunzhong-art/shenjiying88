@@ -1,9 +1,9 @@
+'use client';
 /**
  * 分类详情页 — Category Detail Page
  * 角色视角: 👤运营管理员
  * 功能: 查看 / 编辑 / 状态切换 / 删除
  */
-'use client';
 
 import { useState, useCallback, use } from 'react';
 

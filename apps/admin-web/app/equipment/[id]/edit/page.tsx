@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备编辑页 — Equipment Edit Page (Next.js App Router Page)
  * 角色视角: 🏢总部管理 / 🛠️运维
  * 功能: 编辑设备信息（名称、型号、门店、供应商、备注）
  */
-'use client';
 
 import { useState, useCallback, use } from 'react';
 import Link from 'next/link';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 公告管理页 — Announcements Management Page (Next.js App Router Page)
  * 角色视角: 👔系统管理员 / 📢运营主管
  * 功能: 查看、发布、编辑、归档、删除公告，支持搜索/筛选/排序/分页
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 

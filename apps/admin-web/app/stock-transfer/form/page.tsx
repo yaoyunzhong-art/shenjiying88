@@ -1,9 +1,9 @@
+'use client';
 /**
  * 库存调拨表单页 — Stock Transfer Form Page (Next.js App Router Page)
  * 功能: 新建调拨申请，含商品选择、门店选择、数量与紧急度、备注
  * 角色视角: 👤店长 / 仓管
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';

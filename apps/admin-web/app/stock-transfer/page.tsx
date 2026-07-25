@@ -1,9 +1,9 @@
+'use client';
 /**
  * 库存调拨审核列表页 — Stock Transfer Approval List (Next.js App Router Page)
  * 角色视角: 👔运营主管 / 📦仓储经理 / 💰财务
  * 功能: 搜索、调拨类型/状态筛选、分页排序
  */
-'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';

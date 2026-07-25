@@ -1,10 +1,10 @@
+'use client';
 /**
  * 规则管理列表页 — Rules Management List Page (Next.js App Router Page)
  * 角色视角: 👔系统管理员 / 🛡️运营主管
  * 功能: 规则概览、搜索/筛选/分类浏览、统计数据、导航至子页面
  */
 
-'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AdminPermissionGate } from '../components/admin-permission-gate';

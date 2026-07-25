@@ -1,3 +1,4 @@
+'use client'
 /**
  * V18 财务健康仪表盘
  *
@@ -12,7 +13,6 @@
  * 路由: /finance/dashboard
  */
 
-'use client'
 
 import React from 'react'
 import { useCallback, useEffect, useState } from 'react'

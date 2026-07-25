@@ -1,9 +1,9 @@
+'use client';
 /**
  * 退换货详情页 — Return Detail Page (Next.js App Router Page)
  * 角色视角: 👤运营管理 / 💰财务 / 🛒客服
  * 功能: 查看详情、编辑、删除、状态流转（审核/收货/退款/换货/关闭）
  */
-'use client';
 
 import { use, useState, useCallback } from 'react';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';

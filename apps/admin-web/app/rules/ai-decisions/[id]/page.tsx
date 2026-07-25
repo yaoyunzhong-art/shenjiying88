@@ -1,9 +1,9 @@
+'use client';
 /**
  * AI 决策执行结果详情页 — AI Decision Execution Detail (Next.js App Router Page)
  * 角色视角: 👤运营管理员 / 规则配置师
  * 功能: 查看 AI 决策执行的完整详情，包含输入上下文、推理过程、执行结果、效果验证、异常回溯
  */
-'use client';
 
 import { useState, useCallback, use, useEffect } from 'react';
 import { AdminPermissionGate } from '../../../components/admin-permission-gate';

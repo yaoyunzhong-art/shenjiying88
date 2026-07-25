@@ -1,9 +1,9 @@
+'use client';
 /**
  * 客户画像标签管理页 — Customer Profile Tag Management Page (Next.js App Router Page)
  * 功能: 查看、创建、编辑、删除标签，含表单验证、提交反馈、错误处理
  * 角色视角: 👤运营管理员 / 📊市场分析师
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { AdminPermissionGate } from '../components/admin-permission-gate';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 供应商详情页 — Supplier Detail Page (Next.js App Router Page)
  * 角色视角: 👤采购管理 / 📊供应链
  * 功能: 查看详情、编辑信息、状态流转、删除确认
  */
-'use client';
 
 import { useState, useCallback, use } from 'react';
 

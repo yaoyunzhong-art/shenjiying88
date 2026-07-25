@@ -1,9 +1,9 @@
+'use client';
 /**
  * 会员等级权益配置表单 — Member Tier Benefits Form (Next.js App Router Page)
  * 功能: 为会员创建/编辑等级及其权益配置，含字段验证/提交/错误处理
  * 角色视角: 👤运营管理 / 会员体系
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 

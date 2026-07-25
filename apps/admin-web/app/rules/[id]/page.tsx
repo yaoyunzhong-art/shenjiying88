@@ -1,10 +1,10 @@
+'use client';
 /**
  * 规则详情页 — Rule Detail Page (Next.js App Router Page)
  * 功能: 展示单条规则的完整信息 / 状态切换 / 编辑 / 删除 / 版本查看
  * 角色视角: 👔系统管理员 / 🛡️运营主管
  */
 
-'use client';
 
 import { use, useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';

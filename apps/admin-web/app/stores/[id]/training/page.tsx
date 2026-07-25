@@ -53,7 +53,6 @@ export default function TrainingPage() {
   if (error) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#ef4444' }}>数据获取失败: {error}</div></PageShell>;
   if (!data || data.length === 0) return <PageShell><div style={{ textAlign: 'center', padding: 64, color: '#94a3b8' }}>暂无数据</div></PageShell>;
 
-  const
   const [showAdd, setShowAdd] = useState(false);
   const [filter, setFilter] = useState<string>('all');
 

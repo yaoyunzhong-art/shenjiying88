@@ -1,10 +1,10 @@
+'use client';
 /**
  * Coupon Form Page — 优惠券创建/编辑表单页
  * 角色视角: 👔运营经理 · 💰财务主管 · 📊品类经理
  * 功能: 新建优惠券（支持折扣券/代金券/包邮券/满减券）
  *       含字段验证、提交回调、错误反馈
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';

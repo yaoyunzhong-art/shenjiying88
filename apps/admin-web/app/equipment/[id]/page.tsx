@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备详情页 — Equipment Detail Page (Next.js App Router Page)
  * 角色视角: 🏢总部管理 / 🛠️运维
  * 功能: 查看详情、编辑信息、状态流转、删除确认
  */
-'use client';
 
 import { useState, useCallback, use } from 'react';
 import Link from 'next/link';

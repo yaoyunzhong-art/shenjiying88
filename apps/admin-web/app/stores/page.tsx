@@ -1,3 +1,4 @@
+'use client';
 /**
  * Stores — 门店管理中心
  *
@@ -8,7 +9,6 @@
  * 🐜 Phase 1 商店管理
  */
 
-'use client';
 
 import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';

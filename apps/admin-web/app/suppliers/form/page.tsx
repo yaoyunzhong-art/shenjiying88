@@ -6,8 +6,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
  * 功能: 新建/编辑供应商信息，含字段验证、提交、错误处理
  * 角色视角: 👤采购管理 / 供应链
  */
-'use client';
-
 import React, { useState, useCallback } from 'react';
 
 import {

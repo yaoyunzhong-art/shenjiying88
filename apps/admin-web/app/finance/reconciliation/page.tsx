@@ -1,3 +1,4 @@
+'use client'
 /**
  * P-38 财务对账管理页面
  *
@@ -12,7 +13,6 @@
  * 路由: /finance/reconciliation
  */
 
-'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AdminPermissionGate } from '../../components/admin-permission-gate'

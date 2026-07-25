@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备新增表单页 — Device Add Form Page (Next.js App Router Page)
  * 功能: 新建设备，含设备名称/类型/IP/门店/固件版本/序列号
  * 角色视角: 👤运维管理员
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';

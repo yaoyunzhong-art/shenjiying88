@@ -1,10 +1,10 @@
+'use client';
 /**
  * Cashier — 会员收银页面 (P-35 / P1-3 共享层收口)
  * 前台收银台：会员搜索、消费记录、余额查询、结账
  * 使用 @m5/sdk BusinessClient 调用真实 API，无 mock 兜底
  */
 
-'use client';
 
 import { useState, useCallback, Suspense } from 'react';
 import { Input, Button, List, Typography, Space, Card, Statistic, message, Empty, Spin } from 'antd';

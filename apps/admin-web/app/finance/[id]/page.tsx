@@ -1,3 +1,4 @@
+'use client';
 /**
  * 支付详情页 — Payment Detail Page (admin-web)
  * B-页面: 详情页 (含编辑/删除/状态流转)
@@ -10,7 +11,6 @@
  *  - 返回列表
  */
 
-'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';

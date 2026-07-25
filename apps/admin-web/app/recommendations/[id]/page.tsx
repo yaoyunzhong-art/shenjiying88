@@ -1,9 +1,9 @@
+'use client';
 /**
  * 推荐策略详情页 — Recommendation Detail Page (Next.js App Router Page)
  * 角色视角: 👤营销运营 / 商品推荐
  * 功能: 查看推荐策略详情、编辑规则配置、状态流转、策略启停
  */
-'use client';
 
 import { useState, useCallback, use } from 'react';
 

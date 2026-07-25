@@ -1,3 +1,4 @@
+'use client';
 /**
  * 采购单详情页 — Purchase Order Detail Page
  * 角色视角: 👤采购管理员 / 店长
@@ -5,7 +6,6 @@
  * 状态流: draft → pending_approval → approved → shipped → partial_received → received
  *                                      ↘ cancelled (任意状态可取消)
  */
-'use client';
 
 import React, { useState, useCallback, use } from 'react';
 
