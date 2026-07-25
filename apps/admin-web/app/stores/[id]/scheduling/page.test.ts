@@ -9,6 +9,10 @@ const SOURCE = resolve(__dirname, 'page.tsx');
 const SRC = readFileSync(SOURCE, 'utf-8');
 
 describe('scheduling — actor headers', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出默认组件', () => {
     assert.ok(SRC.includes('export default function SchedulingPage'));
   });

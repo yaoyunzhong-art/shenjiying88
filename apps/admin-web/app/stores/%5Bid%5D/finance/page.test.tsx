@@ -6,6 +6,10 @@ import { resolve } from 'node:path';
 const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 
 describe('财务 — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出默认组件', () => assert.ok(SRC.includes('export default function')));
   it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
   it('应包含hook', () => assert.ok(SRC.includes('useState') || SRC.includes('useEffect') || SRC.includes('useCallback')));

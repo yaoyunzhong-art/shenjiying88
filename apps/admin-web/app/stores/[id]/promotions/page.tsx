@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Progress, Tabs, Empty, Popconfirm } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Promo {
   id: string; name: string; type: string; discount: string; scope: string;
@@ -26,6 +27,12 @@ const SCFG: Record<string, { color: string; label: string }> = {
 };
 
 const typeColors: Record<string, string> = { 折扣: '#10b981', 满减: '#f59e0b', 满赠: '#8b5cf6', 套餐: '#6366f1' };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店促销访问受限',
+  description:
+    '门店促销页已接入管理员本地 session，只有具备 store:read 的账号才能查看活动预算、投放状态与效果分析。',
+} as const;
 
 export default function PromotionsPage() {
   const [filter, setFilter] = useState('all');
@@ -59,8 +66,9 @@ export default function PromotionsPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>🎉 促销管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>活动创建 · 监控 · 效果分析</span></div>
           <Button type="primary" onClick={() => setShowAdd(true)}>+ 新建促销</Button>
@@ -95,7 +103,8 @@ export default function PromotionsPage() {
             <Input placeholder="预算" type="number" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

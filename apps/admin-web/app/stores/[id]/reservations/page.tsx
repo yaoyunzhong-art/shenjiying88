@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Tabs, Empty, Tooltip } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const DATA = [
   { id:'R001', customer:'张明', type:'生日派对', date:'2026-07-15', time:'14:00-17:00', people:15, status:'confirmed', phone:'138****8888', source:'小程序' },
@@ -17,6 +18,12 @@ const DATA = [
 const STATUS_CFG: Record<string, [string, string]> = {
   confirmed: ['green', '已确认'], pending: ['blue', '待确认'], cancelled: ['default', '已取消'],
 };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店预约访问受限',
+  description:
+    '门店预约页已接入管理员本地 session，只有具备 store:read 的账号才能查看预约列表、排程视图与客户联系方式。',
+} as const;
 
 const COLUMNS = [
   { title: '客户', dataIndex: 'customer' },
@@ -53,8 +60,9 @@ export default function ReservationsPage() {
   const pendingCount = DATA.filter(d => d.status === 'pending').length;
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>📅 预约管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>场地预约 · 设备预约 · 批量管理</span></div>
           <Button type="primary" onClick={() => setShowCreate(true)}>+ 创建预约</Button>
@@ -109,7 +117,8 @@ export default function ReservationsPage() {
             <Input placeholder="人数" type="number" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

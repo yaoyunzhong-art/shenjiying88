@@ -11,6 +11,10 @@ const SOURCE = resolve(__dirname, 'page.tsx');
 const SRC = readFileSync(SOURCE, 'utf-8');
 
 describe('inspection — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出 InspectionPage', () => assert.ok(SRC.includes('export default function InspectionPage')));
   it('应包含巡检管理标题', () => assert.ok(SRC.includes('巡检管理')));
   it('应包含巡检数据', () => assert.ok(SRC.includes('INSPECT_DATA') || SRC.includes('巡检')));

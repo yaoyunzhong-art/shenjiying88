@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal, Select, Tabs, Progress } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 /* ── 平台配置类型定义 ── */
 interface PlatformConfigItem {
@@ -48,6 +49,12 @@ const QUOTA_OPTIONS = [
 ];
 
 const DOCS = ['REST API概览','OAuth2认证','Webhook回调','SDK下载','错误码表','频率限制'];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店开放平台访问受限',
+  description:
+    '门店开放平台页已接入管理员本地 session，只有具备 store:read 的账号才能查看 API 密钥、平台配置与开发文档。',
+} as const;
 
 function statusTag(status: string) {
   if (status === 'active') return <Tag variant="success">活跃</Tag>;
@@ -103,8 +110,9 @@ export default function OpenPlatformPage() {
   );
 
   return (
-    <PageShell title="开放平台">
-      <Space style={{width:'100%',flexDirection:'column',gap:16}}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="开放平台">
+        <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>🔗 开放平台</h2>
           <Space>
@@ -179,7 +187,8 @@ export default function OpenPlatformPage() {
             <Select placeholder="权限范围" options={QUOTA_OPTIONS} style={{width:'100%'}} />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

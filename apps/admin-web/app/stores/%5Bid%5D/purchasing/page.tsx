@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Supplier { id:string; name:string; contact:string; phone:string; category:string; status:string; totalOrders:number; lastOrder:string; [key:string]:unknown; }
 
@@ -11,17 +12,24 @@ const SUPPLIERS: Supplier[] = [
   { id:'S-03',name:'农夫山泉',contact:'王经理',phone:'138****3300',category:'饮品',status:'active',totalOrders:24,lastOrder:'2026-07-12' },
   { id:'S-04',name:'任天堂',contact:'赵经理',phone:'138****4400',category:'游戏卡带',status:'pending',totalOrders:3,lastOrder:'2026-06-20' },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店采购访问受限',
+  description:
+    '门店采购页已接入管理员本地 session，只有具备 store:read 的账号才能查看供应商、采购统计与到货状态。',
+} as const;
 
 export default function InventoryPage() {
   const [loading, _setLoading] = useState(false);
   const [error, _setError] = useState<string | null>(null);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (SUPPLIERS.length === 0) return <div>暂无供应商数据</div>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
+  if (SUPPLIERS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无供应商数据</div></AdminPermissionGate>;
   const [showAdd, setShowAdd] = useState(false);
   return (
-    <PageShell title="库存采购">
-      <Space style={{width:'100%',flexDirection:'column',gap:16}}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="库存采购">
+        <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>📦 库存采购</h2>
           <Space><Button>采购单</Button><Button variant="primary" onClick={()=>setShowAdd(true)}>+ 添加供应商</Button></Space>
@@ -54,7 +62,8 @@ export default function InventoryPage() {
             <Input placeholder="供应商名称" /><Input placeholder="联系人" /><Input placeholder="联系电话" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

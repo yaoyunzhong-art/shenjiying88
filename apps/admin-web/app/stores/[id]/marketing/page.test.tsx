@@ -15,6 +15,14 @@ function readSource(): string {
   return readFileSync(SOURCE, 'utf-8');
 }
 
+describe('marketing — 权限边界', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'));
+    assert.ok(src.includes("requiredPermission: 'store:read'"));
+  });
+});
+
 // ---- 正例 ----
 
 describe.skip('marketing — 正例', () => {

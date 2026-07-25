@@ -14,6 +14,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ─── 类型 ────────────────────────────────────────────────
 
@@ -51,6 +52,12 @@ export const DEFAULT_STORE_REPORTS: StoreReportRow[] = [
 ];
 
 const API_PATH = '/api/stores/reports';
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店报表访问受限',
+  description:
+    '门店报表页已接入管理员本地 session，只有具备 store:read 的账号才能查看门店营收、利润与净利率明细。',
+} as const;
 
 // ─── 数据获取 ─────────────────────────────────────────────
 
@@ -176,11 +183,12 @@ export default function StoreReportsPage() {
   const showEmpty = !loading && sortedRows.length === 0;
 
   return (
-    <main style={{ maxWidth: 1220, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="门店经营报表"
-        subtitle="查看各门店的营收、成本、利润及净利率明细"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1220, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="门店经营报表"
+          subtitle="查看各门店的营收、成本、利润及净利率明细"
+        >
         {/* 概要统计卡片 */}
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
           <article style={card}>
@@ -268,7 +276,8 @@ export default function StoreReportsPage() {
             />
           </>
         )}
-      </PageShell>
-    </main>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

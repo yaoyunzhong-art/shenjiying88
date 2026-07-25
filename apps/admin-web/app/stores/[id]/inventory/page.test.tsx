@@ -18,6 +18,11 @@ function readSource(): string {
 // ---- 正例 ----
 
 describe('inventory — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readSource();
+    assert.ok(src.includes('AdminPermissionGate'));
+    assert.ok(src.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出一个默认组件 InventoryPage', () => {
     const src = readSource();
     assert.ok(src.includes('export default function InventoryPage'), '缺少默认导出组件');

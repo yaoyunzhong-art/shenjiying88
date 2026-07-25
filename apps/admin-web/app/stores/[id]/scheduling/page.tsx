@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { buildActorHeaders } from '@m5/sdk';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Progress, Empty, Spin } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 // P-30 真联调: 清洁排班数据接口 (对齐后端 clean-schedules API)
 interface CleanSchedule {
@@ -47,6 +48,12 @@ const SCHEDULING_PAGE_ACTOR = {
   roles: ['TENANT_ADMIN', 'OPERATIONS'],
   permissions: ['logistics.schedule.read', 'logistics.schedule.write'],
   authenticated: true,
+} as const;
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店排班访问受限',
+  description:
+    '门店排班页已接入管理员本地 session，只有具备 store:read 的账号才能查看排班列表、签到状态与班次统计。',
 } as const;
 
 export default function SchedulingPage() {
@@ -393,8 +400,9 @@ export default function SchedulingPage() {
 
   // ============ 渲染 ============
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -506,7 +514,8 @@ export default function SchedulingPage() {
             </div>
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

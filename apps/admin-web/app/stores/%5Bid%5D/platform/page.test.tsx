@@ -118,6 +118,11 @@ function setup() {
 /* ============================================================ */
 
 describe('platform: 页面渲染', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+
   it('renders without error', () => {
     assert.doesNotThrow(() => setup());
   });

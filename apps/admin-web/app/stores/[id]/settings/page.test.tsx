@@ -114,6 +114,12 @@ function setup() {
 /* ============================================================ */
 
 describe('settings: 页面渲染', () => {
+  it('源码接入管理员权限边界', () => {
+    const src = fs.readFileSync(require.resolve('./page'), 'utf-8');
+    assert.ok(src.includes('AdminPermissionGate'));
+    assert.ok(src.includes("requiredPermission: 'store:read'"));
+  });
+
   it('renders without error', () => {
     assert.doesNotThrow(() => setup());
   });

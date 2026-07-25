@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Modal, Input, message, Progress } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Course {
   id: string; name: string; type: string; trainer: string; date: string;
@@ -26,6 +27,12 @@ const SCFG: Record<string, { color: string; label: string }> = {
   ongoing: { color: 'blue', label: '进行中' },
   completed: { color: 'green', label: '已完成' },
 };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店培训访问受限',
+  description:
+    '门店培训页已接入管理员本地 session，只有具备 store:read 的账号才能查看培训计划、考核通过率与课程安排。',
+} as const;
 
 export default function TrainingPage() {
   const [loading, setLoading] = useState(true);
@@ -72,8 +79,9 @@ export default function TrainingPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>📚 培训管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>培训计划 · 课程 · 考核</span></div>
           <Button type="primary" onClick={() => setShowAdd(true)}>+ 创建培训</Button>
@@ -114,7 +122,8 @@ export default function TrainingPage() {
             <Input placeholder="时长(小时)" type="number" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

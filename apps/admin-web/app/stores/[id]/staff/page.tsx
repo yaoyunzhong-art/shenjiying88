@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Input, Modal, Select, message, Avatar, Badge, Progress, DatePicker, Divider, Empty, Tabs } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Employee { id: string; name: string; role: string; status: 'on' | 'off' | 'leave'; phone: string; shift: string; joinDate: string; skills: string[]; performance?: string; attendance?: number; emergency?: string; }
 const STATUS_CFG: Record<string, { color: string; label: string }> = { on: { color: 'green', label: '在岗' }, off: { color: 'default', label: '休息' }, leave: { color: 'orange', label: '请假' } };
@@ -18,6 +19,12 @@ const EMP: Employee[] = [
 ];
 
 const ROLES = ['全部', '店长', '收银员', '导玩员', '技术员', '保洁'];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店员工访问受限',
+  description:
+    '门店员工页已接入管理员本地 session，只有具备 store:read 的账号才能查看员工排班、出勤率与绩效信息。',
+} as const;
 
 export default function StaffPage() {
   const [showAdd, setShowAdd] = useState(false);
@@ -71,8 +78,9 @@ export default function StaffPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>👥 员工管理</h2>
           <Space>
@@ -167,7 +175,8 @@ export default function StaffPage() {
             </div>
           </Space>}
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

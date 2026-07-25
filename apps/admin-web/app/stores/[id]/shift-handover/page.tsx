@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Modal, message, Input, Tabs, Empty, Select, Tooltip } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Handover {
   id: string; from: string; to: string; cash: number; cash_diff: number;
@@ -20,6 +21,12 @@ const HANDOVERS: Handover[] = [
 ];
 
 const getStatusForDiff = (diff: number): 'normal' | 'diff' => diff === 0 ? 'normal' : 'diff';
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店交接班访问受限',
+  description:
+    '门店交接班页已接入管理员本地 session，只有具备 store:read 的账号才能查看现金差异、设备状态与交接记录。',
+} as const;
 
 const COLUMNS = [
   { title:'交班人', dataIndex:'from', width:130 },
@@ -60,8 +67,9 @@ export default function ShiftHandoverPage() {
   const totalCashDiff = HANDOVERS.reduce((s, h) => s + Math.abs(h.cash_diff), 0);
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>🔄 交接班</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>收银 · 设备 · 钥匙 · 离职入职工位交接</span></div>
           <Button type="primary" onClick={() => setShowStart(true)}>+ 开始交接</Button>
@@ -129,7 +137,8 @@ export default function ShiftHandoverPage() {
             <Input placeholder="备注" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

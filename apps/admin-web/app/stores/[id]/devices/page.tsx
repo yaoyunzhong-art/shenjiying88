@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Modal, Input, message, Progress, Empty, Divider, Timeline } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 type DevStatus = 'online' | 'offline' | 'maintenance' | 'fault';
 interface Device {
@@ -40,6 +41,12 @@ const DEVICES: Device[] = [
   { id: 'DEV-011', name: '跳绳机', type: '彩票机', location: 'D区-娱乐区', status: 'online', lastMaintenance: '2026-06-25', nextMaintenance: '2026-07-25', usageHours: 2100, purchaseDate: '2025-01', warranty: '2028-01' },
   { id: 'DEV-012', name: 'K歌机', type: '娱乐设备', location: 'C区', status: 'online', lastMaintenance: '2026-06-15', nextMaintenance: '2026-08-15', usageHours: 1500, purchaseDate: '2025-06', warranty: '2028-06' },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店设备访问受限',
+  description:
+    '门店设备页已接入管理员本地 session，只有具备 store:read 的账号才能查看设备状态、维护记录与资产清单。',
+} as const;
 
 export default function DevicesPage() {
   const [showAdd, setShowAdd] = useState(false);
@@ -91,8 +98,9 @@ export default function DevicesPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>🖥️ 设备管理</h2>
           <Space><Button>导出清单</Button><Button type="primary" onClick={() => setShowAdd(true)}>+ 添加设备</Button></Space>
@@ -183,7 +191,8 @@ export default function DevicesPage() {
             <Input.TextArea rows={4} placeholder="维护说明" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tabs, Empty, Progress } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const TENANTS = [
   { id:'T-001', name:'旗舰店', brand:'大玩家', plan:'专业版', users:12, stores:1, status:'active', created:'2026-01-01', region:'华南', revenue:285000 },
@@ -23,12 +24,18 @@ const COLUMNS = [
   { title:'状态', dataIndex:'status', render:(v:string)=><Tag color={STATUS_MAP[v]?.color||'default'}>{STATUS_MAP[v]?.label||v}</Tag> },
   { title:'创建时间', dataIndex:'created' },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店租户访问受限',
+  description:
+    '门店租户页已接入管理员本地 session，只有具备 store:read 的账号才能查看租户配置、套餐状态与营收概览。',
+} as const;
 
 export default function TenantPage() {
   const [planFilter, setPlanFilter] = useState('all');
   const filtered = planFilter==='all'?TENANTS:TENANTS.filter(t=>t.plan===planFilter);
   const totalRevenue = TENANTS.reduce((s,t)=>s+t.revenue,0);
-  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
+  return (<AdminPermissionGate {...permissionGate}><PageShell><Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div><h2 style={{color:'#f8fafc',margin:0}}>🔌 租户管理</h2><span style={{color:'#94a3b8',fontSize:13}}>多租户隔离·配置·迁移</span></div><Button type="primary">创建租户</Button></div>
     <Row gutter={[16,16]}>
       <Col span={4}><Card size="small"><Statistic title="租户总数" value={TENANTS.length}/></Card></Col>
@@ -38,5 +45,5 @@ export default function TenantPage() {
       <Col span={5}><Card size="small"><Statistic title="总门店" value={TENANTS.reduce((s,t)=>s+t.stores,0)}/></Card></Col>
     </Row>
     <Card><Space style={{marginBottom:12,gap:8}} wrap><span style={{color:'#94a3b8',fontSize:13}}>套餐:</span><Select value={planFilter} onChange={setPlanFilter} style={{width:120}} options={[{value:'all',label:'全部'},{value:'免费版',label:'免费版'},{value:'专业版',label:'专业版'},{value:'企业版',label:'企业版'}]}/></Space><Table dataSource={filtered} columns={COLUMNS} rowKey="id" pagination={{pageSize:8}}/></Card>
-  </Space></PageShell>);
+  </Space></PageShell></AdminPermissionGate>);
 }

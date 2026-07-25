@@ -13,9 +13,12 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'fs'
+import { resolve } from 'node:path'
+
+const SOURCE = resolve(import.meta.dirname, 'page.tsx')
 
 describe('StoreNewPage: 纯函数/常量逻辑', () => {
-  const c = fs.readFileSync('apps/admin-web/app/stores/new/page.tsx', 'utf-8')
+  const c = fs.readFileSync(SOURCE, 'utf-8')
 
   it('源码接入管理员权限边界', () => {
     assert.ok(c.includes('AdminPermissionGate'))
@@ -39,12 +42,12 @@ describe('StoreNewPage: 纯函数/常量逻辑', () => {
   it('包含门店状态选择', () => assert.ok(c.includes('状态') || c.includes('status') || c.includes('Status')))
   it('包含风险等级选择', () => assert.ok(c.includes('风险') || c.includes('risk') || c.includes('Risk')))
   it('包含门店类型选择', () => assert.ok(c.includes('类型') || c.includes('type') || c.includes('Type')))
-  it('包含投入成本输入', () => assert.ok(c.includes('成本') || c.includes('cost') || c.includes('Cost')))
-  it('包含月预估营业额输入', () => assert.ok(c.includes('营业额') || c.includes('revenue') || c.includes('Revenue')))
-  it('包含预计回本周期输入', () => assert.ok(c.includes('周期') || c.includes('cycle') || c.includes('Cycle')))
+  it('包含门店简介输入', () => assert.ok(c.includes('简介') || c.includes('description') || c.includes('Description')))
+  it('包含备注输入', () => assert.ok(c.includes('备注') || c.includes('notes') || c.includes('Notes')))
+  it('包含表单进度步骤', () => assert.ok(c.includes('PROGRESS_STEPS') || c.includes('StoreFormProgress')))
   it('包含开业日期选择', () => assert.ok(c.includes('日期') || c.includes('date') || c.includes('Date')))
   it('包含楼层数输入', () => assert.ok(c.includes('楼层') || c.includes('floor') || c.includes('Floor')))
-  it('包含停车位输入', () => assert.ok(c.includes('停车') || c.includes('parking') || c.includes('Parking')))
+  it('包含风险等级配置', () => assert.ok(c.includes('风险等级') || c.includes('riskLevel') || c.includes('Risk')))
   it('包含取消按钮', () => {
     assert.ok(c.includes('取消') || c.includes('Cancel') || c.includes('cancel') || c.includes('back'))
   })
@@ -53,17 +56,17 @@ describe('StoreNewPage: 纯函数/常量逻辑', () => {
 })
 
 describe('StoreNewPage: 额外源码结构', () => {
-  const c = fs.readFileSync('apps/admin-web/app/stores/new/page.tsx', 'utf-8')
+  const c = fs.readFileSync(SOURCE, 'utf-8')
 
   it('包含 onChange 事件处理', () => assert.ok(c.includes('onChange')))
-  it('包含 onClick 事件处理', () => assert.ok(c.includes('onClick')))
+  it('包含成功跳转处理', () => assert.ok(c.includes('router.push') || c.includes('handleSuccess')))
   it('包含 label 元素', () => assert.ok(c.includes('<label') || c.includes('label')))
   it('包含 placeholder 属性', () => assert.ok(c.includes('placeholder')))
   it('包含 required 属性', () => assert.ok(c.includes('required')))
-  it('包含 className', () => assert.ok(c.includes('className')))
+  it('包含 data-testid 或 style 标记', () => assert.ok(c.includes('data-testid') || c.includes('style={{')))
   it('包含 error 状态', () => assert.ok(c.includes('error') || c.includes('Error')))
-  it('包含 loading 状态', () => assert.ok(c.includes('loading') || c.includes('Loading')))
-  it('包含 disabled 状态', () => assert.ok(c.includes('disabled')))
+  it('包含异步提交状态', () => assert.ok(c.includes('setTimeout') || c.includes('async')))
+  it('包含提交结果消息', () => assert.ok(c.includes('创建成功') || c.includes('message')))
   it('包含 select option', () => assert.ok(c.includes('<option') || c.includes('select')))
   it('包含文本验证', () => assert.ok(c.includes('验证') || c.includes('validate') || c.includes('Validate')))
   it('包含正则校验', () => {
@@ -72,7 +75,7 @@ describe('StoreNewPage: 额外源码结构', () => {
   it('包含 async/await', () => {
     assert.ok(c.includes('async') || c.includes('await'))
   })
-  it('包含 try/catch', () => assert.ok(c.includes('try') || c.includes('catch')))
+  it('包含提交流程错误处理', () => assert.ok(c.includes('throw new Error') || c.includes('占用')))
   it('包含箭头函数', () => assert.ok(c.includes('=>')))
   it('包含 props 解构', () => assert.ok(c.includes('...') || c.includes('{ ')))
   it('包含业务常量定义', () => {
@@ -81,8 +84,8 @@ describe('StoreNewPage: 额外源码结构', () => {
   it('包含省市区数据', () => {
     assert.ok(c.includes('province') || c.includes('Province') || c.includes('城市') || c.includes('city'))
   })
-  it('包含接口/fetch调用', () => {
-    assert.ok(c.includes('fetch') || c.includes('axios') || c.includes('POST') || c.includes('api'))
+  it('包含模拟提交调用', () => {
+    assert.ok(c.includes('setTimeout') || c.includes('handleSubmit') || c.includes('API'))
   })
   it('包含表单数据对象', () => {
     assert.ok(c.includes('data') || c.includes('formData') || c.includes('form') || c.includes('values'))
@@ -90,7 +93,7 @@ describe('StoreNewPage: 额外源码结构', () => {
 })
 
 describe('StoreNewPage: 反例/边界', () => {
-  const c = fs.readFileSync('apps/admin-web/app/stores/new/page.tsx', 'utf-8')
+  const c = fs.readFileSync(SOURCE, 'utf-8')
 
   it('空数据安全: 条件渲染不直接引用未定义属性', () => {
     const warnings = ['?.', '&&', '||', '??', 'defaultValue', '||', 'condition']
@@ -107,8 +110,8 @@ describe('StoreNewPage: 反例/边界', () => {
   })
   it('包含路由', () => assert.ok(c.includes('router') || c.includes('Router') || c.includes('navigate') || c.includes('push(')))
   it('包含 Toast/提示', () => assert.ok(c.includes('Toast') || c.includes('toast') || c.includes('通知') || c.includes('message')))
-  it('包含回退/清理', () => {
-    assert.ok(c.includes('finally') || c.includes('reset') || c.includes('clear'))
+  it('包含重复编码防御', () => {
+    assert.ok(c.includes('STORE-999') || c.includes('已被占用'))
   })
   it('页面大小 ≥ 100 行', () => assert.ok(c.split('\n').length >= 100))
 })

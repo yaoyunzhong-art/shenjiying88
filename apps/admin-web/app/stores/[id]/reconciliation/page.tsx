@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Modal, message, Input, Tooltip, DatePicker, Tabs, Progress } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Record {
   id: string; date: string; income: number; system: number; diff: number;
@@ -27,6 +28,12 @@ const formatDiff = (v: number) => {
   if (v === 0) return <span style={{ color: '#34d399', fontWeight: 600 }}>✓</span>;
   return <span style={{ color: '#f87171', fontWeight: 600 }}>{v > 0 ? `+${v}` : `${v}`}</span>;
 };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店对账访问受限',
+  description:
+    '门店对账页已接入管理员本地 session，只有具备 store:read 的账号才能查看支付差异、对账汇总与处理说明。',
+} as const;
 
 export default function ReconciliationPage() {
   const [loading, setLoading] = useState(true);
@@ -108,8 +115,9 @@ export default function ReconciliationPage() {
   }, []);
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#fafafa', margin: 0 }}>🧾 对账管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>支付对账 · 差异处理 · 日报生成</span></div>
           <Button type="primary" onClick={() => setShowPerf(true)}>+ 执行对账</Button>
@@ -194,7 +202,8 @@ export default function ReconciliationPage() {
             </Space>
           )}
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

@@ -15,6 +15,14 @@ function readPage(): string {
   return readFileSync(PAGE_SOURCE, 'utf-8');
 }
 
+describe('promotions/page — 权限边界', () => {
+  it('应接入管理员权限边界', () => {
+    const src = readPage();
+    assert.ok(src.includes('AdminPermissionGate'));
+    assert.ok(src.includes("requiredPermission: 'store:read'"));
+  });
+});
+
 // ==================== Page scaffold 正例 ====================
 
 describe.skip('promotions/page — 正例', () => {

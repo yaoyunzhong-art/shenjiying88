@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, message, Modal, Progress, Divider, Timeline, Empty } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Alert { id: string; type: string; location: string; time: string; severity: 'low' | 'medium' | 'high' | 'critical'; status: 'pending' | 'handled' | 'ignored'; handler?: string; category: string; resolvedAt?: string; }
 const ALERTS: Alert[] = [
@@ -31,6 +32,12 @@ const CAMERA_STATUS = [
   { id: 'CAM-07', name: '出口', status: 'error', lastCheck: '5分钟前' },
   { id: 'CAM-08', name: '机房', status: 'online', lastCheck: '30秒前' },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店安防访问受限',
+  description:
+    '门店安防页已接入管理员本地 session，只有具备 store:read 的账号才能查看告警列表、监控状态与处理记录。',
+} as const;
 
 export default function SecurityPage() {
   const [filter, setFilter] = useState<string>('all');
@@ -66,8 +73,9 @@ export default function SecurityPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>🛡️ 安防管理</h2>
           <Space><Button type="primary">视频监控</Button><Button>门禁管理</Button><Button>告警规则</Button></Space>
@@ -144,7 +152,8 @@ export default function SecurityPage() {
             <div style={{ color: '#94a3b8', fontSize: 13, marginTop: 4 }}>建议立即派单到对应班组处理。告警类型：{detailModal.category}，可转至运维工单系统。</div>
           </Space>}
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

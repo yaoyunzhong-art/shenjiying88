@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Input, Tabs, DatePicker, Progress, Empty, Divider, Modal, message } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Report {
   id: string; name: string; freq: string; desc: string; last: string;
@@ -34,6 +35,12 @@ const STATUS_CFG: Record<string, [string, string]> = {
   overdue: ['orange', '逾期'],
   failed: ['red', '失败'],
 };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店报表访问受限',
+  description:
+    '门店报表页已接入管理员本地 session，只有具备 store:read 的账号才能查看经营报表、生成进度与自定义报表详情。',
+} as const;
 
 export default function ReportsPage() {
   const [tabKey, setTabKey] = useState('overview');
@@ -55,7 +62,7 @@ export default function ReportsPage() {
   const pendingCount = AUTO_REPORTS.filter(r => r.status === 'overdue').length;
   const genCount = CUSTOM_REPORTS.filter(r => r.status === 'generating').length;
 
-  return (<PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
+  return (<AdminPermissionGate {...permissionGate}><PageShell><Space style={{width:'100%',flexDirection:'column',gap:16}}>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
       <h2 style={{color:'#f8fafc',margin:0}}>📈 报表中心</h2>
       <Space>
@@ -193,5 +200,5 @@ export default function ReportsPage() {
         <Input.TextArea rows={4} placeholder="报表说明（可选）" />
       </Space>
     </Modal>
-  </Space></PageShell>);
+  </Space></PageShell></AdminPermissionGate>);
 }

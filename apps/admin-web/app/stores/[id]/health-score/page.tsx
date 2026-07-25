@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Progress, Tooltip, Tabs, Empty } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const DIMENSIONS = [
   { key:'revenue', label:'营收健康', score:85, status:'good', trend:'up', detail:'本月营收达标率105%', suggestion:'保持当前价格策略' },
@@ -20,6 +21,12 @@ const STATUS_CFG: Record<string, { color: string; label: string }> = {
   poor: { color: 'red', label: '较差' },
 };
 const TREND_ICON: Record<string, string> = { up: '📈', down: '📉', stable: '➡️' };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店健康评分访问受限',
+  description:
+    '门店健康评分页已接入管理员本地 session，只有具备 store:read 的账号才能查看综合评分、趋势与改进建议。',
+} as const;
 
 const scoreColor = (s: number) => s >= 80 ? '#34d399' : s >= 60 ? '#f59e0b' : '#f87171';
 
@@ -46,8 +53,9 @@ export default function HealthScorePage() {
   const fairCount = DIMENSIONS.filter(d => d.status === 'fair').length;
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>❤️ 健康评分</h2>
         </div>
@@ -118,7 +126,8 @@ export default function HealthScorePage() {
             <Empty description="趋势图表开发中…" />
           )}
         </Card>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

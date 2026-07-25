@@ -1,6 +1,7 @@
 // ⚙️ 设置中心 · 门店基础参数配置
 'use client'; import { useState } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Switch, Input, Modal, message, Tabs, Divider, Empty, notification } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface ConfigItem { id:string; label:string; key:string; type:'switch'|'text'|'select'|'number'; value:any; options?:{value:string,label:string}[]; desc:string; category:string; }
 interface NotifItem { id:string; type:string; message:string; time:string; read:boolean; }
@@ -49,6 +50,12 @@ const CATEGORIES = [
     ],
   },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店设置访问受限',
+  description:
+    '门店设置页已接入管理员本地 session，只有具备 store:read 的账号才能查看配置分组、通知中心与批量配置操作。',
+} as const;
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
@@ -73,8 +80,9 @@ export default function SettingsPage() {
   const unreadNotifs = NOTIFICATIONS.filter(n => !n.read).length;
 
   return (
-    <PageShell>
-      <Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{width:'100%',flexDirection:'column',gap:16,alignItems:'stretch'}}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{color:'#f8fafc',margin:0}}>⚙️ 设置中心</h2>
           <Space>
@@ -166,7 +174,8 @@ export default function SettingsPage() {
             <div style={{ color: '#94a3b8', fontSize: 12 }}>支持从其他门店复制配置JSON</div>
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

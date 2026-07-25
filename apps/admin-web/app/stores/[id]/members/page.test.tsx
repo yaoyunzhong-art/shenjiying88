@@ -9,6 +9,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
+describe('members / 权限边界', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
+});
+
 // ===================== L1 冒烟测试 =====================
 describe.skip('members / L1 冒烟', () => {
   it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });

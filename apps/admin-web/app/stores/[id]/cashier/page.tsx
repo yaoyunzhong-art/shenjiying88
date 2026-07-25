@@ -11,9 +11,16 @@ import { Input, Button, List, Typography, Space, Card, Statistic, message, Empty
 import { SearchOutlined, DollarOutlined, UserOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PageShell, CashierPanel, LoadingSkeleton } from '@m5/ui';
 import { getBizClient } from '../../../lib/sdk';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 import type { QuickStatItem } from '@m5/ui';
 
 const { Text, Title } = Typography;
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店收银访问受限',
+  description:
+    '门店收银页已接入管理员本地 session，只有具备 store:read 的账号才能查看会员检索、消费记录与收银工作台。',
+} as const;
 
 // ---- 类型定义 ----
 
@@ -253,114 +260,116 @@ export default function CashierPage() {
   };
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="会员收银" subtitle="前台收银台 - 会员搜索、消费记录、余额、结账">
-        <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载收银台..." />}>
-          {/* 收银员工作台面板 */}
-          <div style={{ marginBottom: 24 }}>
-            <CashierPanel
-              title={cashierTitle}
-              cashierName={cashierName}
-              cashierStatus="active"
-              shiftInfo={shiftInfo}
-              metrics={metrics}
-              transactions={[
-                { id: 'log1', receiptNo: 'REC20260711-001', time: '20:15', amount: 128.00, payment: '微信支付', type: 'sale', memberName: '张三' },
-                { id: 'log2', receiptNo: 'REC20260711-002', time: '19:30', amount: 58.00, payment: '现金', type: 'sale', memberName: '李四' },
-                { id: 'log3', receiptNo: 'REC20260711-003', time: '18:00', amount: 30.00, payment: '微信', type: 'refund', memberName: '王五' },
-              ]}
-              tillStatus={{
-                tillNo: 'POS-01',
-                version: 'v3.2.1',
-                printerOnline: true,
-                cashDrawerOpen: false,
-                scannerOnline: true,
-                networkOnline: true,
-              }}
-            />
-          </div>
-
-          {/* 会员搜索区 */}
-          <Card title="会员查询" size="small" style={{ marginBottom: 16 }}>
-            <Space.Compact style={{ width: '100%' }}>
-              <Input
-                placeholder="输入手机号 / 会员卡号"
-                prefix={<SearchOutlined />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onPressEnter={handleSearch}
-                allowClear
-                size="middle"
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell title="会员收银" subtitle="前台收银台 - 会员搜索、消费记录、余额、结账">
+          <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载收银台..." />}>
+            {/* 收银员工作台面板 */}
+            <div style={{ marginBottom: 24 }}>
+              <CashierPanel
+                title={cashierTitle}
+                cashierName={cashierName}
+                cashierStatus="active"
+                shiftInfo={shiftInfo}
+                metrics={metrics}
+                transactions={[
+                  { id: 'log1', receiptNo: 'REC20260711-001', time: '20:15', amount: 128.00, payment: '微信支付', type: 'sale', memberName: '张三' },
+                  { id: 'log2', receiptNo: 'REC20260711-002', time: '19:30', amount: 58.00, payment: '现金', type: 'sale', memberName: '李四' },
+                  { id: 'log3', receiptNo: 'REC20260711-003', time: '18:00', amount: 30.00, payment: '微信', type: 'refund', memberName: '王五' },
+                ]}
+                tillStatus={{
+                  tillNo: 'POS-01',
+                  version: 'v3.2.1',
+                  printerOnline: true,
+                  cashDrawerOpen: false,
+                  scannerOnline: true,
+                  networkOnline: true,
+                }}
               />
-              <Button
-                type="primary"
-                icon={<SearchOutlined />}
-                onClick={handleSearch}
-                loading={searching}
-                size="middle"
-              >
-                查询
-              </Button>
-            </Space.Compact>
-          </Card>
+            </div>
 
-          {/* 搜索结果 - 错误状态 */}
-          {searchError && !searching && (
-            <Card size="small" style={{ marginBottom: 16 }}>
-              <Space>
-                <Text type="danger">{searchError}</Text>
+            {/* 会员搜索区 */}
+            <Card title="会员查询" size="small" style={{ marginBottom: 16 }}>
+              <Space.Compact style={{ width: '100%' }}>
+                <Input
+                  placeholder="输入手机号 / 会员卡号"
+                  prefix={<SearchOutlined />}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onPressEnter={handleSearch}
+                  allowClear
+                  size="middle"
+                />
                 <Button
-                  size="small"
-                  icon={<ReloadOutlined />}
+                  type="primary"
+                  icon={<SearchOutlined />}
                   onClick={handleSearch}
+                  loading={searching}
+                  size="middle"
                 >
-                  重试
+                  查询
                 </Button>
-              </Space>
+              </Space.Compact>
             </Card>
-          )}
 
-          {/* 搜索结果 - 会员信息 */}
-          {searchedMember && !searchError && (
-            <MemberInfoCard member={searchedMember} />
-          )}
+            {/* 搜索结果 - 错误状态 */}
+            {searchError && !searching && (
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Space>
+                  <Text type="danger">{searchError}</Text>
+                  <Button
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={handleSearch}
+                  >
+                    重试
+                  </Button>
+                </Space>
+              </Card>
+            )}
 
-          {/* 消费记录 - 加载中 */}
-          {loadingRecords && (
-            <Spin tip="加载消费记录...">
-              <div style={{ padding: 24 }} />
-            </Spin>
-          )}
+            {/* 搜索结果 - 会员信息 */}
+            {searchedMember && !searchError && (
+              <MemberInfoCard member={searchedMember} />
+            )}
 
-          {/* 消费记录 - 错误 */}
-          {recordsError && !loadingRecords && searchedMember && (
-            <Card size="small" style={{ marginBottom: 16 }}>
-              <Space>
-                <Text type="danger">{recordsError}</Text>
-                <Button
-                  size="small"
-                  icon={<ReloadOutlined />}
-                  onClick={() => {
-                    setRecordsError(null);
-                    setLoadingRecords(true);
-                    fetchConsumptionHistory(searchedMember.id)
-                      .then(setConsumptionRecords)
-                      .catch((e) => setRecordsError(e instanceof Error ? e.message : '加载消费记录失败'))
-                      .finally(() => setLoadingRecords(false));
-                  }}
-                >
-                  重试
-                </Button>
-              </Space>
-            </Card>
-          )}
+            {/* 消费记录 - 加载中 */}
+            {loadingRecords && (
+              <Spin tip="加载消费记录...">
+                <div style={{ padding: 24 }} />
+              </Spin>
+            )}
 
-          {/* 消费记录 - 已加载 */}
-          {!loadingRecords && !recordsError && searchedMember && (
-            <ConsumptionHistory records={consumptionRecords} />
-          )}
-        </Suspense>
-      </PageShell>
-    </main>
+            {/* 消费记录 - 错误 */}
+            {recordsError && !loadingRecords && searchedMember && (
+              <Card size="small" style={{ marginBottom: 16 }}>
+                <Space>
+                  <Text type="danger">{recordsError}</Text>
+                  <Button
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={() => {
+                      setRecordsError(null);
+                      setLoadingRecords(true);
+                      fetchConsumptionHistory(searchedMember.id)
+                        .then(setConsumptionRecords)
+                        .catch((e) => setRecordsError(e instanceof Error ? e.message : '加载消费记录失败'))
+                        .finally(() => setLoadingRecords(false));
+                    }}
+                  >
+                    重试
+                  </Button>
+                </Space>
+              </Card>
+            )}
+
+            {/* 消费记录 - 已加载 */}
+            {!loadingRecords && !recordsError && searchedMember && (
+              <ConsumptionHistory records={consumptionRecords} />
+            )}
+          </Suspense>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

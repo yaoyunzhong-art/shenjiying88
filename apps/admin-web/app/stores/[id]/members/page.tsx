@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Input, 
          Modal, Form, Select, Drawer, Descriptions, Divider, Steps, message, 
          Tabs, Progress, Badge, Empty } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 // ─── 类型 ──────────────────────────────────────────────────────────
 
@@ -61,6 +62,12 @@ const MOCK_MEMBERS: Member[] = Array.from({ length: 48 }, (_, i) => {
 });
 
 const DASHBOARD = { total: MOCK_MEMBERS.length, active: MOCK_MEMBERS.filter(m => m.status === 'active').length, newThisMonth: 48, active7d: 356, totalPoints: MOCK_MEMBERS.reduce((s, m) => s + m.points, 0), totalBalance: MOCK_MEMBERS.reduce((s, m) => s + m.balance, 0) };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店会员访问受限',
+  description:
+    '门店会员页已接入管理员本地 session，只有具备 store:read 的账号才能查看会员档案、积分余额与等级配置。',
+} as const;
 
 // ─── 子组件 ────────────────────────────────────────────────────────
 
@@ -137,8 +144,9 @@ export default function MembersPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>👥 会员管理</h2>
@@ -355,6 +363,7 @@ export default function MembersPage() {
           ))}
         </Form>
       </Modal>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

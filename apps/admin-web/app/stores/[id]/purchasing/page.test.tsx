@@ -9,6 +9,10 @@ const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 // 正例 — 页面骨架
 // ============================================================
 describe('PurchasingPage — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出默认组件', () => assert.ok(SRC.includes('export default function PurchasingPage')));
   it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
   it('应包含useState/useEffect/useCallback等hook', () => {
@@ -70,23 +74,21 @@ describe('PurchasingPage — 交互', () => {
 });
 
 // ============================================================
-// 采购配置统计条 — 新增功能（4个统计卡片）
+// 采购统计条 — 当前实现（5个统计卡片）
 // ============================================================
 describe('PurchasingPage — 采购配置统计', () => {
-  it('应定义 CONFIG_ITEMS 配置数组', () => assert.ok(SRC.includes('CONFIG_ITEMS')));
-  it('应计算已启用数', () => assert.ok(SRC.includes('CONFIG_ENABLED')));
-  it('应计算已禁用数', () => assert.ok(SRC.includes('CONFIG_DISABLED')));
-  it('应计算待配置数', () => assert.ok(SRC.includes('CONFIG_PENDING')));
-  it('应显示总配置项卡片', () => assert.ok(SRC.includes('总配置项')));
-  it('应显示已启用卡片', () => assert.ok(SRC.includes('已启用')));
-  it('应显示已禁用卡片', () => assert.ok(SRC.includes('已禁用')));
-  it('应显示待配置卡片', () => assert.ok(SRC.includes('待配置')));
+  it('应计算待收货金额', () => assert.ok(SRC.includes('totalPending')));
+  it('应计算待收货单数', () => assert.ok(SRC.includes('pendingOrderCount')));
+  it('应显示总采购单卡片', () => assert.ok(SRC.includes('总采购单')));
+  it('应显示待收货卡片', () => assert.ok(SRC.includes('待收货')));
+  it('应显示已到货卡片', () => assert.ok(SRC.includes('已到货')));
+  it('应显示采购总额卡片', () => assert.ok(SRC.includes('采购总额')));
+  it('应显示待付款卡片', () => assert.ok(SRC.includes('待付款')));
   it('应为配置统计使用 Row/Col 布局', () => assert.ok(SRC.indexOf('Row') !== -1 && SRC.indexOf('Col') !== -1));
-  it('待配置数应等于禁用数', () => {
-    // 提取 CONFIG_ITEMS 定义区域，确认逻辑正确
-    const line = SRC.split('\n').find(l => l.includes('CONFIG_PENDING'));
-    assert.ok(line, 'CONFIG_PENDING 应存在');
-    assert.ok(line.includes('CONFIG_DISABLED'), '待配置 = 禁用');
+  it('待收货单数应基于未到货状态过滤', () => {
+    const line = SRC.split('\n').find(l => l.includes('pendingOrderCount'));
+    assert.ok(line, 'pendingOrderCount 应存在');
+    assert.ok(line.includes("status !== 'received'"), '待收货应按未到货状态统计');
   });
 });
 

@@ -11,6 +11,10 @@ const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 // ===================== L1 冒烟测试 =====================
 describe('staff / L1 冒烟', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });
   it('应包含 use client 指令', () => { assert.ok(SRC.includes("'use client'")); });
   it('应包含 JSX 模板', () => { assert.ok(SRC.includes('return (') || SRC.includes('return <')); });

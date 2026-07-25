@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Statistic, Row, Col, Select, Input, Modal, message, Progress, Tabs, Empty, Tooltip, Popconfirm } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Purchase {
   id: string; supplier: string; items: string; total: number;
@@ -54,6 +55,12 @@ const cols = [
     ),
   },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店采购访问受限',
+  description:
+    '门店采购页已接入管理员本地 session，只有具备 store:read 的账号才能查看采购单、供应商信息与入库状态。',
+} as const;
 
 export default function PurchasingPage() {
   // 三态条件渲染
@@ -79,8 +86,9 @@ export default function PurchasingPage() {
   const pendingOrderCount = DATA.filter(d => d.status !== 'received').length;
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>🛒 采购管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>采购订单 · 供应商管理 · 入库确认</span></div>
           <Button type="primary" onClick={() => setShowAdd(true)}>+ 新建采购单</Button>
@@ -140,7 +148,8 @@ export default function PurchasingPage() {
             <Input placeholder="预期到货日" type="date" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

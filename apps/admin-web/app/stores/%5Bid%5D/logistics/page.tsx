@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Statistic, Tag, Button, Space, Input, Modal, Row, Col, type TagProps } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Reservation { id: string; customer: string; type: string; people: number; time: string; status: string; amount: number; staff: string; [key:string]: unknown; }
 
@@ -48,6 +49,12 @@ const STATUS_VARIANT: Record<string, string> = {
   delivered: 'success',
   abnormal: 'danger',
 };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店后勤访问受限',
+  description:
+    '门店后勤页已接入管理员本地 session，只有具备 store:read 的账号才能查看预约统计、物流状态与明细记录。',
+} as const;
 
 const SHIPMENT_COLUMNS = [
   { title: '运单号', dataIndex: 'trackingNo' },
@@ -62,9 +69,9 @@ const SHIPMENT_COLUMNS = [
 export default function LogisticsPage() {
   const [loading, _setLoading] = useState(false);
   const [error, _setError] = useState<string | null>(null);
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>数据获取失败: {error}</div>;
-  if (RESERVATIONS.length === 0) return <div>暂无预约数据</div>;
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
+  if (RESERVATIONS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无预约数据</div></AdminPermissionGate>;
   const [showCreate, setShowCreate] = useState(false);
   const [shipmentFilter, setShipmentFilter] = useState<string>('all');
 
@@ -79,8 +86,9 @@ export default function LogisticsPage() {
   }, [shipmentFilter]);
 
   return (
-    <PageShell title="后勤管理">
-      <Space style={{width:'100%',flexDirection:'column',gap:16}}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="后勤管理">
+        <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>🅿️ 后勤管理</h2>
           <Button variant="primary" onClick={()=>setShowCreate(true)}>+ 新建预约</Button>
@@ -179,7 +187,8 @@ export default function LogisticsPage() {
             <Input placeholder="客户姓名" />
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

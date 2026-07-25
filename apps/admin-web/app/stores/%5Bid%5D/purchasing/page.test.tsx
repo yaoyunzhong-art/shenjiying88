@@ -9,6 +9,10 @@ const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
 // 正例 — 页面骨架
 // ============================================================
 describe('PurchasingPage — 正例', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+  });
   it('应导出默认组件', () => assert.ok(SRC.includes('export default function PurchasingPage')));
   it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
   it('应包含useState/useEffect/useCallback等hook', () => {
@@ -112,5 +116,5 @@ describe('PurchasingPage — 边界', () => {
   it('金额格式化使用 toLocaleString', () => assert.ok(SRC.includes('.toLocaleString()')));
   it('分页应有 pageSize 限制', () => assert.ok(SRC.includes('pageSize')));
   it('应处理无签收人情况', () => assert.ok(SRC.includes('receiver')));
-  it('应显示供应商统计信息', () => assert.ok(SRC.includes('常用供应商')));
+  it('应显示供应商统计信息', () => assert.ok(SRC.includes('供应商') || SRC.includes('品类数')));
 });

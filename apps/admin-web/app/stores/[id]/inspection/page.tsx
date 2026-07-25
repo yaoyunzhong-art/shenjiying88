@@ -22,6 +22,7 @@ import {
   useToast,
 } from '@m5/ui';
 import type { TableColumn } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface InspectionItem {
   id: string;
@@ -67,6 +68,12 @@ const INSPECTION_PAGE_ACTOR = {
   roles: ['TENANT_ADMIN', 'OPERATIONS'],
   permissions: ['logistics.inspection.read', 'logistics.inspection.write'],
   authenticated: true,
+} as const;
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店巡检访问受限',
+  description:
+    '门店巡检页已接入管理员本地 session，只有具备 store:read 的账号才能查看巡检列表、提醒记录与结果录入。',
 } as const;
 
 export default function InspectionPage() {
@@ -210,9 +217,10 @@ export default function InspectionPage() {
   ];
 
   return (
-    <PageShell title="巡检管理">
-      <ToastContainer toasts={toasts} onDismiss={dismiss} />
-      <Space direction="vertical" className="w-full" style={{ gap: 16 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="巡检管理">
+        <ToastContainer toasts={toasts} onDismiss={dismiss} />
+        <Space direction="vertical" className="w-full" style={{ gap: 16 }}>
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-slate-100 text-xl font-semibold">📋 巡检管理</h2>
@@ -308,25 +316,26 @@ export default function InspectionPage() {
             </Space>
           )}
         </Card>
-      </Space>
-
-      <Modal
-        open={showAdd}
-        onClose={() => setShowAdd(false)}
-        title="新建巡检"
-        footer={
-          <Space>
-            <Button variant="ghost" onClick={() => setShowAdd(false)}>取消</Button>
-            <Button variant="primary" onClick={handleCreate}>确定</Button>
-          </Space>
-        }
-      >
-        <Space direction="vertical" className="w-full" style={{ gap: 12 }}>
-          <Input placeholder="设备名称" value={newItem.equipmentName} onChange={(v) => setNewItem(s => ({ ...s, equipmentName: v }))} />
-          <Input placeholder="负责人" value={newItem.assigneeName} onChange={(v) => setNewItem(s => ({ ...s, assigneeName: v }))} />
-          <Input type="datetime-local" placeholder="排期时间" value={newItem.scheduledAt} onChange={(v) => setNewItem(s => ({ ...s, scheduledAt: v }))} />
         </Space>
-      </Modal>
-    </PageShell>
+
+        <Modal
+          open={showAdd}
+          onClose={() => setShowAdd(false)}
+          title="新建巡检"
+          footer={
+            <Space>
+              <Button variant="ghost" onClick={() => setShowAdd(false)}>取消</Button>
+              <Button variant="primary" onClick={handleCreate}>确定</Button>
+            </Space>
+          }
+        >
+          <Space direction="vertical" className="w-full" style={{ gap: 12 }}>
+            <Input placeholder="设备名称" value={newItem.equipmentName} onChange={(v) => setNewItem(s => ({ ...s, equipmentName: v }))} />
+            <Input placeholder="负责人" value={newItem.assigneeName} onChange={(v) => setNewItem(s => ({ ...s, assigneeName: v }))} />
+            <Input type="datetime-local" placeholder="排期时间" value={newItem.scheduledAt} onChange={(v) => setNewItem(s => ({ ...s, scheduledAt: v }))} />
+          </Space>
+        </Modal>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

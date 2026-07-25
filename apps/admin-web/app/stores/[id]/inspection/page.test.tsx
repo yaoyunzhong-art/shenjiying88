@@ -1,3 +1,5 @@
 // AM-005 skip: [id] glob path causes false positive in batch mode
-import { describe } from 'node:test';
-describe.skip("\page.test.tsx", () => ./app/stores/[id]/inspection/page.test.tsx);
+import { describe, it } from 'node:test';
+describe.skip('stores/[id]/inspection/page', () => {
+  it('placeholder - test file path reserved', () => {});
+});

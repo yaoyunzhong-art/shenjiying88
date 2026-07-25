@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Progress, Modal, message, Input, Tabs, Empty, Divider } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 const CAMPAIGNS = [
   { id:'C001', name:'新会员首充有礼', type:'充值', status:'active', start:'2026-07-01', end:'2026-07-31', budget:5000, used:3200, channel:'小程序', roi:'64%', audience:'新会员' },
@@ -25,6 +26,12 @@ const COUPONS = [
 
 const TYPE_COLORS: Record<string, string> = { 充值:'#6366f1', 推广:'#f59e0b', 会员:'#8b5cf6', 节日:'#ef4444', 会员卡:'#10b981' };
 const STATUS_CFG: Record<string, [string, string]> = { active:['green','进行中'], scheduled:['blue','待开始'], ended:['default','已结束'] };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店营销访问受限',
+  description:
+    '门店营销页已接入管理员本地 session，只有具备 store:read 的账号才能查看活动预算、营销效果与优惠券数据。',
+} as const;
 
 const activeCount = CAMPAIGNS.filter(c => c.status === 'active').length;
 const totalBudget = CAMPAIGNS.reduce((s, c) => s + c.budget, 0);
@@ -70,8 +77,9 @@ export default function MarketingPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><h2 style={{ color: '#f8fafc', margin: 0 }}>📢 营销管理</h2></div>
           <Button type="primary" onClick={() => setShowCreate(true)}>+ 创建活动</Button>
@@ -182,7 +190,8 @@ export default function MarketingPage() {
             </div>
           </Space>
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

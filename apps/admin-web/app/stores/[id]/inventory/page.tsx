@@ -21,6 +21,7 @@ import {
   useToast,
 } from '@m5/ui';
 import type { TableColumn } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Item extends Record<string, unknown> {
   id: string;
@@ -163,6 +164,12 @@ const DETAIL_GRID_STYLE: CSSProperties = {
   gridTemplateColumns: '1fr 1fr',
   gap: 12,
 };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店库存访问受限',
+  description:
+    '门店库存页已接入管理员本地 session，只有具备 store:read 的账号才能查看库存水位、物料申领与出库流转。',
+} as const;
 
 async function readResponseMessage(response: Response): Promise<string> {
   const contentType = response.headers.get('content-type') ?? '';
@@ -652,10 +659,11 @@ export default function InventoryPage() {
   ];
 
   return (
-    <PageShell title="库存管理">
-      <ToastContainer toasts={toasts} onDismiss={dismiss} />
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="库存管理">
+        <ToastContainer toasts={toasts} onDismiss={dismiss} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ color: '#f8fafc', margin: 0 }}>📦 库存管理</h2>
@@ -991,7 +999,8 @@ export default function InventoryPage() {
             ) : null}
           </div>
         </Modal>
-      </div>
-    </PageShell>
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

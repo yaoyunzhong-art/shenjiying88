@@ -4,6 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { PageShell, Card, Table, Tag, Button, Space, Input, Select, Statistic, Row, Col, Modal, message, Tooltip, Empty, Popconfirm, Badge, Spin } from '@m5/ui';
 import { getBizClient } from '../../../lib/sdk';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Order {
   id: string; customer: string; items: string; amount: number;
@@ -89,6 +90,12 @@ const SCFG: Record<string, { color: string; label: string }> = {
 };
 
 const methodTag: Record<string, string> = { '微信': 'green', '支付宝': 'blue', '现金': 'orange', '刷卡': 'purple', '其他': 'default' };
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店订单访问受限',
+  description:
+    '门店订单页已接入管理员本地 session，只有具备 store:read 的账号才能查看订单列表、退款处理与订单详情。',
+} as const;
 
 // ---- 组件 ----
 
@@ -146,8 +153,9 @@ export default function OrdersPage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#fafafa', margin: 0 }}>📝 订单管理</h2>
           {loading && <Spin size="small" />}
@@ -206,7 +214,8 @@ export default function OrdersPage() {
             </Space>
           )}
         </Modal>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

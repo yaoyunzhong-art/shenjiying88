@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface ReconRow { date:string; transaction:number; matched:number; unmatched:number; diff:string; status:string; [key:string]:unknown; }
 
@@ -12,6 +13,12 @@ const RECONCILIATION: ReconRow[] = [
   { date:'07/10', transaction:1490, matched:1490, unmatched:0, diff:'¥0.00', status:'matched' },
   { date:'07/09', transaction:1350, matched:1340, unmatched:10, diff:'¥230.00', status:'alert' },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店财务访问受限',
+  description:
+    '门店财务页已接入管理员本地 session，只有具备 store:read 的账号才能查看对账统计、差异状态与处理入口。',
+} as const;
 
 export default function FinancePage() {
   const totalTx = RECONCILIATION.reduce((s,r)=>s+r.transaction,0);
@@ -19,8 +26,9 @@ export default function FinancePage() {
   const matchRate = Math.round(totalMatch/totalTx*100);
 
   return (
-    <PageShell title="财务对账">
-      <Space style={{width:'100%',flexDirection:'column',gap:16}}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="财务对账">
+        <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>💳 财务对账</h2>
           <Button variant="primary">手动对账</Button>
@@ -51,7 +59,8 @@ export default function FinancePage() {
             ]}
           />
         </Card>
-      </Space>
-    </PageShell>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

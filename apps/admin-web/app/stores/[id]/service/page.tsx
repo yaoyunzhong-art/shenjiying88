@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Row, Col, Statistic, Table, Tag, Button, Space, Select, Input, Modal, message, Progress } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 type TicketStatus = 'open' | 'processing' | 'resolved' | 'closed';
 type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
@@ -35,6 +36,12 @@ const TICKETS: Ticket[] = [
   { id: 'TK-007', title: '充值未到账投诉', type: '客诉', customer: '吴女士', priority: 'urgent', status: 'processing', assignee: '张店长', createdAt: '2026-07-13 17:00', slaHours: 2 },
   { id: 'TK-008', title: '台球桌台面磨损', type: '设备维护', customer: '内部', priority: 'low', status: 'open', assignee: '王师傅', createdAt: '2026-07-13 09:00', slaHours: 48 },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店售后访问受限',
+  description:
+    '门店售后页已接入管理员本地 session，只有具备 store:read 的账号才能查看工单状态、客户投诉与处理进度。',
+} as const;
 
 export default function ServicePage() {
   // 三态条件渲染
@@ -82,8 +89,9 @@ export default function ServicePage() {
   ];
 
   return (
-    <PageShell>
-      <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell>
+        <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>🛠️ 售后服务</h2>
           <Button type="primary" onClick={() => setShowCreate(true)}>创建工单</Button>
@@ -121,7 +129,8 @@ export default function ServicePage() {
           <Select placeholder="优先级"><Select.Option value="low">低</Select.Option><Select.Option value="medium">中</Select.Option><Select.Option value="high">高</Select.Option><Select.Option value="urgent">紧急</Select.Option></Select>
           <Input placeholder="客户信息" /><Input.TextArea rows={3} placeholder="问题描述" />
         </Space>
-      </Modal>
-    </PageShell>
+        </Modal>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

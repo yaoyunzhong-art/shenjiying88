@@ -2,6 +2,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { PageShell, Card, Statistic, Tag, Button, Space, Input, Modal, Row, Col, type TagProps } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Reservation { id: string; customer: string; type: string; people: number; time: string; status: string; amount: number; staff: string; [key:string]: unknown; }
 
@@ -58,6 +59,12 @@ const SHIPMENT_COLUMNS = [
   { title: '预计到达', dataIndex: 'estimatedArrival' },
   { title: '承运商', dataIndex: 'carrier' },
 ];
+const permissionGate = {
+  requiredPermission: 'store:read',
+  title: '门店后勤访问受限',
+  description:
+    '门店后勤页已接入管理员本地 session，只有具备 store:read 的账号才能查看预约调度、物流状态与配送明细。',
+} as const;
 
 export default function LogisticsPage() {
   // 三态条件渲染
@@ -81,8 +88,9 @@ export default function LogisticsPage() {
   }, [shipmentFilter]);
 
   return (
-    <PageShell title="后勤管理">
-      <Space style={{width:'100%',flexDirection:'column',gap:16}}>
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="后勤管理">
+        <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>🅿️ 后勤管理</h2>
           <Button variant="primary" onClick={()=>setShowCreate(true)}>+ 新建预约</Button>
@@ -176,12 +184,13 @@ export default function LogisticsPage() {
           <p style={{color:'#94a3b8'}}>预约列表 — {RESERVATIONS.length} 条记录</p>
         </Card>
 
-        <Modal title="新建预约" open={showCreate} onClose={()=>setShowCreate(false)}>
-          <Space style={{width:'100%',flexDirection:'column'}}>
-            <Input placeholder="客户姓名" />
-          </Space>
-        </Modal>
-      </Space>
-    </PageShell>
+          <Modal title="新建预约" open={showCreate} onClose={()=>setShowCreate(false)}>
+            <Space style={{width:'100%',flexDirection:'column'}}>
+              <Input placeholder="客户姓名" />
+            </Space>
+          </Modal>
+        </Space>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
