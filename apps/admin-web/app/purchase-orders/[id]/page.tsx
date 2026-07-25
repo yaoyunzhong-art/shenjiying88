@@ -130,27 +130,29 @@ export default function PurchaseOrderDetailPage({
 
   if (!item) {
     return (
-      <DetailShell
-        title="采购单未找到"
-        breadcrumbs={[
-          { label: '采购管理', href: '/purchase-orders' },
-          { label: '未找到' },
-        ]}
-      >
-        <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
-          该采购单不存在或已被删除
-        </div>
-        <DetailClosureBar
-          links={[
-            {
-              key: 'back-list',
-              title: '采购单管理',
-              subtitle: '返回采购单列表',
-              href: '/purchase-orders',
-            },
+      <AdminPermissionGate {...permissionGate}>
+        <DetailShell
+          title="采购单未找到"
+          breadcrumbs={[
+            { label: '采购管理', href: '/purchase-orders' },
+            { label: '未找到' },
           ]}
-        />
-      </DetailShell>
+        >
+          <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
+            该采购单不存在或已被删除
+          </div>
+          <DetailClosureBar
+            links={[
+              {
+                key: 'back-list',
+                title: '采购单管理',
+                subtitle: '返回采购单列表',
+                href: '/purchase-orders',
+              },
+            ]}
+          />
+        </DetailShell>
+      </AdminPermissionGate>
     );
   }
 

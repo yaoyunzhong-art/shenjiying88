@@ -182,6 +182,10 @@ describe('suppliers 更多功能', () => {
 const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('Suppliers — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'suppliers:read'"));
+  });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('onChange={')));
