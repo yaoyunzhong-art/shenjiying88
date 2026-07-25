@@ -18,6 +18,7 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import type { CreateBookingDto } from './dto/create-booking.dto'
+import type { CancelBookingDto, RescheduleBookingDto, BookingStatus } from './dto/cancellation.dto'
 
 // ═══════════════════════════════════════════════════════════════════════
 // Types
@@ -363,9 +364,14 @@ interface BookingRecord {
   timeSlot: string
   customerName: string
   customerPhone: string
+  amount: number // 分
   couponCode?: string
-  status: 'confirmed'
+  status: 'confirmed' | 'cancelled' | 'rescheduled' | 'completed' | 'no_show'
   createdAt: string
+  cancelledAt?: string
+  rescheduledTo?: { date: string; timeSlot: string }
+  qrCode: string
+  paymentUrl: string
 }
 
 const bookingStore = new Map<string, BookingRecord>()
@@ -514,9 +520,12 @@ export class StoreFrontService {
       timeSlot,
       customerName,
       customerPhone,
+      amount: finalPrice,
       couponCode,
       status: 'confirmed',
       createdAt: now,
+      qrCode: `QR:${bookingId}`,
+      paymentUrl: `https://pay.shenjiying.com/order/${bookingId}`,
     }
 
     // 模拟原子写入
@@ -541,9 +550,157 @@ export class StoreFrontService {
   // ── 5. 套餐列表 ────────────────────────────────────────────
 
   getPackages(storeSlug?: string): PackageItem[] {
-    // 套餐全部门店通用，storeSlug 参数用于后续差异化套餐扩展
     void storeSlug
     return [...MOCK_PACKAGES]
+  }
+
+  // ── 6. 查询预约 ────────────────────────────────────────────
+
+  getBooking(bookingId: string): BookingStatus {
+    const record = bookingStore.get(bookingId)
+    if (!record) throw new NotFoundException(`预约 ${bookingId} 不存在`)
+    const service = this.findService(record.storeSlug, record.serviceId)
+    const store = this.getStore(record.storeSlug)
+    return {
+      bookingId: record.bookingId,
+      status: record.status,
+      storeName: store.name,
+      serviceName: service?.name ?? record.serviceId,
+      date: record.date,
+      timeSlot: record.timeSlot,
+      customerName: record.customerName,
+      customerPhone: record.customerPhone,
+      amount: record.amount,
+      createdAt: record.createdAt,
+      cancelledAt: record.cancelledAt,
+      rescheduledTo: record.rescheduledTo,
+    }
+  }
+
+  // ── 7. 取消预约 ────────────────────────────────────────────
+
+  cancelBooking(bookingId: string, dto: CancelBookingDto): BookingStatus {
+    const record = bookingStore.get(bookingId)
+    if (!record) throw new NotFoundException(`预约 ${bookingId} 不存在`)
+    if (record.customerPhone !== dto.customerPhone) {
+      throw new BadRequestException('手机号不匹配，无法操作他人预约')
+    }
+    if (record.status !== 'confirmed') {
+      throw new BadRequestException(`预约状态为 ${record.status}，无法取消`)
+    }
+
+    // 取消前至少提前1小时
+    const slotDateTime = new Date(`${record.date}T${record.timeSlot}:00+08:00`)
+    const oneHourBefore = new Date(slotDateTime.getTime() - 60 * 60 * 1000)
+    if (new Date() > oneHourBefore) {
+      throw new BadRequestException('预约开始前1小时内不可取消，请直接联系门店')
+    }
+
+    record.status = 'cancelled'
+    record.cancelledAt = new Date().toISOString()
+
+    // 释放时段
+    bookingStore.set(bookingId, record)
+    const slotKey = `${record.storeSlug}:${record.serviceId}:${record.date}:${record.timeSlot}`
+    slotOccupancy.delete(slotKey)
+
+    const service = this.findService(record.storeSlug, record.serviceId)
+    const store = this.getStore(record.storeSlug)
+    return {
+      bookingId: record.bookingId,
+      status: record.status,
+      storeName: store.name,
+      serviceName: service?.name ?? record.serviceId,
+      date: record.date,
+      timeSlot: record.timeSlot,
+      customerName: record.customerName,
+      customerPhone: record.customerPhone,
+      amount: record.amount,
+      createdAt: record.createdAt,
+      cancelledAt: record.cancelledAt,
+    }
+  }
+
+  // ── 8. 改期 ────────────────────────────────────────────────
+
+  rescheduleBooking(bookingId: string, dto: RescheduleBookingDto): BookingStatus {
+    const record = bookingStore.get(bookingId)
+    if (!record) throw new NotFoundException(`预约 ${bookingId} 不存在`)
+    if (record.customerPhone !== dto.customerPhone) {
+      throw new BadRequestException('手机号不匹配')
+    }
+    if (record.status !== 'confirmed') {
+      throw new BadRequestException(`预约状态为 ${record.status}，无法改期`)
+    }
+
+    // 校验新时段是否可用
+    const newSlotKey = `${dto.storeSlug}:${record.serviceId}:${dto.newDate}:${dto.newTimeSlot}`
+    if (slotOccupancy.has(newSlotKey)) {
+      throw new ConflictException(`新时段 ${dto.newDate} ${dto.newTimeSlot} 已被占用`)
+    }
+
+    // 校验新时段是否在营业时间范围内
+    const [h, m] = dto.newTimeSlot.split(':').map(Number)
+    if (h < OPENING_START) throw new BadRequestException(`门店 ${OPENING_START}:00 开始营业`)
+    const service = this.findService(record.storeSlug, record.serviceId)
+    if (service && (h * 60 + m + service.duration > OPENING_END * 60)) {
+      throw new BadRequestException('新时段超出营业结束时间')
+    }
+
+    // 释放旧时段
+    const oldSlotKey = `${record.storeSlug}:${record.serviceId}:${record.date}:${record.timeSlot}`
+    slotOccupancy.delete(oldSlotKey)
+
+    // 占用新时段
+    slotOccupancy.add(newSlotKey)
+
+    record.rescheduledTo = { date: dto.newDate, timeSlot: dto.newTimeSlot }
+    record.date = dto.newDate
+    record.timeSlot = dto.newTimeSlot
+    record.status = 'rescheduled'
+    bookingStore.set(bookingId, record)
+
+    const store = this.getStore(record.storeSlug)
+    return {
+      bookingId: record.bookingId,
+      status: record.status,
+      storeName: store.name,
+      serviceName: service?.name ?? record.serviceId,
+      date: record.date,
+      timeSlot: record.timeSlot,
+      customerName: record.customerName,
+      customerPhone: record.customerPhone,
+      amount: record.amount,
+      createdAt: record.createdAt,
+      rescheduledTo: record.rescheduledTo,
+    }
+  }
+
+  // ── 9. 核销确认 ────────────────────────────────────────────
+
+  checkIn(bookingId: string): BookingStatus {
+    const record = bookingStore.get(bookingId)
+    if (!record) throw new NotFoundException(`预约 ${bookingId} 不存在`)
+    if (record.status === 'cancelled') throw new BadRequestException('该预约已取消')
+    if (record.status === 'completed') throw new BadRequestException('该预约已核销，请勿重复操作')
+
+    record.status = 'completed'
+    bookingStore.set(bookingId, record)
+
+    const service = this.findService(record.storeSlug, record.serviceId)
+    const store = this.getStore(record.storeSlug)
+    return {
+      bookingId: record.bookingId,
+      status: record.status,
+      storeName: store.name,
+      serviceName: service?.name ?? record.serviceId,
+      date: record.date,
+      timeSlot: record.timeSlot,
+      customerName: record.customerName,
+      customerPhone: record.customerPhone,
+      amount: record.amount,
+      createdAt: record.createdAt,
+    }
   }
 
   // ── 辅助方法 ───────────────────────────────────────────────

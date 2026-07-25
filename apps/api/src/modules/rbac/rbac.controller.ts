@@ -11,11 +11,18 @@ import {
   RegisterProtectedActionDto,
 } from './rbac.dto'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
+
+const IDENTITY_ACCESS_READ_PERMISSION = 'identity-access:read'
+const IDENTITY_ACCESS_WRITE_PERMISSION = 'identity-access:write'
 
 @Controller('rbac')
 @UseGuards(TenantGuard)
-  @Public()
+@RequireTenantScope()
+@RequirePermissions(IDENTITY_ACCESS_READ_PERMISSION)
 export class RBACController {
   constructor(private readonly rbacService: RBACService) {}
 
@@ -24,6 +31,7 @@ export class RBACController {
    * 为用户分配角色
    */
   @Post('assign')
+  @RequirePermissions(IDENTITY_ACCESS_WRITE_PERMISSION)
   @HttpCode(HttpStatus.OK)
   async assignRole(@Body() body: AssignRoleDto) {
     try {
@@ -56,6 +64,7 @@ export class RBACController {
    * 撤销用户角色
    */
   @Post('revoke')
+  @RequirePermissions(IDENTITY_ACCESS_WRITE_PERMISSION)
   @HttpCode(HttpStatus.OK)
   async revokeRole(@Body() body: RevokeRoleDto) {
     try {
@@ -187,6 +196,7 @@ export class RBACController {
    * 注册自定义角色策略
    */
   @Post('policy')
+  @RequirePermissions(IDENTITY_ACCESS_WRITE_PERMISSION)
   @HttpCode(HttpStatus.OK)
   async registerPolicy(@Body() body: RegisterPolicyDto) {
     try {
@@ -209,6 +219,7 @@ export class RBACController {
    * 注册 Controller 受保护动作
    */
   @Post('protected-actions')
+  @RequirePermissions(IDENTITY_ACCESS_WRITE_PERMISSION)
   @HttpCode(HttpStatus.OK)
   async registerProtectedActions(@Body() body: RegisterProtectedActionDto) {
     try {

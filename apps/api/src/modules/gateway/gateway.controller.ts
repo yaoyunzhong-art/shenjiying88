@@ -5,10 +5,19 @@ import { GatewayAnalyticsService } from './gateway-analytics.service'
 import { AuthCheckDto, RouteLookupDto, QuotaSetDto, QuotaQueryDto, CreateApiKeyDto, RevokeApiKeyDto, AnalyticsQueryDto } from './gateway.dto'
 import type { AuthResult, RateLimitResult, QuotaStatus, APIKey, GatewayLogEntry, GatewayAnalyticsSummary, EndpointAnalytics, ClientAnalytics, TimeSeriesPoint, AnomalyDetectionResult } from './gateway.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const GATEWAY_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const GATEWAY_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('gateway')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(GATEWAY_GOVERNANCE_READ_PERMISSION)
 export class GatewayController {
   constructor(
     private readonly apiGateway: APIGateway,
@@ -59,6 +68,7 @@ export class GatewayController {
   /** 消费令牌（检查 + 扣减） */
   @Post('rate-limit/consume')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(GATEWAY_GOVERNANCE_WRITE_PERMISSION)
   async consumeToken(@Body() dto: { clientId: string; path: string; method: string }): Promise<RateLimitResult> {
     const endpoint = `${dto.method}:${dto.path}`
     return this.rateLimiter.consumeToken(dto.clientId, endpoint)
@@ -74,6 +84,7 @@ export class GatewayController {
   /** 修改配额 */
   @Post('quota/set')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(GATEWAY_GOVERNANCE_WRITE_PERMISSION)
   async setQuota(@Body() dto: QuotaSetDto): Promise<{ success: boolean }> {
     await this.rateLimiter.setQuota(dto.clientId, dto.endpoint, {
       maxTokens: dto.maxTokens,
@@ -85,6 +96,7 @@ export class GatewayController {
   /** 创建 API Key */
   @Post('api-keys')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(GATEWAY_GOVERNANCE_WRITE_PERMISSION)
   async createApiKey(@Body() dto: CreateApiKeyDto): Promise<APIKey> {
     return this.apiKeyManager.createAPIKey(dto.name, dto.ownerId, dto.scopes)
   }
@@ -98,6 +110,7 @@ export class GatewayController {
   /** 吊销 API Key */
   @Post('api-keys/revoke')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(GATEWAY_GOVERNANCE_WRITE_PERMISSION)
   async revokeApiKey(@Body() dto: RevokeApiKeyDto): Promise<{ success: boolean }> {
     const ok = await this.apiKeyManager.revokeAPIKey(dto.keyId)
     if (!ok) {

@@ -5,6 +5,11 @@ import { TenantController } from './tenant.controller'
 import { TenantService } from './tenant.service'
 import { TenantQuotaService } from './tenant-quota.service'
 import { TenantLifecycleService } from './tenant-lifecycle.service'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 import type {
   RequestTenantContext,
   RequestActorContext,
@@ -60,9 +65,78 @@ function makeReq(overrides: Partial<TenantAwareRequest> = {}): TenantAwareReques
 
 // ──────────── 路由元数据 ────────────
 describe('tenant controller 路由元数据', () => {
+  const readHandlers = [
+    TenantController.prototype.resolveTenant,
+    TenantController.prototype.getQuota,
+    TenantController.prototype.checkQuota,
+    TenantController.prototype.getUsage,
+    TenantController.prototype.getDefaultTierQuotas,
+    TenantController.prototype.getLifecycle,
+    TenantController.prototype.getStatus,
+    TenantController.prototype.listActive,
+    TenantController.prototype.listSuspended,
+  ]
+
+  const createHandlers = [
+    TenantController.prototype.initQuota,
+    TenantController.prototype.initLifecycle,
+  ]
+
+  const updateHandlers = [
+    TenantController.prototype.setTier,
+    TenantController.prototype.overrideQuota,
+    TenantController.prototype.reserveQuota,
+    TenantController.prototype.suspend,
+    TenantController.prototype.reactivate,
+  ]
+
+  const deleteHandlers = [TenantController.prototype.softDelete]
+
+  const resolvePermissions = (handler: Function) =>
+    Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler) ??
+    Reflect.getMetadata(PERMISSIONS_METADATA_KEY, TenantController)
+
+  const resolveTenantScope = (handler: Function) =>
+    Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler) ??
+    Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, TenantController)
+
   it('controller path 为 tenant', () => {
     const path = Reflect.getMetadata('path', TenantController)
     assert.equal(path, 'tenant')
+  })
+
+  it('controller 不应继续保持 Public', () => {
+    assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, TenantController), undefined)
+  })
+
+  it('全部端点应要求 tenant scope', () => {
+    ;[...readHandlers, ...createHandlers, ...updateHandlers, ...deleteHandlers].forEach((handler) => {
+      assert.deepStrictEqual(resolveTenantScope(handler), {})
+    })
+  })
+
+  it('读接口应复用 tenant:read', () => {
+    readHandlers.forEach((handler) => {
+      assert.deepStrictEqual(resolvePermissions(handler), ['tenant:read'])
+    })
+  })
+
+  it('初始化接口应复用 tenant:create', () => {
+    createHandlers.forEach((handler) => {
+      assert.deepStrictEqual(resolvePermissions(handler), ['tenant:create'])
+    })
+  })
+
+  it('变更接口应复用 tenant:update', () => {
+    updateHandlers.forEach((handler) => {
+      assert.deepStrictEqual(resolvePermissions(handler), ['tenant:update'])
+    })
+  })
+
+  it('删除接口应复用 tenant:delete', () => {
+    deleteHandlers.forEach((handler) => {
+      assert.deepStrictEqual(resolvePermissions(handler), ['tenant:delete'])
+    })
   })
 
   it('resolveTenant 为 GET /resolve', () => {

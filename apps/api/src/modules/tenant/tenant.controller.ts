@@ -9,12 +9,21 @@ import { TenantLifecycleStatus, TenantStatusReason } from './tenant-lifecycle.en
 import type { TenantQuota, TenantQuotaUsage, QuotaCheckResult } from './tenant-quota.entity'
 import type { TenantLifecycleRecord } from './tenant-lifecycle.entity'
 import { TenantGuard } from '../agent/tenant.guard';
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
+
+const TENANT_READ_PERMISSION = 'tenant:read'
+const TENANT_CREATE_PERMISSION = 'tenant:create'
+const TENANT_UPDATE_PERMISSION = 'tenant:update'
+const TENANT_DELETE_PERMISSION = 'tenant:delete'
 
 @Controller('tenant')
 @UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  @Public()
+@RequireTenantScope()
+@RequirePermissions(TENANT_READ_PERMISSION)
 export class TenantController {
   constructor(
     private readonly tenantService: TenantService,
@@ -51,6 +60,7 @@ export class TenantController {
   // ─── 配额管理 (TenantQuotaService) ───
 
   @Post('quota/init')
+  @RequirePermissions(TENANT_CREATE_PERMISSION)
   initQuota(@Body() body: { tenantId: string; tier?: TenantTier }): { data: TenantQuota } {
     const quota = this.tenantQuotaService.initialize(body.tenantId, body.tier)
     return { data: quota }
@@ -63,12 +73,14 @@ export class TenantController {
   }
 
   @Post('quota/set-tier')
+  @RequirePermissions(TENANT_UPDATE_PERMISSION)
   setTier(@Body() body: { tenantId: string; tier: TenantTier }): { data: TenantQuota } {
     const quota = this.tenantQuotaService.setTier(body.tenantId, body.tier)
     return { data: quota }
   }
 
   @Post('quota/override')
+  @RequirePermissions(TENANT_UPDATE_PERMISSION)
   overrideQuota(
     @Body() body: { tenantId: string; overrides: Partial<Omit<TenantQuota, 'tenantId' | 'updatedAt'>> }
   ): { data: TenantQuota } {
@@ -83,6 +95,7 @@ export class TenantController {
   }
 
   @Post('quota/reserve')
+  @RequirePermissions(TENANT_UPDATE_PERMISSION)
   reserveQuota(@Body() body: { tenantId: string; resource: QuotaResourceKind }): { data: QuotaCheckResult } {
     const result = this.tenantQuotaService.reserve(body.tenantId, body.resource)
     return { data: result }
@@ -102,6 +115,7 @@ export class TenantController {
   // ─── 生命周期管理 (TenantLifecycleService) ───
 
   @Post('lifecycle/init')
+  @RequirePermissions(TENANT_CREATE_PERMISSION)
   initLifecycle(@Body() body: { tenantId: string }): { data: TenantLifecycleRecord } {
     const lifecycle = this.tenantLifecycleService.initialize(body.tenantId)
     return { data: lifecycle }
@@ -120,6 +134,7 @@ export class TenantController {
   }
 
   @Post('lifecycle/suspend')
+  @RequirePermissions(TENANT_UPDATE_PERMISSION)
   suspend(
     @Body() body: { tenantId: string; reason?: TenantStatusReason; actorId?: string; note?: string }
   ): { data: TenantLifecycleRecord } {
@@ -128,6 +143,7 @@ export class TenantController {
   }
 
   @Post('lifecycle/reactivate')
+  @RequirePermissions(TENANT_UPDATE_PERMISSION)
   reactivate(
     @Body() body: { tenantId: string; actorId?: string; note?: string }
   ): { data: TenantLifecycleRecord } {
@@ -136,6 +152,7 @@ export class TenantController {
   }
 
   @Post('lifecycle/delete')
+  @RequirePermissions(TENANT_DELETE_PERMISSION)
   softDelete(
     @Body() body: { tenantId: string; reason?: TenantStatusReason; actorId?: string; note?: string }
   ): { data: TenantLifecycleRecord } {
