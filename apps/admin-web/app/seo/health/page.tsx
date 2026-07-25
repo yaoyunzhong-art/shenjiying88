@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface AuditIssue {
   path: string; severity: 'high' | 'medium' | 'low'; suggestion: string
@@ -28,6 +29,13 @@ const MOCK_REPORT: HealthReport = {
 const SEV_ICONS: Record<string, string> = { high: '🔴', medium: '🟡', low: '🟢' }
 const SEV_TEXT: Record<string, string> = { high: '紧急', medium: '中等', low: '轻微' }
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: 'SEO 健康报告访问受限',
+  description:
+    'SEO 健康报告页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看覆盖率、问题清单与优化建议。',
+} as const
+
 export default function SEOHealthPage() {
   const [report, setReport] = useState<HealthReport | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,14 +46,15 @@ export default function SEOHealthPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  if (loading) return <div className="p-6 text-center text-gray-500"><div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2" />加载健康报告...</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div className="p-6 text-center text-gray-500"><div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2" />加载健康报告...</div></AdminPermissionGate>
 
-  if (!report) return <div className="p-6 text-center text-red-500">无法加载健康报告</div>
+  if (!report) return <AdminPermissionGate {...permissionGate}><div className="p-6 text-center text-red-500">无法加载健康报告</div></AdminPermissionGate>
 
   const barBg = report.coverageRate >= 80 ? 'bg-green-500' : report.coverageRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">SEO 健康报告</h1>
 
       {/* 概览卡片 */}
@@ -117,6 +126,7 @@ export default function SEOHealthPage() {
           <li>配置Open Graph社交分享卡片</li>
         </ol>
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

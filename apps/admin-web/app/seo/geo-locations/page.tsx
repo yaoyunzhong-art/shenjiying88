@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 interface GeoRow {
   id: string; city: string; district: string; landmark: string; lat: number; lng: number; radiusKm: number
@@ -13,6 +14,13 @@ const MOCK_ROWS: GeoRow[] = [
   { id: 'G5', city: '成都', district: '锦江', landmark: '春熙路', lat: 30.66, lng: 104.08, radiusKm: 2 },
 ]
 
+const permissionGate = {
+  requiredPermission: 'dashboard:read',
+  title: 'GEO 地域标签访问受限',
+  description:
+    'SEO GEO 地域标签页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看城市、商圈与地理营销数据。',
+} as const
+
 export default function GeoLocationsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,9 +28,9 @@ export default function GeoLocationsPage() {
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState<string>('ALL')
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!rows || rows.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!rows || rows.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   const cities = useMemo(() => [...new Set(rows.map(r => r.city))].sort(), [rows])
 
@@ -38,7 +46,8 @@ export default function GeoLocationsPage() {
   }, [rows, search, cityFilter])
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <AdminPermissionGate {...permissionGate}>
+      <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">GEO 地域标签</h1>
       <p className="text-sm text-gray-500 mb-4">城市 / 商圈 / 地标地理营销数据 ({rows.length} 条)</p>
 
@@ -71,6 +80,7 @@ export default function GeoLocationsPage() {
           </tbody>
         </table>
       </div>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }
