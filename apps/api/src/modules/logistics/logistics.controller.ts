@@ -12,6 +12,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
 import { LogisticsService } from './logistics.service'
 import type {
   CleanScheduleStatus,
@@ -35,8 +39,17 @@ import type {
   AlertTriggerType,
 } from './logistics.phase-p30-80.entity'
 
+const LOGISTICS_READ_PERMISSION = 'logistics:read'
+const LOGISTICS_REPAIRS_READ_PERMISSION = 'logistics:repairs:read'
+const LOGISTICS_REPAIRS_DETAIL_PERMISSION = 'logistics:repairs:id:read'
+const SUPPLIERS_READ_PERMISSION = 'suppliers:read'
+const SUPPLIERS_DETAIL_PERMISSION = 'suppliers:id:read'
+const SUPPLIERS_FORM_PERMISSION = 'suppliers:form:read'
+
 @UseGuards(TenantGuard)
 @Controller('logistics')
+@RequireTenantScope()
+@RequirePermissions(LOGISTICS_READ_PERMISSION)
 export class LogisticsController {
   constructor(private readonly logisticsService: LogisticsService) {}
 
@@ -155,6 +168,7 @@ export class LogisticsController {
   }
 
   @Post('repairs')
+  @RequirePermissions(LOGISTICS_REPAIRS_READ_PERMISSION)
   createRepairOrder(@Headers('x-tenant-id') tenantId: string, @Body() body: any) {
     return this.logisticsService.createRepairOrder({
       tenantId,
@@ -169,6 +183,7 @@ export class LogisticsController {
   }
 
   @Get('repairs')
+  @RequirePermissions(LOGISTICS_REPAIRS_READ_PERMISSION)
   listRepairOrders(
     @Headers('x-tenant-id') tenantId: string,
     @Query('status') status?: RepairOrderStatus,
@@ -179,11 +194,13 @@ export class LogisticsController {
   }
 
   @Get('repairs/:id')
+  @RequirePermissions(LOGISTICS_REPAIRS_DETAIL_PERMISSION)
   repairDetail(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
     return this.logisticsService.getRepairOrder(id, tenantId) ?? null
   }
 
   @Post('repairs/:id/assign')
+  @RequirePermissions(LOGISTICS_REPAIRS_DETAIL_PERMISSION)
   assignRepairOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -193,6 +210,7 @@ export class LogisticsController {
   }
 
   @Post('repairs/:id/start')
+  @RequirePermissions(LOGISTICS_REPAIRS_DETAIL_PERMISSION)
   startRepairOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -202,6 +220,7 @@ export class LogisticsController {
   }
 
   @Post('repairs/:id/complete')
+  @RequirePermissions(LOGISTICS_REPAIRS_DETAIL_PERMISSION)
   completeRepairOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -217,6 +236,7 @@ export class LogisticsController {
   }
 
   @Post('repairs/:id/verify')
+  @RequirePermissions(LOGISTICS_REPAIRS_DETAIL_PERMISSION)
   verifyRepairOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -419,6 +439,7 @@ export class LogisticsController {
   // ═══════════════════════════════════════════
 
   @Post('suppliers')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   createSupplier(
     @Headers('x-tenant-id') tenantId: string,
     @Body() body: {
@@ -437,6 +458,7 @@ export class LogisticsController {
   }
 
   @Get('suppliers')
+  @RequirePermissions(SUPPLIERS_READ_PERMISSION)
   listSuppliers(
     @Headers('x-tenant-id') tenantId: string,
     @Query('status') status?: SupplierStatus,
@@ -448,11 +470,13 @@ export class LogisticsController {
   }
 
   @Get('suppliers/:id')
+  @RequirePermissions(SUPPLIERS_DETAIL_PERMISSION)
   getSupplier(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
     return this.logisticsService.getSupplier(id, tenantId) ?? null
   }
 
   @Patch('suppliers/:id')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   updateSupplier(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -462,12 +486,14 @@ export class LogisticsController {
   }
 
   @Delete('suppliers/:id')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   deleteSupplier(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
     const result = this.logisticsService.deleteSupplier(id, tenantId)
     return { success: result }
   }
 
   @Post('suppliers/:id/contacts')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   addSupplierContact(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -477,6 +503,7 @@ export class LogisticsController {
   }
 
   @Post('suppliers/:id/contracts')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   addSupplierContract(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -495,11 +522,13 @@ export class LogisticsController {
   }
 
   @Get('suppliers/:id/contracts')
+  @RequirePermissions(SUPPLIERS_DETAIL_PERMISSION)
   listSupplierContracts(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
     return this.logisticsService.listSupplierContracts(id, tenantId)
   }
 
   @Post('suppliers/:id/evaluations')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   evaluateSupplier(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -517,11 +546,13 @@ export class LogisticsController {
   }
 
   @Get('suppliers/:id/evaluations')
+  @RequirePermissions(SUPPLIERS_DETAIL_PERMISSION)
   listSupplierEvaluations(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string) {
     return this.logisticsService.listSupplierEvaluations(id, tenantId)
   }
 
   @Get('suppliers/metrics')
+  @RequirePermissions(SUPPLIERS_READ_PERMISSION)
   getSupplierMetrics(@Headers('x-tenant-id') tenantId: string) {
     return this.logisticsService.getSupplierMetrics(tenantId)
   }

@@ -3,18 +3,8 @@
  * P1-3 共享层收口: 优先调用真实 API，不可用时回落 mock
  */
 
-import { createBusinessClient } from '@m5/sdk';
+import { getBizClient } from '../lib/sdk';
 import type { RefundItem } from './refund-types';
-
-/** API 客户端 (client-side singleton) */
-function getBizClient() {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as Record<string, unknown> & { __m5_biz_client?: ReturnType<typeof createBusinessClient> };
-  if (!w.__m5_biz_client) {
-    w.__m5_biz_client = createBusinessClient();
-  }
-  return w.__m5_biz_client;
-}
 
 /** 将后端退款记录映射为前端 RefundItem */
 function mapApiRefundToRefundItem(apiRefund: any, index: number): RefundItem {

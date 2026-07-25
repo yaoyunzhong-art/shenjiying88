@@ -14,6 +14,11 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 import { resetTransactionsServiceTestState } from './transactions.service'
 import { TransactionsController } from './transactions.controller'
 import { TransactionsService } from './transactions.service'
@@ -104,6 +109,64 @@ beforeEach(() => { buildServices() })
 afterEach(() => { resetTransactionsServiceTestState() })
 
 describe('transactions controller', () => {
+  describe('authorization metadata', () => {
+    const readHandlers = [
+      TransactionsController.prototype.getOrderTransaction,
+      TransactionsController.prototype.listOrderTransactions,
+      TransactionsController.prototype.listLytOrderSnapshots,
+      TransactionsController.prototype.getLytOrderSnapshot,
+      TransactionsController.prototype.listLytPaymentSnapshots,
+      TransactionsController.prototype.getLytPaymentSnapshot,
+      TransactionsController.prototype.listOrderRefunds,
+      TransactionsController.prototype.listRefunds,
+      TransactionsController.prototype.listPendingRefunds,
+      TransactionsController.prototype.getRefundDashboard,
+      TransactionsController.prototype.getRefund,
+      TransactionsController.prototype.listMemberTransactions,
+      TransactionsController.prototype.listMemberRefunds,
+    ]
+    const writeHandlers = [
+      TransactionsController.prototype.startCheckout,
+      TransactionsController.prototype.timeoutCloseOrder,
+      TransactionsController.prototype.batchTimeoutCloseOrders,
+      TransactionsController.prototype.manualCloseOrder,
+    ]
+    const refundHandlers = [
+      TransactionsController.prototype.requestRefund,
+      TransactionsController.prototype.approveRefund,
+      TransactionsController.prototype.rejectRefund,
+      TransactionsController.prototype.batchApproveRefunds,
+      TransactionsController.prototype.batchRejectRefunds,
+      TransactionsController.prototype.batchAssignRefunds,
+      TransactionsController.prototype.batchClaimRefunds,
+    ]
+
+    it('payment callback 应标记为 Public', () => {
+      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, TransactionsController.prototype.applyPaymentCallback), true)
+    })
+
+    it('order 读取链路应要求 tenant scope 和 order:read', () => {
+      readHandlers.forEach((handler) => {
+        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
+        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['order:read'])
+      })
+    })
+
+    it('order 写入链路应要求 tenant scope 和 order:write', () => {
+      writeHandlers.forEach((handler) => {
+        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
+        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['order:write'])
+      })
+    })
+
+    it('refund 操作链路应要求 tenant scope 和 order:refund', () => {
+      refundHandlers.forEach((handler) => {
+        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
+        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['order:refund'])
+      })
+    })
+  })
+
   describe('startCheckout', () => {
     it('should create checkout and return aggregate', async () => {
       reg('m-1')

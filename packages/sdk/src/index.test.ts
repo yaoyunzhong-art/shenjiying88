@@ -1310,6 +1310,35 @@ test('sdk: createBusinessClient returns typed client with checkout/orders/cashie
   assert.equal(typeof biz.checkout.start, 'function');
 });
 
+test('sdk: createBusinessClient accepts api client options and forwards auth context headers', async () => {
+  const requests: Array<{ headers: Headers }> = [];
+  globalThis.fetch = (async (_input, init) => {
+    requests.push({ headers: new Headers(init?.headers) });
+    return new Response(
+      JSON.stringify({ success: true, data: [], timestamp: '2026-07-22T00:00:00.000Z' }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  }) as typeof fetch;
+
+  const biz = createBusinessClient({
+    baseUrl: 'http://localhost:3002/api/v1',
+    tenantId: 'tenant-demo',
+    token: 'token-demo',
+    headers: {
+      'x-actor-id': 'admin-001',
+      'x-actor-permissions': 'order:read,workbench.read',
+    },
+  });
+
+  await biz.orders.list();
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.headers.get('authorization'), 'Bearer token-demo');
+  assert.equal(requests[0]?.headers.get('x-tenant-id'), 'tenant-demo');
+  assert.equal(requests[0]?.headers.get('x-actor-id'), 'admin-001');
+  assert.equal(requests[0]?.headers.get('x-actor-permissions'), 'order:read,workbench.read');
+});
+
 test('sdk: createBusinessClient checkout.start makes POST request', async () => {
   let requestUrl = '';
   let requestMethod = '';

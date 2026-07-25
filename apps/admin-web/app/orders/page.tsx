@@ -19,7 +19,7 @@ import {
 } from '@m5/ui';
 
 // P1-3: 共享层收口 — 从 API 加载订单数据, API 不可用时回落 MOCK
-import { createBusinessClient } from '@m5/sdk';
+import { getBizClient } from '../lib/sdk';
 
 import {
   MOCK_ORDERS,
@@ -40,17 +40,6 @@ const permissionGate = {
   description:
     '订单管理中心已接入管理员本地 session，只有具备 order:read 的账号才能查看订单列表、状态流转与渠道统计结果。',
 } as const;
-
-// ── API 客户端 (client-side singleton) ──
-
-function getBizClient() {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as Record<string, unknown> & { __m5_biz_client?: ReturnType<typeof createBusinessClient> };
-  if (!w.__m5_biz_client) {
-    w.__m5_biz_client = createBusinessClient();
-  }
-  return w.__m5_biz_client;
-}
 
 /** 将后端订单数据映射为 OrderItem 前端类型 */
 function mapApiOrderToOrderItem(apiOrder: any): OrderItem {

@@ -71,7 +71,8 @@ describe('agents/sessions/[id] — 边界', () => {
   it('snapshot 为 falsy 时应调用 notFound()', () => {
     const src = readSource();
     assert.ok(src.includes('if (!snapshot)'), '缺少 null 检查');
-    assert.ok(src.includes('notFound()'), '应调用 notFound');
+    assert.ok(src.includes('Agent 会话未找到'), '应提供未找到兜底文案');
+    assert.ok(src.includes('AdminPermissionGate'), '未找到分支应纳入权限边界');
   });
 
   it('userInput 应截断到 80 字符', () => {

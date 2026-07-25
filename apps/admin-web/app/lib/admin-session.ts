@@ -6,6 +6,10 @@ export interface AdminSessionUser {
   email?: string;
   role: string;
   permissions: string[];
+  tenantId?: string;
+  brandId?: string;
+  storeId?: string;
+  marketCode?: string;
 }
 
 export const ADMIN_ACCESS_TOKEN_KEY = 'admin_access_token';
@@ -25,6 +29,10 @@ export function normalizeAdminSessionUser(raw: unknown): AdminSessionUser {
   const username = typeof record.username === 'string' ? record.username : undefined;
   const email = typeof record.email === 'string' ? record.email : undefined;
   const role = typeof record.role === 'string' ? record.role : '';
+  const tenantId = typeof record.tenantId === 'string' ? record.tenantId : undefined;
+  const brandId = typeof record.brandId === 'string' ? record.brandId : undefined;
+  const storeId = typeof record.storeId === 'string' ? record.storeId : undefined;
+  const marketCode = typeof record.marketCode === 'string' ? record.marketCode : undefined;
   const userId =
     typeof record.userId === 'string' && record.userId
       ? record.userId
@@ -42,6 +50,10 @@ export function normalizeAdminSessionUser(raw: unknown): AdminSessionUser {
     permissions: Array.isArray(record.permissions)
       ? record.permissions.filter((item): item is string => typeof item === 'string')
       : [],
+    tenantId,
+    brandId,
+    storeId,
+    marketCode,
   };
 }
 

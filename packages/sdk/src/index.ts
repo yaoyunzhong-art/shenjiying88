@@ -2122,8 +2122,17 @@ function normalizeBusinessOrderListResponse(
  * const member = await biz.member.lookup('13800138001')
  * ```
  */
-export function createBusinessClient(baseUrl?: string) {
-  const api = new ApiClient({ baseUrl: baseUrl ?? getDefaultApiBaseUrl() });
+export function createBusinessClient(
+  options?: string | (Omit<ApiClientOptions, 'baseUrl'> & { baseUrl?: string })
+) {
+  const resolvedOptions =
+    typeof options === 'string'
+      ? { baseUrl: options }
+      : { ...(options ?? {}), baseUrl: options?.baseUrl ?? getDefaultApiBaseUrl() };
+  const api = new ApiClient({
+    ...resolvedOptions,
+    baseUrl: resolvedOptions.baseUrl,
+  });
 
   return {
     // ── Checkout (POST /api/v1/transactions/checkout) ──

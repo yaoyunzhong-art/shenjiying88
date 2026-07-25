@@ -6,7 +6,10 @@
  * 正例 ✓ + 反例 ✗ + 边界 ⚠
  */
 
+import 'reflect-metadata'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { AuthController } from './auth.controller'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 
 // ─── Mock AuthService ─────────────────────────────────────────────────────
 
@@ -258,6 +261,12 @@ describe('AuthController', () => {
   })
 
   // ══════════════════════════════════════════════════════════════════════
+
+  describe('authorization metadata', () => {
+    it('getCurrentUser 应显式标记为 Public，避免被全局 IdentityAccessGuard 提前拦截', () => {
+      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, AuthController.prototype.getCurrentUser), true)
+    })
+  })
   // POST /auth/login/sms
   // ══════════════════════════════════════════════════════════════════════
 

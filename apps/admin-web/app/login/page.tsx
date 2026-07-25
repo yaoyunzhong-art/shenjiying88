@@ -38,6 +38,10 @@ interface LoginResult {
   token: string;
   role: string;
   permissions: string[];
+  tenantId: string;
+  brandId: string;
+  storeId: string;
+  marketCode: string;
 }
 
 interface LoginHistoryEntry {
@@ -103,6 +107,10 @@ async function mockLoginApi(username: string, password: string): Promise<LoginRe
   return {
     token: 'mock-jwt-token',
     role: 'super_admin',
+    tenantId: 'tenant-demo',
+    brandId: 'brand-demo',
+    storeId: 'store-001',
+    marketCode: 'cn-mainland',
     permissions: [
       'dashboard:read',
       'dashboard:operations:read',

@@ -10,15 +10,26 @@ import {
 } from './procurement-order.dto'
 import { ProcurementOrderService } from './procurement-order.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
+
+const PURCHASE_ORDERS_READ_PERMISSION = 'purchase-orders:read'
+const PURCHASE_ORDERS_DETAIL_PERMISSION = 'purchase-orders:id:read'
+const PURCHASE_ORDERS_FORM_PERMISSION = 'purchase-orders:form:read'
 
 @Controller('procurement-orders')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(PURCHASE_ORDERS_READ_PERMISSION)
 export class ProcurementOrderController {
   constructor(private readonly orderService: ProcurementOrderService) {}
 
   // ── CRUD ──
 
   @Post()
+  @RequirePermissions(PURCHASE_ORDERS_FORM_PERMISSION)
   createOrder(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateProcurementOrderDto
@@ -48,6 +59,7 @@ export class ProcurementOrderController {
   }
 
   @Get(':orderId')
+  @RequirePermissions(PURCHASE_ORDERS_DETAIL_PERMISSION)
   getOrder(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('orderId') orderId: string
@@ -60,6 +72,7 @@ export class ProcurementOrderController {
   }
 
   @Patch(':orderId')
+  @RequirePermissions(PURCHASE_ORDERS_FORM_PERMISSION)
   updateOrder(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('orderId') orderId: string,
@@ -69,6 +82,7 @@ export class ProcurementOrderController {
   }
 
   @Delete(':orderId')
+  @RequirePermissions(PURCHASE_ORDERS_FORM_PERMISSION)
   deleteOrder(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('orderId') orderId: string
@@ -80,6 +94,7 @@ export class ProcurementOrderController {
   // ── Status management ──
 
   @Patch(':orderId/status')
+  @RequirePermissions(PURCHASE_ORDERS_FORM_PERMISSION)
   updateOrderStatus(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('orderId') orderId: string,
@@ -93,6 +108,7 @@ export class ProcurementOrderController {
   }
 
   @Post(':orderId/receive')
+  @RequirePermissions(PURCHASE_ORDERS_FORM_PERMISSION)
   receiveItems(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('orderId') orderId: string,

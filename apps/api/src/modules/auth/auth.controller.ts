@@ -198,6 +198,7 @@ export class AuthController {
    * GET /auth/me
    * 获取当前用户信息
    */
+  @Public()
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getCurrentUser(@Headers('authorization') auth?: string) {
