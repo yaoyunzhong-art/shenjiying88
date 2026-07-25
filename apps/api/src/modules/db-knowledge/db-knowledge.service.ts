@@ -251,7 +251,7 @@ export class DbKnowledgeService {
       FROM knowledge_documents
       WHERE to_tsvector('simple', content) @@ plainto_tsquery('simple', $1)
     `
-    const params: any[] = [query]
+    const params: unknown[] = [query]
     if (kind) {
       sql += ` AND kind = $2`
       params.push(kind)
@@ -260,7 +260,7 @@ export class DbKnowledgeService {
     params.push(limit)
 
     const result = await this.pool!.query(sql, params)
-    return result.rows.map((r: any) => ({
+    return result.rows.map((r: Record<string, unknown>) => ({
       id: r.id,
       sourcePath: r.source_path,
       title: r.title,
@@ -284,7 +284,7 @@ export class DbKnowledgeService {
   async getExperts(groupId?: string): Promise<ExpertProfile[]> {
     if (!this.isAvailable) return []
     let sql = `SELECT * FROM expert_profiles`
-    const params: any[] = []
+    const params: unknown[] = []
     if (groupId) {
       sql += ` WHERE group_id = $1`
       params.push(groupId)
@@ -317,7 +317,7 @@ export class DbKnowledgeService {
   async getPatterns(type?: 'anti-pattern' | 'positive-pattern'): Promise<PatternRecord[]> {
     if (!this.isAvailable) return []
     let sql = `SELECT * FROM pattern_records`
-    const params: any[] = []
+    const params: unknown[] = []
     if (type) {
       sql += ` WHERE pattern_type = $1`
       params.push(type)
@@ -357,7 +357,7 @@ export class DbKnowledgeService {
 
   // ── 映射函数 ──
 
-  private mapDoc(r: any): KnowledgeDoc {
+  private mapDoc(r: Record<string, unknown>): KnowledgeDoc {
     return {
       id: r.id,
       sourcePath: r.source_path,
@@ -374,7 +374,7 @@ export class DbKnowledgeService {
     }
   }
 
-  private mapExpert(r: any): ExpertProfile {
+  private mapExpert(r: Record<string, unknown>): ExpertProfile {
     return {
       id: r.id,
       code: r.code,
@@ -391,7 +391,7 @@ export class DbKnowledgeService {
     }
   }
 
-  private mapPulse(r: any): AcceptancePulse {
+  private mapPulse(r: Record<string, unknown>): AcceptancePulse {
     return {
       id: r.id,
       pulseNumber: r.pulse_number,
@@ -408,7 +408,7 @@ export class DbKnowledgeService {
     }
   }
 
-  private mapPattern(r: any): PatternRecord {
+  private mapPattern(r: Record<string, unknown>): PatternRecord {
     return {
       id: r.id,
       patternType: r.pattern_type,
@@ -424,7 +424,7 @@ export class DbKnowledgeService {
     }
   }
 
-  private mapPhase(r: any): PhaseRecord {
+  private mapPhase(r: Record<string, unknown>): PhaseRecord {
     return {
       id: r.id,
       phaseCode: r.phase_code,
@@ -442,7 +442,7 @@ export class DbKnowledgeService {
     }
   }
 
-  private mapBrief(r: any): DailyBrief {
+  private mapBrief(r: Record<string, unknown>): DailyBrief {
     return {
       id: r.id,
       date: r.date,
@@ -464,7 +464,7 @@ export class DbKnowledgeService {
     }
   }
 
-  private mapVenue(r: any): CompetitorVenue {
+  private mapVenue(r: Record<string, unknown>): CompetitorVenue {
     return {
       id: r.id,
       city: r.city,

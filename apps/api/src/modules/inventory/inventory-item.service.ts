@@ -31,7 +31,7 @@ export interface CreateInventoryItemInput {
   totalQty: number
   lowStockThreshold?: number
   unitPriceCents: number
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ListInventoryItemFilter {
@@ -49,7 +49,7 @@ export interface UpdateInventoryItemInput {
   lowStockThreshold?: number
   unitPriceCents?: number
   status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED'
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface StockOpInput {

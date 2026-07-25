@@ -32,7 +32,7 @@ export interface AnalyticsEvent {
   why?: string                     // 触发原因
   how?: string                     // 设备/平台
   // properties
-  properties: Record<string, any>
+  properties: Record<string, unknown>
   revenueCents?: number
 }
 
@@ -64,8 +64,8 @@ export interface CDCEvent {
   // 业务幂等
   eventId: string
   watermark: number                // 毫秒级
-  before?: Record<string, any>     // 旧值 (UPDATED/DELETED)
-  after?: Record<string, any>      // 新值 (CREATED/UPDATED)
+  before?: Record<string, unknown>     // 旧值 (UPDATED/DELETED)
+  after?: Record<string, unknown>      // 新值 (CREATED/UPDATED)
   // 重放元数据
   replayed?: boolean
   appliedAt?: string
@@ -100,7 +100,7 @@ export interface CohortMatrix {
 export interface FunnelStep {
   name: string
   eventType: EventType
-  filter?: Record<string, any>
+  filter?: Record<string, unknown>
 }
 
 export interface FunnelResult {

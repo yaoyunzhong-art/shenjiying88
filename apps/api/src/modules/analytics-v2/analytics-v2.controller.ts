@@ -64,10 +64,10 @@ export class AnalyticsV2Controller {
     what: string
     memberId?: string
     sessionId?: string
-    where?: Record<string, any>
+    where?: Record<string, unknown>
     why?: string
     how?: string
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
     revenueCents?: number
     timestamp?: string
   }) {
@@ -132,7 +132,7 @@ export class AnalyticsV2Controller {
     tenantId: TenantId
     memberId: string
     activityType: EventType
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
   }) {
     return this.cohortService.trackMemberActivity(body)
   }

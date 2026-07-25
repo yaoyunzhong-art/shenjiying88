@@ -108,7 +108,7 @@ export class DispatchWebhookDto {
   eventType!: string
 
   @IsObject()
-  payload!: Record<string, any>
+  payload!: Record<string, unknown>
 }
 
 export class PauseResumeWebhookDto {
@@ -199,7 +199,7 @@ export class VerifySignatureDto {
   secret!: string
 
   @IsObject()
-  request!: Record<string, any>
+  request!: Record<string, unknown>
 }
 
 // ── Response Types (non-validated interfaces) ──

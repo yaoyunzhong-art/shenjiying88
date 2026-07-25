@@ -35,7 +35,7 @@ export class EventCollector {
     where?: EventContext
     why?: string
     how?: string
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
     revenueCents?: number
     timestamp?: string
   }): { accepted: boolean; reason?: string; event?: AnalyticsEvent } {
@@ -76,15 +76,15 @@ export class EventCollector {
   /**
    * PII 脱敏
    */
-  private sanitizeProperties(props: Record<string, any>): Record<string, any> {
+  private sanitizeProperties(props: Record<string, unknown>): Record<string, unknown> {
     if (Object.keys(props).length > MAX_PROPERTIES) {
-      const limited: Record<string, any> = {}
+      const limited: Record<string, unknown> = {}
       Object.keys(props).slice(0, MAX_PROPERTIES).forEach(k => {
         limited[k] = this.maskPII(k, props[k])
       })
       return limited
     }
-    const sanitized: Record<string, any> = {}
+    const sanitized: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(props)) {
       sanitized[k] = this.maskPII(k, v)
     }
@@ -108,7 +108,7 @@ export class EventCollector {
   /**
    * 反模式检测: 过度采集
    */
-  isOverCollecting(properties: Record<string, any>): boolean {
+  isOverCollecting(properties: Record<string, unknown>): boolean {
     return Object.keys(properties).length > MAX_PROPERTIES
   }
 }

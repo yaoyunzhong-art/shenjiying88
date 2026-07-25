@@ -65,7 +65,7 @@ export interface WebhookDelivery {
   tenantId: TenantId
   subscriptionId: string
   eventType: WebhookEventType
-  payload: Record<string, any>
+  payload: Record<string, unknown>
   attempts: number         // 重试次数 (0-5)
   status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'DEAD_LETTER'
   lastAttemptAt?: string
@@ -157,9 +157,9 @@ export interface OpenAPISpec {
     description?: string
   }
   servers: Array<{ url: string; description: string }>
-  paths: Record<string, any>
+  paths: Record<string, unknown>
   components: {
-    securitySchemes: Record<string, any>
-    schemas: Record<string, any>
+    securitySchemes: Record<string, unknown>
+    schemas: Record<string, unknown>
   }
 }

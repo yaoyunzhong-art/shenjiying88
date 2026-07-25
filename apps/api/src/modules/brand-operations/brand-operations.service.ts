@@ -1718,7 +1718,7 @@ export class BrandOperationsService {
 
     // Restore original data
     try {
-      const original = JSON.parse(item.originalData) as Record<string, any>
+      const original = JSON.parse(item.originalData) as Record<string, unknown>
       if (item.entityType === 'asset') {
         assetStore.set(item.entityId, original as unknown as BrandAsset)
     if (this.prismaStore) void this.prismaStore.persistAsset(item.entityId)

@@ -87,7 +87,7 @@ export class CDCAdapter {
   /**
    * 应用变更到本地状态 (简化版, 真实场景会分发到下游)
    */
-  applyToState(tableName: string, recordId: string, event: CDCEvent): Record<string, any> | null {
+  applyToState(tableName: string, recordId: string, event: CDCEvent): Record<string, unknown> | null {
     if (event.eventType === 'CREATED' || event.eventType === 'UPDATED') {
       return event.after ? { ...event.after } : null
     }

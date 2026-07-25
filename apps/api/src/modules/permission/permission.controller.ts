@@ -204,7 +204,7 @@ export class PermissionController {
       resource: string
       action: string
       resourceId?: string
-      data?: Record<string, any>
+      data?: Record<string, unknown>
     },
     @Headers('authorization') auth?: string,
   ) {

@@ -353,7 +353,7 @@ export class BirthdayService {
   preloadEffects(memberId: string): {
     memberId: string;
     hasActivePlan: boolean;
-    effects: Array<{ type: string; name: string; data: Record<string, any> }>;
+    effects: Array<{ type: string; name: string; data: Record<string, unknown> }>;
   } {
     const plan = this.findPlanByMember(memberId, 'active') ?? this.findPlanByMember(memberId, 'pending');
     if (!plan || !plan.isUpcoming) {
@@ -365,7 +365,7 @@ export class BirthdayService {
     }
 
     // 根据会员等级加载不同特效
-    const effects: Array<{ type: string; name: string; data: Record<string, any> }> = [];
+    const effects: Array<{ type: string; name: string; data: Record<string, unknown> }> = [];
 
     // 入口动画数据
     effects.push({

@@ -102,7 +102,7 @@ export interface PermissionCheckRequest {
   resource: string
   action: ActionType
   resourceId?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 }
 
 // ─── 权限检查结果 ────────────────────────────────────────────────────────

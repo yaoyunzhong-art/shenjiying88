@@ -186,7 +186,7 @@ export class OpenAPIController {
     tenantId: TenantId
     subscriptionId: string
     eventType: WebhookEventType
-    payload: Record<string, any>
+    payload: Record<string, unknown>
   }) {
     return this.webhookSvc.dispatchEvent(body)
   }

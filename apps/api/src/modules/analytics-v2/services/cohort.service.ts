@@ -91,7 +91,7 @@ export class CohortService {
     tenantId: TenantId
     memberId: string
     activityType: 'PAGEVIEW' | 'CLICK' | 'CONVERSION' | 'PURCHASE' | 'CUSTOM'
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
   }): { eventCollected: boolean; cohortUpdated: boolean } {
     const eventResult = this.eventCollector.collect({
       tenantId: input.tenantId,

@@ -25,8 +25,8 @@ export class CDCStream {
     tableName: string
     recordId: string
     eventType: CDCEventType
-    before?: Record<string, any>
-    after?: Record<string, any>
+    before?: Record<string, unknown>
+    after?: Record<string, unknown>
     eventId?: string
   }): CDCEvent {
     return {

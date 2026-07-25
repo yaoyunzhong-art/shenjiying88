@@ -80,8 +80,8 @@ export class DataScopeService {
   applyDataScopeFilter(
     scope: DataScope,
     context: PermissionContext,
-    query: Record<string, any>,
-  ): Record<string, any> {
+    query: Record<string, unknown>,
+  ): Record<string, unknown> {
     const filteredQuery = { ...query }
 
     switch (scope.scopeType) {

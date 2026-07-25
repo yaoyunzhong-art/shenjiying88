@@ -91,7 +91,7 @@ export interface Anomaly {
   confidence: number
   detectedAt: string
   sourceIds: string[]
-  context: Record<string, any>
+  context: Record<string, unknown>
 }
 
 /**

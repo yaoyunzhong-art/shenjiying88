@@ -477,7 +477,7 @@ export class AuditLogService {
 export class ChainAuditService {
   private trails = new Map<string, any>()
 
-  createAuditTrail(transactionId: string, action: string, userId: string, metadata: Record<string, any>): any {
+  createAuditTrail(transactionId: string, action: string, userId: string, metadata: Record<string, unknown>): any {
     const id = `trail-${nanoid()}`
     const trail = { id, transactionId, action, userId, metadata, createdAt: new Date().toISOString() }
     this.trails.set(id, trail)

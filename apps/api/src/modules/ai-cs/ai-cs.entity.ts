@@ -107,7 +107,7 @@ export interface SendMessageRequest {
     forceHandoff?: boolean
     preferredProvider?: ProviderType
     language?: string
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   }
 }
 

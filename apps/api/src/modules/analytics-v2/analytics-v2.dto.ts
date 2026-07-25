@@ -43,7 +43,7 @@ export class CollectEventDto {
   @IsOptional() @ValidateNested() @Type(() => EventContextDto) where?: EventContextDto
   @IsOptional() @IsString() why?: string
   @IsOptional() @IsString() how?: string
-  @IsOptional() @IsObject() properties?: Record<string, any>
+  @IsOptional() @IsObject() properties?: Record<string, unknown>
   @IsOptional() @IsNumber() @Min(0) revenueCents?: number
   @IsOptional() @IsString() timestamp?: string
 }
@@ -64,8 +64,8 @@ export class ApplyCDCDto {
   @IsNotEmpty() @IsEnum(['CREATED', 'UPDATED', 'DELETED']) eventType!: 'CREATED' | 'UPDATED' | 'DELETED'
   @IsNotEmpty() @IsString() eventId!: string
   @IsOptional() @IsNumber() watermark?: number
-  @IsOptional() @IsObject() before?: Record<string, any>
-  @IsOptional() @IsObject() after?: Record<string, any>
+  @IsOptional() @IsObject() before?: Record<string, unknown>
+  @IsOptional() @IsObject() after?: Record<string, unknown>
 }
 
 export class ReplayCDCDto {
@@ -86,7 +86,7 @@ export class TrackActivityDto {
   @IsNotEmpty() @IsString() tenantId!: string
   @IsNotEmpty() @IsString() memberId!: string
   @IsNotEmpty() @IsEnum(['PAGEVIEW', 'CLICK', 'CONVERSION', 'PURCHASE', 'CUSTOM']) activityType!: EventType
-  @IsOptional() @IsObject() properties?: Record<string, any>
+  @IsOptional() @IsObject() properties?: Record<string, unknown>
 }
 
 export class CohortListQueryDto {
@@ -103,7 +103,7 @@ export class CohortMatrixQueryDto {
 export class FunnelStepDto {
   @IsNotEmpty() @IsString() name!: string
   @IsNotEmpty() @IsEnum(['PAGEVIEW', 'CLICK', 'CONVERSION', 'PURCHASE', 'CUSTOM']) eventType!: EventType
-  @IsOptional() @IsObject() filter?: Record<string, any>
+  @IsOptional() @IsObject() filter?: Record<string, unknown>
 }
 
 export class CreateFunnelDto {

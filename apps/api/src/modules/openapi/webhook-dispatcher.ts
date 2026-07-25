@@ -60,7 +60,7 @@ export class WebhookDispatcher {
     tenantId: TenantId
     subscriptionId: string
     eventType: WebhookEventType
-    payload: Record<string, any>
+    payload: Record<string, unknown>
     now?: number
   }): Promise<WebhookDelivery> {
     const sub = this.adapter.querySubscription(input.tenantId, input.subscriptionId)

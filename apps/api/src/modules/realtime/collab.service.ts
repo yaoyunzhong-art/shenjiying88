@@ -457,44 +457,75 @@ export class ConflictResolver {
 }
 // ── Test wrapper ──
 
-export class CollabService {
-  private sessions = new Map<string, any>()
-  private cursors = new Map<string, any[]>()
-  private presences = new Map<string, any>()
-  private comments = new Map<string, any[]>()
+interface CollabSession {
+  id: string
+  documentId: string
+  ownerId: string
+  participants: string[]
+  createdAt: string
+}
 
-  createSession(docId: string, ownerId: string): any {
+interface CursorPosition {
+  userId: string
+  position: { line: number; column: number }
+  sessionId: string
+}
+
+interface PresenceEntry {
+  status: string
+  userId: string
+  sessionId: string
+  updatedAt: string
+}
+
+interface CommentEntry {
+  id: string
+  userId: string
+  sessionId: string
+  content: string
+  selection: { start: number; end: number }
+  resolved: boolean
+  createdAt: string
+}
+
+export class CollabService {
+  private sessions = new Map<string, CollabSession>()
+  private cursors = new Map<string, CursorPosition[]>()
+  private presences = new Map<string, PresenceEntry>()
+  private comments = new Map<string, CommentEntry[]>()
+
+  createSession(docId: string, ownerId: string): CollabSession {
     const id = `session-${nanoid()}`
-    const session = { id, documentId: docId, ownerId, participants: [ownerId], createdAt: new Date().toISOString() }
+    const session: CollabSession = { id, documentId: docId, ownerId, participants: [ownerId], createdAt: new Date().toISOString() }
     this.sessions.set(id, session)
     return session
   }
 
-  joinSession(sessionId: string, userId: string): any {
+  joinSession(sessionId: string, userId: string): CollabSession {
     const session = this.sessions.get(sessionId)
     if (!session) throw new Error(`Session ${sessionId} not found`)
     if (!session.participants.includes(userId)) session.participants.push(userId)
     return session
   }
 
-  leaveSession(sessionId: string, userId: string): any {
+  leaveSession(sessionId: string, userId: string): CollabSession {
     const session = this.sessions.get(sessionId)
     if (!session) throw new Error(`Session ${sessionId} not found`)
-    session.participants = session.participants.filter((p: string) => p !== userId)
+    session.participants = session.participants.filter((p) => p !== userId)
     return session
   }
 
-  broadcastChange(sessionId: string, userId: string, change: any): { recipients: string[] } {
+  broadcastChange(sessionId: string, _userId: string, _change: unknown): { recipients: string[] } {
     const session = this.sessions.get(sessionId)
     if (!session) return { recipients: [] }
     return { recipients: session.participants.slice() }
   }
 
-  getSession(sessionId: string): any | undefined {
+  getSession(sessionId: string): CollabSession | undefined {
     return this.sessions.get(sessionId)
   }
 
-  listActiveSessions(): any[] {
+  listActiveSessions(): CollabSession[] {
     return Array.from(this.sessions.values())
   }
 
@@ -503,8 +534,8 @@ export class CollabService {
     return session ? session.participants.slice() : []
   }
 
-  addCursor(sessionId: string, userId: string, line: number, column: number): any {
-    const cursor = { userId, position: { line, column }, sessionId }
+  addCursor(sessionId: string, userId: string, line: number, column: number): CursorPosition {
+    const cursor: CursorPosition = { userId, position: { line, column }, sessionId }
     const arr = this.cursors.get(sessionId) || []
     arr.push(cursor)
     this.cursors.set(sessionId, arr)
@@ -513,43 +544,43 @@ export class CollabService {
 
   removeCursor(sessionId: string, userId: string): boolean {
     const arr = this.cursors.get(sessionId) || []
-    this.cursors.set(sessionId, arr.filter((c: any) => c.userId !== userId))
+    this.cursors.set(sessionId, arr.filter((c) => c.userId !== userId))
     return true
   }
 
-  listCursors(sessionId: string): any[] {
+  listCursors(sessionId: string): CursorPosition[] {
     return this.cursors.get(sessionId) || []
   }
 
-  getPresence(sessionId: string, userId: string): any | undefined {
+  getPresence(sessionId: string, userId: string): PresenceEntry | undefined {
     const key = `${sessionId}:${userId}`
     return this.presences.get(key)
   }
 
-  updatePresence(sessionId: string, userId: string, info: { status: string }): any {
+  updatePresence(sessionId: string, userId: string, info: { status: string }): PresenceEntry {
     const key = `${sessionId}:${userId}`
-    const entry: any = { ...info, userId, sessionId, updatedAt: new Date().toISOString() }
+    const entry: PresenceEntry = { ...info, userId, sessionId, updatedAt: new Date().toISOString() }
     this.presences.set(key, entry)
     return entry
   }
 
-  addComment(sessionId: string, userId: string, comment: { content: string; selection: { start: number; end: number } }): any {
+  addComment(sessionId: string, userId: string, comment: { content: string; selection: { start: number; end: number } }): CommentEntry {
     const id = `cmt-${nanoid()}`
-    const entry = { id, userId, sessionId, ...comment, resolved: false, createdAt: new Date().toISOString() }
+    const entry: CommentEntry = { id, userId, sessionId, ...comment, resolved: false, createdAt: new Date().toISOString() }
     const arr = this.comments.get(sessionId) || []
     arr.push(entry)
     this.comments.set(sessionId, arr)
     return entry
   }
 
-  listComments(sessionId: string): any[] {
+  listComments(sessionId: string): CommentEntry[] {
     return this.comments.get(sessionId) || []
   }
 
-  resolveComment(sessionId: string, commentId: string): any {
+  resolveComment(sessionId: string, commentId: string): CommentEntry | { resolved: true } {
     const arr = this.comments.get(sessionId) || []
-    const comment = arr.find((c: any) => c.id === commentId)
+    const comment = arr.find((c) => c.id === commentId)
     if (comment) comment.resolved = true
-    return comment || { resolved: true }
+    return comment ?? { resolved: true }
   }
 }

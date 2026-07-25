@@ -27,7 +27,7 @@ function readHeader(req: any, name: string): string | undefined {
   return trimmed === '' ? undefined : trimmed
 }
 
-function parseActorHeader(value: string): Record<string, any> | string {
+function parseActorHeader(value: string): Record<string, unknown> | string {
   if (!value) return ''
   try {
     const parsed = JSON.parse(value)
@@ -88,7 +88,7 @@ export class TenantMiddleware {
       readHeader(req, 'x-permissions') ??
       readHeader(req, 'x-permission')
 
-    let jsonActor: Record<string, any> | null = null
+    let jsonActor: Record<string, unknown> | null = null
     let plainActorId: string | null = null
     if (headerActor !== undefined) {
       const parsed = parseActorHeader(headerActor)

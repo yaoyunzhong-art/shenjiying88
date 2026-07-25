@@ -35,7 +35,7 @@ export interface Payment {
   /** 反模式 v4 optimistic-lock: DR-36 决策 3 */
   version: number
   /** 反模式 v4 audit: 创建/修改审计 */
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   createdAt: string
   updatedAt: string
   successAt?: string
@@ -108,13 +108,13 @@ export interface CreatePaymentInput {
   method: PaymentMethod
   /** 幂等键: 必填, 客户端生成 UUID */
   idempotencyKey: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdatePaymentInput {
   transactionId?: string
   failureReason?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface CreateRefundInput {

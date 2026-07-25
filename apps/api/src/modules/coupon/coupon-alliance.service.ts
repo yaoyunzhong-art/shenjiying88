@@ -342,7 +342,7 @@ export class CouponDistributionEngine {
    * autoIssueByRule - 按规则自动发放
    * trigger 类型: on_register / on_consume / on_birthday / on_level_up / manual
    */
-  autoIssueByRule(couponId: string, trigger: DistributionTrigger, context: Record<string, any> = {}): { issued: boolean; trigger: DistributionTrigger; couponId: string } {
+  autoIssueByRule(couponId: string, trigger: DistributionTrigger, context: Record<string, unknown> = {}): { issued: boolean; trigger: DistributionTrigger; couponId: string } {
     const handlers: Record<DistributionTrigger, () => boolean> = {
       on_register: () => {
         const memberId = context.memberId
