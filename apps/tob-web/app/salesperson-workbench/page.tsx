@@ -26,7 +26,7 @@ import {
   type RecentCustomer,
 } from './salesperson-data';
 
-const RecentDataTable: React.ComponentType<React.ComponentProps<typeof DataTable>> = DataTable;
+const RecentDataTable = DataTable;
 
 // ---- 样式 ----
 
@@ -368,7 +368,7 @@ export default function SalespersonWorkbenchPage() {
             </div>
           </div>
           <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(148,163,184,0.1)' }}>
-            <RecentDataTable
+            <DataTable
               columns={recentColumns}
               items={MOCK_RECENT_CUSTOMERS}
               rowKey={(item: RecentCustomer) => item.id}

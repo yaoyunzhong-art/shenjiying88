@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 import AgentSessionDetailClient from './session-detail-client';
 import { loadAgentSessionDetail } from '../../agent-view-model';
 
