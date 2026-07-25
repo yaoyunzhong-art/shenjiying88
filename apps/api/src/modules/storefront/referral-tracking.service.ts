@@ -23,6 +23,7 @@
 
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
+import { PrismaService } from '../../prisma/prisma.service'
 
 // ══════════════════════════════════════════════════════
 // Types
@@ -110,7 +111,9 @@ export class ReferralTrackingService {
   private readonly records: ReferralRecord[] = []
   private readonly referrerRevenue = new Map<string, number>() // referrerId → totalRevenue
 
-  constructor() {
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {
     // 种子数据：预置一些推广码
     this.createCode({
       type: 'employee', referrerId: 'EMP001', referrerName: '小陈·朝阳店店长',
@@ -150,6 +153,16 @@ export class ReferralTrackingService {
       totalRevenue: 0,
     }
     this.codes.set(code, referralCode)
+
+    // BL-6: Prisma 持久化推广码
+    this.prisma.storefrontReferralCode.create({
+      data: {
+        code, type: params.type, tenantId: 'tenant-default',
+        referrerId: params.referrerId, referrerName: params.referrerName,
+        storeSlug: params.storeSlug, channel: params.channel as string,
+      },
+    }).catch(err => this.logger.warn(`[Referral] DB 写入失败: ${err.message}`))
+
     this.logger.log(`[Referral] Created ${params.type} code: ${code} → ${params.referrerName}`)
     return referralCode
   }
@@ -180,6 +193,16 @@ export class ReferralTrackingService {
       status: 'scanned',
     }
     this.records.push(record)
+
+    // BL-6: Prisma 持久化推广关系
+    this.prisma.storefrontReferralRelation.create({
+      data: {
+        tenantId: 'tenant-default',
+        referralCodeId: code, // SQLite/Postgres — 用 code 查找
+        customerPhone,
+        hasConverted: false,
+      },
+    }).catch(err => this.logger.warn(`[Referral] DB 扫描记录写入失败: ${err.message}`))
 
     // 不发送骚扰通知 — 宪法§13.8
     this.logger.log(`[Referral] ${customerPhone} 扫描了 ${referralCode.referrerName} 的推广码 (无通知)`)
@@ -235,6 +258,30 @@ export class ReferralTrackingService {
       `[Referral Conversion] ${customerPhone} → ${record.referrerId}(${referralCode.type}) ` +
       `订单¥${orderAmount / 100} 佣金¥${commission / 100} (${finalRate.toFixed(1)}%)`,
     )
+
+    // BL-6: 更新 DB 转化状态 + 佣金
+    this.prisma.storefrontReferralCode.upsert({
+      where: { code: record.code },
+      create: {
+        code: record.code, type: referralCode.type as string,
+        tenantId: 'tenant-default', referrerId: record.referrerId,
+        referrerName: referralCode.referrerName, storeSlug: referralCode.storeSlug,
+        channel: referralCode.channel as string,
+        totalConversions: 1, totalCommission: commission,
+        commissionTier: tierRate,
+      },
+      update: {
+        totalConversions: { increment: 1 },
+        totalCommission: { increment: commission },
+        commissionTier: tierRate,
+      },
+    }).then(async () => {
+      // 更新推广关系，标记已转化
+      await this.prisma.storefrontReferralRelation.updateMany({
+        where: { customerPhone, hasConverted: false },
+        data: { hasConverted: true, orderAmount, commissionAmount: commission, convertedAt: new Date() },
+      })
+    }).catch(err => this.logger.warn(`[Referral] DB 转化写入失败: ${err.message}`))
 
     return record
   }

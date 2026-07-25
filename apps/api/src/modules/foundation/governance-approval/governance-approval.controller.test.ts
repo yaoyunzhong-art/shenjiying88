@@ -2,6 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { GovernanceApprovalController } from './governance-approval.controller'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../identity-access/identity-access.decorator'
 
 it('governance-approval controller path metadata is set', () => {
   const path = Reflect.getMetadata('path', GovernanceApprovalController)
@@ -84,4 +88,53 @@ it('governance-approval controller instantiates with prisma dependency', () => {
   assert.strictEqual(typeof controller.resubmitApproval, 'function')
   assert.strictEqual(typeof controller.markExecuted, 'function')
   assert.strictEqual(typeof controller.markExecutionFailed, 'function')
+})
+
+const resolvePermissions = (handler: Function) =>
+  Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+  ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, GovernanceApprovalController)
+
+const resolveTenantScope = (handler: Function) =>
+  Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+  ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, GovernanceApprovalController)
+
+it('governance-approval all routes should require tenant scope', () => {
+  const handlers = [
+    GovernanceApprovalController.prototype.listApprovals,
+    GovernanceApprovalController.prototype.summarizeApprovals,
+    GovernanceApprovalController.prototype.getApproval,
+    GovernanceApprovalController.prototype.materializeApproval,
+    GovernanceApprovalController.prototype.decideApproval,
+    GovernanceApprovalController.prototype.cancelApproval,
+    GovernanceApprovalController.prototype.resubmitApproval,
+    GovernanceApprovalController.prototype.markExecuted,
+    GovernanceApprovalController.prototype.markExecutionFailed,
+  ]
+
+  handlers.forEach((handler) => {
+    assert.deepEqual(resolveTenantScope(handler), {})
+  })
+})
+
+it('governance-approval read routes should reuse foundation.governance.read', () => {
+  ;[
+    GovernanceApprovalController.prototype.listApprovals,
+    GovernanceApprovalController.prototype.summarizeApprovals,
+    GovernanceApprovalController.prototype.getApproval,
+  ].forEach((handler) => {
+    assert.deepEqual(resolvePermissions(handler), ['foundation.governance.read'])
+  })
+})
+
+it('governance-approval write routes should reuse foundation.governance.write', () => {
+  ;[
+    GovernanceApprovalController.prototype.materializeApproval,
+    GovernanceApprovalController.prototype.decideApproval,
+    GovernanceApprovalController.prototype.cancelApproval,
+    GovernanceApprovalController.prototype.resubmitApproval,
+    GovernanceApprovalController.prototype.markExecuted,
+    GovernanceApprovalController.prototype.markExecutionFailed,
+  ].forEach((handler) => {
+    assert.deepEqual(resolvePermissions(handler), ['foundation.governance.write'])
+  })
 })

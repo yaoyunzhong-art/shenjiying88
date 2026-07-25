@@ -12,6 +12,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
 import {
   FinancePaymentService,
@@ -24,6 +28,9 @@ import type {
   CreateRefundInput
 } from './finance-payment.entity'
 
+const FINANCE_PAYMENT_READ_PERMISSION = 'finance:read'
+const FINANCE_PAYMENT_WRITE_PERMISSION = 'finance:*'
+
 /**
  * Phase-38 T168: /api/finance/payments + /api/finance/refunds 路由
  *
@@ -34,6 +41,8 @@ interface TenantQuery { tenantId?: string }
 
 @UseGuards(TenantGuard)
 @Controller('api/finance')
+@RequireTenantScope()
+@RequirePermissions(FINANCE_PAYMENT_READ_PERMISSION)
 export class FinancePaymentController {
   constructor(private readonly svc: FinancePaymentService) {}
 
@@ -41,6 +50,7 @@ export class FinancePaymentController {
 
   @Post('payments')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   createPayment(@Body() body: CreatePaymentInput) {
     return this.svc.create(body)
   }
@@ -58,6 +68,7 @@ export class FinancePaymentController {
   }
 
   @Put('payments/:id')
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   updatePayment(
     @Param('id') id: string,
     @Query() q: TenantQuery & { version?: string },
@@ -69,12 +80,14 @@ export class FinancePaymentController {
   }
 
   @Post('payments/:id/success')
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   markPaymentSuccess(@Param('id') id: string, @Query() q: TenantQuery, @Body() body: { transactionId?: string } = {}) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.markSuccess(id, q.tenantId, body.transactionId)
   }
 
   @Post('payments/:id/fail')
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   markPaymentFail(@Param('id') id: string, @Query() q: TenantQuery, @Body() body: { reason?: string } = {}) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.markFailed(id, q.tenantId, body.reason)
@@ -90,6 +103,7 @@ export class FinancePaymentController {
 
   @Post('payments/:id/refunds')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   requestRefund(
     @Param('id') paymentId: string,
     @Body() body: Omit<CreateRefundInput, 'paymentId'>
@@ -116,6 +130,7 @@ export class FinancePaymentController {
   }
 
   @Post('refunds/:rid/approve')
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   approveRefund(
     @Param('rid') rid: string,
     @Query() q: TenantQuery,
@@ -127,6 +142,7 @@ export class FinancePaymentController {
   }
 
   @Post('refunds/:rid/reject')
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   rejectRefund(
     @Param('rid') rid: string,
     @Query() q: TenantQuery,
@@ -139,6 +155,7 @@ export class FinancePaymentController {
   }
 
   @Post('refunds/:rid/complete')
+  @RequirePermissions(FINANCE_PAYMENT_WRITE_PERMISSION)
   completeRefund(
     @Param('rid') rid: string,
     @Query() q: TenantQuery,

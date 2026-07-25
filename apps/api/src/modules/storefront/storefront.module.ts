@@ -27,6 +27,7 @@ import { StoreFrontService } from './storefront.service'
 import { ReferralTrackingService } from './referral-tracking.service'
 
 // 已有系统模块 — TOC 聚合入口直接注入
+import { PrismaModule } from '../../prisma/prisma.module'
 import { CashierModule } from '../cashier/cashier.module'
 import { CouponModule } from '../coupon/coupon.module'
 import { PushModule } from '../push/push.module'
@@ -36,6 +37,7 @@ import { MarketingModule } from '../marketing/marketing.module'
 
 @Module({
   imports: [
+    PrismaModule,     // DB 持久化
     CashierModule,    // 收银支付 (createOrder/processPayment/refund)
     CouponModule,     // 优惠券   (create/redeem/validate)
     PushModule,       // 推送通知 (sendPush/schedule/WS)

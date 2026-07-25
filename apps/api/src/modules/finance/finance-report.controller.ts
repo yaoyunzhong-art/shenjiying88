@@ -25,6 +25,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceReportService } from './finance-report.service'
@@ -34,8 +38,13 @@ import {
   ExportReportDto
 } from './dto/create-report.dto'
 
+const FINANCE_REPORT_READ_PERMISSION = 'finance:read'
+const FINANCE_REPORT_WRITE_PERMISSION = 'finance:*'
+
 @UseGuards(TenantGuard)
 @Controller('finance/reports')
+@RequireTenantScope()
+@RequirePermissions(FINANCE_REPORT_READ_PERMISSION)
 export class FinanceReportController {
   private readonly logger = new Logger(FinanceReportController.name)
 
@@ -116,6 +125,7 @@ export class FinanceReportController {
    * 创建报表
    */
   @Post()
+  @RequirePermissions(FINANCE_REPORT_WRITE_PERMISSION)
   async createReport(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateReportDto
@@ -167,6 +177,7 @@ export class FinanceReportController {
    * 重新生成报表
    */
   @Post(':reportId/regenerate')
+  @RequirePermissions(FINANCE_REPORT_WRITE_PERMISSION)
   async regenerateReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -184,6 +195,7 @@ export class FinanceReportController {
    * 导出现有报表
    */
   @Post(':reportId/export')
+  @RequirePermissions(FINANCE_REPORT_WRITE_PERMISSION)
   async exportReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -219,6 +231,7 @@ export class FinanceReportController {
    * 删除报表及关联导出
    */
   @Delete(':reportId')
+  @RequirePermissions(FINANCE_REPORT_WRITE_PERMISSION)
   async deleteReport(
     @Param('reportId') reportId: string,
     @TenantContext() tenantContext: RequestTenantContext

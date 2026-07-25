@@ -37,6 +37,13 @@ import {
 } from '@nestjs/common'
 import { requireTenantContext } from '../../common/context/tenant-context'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const SAAS_SETTINGS_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const SAAS_SETTINGS_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 // ============ 类型定义 ============
 
@@ -303,6 +310,8 @@ const ALLOWED_VALUE_TYPES: SystemSettingValueType[] = [
 
 @Controller('system-config')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(SAAS_SETTINGS_GOVERNANCE_READ_PERMISSION)
 export class SystemConfigController {
   /** 内存存储 (生产环境应替换为数据库持久化) */
   private readonly settings: Map<string, SystemSetting> = new Map()
@@ -362,6 +371,7 @@ export class SystemConfigController {
    */
   @Put(':key')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SAAS_SETTINGS_GOVERNANCE_WRITE_PERMISSION)
   updateSetting(
     @Param('key') key: string,
     @Body() body: { value: string },
@@ -391,6 +401,7 @@ export class SystemConfigController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(SAAS_SETTINGS_GOVERNANCE_WRITE_PERMISSION)
   createSetting(
     @Body() body: {
       key: string
@@ -441,6 +452,7 @@ export class SystemConfigController {
    */
   @Delete(':key')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(SAAS_SETTINGS_GOVERNANCE_WRITE_PERMISSION)
   resetSetting(@Param('key') key: string): SystemSetting {
     this.assertSuperAdmin()
     const existing = this.settings.get(key)

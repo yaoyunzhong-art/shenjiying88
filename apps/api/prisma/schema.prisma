@@ -2653,3 +2653,83 @@ model CashierTransaction {
   @@index([orderId])
   @@map("cashier_transactions")
 }
+
+// ── TOC 单店预约 ────────────────────────────────────────────
+
+model StorefrontBooking {
+  id            String   @id @default(cuid())
+  bookingId     String   @unique
+  tenantId      String
+  storeSlug     String
+  serviceId     String
+  serviceName   String
+  date          String
+  timeSlot      String
+  customerName  String
+  customerPhone String
+  amount        Int
+  couponCode    String?
+  status        String   @default("confirmed") // confirmed | cancelled | rescheduled | completed | no_show
+  qrCode        String
+  qrSignature   String
+  paymentUrl    String?
+  cancelledAt   DateTime?
+  rescheduledTo Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([date, timeSlot, serviceId, storeSlug], name: "uq_booking_slot")
+  @@index([tenantId])
+  @@index([storeSlug])
+  @@index([customerPhone])
+  @@index([bookingId])
+  @@map("storefront_bookings")
+}
+
+// ── TOC 推广码 ──────────────────────────────────────────────
+
+model StorefrontReferralCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  tenantId      String
+  type          String   // employee | kol | customer | store
+  referrerId    String
+  referrerName  String
+  storeSlug     String
+  channel       String   @default("wechat")
+  commissionTier Int     @default(3) // 佣金阶梯: 3/5/8/12
+  totalScans    Int      @default(0)
+  totalConversions Int   @default(0)
+  totalCommission  Int   @default(0) // 单位: 分
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ReferralRelations StorefrontReferralRelation[]
+
+  @@index([tenantId])
+  @@index([storeSlug])
+  @@index([referrerId])
+  @@map("storefront_referral_codes")
+}
+
+// ── TOC 推广关系 ────────────────────────────────────────────
+
+model StorefrontReferralRelation {
+  id              String   @id @default(cuid())
+  tenantId        String
+  referralCodeId  String
+  customerPhone   String
+  hasConverted    Boolean  @default(false)
+  orderAmount     Int?
+  commissionAmount Int?
+  scannedAt       DateTime @default(now())
+  convertedAt     DateTime?
+
+  referralCode StorefrontReferralCode @relation(fields: [referralCodeId], references: [id])
+
+  @@unique([referralCodeId, customerPhone])
+  @@index([tenantId])
+  @@index([customerPhone])
+  @@map("storefront_referral_relations")
+}
