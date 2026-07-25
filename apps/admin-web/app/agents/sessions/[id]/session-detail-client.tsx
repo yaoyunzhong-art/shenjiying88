@@ -13,7 +13,7 @@ import type {
 } from '@m5/types';
 import { runAgentSessionStream } from '../../agent-view-model';
 
-interface AgentSessionDetailClientProps {
+export interface AgentSessionDetailClientProps {
   session: AgentSession;
   execution: AgentExecution | null;
   evaluation: QualityEvaluation | null;

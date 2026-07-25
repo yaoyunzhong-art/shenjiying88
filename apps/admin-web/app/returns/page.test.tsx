@@ -278,7 +278,8 @@ describe('returns — 边界与反例', () => {
   });
 
   it('32. 不存在的状态过滤无结果', () => {
-    assert.equal((MOCK_RETURNS as any[]).filter(r => r.status === 'unknown').length, 0);
+    // @ts-expect-error -- 测试不存在的 status 值 'unknown'
+    assert.equal(MOCK_RETURNS.filter(r => r.status === 'unknown').length, 0);
   });
 
   it('33. 朝阳店退货总额 > 其他', () => {

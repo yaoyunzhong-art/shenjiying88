@@ -521,7 +521,7 @@ describe('[L3-E2E] 链12: Admin数据报表 → API → Domain聚合 → Storefr
       source: 'admin-web',
       tenantId: 't1',
       operatorId: 'admin-1',
-      reportType: 'customer' as any,
+      reportType: 'customer',
       period: 'monthly',
       startDate: '2026-06-01',
       endDate: '2026-06-30',

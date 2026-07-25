@@ -375,9 +375,9 @@ describe('[L3-E2E] 链41: Admin部署管控 → Runtime监控 → API回滚 → 
     resetDeployStore();
 
     // 同时部署 admin, api, storefront 三个应用
-    const apps = ['admin', 'api', 'storefront'];
+    const apps = ['admin', 'api', 'storefront'] as const;
     for (const app of apps) {
-      adminCreateRelease({ version: '1.0.0', appName: app, target: app as any, canaryPercent: 0, artifacts: { imageTag: `v1.0.0-${app}`, commit: 'aaa' } });
+      adminCreateRelease({ version: '1.0.0', appName: app, target: app, canaryPercent: 0, artifacts: { imageTag: `v1.0.0-${app}`, commit: 'aaa' } });
       adminStartDeploy(app, '1.0.0', false);
     }
 

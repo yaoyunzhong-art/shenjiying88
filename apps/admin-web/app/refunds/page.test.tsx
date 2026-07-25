@@ -306,11 +306,13 @@ describe('refunds — 边界与反例', () => {
   });
 
   it('35. 不存在的状态过滤无结果', () => {
-    assert.equal((MOCK_REFUNDS as any[]).filter(r => r.status === 'unknown').length, 0);
+    // @ts-expect-error -- 测试不存在的 status 值 'unknown'
+    assert.equal(MOCK_REFUNDS.filter(r => r.status === 'unknown').length, 0);
   });
 
   it('36. 不存在的类型过滤无结果', () => {
-    assert.equal((MOCK_REFUNDS as any[]).filter(r => r.type === 'unknown_type').length, 0);
+    // @ts-expect-error -- 测试不存在的 type 值 'unknown_type'
+    assert.equal(MOCK_REFUNDS.filter(r => r.type === 'unknown_type').length, 0);
   });
 });
 

@@ -220,7 +220,7 @@ describe('admin-reports: 正例', () => {
 
 describe('admin-reports: 反例', () => {
   it('buildChartOption 不存在的 tab 返回默认标题', () => {
-    const opt = buildChartOption('hourly-heatmap' as any, MOCK_REVENUE);
+    const opt = buildChartOption('hourly-heatmap', MOCK_REVENUE);
     assert.equal(opt.title.text, 'hourly-heatmap');
   });
 

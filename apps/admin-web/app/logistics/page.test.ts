@@ -267,15 +267,21 @@ test('数据 → 边界: 所有状态互斥，无重复', () => {
 // ── 反例测试 ─────────────────────────────────────────
 
 test('数据 → 反例: 非法状态不应在状态列表中', () => {
-  assert.ok(!VALID_STATUSES.includes('unknown' as any));
-  assert.ok(!VALID_STATUSES.includes('expired' as any));
-  assert.ok(!VALID_STATUSES.includes('refunded' as any));
+  // @ts-expect-error -- 测试非法 status 值
+  assert.ok(!VALID_STATUSES.includes('unknown' as LogisticsStatus));
+  // @ts-expect-error -- 测试非法 status 值
+  assert.ok(!VALID_STATUSES.includes('expired' as LogisticsStatus));
+  // @ts-expect-error -- 测试非法 status 值
+  assert.ok(!VALID_STATUSES.includes('refunded' as LogisticsStatus));
 });
 
 test('数据 → 反例: 非法紧急程度不应在列表中', () => {
-  assert.ok(!VALID_URGENCIES.includes('critical' as any));
-  assert.ok(!VALID_URGENCIES.includes('low' as any));
-  assert.ok(!VALID_URGENCIES.includes('high' as any));
+  // @ts-expect-error -- 测试非法 urgency 值
+  assert.ok(!VALID_URGENCIES.includes('critical' as LogisticsUrgency));
+  // @ts-expect-error -- 测试非法 urgency 值
+  assert.ok(!VALID_URGENCIES.includes('low' as LogisticsUrgency));
+  // @ts-expect-error -- 测试非法 urgency 值
+  assert.ok(!VALID_URGENCIES.includes('high' as LogisticsUrgency));
 });
 
 test('格式化 → 反例: 负数不应产生有效格式', () => {

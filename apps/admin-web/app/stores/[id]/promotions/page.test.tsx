@@ -193,7 +193,8 @@ describe.skip('promotions: 业务逻辑', () => {
   });
 
   it('no promos have status "paused"', () => {
-    assert.equal(PROMO_DATA.filter(p => p.status === 'paused' as any).length, 0);
+    // @ts-expect-error -- 测试不存在 status 'paused' 无记录
+    assert.equal(PROMO_DATA.filter(p => p.status === 'paused' as PromoStatus).length, 0);
   });
 
   it('no promo has negative budget', () => {

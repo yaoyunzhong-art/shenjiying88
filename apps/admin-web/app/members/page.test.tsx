@@ -305,7 +305,8 @@ describe('members — 边界与反例', () => {
   });
 
   it('35. 按不存在的等级过滤返回空', () => {
-    const result = (MOCK_MEMBERS as any[]).filter(m => m.tier === 'platinum');
+    // @ts-expect-error -- 测试不存在的 tier 值 'platinum' 的过滤结果
+    const result = MOCK_MEMBERS.filter(m => m.tier === 'platinum');
     assert.equal(result.length, 0);
   });
 

@@ -201,7 +201,8 @@ describe('members/[id]/edit — 表单验证', () => {
 
   it('16. 无效性别值报错（反例）', () => {
     const data = createValidData();
-    data.gender = 'unknown' as any;
+    // @ts-expect-error -- 测试无效 gender 值的校验
+    data.gender = 'unknown' as MemberFormData['gender'];
     assert.ok(validateForm(data).gender);
   });
 

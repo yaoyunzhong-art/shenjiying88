@@ -8,6 +8,7 @@ import {
   replayMemberOperationsRuntimeReceipt,
   replayMemberOperationsRuntimeReceipts,
 } from './members-view-model';
+import type { MemberOperationsRuntimeReceipt } from './members-view-model';
 
 // ---- 正例 ----
 
@@ -82,13 +83,15 @@ test('members fallback chain: throwing fetch returns null for unknown receipt', 
 });
 
 test('members fallback chain: getApprovalSummary returns null for missing approval', async () => {
-  const approval = getMemberOperationsRuntimeApprovalSummary({} as any);
+  // @ts-expect-error -- 测试空对象参数防御
+  const approval = getMemberOperationsRuntimeApprovalSummary({} as MemberOperationsRuntimeReceipt);
   assert.equal(approval, null);
 });
 
 test('members fallback chain: getApprovalSummary returns null for receipt without approval field', () => {
-  const receipt = { receiptCode: 'NO-APR-001', callback: { callbackStatus: 'no-callback' } } as any;
-  const approval = getMemberOperationsRuntimeApprovalSummary(receipt);
+  const receipt = { receiptCode: 'NO-APR-001', callback: { callbackStatus: 'no-callback' } };
+  // @ts-expect-error -- 测试缺少 approval 字段的防御
+  const approval = getMemberOperationsRuntimeApprovalSummary(receipt as MemberOperationsRuntimeReceipt);
   assert.equal(approval, null);
 });
 
@@ -130,7 +133,8 @@ test('members fallback chain: source detail with unknown source kind returns emp
     throw new Error('network unavailable');
   }) as typeof fetch;
 
-  const snapshot = await loadAdminMemberOperationSourceDetail('member-001', 'payment' as any, 'unknown-payment');
+  // @ts-expect-error -- 测试未知 sourceKind 的降级行为
+  const snapshot = await loadAdminMemberOperationSourceDetail('member-001', 'payment' as unknown as 'order', 'unknown-payment');
   assert.equal(snapshot.deliveryMode, 'fallback');
   assert.equal(snapshot.tasks.length, 0);
   assert.equal(snapshot.receipts.length, 0);

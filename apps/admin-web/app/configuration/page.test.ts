@@ -411,7 +411,8 @@ describe('configuration-page: 边界 (boundary cases)', () => {
 
     it('should not throw for unknown query keys', async () => {
       const snapshot = await loadConfigurationGovernanceSnapshot(
-        { unknownProp: 'foo' } as any,
+        // @ts-expect-error -- 测试 unknown query key 的防御
+        { unknownProp: 'foo' } as Parameters<typeof loadConfigurationGovernanceSnapshot>[0],
         { cache: 'no-store' },
       );
       assert.ok(snapshot, 'snapshot should not throw');

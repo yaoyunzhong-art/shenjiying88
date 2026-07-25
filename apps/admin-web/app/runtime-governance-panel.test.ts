@@ -129,6 +129,7 @@ describe('runtime-governance-panel — 反例', () => {
     // 故意传 null 会抛 TypeError，这是预期的防御行为
     try {
       renderToStaticMarkup(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         React.createElement(RuntimeGovernancePanel, { tenantContext: null } as any)
       );
     } catch (e: unknown) {

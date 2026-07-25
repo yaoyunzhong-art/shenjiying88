@@ -228,11 +228,15 @@ test('状态标签 → 正例: 所有状态都有标签', () => {
 });
 
 test('数据 → 反例: 非法状态应不在状态列表中', () => {
-  assert.ok(!VALID_STATUSES.includes('unknown' as any));
-  assert.ok(!VALID_STATUSES.includes('expired' as any));
+  // @ts-expect-error -- 测试非法 status 不会被 VALID_STATUSES 包含
+  assert.ok(!VALID_STATUSES.includes('unknown' as PurchaseOrderStatus));
+  // @ts-expect-error -- 测试非法 status 不会被 VALID_STATUSES 包含
+  assert.ok(!VALID_STATUSES.includes('expired' as PurchaseOrderStatus));
 });
 
 test('数据 → 反例: 非法紧急程度不应在列表中', () => {
-  assert.ok(!VALID_URGENCIES.includes('critical' as any));
-  assert.ok(!VALID_URGENCIES.includes('low' as any));
+  // @ts-expect-error -- 测试非法 urgency 不会被 VALID_URGENCIES 包含
+  assert.ok(!VALID_URGENCIES.includes('critical' as PurchaseOrderUrgency));
+  // @ts-expect-error -- 测试非法 urgency 不会被 VALID_URGENCIES 包含
+  assert.ok(!VALID_URGENCIES.includes('low' as PurchaseOrderUrgency));
 });

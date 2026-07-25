@@ -191,12 +191,14 @@ describe('admin-finance: 反例', () => {
   });
 
   it('filterPaymentsByStatus 不存在的状态返回空数组', () => {
-    const result = filterPaymentsByStatus(BASE_PAYMENTS, 'NONEXISTENT' as any);
+    // @ts-expect-error -- 测试不存在的 status 值 'NONEXISTENT'
+    const result = filterPaymentsByStatus(BASE_PAYMENTS, 'NONEXISTENT' as PaymentStatus);
     assert.equal(result.length, 0);
   });
 
   it('filterPaymentsByMethod 不存在的支付方式返回空数组', () => {
-    const result = filterPaymentsByMethod(BASE_PAYMENTS, 'BITCOIN' as any);
+    // @ts-expect-error -- 测试不存在的 method 值 'BITCOIN'
+    const result = filterPaymentsByMethod(BASE_PAYMENTS, 'BITCOIN' as PaymentMethod);
     assert.equal(result.length, 0);
   });
 

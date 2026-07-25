@@ -114,7 +114,7 @@ function domainCheckIdempotency(requestId: string, opType: string): boolean {
     return true; // 重复请求
   }
   REQUEST_HISTORY.set(key, {
-    requestId, operationType: opType as any,
+    requestId, operationType: opType as DomainIdempotencyCheck['operationType'],
     handled: true, resultHash: '',
     timestamp: Date.now(),
   });

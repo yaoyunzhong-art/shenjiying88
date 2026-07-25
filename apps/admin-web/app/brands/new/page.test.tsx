@@ -24,7 +24,7 @@ import userEvent from '@testing-library/user-event';
 import PageMod from './page';
 
 // 处理 CJS 默认导出嵌套
-const BrandNewPage = (PageMod as any).default ?? PageMod;
+const BrandNewPage = (PageMod as { default?: React.ComponentType }).default ?? PageMod;
 
 /* ── 辅助函数 ── */
 

@@ -160,7 +160,8 @@ describe('members/cards — 类型与状态映射', () => {
   });
 
   it('10. 未知类型返回默认颜色（反例）', () => {
-    assert.equal(cardTypeColor('unknown' as any), '#94a3b8');
+    // @ts-expect-error -- 测试不存在 cardType 'unknown' 的 fallback
+    assert.equal(cardTypeColor('unknown' as MemberCard['cardType']), '#94a3b8');
   });
 });
 

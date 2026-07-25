@@ -172,13 +172,15 @@ describe('admin-alerts: 反例', () => {
     const result = filterAlertsByStatus(BASE_ALERTS, 'muted' as GovernanceAlertStatus);
     // "muted" exists
     assert.equal(result.length, 1);
-    const result2 = filterAlertsByStatus(BASE_ALERTS, 'nonexistent' as any);
+    // @ts-expect-error -- 测试不存在的 status 值 'nonexistent'
+    const result2 = filterAlertsByStatus(BASE_ALERTS, 'nonexistent' as GovernanceAlertStatus);
     assert.equal(result2.length, 0);
   });
 
   it('countAlertsBySeverity 不存在的级别', () => {
     assert.equal(countAlertsBySeverity(BASE_ALERTS, 'critical' as GovernanceAlertSeverity), 3);
-    assert.equal(countAlertsBySeverity(BASE_ALERTS, 'info' as any), 0);
+    // @ts-expect-error -- 测试不存在的 severity 值 'info'
+    assert.equal(countAlertsBySeverity(BASE_ALERTS, 'info' as GovernanceAlertSeverity), 0);
   });
 });
 

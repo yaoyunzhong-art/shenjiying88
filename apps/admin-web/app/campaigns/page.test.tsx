@@ -497,7 +497,8 @@ describe('工具函数', () => {
 
   it('反例: statusLabel未知状态', async () => {
     const mod = await import('./page');
-    assert.strictEqual(mod.statusLabel('unknown' as any), 'unknown');
+    // @ts-expect-error -- 测试不存在 status 'unknown' 的 fallback
+    assert.strictEqual(mod.statusLabel('unknown' as 'active'), 'unknown');
   });
 
   it('正例: statusColor', async () => {

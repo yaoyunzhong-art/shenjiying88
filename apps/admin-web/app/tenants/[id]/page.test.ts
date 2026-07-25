@@ -328,8 +328,8 @@ test('边界: 超 50 条批量数据构造 < 30ms', () => {
   );
   const elapsed = performance.now() - start;
   assert.equal(tenants.length, 50);
-  assert.equal((tenants[0] as any).id, 't0');
-  assert.equal((tenants[49] as any).id, 't49');
+  assert.equal(String(tenants[0].id), 't0');
+  assert.equal(String(tenants[49].id), 't49');
   assert.ok(elapsed < 30, `50 tenants construct in ${elapsed.toFixed(1)}ms (< 30ms)`);
 });
 

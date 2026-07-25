@@ -9,14 +9,24 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import PageMod from './page';
 import fs from 'node:fs';
+import type { ComponentType } from 'react';
 
-const NewNotificationPage = (PageMod as any).default ?? PageMod;
+/** 测试全局追踪类型 */
+interface TestGlobals {
+  __routerTracer: { pushCalls: string[] };
+  __toastTracer: { successCalls: unknown[]; errorCalls: unknown[] };
+  window: { confirm: (msg?: string) => boolean };
+}
+
+const G = globalThis as unknown as TestGlobals;
+
+const NewNotificationPage = (PageMod as { default?: ComponentType }).default ?? PageMod;
 
 /* ── 全局追踪 ── */
 function resetGlobals() {
-  (globalThis as any).__routerTracer = { pushCalls: [] };
-  (globalThis as any).__toastTracer = { successCalls: [], errorCalls: [] };
-  (globalThis as any).window.confirm = () => true;
+  G.__routerTracer = { pushCalls: [] };
+  G.__toastTracer = { successCalls: [], errorCalls: [] };
+  G.window.confirm = () => true;
 }
 function setup() {
   cleanup();
@@ -120,7 +130,7 @@ test('🔔 可选字段渲染', () => {
 test('🛡️ 空内容取消无 confirm', () => {
   setup();
   let called = false;
-  (globalThis as any).window.confirm = () => { called = true; return true; };
+  G.window.confirm = () => { called = true; return true; };
   assert.doesNotThrow(() => fireEvent.click(getCancel()));
   assert.equal(called, false);
 });
@@ -130,7 +140,7 @@ test('🔔 成功提交 toast.success', async () => {
   fillAllFields();
   await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
-  assert.ok((globalThis as any).__toastTracer.successCalls.length >= 1);
+  assert.ok(G.__toastTracer.successCalls.length >= 1);
 });
 
 test('🔔 成功提交跳转 /notifications', async () => {
@@ -138,7 +148,7 @@ test('🔔 成功提交跳转 /notifications', async () => {
   fillAllFields();
   await new Promise(r => setTimeout(r, 200));
   await submitForm(1300);
-  assert.ok((globalThis as any).__routerTracer.pushCalls.some((u: string) => u.includes('/notifications')));
+  assert.ok(G.__routerTracer.pushCalls.some((u: string) => u.includes('/notifications')));
 });
 
 test('🔔 标签字段可填写', () => {
@@ -343,7 +353,7 @@ test('🛡️ 有内容取消触发 confirm', async () => {
   });
   await new Promise(r => setTimeout(r, 50));
   let called = false;
-  (globalThis as any).window.confirm = () => { called = true; return false; };
+  G.window.confirm = () => { called = true; return false; };
   fireEvent.click(getCancel());
   assert.equal(called, true);
 });
@@ -352,17 +362,17 @@ test('🛡️ confirm 取消不跳转', async () => {
   setup();
   act(() => { fillInput(/输入通知标题/, '有内容'); });
   await new Promise(r => setTimeout(r, 50));
-  (globalThis as any).window.confirm = () => false;
+  G.window.confirm = () => false;
   fireEvent.click(getCancel());
-  assert.equal((globalThis as any).__routerTracer.pushCalls.length, 0);
+  assert.equal(G.__routerTracer.pushCalls.length, 0);
 });
 
 test('🛡️ confirm 确认跳转', () => {
   setup();
   act(() => { fillInput(/输入通知标题/, '有内容'); });
-  (globalThis as any).window.confirm = () => true;
+  G.window.confirm = () => true;
   fireEvent.click(getCancel());
-  assert.ok((globalThis as any).__routerTracer.pushCalls.some((u: string) => u.includes('/notifications')));
+  assert.ok(G.__routerTracer.pushCalls.some((u: string) => u.includes('/notifications')));
 });
 
 test('🛡️ 标题纯空格触发必填', async () => {
