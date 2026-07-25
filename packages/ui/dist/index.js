@@ -432,6 +432,8 @@ __export(index_exports, {
   runtimeOperationListDemoPresets: () => runtimeOperationListDemoPresets,
   runtimeOperationStatusLabels: () => runtimeOperationStatusLabels,
   runtimeOperationStatusVariants: () => runtimeOperationStatusVariants,
+  sanitizeHtml: () => sanitizeHtml2,
+  sanitizeJsonLd: () => sanitizeJsonLd,
   serializeToCsv: () => serializeToCsv,
   summarizeRuntimePanelReceipt: () => summarizeRuntimePanelReceipt,
   useAIRuleWeight: () => useAIRuleWeight,
@@ -73583,6 +73585,33 @@ function PrizeRedemptionCounter({
     }
   );
 }
+
+// src/sanitize/sanitize-html.ts
+var XSS_PATTERNS = [
+  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+  /on\w+\s*=\s*"[^"]*"/gi,
+  /on\w+\s*=\s*'[^']*'/gi,
+  /on\w+\s*=\s*[^\s>]+/gi,
+  /javascript\s*:/gi,
+  /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+  /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi,
+  /<embed\b[^>]*>/gi
+];
+function sanitizeHtml2(html) {
+  if (!html || typeof html !== "string") return "";
+  let sanitized = html;
+  for (const pattern of XSS_PATTERNS) {
+    sanitized = sanitized.replace(pattern, "");
+  }
+  return sanitized;
+}
+function sanitizeJsonLd(json) {
+  try {
+    return JSON.stringify(json);
+  } catch {
+    return "{}";
+  }
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AIAgentChatPanel,
@@ -73987,6 +74016,8 @@ function PrizeRedemptionCounter({
   runtimeOperationListDemoPresets,
   runtimeOperationStatusLabels,
   runtimeOperationStatusVariants,
+  sanitizeHtml,
+  sanitizeJsonLd,
   serializeToCsv,
   summarizeRuntimePanelReceipt,
   useAIRuleWeight,
