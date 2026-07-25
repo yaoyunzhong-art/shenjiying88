@@ -11,6 +11,7 @@ import {
   SubmitButton,
   WorkspaceBreadcrumb,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import { MEMBER_TIER_MAP, MEMBER_STATUSES, MEMBER_STATUS_MAP, type MemberTier, type MemberStatus } from '../../members-data';
 
@@ -145,10 +146,11 @@ async function submitCreateMember(data: CreateFormData): Promise<{ memberId: str
 
 
 const permissionGate = {
-  requiredPermission: 'members:create:read',
-  title: 'members create 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:create:read 权限的账号可访问。',
-} as const
+  requiredPermission: 'member:read',
+  title: '新增会员访问受限',
+  description:
+    '新增会员页已接入管理员本地 session，只有具备 member:read 的账号才能查看会员建档表单、市场归属与初始化信息。',
+} as const;
 
 export default function CreateMemberPage() {
   const router = useRouter();
@@ -238,7 +240,8 @@ export default function CreateMemberPage() {
   }, [createdMember, router]);
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 32 }}>
       <WorkspaceBreadcrumb
         workspaceLabel="会员管理"
         workspaceHref="/members"
@@ -548,7 +551,8 @@ export default function CreateMemberPage() {
           </form>
         )}
       </PageShell>
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }
 

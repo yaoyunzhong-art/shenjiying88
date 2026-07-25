@@ -14,6 +14,7 @@ import {
   replayMemberOperationsRuntimeReceipts,
   type MemberOperationsSourceKind,
 } from '../../../../../members-view-model';
+import { AdminPermissionGate } from '../../../../../components/admin-permission-gate';
 import { useDetailActions } from '../../../../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../../../../components/detail-workspace-registry';
 
@@ -23,9 +24,10 @@ function sourceKindLabel(kind: MemberOperationsSourceKind) {
 
 
 const permissionGate = {
-  requiredPermission: 'members:id:sources:kind:sourceId:read',
-  title: 'members sources 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:id:sources:kind:sourceId:read 权限的账号可访问。',
+  requiredPermission: 'member:read',
+  title: '会员运营来源访问受限',
+  description:
+    '会员运营来源详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看来源链路、治理关注项与批处理入口。',
 } as const
 
 export default function MemberOperationSourceDetailPage({
@@ -204,7 +206,8 @@ export default function MemberOperationSourceDetailPage({
   );
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'members', detailLabel: `${memberId}/${sourceKindLabel(kind)}` })}
       />
@@ -815,27 +818,28 @@ export default function MemberOperationSourceDetailPage({
         )}
       </div>
 
-      <DetailActionBar
-        actions={detailActions}
-        heading="详情收口动作"
-        caption="复制 / 导出 / 分享当前运营来源详情"
-      />
+        <DetailActionBar
+          actions={detailActions}
+          heading="详情收口动作"
+          caption="复制 / 导出 / 分享当前运营来源详情"
+        />
 
-      <DetailClosureBar
-        links={buildStandardClosureLinks({
-          workspace: 'members',
-          detailId: `${memberId}/sources/${kind}/${sourceId}`,
-          extraLinks: [
-            {
-              key: 'member',
-              title: '返回会员详情',
-              subtitle: `回到会员 ${memberId} 详情`,
-              href: `/members/${memberId}`
-            }
-          ]
-        })}
-      />
-    </main>
+        <DetailClosureBar
+          links={buildStandardClosureLinks({
+            workspace: 'members',
+            detailId: `${memberId}/sources/${kind}/${sourceId}`,
+            extraLinks: [
+              {
+                key: 'member',
+                title: '返回会员详情',
+                subtitle: `回到会员 ${memberId} 详情`,
+                href: `/members/${memberId}`
+              }
+            ]
+          })}
+        />
+      </main>
+    </AdminPermissionGate>
   );
 }
 

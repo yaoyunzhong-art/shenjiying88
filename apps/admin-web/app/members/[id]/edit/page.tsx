@@ -21,6 +21,7 @@ import {
   type MemberStatus,
   type MemberDetail,
 } from '../../../members-data';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 import {
   loadAdminMemberDetail,
   updateAdminMemberProfile,
@@ -122,10 +123,11 @@ function validateForm(data: EditFormData): EditFormErrors {
 
 
 const permissionGate = {
-  requiredPermission: 'members:id:edit:read',
-  title: 'members edit 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:id:edit:read 权限的账号可访问。',
-} as const
+  requiredPermission: 'member:read',
+  title: '会员编辑访问受限',
+  description:
+    '会员编辑页已接入管理员本地 session，只有具备 member:read 的账号才能查看会员档案、编辑表单与状态反馈。',
+} as const;
 
 export default function EditMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -275,24 +277,28 @@ export default function EditMemberPage({ params }: { params: Promise<{ id: strin
 
   if (snapshot.status === 'loading') {
     return (
-      <DetailShell
-        title="正在加载..."
-        backLink={{ label: '返回会员详情', href: `/members/${id}` }}
-      >
-        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
-          正在加载会员信息...
-        </div>
-      </DetailShell>
+      <AdminPermissionGate {...permissionGate}>
+        <DetailShell
+          title="正在加载..."
+          backLink={{ label: '返回会员详情', href: `/members/${id}` }}
+        >
+          <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+            正在加载会员信息...
+          </div>
+        </DetailShell>
+      </AdminPermissionGate>
     );
   }
 
   if (snapshot.status === 'error' || !member) {
     return (
-      <DetailShell
-        title="加载失败"
-        backLink={{ label: '返回会员列表', href: '/members' }}
-        error={loadError || '未找到该会员'}
-      />
+      <AdminPermissionGate {...permissionGate}>
+        <DetailShell
+          title="加载失败"
+          backLink={{ label: '返回会员列表', href: '/members' }}
+          error={loadError || '未找到该会员'}
+        />
+      </AdminPermissionGate>
     );
   }
 
@@ -303,13 +309,14 @@ export default function EditMemberPage({ params }: { params: Promise<{ id: strin
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 32 }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="会员管理"
-        workspaceHref="/members"
-        intermediateLabel={member.name}
-        detailLabel="编辑资料"
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 32 }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="会员管理"
+          workspaceHref="/members"
+          intermediateLabel={member.name}
+          detailLabel="编辑资料"
+        />
 
       <PageShell
         title={`编辑会员资料 · ${member.name}`}
@@ -543,7 +550,8 @@ export default function EditMemberPage({ params }: { params: Promise<{ id: strin
           </div>
         </form>
       </PageShell>
-    </div>
+      </div>
+    </AdminPermissionGate>
   );
 }
 

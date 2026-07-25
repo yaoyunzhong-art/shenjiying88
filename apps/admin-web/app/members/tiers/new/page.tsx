@@ -14,6 +14,7 @@ import {
   type FormPageField,
   type FormPageSubmitResult,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 // ---- 类型 ----
 
@@ -227,10 +228,11 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
 
 
 const permissionGate = {
-  requiredPermission: 'members:tiers:new:read',
-  title: 'members tiers new 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:tiers:new:read 权限的账号可访问。',
-} as const
+  requiredPermission: 'member:read',
+  title: '新建会员等级访问受限',
+  description:
+    '新建会员等级页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级配置字段、权益预设与校验反馈。',
+} as const;
 
 export default function NewMemberTierPage() {
   const router = useRouter();
@@ -252,13 +254,15 @@ export default function NewMemberTierPage() {
   };
 
   return (
-    <FormPageScaffold
-      meta={{ title: '新建会员等级', description: '创建一个新的会员等级，配置积分门槛、折扣率、权益等信息' }}
-      fields={FIELDS}
-      onSubmit={handleSubmit}
-      submitLabel="创建等级"
-      backUrl="/members/tiers"
-      maxWidth={720}
-    />
+    <AdminPermissionGate {...permissionGate}>
+      <FormPageScaffold
+        meta={{ title: '新建会员等级', description: '创建一个新的会员等级，配置积分门槛、折扣率、权益等信息' }}
+        fields={FIELDS}
+        onSubmit={handleSubmit}
+        submitLabel="创建等级"
+        backUrl="/members/tiers"
+        maxWidth={720}
+      />
+    </AdminPermissionGate>
   );
 }

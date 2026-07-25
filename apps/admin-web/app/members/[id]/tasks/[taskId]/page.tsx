@@ -10,14 +10,16 @@ import {
   loadAdminMemberOperationTaskDetail,
   type MemberOperationsReceiptApi,
 } from '../../../../members-view-model';
+import { AdminPermissionGate } from '../../../../components/admin-permission-gate';
 import { useDetailActions } from '../../../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../../../components/detail-workspace-registry';
 
 
 const permissionGate = {
-  requiredPermission: 'members:id:tasks:taskId:read',
-  title: 'members tasks 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:id:tasks:taskId:read 权限的账号可访问。',
+  requiredPermission: 'member:read',
+  title: '会员运营任务访问受限',
+  description:
+    '会员运营任务详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看任务链路、同源回执与来源聚合信息。',
 } as const
 
 export default function MemberOperationTaskDetailPage({
@@ -67,7 +69,8 @@ export default function MemberOperationTaskDetailPage({
   });
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'members', detailLabel: `${memberId}/tasks/${taskId}` })}
       />
@@ -188,27 +191,28 @@ export default function MemberOperationTaskDetailPage({
         </>
       ) : null}
 
-      <DetailActionBar
-        actions={detailActions}
-        heading="详情收口动作"
-        caption="复制 / 导出 / 分享当前运营任务详情"
-      />
+        <DetailActionBar
+          actions={detailActions}
+          heading="详情收口动作"
+          caption="复制 / 导出 / 分享当前运营任务详情"
+        />
 
-      <DetailClosureBar
-        links={buildStandardClosureLinks({
-          workspace: 'members',
-          detailId: `${memberId}/tasks/${taskId}`,
-          extraLinks: [
-            {
-              key: 'member',
-              title: '返回会员详情',
-              subtitle: `回到会员 ${memberId} 详情`,
-              href: `/members/${memberId}`
-            }
-          ]
-        })}
-      />
-    </main>
+        <DetailClosureBar
+          links={buildStandardClosureLinks({
+            workspace: 'members',
+            detailId: `${memberId}/tasks/${taskId}`,
+            extraLinks: [
+              {
+                key: 'member',
+                title: '返回会员详情',
+                subtitle: `回到会员 ${memberId} 详情`,
+                href: `/members/${memberId}`
+              }
+            ]
+          })}
+        />
+      </main>
+    </AdminPermissionGate>
   );
 }
 

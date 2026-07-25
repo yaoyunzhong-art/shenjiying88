@@ -14,6 +14,7 @@ import {
   SubmitButton,
   WorkspaceBreadcrumb,
 } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ---- 常量 ----
 
@@ -140,10 +141,11 @@ function validateForm(values: TierBenefitsFormValues): FieldError[] {
 
 
 const permissionGate = {
-  requiredPermission: 'members:form:read',
-  title: 'members form 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:form:read 权限的账号可访问。',
-} as const
+  requiredPermission: 'member:read',
+  title: '会员等级权益配置访问受限',
+  description:
+    '会员等级权益配置页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级分类、权益配置与校验结果。',
+} as const;
 
 export default function TierBenefitsFormPage() {
   const [values, setValues] = useState<TierBenefitsFormValues>(DEFAULT_VALUES);
@@ -211,7 +213,8 @@ export default function TierBenefitsFormPage() {
   const isSubmitting = submitState === 'submitting';
 
   return (
-    <PageShell
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
       title="配置会员等级权益"
       subtitle="设置会员等级名称、积分范围、折扣率及权益类型"
       breadcrumb={
@@ -456,7 +459,8 @@ export default function TierBenefitsFormPage() {
           </form>
         )}
       </div>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }
 

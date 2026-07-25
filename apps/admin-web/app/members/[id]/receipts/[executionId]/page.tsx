@@ -14,6 +14,7 @@ import {
   loadAdminMemberOperationReceiptDetail,
   replayMemberOperationsRuntimeReceipt,
 } from '../../../../members-view-model';
+import { AdminPermissionGate } from '../../../../components/admin-permission-gate';
 import { useDetailActions } from '../../../../components/use-detail-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../../../components/detail-workspace-registry';
 
@@ -33,9 +34,10 @@ function runtimeApprovalColor(status: string): string {
 
 
 const permissionGate = {
-  requiredPermission: 'members:id:receipts:executionId:read',
-  title: 'members receipts 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 members:id:receipts:executionId:read 权限的账号可访问。',
+  requiredPermission: 'member:read',
+  title: '会员运营回执访问受限',
+  description:
+    '会员运营回执详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看执行回执、runtime 状态与审批互链。',
 } as const
 
 export default function MemberOperationReceiptDetailPage({
@@ -114,7 +116,8 @@ export default function MemberOperationReceiptDetailPage({
   });
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'members', detailLabel: `${memberId}/receipts/${executionId}` })}
       />
@@ -273,21 +276,22 @@ export default function MemberOperationReceiptDetailPage({
         caption="复制 / 导出 / 分享当前运营回执详情"
       />
 
-      <DetailClosureBar
-        links={buildStandardClosureLinks({
-          workspace: 'members',
-          detailId: `${memberId}/receipts/${executionId}`,
-          extraLinks: [
-            {
-              key: 'member',
-              title: '返回会员详情',
-              subtitle: `回到会员 ${memberId} 详情`,
-              href: `/members/${memberId}`
-            }
-          ]
-        })}
-      />
-    </main>
+        <DetailClosureBar
+          links={buildStandardClosureLinks({
+            workspace: 'members',
+            detailId: `${memberId}/receipts/${executionId}`,
+            extraLinks: [
+              {
+                key: 'member',
+                title: '返回会员详情',
+                subtitle: `回到会员 ${memberId} 详情`,
+                href: `/members/${memberId}`
+              }
+            ]
+          })}
+        />
+      </main>
+    </AdminPermissionGate>
   );
 }
 
