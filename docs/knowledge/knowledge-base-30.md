@@ -164,3 +164,29 @@ finance-reconciliation测试helper `createTxn`缺`externalTransactionId`字段�
 
 **32条知识 · 生成完毕 ✅**
 **签署**: 🦞 龙虾哥 · 2026-07-14 03:35
+
+---
+
+## 🔄 V23 Phase 1 追加（2026-07-26）
+
+### KB-033: 单门店TOC网页全链路产品规划
+**来源**: 《M5母机V5.1宪法》第4/15/16/17卷 + 54专家团联合评审
+**路径**: `docs/knowledge/单门店TOC网页_全链路产品规划.md`
+**摘要**: 为单门店打造的消费者入口，包含5大模块53子需求（门店展示/预约下单/社媒裂变/AI赋能/转化漏斗）
+**关联PRD**: PRD-018 → `docs/knowledge/prd/prd-storefront-toc-p55.md`
+**Phase 1产出**: `apps/storefront-web/app/store/` 4个核心页面 + `apps/api/src/modules/storefront/` 5个后端API
+
+### KB-034: V23上线前终检 — 54专家团联签
+**来源**: 54专家团 G1-G9 三重交叉验证
+**路径**: `docs/knowledge/master-status-board.md`
+**摘要**: 9门全绿, 87/100总分, 🟡有条件通过→🟢建议上线, 系统债Phase-Next排期
+
+### KB-035: antd v6 CJS序列化问题
+**来源**: admin-web Next.js 15 构建失败根因分析
+**路径**: `apps/admin-web/next.config.mjs` + `apps/admin-web/app/layout.tsx`
+**摘要**: antd v6.5.0 47个组件在CJS中为lazy object，Next.js RSC静态生成时无法序列化。修复方案: root layout 加 `export const dynamic = 'force-dynamic'` 全站SSR。
+
+### KB-036: Cashier核心表跨租户隔离修复
+**来源**: 54专家团G2安全+G7租户 联合审计
+**路径**: `apps/api/prisma/migrations/20260725185300_add_tenant_id_to_cashier_tables/`
+**摘要**: CashierPayment/CashierMember/CashierTransaction 三表补 tenantId + @@index，迁移策略: 先加NULL→填默认值→改NOT NULL。
