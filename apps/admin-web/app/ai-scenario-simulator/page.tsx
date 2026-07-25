@@ -18,6 +18,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
   Button,
   DataTable,
@@ -328,10 +329,11 @@ export default function AiScenarioSimulatorPage() {
   }, [history]);
 
   return (
-    <PageShell
-      title="AI 场景模拟器"
-      subtitle="调整参数预测门店运营决策效果"
-    >
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell
+        title="AI 场景模拟器"
+        subtitle="调整参数预测门店运营决策效果"
+      >
       {/* 页面头部 */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -528,28 +530,29 @@ export default function AiScenarioSimulatorPage() {
       )}
 
       {/* 历史记录 */}
-      <div style={{ marginTop: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>📋 历史模拟记录</h3>
-        {history.length === 0 ? (
-          <div style={{
-            padding: 32, textAlign: 'center', color: '#9ca3af',
-            border: '1px dashed #d1d5db', borderRadius: 8, background: '#f9fafb',
-          }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>🧪</div>
-            <div style={{ fontSize: 14, marginBottom: 6 }}>暂无模拟记录</div>
-            <div style={{ fontSize: 12, color: '#a0aec0' }}>调整参数并点击「模拟」按钮开始</div>
-          </div>
-        ) : (
-          <DataTable
-            columns={historyColumns}
-            items={history}
-            rowKey={(item) => item.id}
-            compact
-            striped
-            emptyText="暂无记录"
-          />
-        )}
-      </div>
-    </PageShell>
+        <div style={{ marginTop: 20 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>📋 历史模拟记录</h3>
+          {history.length === 0 ? (
+            <div style={{
+              padding: 32, textAlign: 'center', color: '#9ca3af',
+              border: '1px dashed #d1d5db', borderRadius: 8, background: '#f9fafb',
+            }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>🧪</div>
+              <div style={{ fontSize: 14, marginBottom: 6 }}>暂无模拟记录</div>
+              <div style={{ fontSize: 12, color: '#a0aec0' }}>调整参数并点击「模拟」按钮开始</div>
+            </div>
+          ) : (
+            <DataTable
+              columns={historyColumns}
+              items={history}
+              rowKey={(item) => item.id}
+              compact
+              striped
+              emptyText="暂无记录"
+            />
+          )}
+        </div>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

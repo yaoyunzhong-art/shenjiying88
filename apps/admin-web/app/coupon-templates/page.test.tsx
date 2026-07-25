@@ -325,6 +325,10 @@ describe('coupon-templates — 业务深度', () => {
 
 describe('coupon-templates — hooks 验证', () => {
   const src = readSource();
+  it('应接入管理员权限边界', () => {
+    assert.ok(src.includes('AdminPermissionGate'));
+    assert.ok(src.includes("requiredPermission: 'coupon-templates:read'"));
+  });
   it('包含 useState 声明', () => assert.ok(src.includes('const [') && src.includes('useState')));
   it('包含 JSX 返回', () => assert.ok(src.includes('return (') || src.includes('return <')));
   it('包含事件处理器', () => assert.ok(src.includes('onClick={') || src.includes('onChange={')));
@@ -348,6 +352,14 @@ let pageModule: any;
 
 describe('coupon-templates — React 渲染', () => {
   before(async () => {
+    window.localStorage.setItem(
+      'admin_user',
+      JSON.stringify({
+        userId: 'admin:test',
+        role: 'super-admin',
+        permissions: ['coupon-templates:read'],
+      }),
+    );
     pageModule = await import('./page.tsx');
     CouponTemplatesPage = pageModule.default;
     // pageModule.default may be object->function via tsx; try unwrap

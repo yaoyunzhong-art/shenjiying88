@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   PageShell,
@@ -362,9 +363,11 @@ const permissionGate = {
 
 export default function CouponDetailPage() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <CouponDetailContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<LoadingFallback />}>
+        <CouponDetailContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 

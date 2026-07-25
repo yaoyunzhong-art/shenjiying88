@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, use } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   DetailActionBar,
@@ -26,6 +27,8 @@ import {
 } from '../../marketing-view-model';
 
 import { useDetailActions } from '../../components/use-detail-actions';
+
+export { campaignStatusLabel, campaignChannelLabel };
 
 // ---- 类型 ----
 
@@ -55,7 +58,7 @@ const STATUS_TRANSITIONS: Partial<Record<CampaignStatus, CampaignStatus>> = {
   running: 'ended',
 };
 
-function canTransition(status: CampaignStatus): CampaignStatus | null {
+export function canTransition(status: CampaignStatus): CampaignStatus | null {
   return STATUS_TRANSITIONS[status] ?? null;
 }
 
@@ -70,7 +73,7 @@ function getNextTransitionLabel(status: CampaignStatus): string {
 
 // ---- Mock 活动详情数据 ----
 
-function getMarketingCampaignById(id: string): MarketingCampaign | null {
+export function getMarketingCampaignById(id: string): MarketingCampaign | null {
   const lookup: Record<string, MarketingCampaign> = {
     c1: {
       id: 'c1',
@@ -153,7 +156,7 @@ interface EditFormErrors {
   channel?: string;
 }
 
-function validateCampaignForm(data: EditFormData): EditFormErrors {
+export function validateCampaignForm(data: EditFormData): EditFormErrors {
   const errors: EditFormErrors = {};
   if (!data.name.trim()) errors.name = '活动名称不能为空';
   if (data.name.trim().length > 100) errors.name = '活动名称不能超过100个字符';
@@ -280,42 +283,44 @@ export default function MarketingCampaignDetailPage({
   // 页面未找到
   if (!campaign) {
     return (
-      <div style={{ display: 'grid', gap: 16, padding: 32 }}>
-        <WorkspaceBreadcrumb
-          workspaceLabel="营销管理"
-          workspaceHref="/marketing"
-          detailLabel="未找到活动"
-        />
-        <section
-          style={{
-            borderRadius: 16,
-            padding: 24,
-            background: 'rgba(15, 23, 42, 0.35)',
-            border: '1px solid rgba(148, 163, 184, 0.18)',
-            textAlign: 'center',
-          }}
-        >
-          <h2 style={{ color: '#f87171', marginBottom: 8 }}>活动未找到</h2>
-          <p style={{ color: '#94a3b8', fontSize: 14 }}>
-            未找到 ID 为 &ldquo;{id}&rdquo; 的营销活动。
-          </p>
-          <button
-            onClick={handleRetry}
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ display: 'grid', gap: 16, padding: 32 }}>
+          <WorkspaceBreadcrumb
+            workspaceLabel="营销管理"
+            workspaceHref="/marketing"
+            detailLabel="未找到活动"
+          />
+          <section
             style={{
-              marginTop: 16,
-              padding: '8px 20px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#2563eb',
-              color: '#fff',
-              fontSize: 14,
-              cursor: 'pointer',
+              borderRadius: 16,
+              padding: 24,
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+              textAlign: 'center',
             }}
           >
-            重新尝试
-          </button>
-        </section>
-      </div>
+            <h2 style={{ color: '#f87171', marginBottom: 8 }}>活动未找到</h2>
+            <p style={{ color: '#94a3b8', fontSize: 14 }}>
+              未找到 ID 为 &ldquo;{id}&rdquo; 的营销活动。
+            </p>
+            <button
+              onClick={handleRetry}
+              style={{
+                marginTop: 16,
+                padding: '8px 20px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#2563eb',
+                color: '#fff',
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              重新尝试
+            </button>
+          </section>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
@@ -366,22 +371,23 @@ export default function MarketingCampaignDetailPage({
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="营销管理"
-        workspaceHref="/marketing"
-        detailLabel={campaign.name}
-      />
-      <DetailShell
-        title={campaign.name}
-        subtitle={`活动 · ${campaign.id}`}
-        breadcrumbs={[
-          { label: '营销管理', href: '/marketing' },
-          { label: campaign.name },
-        ]}
-        backLink={{ label: '返回营销列表', href: '/marketing' }}
-        actions={actions}
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="营销管理"
+          workspaceHref="/marketing"
+          detailLabel={campaign.name}
+        />
+        <DetailShell
+          title={campaign.name}
+          subtitle={`活动 · ${campaign.id}`}
+          breadcrumbs={[
+            { label: '营销管理', href: '/marketing' },
+            { label: campaign.name },
+          ]}
+          backLink={{ label: '返回营销列表', href: '/marketing' }}
+          actions={actions}
+        >
         {/* 编辑模式 */}
         {editOpen ? (
           <section
@@ -543,19 +549,20 @@ export default function MarketingCampaignDetailPage({
             caption="复制 / 导出 / 分享当前活动详情"
           />
         </section>
-      </DetailShell>
+        </DetailShell>
 
-      <DetailClosureBar
-        links={[
-          {
-            key: 'marketing',
-            title: '返回营销管理',
-            subtitle: '回到营销管理总览',
-            href: '/marketing',
-          },
-        ]}
-      />
-    </div>
+        <DetailClosureBar
+          links={[
+            {
+              key: 'marketing',
+              title: '返回营销管理',
+              subtitle: '回到营销管理总览',
+              href: '/marketing',
+            },
+          ]}
+        />
+      </div>
+    </AdminPermissionGate>
   );
 }
 

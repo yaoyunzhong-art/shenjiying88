@@ -553,6 +553,11 @@ const __dirname = dirname(__filename);
 const PAGE_SOURCE = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('coupons-page: 源码结构分析', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(PAGE_SOURCE.includes('AdminPermissionGate'));
+    assert.ok(PAGE_SOURCE.includes("requiredPermission: 'coupons:read'"));
+  })
+
   it('源码含"优惠券管理中心"标题字符串', () => {
     assert.ok(PAGE_SOURCE.includes('优惠券管理中心'), '源码应包含标题')
   })

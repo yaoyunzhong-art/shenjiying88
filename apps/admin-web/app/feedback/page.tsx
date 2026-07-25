@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 // ─── 类型定义 ──────────────────────────────────────────
 
@@ -167,25 +168,26 @@ export default function FeedbackPage() {
   const showEmptyState = filtered.length === 0;
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-      {/* 页面标题 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>客户反馈管理</h1>
-          <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 14 }}>
-            查看和处理来自各门店的客户反馈信息
-          </p>
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24, fontFamily: 'system-ui, sans-serif' }}>
+        {/* 页面标题 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>客户反馈管理</h1>
+            <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 14 }}>
+              查看和处理来自各门店的客户反馈信息
+            </p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14, color: '#374151' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M1 8a7 7 0 0 1 13.2-3.5M15 1v4h-4m4 3a7 7 0 0 1-13.2 3.5M1 15v-4h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            刷新
+          </button>
         </div>
-        <button
-          onClick={handleRefresh}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14, color: '#374151' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M1 8a7 7 0 0 1 13.2-3.5M15 1v4h-4m4 3a7 7 0 0 1-13.2 3.5M1 15v-4h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          刷新
-        </button>
-      </div>
 
       {/* 概览统计 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
@@ -272,17 +274,18 @@ export default function FeedbackPage() {
         )}
       </div>
 
-      {/* 列表 / 空态 */}
-      {showEmptyState ? (
-        <EmptyState onReset={handleRefresh} keyword={keyword} />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {filtered.map((item) => (
-            <FeedbackCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
-    </main>
+        {/* 列表 / 空态 */}
+        {showEmptyState ? (
+          <EmptyState onReset={handleRefresh} keyword={keyword} />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {filtered.map((item) => (
+              <FeedbackCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+      </main>
+    </AdminPermissionGate>
   );
 }
 

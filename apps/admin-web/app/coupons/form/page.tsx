@@ -7,6 +7,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 import {
   FormField,
@@ -200,16 +201,17 @@ export default function CouponFormPage() {
   })();
 
   return (
-    <main style={{ maxWidth: 720, margin: '0 auto', padding: 32 }}>
-      <Breadcrumb
-        items={[
-          { label: '优惠券管理', href: '/coupons' },
-          { label: '创建优惠券' },
-        ]}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 720, margin: '0 auto', padding: 32 }}>
+        <Breadcrumb
+          items={[
+            { label: '优惠券管理', href: '/coupons' },
+            { label: '创建优惠券' },
+          ]}
+        />
 
-      <PageShell title="创建优惠券" subtitle="创建新的优惠券活动，支持多种优惠类型与发放规则">
-        <form onSubmit={handleSubmit} noValidate style={{ marginTop: 24 }}>
+        <PageShell title="创建优惠券" subtitle="创建新的优惠券活动，支持多种优惠类型与发放规则">
+          <form onSubmit={handleSubmit} noValidate style={{ marginTop: 24 }}>
           {/* 基本信息 */}
           <div style={{ marginBottom: 28 }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 14, color: '#e2e8f0' }}>
@@ -434,9 +436,10 @@ export default function CouponFormPage() {
               重置
             </SubmitButton>
           </div>
-        </form>
-      </PageShell>
-    </main>
+          </form>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

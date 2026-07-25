@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   DataTable,
@@ -257,11 +258,12 @@ export default function CouponTemplatesPage() {
   const hasNoData = MOCK_COUPON_TEMPLATES.length === 0;
 
   return (
-    <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="优惠券模板管理"
-        subtitle="统一管理优惠券模板，支持发放跟踪、使用率监控与状态筛选。"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="优惠券模板管理"
+          subtitle="统一管理优惠券模板，支持发放跟踪、使用率监控与状态筛选。"
+        >
         {/* 统计卡片 */}
         {!hasNoData && (
           <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
@@ -396,13 +398,14 @@ export default function CouponTemplatesPage() {
           </>
         )}
 
-        <DetailActionBar
-          actions={actions}
-          heading="工作台收口动作"
-          caption="复制 / 导出 / 分享当前优惠券模板管理筛选快照"
-        />
-      </PageShell>
-    </main>
+          <DetailActionBar
+            actions={actions}
+            heading="工作台收口动作"
+            caption="复制 / 导出 / 分享当前优惠券模板管理筛选快照"
+          />
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }
 

@@ -143,6 +143,11 @@ describe('coupons/[id] — 结构完整性', () => {
 
   before(() => { src = readSource(); });
 
+  it('应接入管理员权限边界', () => {
+    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(src.includes("requiredPermission: 'coupons:id:read'"), '缺少 coupons:id:read 权限');
+  });
+
   it('应包含 LoadingFallback Spinner 占位', () => {
     assert.ok(src.includes('LoadingFallback'), '缺少 LoadingFallback');
     assert.ok(src.includes('Spinner'), '缺少 Spinner');
