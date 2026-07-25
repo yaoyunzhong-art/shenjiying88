@@ -54,7 +54,8 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
-  transpilePackages: ['@m5/ui', '@m5/domain'],
+  transpilePackages: ['@m5/domain'],
+  serverExternalPackages: ['@m5/ui'],
   output: 'standalone',
   outputFileTracingRoot: path.join(currentDir, '../..'),
   staticPageGenerationTimeout: 300,
