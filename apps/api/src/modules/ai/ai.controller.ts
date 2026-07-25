@@ -25,6 +25,6 @@ export class AiController {
   /** 关键词提取 */
   @Post('keywords')
   keywords(@Body() body: { text: string; topK?: number }) {
-    return this.service.extractKeywords(body.text)
+    return this.service.extractKeywords(body.text, { topN: body.topK })
   }
 }
