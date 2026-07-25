@@ -477,26 +477,26 @@ export class AuditLogService {
 export class ChainAuditService {
   private trails = new Map<string, any>()
 
-  createAuditTrail(transactionId: string, action: string, userId: string, metadata: Record<string, unknown>): any {
+  createAuditLogEntry(transactionId: string, action: string, userId: string, metadata: Record<string, unknown>): any {
     const id = `trail-${nanoid()}`
     const trail = { id, transactionId, action, userId, metadata, createdAt: new Date().toISOString() }
     this.trails.set(id, trail)
     return trail
   }
 
-  verifyAuditTrail(id: string): { verified: boolean } {
+  verifyAuditLogEntry(id: string): { verified: boolean } {
     return { verified: this.trails.has(id) }
   }
 
-  getAuditTrail(id: string): AuditTrail | undefined {
+  getAuditLogEntry(id: string): AuditLogEntry | undefined {
     return this.trails.get(id)
   }
 
-  listAuditTrails(): AuditTrail[] {
+  listAuditLogEntrys(): AuditLogEntry[] {
     return Array.from(this.trails.values())
   }
 
-  queryAuditTrails(filter: { userId?: string; startTime?: number; endTime?: number }): AuditTrail[] {
+  queryAuditLogEntrys(filter: { userId?: string; startTime?: number; endTime?: number }): AuditLogEntry[] {
     let results = Array.from(this.trails.values())
     if (filter.userId) results = results.filter(t => t.userId === filter.userId)
     return results
@@ -506,7 +506,7 @@ export class ChainAuditService {
     return `审计报告\n用户: ${userId}\n时间: ${new Date(startTime).toISOString()} - ${new Date(endTime).toISOString()}`
   }
 
-  alertOnAnomaly(userId: string): AuditTrail | null {
+  alertOnAnomaly(userId: string): AuditLogEntry | null {
     const trails = Array.from(this.trails.values()).filter(t => t.userId === userId)
     if (trails.length < 2) return null
     return { userId, reason: 'Rapid consecutive actions detected' }
