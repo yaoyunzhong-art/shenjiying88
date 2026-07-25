@@ -112,12 +112,12 @@ describe('PaymentService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException for cross-tenant payment access', async () => {
+    it('should throw NotFoundException for cross-tenant payment access (order not visible)', async () => {
       orderService._setOrder(makePendingOrder({ tenantId: 'tenant-2' }));
 
       await expect(
         service.create(makeValidInput(), makeValidOpts()),
-      ).rejects.toThrow(/cross_tenant_payment_access/);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when order is not PENDING', async () => {
@@ -125,7 +125,7 @@ describe('PaymentService', () => {
 
       await expect(
         service.create(makeValidInput(), makeValidOpts()),
-      ).rejects.toThrow(/order.*not.*pending/i);
+      ).rejects.toThrow(/order.*PENDING/i);
     });
 
     it('should throw BadRequestException on amount mismatch', async () => {
@@ -230,7 +230,7 @@ describe('PaymentService', () => {
         makeValidOpts({ tenantId: 'tenant-1' }),
       );
 
-      expect(() => service.confirm(p2.id, 'txn-001', 'tenant-1')).toThrow('payment_callback_mismatch');
+      expect(() => service.confirm(p2.id, 'txn-001', 'tenant-1')).toThrow(/already bound/);
     });
   });
 

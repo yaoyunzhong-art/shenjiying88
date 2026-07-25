@@ -622,4 +622,77 @@ require.cache[uiPath] = {
   exports: mockUiModule,
 };
 
+// Mock admin-session for AdminPermissionGate tests
+const adminSessionPath = Module._resolveFilename('../lib/admin-session', {
+  id: import.meta.url,
+  filename: import.meta.url,
+  paths: Module._nodeModulePaths(process.cwd()),
+});
+
+// Resolve from the app folder if the relative path doesn't work
+let resolvedAdminSessionPath = adminSessionPath;
+try {
+  if (!require.cache[adminSessionPath]) {
+    // Try resolving from the app directory
+    const appDir = new URL('./app/lib/admin-session.ts', import.meta.url).pathname;
+    resolvedAdminSessionPath = appDir;
+  }
+} catch (e) {
+  // fallback: use the relative resolution
+}
+
+const mockAdminUser = {
+  userId: 'test-admin-001',
+  username: 'testadmin',
+  email: 'admin@test.com',
+  role: 'super_admin',
+  permissions: ['*'],
+};
+
+const mockAdminSession = {
+  __esModule: true,
+  ADMIN_ACCESS_TOKEN_KEY: 'admin_access_token',
+  ADMIN_REFRESH_TOKEN_KEY: 'admin_refresh_token',
+  ADMIN_USER_KEY: 'admin_user',
+  normalizeAdminSessionUser: (raw) => {
+    const r = (raw ?? {});
+    return {
+      userId: r.userId || 'test-admin-001',
+      username: r.username || 'testadmin',
+      email: r.email || 'admin@test.com',
+      role: r.role || 'super_admin',
+      permissions: Array.isArray(r.permissions) ? r.permissions : ['*'],
+    };
+  },
+  getAdminAccessToken: () => 'mock-access-token',
+  getCachedAdminUser: () => mockAdminUser,
+  storeAdminSession: (input) => {
+    return mockAdminSession.normalizeAdminSessionUser(input.user);
+  },
+  clearAdminSession: () => {},
+  hasAdminPermission: () => true,
+};
+
+// Monkey-patch requires for the admin-session module so it works with relative imports
+const origResolve = Module._resolveFilename;
+Module._resolveFilename = function (request, parent) {
+  if (request.endsWith('/lib/admin-session') || request.endsWith('\\lib\\admin-session')) {
+    return resolvedAdminSessionPath;
+  }
+  // Handle app/components/admin-permission-gate.tsx importing '../lib/admin-session'
+  if (request === '../lib/admin-session' || request.includes('/lib/admin-session')) {
+    if (parent && (parent.includes('/components/admin-permission-gate'))) {
+      return resolvedAdminSessionPath;
+    }
+  }
+  return origResolve.apply(this, arguments);
+};
+
+require.cache[resolvedAdminSessionPath] = {
+  id: resolvedAdminSessionPath,
+  filename: resolvedAdminSessionPath,
+  loaded: true,
+  exports: mockAdminSession,
+};
+
 console.log('[test-setup] happy-dom initialized (ESM), next/navigation + next/link + next/image + @m5/ui mocked');
