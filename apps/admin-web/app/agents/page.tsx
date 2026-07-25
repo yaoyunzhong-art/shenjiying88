@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import {
   PageShell,
   StatCard,
@@ -63,6 +64,12 @@ const MODULES: ModuleCard[] = [
     description: '在线编排 Agent 工作流，实时测试与调试 Agent 行为。',
   },
 ];
+
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: 'Agent 管理访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 foundation.governance.read 权限的账号可访问 Agent 管理中心。',
+} as const;
 
 /* ── 概览统计区域 (服务端组件) ── */
 async function OverviewStats() {
@@ -168,23 +175,25 @@ function ModuleGrid() {
 /* ── 主页面 ── */
 export default async function AgentsPage() {
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="Agent 管理中心"
-        subtitle="AI Agent 全生命周期管理 — 配置、运行、监控、评估与编排。"
-      >
-        <Suspense
-          fallback={<LoadingSkeleton variant="card" rows={2} label="加载概览统计..." />}
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="Agent 管理中心"
+          subtitle="AI Agent 全生命周期管理 — 配置、运行、监控、评估与编排。"
         >
-          <OverviewStats />
-        </Suspense>
+          <Suspense
+            fallback={<LoadingSkeleton variant="card" rows={2} label="加载概览统计..." />}
+          >
+            <OverviewStats />
+          </Suspense>
 
-        <Suspense
-          fallback={<LoadingSkeleton variant="card" rows={3} label="加载功能模块..." />}
-        >
-          <ModuleGrid />
-        </Suspense>
-      </PageShell>
-    </main>
+          <Suspense
+            fallback={<LoadingSkeleton variant="card" rows={3} label="加载功能模块..." />}
+          >
+            <ModuleGrid />
+          </Suspense>
+        </PageShell>
+      </main>
+    </AdminPermissionGate>
   );
 }

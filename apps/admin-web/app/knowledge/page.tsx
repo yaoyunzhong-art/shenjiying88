@@ -6,6 +6,7 @@
 
 import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell, ErrorBoundary } from '@m5/ui';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 import KnowledgeClient from './knowledge-client';
 
 interface KnowledgeCategory {
@@ -67,19 +68,27 @@ async function loadKnowledge(): Promise<KnowledgeSnapshot> {
   };
 }
 
+const permissionGate = {
+  requiredPermission: 'foundation.governance.read',
+  title: '知识库访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 foundation.governance.read 权限的账号可访问知识库与制度资料。',
+} as const;
+
 export default async function KnowledgePage() {
   const data = await loadKnowledge();
 
   return (
-    <ErrorBoundary>
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <PageShell title="📚 知识库" subtitle="运营手册·设备指南·会员政策·财务规范·安全制度">
-          <Suspense fallback={<LoadingSkeleton variant="card" rows={8} label="加载知识库..." />}>
-            <KnowledgeClient data={data} />
-          </Suspense>
-        </PageShell>
-      </main>
-    </ErrorBoundary>
+    <AdminPermissionGate {...permissionGate}>
+      <ErrorBoundary>
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+          <PageShell title="📚 知识库" subtitle="运营手册·设备指南·会员政策·财务规范·安全制度">
+            <Suspense fallback={<LoadingSkeleton variant="card" rows={8} label="加载知识库..." />}>
+              <KnowledgeClient data={data} />
+            </Suspense>
+          </PageShell>
+        </main>
+      </ErrorBoundary>
+    </AdminPermissionGate>
   );
 }
 

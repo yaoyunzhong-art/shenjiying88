@@ -160,6 +160,10 @@ describe('agents — 数据校验', () => {
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Agents — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
   it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
