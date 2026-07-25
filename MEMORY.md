@@ -228,3 +228,23 @@ Pulse-18:   链31 RLS(22) + 链32 库存采购(22) + 链33 财务对账(22) + �
 - T1: 性能扫描 45findMany无分页+1处N+1循环
 - L1: 构建分析 admin 3.2G storefront 1.4G tob 847M
 - 四端TSC全绿 6门全通
+
+## V23 Day16 (2026-07-26)
+- T1性能: 45个findMany无分页 + 1处N+1循环
+- T2安全: **裸奔controller 10→0** (9处补@Public)
+- **T3 N+1修复**: member.service.ts listPersistentProfiles 1+3N(≤301)→4次查询, batchFindSnapshotsByProfileIds+batchFindMemberProfileExtensions批量预加载
+- L1构建: admin 3.2G(97%cache虚胖), storefront 2.0M单chunk
+- L2/L3: MEMORY+日总结
+- 四端TSC全绿 6道门全通
+- T2进度: 55/223已标注(24.7%), 158 TenantGuard fallback(70.9%), 0裸奔
+
+## V23 Day17启动 (2026-07-26)
+- T1: 上线部署全量检查
+- L1: CI/CD+部署配置审查
+
+## V23 Day17阶段 (2026-07-26)
+- T1上线检查: TSC/Build 0错, 16迁移一致, 183+模块, 114 models, Docker链路完整 ✅
+- L1 CI/CD审查: B+(85分) — K8s A级, docker-compose完善, 🔴双重Dockerfile需统一
+- T2: Healthcheck + 迁移验证 (进行中)
+- L2: 三端构建验证 (进行中)
+- T3: API全量vitest回归 (进行中)
