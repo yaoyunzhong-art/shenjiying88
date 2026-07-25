@@ -282,7 +282,7 @@ export default function ServiceDetailPage() {
                 {service.name}
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Rating value={service.rating} readonly size="sm" />
+                <Rating value={service.rating} interactive={false} />
                 <span style={{ fontSize: 14, color: '#fbbf24', fontWeight: 600 }}>{service.rating}</span>
                 <span style={{ fontSize: 12, color: '#64748b' }}>({service.reviewCount}条评价)</span>
                 <span style={{ fontSize: 12, color: '#475569' }}>|</span>
@@ -430,7 +430,7 @@ export default function ServiceDetailPage() {
                         {rec.name}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                        <Rating value={rec.rating} readonly size="sm" />
+                        <Rating value={rec.rating} interactive={false} />
                         <span style={{ fontSize: 11, color: '#fbbf24' }}>{rec.rating}</span>
                       </div>
                       <div style={{ fontSize: 16, fontWeight: 700, color: '#fbbf24' }}>
