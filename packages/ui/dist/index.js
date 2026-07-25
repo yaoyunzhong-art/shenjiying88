@@ -5983,7 +5983,7 @@ function useHandleEvent() {
         event.handled = true;
         event.handledBy = params.handledBy;
         event.handledAt = (/* @__PURE__ */ new Date()).toISOString();
-        console.log(`[useHandleEvent] Handled event ${params.eventId} by ${params.handledBy}`);
+        if (process.env.NODE_ENV === "development") console.debug(`[useHandleEvent] Handled event ${params.eventId} by ${params.handledBy}`);
       }
     },
     isLoading: false,

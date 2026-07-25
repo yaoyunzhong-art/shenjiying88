@@ -725,7 +725,9 @@ interface BusinessDailyRevenueSummary {
  * const member = await biz.member.lookup('13800138001')
  * ```
  */
-declare function createBusinessClient(baseUrl?: string): {
+declare function createBusinessClient(options?: string | (Omit<ApiClientOptions, 'baseUrl'> & {
+    baseUrl?: string;
+})): {
     checkout: {
         /** 发起结账 */
         start: (body: {

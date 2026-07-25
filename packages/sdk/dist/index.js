@@ -1282,8 +1282,12 @@ function normalizeBusinessOrderListResponse(payload) {
   }
   return payload;
 }
-function createBusinessClient(baseUrl) {
-  const api = new ApiClient({ baseUrl: baseUrl ?? getDefaultApiBaseUrl() });
+function createBusinessClient(options) {
+  const resolvedOptions = typeof options === "string" ? { baseUrl: options } : { ...options ?? {}, baseUrl: options?.baseUrl ?? getDefaultApiBaseUrl() };
+  const api = new ApiClient({
+    ...resolvedOptions,
+    baseUrl: resolvedOptions.baseUrl
+  });
   return {
     // ── Checkout (POST /api/v1/transactions/checkout) ──
     checkout: {
