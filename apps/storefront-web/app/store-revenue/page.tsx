@@ -1,9 +1,9 @@
+'use client';
 /**
  * 门店营收 — Store Revenue Dashboard (storefront-web)
  * 角色: 👔 店长 / 💰 财务 / 🎯 运营总监
  * 功能: 营收总览、趋势对比、渠道分析、日/周/月切换
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

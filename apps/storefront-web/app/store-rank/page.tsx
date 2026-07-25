@@ -1,9 +1,9 @@
+'use client';
 /**
  * 门店排名 — Store Rank Dashboard (storefront-web)
  * 角色: 👔 店长 / 🎯 运营总监
  * 功能: 门店综合排名、各维度KPI排名、趋势数据、排行升降
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

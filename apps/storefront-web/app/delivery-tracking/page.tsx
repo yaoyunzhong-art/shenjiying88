@@ -1,8 +1,8 @@
+'use client';
 /**
  * 配送追踪 — Delivery Tracking (storefront-web)
  * 增强: 加载态(loading)/错误态(error)/空状态(empty) 三态 + 趋势统计看板 + 历史搜索记录
  */
-'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DeliveryTrackingClient } from './components/DeliveryTrackingClient';

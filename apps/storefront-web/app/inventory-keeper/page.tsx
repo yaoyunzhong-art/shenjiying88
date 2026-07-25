@@ -1,9 +1,9 @@
+'use client';
 /**
  * 库存看板 — Inventory Keeper (storefront-web)
  * 角色视角: 👔店长 / 🛒前台
  * 功能: 库存看板、预警、补货建议、分类筛选、搜索、入库/出库趋势
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

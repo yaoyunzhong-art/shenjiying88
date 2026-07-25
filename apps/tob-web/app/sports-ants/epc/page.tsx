@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁EPC+O全流程服务页面 - 重构版
  * BigAnts EPC+O Service Page - Enhanced
  * 包含招投标项目承接能力展示
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import SEOMeta from '../components/seo/SEOMeta';

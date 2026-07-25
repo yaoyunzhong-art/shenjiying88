@@ -1,9 +1,9 @@
+'use client';
 /**
  * 会员等级积分 — Loyalty (storefront-web)
  * 角色视角: 👤会员 / 👔店长
  * 功能: 等级展示、积分明细、积分获取攻略、奖励中心、升级进度、空/错状态、统计面板
  */
-'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { PageShell, StatusBadge } from '@m5/ui';

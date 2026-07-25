@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁招商加盟页面 - 重构版
  * BigAnts Franchise Page - Enhanced
  * 三种合作模式 × 八类人群适配矩阵 + 神机营SaaS融合
  */
 
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';

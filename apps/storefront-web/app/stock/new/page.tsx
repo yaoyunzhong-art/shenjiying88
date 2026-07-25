@@ -1,9 +1,9 @@
+'use client';
 /**
  * 新建库存商品 — New Stock Item Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 表单验证、提交、错误处理
  */
-'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';

@@ -1,3 +1,4 @@
+'use client';
 /**
  * H5积分页面 - Points Page (H5端)
  * Phase-FP T-FP-029 · 2026-07-03
@@ -5,7 +6,6 @@
  * 功能: 查看积分、积分明细、积分兑换
  */
 
-'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';

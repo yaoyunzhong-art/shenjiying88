@@ -1,7 +1,7 @@
+'use client';
 /**
  * contracts/page.tsx — 合同管理列表页 (ToB 合同管理)
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import {

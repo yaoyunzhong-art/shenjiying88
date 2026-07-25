@@ -1,9 +1,9 @@
+'use client';
 /**
  * 库存盘点详情页 — Stocktaking Detail Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🔧仓管
  * 功能: 盘点单详细信息展示、编辑、状态流转、删除、盘点商品明细
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

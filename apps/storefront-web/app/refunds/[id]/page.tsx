@@ -1,9 +1,9 @@
+'use client';
 /**
  * 退换货详情页 — Refund Detail Page (Next.js App Router Page)
  * 功能: 查看退换货申请详情、审批/驳回、处理流转
  * 角色视角: 👔店长 / 🛒前台
  */
-'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';

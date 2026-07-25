@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CampaignQueryDto, CreateCampaignDto } from './campaign-performance.dto'
@@ -18,6 +19,7 @@ import { CampaignPerformanceService } from './campaign-performance.service'
 @ApiTags('活动效果评估')
 @UseGuards(TenantGuard)
 @Controller('campaign-performance')
+@Public()
 export class CampaignPerformanceController {
   constructor(
     private readonly campaignPerformanceService: CampaignPerformanceService,

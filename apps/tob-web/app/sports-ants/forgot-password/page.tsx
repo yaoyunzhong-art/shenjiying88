@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁忘记密码页面
  * BigAnts Forgot Password
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * brands/page.tsx — 品牌管理列表页 (ToB 品牌注册管理)
  * 角色视角: 👔 租户管理员 / 🏢 品牌经理
  * 功能: 品牌列表展示、搜索、状态/分类筛选、营收统计
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import {

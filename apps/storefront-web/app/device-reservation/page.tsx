@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备预定 — P-39 Device Reservation (前台自助)
  * 角色: 🎮 导玩员/顾客
  * 功能: 选择设备类型、查看可用时段、选择时间段、提交预定
  */
-'use client';
 
 import React, { useState } from 'react';
 

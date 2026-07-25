@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Patch, Query, UseGuards } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -101,6 +102,7 @@ function toEntityWSClient(
 
 @Controller('push')
 @UseGuards(TenantGuard)
+@Public()
 export class PushController {
   constructor(
     private readonly apnsService: APNsService,

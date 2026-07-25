@@ -1,9 +1,9 @@
+'use client';
 /**
  * 意见反馈 — Feedback (storefront-web)
  * 角色视角: 👤会员 / 👔店长
  * 功能: 提交反馈、历史记录、分类筛选、待处理/已处理状态管理、评分、附图、空/错状态
  */
-'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { PageShell, StatusBadge } from '@m5/ui';

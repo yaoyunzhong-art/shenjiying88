@@ -1,10 +1,10 @@
+'use client';
 /**
  * 新建补货申请 — Replenishment Create Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🔧仓管
  * 类型: B-页面创建 (表单页)
  * 功能: 表单验证、提交、错误处理
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';

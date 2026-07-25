@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁产品详情页
  * BigAnts Product Detail Page
  */
 
-'use client';
 
 import React from 'react';
 import { useParams } from 'next/navigation';

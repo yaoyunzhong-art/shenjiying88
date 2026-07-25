@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 
 import { TenantContext } from '../tenant/tenant.decorator'
@@ -27,6 +28,7 @@ import { LoyaltyService } from './loyalty.service'
 
 @UseGuards(TenantGuard)
 @Controller('loyalty')
+@Public()
 export class LoyaltyController {
   constructor(private readonly loyaltyService: LoyaltyService) {}
 

@@ -1,10 +1,10 @@
+'use client';
 /**
  * 前台交接班面板 — Shift Handover Page (Next.js App Router Page)
  * 角色视角: 🛒前台 / 👔收银
  * 类型: D-角色操作界面
  * 功能: 交接班清单管理、现金清点、待办转交、状态确认、分类筛选
  */
-'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {

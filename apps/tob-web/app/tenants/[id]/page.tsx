@@ -1,9 +1,9 @@
+'use client';
 /**
  * tenants/[id]/page.tsx — 租户详情页 (ToB 多租户管理)
  * 角色视角: 👔 超级管理员
  * 功能: 租户详情查看、编辑、状态变更
  */
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

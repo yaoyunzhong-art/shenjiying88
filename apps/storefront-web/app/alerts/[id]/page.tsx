@@ -1,3 +1,4 @@
+'use client';
 /**
  * 告警详情页 — Alert Detail Page (storefront-web)
  * 功能: 展示单条告警的详情，包含加载态、错误态、未找到态
@@ -11,7 +12,6 @@
  * - 告警分级高亮
  * - 返回导航
  */
-'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

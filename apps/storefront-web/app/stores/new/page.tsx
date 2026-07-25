@@ -1,9 +1,9 @@
+'use client';
 /**
  * 创建门店页 — Store Create Page (Next.js App Router Page)
  * 功能: 门店创建表单，含字段验证、提交、成功引导
  * 类型: B-表单页 (含验证/提交/错误处理/成功引导)
  */
-'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Link from 'next/link';

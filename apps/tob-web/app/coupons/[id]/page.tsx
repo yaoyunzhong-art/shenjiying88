@@ -1,10 +1,10 @@
+'use client';
 /**
  * coupons/[id]/page.tsx — ToB 优惠券详情页
  * 角色视角: 👔运营经理 / 📊品牌专员
  * 功能: 优惠券详情查看、状态流转、编辑导航、删除操作
  * 类型: B-详情页 (含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

@@ -1,10 +1,10 @@
+'use client';
 /**
  * ai-rules-dashboard/page.tsx — AI 决策规则仪表盘
  *
  * 角色视角: 👔 租户管理员 / 🧠 AI 运营
  * 功能: 展示 AI 决策规则的概览、分类统计、规则列表，支持按状态/分类筛选
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import {

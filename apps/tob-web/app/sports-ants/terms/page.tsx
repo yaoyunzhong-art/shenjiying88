@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁服务条款页面
  * BigAnts Terms of Service
  */
 
-'use client';
 
 import React from 'react';
 import SEOMeta from '../components/seo/SEOMeta';

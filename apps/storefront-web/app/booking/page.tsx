@@ -1,3 +1,4 @@
+'use client';
 /**
  * 预约看店页 — Booking Page (Next.js App Router Page)
  * B-页面: 面向C端用户的预约到店功能
@@ -5,7 +6,6 @@
  *
  * 功能: 选择门店 → 选择日期/时段 → 填写联系信息 → 提交预约
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import {

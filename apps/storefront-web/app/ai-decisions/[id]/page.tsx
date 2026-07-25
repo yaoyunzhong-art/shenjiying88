@@ -1,8 +1,8 @@
+'use client';
 /**
  * AI决策详情页 — AI Decision Detail (Next.js App Router Page)
  * 展示单条规则执行的完整结果、决策过程、影响范围及处置建议
  */
-'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { notFound } from 'next/navigation';

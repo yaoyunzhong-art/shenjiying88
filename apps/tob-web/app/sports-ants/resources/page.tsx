@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁决策资源中心页面
  * BigAnts Decision Resources Center
  * 为客户提供自主决策支持的完整资源库
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

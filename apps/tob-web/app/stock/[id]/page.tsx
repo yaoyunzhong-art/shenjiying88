@@ -1,9 +1,9 @@
+'use client';
 /**
  * TOB 库存详情页 — Stock Detail Page (Next.js App Router Page)
  * 功能: 查看库存详情、编辑库存信息、删除记录、状态流转
  * 角色视角: 📋运营经理
  */
-'use client';
 
 import React, { useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';

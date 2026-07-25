@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备保养工单列表页 — Maintenance Order List (Next.js App Router Page)
  * 角色视角: 👨‍🔧设备维护 / 🔧门店运营
  * 功能: 搜索、状态筛选、优先级筛选、分页浏览、统计面板、详情弹窗
  */
-'use client';
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';

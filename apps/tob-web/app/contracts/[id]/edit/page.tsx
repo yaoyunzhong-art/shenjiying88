@@ -1,10 +1,10 @@
+'use client';
 /**
  * contracts/[id]/edit/page.tsx — ToB 合同编辑页面 (从详情跳转)
  *
  * B型任务：表单编辑页（含字段验证、回填、提交、错误处理）
  * 角色视角: 🔧 运营商管理员
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';

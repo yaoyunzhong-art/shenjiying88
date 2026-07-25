@@ -1,10 +1,10 @@
+'use client';
 /**
  * 门店任务中心页 — Store Task Center (Next.js App Router Page)
  * 角色视角: 👔店长 / 🏪全体门店员工
  * 类型: D-角色操作界面
  * 功能: 门店所有待办任务聚合展示，按类型和优先级分组
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';

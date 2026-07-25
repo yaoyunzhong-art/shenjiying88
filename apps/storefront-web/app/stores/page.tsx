@@ -1,9 +1,9 @@
+'use client';
 /**
  * 门店列表页 — Stores List Page (Next.js App Router Page)
  * 功能: 搜索、状态筛选、分页浏览门店列表
  * 类型: B-列表页 (含搜索/过滤/分页)
  */
-'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';

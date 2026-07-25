@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁帮助中心页面
  * BigAnts Help Center
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

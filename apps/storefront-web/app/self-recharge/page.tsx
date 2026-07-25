@@ -1,9 +1,9 @@
+'use client';
 /**
  * 自助充值 — P-37 Self-Service Recharge (立式触屏机)
  * 角色: 🛒 前台顾客自助
  * 功能: 选择充值金额、选择支付方式、扫码支付、充值成功
  */
-'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';

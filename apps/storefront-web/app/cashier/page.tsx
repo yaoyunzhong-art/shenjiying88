@@ -1,3 +1,4 @@
+'use client';
 /**
  * 前台收银台 — P-35 Storefront Cashier Page
  *
@@ -14,7 +15,6 @@
  *   AC-35-07: 支付方式选择
  *   AC-35-10: 空结算防御
  */
-'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';

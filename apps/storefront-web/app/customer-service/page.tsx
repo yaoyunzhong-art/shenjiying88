@@ -1,9 +1,9 @@
+'use client';
 /**
  * 客服工作台页 — Customer Service Dashboard (Next.js App Router Page)
  * 角色: 客服视角，展示工单处理面板、服务质量指标、座席状态、快速操作
  * 功能: 工单列表/服务指标/座席状态/工单分类筛选/操作弹窗/任务处理
  */
-'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {

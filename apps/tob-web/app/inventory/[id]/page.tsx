@@ -1,3 +1,4 @@
+'use client';
 /**
  * inventory/[id]/page.tsx — 库存详情页 (ToB Next.js App Router Page)
  *
@@ -5,7 +6,6 @@
  * 支持编辑 / 盘点 / 删除操作
  * 角色视角: 📦品牌运营 / 💰采购经理 / 👔门店店长
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

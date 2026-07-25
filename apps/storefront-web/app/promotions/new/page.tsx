@@ -1,9 +1,9 @@
+'use client';
 /**
  * 促销活动新建页 — New Promotion Page (Next.js App Router Page)
  * 功能: 创建新的促销活动，支持类型/预算/时间等字段填写，提交后跳转详情页
  * 角色视角: 👔店长 / 📊运营
  */
-'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

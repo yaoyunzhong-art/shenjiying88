@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁AI赋能中心页面
  * BigAnts AI Empowerment Center
  * 展示AI驱动的个性化推荐、智能客服、转化分析能力
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

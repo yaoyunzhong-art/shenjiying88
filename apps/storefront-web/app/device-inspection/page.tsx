@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备巡检员工作台 — Device Inspector Dashboard (Next.js App Router Page)
  * 角色视角: 🔧 设备巡检员 / 🎯 运营专员
  * 功能: 巡检任务分配、设备检查清单、巡检记录、异常上报
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import {

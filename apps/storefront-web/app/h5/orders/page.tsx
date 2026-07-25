@@ -1,3 +1,4 @@
+'use client';
 /**
  * H5订单列表页面 - Orders Page (H5端)
  * Phase-FP T-FP-029 · 2026-07-03
@@ -5,7 +6,6 @@
  * 功能: 查看会员订单列表
  */
 
-'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';

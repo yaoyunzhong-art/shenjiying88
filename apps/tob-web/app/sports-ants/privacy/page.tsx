@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁隐私政策页面
  * BigAnts Privacy Policy
  */
 
-'use client';
 
 import React from 'react';
 import SEOMeta from '../components/seo/SEOMeta';

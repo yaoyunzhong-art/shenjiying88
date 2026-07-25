@@ -1,9 +1,9 @@
+'use client';
 /**
  * 财务管理 — Finance Page (storefront-web)
  * 角色视角: 👔店长 / 财务主管
  * 功能: 营收总览、退款/支出、净收入、趋势、真实 ledger 对账记录
  */
-'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {

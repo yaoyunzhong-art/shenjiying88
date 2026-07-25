@@ -1,9 +1,9 @@
+'use client';
 /**
  * 供应商详情页 — Supplier Detail Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 供应商详情查看、合作状态流转、编辑、删除
  */
-'use client';
 
 import React, { use, useState, useCallback } from 'react';
 import Link from 'next/link';

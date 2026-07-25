@@ -1,10 +1,10 @@
+'use client';
 /**
  * 新建任务表单页 — Task Create Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🏪全体门店员工
  * 类型: B-表单页
  * 功能: 任务创建表单，含验证、提交、错误处理
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

@@ -1,8 +1,8 @@
+'use client';
 /**
  * h5/payment/[orderId]/page.tsx — 扫码支付页面
  * Phase-FP T-FP-027 · 2026-07-02
  */
-'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';

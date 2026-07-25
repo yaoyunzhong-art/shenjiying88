@@ -1,10 +1,10 @@
+'use client';
 /**
  * 门店详情页 — Store Detail Page (Next.js App Router Page)
  * 角色视角: 👔区域经理 / 👨‍💼运营
  * 功能: 门店详情查看、编辑、状态变更、删除
  * 类型: B-详情页 (含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { use, useState, useCallback } from 'react';
 import Link from 'next/link';

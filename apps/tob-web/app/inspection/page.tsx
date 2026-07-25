@@ -1,9 +1,9 @@
+'use client'
 /**
  * inspection/page.tsx — 设备巡检表单页 (表单页含验证/提交/错误处理)
  *
  * 功能: 门店选择 + 巡检类型 + 逐项评定 + 签字确认 + 提交
  */
-'use client'
 
 import React, { useCallback, useState } from 'react'
 import { Alert } from '@m5/ui'

@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 import { PointsAtomicService } from './points-atomic.service'
 import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier } from './points-risk.service'
@@ -44,6 +45,7 @@ import type {
 @UseGuards(TenantGuard)
 @Controller('points')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@Public()
 export class PointsController {
   private issuanceRules: Map<string, PointsIssuanceRule> = new Map()
   private redemptionRules: Map<string, PointsRedemptionRule> = new Map()

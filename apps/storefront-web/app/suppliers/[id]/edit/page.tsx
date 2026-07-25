@@ -1,9 +1,9 @@
+'use client';
 /**
  * 编辑供应商 — Supplier Edit Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 表单预填充、验证、提交、错误处理、状态流转（暂停/启用/终止）
  */
-'use client';
 
 import React, { useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';

@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 import {
   HrRecruitmentService,
@@ -26,6 +27,7 @@ import {
 
 @Controller('hr/recruitment')
 @UseGuards(TenantGuard)
+@Public()
 export class HrRecruitmentController {
   constructor(private readonly service: HrRecruitmentService) {}
 

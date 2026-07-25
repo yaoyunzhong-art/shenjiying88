@@ -1,10 +1,10 @@
+'use client';
 /**
  * 评价详情页 — Review Detail Page (Next.js App Router Page)
  * 角色视角: 🛒 前台消费者 / 👔 门店运营
  * 功能: 查看评价详情、状态流转(隐藏/显示/待审核)、编辑评价内容、删除评价
  * 类型: B-详情页 (含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';

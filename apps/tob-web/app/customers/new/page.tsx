@@ -1,9 +1,9 @@
+'use client';
 /**
  * customers/new/page.tsx — 新建企业客户表单页 (ToB 客户管理)
  *
  * B型任务：表单页（含验证/提交/错误处理）
  */
-'use client';
 
 import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';

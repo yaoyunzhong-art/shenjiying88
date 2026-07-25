@@ -1,9 +1,9 @@
+'use client';
 /**
  * 客户画像标签管理页 — Customer Profile Tag Management Page (ToB Sales Context)
  * 功能: 查看、创建、编辑、删除标签，含表单验证、提交反馈、错误处理
  * 角色视角: 👤销售运营 / 📊商务分析师
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 

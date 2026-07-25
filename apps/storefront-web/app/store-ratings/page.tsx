@@ -1,9 +1,9 @@
+'use client';
 /**
  * 门店评分 — Store Ratings (storefront-web)
  * 角色: 顾客 / 👔店长
  * 功能: 综合评分、维度评分、评分分布、近期评价、筛选、排序、回复评价、趋势
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

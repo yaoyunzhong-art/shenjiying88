@@ -1,9 +1,9 @@
+'use client';
 /**
  * products/[id]/page.tsx — 商品详情页 (Next.js App Router Page)
  * 角色视角: 👔店长 / 📦采购 / 📋运营
  * 功能: 商品基本信息、库存动态、编辑/操作按钮、状态流转、删除确认
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

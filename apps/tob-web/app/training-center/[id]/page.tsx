@@ -1,10 +1,10 @@
+'use client';
 /**
  * training-center/[id]/page.tsx — 培训详情页 (ToB 培训中心)
  *
  * 使用 DetailShell + InfoSection / InfoRow 结构展示培训课程信息
  * 支持编辑 + 状态流转 + 删除
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

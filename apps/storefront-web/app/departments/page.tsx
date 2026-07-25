@@ -1,9 +1,9 @@
+'use client';
 /**
  * 部门管理 — Departments Page (storefront-web)
  * 角色视角: 👔店长 / 运营主管
  * 功能: 部门列表、成员统计、预算分析、部门绩效、搜索筛选
  */
-'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 

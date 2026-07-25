@@ -1,9 +1,9 @@
+'use client';
 /**
  * 门店首页 — P-40 Storefront Home (完整版)
  * 角色: 所有访客/会员
  * 功能: 门店信息、活动推荐、快速入口、设备展示
  */
-'use client';
 
 import React, { useState } from 'react';
 

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 库存调拨详情页 — Stock Transfer Detail Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购 / 📦仓管
  * 功能: 调拨单详细信息、编辑、状态流转、操作历史
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

@@ -1,10 +1,10 @@
+'use client';
 /**
  * products/[id]/edit/page.tsx — ToB 商品编辑表单页
  *
  * B型任务：表单页（含验证/提交/错误处理）
  * 支持编辑商品名称、定价、库存等核心字段。
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';

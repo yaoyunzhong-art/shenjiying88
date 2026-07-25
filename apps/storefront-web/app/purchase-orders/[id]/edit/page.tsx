@@ -1,9 +1,9 @@
+'use client';
 /**
  * 采购单编辑页 — Purchase Order Edit Page (Next.js App Router Page)
  * 功能: 编辑采购单基本信息、供应商信息、调整明细、更新备注/付款条款
  * 角色视角: 👔店长 / 💳采购经理
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

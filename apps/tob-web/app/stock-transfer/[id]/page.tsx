@@ -1,3 +1,4 @@
+'use client';
 /**
  * stock-transfer/[id]/page.tsx — 库存调拨详情页 (ToB Next.js App Router Page)
  *
@@ -5,7 +6,6 @@
  * 支持编辑 / 审批 / 取消 / 删除操作
  * 角色视角: 👔品牌运营 / 📦仓库管理员 / 💳采购经理
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

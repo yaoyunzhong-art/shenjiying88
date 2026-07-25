@@ -1,10 +1,10 @@
+'use client';
 /**
  * 物流配送详情页 — Delivery Detail Page (Next.js App Router / Dynamic Route)
  * 角色视角: 👔店长 / 🛒前台 / 💳采购
  * 类型: B-页面创建 / 详情页
  * 功能: 查看单票物流详情、时间线、轨迹地图展示、联系承运方
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useCallback, useState } from 'react';

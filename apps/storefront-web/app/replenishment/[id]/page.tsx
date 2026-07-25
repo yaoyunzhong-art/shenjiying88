@@ -1,10 +1,10 @@
+'use client';
 /**
  * 补货单详情页 — Replenishment Detail Page (Next.js App Router Page)
  * 类型: B-详情页 (含编辑/删除/状态流转)
  * 角色视角: 👔店长 / 🔧仓管
  * 功能: 查看补货单详情、审核/驳回/取消操作、状态流转
  */
-'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 积分历史 — Point History (storefront-web)
  * 角色视角: 👤会员 / 👔店长
  * 功能: 积分总览、历史记录列表、按类型筛选、搜索、分页、空/错状态、统计面板
  */
-'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { PageShell, StatusBadge } from '@m5/ui';

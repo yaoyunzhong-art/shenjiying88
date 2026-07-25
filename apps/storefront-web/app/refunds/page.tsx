@@ -1,9 +1,9 @@
+'use client';
 /**
  * 退换货管理页 — Refunds List Page (Next.js App Router Page)
  * 角色: 店长/前台可查看和处理退换货申请
  * 功能: 数据表格/状态筛选/搜索/审批弹窗/统计卡片/分页/导出
  */
-'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { PageShell, DataTable, StatusBadge, EmptyState, Modal } from '@m5/ui';

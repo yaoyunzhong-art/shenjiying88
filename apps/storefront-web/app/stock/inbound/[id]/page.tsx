@@ -1,10 +1,10 @@
+'use client';
 /**
  * 入库接收处理页 — Inbound Receiving Page (Next.js App Router Page)
  * 角色视角: 🏭库房管理员
  * 类型: B-页面创建
  * 功能: 入库单详情/验收/质检/上架/完成
  */
-'use client';
 
 import React, { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';

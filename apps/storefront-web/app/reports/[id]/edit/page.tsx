@@ -1,9 +1,9 @@
+'use client';
 /**
  * 销售报表编辑页 — Report Edit Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 📊运营 / 💰财务
  * 功能: 编辑报表标题/摘要/指标，表单验证，提交，错误处理，预览
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

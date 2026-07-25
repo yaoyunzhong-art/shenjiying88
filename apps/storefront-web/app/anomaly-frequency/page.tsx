@@ -1,3 +1,4 @@
+'use client';
 /**
  * AnomalyFrequencyPage — 门店异常时序频率监控页面 (storefront-web)
  *
@@ -12,7 +13,6 @@
  * - 导购员查看最近异常告警频率
  */
 
-'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { AnomalyFrequencyTimeline, StatusBadge, PageShell, Modal } from '@m5/ui';

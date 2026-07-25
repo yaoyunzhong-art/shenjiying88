@@ -1,10 +1,10 @@
+'use client';
 /**
  * campaigns/page.tsx — 营销活动列表页 (ToB 活动管理)
  * 含搜索/过滤/分页/详情入口
  *
  * 活动属性: 编号、名称、类型、状态、渠道、预算、花费、ROI
  */
-'use client';
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {

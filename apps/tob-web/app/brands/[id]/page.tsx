@@ -1,10 +1,10 @@
+'use client';
 /**
  * brands/[id]/page.tsx — 品牌详情页 (ToB Next.js App Router)
  * 角色视角: 👔 租户管理员 / 🏢 品牌经理
  * 功能: 品牌详情查看、编辑入口、状态流转（审核/暂停/归档/启用）、删除
  * 类型: B-详情页 (含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

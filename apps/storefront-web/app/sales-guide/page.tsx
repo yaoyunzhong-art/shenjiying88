@@ -1,8 +1,8 @@
+'use client';
 /**
  * 导购员工作台页 — Sales Guide Dashboard (Next.js App Router Page)
  * 角色: 导购员视角，展示个人接待数据、待跟进客户、推荐话术、快速查询会员、排名
  */
-'use client';
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { PageShell, StatusBadge, SalesClerkTool } from '@m5/ui';

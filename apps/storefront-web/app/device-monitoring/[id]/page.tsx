@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备详情页 — Device Detail Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🛠️运维
  * 功能: 查看设备详细信息、编辑设备信息、状态选择更新、删除设备
  */
-'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';

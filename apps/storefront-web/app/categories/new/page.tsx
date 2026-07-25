@@ -1,8 +1,8 @@
+'use client';
 /**
  * 新建分类 — Category Create Form Page (Next.js App Router Page)
  * 功能: 表单验证、提交、错误处理
  */
-'use client';
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';

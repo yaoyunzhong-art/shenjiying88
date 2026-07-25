@@ -1,3 +1,4 @@
+'use client';
 /**
  * AI销售面板页面 - AI Sales Panel Page (ToB企业端)
  * Phase-FP · 2026-07-03
@@ -5,7 +6,6 @@
  * 功能: 智能推荐、异议处理、跟进任务、销售话术
  */
 
-'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';

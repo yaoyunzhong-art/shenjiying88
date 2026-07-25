@@ -1,10 +1,10 @@
+'use client';
 /**
  * 员工管理页 — Staff Management Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 运营主管
  * 功能: 员工信息管理、值班状态、排班概览、岗位设置
  * 类型: B-管理页 (含搜索/筛选/状态/分页)
  */
-'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { PageShell, StatusBadge, SearchFilterInput, Pagination, DataTable, usePagination, useSearchFilter, type DataTableColumn } from '@m5/ui';

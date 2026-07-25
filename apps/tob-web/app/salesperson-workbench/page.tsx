@@ -1,9 +1,9 @@
+'use client';
 /**
  * salesperson-workbench/page.tsx — 导购员工作台
  * 角色: 张三 (旗舰店·上海)
  * 功能: 今日数据概览 / 待办任务 / 近期客户 / 快速操作
  */
-'use client';
 
 import { useMemo, useState } from 'react';
 

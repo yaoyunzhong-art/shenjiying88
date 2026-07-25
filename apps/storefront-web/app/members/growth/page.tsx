@@ -1,6 +1,6 @@
+ * Next.js App Router, 'use client', 暗色主题
 /**
  * storefront-web - 成长值页面
- * Next.js App Router, 'use client', 暗色主题
  */
 
 'use client';

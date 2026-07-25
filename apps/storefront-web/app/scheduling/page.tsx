@@ -1,10 +1,10 @@
+'use client';
 /**
  * 排班管理页 — Staff Scheduling Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🛒前台主管
  * 类型: D-角色操作界面
  * 功能: 门店排班查看、排班表编辑、排班冲突检测、人员统计
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import {

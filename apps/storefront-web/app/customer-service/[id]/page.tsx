@@ -1,10 +1,10 @@
+'use client';
 /**
  * 客服工单详情页 — Customer Service Ticket Detail (Next.js App Router Page)
  * 角色视角: 💁客服
  * 功能: 工单详情查看、状态流转、回复处理、关闭工单
  * 类型: B-页面创建
  */
-'use client';
 
 import React, { use, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';

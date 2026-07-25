@@ -1,3 +1,4 @@
+'use client';
 /**
  * 评价展示页 — Reviews Page (Next.js App Router Page)
  * B-页面: 面向C端用户的评价浏览
@@ -5,7 +6,6 @@
  *
  * 功能: 查看门店评价、评分分布、按评分/时间排序、标签筛选
  */
-'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import {

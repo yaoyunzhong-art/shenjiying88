@@ -1,9 +1,9 @@
+'use client';
 /**
  * 会员等级分布可视化仪表板 — Member Tier Distribution Dashboard
  * 店长/运营视角：展示会员等级分布饼图/柱状图/趋势分析
  * C类 - 数据可视化组件页面
  */
-'use client';
 
 import React, { useMemo } from 'react';
 import {

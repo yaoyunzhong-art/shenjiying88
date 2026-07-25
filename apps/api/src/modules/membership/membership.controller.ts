@@ -39,6 +39,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 import { MembershipService, type MemberLevel } from './membership.service'
 import type {
@@ -55,6 +56,7 @@ import type {
 @Controller('membership')
 @UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@Public()
 export class MembershipController {
   constructor(private readonly svc: MembershipService) {}
 

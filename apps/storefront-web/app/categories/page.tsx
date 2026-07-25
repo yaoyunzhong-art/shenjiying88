@@ -1,10 +1,10 @@
+'use client';
 /**
  * 分类管理页 — Product Categories Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 类型: D-角色操作界面
  * 功能: 分类列表/搜索/筛选/排序/分页/统计概览/CRUD弹窗/层级结构
  */
-'use client';
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {

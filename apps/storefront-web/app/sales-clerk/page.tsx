@@ -1,10 +1,10 @@
+'use client';
 /**
  * 导购员工作台 — Sales Clerk Workbench (Next.js App Router Page)
  * 角色视角: 🛍️ 导购员
  * 类型: D-角色操作界面 (导购员工作台)
  * 功能: 聚合当日接待统计、待跟进客户列表、推荐话术、会员快速查询
  */
-'use client';
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { SalesClerkTool, PageShell, StatusBadge } from '@m5/ui';

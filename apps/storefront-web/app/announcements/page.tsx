@@ -1,8 +1,8 @@
+'use client';
 /**
  * 公告列表 — Announcements (storefront-web)
  * 增强: 模拟API加载(loading/error二态) + 深色主题 + 搜索 + 展开详情 + 无数据空态
  */
-'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 

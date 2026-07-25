@@ -1,9 +1,9 @@
+'use client';
 /**
  * 产品编辑页 — Product Edit Page (Next.js App Router Page)
  * 功能: 编辑产品/课程/活动/服务信息，提交保存，支持返回
  * 角色视角: 👔店长 / 🛒前台
  */
-'use client';
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
