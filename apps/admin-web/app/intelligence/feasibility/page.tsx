@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Feasibility - 神机营' }
@@ -27,6 +29,13 @@ interface FinancePanorama {
   paybackMonths: number; paybackWithDepreciation: number
   cityAvgComparison: { initialInvestment: number; monthlyFixedCost: number; monthlyRevenue: number; paybackMonths: number }
 }
+
+
+const permissionGate = {
+  requiredPermission: 'intelligence:feasibility:read',
+  title: '情报可行性分析 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 intelligence:feasibility:read 权限的账号可访问。',
+} as const
 
 export default function FeasibilityPage() {
   const [city, setCity] = useState('')

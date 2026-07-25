@@ -157,6 +157,13 @@ function buildColumns(): DataTableColumn<SafetyRecord>[] {
 
 // ==================== 主页面 ====================
 
+
+const permissionGate = {
+  requiredPermission: 'safety:read',
+  title: 'safety 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 safety:read 权限的账号可访问。',
+} as const
+
 export default function SafetyPage() {
   const [records, setRecords] = useState<SafetyRecord[]>(generateMockRecords);
   const [statusFilter, setStatusFilter] = useState<SafetyStatus | 'ALL'>('ALL');

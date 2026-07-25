@@ -119,6 +119,14 @@ export function validateDeviceForm(values: DeviceFormValues): FieldError[] {
 
 // ---- 页面 ----
 
+
+const permissionGate = {
+  requiredPermission: 'devices:form:read',
+  title: 'devices form 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 devices:form:read 权限的账号可访问。',
+} as const
+
+
 export default function DeviceFormPage() {
   const [values, setValues] = useState<DeviceFormValues>(DEFAULT_VALUES);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);

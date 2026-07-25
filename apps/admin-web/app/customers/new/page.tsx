@@ -1,4 +1,6 @@
 'use client'
+
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 /**
  * customers/new/page.tsx — 新建客户表单页 (admin-web)
  *
@@ -150,6 +152,13 @@ function getDefaultFormData(): NewCustomerFormData {
     remark: '',
   }
 }
+
+
+const permissionGate = {
+  requiredPermission: 'customers:new:read',
+  title: 'customers new 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 customers:new:read 权限的账号可访问。',
+} as const
 
 export default function NewCustomerPage() {
   const router = useRouter()

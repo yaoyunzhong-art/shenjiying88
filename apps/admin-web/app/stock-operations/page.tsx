@@ -181,6 +181,13 @@ function buildColumns(): DataTableColumn<StockOp>[] {
 
 // ==================== 主页面 ====================
 
+
+const permissionGate = {
+  requiredPermission: 'stock-operations:read',
+  title: 'stock-operations 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 stock-operations:read 权限的账号可访问。',
+} as const
+
 export default function StockOperationsPage() {
   const [allOps] = useState<StockOp[]>(generateMockOps);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');

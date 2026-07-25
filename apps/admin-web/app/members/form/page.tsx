@@ -138,6 +138,13 @@ function validateForm(values: TierBenefitsFormValues): FieldError[] {
 
 // ---- 页面组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'members:form:read',
+  title: 'members form 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 members:form:read 权限的账号可访问。',
+} as const
+
 export default function TierBenefitsFormPage() {
   const [values, setValues] = useState<TierBenefitsFormValues>(DEFAULT_VALUES);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);

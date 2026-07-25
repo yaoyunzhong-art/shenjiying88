@@ -132,6 +132,13 @@ export async function submitCoupon(data: CouponFormData): Promise<SubmitResult> 
 
 // ---- 页面组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'coupons:form:read',
+  title: 'coupons form 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 coupons:form:read 权限的账号可访问。',
+} as const
+
 export default function CouponFormPage() {
   const [formData, setFormData] = useState<CouponFormData>(emptyFormData);
   const [errors, setErrors] = useState<FormErrors>({});

@@ -41,6 +41,13 @@ const SUPPORTED_STATUS_TRANSITIONS: Record<StaffStatus, {
 
 // ─── 详情页 ────────────────────────────────────────
 
+
+const permissionGate = {
+  requiredPermission: 'staff:id:read',
+  title: 'staff 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 staff:id:read 权限的账号可访问。',
+} as const
+
 export default function StaffDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();

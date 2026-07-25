@@ -187,6 +187,13 @@ const styles: Record<string, React.CSSProperties> = {
 // 页面组件
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: 'member 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 member:read 权限的账号可访问。',
+} as const
+
 export default function MemberPage() {
   const [members, setMembers] = useState<Member[]>(DEFAULT_MEMBERS);
   const [search, setSearch] = useState('');

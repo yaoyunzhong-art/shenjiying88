@@ -74,6 +74,13 @@ const STATUS_MAP: Record<ReviewStatus, { label: string; variant: 'warning' | 'su
   hidden: { label: '已隐藏', variant: 'neutral' },
 };
 
+
+const permissionGate = {
+  requiredPermission: 'shop:order-reviews:read',
+  title: 'shop order-reviews 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 shop:order-reviews:read 权限的账号可访问。',
+} as const
+
 export default function OrderReviewsPage() {
   const [reviews, setReviews] = useState(MOCK_REVIEWS);
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | 'ALL'>('ALL');

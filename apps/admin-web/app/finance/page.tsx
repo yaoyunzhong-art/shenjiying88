@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * Phase-38 T168: 财务管理页面 (admin-web)
  *
@@ -69,6 +71,13 @@ function formatAmount(cents: number, currency = 'CNY'): string {
   const yuan = (cents / 100).toFixed(2)
   return currency === 'CNY' ? `¥${yuan}` : `${currency} ${yuan}`
 }
+
+
+const permissionGate = {
+  requiredPermission: 'finance:read',
+  title: 'finance 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 finance:read 权限的账号可访问。',
+} as const
 
 export default function FinancePage() {
   const [tenantId, setTenantId] = useState('demo-tenant')

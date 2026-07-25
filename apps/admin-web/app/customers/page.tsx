@@ -1,4 +1,6 @@
 'use client'
+
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 /**
  * customers/page.tsx — 门店客户管理列表页 (admin-web)
  *
@@ -66,6 +68,13 @@ function filterCustomers(
 
   return result
 }
+
+
+const permissionGate = {
+  requiredPermission: 'customers:read',
+  title: 'customers 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 customers:read 权限的账号可访问。',
+} as const
 
 export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('')

@@ -1,3 +1,7 @@
+'use client'
+
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * 帮助中心 — Help Center Page (Next.js App Router)
  *
@@ -86,6 +90,13 @@ function SearchNoResultsState() {
     />
   );
 }
+
+
+const permissionGate = {
+  requiredPermission: 'help-center:read',
+  title: 'help-center 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 help-center:read 权限的账号可访问。',
+} as const
 
 export default function HelpCenterPage() {
   const articles = getHelpArticles();

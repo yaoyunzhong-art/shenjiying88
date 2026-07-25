@@ -93,6 +93,14 @@ const STORE_OPTIONS = [
 
 // ---- 页面 ----
 
+
+const permissionGate = {
+  requiredPermission: 'stock-transfer:form:read',
+  title: 'stock-transfer form 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 stock-transfer:form:read 权限的账号可访问。',
+} as const
+
+
 export default function StockTransferFormPage() {
   const [values, setValues] = useState<TransferFormValues>(DEFAULT_VALUES);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);

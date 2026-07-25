@@ -25,6 +25,14 @@ import {
   MEMBER_CARD_STATUS_MAP,
   type MemberCard,
 } from '../../../members-data';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员卡详情访问受限',
+  description:
+    '会员卡详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看卡片状态、余额、持卡人信息与编辑记录。',
+} as const;
 
 // ---- 状态映射 ----
 
@@ -257,24 +265,26 @@ export default function MemberCardDetailPage() {
   // 未找到
   if (!card) {
     return (
-      <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
-        <h2 style={{ color: '#ef4444' }}>卡片不存在</h2>
-        <p>未找到 ID 为「{cardId}」的会员卡</p>
-        <button
-          onClick={() => router.push('/members/cards')}
-          style={{
-            marginTop: 16,
-            padding: '8px 20px',
-            background: '#3b82f6',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
-        >
-          返回卡片列表
-        </button>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+          <h2 style={{ color: '#ef4444' }}>卡片不存在</h2>
+          <p>未找到 ID 为「{cardId}」的会员卡</p>
+          <button
+            onClick={() => router.push('/members/cards')}
+            style={{
+              marginTop: 16,
+              padding: '8px 20px',
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            返回卡片列表
+          </button>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
@@ -282,15 +292,16 @@ export default function MemberCardDetailPage() {
   const statusInfo = MEMBER_CARD_STATUS_MAP[card.status];
 
   return (
-    <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="会员管理"
-        workspaceHref="/members"
-        detailLabel={card.cardNumber}
-        extraSegments={[
-          { label: '会员卡管理', href: '/members/cards' },
-        ]}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="会员管理"
+          workspaceHref="/members"
+          detailLabel={card.cardNumber}
+          extraSegments={[
+            { label: '会员卡管理', href: '/members/cards' },
+          ]}
+        />
 
       <DetailShell
         title={card.cardNumber}
@@ -499,16 +510,16 @@ export default function MemberCardDetailPage() {
         )}
       </DetailShell>
 
-      {/* ---- 状态变更弹窗 ---- */}
-      {statusDialogOpen && (
-        <Dialog
-          open
-          onClose={() => {
-            setStatusDialogOpen(false);
-            setTargetStatus(null);
-          }}
-          title="变更会员卡状态"
-        >
+        {/* ---- 状态变更弹窗 ---- */}
+        {statusDialogOpen && (
+          <Dialog
+            open
+            onClose={() => {
+              setStatusDialogOpen(false);
+              setTargetStatus(null);
+            }}
+            title="变更会员卡状态"
+          >
           <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 12 }}>
             当前状态：<StatusBadge label={statusInfo.label} variant={statusInfo.variant as 'success' | 'warning' | 'danger' | 'neutral'} size="sm" />
           </p>
@@ -559,16 +570,16 @@ export default function MemberCardDetailPage() {
               确认变更
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
+          </Dialog>
+        )}
 
-      {/* ---- 注销弹窗 ---- */}
-      {cancelDialogOpen && (
-        <Dialog
-          open
-          onClose={() => setCancelDialogOpen(false)}
-          title="确认注销会员卡"
-        >
+        {/* ---- 注销弹窗 ---- */}
+        {cancelDialogOpen && (
+          <Dialog
+            open
+            onClose={() => setCancelDialogOpen(false)}
+            title="确认注销会员卡"
+          >
           <p style={{ color: '#f87171', fontSize: 13, marginBottom: 8 }}>
             确定要注销会员卡「{card.cardNumber}」吗？
           </p>
@@ -593,9 +604,10 @@ export default function MemberCardDetailPage() {
               确认注销
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
-    </div>
+          </Dialog>
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }
 

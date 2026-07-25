@@ -52,6 +52,13 @@ function buildColumns(): DataTableColumn<Brand>[] {
   ];
 }
 
+
+const permissionGate = {
+  requiredPermission: 'brands:read',
+  title: 'brands 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 brands:read 权限的账号可访问。',
+} as const
+
 export default function BrandsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

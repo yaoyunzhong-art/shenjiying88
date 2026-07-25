@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 import { useCallback, useEffect, useState } from 'react'
 
 // ─── 类型定义 ──────────────────────────────────────
@@ -265,6 +267,13 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 // ── 主组件 ──
+
+
+const permissionGate = {
+  requiredPermission: 'procurement:read',
+  title: 'procurement 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 procurement:read 权限的账号可访问。',
+} as const
 
 export default function ProcurementPage() {
   const [orders, setOrders] = useState<ProcurementOrder[]>([])

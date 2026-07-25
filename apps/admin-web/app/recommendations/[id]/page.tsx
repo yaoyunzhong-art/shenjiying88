@@ -214,6 +214,13 @@ function formatNumber(n: number): string {
 
 // ---- 页面组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'recommendations:id:read',
+  title: 'recommendations 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 recommendations:id:read 权限的账号可访问。',
+} as const
+
 export default function RecommendationDetailPage({
   params,
 }: {

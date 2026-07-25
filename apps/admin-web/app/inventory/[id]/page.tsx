@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
+
 /**
  * Phase-37 T168: 库存详情页 (admin-web)
  *
@@ -101,6 +103,13 @@ function formatPrice(cents: number): string {
 }
 
 // ─── Detail Page Component ───────────────────────────────────────────────
+
+
+const permissionGate = {
+  requiredPermission: 'inventory:id:read',
+  title: 'inventory 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 inventory:id:read 权限的账号可访问。',
+} as const
 
 export default function InventoryDetailPage({
   params,

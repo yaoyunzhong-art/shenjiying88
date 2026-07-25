@@ -231,6 +231,13 @@ function DetailDialog({ customer, onClose }: DetailDialogProps) {
 
 // ─── 主页面组件 ───
 
+
+const permissionGate = {
+  requiredPermission: 'crm:read',
+  title: 'crm 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 crm:read 权限的账号可访问。',
+} as const
+
 export default function CrmPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<CrmCustomerStatus | 'all'>('all')

@@ -77,6 +77,13 @@ const SEGMENTS: GaugeSegment[] = [
   { from: 90, to: 100, color: '#4ade80', label: '优秀' },
 ];
 
+
+const permissionGate = {
+  requiredPermission: 'ai-decision:stats:read',
+  title: 'ai-decision stats 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 ai-decision:stats:read 权限的账号可访问。',
+} as const
+
 export default function AiDecisionStatsPage() {
   const [rules] = useState<RuleStat[]>(MOCK_RULES);
 

@@ -22,6 +22,14 @@ import {
   MOCK_MEMBER_LEVEL_CONFIGS,
   type MemberLevelConfig,
 } from '../../../members-data';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员等级详情访问受限',
+  description:
+    '会员等级详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级规则、积分区间、权益配置与状态变更记录。',
+} as const;
 
 // ---- 状态映射 ----
 
@@ -263,39 +271,42 @@ export default function MemberLevelDetailPage() {
   // 未找到
   if (!level) {
     return (
-      <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
-        <h2 style={{ color: '#ef4444' }}>等级不存在</h2>
-        <p>未找到 ID 为「{levelId}」的会员等级</p>
-        <button
-          onClick={() => router.push('/members/levels')}
-          style={{
-            marginTop: 16,
-            padding: '8px 20px',
-            background: '#3b82f6',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
-        >
-          返回等级列表
-        </button>
-      </div>
+      <AdminPermissionGate {...permissionGate}>
+        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+          <h2 style={{ color: '#ef4444' }}>等级不存在</h2>
+          <p>未找到 ID 为「{levelId}」的会员等级</p>
+          <button
+            onClick={() => router.push('/members/levels')}
+            style={{
+              marginTop: 16,
+              padding: '8px 20px',
+              background: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            返回等级列表
+          </button>
+        </div>
+      </AdminPermissionGate>
     );
   }
 
   const statusInfo = STATUS_MAP[level.status] ?? { label: level.status, variant: 'neutral' as const };
 
   return (
-    <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
-      <WorkspaceBreadcrumb
-        workspaceLabel="会员管理"
-        workspaceHref="/members"
-        extraSegments={[
-          { label: '等级列表', href: '/members/levels' },
-          { label: level.name },
-        ]}
-      />
+    <AdminPermissionGate {...permissionGate}>
+      <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
+        <WorkspaceBreadcrumb
+          workspaceLabel="会员管理"
+          workspaceHref="/members"
+          extraSegments={[
+            { label: '等级列表', href: '/members/levels' },
+            { label: level.name },
+          ]}
+        />
 
       <DetailShell
         title={level.name}
@@ -632,13 +643,13 @@ export default function MemberLevelDetailPage() {
         )}
       </DetailShell>
 
-      {/* ---- 状态变更弹窗 ---- */}
-      {statusDialogOpen && (
-        <Dialog
-          open
-          onClose={() => setStatusDialogOpen(false)}
-          title="变更等级状态"
-        >
+        {/* ---- 状态变更弹窗 ---- */}
+        {statusDialogOpen && (
+          <Dialog
+            open
+            onClose={() => setStatusDialogOpen(false)}
+            title="变更等级状态"
+          >
           <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 12 }}>
             当前状态：<StatusBadge variant={statusInfo.variant} label={statusInfo.label} />
           </p>
@@ -689,16 +700,16 @@ export default function MemberLevelDetailPage() {
               确认变更
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
+          </Dialog>
+        )}
 
-      {/* ---- 删除确认弹窗 ---- */}
-      {deleteDialogOpen && (
-        <Dialog
-          open
-          onClose={() => setDeleteDialogOpen(false)}
-          title="确认删除等级"
-        >
+        {/* ---- 删除确认弹窗 ---- */}
+        {deleteDialogOpen && (
+          <Dialog
+            open
+            onClose={() => setDeleteDialogOpen(false)}
+            title="确认删除等级"
+          >
           <p style={{ color: '#f87171', fontSize: 13, marginBottom: 8 }}>
             确定要删除等级「{level.name}」吗？此操作不可撤销。
           </p>
@@ -723,9 +734,10 @@ export default function MemberLevelDetailPage() {
               确认删除
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
-    </div>
+          </Dialog>
+        )}
+      </div>
+    </AdminPermissionGate>
   );
 }
 

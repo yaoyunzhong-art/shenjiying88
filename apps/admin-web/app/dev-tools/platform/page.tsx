@@ -5,6 +5,13 @@ import { PageShell, Card, Statistic, Tabs, Button, Space, Tag } from '@m5/ui';
 
 const DOC_ITEMS = ['收银API','会员API','库存API','报表API','活动API'];
 
+
+const permissionGate = {
+  requiredPermission: 'dev-tools:platform:read',
+  title: 'dev-tools platform 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 dev-tools:platform:read 权限的账号可访问。',
+} as const
+
 export default function OpenPlatformPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -31,6 +31,13 @@ const PARENT_OPTIONS = [
   { label: '食品饮料', value: '食品饮料' },
 ];
 
+
+const permissionGate = {
+  requiredPermission: 'categories:new:read',
+  title: 'categories new 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 categories:new:read 权限的账号可访问。',
+} as const
+
 export default function NewCategoryPage() {
   const router = useRouter();
   const toast = useToast();

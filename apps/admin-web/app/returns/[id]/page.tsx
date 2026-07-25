@@ -185,6 +185,13 @@ function getReturnDetail(id: string): ReturnDetail | undefined {
 
 // ---- 组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'returns:id:read',
+  title: 'returns 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 returns:id:read 权限的账号可访问。',
+} as const
+
 export default function ReturnDetailPage({ params }: { params: Promise<{ id: string }> }): React.ReactElement {
   const { id } = use(params);
   const [detail, setDetail] = useState<ReturnDetail | undefined>(() => getReturnDetail(id));

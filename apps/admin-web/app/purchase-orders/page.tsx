@@ -1,4 +1,6 @@
 'use client'
+
+import { AdminPermissionGate } from '../components/admin-permission-gate'
 /**
  * 采购单管理列表页 — Purchase Orders List Page
  * 角色视角：管理员 / 采购 / 店长
@@ -195,6 +197,13 @@ function buildTabs(stats: ReturnType<typeof computePurchaseOrderStats>): StatusT
 }
 
 // ---- 页面组件 ----
+
+
+const permissionGate = {
+  requiredPermission: 'purchase-orders:read',
+  title: 'purchase-orders 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 purchase-orders:read 权限的账号可访问。',
+} as const
 
 export default function PurchaseOrdersPage() {
   const [activeTab, setActiveTab] = useState<PurchaseOrderStatus | 'all'>('all');

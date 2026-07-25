@@ -121,6 +121,13 @@ function buildColumns(): DataTableColumn<ActivityItem>[] {
 
 // ---- 页面 ----
 
+
+const permissionGate = {
+  requiredPermission: 'member:activities:read',
+  title: 'member activities 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 member:activities:read 权限的账号可访问。',
+} as const
+
 export default function MemberActivitiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

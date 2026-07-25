@@ -141,6 +141,14 @@ const STATUS_FILTERS: Array<TransferStatus | 'ALL'> = ['ALL', 'pending', 'approv
 const TYPE_FILTERS: Array<TransferType | 'ALL'> = ['ALL', 'supply', 'return', 'move', 'emergency'];
 const URGENCY_FILTERS: Array<UrgencyLevel | 'ALL'> = ['ALL', 'normal', 'urgent', 'critical'];
 
+
+const permissionGate = {
+  requiredPermission: 'stock-transfer:read',
+  title: 'stock-transfer 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 stock-transfer:read 权限的账号可访问。',
+} as const
+
+
 export default function StockTransferListPage(): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

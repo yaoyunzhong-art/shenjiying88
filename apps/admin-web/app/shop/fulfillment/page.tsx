@@ -131,6 +131,13 @@ function formatMoney(amount: number): string {
 
 // ==================== 主页面组件 ====================
 
+
+const permissionGate = {
+  requiredPermission: 'shop:fulfillment:read',
+  title: 'shop fulfillment 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 shop:fulfillment:read 权限的账号可访问。',
+} as const
+
 export default function FulfillmentPage() {
   const [orders, setOrders] = useState<FulfillmentOrder[]>(MOCK_ORDERS);
   const [statusFilter, setStatusFilter] = useState<FulfillmentStatus | 'ALL'>('ALL');

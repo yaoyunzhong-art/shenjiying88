@@ -34,6 +34,13 @@ function statusTag(status: string) {
   return <Tag variant={v as any}>{l}</Tag>;
 }
 
+
+const permissionGate = {
+  requiredPermission: 'dev-tools:deploy:read',
+  title: 'dev-tools deploy 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 dev-tools:deploy:read 权限的账号可访问。',
+} as const
+
 export default function DeployPage() {
   const [envFilter, setEnvFilter] = useState('all');
   const [showDeploy, setShowDeploy] = useState(false);

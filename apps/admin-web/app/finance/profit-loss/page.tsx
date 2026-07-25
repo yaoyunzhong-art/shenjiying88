@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
+
 import React, { useCallback, useEffect, useState } from 'react'
 
 // ─── 类型定义 ──────────────────────────────────────
@@ -296,6 +298,13 @@ function PnLRow({ item, depth = 0 }: { item: PnLLineItem; depth?: number }) {
 }
 
 // ── 主组件 ──
+
+
+const permissionGate = {
+  requiredPermission: 'finance:profit-loss:read',
+  title: '损益报表 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 finance:profit-loss:read 权限的账号可访问。',
+} as const
 
 export default function ProfitLossPage() {
   const [report, setReport] = useState<PnLReport | null>(null)

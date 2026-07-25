@@ -177,6 +177,13 @@ function useAutoRefresh(callback: () => void, intervalMs: number) {
   return { active, toggle: () => setActive((a) => !a) }
 }
 
+
+const permissionGate = {
+  requiredPermission: 'finance:reconciliation:read',
+  title: '财务对账 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 finance:reconciliation:read 权限的账号可访问。',
+} as const
+
 export default function ReconciliationPage() {
   const [status, setStatus] = useState<ReconciliationStatus | null>(null)
   const [summary, setSummary] = useState<SummaryResponse | null>(null)

@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../../../components/admin-permission-gate'
+
 import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -28,6 +30,13 @@ const MOCK_DETAIL = {
   completedAt: null as string | null,
   note: '已检查扳机弹簧，需更换配件',
 }
+
+
+const permissionGate = {
+  requiredPermission: 'logistics:repairs:id:read',
+  title: 'logistics repairs 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 logistics:repairs:id:read 权限的账号可访问。',
+} as const
 
 export default function RepairDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)

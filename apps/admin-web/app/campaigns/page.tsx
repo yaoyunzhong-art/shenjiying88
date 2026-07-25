@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 import { useCallback, useEffect, useState } from 'react'
 import { Modal, Form, Input, Select, DatePicker, InputNumber, message } from 'antd'
 import dayjs from 'dayjs'
@@ -171,6 +173,13 @@ const defaultFormValues: CampaignFormValues = {
 }
 
 // ── 主组件 ──
+
+
+const permissionGate = {
+  requiredPermission: 'campaigns:read',
+  title: 'campaigns 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 campaigns:read 权限的账号可访问。',
+} as const
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])

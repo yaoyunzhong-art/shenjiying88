@@ -91,6 +91,13 @@ const CARD_STYLE: React.CSSProperties = {
 // 主页面
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'shop:inventory:read',
+  title: 'shop inventory 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 shop:inventory:read 权限的账号可访问。',
+} as const
+
 export default function InventoryPage() {
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig>({ key: 'name', dir: 'asc' });
 

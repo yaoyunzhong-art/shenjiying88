@@ -50,6 +50,13 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+
+const permissionGate = {
+  requiredPermission: 'logistics:repairs:read',
+  title: 'logistics repairs 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 logistics:repairs:read 权限的账号可访问。',
+} as const
+
 export default function RepairsPage() {
   const [repairs] = useState<RepairOrder[]>(MOCK_REPAIRS)
   const [statusFilter, setStatusFilter] = useState<RepairStatus | 'ALL'>('ALL')

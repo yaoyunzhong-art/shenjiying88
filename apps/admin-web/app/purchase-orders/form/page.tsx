@@ -1,4 +1,6 @@
 'use client'
+
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 /**
  * 采购单创建/编辑表单页 — Purchase Order Form Page (Next.js App Router Page)
  * 功能: 新建采购单，含字段验证、提交、错误处理
@@ -177,6 +179,13 @@ function FormFieldWithData(props: {
 }
 
 // ---- 表单页面组件 ----
+
+
+const permissionGate = {
+  requiredPermission: 'purchase-orders:form:read',
+  title: 'purchase-orders form 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 purchase-orders:form:read 权限的账号可访问。',
+} as const
 
 export default function PurchaseOrderFormPage() {
   const [values, setValues] = useState<PurchaseOrderFormValues>(DEFAULT_VALUES);

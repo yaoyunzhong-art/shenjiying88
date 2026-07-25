@@ -149,6 +149,13 @@ function MiniLineChart({
 // 主页面
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'shop:analytics:read',
+  title: 'shop analytics 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 shop:analytics:read 权限的账号可访问。',
+} as const
+
 export default function ShopAnalyticsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [productTab, setProductTab] = useState<'sales' | 'revenue'>('sales');

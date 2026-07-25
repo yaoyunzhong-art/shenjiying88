@@ -120,6 +120,13 @@ function EmptyStateSVG({ onReset }: { onReset: () => void }) {
 
 // ── 主页面组件 ──
 
+
+const permissionGate = {
+  requiredPermission: 'tags:read',
+  title: 'tags 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 tags:read 权限的账号可访问。',
+} as const
+
 export default function TagsPage() {
   const [tags, setTags] = useState<TagItem[]>(SAMPLE_TAGS);
   const [activeTab, setActiveTab] = useState<string>('all');

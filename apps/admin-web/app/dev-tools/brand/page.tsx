@@ -11,6 +11,13 @@ const BRANDS: Brand[] = [
   { id:'B-04',name:'极速卡丁车',domain:'speed.venuetech.com',status:'active' as string,templates:4,campaigns:15,emailCount:6,created:'2026-01'},
 ];
 
+
+const permissionGate = {
+  requiredPermission: 'dev-tools:brand:read',
+  title: 'dev-tools brand 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 dev-tools:brand:read 权限的账号可访问。',
+} as const
+
 export default function BrandPage() {
   const [search, setSearch] = useState('');
   const filtered = BRANDS.filter(b => !search || b.name.includes(search));

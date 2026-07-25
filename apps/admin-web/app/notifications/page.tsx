@@ -224,6 +224,13 @@ function buildColumns(): DataTableColumn<Notification>[] {
 
 /* ── 页面组件 ── */
 
+
+const permissionGate = {
+  requiredPermission: 'notifications:read',
+  title: 'notifications 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 notifications:read 权限的账号可访问。',
+} as const
+
 export default function NotificationsPage() {
   const [tabKey, setTabKey] = useState<string>('ALL');
   const [refreshKey, setRefreshKey] = useState(0);

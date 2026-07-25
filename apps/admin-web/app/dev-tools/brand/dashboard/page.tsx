@@ -21,6 +21,13 @@ const BRAND_METRICS: BrandMetric[] = [
   { brand:'极速卡丁车', posts:22, reach:28000, engagement:'2.8%', sentiment:'正85%' },
 ];
 
+
+const permissionGate = {
+  requiredPermission: 'dev-tools:brand:dashboard:read',
+  title: 'dev-tools brand dashboard 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 dev-tools:brand:dashboard:read 权限的账号可访问。',
+} as const
+
 export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

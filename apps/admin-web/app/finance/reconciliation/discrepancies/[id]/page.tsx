@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../../../../components/admin-permission-gate'
+
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -199,6 +201,13 @@ function OperationLogTimeline({ history }: { history: DiscrepancyDetail['history
 }
 
 // ── 主组件 ──
+
+
+const permissionGate = {
+  requiredPermission: 'finance:reconciliation:discrepancies:id:read',
+  title: 'finance reconciliation discrepancies 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 finance:reconciliation:discrepancies:id:read 权限的账号可访问。',
+} as const
 
 export default function DiscrepancyDetailPage() {
   const params = useParams()

@@ -30,6 +30,14 @@ import {
   MEMBER_TIER_MAP,
   type MemberLevelConfig,
 } from '../../members-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员等级管理访问受限',
+  description:
+    '会员等级管理页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级配置、会员覆盖、筛选结果与新增操作。',
+} as const;
 
 // ---- 等级状态映射 ----
 
@@ -390,11 +398,12 @@ export default function MemberLevelsPage() {
   }, [deleteTarget, toast]);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="会员等级管理"
-        subtitle="配置和管理会员等级体系，包括等级名称、积分区间、折扣率和权益"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="会员等级管理"
+          subtitle="配置和管理会员等级体系，包括等级名称、积分区间、折扣率和权益"
+        >
         {/* 统计卡片 */}
         <div
           style={{
@@ -505,19 +514,19 @@ export default function MemberLevelsPage() {
           onPageChange={pagination.setPage}
           onPageSizeChange={pagination.setPageSize}
         />
-      </PageShell>
+        </PageShell>
 
-      {/* ---- 新增等级弹窗 ---- */}
-      {createDialogOpen && (
-        <Dialog
-          open
-          onClose={() => {
-            setCreateDialogOpen(false);
-            setCreateForm(DEFAULT_CREATE_FORM);
-            setCreateErrors({});
-          }}
-          title="新增会员等级"
-        >
+        {/* ---- 新增等级弹窗 ---- */}
+        {createDialogOpen && (
+          <Dialog
+            open
+            onClose={() => {
+              setCreateDialogOpen(false);
+              setCreateForm(DEFAULT_CREATE_FORM);
+              setCreateErrors({});
+            }}
+            title="新增会员等级"
+          >
           <div style={{ display: 'grid', gap: 16, minWidth: 480 }}>
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
               <div data-field="name">
@@ -658,19 +667,19 @@ export default function MemberLevelsPage() {
               {isCreating ? '创建中...' : '确认创建'}
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
+          </Dialog>
+        )}
 
-      {/* ---- 删除确认弹窗 ---- */}
-      {deleteDialogOpen && deleteTarget && (
-        <Dialog
-          open
-          onClose={() => {
-            setDeleteDialogOpen(false);
-            setDeleteTarget(null);
-          }}
-          title="确认删除等级"
-        >
+        {/* ---- 删除确认弹窗 ---- */}
+        {deleteDialogOpen && deleteTarget && (
+          <Dialog
+            open
+            onClose={() => {
+              setDeleteDialogOpen(false);
+              setDeleteTarget(null);
+            }}
+            title="确认删除等级"
+          >
           <p style={{ color: '#f87171', fontSize: 14, marginBottom: 8 }}>
             确定要删除等级「{deleteTarget.name}」吗？此操作不可撤销。
           </p>
@@ -697,9 +706,10 @@ export default function MemberLevelsPage() {
               确认删除
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
-    </main>
+          </Dialog>
+        )}
+      </main>
+    </AdminPermissionGate>
   );
 }
 

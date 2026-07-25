@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Payment Channels - 神机营' }
@@ -76,6 +78,13 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 // ── 主组件 ──
+
+
+const permissionGate = {
+  requiredPermission: 'payment-channels:read',
+  title: 'payment-channels 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 payment-channels:read 权限的账号可访问。',
+} as const
 
 export default function PaymentChannelsPage() {
   const [channels, setChannels] = useState<PaymentChannel[]>([])

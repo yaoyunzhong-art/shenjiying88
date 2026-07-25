@@ -29,6 +29,14 @@ import {
   MEMBER_CARD_STATUS_MAP,
   type MemberCard,
 } from '../../members-data';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
+
+const permissionGate = {
+  requiredPermission: 'member:read',
+  title: '会员卡管理访问受限',
+  description:
+    '会员卡管理页已接入管理员本地 session，只有具备 member:read 的账号才能查看卡片列表、发行记录、状态筛选与余额信息。',
+} as const;
 
 // ---- 样式工具 ----
 
@@ -316,11 +324,12 @@ export default function MemberCardsPage() {
   }, [issueForm, toast, validateIssueForm]);
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="会员卡管理"
-        subtitle="管理所有会员卡，包括虚拟卡、实体卡和数字卡的发行、状态管理和余额查看"
-      >
+    <AdminPermissionGate {...permissionGate}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="会员卡管理"
+          subtitle="管理所有会员卡，包括虚拟卡、实体卡和数字卡的发行、状态管理和余额查看"
+        >
         {/* 统计卡片 */}
         <div
           style={{
@@ -460,19 +469,19 @@ export default function MemberCardsPage() {
           onPageChange={pagination.setPage}
           onPageSizeChange={pagination.setPageSize}
         />
-      </PageShell>
+        </PageShell>
 
-      {/* ---- 发行卡片弹窗 ---- */}
-      {issueDialogOpen && (
-        <Dialog
-          open
-          onClose={() => {
-            setIssueDialogOpen(false);
-            setIssueForm(DEFAULT_ISSUE_FORM);
-            setIssueErrors({});
-          }}
-          title="发行新会员卡"
-        >
+        {/* ---- 发行卡片弹窗 ---- */}
+        {issueDialogOpen && (
+          <Dialog
+            open
+            onClose={() => {
+              setIssueDialogOpen(false);
+              setIssueForm(DEFAULT_ISSUE_FORM);
+              setIssueErrors({});
+            }}
+            title="发行新会员卡"
+          >
           <div style={{ display: 'grid', gap: 16, minWidth: 420 }}>
             <div style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
               <div data-field="memberId">
@@ -583,9 +592,10 @@ export default function MemberCardsPage() {
               {isIssuing ? '发行中...' : '确认发行'}
             </SubmitButton>
           </div>
-        </Dialog>
-      )}
-    </main>
+          </Dialog>
+        )}
+      </main>
+    </AdminPermissionGate>
   );
 }
 

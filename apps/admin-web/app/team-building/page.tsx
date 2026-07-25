@@ -186,6 +186,13 @@ const LABEL_STYLE: React.CSSProperties = {
 // 主页面组件
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'team-building:read',
+  title: 'team-building 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 team-building:read 权限的账号可访问。',
+} as const
+
 export default function TeamBuildingPage() {
   const [activities, setActivities] = useState<TeamBuildingRecord[]>(DEFAULT_ACTIVITIES);
   const [searchTerm, setSearchTerm] = useState('');

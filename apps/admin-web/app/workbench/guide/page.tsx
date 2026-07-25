@@ -32,6 +32,13 @@ function generateServices(): ServiceItem[] {
   }));
 }
 
+
+const permissionGate = {
+  requiredPermission: 'workbench:guide:read',
+  title: 'workbench guide 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 workbench:guide:read 权限的账号可访问。',
+} as const
+
 export default function GuideWorkbenchPage() {
   const [loading, _setLoading] = useState(false);
   const [error, _setError] = useState<string | null>(null);

@@ -187,6 +187,13 @@ function EmptyCouponSVG() {
 
 // ---- 页面组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'coupon-templates:read',
+  title: 'coupon-templates 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 coupon-templates:read 权限的账号可访问。',
+} as const
+
 export default function CouponTemplatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [tabFilter, setTabFilter] = useState<CouponStatus | 'active' | 'ALL'>('active');

@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 import { useCallback, useEffect, useState, useMemo } from 'react'
 
 // ─── 类型定义 ──────────────────────────────────────
@@ -188,6 +190,13 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 // ── 主组件 ──
+
+
+const permissionGate = {
+  requiredPermission: 'alliances:read',
+  title: 'alliances 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 alliances:read 权限的账号可访问。',
+} as const
 
 export default function AlliancesPage() {
   const [partners, setPartners] = useState<AlliancePartner[]>([])

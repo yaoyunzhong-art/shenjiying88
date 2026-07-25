@@ -139,6 +139,13 @@ async function submitEdit(form: EditFormData): Promise<{ success: boolean }> {
 
 // ---- 页面组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'notifications:id:read',
+  title: 'notifications 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 notifications:id:read 权限的账号可访问。',
+} as const
+
 export default function NotificationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const notice = getNotificationById(id);

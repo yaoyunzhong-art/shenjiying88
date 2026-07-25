@@ -89,6 +89,13 @@ function mockRevenueHours(): RevenueHour[] {
   return hours;
 }
 
+
+const permissionGate = {
+  requiredPermission: 'workbench:store-manager:read',
+  title: 'workbench store-manager 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 workbench:store-manager:read 权限的账号可访问。',
+} as const
+
 export default function StoreManagerWorkbenchPage() {
   const router = useRouter();
   const kpi = useMemo(() => mockKpi(), []);

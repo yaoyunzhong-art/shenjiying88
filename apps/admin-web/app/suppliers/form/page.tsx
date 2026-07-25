@@ -1,4 +1,6 @@
 'use client'
+
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 /**
  * 供应商编辑/创建表单页 — Supplier Form Page (Next.js App Router Page)
  * 功能: 新建/编辑供应商信息，含字段验证、提交、错误处理
@@ -110,6 +112,13 @@ function validateForm(values: SupplierFormValues): FieldError[] {
 }
 
 // ---- 表单页面组件 ----
+
+
+const permissionGate = {
+  requiredPermission: 'suppliers:form:read',
+  title: 'suppliers form 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 suppliers:form:read 权限的账号可访问。',
+} as const
 
 export default function SupplierFormPage() {
   const [values, setValues] = useState<SupplierFormValues>(DEFAULT_VALUES);

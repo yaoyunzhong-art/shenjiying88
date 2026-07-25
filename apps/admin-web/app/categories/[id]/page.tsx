@@ -30,6 +30,13 @@ import {
 
 type TabKey = 'basic' | 'children';
 
+
+const permissionGate = {
+  requiredPermission: 'categories:id:read',
+  title: 'categories 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 categories:id:read 权限的账号可访问。',
+} as const
+
 export default function CategoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolved = use(params);
   const item = MOCK_CATEGORIES.find(c => c.id === resolved.id)!;

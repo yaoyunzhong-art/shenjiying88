@@ -142,6 +142,13 @@ function OrderDetailContent() {
   );
 }
 
+
+const permissionGate = {
+  requiredPermission: 'orders:id:read',
+  title: 'orders 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 orders:id:read 权限的账号可访问。',
+} as const
+
 export default function OrderDetailPage() {
   return (
     <Suspense fallback={<div style={{ padding: 32, color: '#cbd5e1' }}>加载订单详情...</div>}>

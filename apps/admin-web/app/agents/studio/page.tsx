@@ -1,4 +1,6 @@
 'use client'
+
+import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import React, { useState, useMemo, useCallback } from 'react'
 
 const styles = {
@@ -42,6 +44,13 @@ const SEED_CONFIGS: AgentConfigItem[] = [
 ]
 
 const MODEL_OPTIONS = ['全部', 'gpt-4o', 'gpt-4o-mini', 'claude-3-haiku', 'claude-3-sonnet']
+
+
+const permissionGate = {
+  requiredPermission: 'agents:studio:read',
+  title: 'agents studio 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 agents:studio:read 权限的账号可访问。',
+} as const
 
 export default function AgentStudioPage() {
   // 三态条件渲染

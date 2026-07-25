@@ -1,3 +1,7 @@
+'use client'
+
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * 退换货管理 — Return List Page (Next.js App Router)
  *
@@ -111,6 +115,13 @@ function ReturnEmptyState() {
     />
   );
 }
+
+
+const permissionGate = {
+  requiredPermission: 'returns:read',
+  title: 'returns 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 returns:read 权限的账号可访问。',
+} as const
 
 export default function ReturnsPage() {
   const returns = getReturns();

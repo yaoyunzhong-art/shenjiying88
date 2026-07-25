@@ -115,6 +115,13 @@ const STATUS_MAP: Record<DiscountStatus, { label: string; variant: 'success' | '
 // 主页面
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'shop:discount-rules:read',
+  title: 'shop discount-rules 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 shop:discount-rules:read 权限的账号可访问。',
+} as const
+
 export default function DiscountRulesPage() {
   const [activeTab, setActiveTab] = useState<'active' | 'scheduled' | 'inactive' | 'all'>('active');
 

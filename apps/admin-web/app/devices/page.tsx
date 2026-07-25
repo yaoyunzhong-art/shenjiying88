@@ -1,3 +1,7 @@
+'use client'
+
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * 设备管理 — Device List Page (Next.js App Router)
  *
@@ -108,6 +112,13 @@ function DeviceSearchNoResults() {
     />
   );
 }
+
+
+const permissionGate = {
+  requiredPermission: 'devices:read',
+  title: 'devices 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 devices:read 权限的账号可访问。',
+} as const
 
 export default function DevicesPage() {
   const devices = getDevices();

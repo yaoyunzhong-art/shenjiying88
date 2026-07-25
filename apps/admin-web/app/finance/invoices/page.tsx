@@ -121,6 +121,13 @@ function formatDate(iso: string | null): string {
 
 // ─── 组件 ─────────────────────────────────────────────────
 
+
+const permissionGate = {
+  requiredPermission: 'finance:invoices:read',
+  title: '发票管理 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 finance:invoices:read 权限的账号可访问。',
+} as const
+
 export default function FinanceInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices)
   const [statusFilter, setStatusFilter] = useState<string>('ALL')

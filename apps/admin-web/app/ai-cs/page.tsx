@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * Phase-41 T171: 智能客服工作台 (admin-web)
  *
@@ -268,6 +270,13 @@ function ConversationRow({ conv, isActive, onClick }: {
 }
 
 // ==================== 主页面 ====================
+
+
+const permissionGate = {
+  requiredPermission: 'ai-cs:read',
+  title: 'ai-cs 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 ai-cs:read 权限的账号可访问。',
+} as const
 
 export default function AiCsPage() {
   const [tenantId] = useState<string>(() => {

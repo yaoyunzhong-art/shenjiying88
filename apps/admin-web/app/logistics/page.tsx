@@ -405,6 +405,13 @@ function OrderDetailPanel({ order, onClose }: { order: LogisticsOrder; onClose: 
 
 // ─── 主页面组件 ────────────────────────────────────────
 
+
+const permissionGate = {
+  requiredPermission: 'logistics:read',
+  title: 'logistics 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 logistics:read 权限的账号可访问。',
+} as const
+
 export default function LogisticsPage() {
   const [activeTab, setActiveTab] = useState<LogisticsOrderStatus | 'all'>('all');
   const [_selectedIds] = useState<string[]>([]);

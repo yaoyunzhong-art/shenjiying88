@@ -96,6 +96,13 @@ function warrantyColor(days: number): string {
 
 // ---- 组件 ----
 
+
+const permissionGate = {
+  requiredPermission: 'equipment:read',
+  title: 'equipment 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 equipment:read 权限的账号可访问。',
+} as const
+
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<EquipmentItem[]>(defaultEquipment);
   const [tabKey, setTabKey] = useState<EquipmentTabKey>('ALL');

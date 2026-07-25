@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * Phase-40 T170: 推荐中心页面 (admin-web)
  *
@@ -253,6 +255,13 @@ function renderHeatmap(echarts: any, el: HTMLElement, summary: RecommendationSum
 }
 
 // ─── 主页面组件 ──────────────────────────────────────────
+
+
+const permissionGate = {
+  requiredPermission: 'recommendations:read',
+  title: 'recommendations 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 recommendations:read 权限的账号可访问。',
+} as const
 
 export default function RecommendationsPage() {
   const tenantId = 'default'

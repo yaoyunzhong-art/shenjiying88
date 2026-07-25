@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../../../components/admin-permission-gate'
+
 /**
  * Phase-41 T172: 规则执行结果详情页 (admin-web)
  *
@@ -127,6 +129,13 @@ function formatRelativeTime(iso: string): string {
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
+
+
+const permissionGate = {
+  requiredPermission: 'rules:executions:id:read',
+  title: 'rules executions 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 rules:executions:id:read 权限的账号可访问。',
+} as const
 
 export default function RuleExecutionDetailPage({
   params,

@@ -68,6 +68,13 @@ const MOCK_OUTBOUND_TASKS: OutboundTask[] = [
 // 组件
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'workbench:inventory-keeper:read',
+  title: 'workbench inventory-keeper 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 workbench:inventory-keeper:read 权限的账号可访问。',
+} as const
+
 export default function InventoryKeeperWorkbenchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();

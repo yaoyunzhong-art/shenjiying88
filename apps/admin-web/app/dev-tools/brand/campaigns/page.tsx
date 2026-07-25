@@ -15,6 +15,13 @@ const CAMPAIGNS: Campaign[] = [
 
 const CHANNELS = [...new Set(CAMPAIGNS.map(c=>c.channel))];
 
+
+const permissionGate = {
+  requiredPermission: 'dev-tools:brand:campaigns:read',
+  title: 'dev-tools brand campaigns 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 dev-tools:brand:campaigns:read 权限的账号可访问。',
+} as const
+
 export default function CampaignPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

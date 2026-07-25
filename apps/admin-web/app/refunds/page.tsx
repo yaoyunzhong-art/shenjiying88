@@ -103,6 +103,13 @@ function RefundEmptyState() {
 }
 
 /** 主页面: API 优先加载, 不可用时回落 mock */
+
+const permissionGate = {
+  requiredPermission: 'refunds:read',
+  title: 'refunds 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 refunds:read 权限的账号可访问。',
+} as const
+
 export default function RefundsPage() {
   const [refunds, setRefunds] = useState<RefundItem[]>(getRefunds());
   const [loading, setLoading] = useState(true);

@@ -161,6 +161,13 @@ function calculateCtr(ch: ChannelMetrics): string {
 
 // ─── 组件 ─────────────────────────────────────────────────
 
+
+const permissionGate = {
+  requiredPermission: 'marketing:id:performance:read',
+  title: 'marketing performance 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 marketing:id:performance:read 权限的账号可访问。',
+} as const
+
 export default function CampaignPerformancePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const [analytics, setAnalytics] = useState<CampaignAnalytics | null>(null);

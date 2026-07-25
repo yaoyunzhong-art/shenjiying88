@@ -1,5 +1,7 @@
 'use client'
 
+import { AdminPermissionGate } from '../components/admin-permission-gate'
+
 /**
  * Phase-42 T172: 智能营销工作台
  *
@@ -25,6 +27,13 @@ import {
 
 
 const TENANT = 'demo-tenant'
+
+
+const permissionGate = {
+  requiredPermission: 'marketing:read',
+  title: 'marketing 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 marketing:read 权限的账号可访问。',
+} as const
 
 export default function MarketingWorkbench() {
   const fallback = createFallbackMarketingWorkbenchState()

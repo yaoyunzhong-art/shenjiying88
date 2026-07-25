@@ -194,6 +194,13 @@ const styles: Record<string, React.CSSProperties> = {
 // 页面组件
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'campaign-rules:read',
+  title: 'campaign-rules 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 campaign-rules:read 权限的账号可访问。',
+} as const
+
 export default function CampaignRulesPage() {
   const [rules, setRules] = useState<CampaignRule[]>(DEFAULT_RULES);
   const [search, setSearch] = useState('');

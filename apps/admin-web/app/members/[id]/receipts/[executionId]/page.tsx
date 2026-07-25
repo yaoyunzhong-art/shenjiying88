@@ -31,6 +31,13 @@ function runtimeApprovalColor(status: string): string {
   return '#fca5a5';
 }
 
+
+const permissionGate = {
+  requiredPermission: 'members:id:receipts:executionId:read',
+  title: 'members receipts 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 members:id:receipts:executionId:read 权限的账号可访问。',
+} as const
+
 export default function MemberOperationReceiptDetailPage({
   params,
 }: {

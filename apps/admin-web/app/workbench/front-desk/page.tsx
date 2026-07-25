@@ -60,6 +60,13 @@ function generateQueue(): QueueItem[] {
 // 组件
 // ============================================================
 
+
+const permissionGate = {
+  requiredPermission: 'workbench:front-desk:read',
+  title: 'workbench front-desk 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 workbench:front-desk:read 权限的账号可访问。',
+} as const
+
 export default function FrontDeskWorkbenchPage() {
   const [basket, setBasket] = useState<BasketItem[]>([
     { id: 'b1', name: '经典咖啡（热）', sku: 'COF-H-001', quantity: 2, unitPrice: 28, subtotal: 56 },

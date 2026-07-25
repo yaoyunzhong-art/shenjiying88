@@ -385,6 +385,13 @@ function ProfitOverviewPanel({ data }: { data: { storeProfit: number; storeMargi
 
 // ─── 主组件 ─────────────────────────────────────────────
 
+
+const permissionGate = {
+  requiredPermission: 'finance:dashboard:read',
+  title: '财务健康仪表盘 访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 finance:dashboard:read 权限的账号可访问。',
+} as const
+
 export default function FinanceDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
