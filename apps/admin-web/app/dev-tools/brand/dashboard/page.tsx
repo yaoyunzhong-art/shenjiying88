@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface RevenueRow { month:string; revenue:number; cost:number; roi:string; leads:number; conversion:string; [key:string]:unknown; }
 interface BrandMetric { brand:string; posts:number; reach:number; engagement:string; sentiment:string; [key:string]:unknown; }
@@ -24,8 +25,9 @@ const BRAND_METRICS: BrandMetric[] = [
 
 const permissionGate = {
   requiredPermission: 'dev-tools:brand:dashboard:read',
-  title: 'dev-tools brand dashboard 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dev-tools:brand:dashboard:read 权限的账号可访问。',
+  title: '品牌看板访问受限',
+  description:
+    '品牌看板页已接入管理员本地 session，只有具备 dev-tools:brand:dashboard:read 的账号才能查看营收走势、社媒表现与周期切换。',
 } as const
 
 export default function BrandDashboardPage() {
@@ -37,12 +39,13 @@ export default function BrandDashboardPage() {
   const totalLeads = REVENUE.reduce((s,r)=>s+r.leads,0);
   const avgRoi = Math.round(REVENUE.reduce((s,r)=>s+parseInt(r.roi),0)/REVENUE.length);
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!REVENUE || REVENUE.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!REVENUE || REVENUE.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   return (
-    <PageShell title="品牌运营看板">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="品牌运营看板">
       <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>📊 品牌运营看板</h2>
@@ -84,6 +87,7 @@ export default function BrandDashboardPage() {
           </Card>
         </div>
       </Space>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

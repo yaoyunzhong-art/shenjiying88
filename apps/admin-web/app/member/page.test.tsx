@@ -603,6 +603,10 @@ const __dirname = dirname(__filename);
 const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 
 describe('member/page — hooks 验证 (源码静态分析)', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'member:read'"));
+  });
   it('使用函数组件', () => assert.ok(SRC.includes('function MemberPage') || SRC.includes('function ')));
   it('包含 JSX 返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含 PageShell 布局', () => assert.ok(SRC.includes('PageShell')));

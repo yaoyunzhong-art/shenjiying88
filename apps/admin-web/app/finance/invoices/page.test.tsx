@@ -7,11 +7,25 @@
  * 边界 — 筛选切换
  */
 
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import FinanceInvoicesPage from './page'
+import fs from 'node:fs'
+
+const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8')
+
+beforeEach(() => {
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['finance:invoices:read'],
+    }),
+  )
+})
 
 afterEach(() => {
   cleanup()
@@ -122,5 +136,12 @@ describe('B2 Invoice 发票管理页', () => {
     await waitFor(() => {
       assert.ok(screen.getByText('新建发票'))
     })
+  })
+})
+
+describe('Finance / Invoices — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'))
+    assert.ok(SRC.includes("requiredPermission: 'finance:invoices:read'"))
   })
 })

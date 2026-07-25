@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Select, Modal, Input } from '@m5/ui';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface Campaign { id:string; name:string; channel:string; budget:number; spent:number; impressions:number; clicks:number; conversions:number; roi:string; status:string; [key:string]:unknown; }
 
@@ -18,8 +19,9 @@ const CHANNELS = [...new Set(CAMPAIGNS.map(c=>c.channel))];
 
 const permissionGate = {
   requiredPermission: 'dev-tools:brand:campaigns:read',
-  title: 'dev-tools brand campaigns 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dev-tools:brand:campaigns:read 权限的账号可访问。',
+  title: '品牌活动访问受限',
+  description:
+    '品牌活动页已接入管理员本地 session，只有具备 dev-tools:brand:campaigns:read 的账号才能查看活动列表、渠道筛选与创建弹窗。',
 } as const
 
 export default function CampaignPage() {
@@ -32,12 +34,13 @@ export default function CampaignPage() {
   const totalSpent = CAMPAIGNS.reduce((s,c)=>s+c.spent,0);
   const totalImpressions = CAMPAIGNS.reduce((s,c)=>s+c.impressions,0);
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!CAMPAIGNS || CAMPAIGNS.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!CAMPAIGNS || CAMPAIGNS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   return (
-    <PageShell title="营销活动">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="营销活动">
       <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>📈 营销活动</h2>
@@ -83,6 +86,7 @@ export default function CampaignPage() {
           </Space>
         </Modal>
       </Space>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

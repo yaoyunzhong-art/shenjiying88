@@ -40,6 +40,10 @@ describe('BrandDashboardPage — 品牌表现', () => {
 });
 
 describe('Dev Tools / Brand / Dashboard — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'dev-tools:brand:dashboard:read'"));
+  });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('onChange={')));

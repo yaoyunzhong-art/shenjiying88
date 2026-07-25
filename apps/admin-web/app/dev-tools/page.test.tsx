@@ -638,6 +638,10 @@ describe('dev-tools — 边界与反例', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Dev Tools — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'dev-tools:read'"));
+  });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));

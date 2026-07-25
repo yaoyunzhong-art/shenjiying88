@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Select } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface Brand { id:string; name:string; domain:string; status:string; templates:number; campaigns:number; emailCount:number; created:string; [key:string]:unknown; }
 const BRANDS: Brand[] = [
@@ -14,8 +15,9 @@ const BRANDS: Brand[] = [
 
 const permissionGate = {
   requiredPermission: 'dev-tools:brand:read',
-  title: 'dev-tools brand 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dev-tools:brand:read 权限的账号可访问。',
+  title: '品牌运营工具访问受限',
+  description:
+    '品牌运营工具页已接入管理员本地 session，只有具备 dev-tools:brand:read 的账号才能查看品牌列表、域名信息与管理动作。',
 } as const
 
 export default function BrandPage() {
@@ -23,7 +25,8 @@ export default function BrandPage() {
   const filtered = BRANDS.filter(b => !search || b.name.includes(search));
 
   return (
-    <PageShell title="品牌运营">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="品牌运营">
       <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>🔐 品牌运营</h2>
@@ -68,6 +71,7 @@ export default function BrandPage() {
           />
         </Card>
       </Space>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

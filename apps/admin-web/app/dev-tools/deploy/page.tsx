@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal, Select, Progress } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 interface Deployment { id:string; name:string; version:string; env:string; status:string; time:string; duration:string; deployer:string; commits:number; notes:string; [key:string]:unknown; }
 
@@ -37,8 +38,9 @@ function statusTag(status: string) {
 
 const permissionGate = {
   requiredPermission: 'dev-tools:deploy:read',
-  title: 'dev-tools deploy 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dev-tools:deploy:read 权限的账号可访问。',
+  title: '部署管理访问受限',
+  description:
+    '部署管理页已接入管理员本地 session，只有具备 dev-tools:deploy:read 的账号才能查看部署记录、环境筛选与回滚动作。',
 } as const
 
 export default function DeployPage() {
@@ -49,7 +51,8 @@ export default function DeployPage() {
   const successRate = Math.round(prodDeploys.filter(d=>d.status==='success').length/prodDeploys.length*100);
 
   return (
-    <PageShell title="部署管理 (P-53)">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="部署管理 (P-53)">
       <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>🔧 部署管理 (P-53)</h2>
@@ -93,6 +96,7 @@ export default function DeployPage() {
           </Space>
         </Modal>
       </Space>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

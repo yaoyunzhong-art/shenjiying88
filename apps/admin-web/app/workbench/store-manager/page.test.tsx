@@ -171,6 +171,14 @@ function getTaskByStatus(tasks: TaskItem[], status: TaskStatus): TaskItem[] {
 
 function setup() {
   cleanup();
+  window.localStorage.setItem(
+    'admin_user',
+    JSON.stringify({
+      userId: 'admin:test',
+      role: 'super-admin',
+      permissions: ['workbench.read'],
+    }),
+  );
   return render(React.createElement(StoreManagerWorkbenchPage));
 }
 
@@ -415,6 +423,10 @@ describe('store-manager: 业务逻辑', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Workbench / Store Manager — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'workbench.read'"));
+  });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('onChange={')));

@@ -128,6 +128,10 @@ test('🎮 导玩员视角: 包含 STATUS_V 映射表', () => {
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Workbench / Guide — hooks验证', () => {
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(SRC.includes("requiredPermission: 'workbench.read'"));
+  });
   it('包含useState等hook', () => assert.ok(SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
   it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));

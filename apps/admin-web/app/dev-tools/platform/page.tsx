@@ -2,14 +2,16 @@
 'use client';
 import { useState } from 'react';
 import { PageShell, Card, Statistic, Tabs, Button, Space, Tag } from '@m5/ui';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 const DOC_ITEMS = ['收银API','会员API','库存API','报表API','活动API'];
 
 
 const permissionGate = {
   requiredPermission: 'dev-tools:platform:read',
-  title: 'dev-tools platform 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dev-tools:platform:read 权限的账号可访问。',
+  title: '开放平台访问受限',
+  description:
+    '开放平台页已接入管理员本地 session，只有具备 dev-tools:platform:read 的账号才能查看 API 文档、Webhook 与调用日志。',
 } as const
 
 export default function OpenPlatformPage() {
@@ -17,12 +19,13 @@ export default function OpenPlatformPage() {
   const [error, setError] = useState<string | null>(null)
   const [tabKey, setTabKey] = useState('api');
 
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>数据获取失败: {error}</div>
-  if (!DOC_ITEMS || DOC_ITEMS.length === 0) return <div>暂无数据</div>
+  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
+  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
+  if (!DOC_ITEMS || DOC_ITEMS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
 
   return (
-    <PageShell title="开放平台">
+    <AdminPermissionGate {...permissionGate}>
+      <PageShell title="开放平台">
       <Space style={{width:'100%',flexDirection:'column',gap:16}}>
         <div style={{display:'flex',justifyContent:'space-between'}}>
           <h2 style={{color:'#f8fafc',margin:0}}>🔐 开放平台</h2>
@@ -53,6 +56,7 @@ export default function OpenPlatformPage() {
         {tabKey === 'webhook' && <Card><div style={{color:'#94a3b8',textAlign:'center',padding:40}}>Webhook配置 (开发中)</div></Card>}
         {tabKey === 'logs' && <Card><div style={{color:'#94a3b8',textAlign:'center',padding:40}}>调用日志 (开发中)</div></Card>}
       </Space>
-    </PageShell>
+      </PageShell>
+    </AdminPermissionGate>
   );
 }

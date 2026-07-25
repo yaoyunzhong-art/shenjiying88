@@ -176,6 +176,10 @@ describe('Finance / Reconciliation — 批量操作', () => {
 // ─── 6. 通用 ──────────────────────────────────────
 
 describe('Finance / Reconciliation — 通用', () => {
+  it('应接入管理员权限边界', () => {
+    has('AdminPermissionGate');
+    has("requiredPermission: 'finance:reconciliation:read'");
+  });
   it('useState 声明', () => {
     assert.ok(SRC.includes('useState'));
     assert.ok(SRC.includes('const ['));
