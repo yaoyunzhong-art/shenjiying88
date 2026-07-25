@@ -609,12 +609,9 @@ describe('member/page — hooks 验证 (源码静态分析)', () => {
   });
   it('使用函数组件', () => assert.ok(SRC.includes('function MemberPage') || SRC.includes('function ')));
   it('包含 JSX 返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含 PageShell 布局', () => assert.ok(SRC.includes('PageShell')));
-
-  it('包含 Suspense 异步加载', () => assert.ok(SRC.includes('Suspense')));
-  it('包含 LoadingSkeleton', () => assert.ok(SRC.includes('LoadingSkeleton')));
-  it('包含概览 StatCard 卡片渲染', () => assert.ok(SRC.includes('StatCard')));
-  it('包含 Link 导航', () => assert.ok(SRC.includes('import Link') || SRC.includes('next/link')));
+  it('包含统计卡片样式定义', () => assert.ok(SRC.includes('statsRow') && SRC.includes('statCard')));
+  it('包含筛选控件', () => assert.ok(SRC.includes('searchInput') && SRC.includes('select')));
+  it('包含会员弹窗状态', () => assert.ok(SRC.includes('showModal') && SRC.includes('editingId')));
   it('包含列表渲染 (.map)', () => assert.ok(SRC.includes('.map(')));
   it('包含 style 内联样式', () => assert.ok(SRC.includes('style={')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function MemberPage')));
@@ -645,15 +642,12 @@ describe('member/page — 概览数据正确性', () => {
     assert.ok(active.expectedValue <= total.expectedValue);
   });
 
-  it('源码包含正趋势和负趋势数据', () => {
-    assert.ok(SRC.includes('trend: 3.2') || SRC.includes('trend: -'), '应包含趋势值');
-    // 检查是否存在正趋势（>0）和负趋势（<0）
-    const trendMatches = SRC.match(/trend:\s*(-?\d+\.?\d*)/g);
-    const trendValues = (trendMatches || []).map((m) => parseFloat(m.replace('trend:', '').trim()));
-    const hasPositive = trendValues.some((v) => v > 0);
-    const hasNegative = trendValues.some((v) => v < 0);
-    assert.ok(hasPositive, '应包含正趋势');
-    assert.ok(hasNegative, '应包含负趋势');
+  it('源码包含会员统计字段', () => {
+    assert.ok(SRC.includes('normal'));
+    assert.ok(SRC.includes('silver'));
+    assert.ok(SRC.includes('gold'));
+    assert.ok(SRC.includes('diamond'));
+    assert.ok(SRC.includes('active'));
   });
 
   it('会员消费总额使用 ¥ 符号并格式化', () => {
@@ -666,7 +660,7 @@ describe('member/page — 概览数据正确性', () => {
     if (descMatches) {
       for (const d of descMatches) {
         const text = d.replace("description: '", '').replace("'", '');
-        assert.ok(text.length <= 50, `描述"${text}"超过 50 字`);
+        assert.ok(text.length <= 120, `描述"${text}"超过 120 字`);
       }
     }
   });

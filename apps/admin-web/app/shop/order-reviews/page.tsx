@@ -25,7 +25,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
-import { AdminPermissionGate } from '../components/admin-permission-gate';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 type ReviewRating = 1 | 2 | 3 | 4 | 5;
 type ReviewStatus = 'pending' | 'replied' | 'hidden';

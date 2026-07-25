@@ -14,7 +14,7 @@ import Footer from '../components/Footer';
 import FloatingContact from '../components/FloatingContact';
 import ExitIntentPopup from '../components/ExitIntentPopup';
 import ConversionTracker from '../components/ConversionTracker';
-import DataShowcase, { PRESET_DATA_SHOWCASES } from '../components/DataShowcase';
+import DataShowcase, { PRESET_DATA_SHOWCASES, type DataShowcaseItem } from '../components/DataShowcase';
 import { BigAntsTransitions } from '../lib/bigants-design';
 import { conversionService } from '../lib/conversion-service';
 
@@ -641,7 +641,7 @@ export default function ResourcesPage() {
             <DataShowcase
               title={PRESET_DATA_SHOWCASES.industryStats.title}
               subtitle={PRESET_DATA_SHOWCASES.industryStats.subtitle}
-              items={PRESET_DATA_SHOWCASES.industryStats.items as any}
+              items={PRESET_DATA_SHOWCASES.industryStats.items as DataShowcaseItem[]}
               columns={4}
             />
           </div>

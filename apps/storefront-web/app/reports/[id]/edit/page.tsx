@@ -192,7 +192,7 @@ export default function ReportsEditPage() {
 
   const handleField = useCallback(<K extends keyof EditFormData>(field: K, value: EditFormData[K]) => {
     setForm(p => ({ ...p, [field]: value }));
-    if (field in errors) setErrors(p => { const r = { ...p }; delete (r as any)[field]; return r; });
+    if (field in errors) setErrors(p => { const r = { ...p }; delete (r as Record<string, unknown>)[field]; return r; });
     setFeedback(null);
   }, [errors]);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState, useMemo, useCallback, useEffect } from 'react';
+import { AdminPermissionGate } from '../components/admin-permission-gate';
 
 import {
   DataTable,
@@ -579,9 +580,11 @@ const permissionGate = {
 
 export default function CouponsPage() {
   return (
-    <Suspense fallback={<CouponsPageFallback />}>
-      <CouponsPageContent />
-    </Suspense>
+    <AdminPermissionGate {...permissionGate}>
+      <Suspense fallback={<CouponsPageFallback />}>
+        <CouponsPageContent />
+      </Suspense>
+    </AdminPermissionGate>
   );
 }
 

@@ -23,7 +23,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
-import { AdminPermissionGate } from '../components/admin-permission-gate';
+import { AdminPermissionGate } from '../../components/admin-permission-gate';
 
 // ============================================================
 // 类型

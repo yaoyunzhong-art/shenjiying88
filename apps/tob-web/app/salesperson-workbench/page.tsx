@@ -26,8 +26,7 @@ import {
   type RecentCustomer,
 } from './salesperson-data';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const RecentDataTable = DataTable as any;
+const RecentDataTable: React.ComponentType<React.ComponentProps<typeof DataTable>> = DataTable;
 
 // ---- 样式 ----
 

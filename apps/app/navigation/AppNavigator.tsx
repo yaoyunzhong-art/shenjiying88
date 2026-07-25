@@ -216,7 +216,7 @@ function WorkHomeScreen() {
           <View key={item.screen} style={{ width: '30%' }}>
             <TouchableOpacity
               style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
-              onPress={() => navigation.navigate(item.screen as any)}
+              onPress={() => navigation.navigate(item.screen as never)}
             >
               <Text style={{ fontSize: 32 }}>{item.icon}</Text>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B', marginTop: 8 }}>{item.label}</Text>

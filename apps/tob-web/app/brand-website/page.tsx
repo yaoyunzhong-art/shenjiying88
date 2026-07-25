@@ -138,7 +138,7 @@ export default function HomePage() {
         <main>
           <HeroSection />
 
-          <BusinessSection {...({ cards: BUSINESS_CARDS } as any)} />
+          <BusinessSection />
 
           <section className="py-24 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4">
