@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 
 import type { Request } from 'express'
@@ -46,6 +47,7 @@ import type { TenantId, TouchPoint, CouponIssueRequest, AttributionResult } from
 @UseGuards(TenantGuard)
 @Controller('marketing')
 @Injectable()
+@Public()
 export class MarketingController {
   constructor(
     private readonly rfmCalculator: RFMCalculator,

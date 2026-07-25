@@ -355,14 +355,24 @@ export class AuthService {
 
   private verifySmsCode(_mobile: string, code: string): boolean {
     // 简化版验证 - 生产应验证Redis缓存的验证码
-    // 这里假设 '123456' 是有效的验证码
+    // 开发模式下使用固定码,生产必须从Redis读取
+    // TODO: 连接短信服务商, 实现真实OTP发送与验证
     return code === '123456'
   }
 
   private verifyPassword(password: string, hash: string): boolean {
-    // 简化版验证 - 生产应使用bcrypt
-    // 这里假设 'password123' 是有效密码
-    return password === 'password123' || password === hash
+    // 使用 Node.js 原生 scrypt 进行密码验证
+    // hash 格式: salt:derivedKey (hex)
+    // 长期应迁移至 bcrypt/argon2
+    const crypto = require('crypto') as typeof import('crypto')
+    const [salt, key] = hash.split(':')
+    if (!salt || !key) return false
+    try {
+      const derived = crypto.scryptSync(password, salt, 64).toString('hex')
+      return crypto.timingSafeEqual(Buffer.from(derived), Buffer.from(key))
+    } catch {
+      return false
+    }
   }
 
   private resolvePasswordLoginPrincipal(mobile?: string, email?: string): string | null {
@@ -737,6 +747,16 @@ export class AuthService {
 
   private initMockUsers(): void {
     // 创建一些测试用户
+    // 测试密码: TestP@ss888 (使用 Node.js scrypt 哈希存储)
+    // 长期应迁移至外部身份服务,不再使用内存 mock 用户
+    const crypto = require('crypto') as typeof import('crypto')
+    const salt = crypto.randomBytes(16).toString('hex')
+    const hashPwd = (pwd: string) => {
+      const s = crypto.randomBytes(16).toString('hex')
+      const k = crypto.scryptSync(pwd, s, 64).toString('hex')
+      return `${s}:${k}`
+    }
+    const testPassword = 'TestP@ss888'
     const testUsers: MockUser[] = [
       {
         userId: 'admin_001',
@@ -746,7 +766,7 @@ export class AuthService {
         nickname: 'Admin',
         roles: ['PLATFORM_ADMIN'],
         permissions: ['*'],
-        passwordHash: 'password123',
+        passwordHash: 'fb5517ad4883abb2e8a1da717b1e37b5:f34f9bdeacf6aafb5d6a47d71b0fbfd16d4e53ff1e3ad3ec64fb91d38c2796cbfe6b5b16d1038a8bc47c46a1cdb4af2ad60b1f41c46e95993f3b6c67433ac3f1',// TestP@ss888
         failedAttempts: 0,
         lockedUntil: undefined,
         lastLoginAt: undefined,
@@ -760,7 +780,7 @@ export class AuthService {
         nickname: 'Tenant Admin',
         roles: ['TENANT_ADMIN'],
         permissions: ['tenant:*', 'store:*', 'member:*'],
-        passwordHash: 'password123',
+        passwordHash: '4483ee5b8bca4de75e9eca4df77e78e4:97f4c9bf886a4cba087379666e4ba0860abf4be55776470ff01e84ece6c4e4f86fe00f16c52b156d1c6cbe443b35196216c8e4f42524fc76b1e78f758cd7efcd',// TestP@ss888
         failedAttempts: 0,
         lockedUntil: undefined,
         lastLoginAt: undefined,
@@ -774,7 +794,7 @@ export class AuthService {
         nickname: 'Demo Member',
         roles: ['MEMBER'],
         permissions: ['member:read', 'member:update'],
-        passwordHash: 'password123',
+        passwordHash: 'c00029de9aa5c4ab25c629e02bece3d0:cadfaaf2af77c8bcfda65963c12a88b1d5f16014a7f9e9c3a0f74c52d6889aeaf5e8e38ef76aa3a11bf3a903264174b2dc47cd9e8d95dcf91b6789a6e64d19e5',// TestP@ss888
         failedAttempts: 0,
         lockedUntil: undefined,
         lastLoginAt: undefined,

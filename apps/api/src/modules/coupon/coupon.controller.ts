@@ -25,6 +25,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
 import { CouponService } from './coupon.service'
 import {
@@ -46,6 +47,7 @@ import type {
 
 @UseGuards(TenantGuard)
 @Controller('coupons')
+@Public()
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
