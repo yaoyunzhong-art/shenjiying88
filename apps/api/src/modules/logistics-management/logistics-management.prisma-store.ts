@@ -44,55 +44,21 @@ export class LogisticsManagementPrismaStore implements OnApplicationBootstrap {
     for (const k of kpis) this.logisticsKPIStore.set(k.id, k as unknown as LogisticsManagementMetrics)
   }
 
-  async persistSupplier(id: string): Promise<void> {
-    const entity = this.supplierStore.get(id)
+  private async persistEntity<T>(
+    store: Map<string, T>,
+    id: string,
+    prismaModel: { upsert: (args: { where: { id: string }; create: T; update: T }) => Promise<unknown> },
+  ): Promise<void> {
+    const entity = store.get(id)
     if (!entity) return
-    await this.prisma.supplier.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
+    await prismaModel.upsert({ where: { id }, create: entity, update: entity })
   }
 
-  async persistPurchaseOrder(id: string): Promise<void> {
-    const entity = this.purchaseOrderStore.get(id)
-    if (!entity) return
-    await this.prisma.purchaseOrder.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistStockItem(id: string): Promise<void> {
-    const entity = this.stockItemStore.get(id)
-    if (!entity) return
-    await this.prisma.stockItem.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistMaintenanceTask(id: string): Promise<void> {
-    const entity = this.maintenanceTaskStore.get(id)
-    if (!entity) return
-    await this.prisma.maintenanceTask.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistLogisticsKPI(id: string): Promise<void> {
-    const entity = this.logisticsKPIStore.get(id)
-    if (!entity) return
-    await this.prisma.logisticsKPI.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
+  async persistSupplier(id: string): Promise<void> { return this.persistEntity(this.supplierStore, id, this.prisma.supplier) }
+  async persistPurchaseOrder(id: string): Promise<void> { return this.persistEntity(this.purchaseOrderStore, id, this.prisma.purchaseOrder) }
+  async persistStockItem(id: string): Promise<void> { return this.persistEntity(this.stockItemStore, id, this.prisma.stockItem) }
+  async persistMaintenanceTask(id: string): Promise<void> { return this.persistEntity(this.maintenanceTaskStore, id, this.prisma.maintenanceTask) }
+  async persistLogisticsKPI(id: string): Promise<void> { return this.persistEntity(this.logisticsKPIStore, id, this.prisma.logisticsKPI) }
 
   resetAll(): void {
     this.supplierStore.clear()

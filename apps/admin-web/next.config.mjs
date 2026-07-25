@@ -66,16 +66,6 @@ const nextConfig = {
   experimental: {
     workerThreads: false,
   },
-  webpack: (config) => {
-    // Ensure CJS packages in transpilePackages get proper ESM interop
-    config.module.rules.push({
-      test: /node_modules\/@m5\/(ui|domain)\/dist\/index\.js$/,
-      resolve: {
-        fullySpecified: false,
-      },
-    });
-    return config;
-  },
 
   // V23 Day15 L1: 安全响应头
   async headers() {

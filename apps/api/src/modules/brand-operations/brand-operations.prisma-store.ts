@@ -92,96 +92,27 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
 
   /**
    * 持久化资产到数据库（写时同步）
+   * 泛型辅助方法消除 as any 类型断言
    */
-  async persistAsset(id: string): Promise<void> {
-    const entity = this.assetStore.get(id)
+  private async persistEntity<T>(
+    store: Map<string, T>,
+    id: string,
+    prismaModel: { upsert: (args: { where: { id: string }; create: T; update: T }) => Promise<unknown> },
+  ): Promise<void> {
+    const entity = store.get(id)
     if (!entity) return
-    await this.prisma.brandAsset.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
+    await prismaModel.upsert({ where: { id }, create: entity, update: entity })
   }
 
-  async persistCampaign(id: string): Promise<void> {
-    const entity = this.campaignStore.get(id)
-    if (!entity) return
-    await this.prisma.brandCampaign.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistTemplate(id: string): Promise<void> {
-    const entity = this.templateStore.get(id)
-    if (!entity) return
-    await this.prisma.brandCampaignTemplate.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistCollaboration(id: string): Promise<void> {
-    const entity = this.collaborationStore.get(id)
-    if (!entity) return
-    await this.prisma.collaboration.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistChannel(id: string): Promise<void> {
-    const entity = this.brandChannelStore.get(id)
-    if (!entity) return
-    await this.prisma.brandChannel.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistKPI(id: string): Promise<void> {
-    const entity = this.brandKPIStore.get(id)
-    if (!entity) return
-    await this.prisma.brandKPI.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistRecycleBin(id: string): Promise<void> {
-    const entity = this.recycleBinStore.get(id)
-    if (!entity) return
-    await this.prisma.recycleBinItem.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistExportRecord(id: string): Promise<void> {
-    const entity = this.exportRecordStore.get(id)
-    if (!entity) return
-    await this.prisma.exportRecord.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
-
-  async persistCampaignSchedule(id: string): Promise<void> {
-    const entity = this.campaignScheduleStore.get(id)
-    if (!entity) return
-    await this.prisma.campaignSchedule.upsert({
-      where: { id },
-      create: entity as any,
-      update: entity as any,
-    })
-  }
+  async persistAsset(id: string): Promise<void> { return this.persistEntity(this.assetStore, id, this.prisma.brandAsset) }
+  async persistCampaign(id: string): Promise<void> { return this.persistEntity(this.campaignStore, id, this.prisma.brandCampaign) }
+  async persistTemplate(id: string): Promise<void> { return this.persistEntity(this.templateStore, id, this.prisma.brandCampaignTemplate) }
+  async persistCollaboration(id: string): Promise<void> { return this.persistEntity(this.collaborationStore, id, this.prisma.collaboration) }
+  async persistChannel(id: string): Promise<void> { return this.persistEntity(this.brandChannelStore, id, this.prisma.brandChannel) }
+  async persistKPI(id: string): Promise<void> { return this.persistEntity(this.brandKPIStore, id, this.prisma.brandKPI) }
+  async persistRecycleBin(id: string): Promise<void> { return this.persistEntity(this.recycleBinStore, id, this.prisma.recycleBinItem) }
+  async persistExportRecord(id: string): Promise<void> { return this.persistEntity(this.exportRecordStore, id, this.prisma.exportRecord) }
+  async persistCampaignSchedule(id: string): Promise<void> { return this.persistEntity(this.campaignScheduleStore, id, this.prisma.campaignSchedule) }
 
   /**
    * 重置所有数据（用于测试）
