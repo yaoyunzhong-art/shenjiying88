@@ -1,7 +1,7 @@
 # 🧠 shenjiying88 长期知识 (MEMORY.md)
 
-> 最后更新: 2026-07-18 05:30 CST (晨间收尾 · Pulse-Nightly-18 · +3链链34-36 · +58 subtests · 36链总 ✅ · 营销活动/企业签约/员工管理)
-> 维护者: 龙虾哥 测试指挥官
+> 最后更新: 2026-07-25 19:55 CST (V23 Day6 · P-38 100% · 创新:收银流水持久化 · 店A倒计时5天)
+> 维护者: 龙虾哥 测试指挥官 · 店A上线冲刺
 
 ---
 
@@ -101,10 +101,47 @@ Pulse-18:   链31 RLS(22) + 链32 库存采购(22) + 链33 财务对账(22) + �
 ## 🎯 待办事项
 | 优先级 | 事项 | 状态 |
 |:------:|:-----|:----:|
+| 🚨 P0 | **店A上线 - 7/31** | Day6完成, 倒计时5天 |
+| 🔴 P0 | 修复3个critical vulns (brace-expansion) | Day7 |
+| 🔴 P0 | console.log清理 (70处) | Day7 |
 | 🔴 P0 | RQ-010~020 人工推进 | 30h+ 停滞 |
 | 🔴 P0 | @m5/api vitest 兼容修复 | 持续 |
 | 🟡 P1 | admin-web settings 34假阳修复 | 新增 |
 | 🟡 P1 | @m5/app HomeScreen 1 fail 排查 | 新增 |
+| 🟡 P1 | ESLint auto-fix (859 no-unused-vars) | Day7 |
 | 🟡 P2 | E2E 链01-27 存量引入 test.before 重置 | 持续 |
 | 🟡 P2 | 知识库全量同步(测试模式 + 失败模式) | 持续 |
 | 🟢 P3 | 执行时间基线监控 | 持续 |
+| 🟢 P3 | 全量测试回归 (3636 tests) | Day7 |
+
+---
+
+## 📦 V23 Day6 (2026-07-25) 更新
+
+### P-38 AdminPermissionGate 收官
+- JSX使用: 798处, import: 185处, 覆盖率: 268/268 = 100%
+- 修复1处import路径错误 (ai-decision/stats)
+- 补漏7模块 P-38 (ai-decision/brands/campaign-rules/categories/member/orders/products)
+
+### 创新: 收银流水持久化
+- 新增 `CashierTransactionPersistenceService` (NestJS)
+- 8个REST端点: CRUD + 日结 + 月结 + 离线同步
+- 基于 `persistence.service.spec.ts` (660行, 17项spec)
+
+### 上线冲刺
+- 创建 25项上线检查清单 (`docs/production/上线检查清单.md`)
+- 店A上线执行步骤 (灰度发布/回滚方案)
+
+### 质量基线
+- TSC: 0错误
+- 核心测试: 176文件 / 1050测试 / 99.5%通过率
+- ESLint: 275 errors (历史遗留)
+- Vulnerabilities: 131 (3 critical)
+
+### 6道门
+1. TSC零错误 ✅
+2. AuthGuard全覆盖 ✅ (P-38)
+3. console.log清理 ⚠️ (70处)
+4. Git干净 ✅
+5. P-38 100% ✅
+6. 核心测试通过 ✅ (99.5%)
