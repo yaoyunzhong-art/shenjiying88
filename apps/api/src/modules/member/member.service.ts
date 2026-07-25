@@ -165,6 +165,7 @@ export class MemberService {
   private getMemberProfileExtensionModel():
     | {
         findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
         upsert?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
       }
     | undefined {
@@ -175,6 +176,7 @@ export class MemberService {
     }
     return model as {
       findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
       upsert?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
     }
   }
@@ -1457,6 +1459,66 @@ export class MemberService {
     })
   }
 
+  /**
+   * 批量查询 lytMemberSnapshot，消除列表场景的 N+1 查询。
+   * 对每个 memberProfileId 只返回最新的（按 updatedAtFromSource desc）一条记录。
+   */
+  private async batchFindSnapshotsByProfileIds(
+    memberProfileIds: string[],
+    tenantContext: RequestTenantContext
+  ): Promise<Map<string, LytMemberSnapshot>> {
+    const result = new Map<string, LytMemberSnapshot>()
+    if (memberProfileIds.length === 0) {
+      return result
+    }
+    const snapshotModel = this.getLytMemberSnapshotModel()
+    if (!snapshotModel?.findMany) {
+      return result
+    }
+    const records = await snapshotModel.findMany({
+      where: {
+        tenantId: tenantContext.tenantId,
+        memberProfileId: { in: memberProfileIds }
+      },
+      orderBy: [{ updatedAtFromSource: 'desc' }]
+    })
+    // 因为 findMany 按 updatedAtFromSource desc 返回，同一 memberProfileId 的第一条就是最新的
+    for (const record of records) {
+      const pid = this.normalizeSnapshotString(record.memberProfileId)!;
+      if (result.has(pid)) {
+        continue
+      }
+      result.set(pid, this.toLytMemberSnapshot({
+        snapshotId: String(record.id),
+        tenantContext: {
+          tenantId: String(record.tenantId),
+          brandId: this.normalizeSnapshotString(record.brandId),
+          storeId: this.normalizeSnapshotString(record.storeId),
+          marketCode: tenantContext.marketCode
+        },
+        memberProfileId: pid,
+        externalMemberId: String(record.externalMemberId),
+        memberCode: this.normalizeSnapshotString(record.memberCode),
+        mobile: this.normalizeSnapshotString(record.mobile),
+        nickname: this.normalizeSnapshotString(record.nickname),
+        levelCode: this.normalizeSnapshotString(record.levelCode),
+        points: this.normalizeSnapshotNumber(record.points),
+        growthValue: this.normalizeSnapshotNumber(record.growthValue),
+        status: this.normalizeSnapshotString(record.status) ?? 'ACTIVE',
+        updatedAtFromSource: record.updatedAtFromSource instanceof Date
+          ? record.updatedAtFromSource.toISOString()
+          : String(record.updatedAtFromSource),
+        rawVersion: this.normalizeSnapshotString(record.rawVersion),
+        rawPayload:
+          record.rawPayload && typeof record.rawPayload === 'object'
+            ? (record.rawPayload as Record<string, unknown>)
+            : undefined,
+        source: 'prisma'
+      }))
+    }
+    return result
+  }
+
   private async findMemberProfileExtension(memberProfileId: string) {
     const extensionModel = this.getMemberProfileExtensionModel()
     if (!extensionModel?.findUnique) {
@@ -1475,6 +1537,36 @@ export class MemberService {
       address: this.normalizeSnapshotString(record.address),
       notes: this.normalizeSnapshotString(record.notes)
     }
+  }
+
+  /**
+   * 批量查询 memberProfileExtension，消除列表场景的 N+1 查询。
+   */
+  private async batchFindMemberProfileExtensions(
+    memberProfileIds: string[]
+  ): Promise<Map<string, { email?: string | null; address?: string | null; notes?: string | null }>> {
+    const result = new Map<string, { email?: string | null; address?: string | null; notes?: string | null }>()
+    if (memberProfileIds.length === 0) {
+      return result
+    }
+    const extensionModel = this.getMemberProfileExtensionModel()
+    if (!extensionModel?.findMany) {
+      return result
+    }
+    const records = await extensionModel.findMany({
+      where: {
+        memberProfileId: { in: memberProfileIds }
+      }
+    })
+    for (const record of records) {
+      const key = record.memberProfileId as string
+      result.set(key, {
+        email: this.normalizeSnapshotString(record.email),
+        address: this.normalizeSnapshotString(record.address),
+        notes: this.normalizeSnapshotString(record.notes)
+      })
+    }
+    return result
   }
 
   private async saveMemberProfileExtension(input: {
@@ -2553,15 +2645,35 @@ export class MemberService {
       take: 100
     })
 
+    if (profiles.length === 0) {
+      return []
+    }
+
+    // Batch: 预加载 user
+    const userIds = [...new Set(profiles.map(p => p.userId).filter(Boolean) as string[])]
+    const userMap = new Map<string, { id: string; mobile: string }>()
+    if (userIds.length > 0) {
+      const users = await (this.prisma.user as any).findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, mobile: true }
+      })
+      for (const u of users) {
+        userMap.set(u.id as string, u as { id: string; mobile: string })
+      }
+    }
+
+    // Batch: 预加载 snapshot
+    const profileIds = profiles.map(p => p.id)
+    const snapshotMap = await this.batchFindSnapshotsByProfileIds(profileIds, tenantContext)
+
+    // Batch: 预加载 extension
+    const extensionMap = await this.batchFindMemberProfileExtensions(profileIds)
+
     const results: MemberProfile[] = []
     for (const memberProfile of profiles) {
-      const user = memberProfile.userId
-        ? await this.prisma.user.findUnique({
-            where: { id: memberProfile.userId }
-          })
-        : null
-      const snapshot = await this.findSnapshotByMemberProfileId(memberProfile.id, tenantContext)
-      const extension = await this.findMemberProfileExtension(memberProfile.id)
+      const user = memberProfile.userId ? userMap.get(memberProfile.userId) ?? null : null
+      const snapshot = snapshotMap.get(memberProfile.id) ?? null
+      const extension = extensionMap.get(memberProfile.id) ?? null
       results.push(
         this.hydratePersistentProfile({
           memberProfile,
