@@ -412,226 +412,232 @@ export default function AiCsPage() {
   }
 
   return (
-    <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
       {/* ===== 页面头部 ===== */}
       <header style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>🤖 智能客服工作台</h1>
-        <div style={{ display: 'flex', gap: 16, color: '#6b7280', fontSize: 13, marginTop: 8, flexWrap: 'wrap' }}>
-          <span>🏢 Tenant: <code style={{ background: '#e5e7eb', padding: '1px 6px', borderRadius: 3 }}>{tenantId}</code></span>
-          <span>📊 活跃: {stats.active}</span>
-          <span>🤝 转人工: {stats.handedOff}</span>
-          <span>⏳ 待接: {stats.pending}</span>
-          <span>📚 知识库: {knowledge.length} 条</span>
-          <span>📨 总消息: {stats.avgMessagesPerConv}/对话</span>
-        </div>
+      <h1 style={{ fontSize: 24, fontWeight: 700 }}>🤖 智能客服工作台</h1>
+      <div style={{ display: 'flex', gap: 16, color: '#6b7280', fontSize: 13, marginTop: 8, flexWrap: 'wrap' }}>
+      <span>🏢 Tenant: <code style={{ background: '#e5e7eb', padding: '1px 6px', borderRadius: 3 }}>{tenantId}</code></span>
+      <span>📊 活跃: {stats.active}</span>
+      <span>🤝 转人工: {stats.handedOff}</span>
+      <span>⏳ 待接: {stats.pending}</span>
+      <span>📚 知识库: {knowledge.length} 条</span>
+      <span>📨 总消息: {stats.avgMessagesPerConv}/对话</span>
+      </div>
       </header>
 
       {/* ===== Provider 健康度面板 ===== */}
       <div style={CARD}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600 }}>🔌 AI Provider 健康度</h3>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {providers.map(p => <ProviderBadge key={p.name} provider={p} />)}
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 600 }}>🔌 AI Provider 健康度</h3>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {providers.map(p => <ProviderBadge key={p.name} provider={p} />)}
+      </div>
       </div>
 
       {/* ===== 统计面板 ===== */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <StatCard label="活跃会话" value={stats.active} bg="#d1fae5" color="#065f46" />
-        <StatCard label="待接会话" value={stats.pending} bg="#fef3c7" color="#92400e" />
-        <StatCard label="转人工" value={stats.handedOff} bg="#dbeafe" color="#1e40af" />
-        <StatCard label="总转接次数" value={stats.totalHandoffs} bg="#ede9fe" color="#5b21b6" sub={`${stats.total} 会话`} />
+      <StatCard label="活跃会话" value={stats.active} bg="#d1fae5" color="#065f46" />
+      <StatCard label="待接会话" value={stats.pending} bg="#fef3c7" color="#92400e" />
+      <StatCard label="转人工" value={stats.handedOff} bg="#dbeafe" color="#1e40af" />
+      <StatCard label="总转接次数" value={stats.totalHandoffs} bg="#ede9fe" color="#5b21b6" sub={`${stats.total} 会话`} />
       </div>
 
       {/* ===== 主内容区: 三栏布局 ===== */}
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 320px', gap: 16 }}>
 
-        {/* ===== 左栏: 会话列表 ===== */}
-        <div style={CARD}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📋 会话列表</h3>
+      {/* ===== 左栏: 会话列表 ===== */}
+      <div style={CARD}>
+      <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📋 会话列表</h3>
 
-          {/* 搜索 */}
-          <input
-            type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            placeholder="搜索成员/ID/内容..."
-            style={{ ...INPUT, marginBottom: 8, fontSize: 13 }}
-          />
+      {/* 搜索 */}
+      <input
+      type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+      placeholder="搜索成员/ID/内容..."
+      style={{ ...INPUT, marginBottom: 8, fontSize: 13 }}
+      />
 
-          {/* 状态过滤 */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
-            {(['ALL', 'ACTIVE', 'PENDING', 'HANDED_OFF', 'CLOSED'] as const).map(s => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                style={{
-                  padding: '4px 10px', borderRadius: 12, fontSize: 11, cursor: 'pointer',
-                  background: statusFilter === s ? '#2563eb' : '#e5e7eb',
-                  color: statusFilter === s ? '#fff' : '#374151',
-                  border: 'none'
-                }}
-              >
-                {s === 'ALL' ? '全部' : STATUS_CONFIG[s].label}
-              </button>
-            ))}
-          </div>
+      {/* 状态过滤 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
+      {(['ALL', 'ACTIVE', 'PENDING', 'HANDED_OFF', 'CLOSED'] as const).map(s => (
+      <button
+      key={s}
+      onClick={() => setStatusFilter(s)}
+      style={{
+      padding: '4px 10px', borderRadius: 12, fontSize: 11, cursor: 'pointer',
+      background: statusFilter === s ? '#2563eb' : '#e5e7eb',
+      color: statusFilter === s ? '#fff' : '#374151',
+      border: 'none'
+      }}
+      >
+      {s === 'ALL' ? '全部' : STATUS_CONFIG[s].label}
+      </button>
+      ))}
+      </div>
 
-          {/* 空状态 */}
-          {filteredConvs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
-              <div style={{ fontSize: 14 }}>没有匹配的会话</div>
-            </div>
-          ) : (
-            <>
-              {pagedConvs.map(c => (
-                <ConversationRow
-                  key={c.id} conv={c}
-                  isActive={activeConv?.id === c.id}
-                  onClick={() => setActiveConv(c)}
-                />
-              ))}
+      {/* 空状态 */}
+      {filteredConvs.length === 0 ? (
+      <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
+      <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+      <div style={{ fontSize: 14 }}>没有匹配的会话</div>
+      </div>
+      ) : (
+      <>
+      {pagedConvs.map(c => (
+      <ConversationRow
+      key={c.id} conv={c}
+      isActive={activeConv?.id === c.id}
+      onClick={() => setActiveConv(c)}
+      />
+      ))}
 
-              {/* 分页 */}
-              {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 12 }}>
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    style={{
-                      padding: '4px 10px', borderRadius: 4, fontSize: 12, cursor: page === 1 ? 'not-allowed' : 'pointer',
-                      border: '1px solid #d1d5db', background: '#fff', color: page === 1 ? '#d1d5db' : '#374151'
-                    }}
-                  >‹</button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p} onClick={() => setPage(p)}
-                      style={{
-                        padding: '4px 10px', borderRadius: 4, fontSize: 12, cursor: 'pointer',
-                        border: '1px solid #d1d5db',
-                        background: page === p ? '#2563eb' : '#fff',
-                        color: page === p ? '#fff' : '#374151'
-                      }}
-                    >{p}</button>
-                  ))}
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    style={{
-                      padding: '4px 10px', borderRadius: 4, fontSize: 12, cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                      border: '1px solid #d1d5db', background: '#fff', color: page === totalPages ? '#d1d5db' : '#374151'
-                    }}
-                  >›</button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+      {/* 分页 */}
+      {totalPages > 1 && (
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 12 }}>
+      <button
+      onClick={() => setPage(p => Math.max(1, p - 1))}
+      disabled={page === 1}
+      style={{
+      padding: '4px 10px', borderRadius: 4, fontSize: 12, cursor: page === 1 ? 'not-allowed' : 'pointer',
+      border: '1px solid #d1d5db', background: '#fff', color: page === 1 ? '#d1d5db' : '#374151'
+      }}
+      >‹</button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+      <button
+      key={p} onClick={() => setPage(p)}
+      style={{
+      padding: '4px 10px', borderRadius: 4, fontSize: 12, cursor: 'pointer',
+      border: '1px solid #d1d5db',
+      background: page === p ? '#2563eb' : '#fff',
+      color: page === p ? '#fff' : '#374151'
+      }}
+      >{p}</button>
+      ))}
+      <button
+      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+      disabled={page === totalPages}
+      style={{
+      padding: '4px 10px', borderRadius: 4, fontSize: 12, cursor: page === totalPages ? 'not-allowed' : 'pointer',
+      border: '1px solid #d1d5db', background: '#fff', color: page === totalPages ? '#d1d5db' : '#374151'
+      }}
+      >›</button>
+      </div>
+      )}
+      </>
+      )}
+      </div>
 
-        {/* ===== 中栏: 对话窗口 ===== */}
-        <div style={CARD}>
-          {activeConv ? (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 600 }}>
-                  💬 {activeConv.memberId || '匿名用户'}
-                </h3>
-                <span style={{
-                  fontSize: 11, padding: '3px 8px', borderRadius: 4,
-                  background: STATUS_CONFIG[activeConv.status].bg,
-                  color: STATUS_CONFIG[activeConv.status].color
-                }}>
-                  {STATUS_CONFIG[activeConv.status].label} · {activeConv.metadata.totalMessages} 消息
-                </span>
-              </div>
+      {/* ===== 中栏: 对话窗口 ===== */}
+      <div style={CARD}>
+      {activeConv ? (
+      <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 600 }}>
+      💬 {activeConv.memberId || '匿名用户'}
+      </h3>
+      <span style={{
+      fontSize: 11, padding: '3px 8px', borderRadius: 4,
+      background: STATUS_CONFIG[activeConv.status].bg,
+      color: STATUS_CONFIG[activeConv.status].color
+      }}>
+      {STATUS_CONFIG[activeConv.status].label} · {activeConv.metadata.totalMessages} 消息
+      </span>
+      </div>
 
-              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>
-                🆔 {activeConv.id} · 📱 {CHANNEL_LABEL[activeConv.channel] || activeConv.channel}
-              </div>
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>
+      🆔 {activeConv.id} · 📱 {CHANNEL_LABEL[activeConv.channel] || activeConv.channel}
+      </div>
 
-              <div style={{ height: 400, overflowY: 'auto', padding: 12, background: '#f9fafb', borderRadius: 8, marginBottom: 12 }}>
-                {activeConv.messages.map(m => {
-                  const style = m.role === 'user' ? MSG_USER : m.role === 'ai' ? MSG_AI : m.role === 'human-agent' ? MSG_AGENT : MSG_SYSTEM
-                  const roleLabel = { user: '用户', ai: 'AI', 'human-agent': '客服', system: '系统' }[m.role]
-                  return (
-                    <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                      <div style={style}>{m.content}</div>
-                      <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>
-                        {roleLabel} · {m.timestamp}
-                        {m.metadata?.provider && ` · ${m.metadata.provider}`}
-                        {m.metadata?.confidence != null && ` · conf=${m.metadata.confidence}`}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+      <div style={{ height: 400, overflowY: 'auto', padding: 12, background: '#f9fafb', borderRadius: 8, marginBottom: 12 }}>
+      {activeConv.messages.map(m => {
+      const style = m.role === 'user' ? MSG_USER : m.role === 'ai' ? MSG_AI : m.role === 'human-agent' ? MSG_AGENT : MSG_SYSTEM
+      const roleLabel = { user: '用户', ai: 'AI', 'human-agent': '客服', system: '系统' }[m.role]
+      return (
+      <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+      <div style={style}>{m.content}</div>
+      <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>
+      {roleLabel} · {m.timestamp}
+      {m.metadata?.provider && ` · ${m.metadata.provider}`}
+      {m.metadata?.confidence != null && ` · conf=${m.metadata.confidence}`}
+      </div>
+      </div>
+      )
+      })}
+      </div>
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text" value={input} onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && sendMessage()}
-                  placeholder="输入消息... (Enter 发送)"
-                  style={{ flex: 1, padding: 10, border: '1px solid #d1d5db', borderRadius: 6 }}
-                  maxLength={2000}
-                />
-                <button onClick={sendMessage} style={BTN_PRIMARY}>发送</button>
-              </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
-              <div>请选择一个会话</div>
-            </div>
-          )}
-        </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+      <input
+      type="text" value={input} onChange={e => setInput(e.target.value)}
+      onKeyDown={e => e.key === 'Enter' && sendMessage()}
+      placeholder="输入消息... (Enter 发送)"
+      style={{ flex: 1, padding: 10, border: '1px solid #d1d5db', borderRadius: 6 }}
+      maxLength={2000}
+      />
+      <button onClick={sendMessage} style={BTN_PRIMARY}>发送</button>
+      </div>
+      </>
+      ) : (
+      <div style={{ textAlign: 'center', padding: 60, color: '#9ca3af' }}>
+      <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+      <div>请选择一个会话</div>
+      </div>
+      )}
+      </div>
 
-        {/* ===== 右栏: 知识库 ===== */}
-        <div style={CARD}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📚 知识库</h3>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
-            <input
-              type="text" value={knowledgeQuery} onChange={e => setKnowledgeQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && searchKnowledge()}
-              placeholder="搜索知识..."
-              style={{ flex: 1, padding: 8, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 13 }}
-            />
-            <button onClick={searchKnowledge} style={{
-              padding: '8px 12px', background: '#10b981', color: '#fff',
-              border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer'
-            }}>搜索</button>
-          </div>
+      {/* ===== 右栏: 知识库 ===== */}
+      <div style={CARD}>
+      <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📚 知识库</h3>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+      <input
+      type="text" value={knowledgeQuery} onChange={e => setKnowledgeQuery(e.target.value)}
+      onKeyDown={e => e.key === 'Enter' && searchKnowledge()}
+      placeholder="搜索知识..."
+      style={{ flex: 1, padding: 8, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 13 }}
+      />
+      <button onClick={searchKnowledge} style={{
+      padding: '8px 12px', background: '#10b981', color: '#fff',
+      border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer'
+      }}>搜索</button>
+      </div>
 
-          {knowledge.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
-              <div style={{ fontSize: 13 }}>未找到匹配知识</div>
-            </div>
-          ) : (
-            knowledge.map(k => (
-              <div key={k.id} style={{
-                padding: 10, marginBottom: 8, background: '#f9fafb',
-                borderRadius: 6, fontSize: 12, borderLeft: '3px solid #10b981'
-              }}>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>{k.title}</div>
-                <div style={{ color: '#6b7280', marginBottom: 4 }}>{k.content}</div>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, padding: '1px 5px', background: '#d1fae5', borderRadius: 3, color: '#065f46' }}>{k.category}</span>
-                  {k.tags.map(t => (
-                    <span key={t} style={{
-                      display: 'inline-block', padding: '1px 6px',
-                      background: '#e5e7eb', borderRadius: 3, fontSize: 10
-                    }}>#{t}</span>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      {knowledge.length === 0 ? (
+      <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
+      <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
+      <div style={{ fontSize: 13 }}>未找到匹配知识</div>
+      </div>
+      ) : (
+      knowledge.map(k => (
+      <div key={k.id} style={{
+      padding: 10, marginBottom: 8, background: '#f9fafb',
+      borderRadius: 6, fontSize: 12, borderLeft: '3px solid #10b981'
+      }}>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{k.title}</div>
+      <div style={{ color: '#6b7280', marginBottom: 4 }}>{k.content}</div>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 10, padding: '1px 5px', background: '#d1fae5', borderRadius: 3, color: '#065f46' }}>{k.category}</span>
+      {k.tags.map(t => (
+      <span key={t} style={{
+      display: 'inline-block', padding: '1px 6px',
+      background: '#e5e7eb', borderRadius: 3, fontSize: 10
+      }}>#{t}</span>
+      ))}
+      </div>
+      </div>
+      ))
+      )}
+      </div>
       </div>
 
       <footer style={{ marginTop: 24, fontSize: 12, color: '#9ca3af' }}>
-        <p>📌 Provider: OpenAI · DeepSeek · Mock | 反模式 v4 防御 | KPI: 首次响应 &lt; 2s</p>
+      <p>📌 Provider: OpenAI · DeepSeek · Mock | 反模式 v4 防御 | KPI: 首次响应 &lt; 2s</p>
       </footer>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

@@ -99,141 +99,147 @@ export default function AgentStudioPage() {
   }, [])
 
   return (
-    <div style={styles.container}>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div style={styles.container}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>Agent Studio · 写操作面板</h1>
-        <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>创建/运行/批量执行/删除 Agent 配置与会话。所有写操作直接调用后端 SDK，失败时显示原始错误便于排查。</p>
+      <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 8px' }}>Agent Studio · 写操作面板</h1>
+      <p style={{ margin: 0, color: '#8892b0', fontSize: 14 }}>创建/运行/批量执行/删除 Agent 配置与会话。所有写操作直接调用后端 SDK，失败时显示原始错误便于排查。</p>
       </div>
 
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-        <div style={styles.card}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>Agent 配置数</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#2ed573' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>启用中</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#2ed573' }}>{stats.enabled}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#57606f' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>已禁用</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#8892b0' }}>{stats.disabled}</div>
-        </div>
-        <div style={{ ...styles.card, borderColor: '#4361ee' }}>
-          <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>启用反思</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#4361ee' }}>{stats.reflection}</div>
-        </div>
+      <div style={styles.card}>
+      <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>Agent 配置数</div>
+      <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
+      </div>
+      <div style={{ ...styles.card, borderColor: '#2ed573' }}>
+      <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>启用中</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: '#2ed573' }}>{stats.enabled}</div>
+      </div>
+      <div style={{ ...styles.card, borderColor: '#57606f' }}>
+      <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>已禁用</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: '#8892b0' }}>{stats.disabled}</div>
+      </div>
+      <div style={{ ...styles.card, borderColor: '#4361ee' }}>
+      <div style={{ fontSize: 12, color: '#8892b0', marginBottom: 4 }}>启用反思</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: '#4361ee' }}>{stats.reflection}</div>
+      </div>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input
-          style={styles.input}
-          placeholder="搜索名称 / 模型..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-        />
-        <select style={{ ...styles.input, width: 140, cursor: 'pointer' }} value={modelFilter} onChange={e => { setModelFilter(e.target.value); setPage(1) }}>
-          {MODEL_OPTIONS.map(m => <option key={m} value={m === '全部' ? '' : m}>{m}</option>)}
-        </select>
-        <button style={styles.btn} onClick={() => openModal('create', SEED_CONFIGS[0])}>+ 创建配置</button>
-        <button style={{ ...styles.btn, background: '#2a2a3e' }} onClick={() => window.location.reload()}>刷新</button>
+      <input
+      style={styles.input}
+      placeholder="搜索名称 / 模型..."
+      value={search}
+      onChange={e => { setSearch(e.target.value); setPage(1) }}
+      />
+      <select style={{ ...styles.input, width: 140, cursor: 'pointer' }} value={modelFilter} onChange={e => { setModelFilter(e.target.value); setPage(1) }}>
+      {MODEL_OPTIONS.map(m => <option key={m} value={m === '全部' ? '' : m}>{m}</option>)}
+      </select>
+      <button style={styles.btn} onClick={() => openModal('create', SEED_CONFIGS[0])}>+ 创建配置</button>
+      <button style={{ ...styles.btn, background: '#2a2a3e' }} onClick={() => window.location.reload()}>刷新</button>
       </div>
 
       {paginated.length === 0 ? (
-        <div style={{ ...styles.card, textAlign: 'center', padding: '48px 24px' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🤖</div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>无 Agent 配置</div>
-          <div style={{ color: '#8892b0', fontSize: 14 }}>点击「创建配置」按钮开始创建您的第一个 Agent。</div>
-        </div>
+      <div style={{ ...styles.card, textAlign: 'center', padding: '48px 24px' }}>
+      <div style={{ fontSize: 40, marginBottom: 12 }}>🤖</div>
+      <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>无 Agent 配置</div>
+      <div style={{ color: '#8892b0', fontSize: 14 }}>点击「创建配置」按钮开始创建您的第一个 Agent。</div>
+      </div>
       ) : (
-        <>
-          <div style={styles.card}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>名称</th>
-                  <th style={styles.th}>模型</th>
-                  <th style={styles.th}>状态</th>
-                  <th style={styles.th}>步数</th>
-                  <th style={styles.th}>超时（s）</th>
-                  <th style={styles.th}>工具数</th>
-                  <th style={styles.th}>反思</th>
-                  <th style={styles.th}>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map(item => (
-                  <tr key={item.id}>
-                    <td style={styles.td}>{item.name}</td>
-                    <td style={styles.td}>{item.model}</td>
-                    <td style={styles.td}>
-                      <span style={{ color: item.status === 'enabled' ? '#2ed573' : '#57606f', fontWeight: 600 }}>{item.status}</span>
-                    </td>
-                    <td style={styles.td}>{item.maxSteps}</td>
-                    <td style={styles.td}>{item.timeout}</td>
-                    <td style={styles.td}>{item.toolCount}</td>
-                    <td style={styles.td}>
-                      <span style={{ color: item.reflection ? '#4361ee' : '#57606f' }}>{item.reflection ? '是' : '否'}</span>
-                    </td>
-                    <td style={styles.td}>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => openModal('view', item)}>查看</button>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#2ed573', marginRight: 6 }} onClick={() => openModal('edit', item)}>编辑</button>
-                      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#e63946' }} onClick={() => openModal('delete', item)}>删除</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <>
+      <div style={styles.card}>
+      <table style={styles.table}>
+      <thead>
+      <tr>
+      <th style={styles.th}>名称</th>
+      <th style={styles.th}>模型</th>
+      <th style={styles.th}>状态</th>
+      <th style={styles.th}>步数</th>
+      <th style={styles.th}>超时（s）</th>
+      <th style={styles.th}>工具数</th>
+      <th style={styles.th}>反思</th>
+      <th style={styles.th}>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {paginated.map(item => (
+      <tr key={item.id}>
+      <td style={styles.td}>{item.name}</td>
+      <td style={styles.td}>{item.model}</td>
+      <td style={styles.td}>
+      <span style={{ color: item.status === 'enabled' ? '#2ed573' : '#57606f', fontWeight: 600 }}>{item.status}</span>
+      </td>
+      <td style={styles.td}>{item.maxSteps}</td>
+      <td style={styles.td}>{item.timeout}</td>
+      <td style={styles.td}>{item.toolCount}</td>
+      <td style={styles.td}>
+      <span style={{ color: item.reflection ? '#4361ee' : '#57606f' }}>{item.reflection ? '是' : '否'}</span>
+      </td>
+      <td style={styles.td}>
+      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => openModal('view', item)}>查看</button>
+      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#2ed573', marginRight: 6 }} onClick={() => openModal('edit', item)}>编辑</button>
+      <button style={{ ...styles.btn, padding: '4px 10px', fontSize: 12, background: '#e63946' }} onClick={() => openModal('delete', item)}>删除</button>
+      </td>
+      </tr>
+      ))}
+      </tbody>
+      </table>
+      </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, alignItems: 'center' }}>
-            <button disabled={page <= 1} style={{ ...styles.btn, opacity: page <= 1 ? 0.5 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
-            <span style={{ color: '#8892b0', fontSize: 14 }}>第 {page} / {totalPages} 页</span>
-            <button disabled={page >= totalPages} style={{ ...styles.btn, opacity: page >= totalPages ? 0.5 : 1 }} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
-          </div>
-        </>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, alignItems: 'center' }}>
+      <button disabled={page <= 1} style={{ ...styles.btn, opacity: page <= 1 ? 0.5 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))}>上一页</button>
+      <span style={{ color: '#8892b0', fontSize: 14 }}>第 {page} / {totalPages} 页</span>
+      <button disabled={page >= totalPages} style={{ ...styles.btn, opacity: page >= totalPages ? 0.5 : 1 }} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>下一页</button>
+      </div>
+      </>
       )}
 
       {modal.visible && (
-        <div style={styles.modal} onClick={closeModal}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                {modal.mode === 'create' ? '创建配置' : modal.mode === 'view' ? '配置详情' : modal.mode === 'edit' ? '编辑配置' : '删除配置'}
-              </h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: '#8892b0', fontSize: 20, cursor: 'pointer' }}>×</button>
-            </div>
-            {modal.mode === 'create' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <input style={{ ...styles.input, width: '100%', boxSizing: 'border-box' }} placeholder="名称" />
-                <select style={{ ...styles.input, width: '100%', cursor: 'pointer' }}>
-                  <option>gpt-4o</option>
-                  <option>gpt-4o-mini</option>
-                  <option>claude-3-haiku</option>
-                  <option>claude-3-sonnet</option>
-                </select>
-                <div><label style={{ color: '#8892b0', fontSize: 14 }}><input type="checkbox" /> 启用反思</label></div>
-                <input style={{ ...styles.input, width: '100%', boxSizing: 'border-box' }} placeholder="最大步数" />
-              </div>
-            ) : modal.item && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div><span style={{ color: '#8892b0' }}>名称：</span>{modal.item.name}</div>
-                <div><span style={{ color: '#8892b0' }}>模型：</span>{modal.item.model}</div>
-                <div><span style={{ color: '#8892b0' }}>状态：</span>{modal.item.status}</div>
-                <div><span style={{ color: '#8892b0' }}>步数：</span>{modal.item.maxSteps}</div>
-                <div><span style={{ color: '#8892b0' }}>超时：</span>{modal.item.timeout}s</div>
-                <div><span style={{ color: '#8892b0' }}>工具数：</span>{modal.item.toolCount}</div>
-                <div><span style={{ color: '#8892b0' }}>反思：</span>{modal.item.reflection ? '启用' : '禁用'}</div>
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
-              <button onClick={closeModal} style={{ background: '#2a2a3e', border: '1px solid #3a3a4e', color: '#e0e0e0', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}>取消</button>
-              <button onClick={() => { closeModal() }} style={styles.btn}>
-                {modal.mode === 'create' ? '创建' : modal.mode === 'delete' ? '确认删除' : '关闭'}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div style={styles.modal} onClick={closeModal}>
+      <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+      {modal.mode === 'create' ? '创建配置' : modal.mode === 'view' ? '配置详情' : modal.mode === 'edit' ? '编辑配置' : '删除配置'}
+      </h3>
+      <button onClick={closeModal} style={{ background: 'none', border: 'none', color: '#8892b0', fontSize: 20, cursor: 'pointer' }}>×</button>
+      </div>
+      {modal.mode === 'create' ? (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <input style={{ ...styles.input, width: '100%', boxSizing: 'border-box' }} placeholder="名称" />
+      <select style={{ ...styles.input, width: '100%', cursor: 'pointer' }}>
+      <option>gpt-4o</option>
+      <option>gpt-4o-mini</option>
+      <option>claude-3-haiku</option>
+      <option>claude-3-sonnet</option>
+      </select>
+      <div><label style={{ color: '#8892b0', fontSize: 14 }}><input type="checkbox" /> 启用反思</label></div>
+      <input style={{ ...styles.input, width: '100%', boxSizing: 'border-box' }} placeholder="最大步数" />
+      </div>
+      ) : modal.item && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div><span style={{ color: '#8892b0' }}>名称：</span>{modal.item.name}</div>
+      <div><span style={{ color: '#8892b0' }}>模型：</span>{modal.item.model}</div>
+      <div><span style={{ color: '#8892b0' }}>状态：</span>{modal.item.status}</div>
+      <div><span style={{ color: '#8892b0' }}>步数：</span>{modal.item.maxSteps}</div>
+      <div><span style={{ color: '#8892b0' }}>超时：</span>{modal.item.timeout}s</div>
+      <div><span style={{ color: '#8892b0' }}>工具数：</span>{modal.item.toolCount}</div>
+      <div><span style={{ color: '#8892b0' }}>反思：</span>{modal.item.reflection ? '启用' : '禁用'}</div>
+      </div>
       )}
-    </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+      <button onClick={closeModal} style={{ background: '#2a2a3e', border: '1px solid #3a3a4e', color: '#e0e0e0', borderRadius: '6px', padding: '8px 16px', cursor: 'pointer' }}>取消</button>
+      <button onClick={() => { closeModal() }} style={styles.btn}>
+      {modal.mode === 'create' ? '创建' : modal.mode === 'delete' ? '确认删除' : '关闭'}
+      </button>
+      </div>
+      </div>
+      </div>
+      )}
+      </div>
+    </AdminPermissionGate>
   )
 }

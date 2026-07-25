@@ -192,210 +192,216 @@ export default function RuleExecutionDetailPage({
   ]
 
   return (
-    <main style={{ maxWidth: 960, margin: '0 auto', padding: 32 }}>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <main style={{ maxWidth: 960, margin: '0 auto', padding: 32 }}>
       {toast && (
-        <div
-          style={{
-            position: 'fixed', top: 24, right: 24, zIndex: 9999,
-            padding: '12px 24px', borderRadius: 12, background: '#22c55e',
-            color: '#fff', fontWeight: 600, fontSize: 14,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-          }}
-        >
-          {toast}
-        </div>
+      <div
+      style={{
+      position: 'fixed', top: 24, right: 24, zIndex: 9999,
+      padding: '12px 24px', borderRadius: 12, background: '#22c55e',
+      color: '#fff', fontWeight: 600, fontSize: 14,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+      }}
+      >
+      {toast}
+      </div>
       )}
 
       <PageShell
-        title={`执行记录 · ${execution.ruleName}`}
-        subtitle={`ID: ${execution.id} · ${formatRelativeTime(execution.createdAt)}`}
+      title={`执行记录 · ${execution.ruleName}`}
+      subtitle={`ID: ${execution.id} · ${formatRelativeTime(execution.createdAt)}`}
       >
-        {/* 状态与操作 */}
-        <div
-          style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '16px 20px', borderRadius: 12,
-            background: statusMeta.bg, color: statusMeta.color,
-            marginBottom: 24,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <StatusBadge label={statusMeta.label} />
-            <span style={{ fontWeight: 600, fontSize: 15 }}>{currentStatus}</span>
-            <span style={{ fontSize: 13, opacity: 0.8 }}>
-              耗时 {formatDuration(execution.durationMs)}
-            </span>
-          </div>
+      {/* 状态与操作 */}
+      <div
+      style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '16px 20px', borderRadius: 12,
+      background: statusMeta.bg, color: statusMeta.color,
+      marginBottom: 24,
+      }}
+      >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <StatusBadge label={statusMeta.label} />
+      <span style={{ fontWeight: 600, fontSize: 15 }}>{currentStatus}</span>
+      <span style={{ fontSize: 13, opacity: 0.8 }}>
+      耗时 {formatDuration(execution.durationMs)}
+      </span>
+      </div>
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            {currentStatus === 'FAILURE' || currentStatus === 'TIMEOUT' ? (
-              <button
-                onClick={handleRerun}
-                style={{
-                  padding: '8px 20px', borderRadius: 8, border: 'none',
-                  background: '#2563eb', color: '#fff', fontWeight: 600,
-                  fontSize: 13, cursor: 'pointer',
-                }}
-              >
-                重新执行
-              </button>
-            ) : null}
-            {currentStatus === 'RUNNING' ? (
-              <button
-                onClick={handleCancel}
-                style={{
-                  padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db',
-                  background: '#fff', color: '#374151', fontWeight: 600,
-                  fontSize: 13, cursor: 'pointer',
-                }}
-              >
-                取消执行
-              </button>
-            ) : null}
-            <button
-              onClick={handleDelete}
-              style={{
-                padding: '8px 20px', borderRadius: 8, border: '1px solid #fca5a5',
-                background: '#fff', color: '#dc2626', fontWeight: 600,
-                fontSize: 13, cursor: 'pointer',
-              }}
-            >
-              删除记录
-            </button>
-          </div>
-        </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+      {currentStatus === 'FAILURE' || currentStatus === 'TIMEOUT' ? (
+      <button
+      onClick={handleRerun}
+      style={{
+      padding: '8px 20px', borderRadius: 8, border: 'none',
+      background: '#2563eb', color: '#fff', fontWeight: 600,
+      fontSize: 13, cursor: 'pointer',
+      }}
+      >
+      重新执行
+      </button>
+      ) : null}
+      {currentStatus === 'RUNNING' ? (
+      <button
+      onClick={handleCancel}
+      style={{
+      padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db',
+      background: '#fff', color: '#374151', fontWeight: 600,
+      fontSize: 13, cursor: 'pointer',
+      }}
+      >
+      取消执行
+      </button>
+      ) : null}
+      <button
+      onClick={handleDelete}
+      style={{
+      padding: '8px 20px', borderRadius: 8, border: '1px solid #fca5a5',
+      background: '#fff', color: '#dc2626', fontWeight: 600,
+      fontSize: 13, cursor: 'pointer',
+      }}
+      >
+      删除记录
+      </button>
+      </div>
+      </div>
 
-        {/* 基本信息 */}
-        <div
-          style={{
-            background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb',
-            padding: 20, marginBottom: 20,
-          }}
-        >
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }}>
-            基本信息
-          </h3>
-          <DescriptionList items={infoItems} columns={2} />
-        </div>
+      {/* 基本信息 */}
+      <div
+      style={{
+      background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb',
+      padding: 20, marginBottom: 20,
+      }}
+      >
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }}>
+      基本信息
+      </h3>
+      <DescriptionList items={infoItems} columns={2} />
+      </div>
 
-        {/* 输入载荷 */}
-        <div
-          style={{
-            background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb',
-            padding: 20, marginBottom: 20,
-          }}
-        >
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
-            输入载荷
-          </h3>
-          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
-            {execution.inputSummary}
-          </div>
-          <pre
-            style={{
-              background: '#1e293b', color: '#e2e8f0', borderRadius: 8,
-              padding: 16, fontSize: 12, lineHeight: 1.6, overflow: 'auto',
-              maxHeight: 240,
-            }}
-          >
-            {execution.inputPayload}
-          </pre>
-        </div>
+      {/* 输入载荷 */}
+      <div
+      style={{
+      background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb',
+      padding: 20, marginBottom: 20,
+      }}
+      >
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
+      输入载荷
+      </h3>
+      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+      {execution.inputSummary}
+      </div>
+      <pre
+      style={{
+      background: '#1e293b', color: '#e2e8f0', borderRadius: 8,
+      padding: 16, fontSize: 12, lineHeight: 1.6, overflow: 'auto',
+      maxHeight: 240,
+      }}
+      >
+      {execution.inputPayload}
+      </pre>
+      </div>
 
-        {/* 输出结果 */}
-        <div
-          style={{
-            background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb',
-            padding: 20, marginBottom: 20,
-          }}
-        >
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
-            输出结果
-          </h3>
-          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
-            {execution.outputSummary}
-          </div>
-          <pre
-            style={{
-              background: '#1e293b', color: '#e2e8f0', borderRadius: 8,
-              padding: 16, fontSize: 12, lineHeight: 1.6, overflow: 'auto',
-              maxHeight: 240,
-            }}
-          >
-            {execution.outputPayload}
-          </pre>
-        </div>
+      {/* 输出结果 */}
+      <div
+      style={{
+      background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb',
+      padding: 20, marginBottom: 20,
+      }}
+      >
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 12 }}>
+      输出结果
+      </h3>
+      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+      {execution.outputSummary}
+      </div>
+      <pre
+      style={{
+      background: '#1e293b', color: '#e2e8f0', borderRadius: 8,
+      padding: 16, fontSize: 12, lineHeight: 1.6, overflow: 'auto',
+      maxHeight: 240,
+      }}
+      >
+      {execution.outputPayload}
+      </pre>
+      </div>
 
-        {/* 错误详情 */}
-        {execution.errorMessage && (
-          <div
-            style={{
-              background: '#fef2f2', borderRadius: 12, border: '1px solid #fecaca',
-              padding: 20, marginBottom: 20,
-            }}
-          >
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#991b1b', marginBottom: 8 }}>
-              错误详情
-            </h3>
-            <Tag variant="error">{execution.errorMessage}</Tag>
-            {execution.errorStackTrace && (
-              <pre
-                style={{
-                  marginTop: 12, background: '#450a0a', color: '#fca5a5',
-                  borderRadius: 8, padding: 16, fontSize: 12, lineHeight: 1.6,
-                  overflow: 'auto', maxHeight: 200,
-                }}
-              >
-                {execution.errorStackTrace}
-              </pre>
-            )}
-          </div>
-        )}
+      {/* 错误详情 */}
+      {execution.errorMessage && (
+      <div
+      style={{
+      background: '#fef2f2', borderRadius: 12, border: '1px solid #fecaca',
+      padding: 20, marginBottom: 20,
+      }}
+      >
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#991b1b', marginBottom: 8 }}>
+      错误详情
+      </h3>
+      <Tag variant="error">{execution.errorMessage}</Tag>
+      {execution.errorStackTrace && (
+      <pre
+      style={{
+      marginTop: 12, background: '#450a0a', color: '#fca5a5',
+      borderRadius: 8, padding: 16, fontSize: 12, lineHeight: 1.6,
+      overflow: 'auto', maxHeight: 200,
+      }}
+      >
+      {execution.errorStackTrace}
+      </pre>
+      )}
+      </div>
+      )}
 
-        {/* 关联操作 */}
-        <div
-          style={{
-            display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap',
-          }}
-        >
-          <a
-            href={`/rules/executions`}
-            style={{
-              padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db',
-              background: '#fff', color: '#374151', fontSize: 13,
-              textDecoration: 'none', fontWeight: 500,
-            }}
-          >
-            ← 返回执行列表
-          </a>
-          <a
-            href={`/configuration/entries/${execution.ruleId}`}
-            style={{
-              padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db',
-              background: '#fff', color: '#2563eb', fontSize: 13,
-              textDecoration: 'none', fontWeight: 500,
-            }}
-          >
-            查看规则配置 →
-          </a>
-        </div>
+      {/* 关联操作 */}
+      <div
+      style={{
+      display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap',
+      }}
+      >
+      <a
+      href={`/rules/executions`}
+      style={{
+      padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db',
+      background: '#fff', color: '#374151', fontSize: 13,
+      textDecoration: 'none', fontWeight: 500,
+      }}
+      >
+      ← 返回执行列表
+      </a>
+      <a
+      href={`/configuration/entries/${execution.ruleId}`}
+      style={{
+      padding: '8px 20px', borderRadius: 8, border: '1px solid #d1d5db',
+      background: '#fff', color: '#2563eb', fontSize: 13,
+      textDecoration: 'none', fontWeight: 500,
+      }}
+      >
+      查看规则配置 →
+      </a>
+      </div>
 
-        <DetailActionBar
-          caption="复制 / 导出 / 分享当前执行详情"
-          actions={[
-            { key: 'copy', label: '复制', icon: 'copy', onClick: () => showToast('详情链接已复制') },
-            { key: 'export', label: '导出', icon: 'export', onClick: () => showToast('正在导出 JSON 报告') },
-            { key: 'share', label: '分享', icon: 'link', onClick: () => showToast('分享链接已生成') },
-          ]}
-        />
+      <DetailActionBar
+      caption="复制 / 导出 / 分享当前执行详情"
+      actions={[
+      { key: 'copy', label: '复制', icon: 'copy', onClick: () => showToast('详情链接已复制') },
+      { key: 'export', label: '导出', icon: 'export', onClick: () => showToast('正在导出 JSON 报告') },
+      { key: 'share', label: '分享', icon: 'link', onClick: () => showToast('分享链接已生成') },
+      ]}
+      />
 
-        <DetailClosureBar
-          links={[
-            { key: 'list', title: '返回执行列表', subtitle: '查看全部规则执行结果', href: '/rules/executions' },
-            { key: 'rule', title: '规则编辑', subtitle: `编辑 ${execution.ruleName}`, href: `/configuration/entries/${execution.ruleId}` },
-          ]}
-        />
+      <DetailClosureBar
+      links={[
+      { key: 'list', title: '返回执行列表', subtitle: '查看全部规则执行结果', href: '/rules/executions' },
+      { key: 'rule', title: '规则编辑', subtitle: `编辑 ${execution.ruleName}`, href: `/configuration/entries/${execution.ruleId}` },
+      ]}
+      />
       </PageShell>
-    </main>
+      </main>
+    </AdminPermissionGate>
   )
 }

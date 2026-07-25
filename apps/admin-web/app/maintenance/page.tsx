@@ -139,95 +139,101 @@ export default function MaintenancePage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">后勤维护</h1>
-          <p className="text-sm text-gray-500 mt-1">门店维护·保洁巡检·设备维修管理</p>
-        </div>
-        <button onClick={loadTasks} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
+      <div>
+      <h1 className="text-2xl font-bold text-gray-900">后勤维护</h1>
+      <p className="text-sm text-gray-500 mt-1">门店维护·保洁巡检·设备维修管理</p>
+      </div>
+      <button onClick={loadTasks} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
       </div>
 
       {error && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-yellow-800 text-sm">{error}</p>
-        </div>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+      <p className="text-yellow-800 text-sm">{error}</p>
+      </div>
       )}
 
       {/* 概览 */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">任务总数</p>
-          <p className="text-2xl font-bold mt-1">{tasks.length}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">待处理</p>
-          <p className="text-2xl font-bold mt-1 text-yellow-600">{pendingCount}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">进行中</p>
-          <p className="text-2xl font-bold mt-1 text-blue-600">{tasks.filter(t => t.status === 'in-progress').length}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">紧急</p>
-          <p className="text-2xl font-bold mt-1 text-red-600">{urgentCount}</p>
-        </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">任务总数</p>
+      <p className="text-2xl font-bold mt-1">{tasks.length}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">待处理</p>
+      <p className="text-2xl font-bold mt-1 text-yellow-600">{pendingCount}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">进行中</p>
+      <p className="text-2xl font-bold mt-1 text-blue-600">{tasks.filter(t => t.status === 'in-progress').length}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">紧急</p>
+      <p className="text-2xl font-bold mt-1 text-red-600">{urgentCount}</p>
+      </div>
       </div>
 
       {/* Tab */}
       <div className="border-b border-gray-200">
-        <nav className="flex space-x-4">
-          {(['pending', 'in-progress', 'completed', 'all'] as MaintTab[]).map(tab => (
-            <button key={tab} onClick={() => setTabView(tab)}
-              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-                tabView === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}>
-              {{ pending: '待处理', 'in-progress': '进行中', completed: '已完成', all: '全部' }[tab]}
-            </button>
-          ))}
-        </nav>
+      <nav className="flex space-x-4">
+      {(['pending', 'in-progress', 'completed', 'all'] as MaintTab[]).map(tab => (
+      <button key={tab} onClick={() => setTabView(tab)}
+      className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
+      tabView === tab ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}>
+      {{ pending: '待处理', 'in-progress': '进行中', completed: '已完成', all: '全部' }[tab]}
+      </button>
+      ))}
+      </nav>
       </div>
 
       {/* 列表 */}
       <div className="space-y-4">
-        {filtered.length === 0 ? (
-          <div className="bg-white border rounded-lg p-12 text-center">
-            <div className="text-gray-300 mb-3">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <p className="text-lg text-gray-500 mb-1">暂无任务</p>
-            <p className="text-sm text-gray-400">当前筛选条件下没有后勤任务</p>
-          </div>
-        ) : (
-          filtered.map(task => (
-            <div key={task.id} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base font-medium text-gray-900">{task.storeName} · {task.title}</h3>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${priorityColor(task.priority)}`}>
-                      {priorityLabel(task.priority)}
-                    </span>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusColor(task.status)}`}>
-                      {statusLabel(task.status)}
-                    </span>
-                    <span className="text-xs text-gray-400 bg-gray-50 rounded px-1.5">{typeLabel(task.type)}</span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">{task.description}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
-                    {task.assignedTo && <span>负责人: {task.assignedTo}</span>}
-                    {task.scheduledDate && <span>计划日期: {task.scheduledDate}</span>}
-                    {task.costCents != null && task.costCents > 0 && <span>费用: {fmtCents(task.costCents)}</span>}
-                    {task.completedAt && <span>完成于 {new Date(task.completedAt).toLocaleString('zh-CN')}</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
+      {filtered.length === 0 ? (
+      <div className="bg-white border rounded-lg p-12 text-center">
+      <div className="text-gray-300 mb-3">
+      <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
       </div>
-    </div>
+      <p className="text-lg text-gray-500 mb-1">暂无任务</p>
+      <p className="text-sm text-gray-400">当前筛选条件下没有后勤任务</p>
+      </div>
+      ) : (
+      filtered.map(task => (
+      <div key={task.id} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
+      <div className="flex items-start justify-between">
+      <div className="flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+      <h3 className="text-base font-medium text-gray-900">{task.storeName} · {task.title}</h3>
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${priorityColor(task.priority)}`}>
+      {priorityLabel(task.priority)}
+      </span>
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusColor(task.status)}`}>
+      {statusLabel(task.status)}
+      </span>
+      <span className="text-xs text-gray-400 bg-gray-50 rounded px-1.5">{typeLabel(task.type)}</span>
+      </div>
+      <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+      <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
+      {task.assignedTo && <span>负责人: {task.assignedTo}</span>}
+      {task.scheduledDate && <span>计划日期: {task.scheduledDate}</span>}
+      {task.costCents != null && task.costCents > 0 && <span>费用: {fmtCents(task.costCents)}</span>}
+      {task.completedAt && <span>完成于 {new Date(task.completedAt).toLocaleString('zh-CN')}</span>}
+      </div>
+      </div>
+      </div>
+      </div>
+      ))
+      )}
+      </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

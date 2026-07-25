@@ -124,20 +124,25 @@ export default function DevicesPage() {
   const devices = getDevices();
 
   return (
-    <>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <>
       {/* JSON-LD */}
       <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: '设备管理',
-            applicationCategory: 'BusinessApplication',
-            description:
-              '门店设备在线状态监控与固件管理。支持在线/离线/故障状态筛选和批量操作。',
-          }),
-        }}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+      __html: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: '设备管理',
+      applicationCategory: 'BusinessApplication',
+      description:
+      '门店设备在线状态监控与固件管理。支持在线/离线/故障状态筛选和批量操作。',
+      }),
+      }}
       />
 
       {/* 统计摘要 */}
@@ -145,33 +150,34 @@ export default function DevicesPage() {
 
       {/* 主列表 */}
       <ErrorBoundary fallback={<DeviceListErrorFallback />}>
-        <Suspense fallback={<DeviceListLoadingFallback />}>
-          {devices && devices.length > 0 ? (
-            <DeviceListClient devices={devices} />
-          ) : devices && devices.length === 0 ? (
-            <DeviceSearchNoResults />
-          ) : null}
-        </Suspense>
+      <Suspense fallback={<DeviceListLoadingFallback />}>
+      {devices && devices.length > 0 ? (
+      <DeviceListClient devices={devices} />
+      ) : devices && devices.length === 0 ? (
+      <DeviceSearchNoResults />
+      ) : null}
+      </Suspense>
       </ErrorBoundary>
 
       {/* 操作提示 */}
       <div
-        style={{
-          marginTop: 24,
-          padding: '8px 16px',
-          borderRadius: 8,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(148,163,184,0.08)',
-          fontSize: 12,
-          color: '#94a3b8',
-          lineHeight: 1.6,
-        }}
+      style={{
+      marginTop: 24,
+      padding: '8px 16px',
+      borderRadius: 8,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(148,163,184,0.08)',
+      fontSize: 12,
+      color: '#94a3b8',
+      lineHeight: 1.6,
+      }}
       >
-        <strong style={{ color: '#e2e8f0' }}>操作提示</strong>
-        <br />
-        固件升级前请确保设备电量充足（&gt;30%）。批量操作将同时发送指令至所选设备，建议分批操作。
-        设备固件版本可设置自动更新策略。
+      <strong style={{ color: '#e2e8f0' }}>操作提示</strong>
+      <br />
+      固件升级前请确保设备电量充足（&gt;30%）。批量操作将同时发送指令至所选设备，建议分批操作。
+      设备固件版本可设置自动更新策略。
       </div>
-    </>
-  );
+      </>
+    </AdminPermissionGate>
+  )
 }

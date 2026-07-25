@@ -127,20 +127,25 @@ export default function ReturnsPage() {
   const returns = getReturns();
 
   return (
-    <>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <>
       {/* JSON-LD */}
       <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: '退换货管理',
-            applicationCategory: 'BusinessApplication',
-            description:
-              '管理门店退换货申请审批与处理流程，支持仅退款、换货、维修等多种退换类型。',
-          }),
-        }}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+      __html: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: '退换货管理',
+      applicationCategory: 'BusinessApplication',
+      description:
+      '管理门店退换货申请审批与处理流程，支持仅退款、换货、维修等多种退换类型。',
+      }),
+      }}
       />
 
       {/* 统计摘要 */}
@@ -148,34 +153,35 @@ export default function ReturnsPage() {
 
       {/* 主列表 */}
       <ErrorBoundary fallback={<ReturnListErrorFallback />}>
-        <Suspense fallback={<ReturnListLoadingFallback />}>
-          {returns && returns.length > 0 ? (
-            <ReturnListClient returns={returns} />
-          ) : returns && returns.length === 0 ? (
-            <ReturnEmptyState />
-          ) : null}
-        </Suspense>
+      <Suspense fallback={<ReturnListLoadingFallback />}>
+      {returns && returns.length > 0 ? (
+      <ReturnListClient returns={returns} />
+      ) : returns && returns.length === 0 ? (
+      <ReturnEmptyState />
+      ) : null}
+      </Suspense>
       </ErrorBoundary>
 
       {/* 底部说明 */}
       <div
-        style={{
-          marginTop: 24,
-          padding: '8px 16px',
-          borderRadius: 8,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(148,163,184,0.08)',
-          fontSize: 12,
-          color: '#94a3b8',
-          lineHeight: 1.6,
-        }}
+      style={{
+      marginTop: 24,
+      padding: '8px 16px',
+      borderRadius: 8,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(148,163,184,0.08)',
+      fontSize: 12,
+      color: '#94a3b8',
+      lineHeight: 1.6,
+      }}
       >
-        <strong style={{ color: '#e2e8f0' }}>退换货流程说明</strong>
-        <br />
-        退换货申请需经过门店审核 → 商品回收 → 质检 → 退款/换货发出。
-        维修申请需用户寄回商品，维修周期约 3-7 个工作日。
-        用户可在个人中心查看退换货进度。
+      <strong style={{ color: '#e2e8f0' }}>退换货流程说明</strong>
+      <br />
+      退换货申请需经过门店审核 → 商品回收 → 质检 → 退款/换货发出。
+      维修申请需用户寄回商品，维修周期约 3-7 个工作日。
+      用户可在个人中心查看退换货进度。
       </div>
-    </>
-  );
+      </>
+    </AdminPermissionGate>
+  )
 }

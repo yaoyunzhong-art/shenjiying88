@@ -103,114 +103,120 @@ export default function HelpCenterPage() {
   const articleCount = articles?.length ?? 0;
 
   return (
-    <>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <>
       {/* JSON-LD */}
       <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: '帮助中心',
-            applicationCategory: 'BusinessApplication',
-            description:
-              '平台操作指南、常见问题和技术文档。按分类浏览或搜索关键词快速定位帮助文档。',
-            offers: {
-              '@type': 'Offer',
-              price: '0',
-              priceCurrency: 'CNY',
-            },
-          }),
-        }}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+      __html: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: '帮助中心',
+      applicationCategory: 'BusinessApplication',
+      description:
+      '平台操作指南、常见问题和技术文档。按分类浏览或搜索关键词快速定位帮助文档。',
+      offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+      },
+      }),
+      }}
       />
 
       {/* 页面顶部 — 分类导航 + 统计概览 */}
       <div
-        style={{
-          maxWidth: 1000,
-          margin: '0 auto',
-          padding: '24px 32px 0',
-        }}
+      style={{
+      maxWidth: 1000,
+      margin: '0 auto',
+      padding: '24px 32px 0',
+      }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
-          <div>
-            <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 4 }}>
-              总计 <strong style={{ color: '#f8fafc' }}>{articleCount}</strong> 篇文档
-              · 最后更新: 2026-07-12
-            </div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: 6,
-              flexWrap: 'wrap',
-            }}
-          >
-            {HELP_CATEGORIES.map((cat) => (
-              <div
-                key={cat.key}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '4px 10px',
-                  borderRadius: 6,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(148,163,184,0.1)',
-                  fontSize: 12,
-                  color: '#cbd5e1',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <span>{cat.icon}</span>
-                <span>{cat.label}</span>
-                <span style={{ color: '#64748b', fontSize: 11 }}>({cat.count})</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div
+      style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+      }}
+      >
+      <div>
+      <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 4 }}>
+      总计 <strong style={{ color: '#f8fafc' }}>{articleCount}</strong> 篇文档
+      · 最后更新: 2026-07-12
+      </div>
+      </div>
+      <div
+      style={{
+      display: 'flex',
+      gap: 6,
+      flexWrap: 'wrap',
+      }}
+      >
+      {HELP_CATEGORIES.map((cat) => (
+      <div
+      key={cat.key}
+      style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+      padding: '4px 10px',
+      borderRadius: 6,
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(148,163,184,0.1)',
+      fontSize: 12,
+      color: '#cbd5e1',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      }}
+      >
+      <span>{cat.icon}</span>
+      <span>{cat.label}</span>
+      <span style={{ color: '#64748b', fontSize: 11 }}>({cat.count})</span>
+      </div>
+      ))}
+      </div>
+      </div>
       </div>
 
       {/* 主内容 */}
       <ErrorBoundary fallback={<HelpCenterErrorFallback />}>
-        <Suspense fallback={<HelpCenterLoadingFallback />}>
-          {articleCount > 0 ? (
-            <HelpCenterClient articles={articles} />
-          ) : (
-            <SearchNoResultsState />
-          )}
-        </Suspense>
+      <Suspense fallback={<HelpCenterLoadingFallback />}>
+      {articleCount > 0 ? (
+      <HelpCenterClient articles={articles} />
+      ) : (
+      <SearchNoResultsState />
+      )}
+      </Suspense>
       </ErrorBoundary>
 
       {/* 底部 — 联系支持 */}
       <div
-        style={{
-          marginTop: 32,
-          padding: '16px 24px',
-          borderRadius: 8,
-          background: 'rgba(59,130,246,0.04)',
-          border: '1px solid rgba(59,130,246,0.12)',
-          fontSize: 13,
-          color: '#94a3b8',
-          lineHeight: 1.6,
-          maxWidth: 1000,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          textAlign: 'center',
-        }}
+      style={{
+      marginTop: 32,
+      padding: '16px 24px',
+      borderRadius: 8,
+      background: 'rgba(59,130,246,0.04)',
+      border: '1px solid rgba(59,130,246,0.12)',
+      fontSize: 13,
+      color: '#94a3b8',
+      lineHeight: 1.6,
+      maxWidth: 1000,
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      textAlign: 'center',
+      }}
       >
-        <strong style={{ color: '#60a5fa' }}>没有找到答案？</strong>
-        <br />
-        您可以联系在线客服 (工作日 9:00-22:00) 或提交工单，技术团队将在 2 小时内响应。
+      <strong style={{ color: '#60a5fa' }}>没有找到答案？</strong>
+      <br />
+      您可以联系在线客服 (工作日 9:00-22:00) 或提交工单，技术团队将在 2 小时内响应。
       </div>
-    </>
-  );
+      </>
+    </AdminPermissionGate>
+  )
 }

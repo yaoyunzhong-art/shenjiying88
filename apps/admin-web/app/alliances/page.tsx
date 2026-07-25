@@ -318,225 +318,231 @@ export default function AlliancesPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* 页头 */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">联盟伙伴管理</h1>
-          <p className="text-sm text-gray-500 mt-1">异业联盟合作伙伴 · S/A/B/C 分级管理 · 健康度监控</p>
-        </div>
-        <button onClick={loadPartners} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">
-          刷新
-        </button>
+      <div>
+      <h1 className="text-2xl font-bold text-gray-900">联盟伙伴管理</h1>
+      <p className="text-sm text-gray-500 mt-1">异业联盟合作伙伴 · S/A/B/C 分级管理 · 健康度监控</p>
+      </div>
+      <button onClick={loadPartners} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">
+      刷新
+      </button>
       </div>
 
       {/* 错误提示 */}
       {hasError && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-yellow-800 text-sm">{error}</p>
-        </div>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+      <p className="text-yellow-800 text-sm">{error}</p>
+      </div>
       )}
 
       {/* ---------- 概览 ---------- */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">伙伴总数</p>
-          <p className="text-2xl font-bold mt-1">{stats.total}</p>
-          <p className="text-xs text-green-600 mt-0.5">活跃 {stats.active}</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">总营收</p>
-          <p className="text-2xl font-bold mt-1 text-green-600">{fmtShort(stats.totalRevenue)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">累计交易</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">总订单</p>
-          <p className="text-2xl font-bold mt-1">{stats.totalOrders.toLocaleString()}</p>
-          <p className="text-xs text-gray-400 mt-0.5">笔</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">平均健康度</p>
-          <p className={`text-2xl font-bold mt-1 ${healthColor(stats.avgHealth)}`}>
-            {stats.avgHealth}
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5">分</p>
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-sm text-gray-500">等级分布</p>
-          <div className="mt-1 space-y-0.5">
-            {(['S', 'A', 'B', 'C'] as PartnerGrade[]).map(g => (
-              <div key={g} className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 w-4">{g}</span>
-                <div className="flex-1 bg-gray-100 rounded h-1.5">
-                  <div className={`h-1.5 rounded ${g === 'S' ? 'bg-yellow-400' : g === 'A' ? 'bg-blue-400' : g === 'B' ? 'bg-gray-400' : 'bg-orange-400'}`}
-                    style={{ width: `${stats.total > 0 ? ((stats.gradeDist[g] ?? 0) / stats.total) * 100 : 0}%` }} />
-                </div>
-                <span className="text-xs text-gray-400 w-4 text-right">{stats.gradeDist[g] ?? 0}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">伙伴总数</p>
+      <p className="text-2xl font-bold mt-1">{stats.total}</p>
+      <p className="text-xs text-green-600 mt-0.5">活跃 {stats.active}</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">总营收</p>
+      <p className="text-2xl font-bold mt-1 text-green-600">{fmtShort(stats.totalRevenue)}</p>
+      <p className="text-xs text-gray-400 mt-0.5">累计交易</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">总订单</p>
+      <p className="text-2xl font-bold mt-1">{stats.totalOrders.toLocaleString()}</p>
+      <p className="text-xs text-gray-400 mt-0.5">笔</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">平均健康度</p>
+      <p className={`text-2xl font-bold mt-1 ${healthColor(stats.avgHealth)}`}>
+      {stats.avgHealth}
+      </p>
+      <p className="text-xs text-gray-400 mt-0.5">分</p>
+      </div>
+      <div className="bg-white border rounded-lg p-4">
+      <p className="text-sm text-gray-500">等级分布</p>
+      <div className="mt-1 space-y-0.5">
+      {(['S', 'A', 'B', 'C'] as PartnerGrade[]).map(g => (
+      <div key={g} className="flex items-center gap-2">
+      <span className="text-xs font-medium text-gray-500 w-4">{g}</span>
+      <div className="flex-1 bg-gray-100 rounded h-1.5">
+      <div className={`h-1.5 rounded ${g === 'S' ? 'bg-yellow-400' : g === 'A' ? 'bg-blue-400' : g === 'B' ? 'bg-gray-400' : 'bg-orange-400'}`}
+      style={{ width: `${stats.total > 0 ? ((stats.gradeDist[g] ?? 0) / stats.total) * 100 : 0}%` }} />
+      </div>
+      <span className="text-xs text-gray-400 w-4 text-right">{stats.gradeDist[g] ?? 0}</span>
+      </div>
+      ))}
+      </div>
+      </div>
       </div>
 
       {/* ---------- 搜索/筛选 ---------- */}
       <div className="bg-white border rounded-lg p-4 space-y-3">
-        {/* 搜索框 */}
-        <div>
-          <input
-            type="text"
-            placeholder="搜索伙伴名称或联系方式..."
-            value={filter.search}
-            onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
-          />
-        </div>
-        {/* 筛选行 */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">状态:</span>
-            <select
-              value={filter.status}
-              onChange={e => setFilter(f => ({ ...f, status: e.target.value as PartnerStatus | 'ALL' }))}
-              className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
-            >
-              <option value="ALL">全部</option>
-              <option value="ACTIVE">正常</option>
-              <option value="INACTIVE">已停用</option>
-              <option value="SUSPENDED">已冻结</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">等级:</span>
-            <select
-              value={filter.grade}
-              onChange={e => setFilter(f => ({ ...f, grade: e.target.value as PartnerGrade | 'ALL' }))}
-              className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
-            >
-              <option value="ALL">全部</option>
-              {gradeFilterOptions.filter(o => o !== 'ALL').map(g => (
-                <option key={g} value={g}>{GRADE_LABELS[g as PartnerGrade]} ({g})</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">行业:</span>
-            <select
-              value={filter.businessType}
-              onChange={e => setFilter(f => ({ ...f, businessType: e.target.value as BusinessType | 'ALL' }))}
-              className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
-            >
-              <option value="ALL">全部</option>
-              {bizTypeFilterOptions.filter(o => o !== 'ALL').map(t => (
-                <option key={t} value={t}>{BUSINESS_TYPE_LABELS[t as BusinessType]} ({t})</option>
-              ))}
-            </select>
-          </div>
-          {filter.search && (
-            <button
-              onClick={() => setFilter(f => ({ ...f, search: '' }))}
-              className="text-xs text-blue-600 hover:underline"
-            >
-              清除搜索
-            </button>
-          )}
-          <span className="text-xs text-gray-400 ml-auto">
-            共 {filtered.length} 条结果
-          </span>
-        </div>
+      {/* 搜索框 */}
+      <div>
+      <input
+      type="text"
+      placeholder="搜索伙伴名称或联系方式..."
+      value={filter.search}
+      onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
+      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
+      />
+      </div>
+      {/* 筛选行 */}
+      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">状态:</span>
+      <select
+      value={filter.status}
+      onChange={e => setFilter(f => ({ ...f, status: e.target.value as PartnerStatus | 'ALL' }))}
+      className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
+      >
+      <option value="ALL">全部</option>
+      <option value="ACTIVE">正常</option>
+      <option value="INACTIVE">已停用</option>
+      <option value="SUSPENDED">已冻结</option>
+      </select>
+      </div>
+      <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">等级:</span>
+      <select
+      value={filter.grade}
+      onChange={e => setFilter(f => ({ ...f, grade: e.target.value as PartnerGrade | 'ALL' }))}
+      className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
+      >
+      <option value="ALL">全部</option>
+      {gradeFilterOptions.filter(o => o !== 'ALL').map(g => (
+      <option key={g} value={g}>{GRADE_LABELS[g as PartnerGrade]} ({g})</option>
+      ))}
+      </select>
+      </div>
+      <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">行业:</span>
+      <select
+      value={filter.businessType}
+      onChange={e => setFilter(f => ({ ...f, businessType: e.target.value as BusinessType | 'ALL' }))}
+      className="px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
+      >
+      <option value="ALL">全部</option>
+      {bizTypeFilterOptions.filter(o => o !== 'ALL').map(t => (
+      <option key={t} value={t}>{BUSINESS_TYPE_LABELS[t as BusinessType]} ({t})</option>
+      ))}
+      </select>
+      </div>
+      {filter.search && (
+      <button
+      onClick={() => setFilter(f => ({ ...f, search: '' }))}
+      className="text-xs text-blue-600 hover:underline"
+      >
+      清除搜索
+      </button>
+      )}
+      <span className="text-xs text-gray-400 ml-auto">
+      共 {filtered.length} 条结果
+      </span>
+      </div>
       </div>
 
       {/* ---------- 列表 ---------- */}
       <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="bg-white border rounded-lg p-12 text-center">
-            <div className="text-gray-300 mb-3">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <p className="text-lg text-gray-500 mb-1">无匹配结果</p>
-            <p className="text-sm text-gray-400">当前筛选条件下没有符合条件的伙伴</p>
-            <button
-              onClick={() => setFilter({ search: '', status: 'ALL', grade: 'ALL', businessType: 'ALL' })}
-              className="mt-3 text-sm text-blue-600 hover:underline"
-            >
-              清除所有筛选
-            </button>
-          </div>
-        ) : (
-          filtered.map(p => (
-            <div key={p.id} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
-              <div className="flex items-start justify-between">
-                {/* 左: 基本信息 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base font-medium text-gray-900 truncate max-w-[200px]">{p.name}</h3>
-                    {/* 等级标签 */}
-                    <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${
-                      p.currentGrade ? GRADE_COLORS[p.currentGrade] : 'bg-gray-50 text-gray-400 border border-gray-200'
-                    }`}>
-                      {p.currentGrade ? GRADE_LABELS[p.currentGrade] : '未评定'}
-                    </span>
-                    {/* 状态标签 */}
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[p.status]}`}>
-                      {STATUS_LABELS[p.status]}
-                    </span>
-                    {/* 行业 */}
-                    <span className="text-xs text-gray-400 bg-gray-50 rounded px-1.5">{BUSINESS_TYPE_LABELS[p.businessType]}</span>
-                  </div>
-                  {/* 联系信息 */}
-                  <p className="text-sm text-gray-500 mt-1">{p.contact}</p>
-                  {/* 关键指标 */}
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 flex-wrap">
-                    <span>订单: {p.totalOrders.toLocaleString()}</span>
-                    <span className="text-green-500 font-medium">
-                      营收: {fmtShort(p.totalRevenue)}
-                    </span>
-                    {/* 分润比例 */}
-                    <span className="text-blue-500">
-                      分润: {(p.revenueShare * 100).toFixed(1)}%
-                    </span>
-                    {/* 结算状态 */}
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${
-                      SETTLEMENT_COLORS[p.settlementStatus]
-                    }`}>
-                      结算:{' '}
-                      {SETTLEMENT_LABELS[p.settlementStatus]}
-                    </span>
-                  </div>
-                  {/* 健康度进度条 */}
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">健康度</span>
-                      <span className={`text-xs font-medium ${healthColor(p.healthScore)}`}>
-                        {p.healthScore !== null ? `${p.healthScore}分` : '未评估'}
-                      </span>
-                    </div>
-                    {p.healthScore !== null && (
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                        <div
-                          className={`h-1.5 rounded-full transition-all ${healthBarColor(p.healthScore)}`}
-                          style={{ width: `${Math.min(p.healthScore, 100)}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {/* 右: 注册信息 */}
-                <div className="text-right ml-4 min-w-[120px] shrink-0">
-                  <p className="text-xs text-gray-400">
-                    注册: {p.registeredAt.slice(0, 10)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    更新: {p.updatedAt.slice(0, 10)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
+      {filtered.length === 0 ? (
+      <div className="bg-white border rounded-lg p-12 text-center">
+      <div className="text-gray-300 mb-3">
+      <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
+      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
       </div>
-    </div>
+      <p className="text-lg text-gray-500 mb-1">无匹配结果</p>
+      <p className="text-sm text-gray-400">当前筛选条件下没有符合条件的伙伴</p>
+      <button
+      onClick={() => setFilter({ search: '', status: 'ALL', grade: 'ALL', businessType: 'ALL' })}
+      className="mt-3 text-sm text-blue-600 hover:underline"
+      >
+      清除所有筛选
+      </button>
+      </div>
+      ) : (
+      filtered.map(p => (
+      <div key={p.id} className="bg-white border rounded-lg p-5 hover:shadow-sm transition-shadow">
+      <div className="flex items-start justify-between">
+      {/* 左: 基本信息 */}
+      <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-wrap">
+      <h3 className="text-base font-medium text-gray-900 truncate max-w-[200px]">{p.name}</h3>
+      {/* 等级标签 */}
+      <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${
+      p.currentGrade ? GRADE_COLORS[p.currentGrade] : 'bg-gray-50 text-gray-400 border border-gray-200'
+      }`}>
+      {p.currentGrade ? GRADE_LABELS[p.currentGrade] : '未评定'}
+      </span>
+      {/* 状态标签 */}
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[p.status]}`}>
+      {STATUS_LABELS[p.status]}
+      </span>
+      {/* 行业 */}
+      <span className="text-xs text-gray-400 bg-gray-50 rounded px-1.5">{BUSINESS_TYPE_LABELS[p.businessType]}</span>
+      </div>
+      {/* 联系信息 */}
+      <p className="text-sm text-gray-500 mt-1">{p.contact}</p>
+      {/* 关键指标 */}
+      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 flex-wrap">
+      <span>订单: {p.totalOrders.toLocaleString()}</span>
+      <span className="text-green-500 font-medium">
+      营收: {fmtShort(p.totalRevenue)}
+      </span>
+      {/* 分润比例 */}
+      <span className="text-blue-500">
+      分润: {(p.revenueShare * 100).toFixed(1)}%
+      </span>
+      {/* 结算状态 */}
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${
+      SETTLEMENT_COLORS[p.settlementStatus]
+      }`}>
+      结算:{' '}
+      {SETTLEMENT_LABELS[p.settlementStatus]}
+      </span>
+      </div>
+      {/* 健康度进度条 */}
+      <div className="mt-2">
+      <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-400">健康度</span>
+      <span className={`text-xs font-medium ${healthColor(p.healthScore)}`}>
+      {p.healthScore !== null ? `${p.healthScore}分` : '未评估'}
+      </span>
+      </div>
+      {p.healthScore !== null && (
+      <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+      <div
+      className={`h-1.5 rounded-full transition-all ${healthBarColor(p.healthScore)}`}
+      style={{ width: `${Math.min(p.healthScore, 100)}%` }}
+      />
+      </div>
+      )}
+      </div>
+      </div>
+      {/* 右: 注册信息 */}
+      <div className="text-right ml-4 min-w-[120px] shrink-0">
+      <p className="text-xs text-gray-400">
+      注册: {p.registeredAt.slice(0, 10)}
+      </p>
+      <p className="text-xs text-gray-400 mt-0.5">
+      更新: {p.updatedAt.slice(0, 10)}
+      </p>
+      </div>
+      </div>
+      </div>
+      ))
+      )}
+      </div>
+      </div>
+    </AdminPermissionGate>
   )
 }

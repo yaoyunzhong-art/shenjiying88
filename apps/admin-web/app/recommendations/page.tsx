@@ -324,36 +324,42 @@ export default function RecommendationsPage() {
   }
 
   return (
-    <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
+    <AdminPermissionGate
+      requiredPermission={permissionGate.requiredPermission}
+      title={permissionGate.title}
+      description={permissionGate.description}
+    >
+      <div style={{ padding: 24, background: '#f9fafb', minHeight: '100vh' }}>
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>🎯 推荐中心</h1>
-        <div style={{ display: 'flex', gap: 16, color: '#6b7280', fontSize: 13, marginTop: 8 }}>
-          <span>🏢 Tenant: <code>{tenantId}</code></span>
-          <span>📊 请求总数: {summary.metadata.totalRequests}</span>
-          <span>⚡ 平均耗时: {summary.metadata.avgExecutionMs}ms</span>
-          <span>💾 缓存命中率: {(summary.metadata.cacheHitRate * 100).toFixed(1)}%</span>
-          <span>🔄 Fallback 占比: {(summary.metadata.fallbackRate * 100).toFixed(1)}%</span>
-          {summary.cached && <span style={{ color: '#16a34a' }}>⚡ Cached</span>}
-        </div>
+      <h1 style={{ fontSize: 24, fontWeight: 700 }}>🎯 推荐中心</h1>
+      <div style={{ display: 'flex', gap: 16, color: '#6b7280', fontSize: 13, marginTop: 8 }}>
+      <span>🏢 Tenant: <code>{tenantId}</code></span>
+      <span>📊 请求总数: {summary.metadata.totalRequests}</span>
+      <span>⚡ 平均耗时: {summary.metadata.avgExecutionMs}ms</span>
+      <span>💾 缓存命中率: {(summary.metadata.cacheHitRate * 100).toFixed(1)}%</span>
+      <span>🔄 Fallback 占比: {(summary.metadata.fallbackRate * 100).toFixed(1)}%</span>
+      {summary.cached && <span style={{ color: '#16a34a' }}>⚡ Cached</span>}
+      </div>
       </header>
 
       <nav style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 16 }}>
-        {(['overview', 'funnel', 'reasons', 'coldstart', 'coverage'] as RecTab[]).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={t === tab ? ACTIVE_TAB_STYLE : TAB_STYLE}>
-            {({ overview: '🎯 策略权重', funnel: '📉 转化漏斗', reasons: '💬 推荐理由', coldstart: '🥶 冷启动', coverage: '🔥 覆盖热力' } as Record<RecTab, string>)[t]}
-          </button>
-        ))}
+      {(['overview', 'funnel', 'reasons', 'coldstart', 'coverage'] as RecTab[]).map(t => (
+      <button key={t} onClick={() => setTab(t)} style={t === tab ? ACTIVE_TAB_STYLE : TAB_STYLE}>
+      {({ overview: '🎯 策略权重', funnel: '📉 转化漏斗', reasons: '💬 推荐理由', coldstart: '🥶 冷启动', coverage: '🔥 覆盖热力' } as Record<RecTab, string>)[t]}
+      </button>
+      ))}
       </nav>
 
       <div style={CARD_STYLE}>
-        <div id={`rec-chart-${tab}`} style={{ width: '100%', height: 460 }} />
+      <div id={`rec-chart-${tab}`} style={{ width: '100%', height: 460 }} />
       </div>
 
       <footer style={{ marginTop: 24, fontSize: 12, color: '#9ca3af' }}>
-        <p>📌 5 策略: ItemCF · UserCF · Popular · RecentlyViewed · Personalized</p>
-        <p>📌 反模式 v4: cold-start fallback + LRU cache + MMR diversity + tenant 隔离</p>
-        <p>📌 最后更新: {summary.generatedAt}</p>
+      <p>📌 5 策略: ItemCF · UserCF · Popular · RecentlyViewed · Personalized</p>
+      <p>📌 反模式 v4: cold-start fallback + LRU cache + MMR diversity + tenant 隔离</p>
+      <p>📌 最后更新: {summary.generatedAt}</p>
       </footer>
-    </div>
+      </div>
+    </AdminPermissionGate>
   )
 }
