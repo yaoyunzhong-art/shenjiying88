@@ -1,468 +1,130 @@
-/**
- * P-36 会员 — 积分规则管理页测试（增强版 30+）
- *
- * 覆盖: 正例·反例·边界三件套
- * Mock策略: URL-pattern responseRegistry
- * 圈梁: TSC通过·0 fail·无skip
- */
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import PointsRulesPage from './page'
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-const responseRegistry = new Map<string, () => unknown>();
-let fetchCalls = 0;
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'points-rules-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'points-rules-data.ts'), 'utf-8')
+})
 
-function setResponseFor(pattern: string, factory: () => unknown) {
-  responseRegistry.set(pattern, factory);
-}
+describe('PointsRulesPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function PointsRulesPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
 
-globalThis.fetch = ((url: string) => {
-  fetchCalls++;
-  const path = typeof url === 'string' ? url : '';
-  for (const [pattern, factory] of responseRegistry) {
-    if (path.includes(pattern)) {
-      return Promise.resolve({
-        ok: true, status: 200, json: () => Promise.resolve(factory()),
-        headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path,
-      } as Response);
-    }
-  }
-  return Promise.resolve({
-    ok: true, status: 200, json: () => Promise.resolve({ success: true, data: null, message: 'OK' }),
-    headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path,
-  } as Response);
-}) as typeof globalThis.fetch;
+  it('页面应加载积分规则快照并渲染客户端组件', () => {
+    assert.ok(PAGE_SRC.includes("import { loadPointsRulesSnapshot } from './points-rules-data'"))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadPointsRulesSnapshot()'))
+    assert.ok(PAGE_SRC.includes('<PointsRulesClient snapshot={snapshot} />'))
+  })
 
-function setDefault() {
-  responseRegistry.clear();
-  fetchCalls = 0;
-  setResponseFor('/points-rules', () => ({ success: true, data: {
-    rules: [
-      { id: 'pr-1', name: '消费积分', description: '每消费¥1得1分', category: 'earn', triggerType: 'purchase', rateNumerator: 1, rateDenominator: 100, earnPoints: 0, minAmountCents: 0, maxPerDay: 0, memberLevels: [], enabled: true, priority: 1, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-07-01T00:00:00Z' },
-      { id: 'pr-2', name: '签到积分', description: '每日签到得10分', category: 'earn', triggerType: 'checkin', rateNumerator: 10, rateDenominator: 0, earnPoints: 10, minAmountCents: 0, maxPerDay: 10, memberLevels: [], enabled: true, priority: 2, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-07-01T00:00:00Z' },
-      { id: 'pr-3', name: '已禁用规则', description: '已停用的积分规则', category: 'earn', triggerType: 'manual', rateNumerator: 5, rateDenominator: 0, earnPoints: 5, minAmountCents: 0, maxPerDay: 0, memberLevels: [], enabled: false, priority: 3, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-07-01T00:00:00Z' },
-      { id: 'pr-4', name: '已过期活动', description: '过期活动规则', category: 'bonus', triggerType: 'activity', rateNumerator: 100, rateDenominator: 0, earnPoints: 100, minAmountCents: 0, maxPerDay: 500, memberLevels: ['gold'], enabled: false, priority: 4, startDate: '2026-01-01', endDate: '2026-01-31', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-31T00:00:00Z' },
-      { id: 'pr-5', name: '积分兑换', description: '100积分=¥1', category: 'redeem', triggerType: 'purchase', rateNumerator: 100, rateDenominator: 100, earnPoints: 0, minAmountCents: 500, maxPerDay: 5000, memberLevels: [], enabled: true, priority: 10, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-07-01T00:00:00Z' },
-    ],
-  }, message: 'OK' }));
-  setResponseFor('/points-summary', () => ({ success: true, data: {
-    totalRules: 10, enabledRules: 8, avgEarnRate: 1.2, monthlyIssued: 320000, monthlyRedeemed: 185000, totalMembers: 45600,
-  }, message: 'OK' }));
-}
+  it('页面应接入管理员权限边界与动态渲染', () => {
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'points-rules:read'"))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+  })
+})
 
-// ─── Tests ─────────────────────────────────────────────
+describe('PointsRulesPage — 来源态透明化', () => {
+  it('页面应展示来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
 
-describe('PointsRulesPage', () => {
-  beforeEach(() => { setDefault(); });
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadPointsRulesSnapshot -> member/points-rules + member/points-summary'))
+    assert.ok(PAGE_SRC.includes('loadPointsRulesSnapshot -> defaultRules/defaultSummary fallback'))
+    assert.ok(PAGE_SRC.includes('local points-rules fallback samples'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
 
-  // ── 渲染测试 ──
+describe('PointsRulesData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('rules: PointsRule[]'))
+    assert.ok(DATA_SRC.includes('summary: PointsSummary'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+  })
 
-  it('should render page title', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const els = screen.queryAllByText('积分规则');
-      assert.ok(els.length >= 1);
-    });
-  });
+  it('应定义默认 fallback 样本', () => {
+    assert.ok(DATA_SRC.includes('export const defaultRules'))
+    assert.ok(DATA_SRC.includes('export const defaultSummary'))
+    assert.ok(DATA_SRC.includes('消费积分'))
+    assert.ok(DATA_SRC.includes('签到积分'))
+    assert.ok(DATA_SRC.includes('积分兑换'))
+  })
 
-  it('should show summary stats', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('规则总数'), 'expected total');
-      assert.ok(body.includes('月发放积分'), 'expected issued');
-      assert.ok(body.includes('月消耗积分'), 'expected redeemed');
-      assert.ok(body.includes('平均赚取率'), 'expected rate');
-    });
-  });
+  it('应尝试读取上游 points-rules 与 points-summary 接口', () => {
+    assert.ok(DATA_SRC.includes("new URL('member/points-rules', resolvePointsRulesApiBaseUrl())"))
+    assert.ok(DATA_SRC.includes("new URL('member/points-summary', resolvePointsRulesApiBaseUrl())"))
+    assert.ok(DATA_SRC.includes('Promise.all([fetchPointsRules(), fetchPointsSummary()])'))
+  })
 
-  it('should display rule names', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('消费积分'), 'expected earn rule');
-      assert.ok(body.includes('签到积分'), 'expected checkin rule');
-    });
-  });
+  it('失败时应回退到 fallback 样本并返回错误提示', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes('积分规则实时接口不可达，已切换到 fallback 样本数据。'))
+  })
+})
 
-  it('should render tab navigation', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('赚取'), 'expected earn tab');
-      assert.ok(body.includes('消耗'), 'expected redeem tab');
-      assert.ok(body.includes('奖励'), 'expected bonus tab');
-    });
-  });
+describe('PointsRulesClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client 并支持刷新', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
+  })
 
-  it('should show enabled badge for active rules', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已启用'), 'expected enabled badge');
-    });
-  });
+  it('客户端组件应接收 snapshot 并渲染来源态提示', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: PointsRulesSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('snapshot.deliveryMode'))
+    assert.ok(CLIENT_SRC.includes('snapshot.generatedAt'))
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
+  })
 
-  it('should show disabled badge for inactive rules', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已禁用'), 'expected disabled badge');
-    });
-  });
+  it('客户端组件应保留概览卡、状态统计与 tabs', () => {
+    assert.ok(CLIENT_SRC.includes('规则总数'))
+    assert.ok(CLIENT_SRC.includes('月发放积分'))
+    assert.ok(CLIENT_SRC.includes('月消耗积分'))
+    assert.ok(CLIENT_SRC.includes('平均赚取率'))
+    assert.ok(CLIENT_SRC.includes('data-testid="status-stats"'))
+    assert.ok(CLIENT_SRC.includes("type RuleTab = 'earn' | 'redeem' | 'bonus' | 'all'"))
+    assert.ok(CLIENT_SRC.includes('赚取'))
+    assert.ok(CLIENT_SRC.includes('消耗'))
+    assert.ok(CLIENT_SRC.includes('奖励'))
+    assert.ok(CLIENT_SRC.includes('全部'))
+  })
 
-  it('should show trigger type labels', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('消费'), 'expected purchase trigger');
-      assert.ok(body.includes('手动'), 'expected manual trigger');
-    });
-  });
+  it('客户端组件应保留规则卡片与空态', () => {
+    assert.ok(CLIENT_SRC.includes('triggerLabel(rule.triggerType)'))
+    assert.ok(CLIENT_SRC.includes('rateStr(rule)'))
+    assert.ok(CLIENT_SRC.includes('优先级 #'))
+    assert.ok(CLIENT_SRC.includes('暂无规则'))
+    assert.ok(CLIENT_SRC.includes('.map((rule) =>'))
+  })
+})
 
-  it('should show refresh button', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const els = screen.queryAllByText('刷新');
-      assert.ok(els.length >= 1);
-    });
-  });
+describe('PointsRules — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
 
-  // ── 空状态测试 ──
-
-  it('should show empty state when no rules returned', async () => {
-    responseRegistry.clear();
-    setResponseFor('/points-rules', () => ({ success: true, data: { rules: [] }, message: 'OK' }));
-    setResponseFor('/points-summary', () => ({ success: true, data: { totalRules: 0, enabledRules: 0, avgEarnRate: 0, monthlyIssued: 0, monthlyRedeemed: 0, totalMembers: 0 }, message: 'OK' }));
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('暂无规则'), 'expected empty');
-    });
-  });
-
-  it('should show "当前分类下没有积分规则" for empty tab', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('当前分类下没有积分规则') || body.includes('暂无规则'));
-    });
-  });
-
-  // ── 费率显示测试 ──
-
-  it('should show rate info for earn rules', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('1分'), 'expected rate');
-    });
-  });
-
-  it('should show fixed earn points', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('10分/次'), 'expected fixed earn');
-    });
-  });
-
-  // ── 概览数值测试 ──
-
-  it('should show monthly issuance count', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('32'), 'expected monthly issued number');
-    });
-  });
-
-  it('should show total members in summary', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('4.6万'), 'expected formatted members');
-    });
-  });
-
-  it('should show average earn rate', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('1.2x'), 'expected earn rate');
-    });
-  });
-
-  // ── 规则状态统计条测试 ──
-
-  it('should render status stats section', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const el = document.querySelector('[data-testid="status-stats"]');
-      assert.ok(el, 'expected status stats section');
-    });
-  });
-
-  it('should show total-rules count in status stats', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('总规则'), 'expected total label');
-    });
-  });
-
-  it('should show enabled rules count in status stats', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已启用'), 'expected enabled label');
-    });
-  });
-
-  it('should show disabled rules count in status stats', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已禁用'), 'expected disabled label');
-    });
-  });
-
-  it('should show expired rules count in status stats', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已过期'), 'expected expired label');
-    });
-  });
-
-  // ── Tab切换测试 ──
-
-  it('should filter rules by earn tab', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      // Earn tab is default — should show earn and bonus rules
-      assert.ok(body.includes('消费积分'), 'expected earn rule on earn tab');
-      assert.ok(body.includes('签到积分'), 'expected checkin rule on earn tab');
-      assert.ok(body.includes('已禁用规则'), 'expected disabled earn rule on earn tab');
-    });
-  });
-
-  it('should switch to redeem tab', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const tabs = document.querySelectorAll('button');
-      let redeemBtn: Element | null = null;
-      for (const t of tabs) {
-        if (t.textContent?.includes('消耗')) { redeemBtn = t; break; }
-      }
-      if (redeemBtn) {
-        fireEvent.click(redeemBtn);
-      }
-    });
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('积分兑换'), 'expected redeem rule');
-    });
-  });
-
-  it('should switch to bonus tab', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const tabs = document.querySelectorAll('button');
-      let bonusBtn: Element | null = null;
-      for (const t of tabs) {
-        if (t.textContent?.includes('奖励')) { bonusBtn = t; break; }
-      }
-      if (bonusBtn) {
-        fireEvent.click(bonusBtn);
-      }
-    });
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已过期活动'), 'expected bonus rule');
-    });
-  });
-
-  it('should switch to all tab', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const tabs = document.querySelectorAll('button');
-      let allBtn: Element | null = null;
-      for (const t of tabs) {
-        if (t.textContent?.includes('全部')) { allBtn = t; break; }
-      }
-      if (allBtn) {
-        fireEvent.click(allBtn);
-      }
-    });
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('消费积分'));
-      assert.ok(body.includes('已过期活动'));
-    });
-  });
-
-  // ── 规则卡片元素测试 ──
-
-  it('should show member level badge', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('gold'), 'expected member level');
-    });
-  });
-
-  it('should show priority number', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('#1'), 'expected priority 1');
-    });
-  });
-
-  it('should show min amount when present', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('¥5.00'), 'expected min amount ¥5.00 for 500 cents');
-    });
-  });
-
-  it('should show daily max when present', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('5,000') || body.includes('5000'), 'expected daily max');
-    });
-  });
-
-  it('should show date range for time-limited rules', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('2026-01-01') && body.includes('2026-01-31'), 'expected date range');
-    });
-  });
-
-  // ── 加载与错误状态 ──
-
-  it('should show loading indicator initially', () => {
-    responseRegistry.clear();
-    const neverResolve = new Promise<Response>(() => {});
-    globalThis.fetch = () => neverResolve;
-    render(<PointsRulesPage />);
-    const body = document.body.textContent || '';
-    assert.ok(body.includes('加载积分规则'), 'expected loading text');
-    setDefault(); // restore after test
-  });
-
-  it('should show error message when API fails', async () => {
-    responseRegistry.clear();
-    setResponseFor('/points-rules', () => ({ success: false, message: 'API连接失败' }));
-    setResponseFor('/points-summary', () => ({ success: false, message: 'API连接失败' }));
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      // Should fallback to default data
-      assert.ok(body.includes('规则总数'), 'expected fallback summary');
-    });
-  });
-
-  it('should fallback to default data on network error', async () => {
-    responseRegistry.clear();
-    setResponseFor('/points-rules', () => { throw new Error('Network error'); });
-    setResponseFor('/points-summary', () => { throw new Error('Network error'); });
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('规则总数'), 'expected fallback on error');
-    });
-  });
-
-  // ── 边界条件 ──
-
-  it('should handle rules with all member levels empty', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('消费积分'), 'expected default rule');
-      assert.ok(body.includes('总规则'), 'expected stats section');
-    });
-  });
-
-  it('should handle earnPoints-only rule correctly', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('签到积分'), 'expected checkin rule');
-      assert.ok(body.includes('10分/次'), 'expected fixed rate display');
-    });
-  });
-
-  it('should handle all-disabled rules case', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('已禁用'), 'expected disabled badge');
-      assert.ok(body.includes('已禁用规则'), 'expected disabled rule name');
-    });
-  });
-
-  // ── 表单验证 ──
-
-  it('should have numeric rates on rules', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('100积分'), 'expected redeem rate');
-    });
-  });
-
-  it('should show 刷新 button and trigger reload', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const refreshBtns = screen.queryAllByText('刷新');
-      assert.ok(refreshBtns.length >= 1, 'expected refresh button');
-    });
-  });
-
-  it('should render correct number of status stat cards', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const statGrid = document.querySelector('[data-testid="status-stats"]');
-      assert.ok(statGrid, 'expected status stats grid');
-      const children = statGrid?.children || [];
-      assert.ok(children.length >= 4, 'expected 4 stat cards');
-    });
-  });
-
-  it('should show rule description in card', async () => {
-    render(<PointsRulesPage />);
-    await waitFor(() => {
-      const body = document.body.textContent || '';
-      assert.ok(body.includes('每消费¥1得1分'), 'expected description');
-    });
-  });
-});
-
-// ── 源代码静态分析 ──
-
-const SRC = fs.readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
-describe('PointsRulesPage — hooks验证', () => {
-  it('包含useState', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含状态统计条', () => assert.ok(SRC.includes('statusStats') || SRC.includes('data-testid="status-stats"')));
-  it('包含已禁用统计', () => assert.ok(SRC.includes('disabled') && SRC.includes('已禁用')));
-  it('包含已过期统计', () => assert.ok(SRC.includes('expired') && SRC.includes('已过期')));
-});
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
+})

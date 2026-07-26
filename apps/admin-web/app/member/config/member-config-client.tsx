@@ -84,7 +84,12 @@ export default function MemberConfigClient({
         <div>
           <h1>会员配置中心</h1>
           <p style={{ color: '#666' }}>
-            Delivery {snapshot.deliveryMode} · generatedAt {snapshot.generatedAt}
+            Delivery {snapshot.deliveryMode} · source {snapshot.sourceLabel} · generatedAt{' '}
+            {snapshot.generatedAt}
+          </p>
+          <p style={{ color: '#666', marginTop: 4 }}>
+            最近变更 {snapshot.lastChangedAt} · 操作人 {snapshot.lastChangedBy} · 历史记录{' '}
+            {snapshot.historyCount}
           </p>
         </div>
         <button
@@ -108,6 +113,21 @@ export default function MemberConfigClient({
           }}
         >
           {toast.message}
+        </div>
+      )}
+
+      {snapshot.error && (
+        <div
+          style={{
+            padding: 12,
+            margin: '12px 0',
+            borderRadius: 4,
+            background: '#fff7ed',
+            color: '#9a3412',
+            border: '1px solid #fdba74',
+          }}
+        >
+          {snapshot.error}
         </div>
       )}
 

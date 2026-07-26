@@ -11,7 +11,7 @@ import {
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type { StaffItem, StaffRole, StaffStatus } from '../staff-data'
-export { STAFF_ROLE_MAP, STAFF_STATUS_MAP }
+export { STAFF_ROLE_MAP, STAFF_STATUS_MAP, computeStaffStats }
 export const MOCK_STAFF = FALLBACK_STAFF
 
 export interface StaffSnapshotDelivery {

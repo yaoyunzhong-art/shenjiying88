@@ -21,11 +21,21 @@ export default async function OrdersPage({ params }: PageProps) {
   const snapshot = await loadStoreOrdersSnapshot(id)
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource: 'loadStoreOrdersSnapshot -> DEFAULT_STORE_ORDERS',
-    businessDataSource: 'local store order samples',
+    sourceLabel: snapshot.sourceLabel,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'api'
+        ? 'loadStoreOrdersSnapshot -> transactions?type=order&storeId={id}'
+        : 'loadStoreOrdersSnapshot -> DEFAULT_STORE_ORDERS',
+    businessDataSource:
+      snapshot.deliveryMode === 'api'
+        ? 'transactions order upstream responses'
+        : 'local store order fallback samples',
     refreshPath: 'OrdersPage -> loadStoreOrdersSnapshot',
     generatedAt: snapshot.generatedAt,
-    note: '当前页面使用服务端样本快照，暂未接入门店订单主链，不可作为闭环复签证据。',
+    note:
+      snapshot.deliveryMode === 'api'
+        ? '当前页面直接消费交易订单服务端快照。'
+        : snapshot.error ?? '当前页面已回退到门店订单样本，不可作为闭环复签证据。',
   } as const
 
   return (
@@ -33,7 +43,8 @@ export default async function OrdersPage({ params }: PageProps) {
       <div className="space-y-6 p-6">
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700">
           <div>
-            Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+            Delivery {sourceEvidence.deliveryMode} · 来源标签: {sourceEvidence.sourceLabel} ·
+            控制面来源: {sourceEvidence.controlPlaneSource}
           </div>
           <div>
             业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}

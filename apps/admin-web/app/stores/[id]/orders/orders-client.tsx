@@ -62,18 +62,12 @@ export default function StoreOrdersClient({
   }, [methodFilter, search, snapshot.orders, statusFilter])
 
   const totalRevenue = useMemo(
-    () =>
-      snapshot.orders
-        .filter((order) => order.status === 'completed')
-        .reduce((sum, order) => sum + order.amount, 0),
-    [snapshot.orders]
+    () => snapshot.summary.completedRevenue,
+    [snapshot.summary.completedRevenue]
   )
   const refundedTotal = useMemo(
-    () =>
-      snapshot.orders
-        .filter((order) => order.status === 'refunded')
-        .reduce((sum, order) => sum + order.amount, 0),
-    [snapshot.orders]
+    () => snapshot.summary.refundedAmount,
+    [snapshot.summary.refundedAmount]
   )
 
   const columns = [
@@ -137,8 +131,12 @@ export default function StoreOrdersClient({
           <div>
             <h2 style={{ color: '#fafafa', margin: 0 }}>订单管理</h2>
             <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 6 }}>
-              门店 {snapshot.storeId} · Delivery {snapshot.deliveryMode} · generatedAt{' '}
-              {snapshot.generatedAt}
+              门店 {snapshot.storeId} · Delivery {snapshot.deliveryMode} · source{' '}
+              {snapshot.sourceLabel} · generatedAt {snapshot.generatedAt}
+            </div>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>
+              总单量 {snapshot.summary.total} · 已完成 {snapshot.summary.completed} · 待处理{' '}
+              {snapshot.summary.pending} · 已退款 {snapshot.summary.refunded}
             </div>
           </div>
           <Button
@@ -153,14 +151,14 @@ export default function StoreOrdersClient({
         <Row gutter={[16, 16]}>
           <Col span={6}>
             <Card size="small">
-              <Statistic title="总订单" value={snapshot.orders.length} />
+              <Statistic title="总订单" value={snapshot.summary.total} />
             </Card>
           </Col>
           <Col span={6}>
             <Card size="small">
               <Statistic
                 title="已完成"
-                value={snapshot.orders.filter((order) => order.status === 'completed').length}
+                value={snapshot.summary.completed}
                 valueStyle={{ color: '#34d399' }}
               />
             </Card>
@@ -169,7 +167,7 @@ export default function StoreOrdersClient({
             <Card size="small">
               <Statistic
                 title="待处理"
-                value={snapshot.orders.filter((order) => order.status === 'pending').length}
+                value={snapshot.summary.pending}
                 valueStyle={{ color: '#60a5fa' }}
               />
             </Card>
@@ -187,8 +185,22 @@ export default function StoreOrdersClient({
         </Row>
 
         <Card>
+          {snapshot.error && (
+            <div
+              style={{
+                color: '#fdba74',
+                background: 'rgba(251, 146, 60, 0.12)',
+                border: '1px solid rgba(251, 146, 60, 0.3)',
+                borderRadius: 8,
+                padding: '10px 12px',
+                marginBottom: 12,
+              }}
+            >
+              {snapshot.error}
+            </div>
+          )}
           <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
-            当前列表由服务端样本快照透传，暂未接入门店订单服务端主链。
+            当前列表由服务端快照透传，交易主链优先读取真实订单接口，失败时回退门店样本。
           </div>
           <Space style={{ width: '100%', marginBottom: 12, flexWrap: 'wrap', gap: 8 }} wrap>
             <Input.Search
