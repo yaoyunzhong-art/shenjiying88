@@ -136,6 +136,16 @@ describe('workbench-page: 正例 (positive cases)', () => {
       assert.ok(fallbackWorkbenchConsumerDescriptor.recommendedSequence.length >= 2);
       assert.ok(fallbackWorkbenchConsumerDescriptor.governanceTouchpoints.length >= 1);
     });
+
+    it('workbench list source should include visible delivery evidence', async () => {
+      const source = await import('node:fs/promises').then((fs) =>
+        fs.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
+      );
+      assert.ok(source.includes('workbenchSource'));
+      assert.ok(source.includes('工作台目录来源'));
+      assert.ok(source.includes('实时工作台快照'));
+      assert.ok(source.includes('fallback 工作台目录'));
+    });
   });
 });
 

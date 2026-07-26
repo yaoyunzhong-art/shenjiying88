@@ -9,6 +9,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { mapToBackendRole } from '@m5/types';
 import { PageShell, StatCard, StatusBadge, Tabs } from '@m5/ui';
 import { Spin, Empty, message } from 'antd';
 import { getBizClient } from '../../lib/sdk';
@@ -27,6 +28,7 @@ function fm(a:number):string{return`¥${a.toLocaleString('zh-CN',{minimumFractio
 interface WorkbenchData {
   session: CashierSession;
   recentTxns: RecentTransaction[];
+  deliveryMode: 'api' | 'fallback';
 }
 
 /** 工作台初始数据 (API 不可用或首次加载前使用) */
@@ -106,13 +108,17 @@ async function loadWorkbenchData(): Promise<WorkbenchData> {
         customer: o.memberId?.slice(0, 4) ?? '--',
       }));
 
-      return { session, recentTxns: recentTxns.length > 0 ? recentTxns : generateFallbackTxns() };
+      return {
+        session,
+        recentTxns: recentTxns.length > 0 ? recentTxns : generateFallbackTxns(),
+        deliveryMode: 'api',
+      };
     } catch {
       // API 不可用, 回落 fallback
     }
   }
 
-  return { session: FALLBACK_SESSION, recentTxns: generateFallbackTxns() };
+  return { session: FALLBACK_SESSION, recentTxns: generateFallbackTxns(), deliveryMode: 'fallback' };
 }
 
 
@@ -127,13 +133,18 @@ export default function CashierWorkbenchPage() {
   const [amount, setAmount] = useState('');
   const [data, setData] = useState<WorkbenchData | null>(null);
   const [loading, setLoading] = useState(true);
+  const backendRole = mapToBackendRole('CASHIER');
 
   useEffect(() => {
     loadWorkbenchData()
       .then(setData)
       .catch(() => {
         // fallback: 使用静态数据
-        setData({ session: FALLBACK_SESSION, recentTxns: generateFallbackTxns() });
+        setData({
+          session: FALLBACK_SESSION,
+          recentTxns: generateFallbackTxns(),
+          deliveryMode: 'fallback',
+        });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -143,7 +154,11 @@ export default function CashierWorkbenchPage() {
     loadWorkbenchData()
       .then(setData)
       .catch(() => {
-        setData({ session: FALLBACK_SESSION, recentTxns: generateFallbackTxns() });
+        setData({
+          session: FALLBACK_SESSION,
+          recentTxns: generateFallbackTxns(),
+          deliveryMode: 'fallback',
+        });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -175,11 +190,52 @@ export default function CashierWorkbenchPage() {
   }
 
   const { session: s, recentTxns } = data;
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode: data.deliveryMode,
+      controlPlaneSource: 'admin local session + CashierWorkbenchPage',
+      businessDataSource:
+        data.deliveryMode === 'api'
+          ? 'biz.orders.list + biz.cashier.getChannelStats'
+          : 'FALLBACK_SESSION + generateFallbackTxns',
+      note:
+        data.deliveryMode === 'api'
+          ? '收银工作台当前已命中 SDK/API 数据，若交易列表为空仍会回退到本地样本。'
+          : '收银工作台当前未命中 SDK/API，页面已回退到本地 session 和交易样本。',
+    }),
+    [data.deliveryMode],
+  );
+  const usesOperatorBridge = backendRole === 'operator';
 
   return (
     <AdminPermissionGate {...permissionGate}>
       <main style={{maxWidth:1200,margin:'0 auto',padding:24}}>
         <PageShell title="💳 收银工作台" subtitle={SHIFT_STATUS[s.status]?.l ?? ''}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(15, 23, 42, 0.38)',
+            border: '1px solid rgba(148, 163, 184, 0.12)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <StatusBadge label={`Delivery ${sourceEvidence.deliveryMode}`} variant="neutral" size="sm" />
+            <span style={{ fontSize: 12, color: '#cbd5e1' }}>
+              控制面来源: {sourceEvidence.controlPlaneSource}
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 8, lineHeight: 1.7 }}>
+            业务数据: {sourceEvidence.businessDataSource} · tenant-config 角色映射:{' '}
+            {backendRole ?? '未映射'}
+          </div>
+          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
+            {usesOperatorBridge
+              ? `${sourceEvidence.note} 当前收银角色仍通过 operator 桥接到 tenant-config，属于 E54 M1 过渡态。`
+              : sourceEvidence.note}
+          </div>
+        </div>
         <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>当班营收</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(s.expectedTotal)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>{s.transactionCount}笔</div></div>
           <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>现金</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#eab308'}}>{fm(s.cashRevenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>开柜: {fm(s.openingBalance)}</div></div>

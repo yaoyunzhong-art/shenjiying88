@@ -12,6 +12,8 @@ import { adminRuntimeOperationsRoute } from './operations-data';
 
 export default async function HomePage() {
   const snapshot = await getAdminWorkbenchConsumerSnapshot();
+  const workbenchSource =
+    snapshot.deliveryMode === 'api' ? 'snapshot.workbenches' : 'fallbackRoleWorkbenches';
   const configurationHref = buildConfigurationHref({
     tenantId: snapshot.tenantContext.tenantId,
     brandId: snapshot.tenantContext.brandId,
@@ -46,6 +48,22 @@ export default async function HomePage() {
               value={String(snapshot.governance.alerts.length)}
               helper={snapshot.governance.deliveryMode === 'api' ? '实时 catalog' : 'fallback catalog'}
             />
+          </div>
+          <div
+            style={{
+              marginTop: 24,
+              borderRadius: 18,
+              padding: 20,
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)'
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 700 }}>工作台入口来源态</div>
+            <div style={{ marginTop: 10, color: '#cbd5e1', lineHeight: 1.7 }}>
+              Delivery {snapshot.deliveryMode} · 工作台来源 {workbenchSource}
+              <br />
+              首页工作台目录当前直接消费 `snapshot.workbenches`，已显式区分实时工作台快照与 fallback 工作台目录。
+            </div>
           </div>
           <div
             style={{
@@ -195,7 +213,11 @@ export default async function HomePage() {
             </Link>
           </div>
           <div style={{ marginTop: 24 }}>
-            <WorkbenchList workbenches={snapshot.workbenches} />
+            <WorkbenchList
+              workbenches={snapshot.workbenches}
+              deliveryMode={snapshot.deliveryMode}
+              sourceLabel={workbenchSource}
+            />
           </div>
         </PageShell>
       </AdminPermissionGate>

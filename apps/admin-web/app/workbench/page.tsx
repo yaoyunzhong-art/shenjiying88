@@ -28,6 +28,8 @@ const roleBadgeMap: Record<string, BadgeVariant> = {
 export default async function WorkbenchListPage() {
   const snapshot = await getAdminWorkbenchConsumerSnapshot();
   const { workbenches, governance } = snapshot;
+  const workbenchSource =
+    snapshot.deliveryMode === 'api' ? 'snapshot.workbenches' : 'fallbackRoleWorkbenches';
 
   const workbenchByRole = new Map(workbenches.map((wb) => [wb.role, wb]));
 
@@ -53,6 +55,35 @@ export default async function WorkbenchListPage() {
           <p style={{ marginTop: 0, color: '#cbd5e1', marginBottom: 24 }}>
             选择角色工作台，进入对应的业务管理模块。
           </p>
+          <div
+            style={{
+              marginBottom: 20,
+              borderRadius: 18,
+              padding: 18,
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: '#e2e8f0',
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(148, 163, 184, 0.18)',
+                }}
+              >
+                Delivery {snapshot.deliveryMode}
+              </span>
+              <span style={{ fontSize: 12, color: '#cbd5e1' }}>
+                工作台目录来源: {workbenchSource}
+              </span>
+            </div>
+            <div style={{ marginTop: 8, color: '#94a3b8', fontSize: 13, lineHeight: 1.7 }}>
+              当前目录页统一消费 `snapshot.workbenches`，已显式区分实时 API 与 fallbackRoleWorkbenches 通路。
+            </div>
+          </div>
 
           {roleCategories.map((category) => {
             const visible = category.roles
@@ -104,6 +135,9 @@ export default async function WorkbenchListPage() {
                           </div>
                           <div style={{ color: '#cbd5e1', fontSize: 14, marginBottom: 14 }}>
                             {wb.description}
+                          </div>
+                          <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
+                            来源: {snapshot.deliveryMode === 'api' ? '实时工作台快照' : 'fallback 工作台目录'}
                           </div>
                           <div
                             style={{

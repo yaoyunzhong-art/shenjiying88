@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { mapToBackendRole } from '@m5/types';
 import { FoundationConsumerWiringSection, GovernanceQuickViewSection, LoadingSkeleton, WorkspaceBreadcrumb, DetailClosureBar } from '@m5/ui';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { GovernanceLinkedOverview } from '../../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../../components/runtime-governance-panel';
-import { getAdminWorkbenchConsumerSnapshot, getRoleWorkbench } from '../../bootstrap';
+import { getAdminWorkbenchConsumerSnapshot, getRoleWorkbench, normalizeWorkbenchRoleKey } from '../../bootstrap';
 import { accessMeta, buildCapabilityEntrypoints, isStoreScopedWorkbenchRole, loadStoreCapabilityAccessSnapshot, readinessMeta } from '../../lyt-capability-access';
 import { DetailPageActions } from '../../components/detail-page-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
@@ -30,6 +31,19 @@ export default async function RoleWorkbenchPage({
   const visibleEntrypoints = capabilitySnapshot
     ? buildCapabilityEntrypoints(capabilityStoreId, capabilitySnapshot.capabilityAccess).filter((item) => item.visibility === 'visible')
     : [];
+  const backendRole = mapToBackendRole(workbench.role);
+  const normalizedRole = normalizeWorkbenchRoleKey(workbench.role);
+  const matchedSnapshotWorkbench = snapshot.workbenches.find(
+    (item) => normalizeWorkbenchRoleKey(item.role) === normalizedRole,
+  );
+  const workbenchDeliveryMode =
+    snapshot.deliveryMode === 'api' && matchedSnapshotWorkbench ? 'api' : 'fallback';
+  const workbenchSource = matchedSnapshotWorkbench
+    ? snapshot.deliveryMode === 'api'
+      ? 'snapshot.workbenches'
+      : 'fallbackRoleWorkbenches'
+    : 'fallbackWorkbenchMap';
+  const usesOperatorBridge = backendRole === 'operator';
 
   return (
     <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
@@ -52,6 +66,41 @@ export default async function RoleWorkbenchPage({
           <div style={{ fontSize: 13, color: '#93c5fd' }}>{workbench.channel}</div>
           <h1 style={{ marginBottom: 12 }}>{workbench.title}</h1>
           <p style={{ marginTop: 0, color: '#cbd5e1' }}>{workbench.description}</p>
+          <section
+            style={{
+              marginBottom: 20,
+              borderRadius: 18,
+              padding: 18,
+              background: 'rgba(15, 23, 42, 0.35)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: '#e2e8f0',
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(148, 163, 184, 0.18)',
+                }}
+              >
+                Delivery {workbenchDeliveryMode}
+              </span>
+              <span style={{ fontSize: 12, color: '#cbd5e1' }}>
+                工作台来源: {workbenchSource}
+              </span>
+            </div>
+            <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 13, lineHeight: 1.7 }}>
+              tenant-config 角色映射: {backendRole ?? '未映射'} · navItems: {workbench.navItems.length} ·
+              snapshot delivery: {snapshot.deliveryMode}
+            </div>
+            <div style={{ marginTop: 8, color: '#94a3b8', fontSize: 13 }}>
+              {usesOperatorBridge
+                ? '当前角色工作台主数据已补齐来源态证据，但 tenant-config 角色仍通过 operator 桥接，属于 E54 M1 过渡态。'
+                : '当前角色工作台主数据已补齐来源态证据，可区分 snapshot/api 与 fallbackWorkbenchMap 路径。'}
+            </div>
+          </section>
 
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
             {workbench.navItems.map((item) => (

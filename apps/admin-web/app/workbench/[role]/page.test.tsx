@@ -167,6 +167,13 @@ describe('workbench-[role]: 权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes('requiredPermission="workbench.read"'));
   });
+
+  it('角色详情页显式展示工作台来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {workbenchDeliveryMode}') || SRC.includes('Delivery '));
+    assert.ok(SRC.includes('工作台来源'));
+    assert.ok(SRC.includes('fallbackWorkbenchMap'));
+    assert.ok(SRC.includes('tenant-config 角色映射'));
+  });
 });
 
 describe('workbench-[role]: 数据类型', () => {

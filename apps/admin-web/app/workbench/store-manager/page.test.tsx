@@ -9,11 +9,23 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
 import StoreManagerWorkbenchPage from './page';
-import fs from 'node:fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+const CLIENT_SOURCE = resolve(__dirname, 'store-manager-client.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+function readClientSource(): string {
+  return readFileSync(CLIENT_SOURCE, 'utf-8');
+}
 
 /* ── 类型 ── */
 
@@ -167,42 +179,55 @@ function getTaskByStatus(tasks: TaskItem[], status: TaskStatus): TaskItem[] {
   return tasks.filter(t => t.status === status);
 }
 
-/* ── 辅助 ── */
-
-function setup() {
-  cleanup();
-  window.localStorage.setItem(
-    'admin_user',
-    JSON.stringify({
-      userId: 'admin:test',
-      role: 'super-admin',
-      permissions: ['workbench.read'],
-    }),
-  );
-  return render(React.createElement(StoreManagerWorkbenchPage));
-}
-
 /* ============================================================ */
 
 describe('store-manager: 页面渲染', () => {
   it('源码包含店长工作台标题', () => {
-    assert.ok(SRC.includes('店长工作台'));
+    assert.ok(readClientSource().includes('店长工作台'));
   });
 
   it('component is a function', () => {
     assert.equal(typeof StoreManagerWorkbenchPage, 'function');
   });
 
+  it('服务端页面应导出 async 组件', () => {
+    assert.ok(readSource().includes('export default async function StoreManagerWorkbenchPage'));
+  });
+
+  it('服务端页面应接入 bootstrap snapshot', () => {
+    const src = readSource();
+    assert.ok(src.includes('getAdminWorkbenchConsumerSnapshot'));
+    assert.ok(src.includes("getRoleWorkbench('STORE_MANAGER')"));
+  });
+
+  it('服务端页面应将来源态透传给客户端组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('<StoreManagerWorkbenchClient'));
+    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(src.includes('roleWorkbench={roleWorkbench}'));
+  });
+
   it('源码包含 KPI 卡片文案', () => {
-    assert.ok(SRC.includes('今日营收') && SRC.includes('今日客流'));
+    const src = readClientSource();
+    assert.ok(src.includes('今日营收') && src.includes('今日客流'));
   });
 
   it('源码包含状态栏文案', () => {
-    assert.ok(SRC.includes('待办任务') || SRC.includes('紧急事项') || SRC.includes('当班员工'));
+    const src = readClientSource();
+    assert.ok(src.includes('待办任务') || src.includes('紧急事项') || src.includes('当班员工'));
   });
 
   it('源码包含标签导航文案', () => {
-    assert.ok(SRC.includes('运营概览') || SRC.includes('待办'));
+    const src = readClientSource();
+    assert.ok(src.includes('运营概览') || src.includes('待办'));
+  });
+
+  it('客户端应显式展示来源态和角色映射证据', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('controlPlaneSource'));
+    assert.ok(src.includes('businessDataSource'));
+    assert.ok(src.includes('tenant-config 角色映射'));
+    assert.ok(src.includes('mockKpi/mockTasks/mockHotProducts/mockStaffOnDuty/mockRevenueHours'));
   });
 });
 
@@ -408,12 +433,15 @@ describe('store-manager: 业务逻辑', () => {
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = readClientSource();
 
 describe('Workbench / Store Manager — hooks验证', () => {
   it('应接入管理员权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'workbench.read'"));
+  });
+  it('客户端应使用 use client 指令', () => {
+    assert.ok(SRC.includes("'use client'"));
   });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

@@ -88,6 +88,14 @@ describe('cashier: 页面渲染', () => {
   it('源码包含收银工作台文案', () => {
     assert.ok(SRC.includes('收银工作台') || SRC.includes('收银'));
   });
+
+  it('源码应显式展示来源态与角色映射证据', () => {
+    assert.ok(SRC.includes('deliveryMode'));
+    assert.ok(SRC.includes('controlPlaneSource'));
+    assert.ok(SRC.includes('businessDataSource'));
+    assert.ok(SRC.includes('tenant-config 角色映射'));
+    assert.ok(SRC.includes('operator 桥接'));
+  });
 });
 
 describe('cashier: 数据类型', () => {
@@ -273,4 +281,5 @@ describe('Workbench / Cashier — hooks验证', () => {
   it('使用 SDK 数据加载', () => assert.ok(SRC.includes('getBizClient') || SRC.includes('biz.')));
   it('使用 @m5/sdk', () => assert.ok(SRC.includes('@m5/sdk') || SRC.includes('../../lib/sdk')));
   it('包含加载状态', () => assert.ok(SRC.includes('loading')));
+  it('包含来源态展示', () => assert.ok(SRC.includes('Delivery ${sourceEvidence.deliveryMode}') || SRC.includes('Delivery ')));
 });

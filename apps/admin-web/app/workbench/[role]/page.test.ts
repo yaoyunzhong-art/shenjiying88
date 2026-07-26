@@ -123,6 +123,16 @@ describe('[role] 正例 (positive)', () => {
     assert.ok(Array.isArray(snapshot.governance.alerts));
   });
 
+  it('page source should include visible workbench source evidence', async () => {
+    const source = await import('node:fs/promises').then((fs) =>
+      fs.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
+    );
+    assert.ok(source.includes('workbenchDeliveryMode'));
+    assert.ok(source.includes('workbenchSource'));
+    assert.ok(source.includes('fallbackWorkbenchMap'));
+    assert.ok(source.includes('tenant-config 角色映射'));
+  });
+
   it('fallback workbench data has 10 role entries', () => {
     assert.equal(fallbackRoleWorkbenches.length, 10);
   });

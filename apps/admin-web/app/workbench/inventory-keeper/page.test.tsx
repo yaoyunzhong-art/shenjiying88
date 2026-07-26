@@ -9,11 +9,23 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
 import InventoryKeeperWorkbenchPage from './page';
-import fs from 'node:fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+const CLIENT_SOURCE = resolve(__dirname, 'inventory-keeper-client.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+function readClientSource(): string {
+  return readFileSync(CLIENT_SOURCE, 'utf-8');
+}
 
 /* ── 类型 ── */
 
@@ -124,38 +136,49 @@ function isUrgentTask(task: OutboundTask): boolean {
   return task.priority === 'high' && task.status === 'pending';
 }
 
-/* ── 辅助 ── */
-
-function setup() {
-  cleanup();
-  window.localStorage.setItem(
-    'admin_user',
-    JSON.stringify({
-      userId: 'admin:test',
-      role: 'super-admin',
-      permissions: ['workbench.read'],
-    }),
-  );
-  return render(React.createElement(InventoryKeeperWorkbenchPage));
-}
-
 /* ============================================================ */
 
 describe('inventory-keeper: 页面渲染', () => {
   it('源码包含仓管员工作台标题', () => {
-    assert.ok(SRC.includes('仓管员工作台'));
+    assert.ok(readClientSource().includes('仓管员工作台'));
   });
 
   it('component is a function', () => {
     assert.equal(typeof InventoryKeeperWorkbenchPage, 'function');
   });
 
+  it('服务端页面应导出 async 组件', () => {
+    assert.ok(readSource().includes('export default async function InventoryKeeperWorkbenchPage'));
+  });
+
+  it('服务端页面应接入 bootstrap snapshot', () => {
+    const src = readSource();
+    assert.ok(src.includes('getAdminWorkbenchConsumerSnapshot'));
+    assert.ok(src.includes("getRoleWorkbench('WAREHOUSE')"));
+  });
+
+  it('服务端页面应将来源态透传给客户端组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('<InventoryKeeperWorkbenchClient'));
+    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(src.includes('roleWorkbench={roleWorkbench}'));
+  });
+
   it('源码包含仓库指标文案', () => {
-    assert.ok(SRC.includes('仓库'));
+    assert.ok(readClientSource().includes('仓库'));
   });
 
   it('源码包含快捷操作文案', () => {
-    assert.ok(SRC.includes('新建入库单') || SRC.includes('新建出库单') || SRC.includes('盘点库存'));
+    const src = readClientSource();
+    assert.ok(src.includes('新建入库单') || src.includes('新建出库单') || src.includes('盘点库存'));
+  });
+
+  it('客户端应显式展示来源态与角色映射证据', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('controlPlaneSource'));
+    assert.ok(src.includes('businessDataSource'));
+    assert.ok(src.includes('tenant-config 角色映射'));
+    assert.ok(src.includes('MOCK_METRICS + MOCK_STOCK_ALERTS + MOCK_INBOUND_TASKS + MOCK_OUTBOUND_TASKS'));
   });
 });
 
@@ -326,12 +349,15 @@ describe('inventory-keeper: 业务逻辑', () => {
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = readClientSource();
 
 describe('Workbench / Inventory Keeper — hooks验证', () => {
   it('应接入管理员权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'workbench.read'"));
+  });
+  it('客户端应使用 use client 指令', () => {
+    assert.ok(SRC.includes("'use client'"));
   });
   it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

@@ -114,6 +114,14 @@ describe('workbench — 文件结构', () => {
     assert.ok(source.includes('AdminPermissionGate'));
     assert.ok(source.includes('requiredPermission="workbench.read"'));
   });
+
+  it('5. 显式展示目录来源态证据', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('Delivery {snapshot.deliveryMode}') || source.includes('Delivery '));
+    assert.ok(source.includes('工作台目录来源'));
+    assert.ok(source.includes('snapshot.workbenches'));
+    assert.ok(source.includes('fallbackRoleWorkbenches'));
+  });
 });
 
 /* ══════════════════════════════════════════════════════════
