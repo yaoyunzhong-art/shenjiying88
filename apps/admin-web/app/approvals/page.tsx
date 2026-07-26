@@ -170,6 +170,20 @@ export default function ApprovalsPage() {
       passRate: resolved.length > 0 ? Math.round((approved.length / resolved.length) * 100) : 0,
     };
   }, [approvals]);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode: 'mock' as const,
+      controlPlaneSource: 'DEFAULT_APPROVALS + responseRegistry',
+      businessDataSource: 'in-memory approval records',
+      refreshPath: 'ApprovalsPage.handleRefresh -> DEFAULT_APPROVALS',
+      writePath: 'handleApiCall(/api/approvals/*) -> local state mutation only',
+      latestUpdatedAt:
+        approvals.length > 0
+          ? approvals.reduce((latest, item) => (item.updatedAt > latest ? item.updatedAt : latest), approvals[0]!.updatedAt)
+          : '—',
+    }),
+    [approvals]
+  );
 
   // ---- 事件处理 ----
 
@@ -262,23 +276,49 @@ export default function ApprovalsPage() {
             管理所有类型的审批请求，快速处理待办事项
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          style={{
-            borderRadius: 10,
-            padding: '10px 20px',
-            background: 'rgba(59,130,246,0.16)',
-            border: '1px solid rgba(96,165,250,0.3)',
-            color: '#dbeafe',
-            cursor: isRefreshing ? 'not-allowed' : 'pointer',
-            fontSize: 14,
-            opacity: isRefreshing ? 0.6 : 1,
-          }}
-        >
-          {isRefreshing ? '⟳ 刷新中...' : '⟳ 刷新'}
-        </button>
+        <div style={{ display: 'grid', gap: 6, justifyItems: 'end' }}>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            style={{
+              borderRadius: 10,
+              padding: '10px 20px',
+              background: 'rgba(59,130,246,0.16)',
+              border: '1px solid rgba(96,165,250,0.3)',
+              color: '#dbeafe',
+              cursor: isRefreshing ? 'not-allowed' : 'pointer',
+              fontSize: 14,
+              opacity: isRefreshing ? 0.6 : 1,
+            }}
+          >
+            {isRefreshing ? '⟳ 刷新中...' : '⟳ 刷新'}
+          </button>
+          <span style={{ fontSize: 12, color: '#64748b' }}>仅重置本地 mock 样本，不会请求真实审批服务。</span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 20,
+          padding: '12px 14px',
+          borderRadius: 12,
+          background: 'rgba(15,23,42,0.38)',
+          border: '1px solid rgba(148,163,184,0.18)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.6,
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>
+          写入路径: {sourceEvidence.writePath} · latestUpdatedAt: {sourceEvidence.latestUpdatedAt}
+        </div>
       </div>
 
       {/* 概览统计 */}
@@ -490,13 +530,18 @@ function ApprovalCard({
 
       {/* 待审批操作区 */}
       {isPending && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <button type="button" onClick={onApprove} style={actionBtnStyle('#22c55e', '#86efac')}>
-            ✅ 批准
-          </button>
-          <button type="button" onClick={onReject} style={actionBtnStyle('#ef4444', '#fca5a5')}>
-            ❌ 驳回
-          </button>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={onApprove} style={actionBtnStyle('#22c55e', '#86efac')}>
+              ✅ 批准
+            </button>
+            <button type="button" onClick={onReject} style={actionBtnStyle('#ef4444', '#fca5a5')}>
+              ❌ 驳回
+            </button>
+          </div>
+          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            当前为本地 mock 写链路，审批动作只更新前端内存态，不会写入真实审批系统。
+          </div>
         </div>
       )}
 
@@ -564,6 +609,9 @@ function ApprovalCard({
             >
               {reviewSubmitting ? '提交中...' : '提交意见'}
             </button>
+            <div style={{ marginTop: 8, fontSize: 12, color: '#64748b' }}>
+              审批意见当前通过 `responseRegistry` 模拟提交，仅用于控制面演示。
+            </div>
           </div>
         )}
       </div>

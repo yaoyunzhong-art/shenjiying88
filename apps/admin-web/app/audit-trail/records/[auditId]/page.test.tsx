@@ -52,6 +52,12 @@ describe('audit-trail/records/[auditId] — 正例', () => {
     assert.ok(src.includes('loadMockSnapshot'), '缺少数据加载函数');
   });
 
+  it('本地命中样本时 deliveryMode 应标为 mock 而非 api', () => {
+    const src = readSource();
+    assert.ok(src.includes("deliveryMode: 'mock'"), '命中样本应为 mock');
+    assert.ok(!src.includes("deliveryMode: 'api'"), '不应再把本地样本标记为 api');
+  });
+
   it('应使用 PageShell 作为页面布局容器', () => {
     const src = readSource();
     assert.ok(src.includes('PageShell'), '缺少 PageShell');
@@ -126,6 +132,15 @@ describe('audit-trail/records/[auditId] — 边界', () => {
     const src = readSource();
     assert.ok(src.includes('JSON.stringify(record.details, null, 2)'), '应 JSON 格式化详情');
   });
+
+  it('页面应展示审计详情来源态证据', () => {
+    const src = readSource();
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(src.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(src.includes('referenceAuditId: {sourceEvidence.referenceAuditId}'));
+    assert.ok(src.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
 });
 
 // ---- 防御: 错误处理 & 非法输入 ----
@@ -184,6 +199,14 @@ describe('audit-trail/records/[auditId] — 防御', () => {
   it('空字符串 auditId 应返回 notFound', () => {
     const src = readSource();
     assert.ok(src.includes('!auditId'), '空值应返回 notFound');
+  });
+
+  it('应区分 mock 样本与 fallback notFound 来源', () => {
+    const src = readSource();
+    assert.ok(src.includes('loadMockSnapshot / KNOWN local samples'));
+    assert.ok(src.includes('loadMockSnapshot notFound fallback'));
+    assert.ok(src.includes('local audit detail sample'));
+    assert.ok(src.includes('fallback notFound route'));
   });
 });
 

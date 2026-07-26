@@ -41,6 +41,7 @@ const SEED_SESSIONS: SessionItem[] = [
 
 const VALID_STATUSES = ['pending', 'running', 'completed', 'failed', 'cancelled'];
 const SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+const CLIENT_SRC = readFileSync(new URL('./agent-sessions-client.tsx', import.meta.url), 'utf-8');
 
 // ── 辅助函数 ──
 
@@ -193,5 +194,31 @@ describe('agents/sessions — 权限边界', () => {
   it('接入管理员权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+});
+
+describe('agents/sessions — 首屏壳层与来源态', () => {
+  it('使用 server page 加载会话快照', () => {
+    assert.ok(SRC.includes('export default async function AgentSessionsPage'));
+    assert.ok(SRC.includes('loadAgentSessions'));
+    assert.ok(SRC.includes("cache: 'no-store'"));
+    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"));
+  });
+
+  it('向 AgentSessionsClient 透传 sessions / deliveryMode / error', () => {
+    assert.ok(SRC.includes('AgentSessionsClient'));
+    assert.ok(SRC.includes('sessions={snapshot.sessions}'));
+    assert.ok(SRC.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(SRC.includes('error={snapshot.error}'));
+  });
+
+  it('client 展示会话来源态证据', () => {
+    assert.ok(CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(CLIENT_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(CLIENT_SRC.includes('latestCreatedAt: {sourceEvidence.latestCreatedAt}'));
+    assert.ok(CLIENT_SRC.includes('loadAgentSessions (listAgentSessions + getAgentStats)'));
+    assert.ok(CLIENT_SRC.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS'));
   });
 });

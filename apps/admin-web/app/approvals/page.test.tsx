@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import fs from 'node:fs';
+import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import { clearAdminSession, storeAdminSession } from '../lib/admin-session';
 import ApprovalsPage from './page';
@@ -568,6 +569,15 @@ describe('活动审批页 — 组件结构', () => {
   it('包含空态处理', () => {
     assert.ok(SRC.includes('EmptyState') || SRC.includes('empty'));
   });
+
+  it('显式展示 mock 来源态证据', () => {
+    assert.ok(SRC.includes("deliveryMode: 'mock'"));
+    assert.ok(SRC.includes('DEFAULT_APPROVALS + responseRegistry'));
+    assert.ok(SRC.includes('handleApiCall(/api/approvals/*) -> local state mutation only'));
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(SRC.includes('写入路径: {sourceEvidence.writePath}'));
+  });
 });
 
 // ===================== React 渲染测试 =====================
@@ -646,5 +656,13 @@ describe('活动审批页 — React 渲染', () => {
     const refreshBtn = screen.getByRole('button', { name: /⟳ 刷新/ });
     assert.ok(refreshBtn);
     assert.strictEqual(refreshBtn.getAttribute('type'), 'button');
+  });
+
+  it('渲染 mock 来源态证据与本地写链路提示', () => {
+    render(<ApprovalsPage />);
+    assert.ok(screen.getByText(/Delivery mock/));
+    assert.ok(screen.getByText(/DEFAULT_APPROVALS \+ responseRegistry/));
+    assert.ok(screen.getByText(/仅重置本地 mock 样本/));
+    assert.ok(screen.getAllByText(/只更新前端内存态/).length >= 1);
   });
 });

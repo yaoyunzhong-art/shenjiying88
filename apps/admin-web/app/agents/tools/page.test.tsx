@@ -10,6 +10,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 // ── 类型 ──
 
@@ -22,6 +24,18 @@ interface ToolItem {
   riskLevel: RiskLevel;
   category: string;
   parameters: string;
+}
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PAGE_SOURCE = resolve(__dirname, 'page.tsx');
+const CLIENT_SOURCE = resolve(__dirname, 'agent-tools-client.tsx');
+
+function readPageSource(): string {
+  return readFileSync(PAGE_SOURCE, 'utf-8');
+}
+
+function readClientSource(): string {
+  return readFileSync(CLIENT_SOURCE, 'utf-8');
 }
 
 // ── Mock 数据 ──
@@ -168,6 +182,36 @@ describe('AgentTools — 数据完整性', () => {
     for (const t of SEED_TOOLS.filter(t => t.riskLevel === 'high')) {
       assert.ok(t.description.length > 0, `${t.name}: high-risk tool needs description`);
     }
+  });
+});
+
+describe('agents/tools — 页面壳层', () => {
+  it('应导出默认 async 组件并启用 force-dynamic', () => {
+    const src = readPageSource();
+    assert.ok(src.includes('export default async function AgentToolsPage'));
+    assert.ok(src.includes('force-dynamic'));
+  });
+
+  it('应使用 loadAgentTools 读取首屏快照', () => {
+    const src = readPageSource();
+    assert.ok(src.includes('loadAgentTools'));
+    assert.ok(src.includes("cache: 'no-store'"));
+  });
+
+  it('应向 AgentToolsClient 透传 tools / deliveryMode / error', () => {
+    const src = readPageSource();
+    assert.ok(src.includes('tools={snapshot.tools}'));
+    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(src.includes('error={snapshot.error}'));
+  });
+
+  it('client 应展示工具来源态证据', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(src.includes('schemaCoverage: {sourceEvidence.schemaCoverage}'));
+    assert.ok(src.includes('generatedAt: {sourceEvidence.generatedAt}'));
   });
 });
 

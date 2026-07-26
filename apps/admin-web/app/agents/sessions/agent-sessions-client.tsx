@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   DataTable,
@@ -136,6 +136,10 @@ export default function AgentSessionsClient({
 }: AgentSessionsClientProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<AgentSessionStatus | 'all'>('all');
+  const latestCreatedAt = useMemo(() => {
+    if (sessions.length === 0) return '—';
+    return sessions.reduce((latest, item) => (item.createdAt > latest ? item.createdAt : latest), sessions[0]!.createdAt);
+  }, [sessions]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -149,6 +153,18 @@ export default function AgentSessionsClient({
   }, [sessions, search, statusFilter]);
 
   const columns = useMemo(() => buildColumns(), []);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api' ? 'loadAgentSessions (listAgentSessions + getAgentStats)' : 'FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS',
+      businessDataSource:
+        deliveryMode === 'api' ? 'AgentSession[] snapshot + AgentStats' : 'fallback agent sessions snapshot',
+      refreshPath: 'AgentSessionsPage -> loadAgentSessions',
+      latestCreatedAt
+    }),
+    [deliveryMode, latestCreatedAt]
+  );
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -166,6 +182,25 @@ export default function AgentSessionsClient({
           ⚠️ 后端不可达,正在展示 fallback 数据 ({error ?? 'unknown error'})
         </div>
       ) : null}
+      <div
+        style={{
+          padding: '12px 14px',
+          borderRadius: 12,
+          background: 'rgba(15, 23, 42, 0.38)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.6
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>latestCreatedAt: {sourceEvidence.latestCreatedAt}</div>
+      </div>
       <Tabs
         items={[
           { key: 'all', label: '全部', count: sessions.length },

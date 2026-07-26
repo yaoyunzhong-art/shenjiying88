@@ -62,7 +62,7 @@ describe('agents/sessions/[id] — 正例', () => {
   it('应向客户端透传会话来源态证据', () => {
     const src = readSource();
     assert.ok(src.includes('const sourceEvidence'), '缺少来源态对象');
-    assert.ok(src.includes("detailSource:\n+      deliveryMode === 'api'") || src.includes("detailSource:\n+      deliveryMode === 'api'"), '缺少 detail source');
+    assert.ok(src.includes("detailSource:\n      deliveryMode === 'api'"), '缺少 detail source');
     assert.ok(src.includes("refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail'"));
     assert.ok(src.includes('sourceEvidence={sourceEvidence}'));
   });

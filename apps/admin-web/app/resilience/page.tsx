@@ -135,6 +135,23 @@ export default async function ResiliencePage() {
         },
       ]
     : DEFAULT_STATS;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'api'
+        ? 'loadResilienceOperationsSnapshot'
+        : 'emptyOverview fallback snapshot',
+    businessDataSource:
+      snapshot.deliveryMode === 'api'
+        ? 'ResilienceOverview snapshot'
+        : 'empty resilience overview',
+    refreshPath: 'ResiliencePage -> loadResilienceOperationsSnapshot',
+    generatedAt: snapshot.generatedAt,
+    note:
+      snapshot.deliveryMode === 'api'
+        ? '当前强韧性作战台直接消费 resilience overview 快照。'
+        : '当前为 fallback 空概览，仅表示首屏读模型不可达，不代表系统当前无风险。'
+  } as const;
 
   return (
     <AdminPermissionGate {...permissionGate}>
@@ -159,6 +176,28 @@ export default async function ResiliencePage() {
           title="强韧性作战台"
           subtitle="统一监控可观测信号、重试策略与恢复计划演练进度，辅助运维治理与故障响应。"
         >
+          <div
+            style={{
+              marginBottom: 20,
+              padding: '12px 16px',
+              borderRadius: 12,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(148,163,184,0.12)',
+              fontSize: 12,
+              color: '#cbd5e1',
+              lineHeight: 1.6,
+            }}
+          >
+            <div>
+              Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+            </div>
+            <div>
+              业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+            </div>
+            <div>
+              generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+            </div>
+          </div>
           {/* 统计摘要卡片 */}
           <div
             style={{

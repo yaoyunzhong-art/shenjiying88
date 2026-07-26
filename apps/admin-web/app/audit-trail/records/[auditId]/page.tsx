@@ -32,7 +32,7 @@ interface AuditTrailSnapshot {
     details: Record<string, unknown>;
   } | null;
   generatedAt: string;
-  deliveryMode: string;
+  deliveryMode: 'mock' | 'fallback';
 }
 
 interface PageProps {
@@ -73,7 +73,7 @@ function loadMockSnapshot(auditId: string): AuditTrailSnapshot {
   };
   const record = KNOWN[auditId];
   if (!record) return { auditId, notFound: true, record: null, generatedAt: '', deliveryMode: 'fallback' };
-  return { auditId, notFound: false, record, generatedAt: new Date().toISOString(), deliveryMode: 'api' };
+  return { auditId, notFound: false, record, generatedAt: new Date().toISOString(), deliveryMode: 'mock' };
 }
 
 export default async function AuditTrailRecordDetailPage({ params }: PageProps) {
@@ -86,12 +86,40 @@ export default async function AuditTrailRecordDetailPage({ params }: PageProps) 
     description:
       '审计记录详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看事件摘要、详情 payload 与关联审计链路。',
   } as const;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'mock'
+        ? 'loadMockSnapshot / KNOWN local samples'
+        : 'loadMockSnapshot notFound fallback',
+    businessDataSource:
+      snapshot.deliveryMode === 'mock'
+        ? 'local audit detail sample'
+        : 'fallback notFound route',
+    generatedAt: snapshot.generatedAt || '—',
+    referenceAuditId: snapshot.auditId || auditId || '—',
+    note:
+      snapshot.deliveryMode === 'mock'
+        ? '当前详情页使用本地样本固证审计详情结构，不代表真实审计链回放。'
+        : '当前 auditId 未命中本地样本，页面仅展示 fallback notFound 结果。'
+  } as const;
 
   if (snapshot.notFound || !snapshot.record) {
     return (
       <AdminPermissionGate {...permissionGate}>
         <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
           <PageShell title="审计记录不存在" subtitle="该 auditId 不在当前审计范围内。">
+            <div className="bg-white/5 border border-slate-700 rounded-xl p-4 mb-4 text-xs text-slate-300 leading-6">
+              <div>
+                Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+              </div>
+              <div>
+                业务数据: {sourceEvidence.businessDataSource} · referenceAuditId: {sourceEvidence.referenceAuditId}
+              </div>
+              <div>
+                generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+              </div>
+            </div>
             <Result status="404" title="记录未找到" subTitle={`ID "${auditId}" 的审计记录不存在`}
               extra={<a href="/audit-trail" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回审计列表</a>} />
           </PageShell>
@@ -108,6 +136,17 @@ export default async function AuditTrailRecordDetailPage({ params }: PageProps) 
     <AdminPermissionGate {...permissionGate}>
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
         <PageShell title={`审计记录：${eventLabel}`} subtitle="查看事件级别、操作人、来源、详情 payload 与关联审计记录。">
+          <div className="bg-white/5 border border-slate-700 rounded-xl p-4 mb-4 text-xs text-slate-300 leading-6">
+            <div>
+              Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+            </div>
+            <div>
+              业务数据: {sourceEvidence.businessDataSource} · referenceAuditId: {sourceEvidence.referenceAuditId}
+            </div>
+            <div>
+              generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+            </div>
+          </div>
           <BreadcrumbPageHeader
             breadcrumbs={[{ label: '审计列表', href: '/audit-trail' }, { label: eventLabel }]}
             title={eventLabel}

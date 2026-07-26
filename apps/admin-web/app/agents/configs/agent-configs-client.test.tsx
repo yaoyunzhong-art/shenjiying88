@@ -199,6 +199,17 @@ test('AgentConfigsClient', async (t) => {
     assert.match(html, /timeout after 5000ms/);
   });
 
+  await t.test('renders source evidence banner', () => {
+    const html = render(React.createElement(AgentConfigsClient, {
+      configs: MOCK_CONFIGS,
+      deliveryMode: 'api',
+    }));
+    assert.match(html, /控制面来源/);
+    assert.match(html, /刷新路径/);
+    assert.match(html, /latestUpdatedAt/);
+    assert.match(html, /loadAgentConfigs/);
+  });
+
   // ── Tab 筛选器 ──
   await t.test('renders tabs with config counts', () => {
     const html = render(React.createElement(AgentConfigsClient, {

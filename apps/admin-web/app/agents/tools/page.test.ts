@@ -10,6 +10,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
 
 // ── 类型 ──
 
@@ -31,6 +32,11 @@ interface AgentToolsSnapshot {
   error?: string;
   timestamp: string;
 }
+
+const PAGE_SOURCE = fs.readFileSync(
+  '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/agents/tools/page.tsx',
+  'utf8',
+);
 
 // ── 统计聚合工具 (对齐 page.tsx 中内联逻辑) ──
 
@@ -125,5 +131,13 @@ describe('Agent Tools page logic', () => {
     for (const tool of SAMPLE_TOOLS) {
       assert.ok(validLevels.includes(tool.riskLevel), `Invalid riskLevel: ${tool.riskLevel}`);
     }
+  });
+
+  it('page 应固证 loadAgentTools 壳层与来源透传', () => {
+    assert.ok(PAGE_SOURCE.includes('loadAgentTools'));
+    assert.ok(PAGE_SOURCE.includes("cache: 'no-store'"));
+    assert.ok(PAGE_SOURCE.includes('tools={snapshot.tools}'));
+    assert.ok(PAGE_SOURCE.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(PAGE_SOURCE.includes('error={snapshot.error}'));
   });
 });

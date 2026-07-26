@@ -11,7 +11,6 @@
  * - 边界: 空工具列表 / 无入参工具 / 特殊字符
  */
 
-import React from 'react';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
@@ -205,6 +204,17 @@ test('AgentToolsClient', async (t) => {
     }));
     assert.match(html, /⚠️/);
     assert.match(html, /后端不可达/);
+  });
+
+  await t.test('renders source evidence banner', () => {
+    const html = render(React.createElement(AgentToolsClient, {
+      tools: MOCK_TOOLS,
+      deliveryMode: 'api',
+    }));
+    assert.match(html, /控制面来源/);
+    assert.match(html, /刷新路径/);
+    assert.match(html, /schemaCoverage/);
+    assert.match(html, /n\/a \(snapshot lacks timestamp\)/);
   });
 
   // ── Tab 筛选器 ──

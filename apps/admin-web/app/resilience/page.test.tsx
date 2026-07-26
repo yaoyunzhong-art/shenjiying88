@@ -365,3 +365,19 @@ describe('resilience — 权限边界', () => {
     assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 });
+
+describe('resilience — 来源态透明化', () => {
+  it('页面应展示 resilience 快照来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(SRC.includes('loadResilienceOperationsSnapshot'));
+    assert.ok(SRC.includes('emptyOverview fallback snapshot'));
+    assert.ok(SRC.includes('empty resilience overview'));
+  });
+});
