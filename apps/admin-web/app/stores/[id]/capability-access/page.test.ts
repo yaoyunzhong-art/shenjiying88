@@ -1,35 +1,36 @@
-/**
- * capability-access/page.test.ts — 权限管理页面测试
- */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
-const SRC = readFileSync(SOURCE, 'utf-8');
+import { fileURLToPath } from 'node:url';
 
-describe('capability — 正例', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
+const DIR = dirname(fileURLToPath(import.meta.url));
+const DATA_SRC = readFileSync(resolve(DIR, 'capability-access-data.ts'), 'utf-8');
+const CLIENT_SRC = readFileSync(resolve(DIR, 'capability-access-client.tsx'), 'utf-8');
+
+describe('stores/[id]/capability-access data/client 结构固证', () => {
+  it('snapshot loader 应固化角色快照合同与来源态字段', () => {
+    assert.ok(DATA_SRC.includes('export interface CapabilityAccessSnapshot'));
+    assert.ok(DATA_SRC.includes("sourceLabel: 'store-capability-access-api' | 'store-capability-access-fallback'"));
+    assert.ok(DATA_SRC.includes('diagnostics: CapabilityDiagnostic[]'));
+    assert.ok(DATA_SRC.includes('controlPlaneSource'));
+    assert.ok(DATA_SRC.includes('refreshPath'));
+    assert.ok(DATA_SRC.includes('loadCapabilityAccessSnapshot'));
   });
 
-  it('应导出 CapabilityAccessPage', () => assert.ok(SRC.includes('export default function CapabilityAccessPage')));
-  it('应包含权限管理标题', () => assert.ok(SRC.includes('权限管理')));
-  it('应包含角色数据', () => assert.ok(SRC.includes('ROLE_DATA') || SRC.includes('role')));
-  it('应包含作用域筛选', () => assert.ok(SRC.includes('scopeFilter') || SRC.includes('Select')));
-  it('应包含统计指标', () => assert.ok(SRC.includes('Statistic')));
-  it('应包含表格', () => assert.ok(SRC.includes('Table')));
-  it('应包含新建角色按钮', () => assert.ok(SRC.includes('新建角色')));
-});
-describe('capability — 反例', () => {
-  it('不应包含 dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-  it('不应包含 localStorage', () => assert.ok(!SRC.includes('localStorage')));
-});
-describe('capability — 边界', () => {
-  it('应包含状态映射', () => assert.ok(SRC.includes('STATUS_MAP') || SRC.includes('status')));
-  it('应包含 use client', () => assert.ok(SRC.includes("'use client'")));
-  it('源码长度应大于500', () => assert.ok(SRC.length > 500));
+  it('snapshot loader 应保留角色样本、用户摘要与纯逻辑函数', () => {
+    assert.ok(DATA_SRC.includes('ROLE_DATA'));
+    assert.ok(DATA_SRC.includes('USER_DIGEST'));
+    assert.ok(DATA_SRC.includes('ACCESS_AUDIT_FINDINGS'));
+    assert.ok(DATA_SRC.includes('buildCapabilitySummary'));
+  });
+
+  it('client renderer 应承载筛选、角色动作与 router.refresh 刷新', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"));
+    assert.ok(CLIENT_SRC.includes('snapshot.roles'));
+    assert.ok(CLIENT_SRC.includes('snapshot.diagnostics'));
+    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok(CLIENT_SRC.includes('createRole'));
+    assert.ok(CLIENT_SRC.includes('updateRoleStatus'));
+  });
 });

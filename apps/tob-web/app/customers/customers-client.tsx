@@ -12,21 +12,22 @@ import {
 } from '@m5/ui';
 
 import type { DataTableColumn } from '@m5/ui';
-import type { CustomersSnapshotDelivery, CustomerItem, CustomerStatus, CustomerTier, CustomerIndustry } from '../customers-data';
+import type {
+  CustomersSnapshotDelivery,
+  CustomerListItem,
+  CustomerListStatus,
+} from '../customers-data';
 import {
-  CUSTOMER_STATUS_MAP,
-  CUSTOMER_TIER_MAP,
-  CUSTOMER_INDUSTRY_MAP,
-  CUSTOMER_STATUSES,
-  CUSTOMER_TIERS,
+  CUSTOMER_LIST_STATUS_MAP,
+  CUSTOMER_LIST_STATUSES,
 } from '../customers-data';
 
 const CUSTOMERS_PER_PAGE = 10;
 
-function formatCurrency(n: number): string {
-  if (n >= 1_000_000) return `¥${(n / 10_000).toFixed(1)}万`;
-  if (n >= 1_000) return `¥${(n / 1000).toFixed(1)}K`;
-  return `¥${n}`;
+function formatCurrency(cents: number): string {
+  const yuan = cents / 100;
+  if (yuan >= 10_000) return `¥${(yuan / 10_000).toFixed(1)}万`;
+  return `¥${Math.round(yuan).toLocaleString('zh-CN')}`;
 }
 
 export default function CustomersClient({
@@ -37,9 +38,7 @@ export default function CustomersClient({
   const router = useRouter();
   const [isRefreshing, startRefresh] = useTransition();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'all'>('all');
-  const [tierFilter, setTierFilter] = useState<CustomerTier | 'all'>('all');
-  const [industryFilter, setIndustryFilter] = useState<CustomerIndustry | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<CustomerListStatus | 'all'>('all');
   const [page, setPage] = useState(0);
 
   const filtered = useMemo(() => {
@@ -47,9 +46,11 @@ export default function CustomersClient({
 
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
-      const fields: (keyof CustomerItem)[] = ['companyName', 'contactName', 'contactEmail', 'city'];
       items = items.filter((customer) =>
-        fields.some((field) => String(customer[field]).toLowerCase().includes(lower)),
+        customer.companyName.toLowerCase().includes(lower) ||
+        customer.contactEmail.toLowerCase().includes(lower) ||
+        customer.contactPhone.toLowerCase().includes(lower) ||
+        customer.tags.some((tag) => tag.toLowerCase().includes(lower)),
       );
     }
 
@@ -57,16 +58,8 @@ export default function CustomersClient({
       items = items.filter((customer) => customer.status === statusFilter);
     }
 
-    if (tierFilter !== 'all') {
-      items = items.filter((customer) => customer.tier === tierFilter);
-    }
-
-    if (industryFilter !== 'all') {
-      items = items.filter((customer) => customer.industry === industryFilter);
-    }
-
     return items;
-  }, [industryFilter, searchTerm, snapshot.customers, statusFilter, tierFilter]);
+  }, [searchTerm, snapshot.customers, statusFilter]);
 
   const paged = useMemo(() => {
     const start = page * CUSTOMERS_PER_PAGE;
@@ -75,53 +68,65 @@ export default function CustomersClient({
 
   const totalPages = Math.ceil(filtered.length / CUSTOMERS_PER_PAGE);
 
-  const stats = useMemo(() => {
-    const active = snapshot.customers.filter((customer) => customer.status === 'active').length;
-    const totalMonthly = snapshot.customers.reduce((sum, customer) => sum + customer.monthlySpend, 0);
-    const platinum = snapshot.customers.filter((customer) => customer.tier === 'platinum').length;
-    return { total: snapshot.customers.length, active, totalMonthly, platinum };
-  }, [snapshot.customers]);
-
-  const columns: DataTableColumn<CustomerItem>[] = [
+  const columns: DataTableColumn<CustomerListItem>[] = [
     {
       key: 'companyName',
-      header: '公司名称',
+      header: '企业',
       render: (item) => (
         <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{item.companyName}</span>
       ),
     },
-    { key: 'contactName', header: '联系人' },
-    { key: 'city', header: '城市' },
     {
-      key: 'tier',
-      header: '等级',
-      render: (item) => {
-        const info = CUSTOMER_TIER_MAP[item.tier];
-        return <Badge variant={info.variant}>{info.label}</Badge>;
-      },
-    },
-    {
-      key: 'industry',
-      header: '行业',
-      render: (item) => CUSTOMER_INDUSTRY_MAP[item.industry],
+      key: 'contactEmail',
+      header: '联系方式',
+      render: (item) => (
+        <div style={{ display: 'grid', gap: 4 }}>
+          <span>{item.contactEmail}</span>
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>{item.contactPhone}</span>
+        </div>
+      ),
     },
     {
       key: 'status',
       header: '状态',
       render: (item) => {
-        const info = CUSTOMER_STATUS_MAP[item.status];
+        const info = CUSTOMER_LIST_STATUS_MAP[item.status];
         return <StatusBadge variant={info.variant} label={info.label} />;
       },
     },
     {
-      key: 'activeContracts',
-      header: '进行中合同',
-      render: (item) => `${item.activeContracts}/${item.totalContracts}`,
+      key: 'engagementScore',
+      header: '互动分',
+      render: (item) => `${item.engagementScore}`,
     },
     {
-      key: 'monthlySpend',
-      header: '月消费',
-      render: (item) => formatCurrency(item.monthlySpend),
+      key: 'visitCount',
+      header: '互动次数',
+      render: (item) => `${item.visitCount}`,
+    },
+    {
+      key: 'totalSpentCents',
+      header: '累计消费',
+      render: (item) => formatCurrency(item.totalSpentCents),
+    },
+    {
+      key: 'tags',
+      header: '标签',
+      render: (item) =>
+        item.tags.length > 0 ? (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {item.tags.slice(0, 2).map((tag) => (
+              <Badge key={tag} variant="neutral">{tag}</Badge>
+            ))}
+          </div>
+        ) : (
+          <span style={{ color: '#64748b' }}>-</span>
+        ),
+    },
+    {
+      key: 'lastActivity',
+      header: '最近活跃',
+      render: (item) => item.lastActivity || '—',
     },
   ];
 
@@ -131,7 +136,7 @@ export default function CustomersClient({
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>企业客户管理</h1>
           <p style={{ margin: 0, color: '#94a3b8' }}>
-            透传服务端企业客户快照，支持状态、等级和行业的组合筛选。
+            优先透传 CRM 列表与统计快照；当上游缺失字段时收缩为企业、状态、互动与消费最小视图。
           </p>
         </div>
         <button
@@ -168,15 +173,15 @@ export default function CustomersClient({
       )}
 
       <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <StatCard label="总客户数" value={stats.total.toString()} />
-        <StatCard label="合作中客户" value={stats.active.toString()} />
-        <StatCard label="月均消费总额" value={formatCurrency(stats.totalMonthly)} />
-        <StatCard label="铂金客户" value={stats.platinum.toString()} />
+        <StatCard label="总客户数" value={snapshot.stats.total.toString()} />
+        <StatCard label="活跃客户" value={snapshot.stats.byStatus.active.toString()} />
+        <StatCard label="平均互动分" value={snapshot.stats.avgScore.toString()} />
+        <StatCard label="累计消费" value={formatCurrency(snapshot.stats.totalSpentCents)} />
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchFilterInput
-          placeholder="搜索公司/联系人/城市..."
+          placeholder="搜索企业/邮箱/手机号/标签..."
           value={searchTerm}
           onChange={(value) => {
             setSearchTerm(value);
@@ -187,7 +192,7 @@ export default function CustomersClient({
         <select
           value={statusFilter}
           onChange={(event) => {
-            setStatusFilter(event.target.value as CustomerStatus | 'all');
+            setStatusFilter(event.target.value as CustomerListStatus | 'all');
             setPage(0);
           }}
           style={{
@@ -200,50 +205,8 @@ export default function CustomersClient({
           }}
         >
           <option value="all">全部状态</option>
-          {CUSTOMER_STATUSES.map((status) => (
-            <option key={status} value={status}>{CUSTOMER_STATUS_MAP[status].label}</option>
-          ))}
-        </select>
-
-        <select
-          value={tierFilter}
-          onChange={(event) => {
-            setTierFilter(event.target.value as CustomerTier | 'all');
-            setPage(0);
-          }}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            border: '1px solid rgba(148,163,184,0.25)',
-            background: 'rgba(15,23,42,0.6)',
-            color: '#e2e8f0',
-            fontSize: 14,
-          }}
-        >
-          <option value="all">全部等级</option>
-          {CUSTOMER_TIERS.map((tier) => (
-            <option key={tier} value={tier}>{CUSTOMER_TIER_MAP[tier].label}</option>
-          ))}
-        </select>
-
-        <select
-          value={industryFilter}
-          onChange={(event) => {
-            setIndustryFilter(event.target.value as CustomerIndustry | 'all');
-            setPage(0);
-          }}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 8,
-            border: '1px solid rgba(148,163,184,0.25)',
-            background: 'rgba(15,23,42,0.6)',
-            color: '#e2e8f0',
-            fontSize: 14,
-          }}
-        >
-          <option value="all">全部行业</option>
-          {Object.entries(CUSTOMER_INDUSTRY_MAP).map(([key, value]) => (
-            <option key={key} value={key}>{value}</option>
+          {CUSTOMER_LIST_STATUSES.map((status) => (
+            <option key={status} value={status}>{CUSTOMER_LIST_STATUS_MAP[status].label}</option>
           ))}
         </select>
 
@@ -254,14 +217,14 @@ export default function CustomersClient({
 
       {filtered.length === 0 && (
         <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>
-          {searchTerm || statusFilter !== 'all' || tierFilter !== 'all' || industryFilter !== 'all'
+          {searchTerm || statusFilter !== 'all'
             ? '当前筛选条件下没有企业客户记录'
             : '当前快照暂无企业客户数据'}
         </div>
       )}
 
       {filtered.length > 0 ? (
-        <DataTable columns={columns} rows={paged} rowKey={(customer: CustomerItem) => customer.id} />
+        <DataTable columns={columns} rows={paged} rowKey={(customer: CustomerListItem) => customer.id} />
       ) : null}
 
       {totalPages > 1 && (

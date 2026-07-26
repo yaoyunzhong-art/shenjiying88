@@ -36,28 +36,30 @@ describe('CustomersPage — 来源态证据', () => {
   });
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> customers'));
-    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> MOCK_CUSTOMERS fallback'));
-    assert.ok(PAGE_SRC.includes('local enterprise customer samples'));
+    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> api/crm/customers + api/crm/stats'));
+    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> MOCK_CUSTOMERS mapped fallback'));
+    assert.ok(PAGE_SRC.includes('mapped local enterprise customer samples'));
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'));
   });
 });
 
 describe('CustomersData — 快照合同', () => {
-  it('应定义 api|fallback 快照结构', () => {
+  it('应定义 api|fallback 快照结构与统计字段', () => {
     assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"));
-    assert.ok(DATA_SRC.includes('customers: CustomerItem[]'));
+    assert.ok(DATA_SRC.includes('customers: CustomerListItem[]'));
+    assert.ok(DATA_SRC.includes('stats: CustomerStatsSnapshot;'));
     assert.ok(DATA_SRC.includes('generatedAt: string'));
   });
 
-  it('应尝试读取上游 customers 接口', () => {
-    assert.ok(DATA_SRC.includes("new URL('customers', resolveCustomersApiBaseUrl())"));
-    assert.ok(DATA_SRC.includes('unwrapApiPayload<{ customers: CustomerItem[] }>'));
+  it('应尝试读取上游 CRM 列表与统计接口，并附带租户头', () => {
+    assert.ok(DATA_SRC.includes("new URL('api/crm/customers', resolveCustomersApiBaseUrl())"));
+    assert.ok(DATA_SRC.includes("new URL('api/crm/stats', resolveCustomersApiBaseUrl())"));
+    assert.ok(DATA_SRC.includes("'x-tenant-id': resolveTenantId()"));
   });
 
   it('失败时应回退到 fallback 样本并返回错误提示', () => {
     assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"));
-    assert.ok(DATA_SRC.includes('企业客户实时接口不可达，已切换到 fallback 样本数据。'));
+    assert.ok(DATA_SRC.includes('CRM 列表/统计接口不可达，已切换到 fallback 样本数据。'));
   });
 });
 
@@ -78,8 +80,6 @@ describe('CustomersClient — 客户端展示层', () => {
   it('客户端组件应保留筛选、分页和统计卡片', () => {
     assert.ok(CLIENT_SRC.includes('SearchFilterInput'));
     assert.ok(CLIENT_SRC.includes('setStatusFilter'));
-    assert.ok(CLIENT_SRC.includes('setTierFilter'));
-    assert.ok(CLIENT_SRC.includes('setIndustryFilter'));
     assert.ok(CLIENT_SRC.includes('Pagination'));
     assert.ok(CLIENT_SRC.includes('StatCard label="总客户数"'));
   });

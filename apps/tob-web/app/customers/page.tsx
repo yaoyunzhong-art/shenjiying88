@@ -10,18 +10,18 @@ export default async function CustomersPage() {
     deliveryMode: snapshot.deliveryMode,
     controlPlaneSource:
       snapshot.deliveryMode === 'api'
-        ? 'loadCustomersSnapshot -> customers'
-        : 'loadCustomersSnapshot -> MOCK_CUSTOMERS fallback',
+        ? 'loadCustomersSnapshot -> api/crm/customers + api/crm/stats'
+        : 'loadCustomersSnapshot -> MOCK_CUSTOMERS mapped fallback',
     businessDataSource:
       snapshot.deliveryMode === 'api'
-        ? 'enterprise customers upstream API response'
-        : 'local enterprise customer samples',
+        ? 'CRM customer list and stats upstream API responses'
+        : 'mapped local enterprise customer samples',
     refreshPath: 'CustomersPage -> loadCustomersSnapshot',
     generatedAt: snapshot.generatedAt,
     note:
       snapshot.deliveryMode === 'api'
-        ? '当前页面直接消费企业客户服务端快照。'
-        : '当前页面已回退到本地企业客户样本，不可作为闭环复签证据。',
+        ? '当前页面直接消费 CRM 列表/统计服务端快照。'
+        : '当前页面已回退到本地企业客户映射样本，不可作为闭环复签证据。',
   } as const;
 
   return (

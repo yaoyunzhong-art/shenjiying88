@@ -1,4 +1,10 @@
+import { headers } from 'next/headers'
 import { AdminPermissionGate } from '../components/admin-permission-gate'
+import {
+  pickForwardedRequestHeaders,
+  summarizeForwardedHeaders,
+  summarizeRequestScope,
+} from '../lib/server-request-context'
 import FoundationWorkspaceClient from './foundation-workspace-client'
 import { loadFoundationPageSnapshot, normalizeFoundationQuery } from './foundation-data'
 
@@ -18,8 +24,10 @@ interface FoundationPageProps {
 
 export default async function FoundationPage({ searchParams }: FoundationPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const requestHeaders = pickForwardedRequestHeaders(await headers())
   const snapshot = await loadFoundationPageSnapshot(
     normalizeFoundationQuery(resolvedSearchParams),
+    { headers: requestHeaders, cache: 'no-store' },
   )
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,
@@ -35,6 +43,10 @@ export default async function FoundationPage({ searchParams }: FoundationPagePro
     refreshPath: 'FoundationPage -> loadFoundationPageSnapshot',
     generatedAt: snapshot.generatedAt,
     query: `module=${snapshot.query.moduleKey} · consumer=${snapshot.query.consumer}`,
+    scope: summarizeRequestScope(snapshot.requestContext),
+    requestHeaders: summarizeForwardedHeaders(requestHeaders),
+    requestId: snapshot.requestContext.requestId ?? 'none',
+    actorHeadersMode: snapshot.requestContext.actorHeadersMode,
     note: snapshot.note,
   } as const
 
@@ -52,6 +64,13 @@ export default async function FoundationPage({ searchParams }: FoundationPagePro
           <div>query: {sourceEvidence.query}</div>
           <div>
             refreshPath: {sourceEvidence.refreshPath} · generatedAt: {sourceEvidence.generatedAt}
+          </div>
+          <div>
+            scope: {sourceEvidence.scope} · requestId: {sourceEvidence.requestId}
+          </div>
+          <div>
+            forwardedHeaders: {sourceEvidence.requestHeaders} · actorHeadersMode:{' '}
+            {sourceEvidence.actorHeadersMode}
           </div>
           <div>{sourceEvidence.note}</div>
         </div>

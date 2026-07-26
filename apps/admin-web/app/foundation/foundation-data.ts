@@ -24,8 +24,9 @@ export function normalizeFoundationQuery(
 
 export async function loadFoundationPageSnapshot(
   query: FoundationWorkspaceQuery = {},
+  init: RequestInit = {},
 ): Promise<FoundationPageSnapshot> {
-  const workspaceSnapshot = await loadFoundationWorkspace(query)
+  const workspaceSnapshot = await loadFoundationWorkspace(query, init)
 
   return {
     ...workspaceSnapshot,

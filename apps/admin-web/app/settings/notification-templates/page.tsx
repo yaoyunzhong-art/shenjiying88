@@ -1,4 +1,10 @@
+import { headers } from 'next/headers'
 import { AdminPermissionGate } from '../../components/admin-permission-gate'
+import {
+  pickForwardedRequestHeaders,
+  summarizeForwardedHeaders,
+  summarizeRequestScope,
+} from '../../lib/server-request-context'
 import NotificationTemplatesClient from './notification-templates-client'
 import { loadNotificationTemplatesSnapshot } from './notification-templates-data'
 
@@ -13,7 +19,11 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default async function NotificationTemplatesPage() {
-  const snapshot = await loadNotificationTemplatesSnapshot()
+  const requestHeaders = pickForwardedRequestHeaders(await headers())
+  const snapshot = await loadNotificationTemplatesSnapshot({
+    headers: requestHeaders,
+    cache: 'no-store',
+  })
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,
     sourceLabel: snapshot.sourceLabel,
@@ -23,13 +33,17 @@ export default async function NotificationTemplatesPage() {
         : 'loadNotificationTemplatesSnapshot -> defaultNotificationTemplates fallback',
     businessDataSource:
       snapshot.deliveryMode === 'api'
-        ? 'notification templates upstream API response'
+        ? 'notification template contract response with scope/locale fields preserved'
         : 'local notification template samples',
     refreshPath: 'NotificationTemplatesPage -> loadNotificationTemplatesSnapshot',
     generatedAt: snapshot.generatedAt,
+    scope: summarizeRequestScope(snapshot.requestContext),
+    requestHeaders: summarizeForwardedHeaders(requestHeaders),
+    requestId: snapshot.requestContext.requestId ?? 'none',
+    actorHeadersMode: snapshot.requestContext.actorHeadersMode,
     note:
       snapshot.deliveryMode === 'api'
-        ? '当前页面直接消费通知模板服务端快照。'
+        ? '当前页面直接消费通知模板服务端快照，并保留 scope/locale/tenant 来源字段。'
         : '当前页面已回退到本地模板样本，不可作为闭环复签证据。',
   } as const
 
@@ -58,6 +72,13 @@ export default async function NotificationTemplatesPage() {
           </div>
           <div>
             刷新路径: {sourceEvidence.refreshPath} · generatedAt: {sourceEvidence.generatedAt}
+          </div>
+          <div>
+            scope: {sourceEvidence.scope} · requestId: {sourceEvidence.requestId}
+          </div>
+          <div>
+            forwardedHeaders: {sourceEvidence.requestHeaders} · actorHeadersMode:{' '}
+            {sourceEvidence.actorHeadersMode}
           </div>
           <div>{sourceEvidence.note}</div>
         </div>

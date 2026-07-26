@@ -21,6 +21,7 @@ describe('FoundationPage — 服务端壳层', () => {
 
   it('页面应解析 query 并加载 foundation 快照', () => {
     assert.ok(PAGE_SRC.includes('const resolvedSearchParams = searchParams ? await searchParams : undefined'))
+    assert.ok(PAGE_SRC.includes('const requestHeaders = pickForwardedRequestHeaders(await headers())'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadFoundationPageSnapshot('))
     assert.ok(PAGE_SRC.includes('normalizeFoundationQuery(resolvedSearchParams)'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
@@ -33,6 +34,9 @@ describe('FoundationPage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
     assert.ok(PAGE_SRC.includes('query: {sourceEvidence.query}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('scope: {sourceEvidence.scope}'))
+    assert.ok(PAGE_SRC.includes('forwardedHeaders: {sourceEvidence.requestHeaders}'))
+    assert.ok(PAGE_SRC.includes('actorHeadersMode:'))
     assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })
@@ -42,7 +46,7 @@ describe('FoundationData — 快照合同', () => {
     assert.ok(DATA_SRC.includes('export function normalizeFoundationQuery'))
     assert.ok(DATA_SRC.includes('export async function loadFoundationPageSnapshot'))
     assert.ok(DATA_SRC.includes("sourceLabel: 'foundation-workspace-api' | 'foundation-workspace-fallback'"))
-    assert.ok(DATA_SRC.includes('loadFoundationWorkspace(query)'))
+    assert.ok(DATA_SRC.includes('loadFoundationWorkspace(query, init)'))
   })
 
   it('应保留 api/fallback 来源说明', () => {

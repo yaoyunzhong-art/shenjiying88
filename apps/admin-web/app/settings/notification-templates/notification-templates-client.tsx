@@ -126,6 +126,8 @@ export default function NotificationTemplatesClient({
             <tr>
               <th style={styles.th}>场景</th>
               <th style={styles.th}>渠道</th>
+              <th style={styles.th}>作用域</th>
+              <th style={styles.th}>语言与定位</th>
               <th style={styles.th}>模板名称</th>
               <th style={styles.th}>变量</th>
               <th style={styles.th}>版本</th>
@@ -139,13 +141,30 @@ export default function NotificationTemplatesClient({
                   <div>{template.scene}</div>
                   <div style={styles.code}>{template.code}</div>
                 </td>
-                <td style={styles.td}>{template.channel}</td>
+                <td style={styles.td}>
+                  <div>{template.channel}</div>
+                  <div style={styles.code}>{template.channelCode}</div>
+                </td>
+                <td style={styles.td}>
+                  <div>{template.scopeLabel}</div>
+                  <div style={styles.code}>{template.scopeType}</div>
+                </td>
+                <td style={styles.td}>
+                  <div>{template.locale}</div>
+                  <div style={styles.code}>
+                    {[template.tenantId, template.brandId, template.storeId, template.marketCode]
+                      .filter(Boolean)
+                      .join(' · ') || '未显式绑定'}
+                  </div>
+                </td>
                 <td style={styles.td}>
                   <div>{template.titleTemplate}</div>
                   <div style={styles.code}>{template.bodyTemplate}</div>
                 </td>
                 <td style={styles.td}>{template.variables.join(', ') || '无变量'}</td>
-                <td style={styles.td}>v{template.version}</td>
+                <td style={styles.td}>
+                  {template.version === null ? 'API未提供' : `v${template.version}`}
+                </td>
                 <td style={styles.td}>
                   <span style={{ ...styles.tag, ...statusStyle(template.enabled) }}>
                     {template.enabled ? '启用' : '停用'}

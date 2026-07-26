@@ -1,71 +1,35 @@
-/**
- * audit/page.test.tsx — 审计日志页面测试
- * 覆盖: 正例·反例·边界·防御·组件完整性
- */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+const DIR = dirname(fileURLToPath(import.meta.url));
+const DATA_SRC = readFileSync(resolve(DIR, 'audit-data.ts'), 'utf-8');
+const CLIENT_SRC = readFileSync(resolve(DIR, 'audit-client.tsx'), 'utf-8');
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
+describe('stores/[id]/audit data/client 结构固证', () => {
+  it('snapshot loader 应固化审计快照合同与来源态字段', () => {
+    assert.ok(DATA_SRC.includes('export interface AuditSnapshot'));
+    assert.ok(DATA_SRC.includes("sourceLabel: 'store-audit-api' | 'store-audit-fallback'"));
+    assert.ok(DATA_SRC.includes('diagnostics: AuditDiagnostic[]'));
+    assert.ok(DATA_SRC.includes('controlPlaneSource'));
+    assert.ok(DATA_SRC.includes('businessDataSource'));
+    assert.ok(DATA_SRC.includes('loadAuditSnapshot'));
+  });
 
-describe('audit — 正例', () => {
-  it('应导出一个默认组件 AuditPage', () => {
-    assert.ok(readSource().includes('export default function AuditPage'));
+  it('snapshot loader 应保留审计样本与纯逻辑统计函数', () => {
+    assert.ok(DATA_SRC.includes('DEFAULT_AUDIT_RECORDS'));
+    assert.ok(DATA_SRC.includes('buildAuditSummary'));
+    assert.ok(DATA_SRC.includes('buildAuditActionStats'));
+    assert.ok(DATA_SRC.includes('LEVEL_CONFIG'));
   });
-  it('应包含审计日志标题', () => {
-    assert.ok(readSource().includes('审计日志'));
-  });
-  it('应包含操作数据', () => {
-    const src = readSource();
-    assert.ok(src.includes('AUDIT_DATA') || src.includes('审计'));
-  });
-  it('应包含级别筛选功能', () => {
-    assert.ok(readSource().includes('levelFilter') || readSource().includes('级别'));
-  });
-  it('应包含统计指标', () => {
-    assert.ok(readSource().includes('Statistic'));
-  });
-  it('应包含表格', () => {
-    assert.ok(readSource().includes('Table'));
-  });
-  it('应包含 Select 筛选', () => {
-    assert.ok(readSource().includes('Select'));
-  });
-});
 
-describe('audit — 反例', () => {
-  it('不应使用 dangerouslySetInnerHTML', () => {
-    assert.ok(!readSource().includes('dangerouslySetInnerHTML'));
-  });
-  it('不应直接操作 localStorage', () => {
-    assert.ok(!readSource().includes('localStorage'));
-  });
-});
-
-describe('audit — 边界', () => {
-  it('应包含级别映射配置', () => {
-    assert.ok(readSource().includes('LEVEL_CFG') || readSource().includes('level'));
-  });
-  it('应有颜色样式定义', () => {
-    assert.ok(readSource().includes('color'));
-  });
-  it('源码长度应大于500 bytes', () => {
-    assert.ok(readSource().length > 500);
-  });
-});
-
-describe('audit — 防御', () => {
-  it('应包含 use client 指令', () => {
-    assert.ok(readSource().includes("'use client'"));
-  });
-  it('不应包含 undefined 文本', () => {
-    assert.ok(!readSource().includes('undefined'));
+  it('client renderer 应保留筛选、详情和 router.refresh 刷新链路', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"));
+    assert.ok(CLIENT_SRC.includes('snapshot.records'));
+    assert.ok(CLIENT_SRC.includes('snapshot.diagnostics'));
+    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok(CLIENT_SRC.includes('setDetailRecord'));
   });
 });

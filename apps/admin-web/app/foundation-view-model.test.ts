@@ -389,6 +389,130 @@ describe('foundation-view-model', () => {
     }
   });
 
+  test('loadFoundationWorkspace forwards tenant/request headers and exposes request context evidence', async () => {
+    const originalFetch = globalThis.fetch;
+    const capturedHeaders: Headers[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedHeaders.push(new Headers(init?.headers));
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/foundation/bootstrap')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_BOOTSTRAP }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      if (url.includes('/foundation/overview/modules/trust-governance')) {
+        return new Response(
+          JSON.stringify({
+            code: 'OK',
+            message: '',
+            data: {
+              generatedAt: '2026-06-21T02:06:00.000Z',
+              moduleKey: 'trust-governance',
+              health: {
+                module: 'trust-governance',
+                score: 92,
+                status: 'healthy',
+                indicators: {
+                  highRiskAudits: 2,
+                  pendingApprovals: 3,
+                  executionFailures: 1,
+                  blockedCount: 0
+                }
+              },
+              detail: { approvalsPending: 3 }
+            }
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      if (url.includes('/foundation/overview')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_OVERVIEW }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      return new Response('not-found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      const snapshot = await loadFoundationWorkspace(
+        { moduleKey: 'trust-governance' },
+        {
+          headers: {
+            authorization: 'Bearer foundation-token',
+            'x-tenant-id': 'tenant-live',
+            'x-brand-id': 'brand-live',
+            'x-store-id': 'store-live',
+            'x-market-code': 'jp-east',
+            'x-request-id': 'req-foundation-live',
+            'x-actor-id': 'actor-live',
+            'x-actor-authenticated': 'true',
+            'x-actor-roles': 'TENANT_ADMIN',
+          }
+        }
+      );
+
+      assert.equal(snapshot.requestContext.tenantId, 'tenant-live');
+      assert.equal(snapshot.requestContext.brandId, 'brand-live');
+      assert.equal(snapshot.requestContext.storeId, 'store-live');
+      assert.equal(snapshot.requestContext.marketCode, 'jp-east');
+      assert.equal(snapshot.requestContext.requestId, 'req-foundation-live');
+      assert.equal(snapshot.requestContext.actorHeadersMode, 'forwarded');
+      assert.equal(capturedHeaders[0]?.get('authorization'), 'Bearer foundation-token');
+      assert.equal(capturedHeaders[0]?.get('x-tenant-id'), 'tenant-live');
+      assert.equal(capturedHeaders[0]?.get('x-request-id'), 'req-foundation-live');
+      assert.equal(capturedHeaders[0]?.get('x-actor-id'), 'actor-live');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('loadFoundationWorkspace injects fallback actor headers when request actor is absent', async () => {
+    const originalFetch = globalThis.fetch;
+    const capturedHeaders: Headers[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedHeaders.push(new Headers(init?.headers));
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes('/foundation/bootstrap')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_BOOTSTRAP }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      if (url.includes('/foundation/overview/modules/trust-governance')) {
+        return new Response(
+          JSON.stringify({ code: 'OK', message: '', data: { generatedAt: '2026-06-21T02:06:00.000Z', moduleKey: 'trust-governance', detail: {} } }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      if (url.includes('/foundation/overview')) {
+        return new Response(JSON.stringify({ code: 'OK', message: '', data: SAMPLE_OVERVIEW }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        });
+      }
+      return new Response('not-found', { status: 404 });
+    }) as typeof fetch;
+
+    try {
+      const snapshot = await loadFoundationWorkspace(
+        {},
+        { headers: { 'x-tenant-id': 'tenant-live' } }
+      );
+
+      assert.equal(snapshot.requestContext.actorHeadersMode, 'workspace-fallback');
+      assert.equal(capturedHeaders[0]?.get('x-tenant-id'), 'tenant-live');
+      assert.equal(capturedHeaders[0]?.get('x-actor-id'), 'admin-foundation-workspace');
+      assert.equal(
+        capturedHeaders[0]?.get('x-actor-permissions'),
+        'foundation.governance.read'
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   // ── 反例: loadFoundationWorkspace ──
 
   test('loadFoundationWorkspace falls back when request fails', async () => {
