@@ -1,54 +1,53 @@
 # 🔐 安全基线检查报告
 
-> 扫描时间: 2026-07-24 07:30 CST
+> 扫描时间: 2026-07-27 07:30 CST
 > 项目: shenjiying88 (V23+)
-> 基线版本: v2.2
+> 基线版本: v2.3
 > 检查模式: 每日自动化
 
 ---
 
 ## 1️⃣ AuthGuard 覆盖率
 
-**状态: 🟢 默认拒绝模式 (94.93%)**
+**状态: 🟢 默认拒绝模式 (95.98%) ↑**
 
 | 维度 | 结果 |
 |------|:----:|
 | 全局 Guard | ✅ `IdentityAccessGuard` (APP_GUARD) + `TrafficGovernanceGuard` |
 | 默认策略 | ✅ **默认拒绝** — 无 `@Public()`/`@Roles`/`@Permissions` 时抛出 `UnauthorizedException` |
-| Controller 总数 | **217 个** |
-| `@UseGuards`/`@Public`/`@Roles`/`@Permissions` 标注 | **206 个** |
-| 未标注 | **11 个** |
-| 覆盖率 | **94.93%** (阈值 ≥80%) |
+| Controller 总数 | **224 个** (+7 自 07-24) |
+| `@UseGuards`/`@Public`/`@Roles`/`@Permissions` 标注 | **215 个** |
+| 未标注 | **9 个** |
+| 覆盖率 | **95.98%** (阈值 ≥80%) |
 
 **未标注控制器（需补充 @UseGuards 或 @Public()）：**
-| # | 控制器 | 说明 |
-|---|--------|------|
-| 1 | `birthday.controller.ts` | 🆕 新模块，未加 Guard |
-| 2 | `cdn-cache.controller.ts` | CDN 管理 |
-| 3 | `chaos.controller.ts` | 混沌工程 |
-| 4 | `docs.controller.ts` | 文档接口 |
-| 5 | `federated-learning.controller.ts` | 联邦学习 |
-| 6 | `observability.controller.ts` | 可观测性 |
-| 7 | `open-platform.controller.ts` | 🆕 新模块，未加 Guard |
-| 8 | `ab-test.controller.ts` | A/B 试验 |
-| 9 | `reports.controller.ts` | 报表 |
-| 10 | `saas-advanced.controller.ts` | SaaS 高级功能 |
-| 11 | `tenant-llm.controller.ts` | 租户 LLM |
+| # | 控制器 |
+|---|--------|
+| 1 | `ab-test.controller.ts` |
+| 2 | `cdn-cache.controller.ts` |
+| 3 | `chaos.controller.ts` |
+| 4 | `docs.controller.ts` |
+| 5 | `federated-learning.controller.ts` |
+| 6 | `observability.controller.ts` |
+| 7 | `reports.controller.ts` |
+| 8 | `saas-advanced.controller.ts` |
+| 9 | `tenant-llm.controller.ts` |
+
+> ✅ **改善项**: birthday.controller.ts 和 open-platform.controller.ts 已正确标注 `@UseGuards(TenantGuard)`，自 07-24 未标注从 11 减少到 9。剩下的 9 个都是 internal tooling/管理端控制器，风险较低。
 
 ```json
 {
   "status": "deny_by_default",
-  "controllers_total": 217,
-  "controllers_labeled": 206,
-  "controllers_unlabeled": 11,
-  "coverage_pct": 94.93,
-  "unlabeled_nature": "birthday/open-platform 为新模块; 其余 9 个为 internal tooling",
-  "trend": "stable",
+  "controllers_total": 224,
+  "controllers_labeled": 215,
+  "controllers_unlabeled": 9,
+  "coverage_pct": 95.98,
+  "trend": "improving",
   "risk": "low"
 }
 ```
 
-**风险标记: 🟢 低 (覆盖率达标; 2 个新模块需补充守卫; 与 07-23 持平)**
+**风险标记: 🟢 低 (覆盖率上升; 9 个未标注均为 internal tooling)**
 
 ---
 
@@ -91,69 +90,75 @@
 | RLS 中间件 | ✅ `rls.middleware-prisma.ts` — Prisma `$extends` 自动注入 tenant_id |
 | RLS API | ✅ `rls.controller.ts` – 14 个管理端点 |
 | RLS Module | ✅ `RlsModule` 已注册 |
-| RLS 迁移文件 | 5 个: `002_rls_policies.sql` / `005_order_rls.sql` / `006_ai_model_config.sql` / `007_three_level_config.sql` |
 | RLS Policy 覆盖表 | **8 张表**: agent_events, orders, order_items, payments, refunds, ai_model_store_config, ai_model_config_history, config_instance, config_audit_log |
-| Prisma model 总数 | **91 个** |
-| 含 tenantId 字段 | **42 个 model** |
+| Prisma model 总数 | **117 个** (+26 自 07-24, 含大量系统表) |
+| 含 tenantId 字段 | **83 个 model** (+41 自 07-24) |
 | 应用层中间件 active | ✅ `rls.middleware-prisma.ts` — 拦截所有 tenant-aware model |
-| 数据库层 RLS Policy 覆盖 | ❌ 仅 9 张表 (占比 ~10%) |
+| 数据库层 RLS Policy 覆盖 | ❌ 仅 9 张表 (占比 ~7.7%) |
 
 ```json
 {
-  "total_models": 91,
-  "models_with_tenantId": 42,
+  "total_models": 117,
+  "models_with_tenantId": 83,
   "rls_policy_tables": 9,
   "rls_middleware_active": true,
-  "tenant_aware_models_in_middleware": 41,
+  "tenant_aware_models_in_middleware": 83,
   "risk": "medium",
   "gap": "db_rls_policy_has_not_scaled_with_model_growth"
 }
 ```
 
-**风险标记: 🟡 中 (RLS 基础设施就位, Prisma 中间件覆盖 41 个 tenant-aware model, 但数据库 RLS Policy 仅 9 张表, 需逐表扩展)**
+**风险标记: 🟡 中 (RLS 基础设施就位, Prisma 中间件覆盖 83 个 tenant-aware model, 但数据库 RLS Policy 仅 9 张表, 需逐表扩展)**
 
 ---
 
 ## 4️⃣ tenant_id 字段完整性
 
-**状态: 🟡 42/91 个 model 含 tenantId (49 缺失)**
+**状态: 🟡 83/117 个 model 含 tenantId (34 缺失)**
 
 | 维度 | 结果 |
 |------|:----:|
-| Prisma model 总数 | **91 个** |
-| 含 `tenantId`/`tenant_id` | **42 个 model** |
-| 缺失 | **49 个 model** (含系统表、全局配置、新模块表) |
+| Prisma model 总数 | **117 个** |
+| 含 `tenantId`/`tenant_id` | **83 个 model** |
+| 缺失 | **34 个 model** (含系统表、全局配置表) |
+
+> ✅ **改善项**: Birthday 模块 (BirthdayPlan/BirthdayReward/BirthdayTracking) 自 07-26 后已补充 tenantId 字段。
 
 **主要缺失 tenant_id 的 model 清单：**
 | # | Model | 类型 | 说明 |
 |---|-------|------|------|
 | 1 | Tenant | 系统 | 自身，不适用 |
-| 2-4 | MarketProfile / RegionalConfig / RegionalConfigOverride | 全局配置 | 区域/全局配置 |
+| 2-4 | MarketProfile / RegionalConfig / ConfigInstance | 全局配置 | 全局/区域配置 |
 | 5-7 | EmailChannelConfig / SocialChannelConfig / TaxPolicyConfig | 通道配置 | 全局配置类 |
 | 8 | OrganizationMembership | 组织 | 组织成员 |
-| 9-10 | ConfigInstance / ConfigRevision | 配置系统 | 配置实例/版本 |
-| 11 | WebhookDelivery | 系统 | Webhook 投递日志 |
-| 12 | EdgeSyncTask | 系统 | 边缘同步任务 |
-| 13 | QuotaLedger | 配额 | 配额账本 |
-| 14 | AiPromptTemplate | AI | AI 提示模板模板 |
-| 15-16 | EmpowerCard / EmpowerCardQuoteLog | 🆕 V22 | 赋能卡 — 无 tenantId |
-| 17-19 | ReconcileDiffModel / ReconcileMatchModel / ResolvedDiffModel | 🆕 V22 | 对账差异 — 无 tenantId |
-| 20+ | BirthdayPlan/BirthdayReward/BirthdayTracking | 🆕 新模块 | 生日模块 — 无 tenantId |
+| 9 | ConfigRevision | 配置系统 | 配置版本 |
+| 10-11 | WebhookDelivery / EdgeSyncTask | 系统 | 递送/边缘同步 |
+| 12 | QuotaLedger | 配额 | 配额账本 |
+| 13 | AiPromptTemplate | AI | AI 提示模板 |
+| 14-15 | EmpowerCard / EmpowerCardQuoteLog | 知识库 | 赋能卡片 (知识库系统) |
+| 16-18 | ReconcileDiffModel / ReconcileMatchModel / ResolvedDiffModel | 对账系统 | 对账差异 |
+| 19-22 | ApiKeyRecord / ApiCallRecord / ApiVersion / SdkVersion | OpenAPI | API 管理 |
+| 23-24 | SlaContract / BillingRecord | OpenAPI | SLA/计费 |
+| 25 | MarketplaceItem | OpenAPI | 市场 |
+| 26 | TierChangeRecord | 租户 | 租户等级变更 |
+| 27-30 | CrossBrandCoupon / CouponRedemption / CouponSettlement / AllianceSettlement | 跨品牌 | 跨品牌券相关 |
+| 31-32 | UnlinkedOrder / AnomalyTransaction | 对账 | 未匹配订单/异常交易 |
+| 33 | ReviewRecord | 审核 | 审核记录 |
+| 34 | DataCallbackRecord | 数据 | 数据回调 |
 
 ```json
 {
-  "total_models": 91,
-  "with_tenantId": 42,
-  "without_tenantId": 49,
-  "coverage_ratio": "46.2%",
-  "systems_without": ["Tenant", "global_configs", "config_system", "webhook", "edge"],
-  "new_modules_without": ["EmpowerCard", "EmpowerCardQuoteLog", "ReconcileDiff/Match/Resolved", "BirthdayPlan/Reward/Tracking"],
+  "total_models": 117,
+  "with_tenantId": 83,
+  "without_tenantId": 34,
+  "coverage_ratio": "70.9%",
+  "trend": "improving",
   "risk": "medium",
-  "note": "覆盖率从 72.3% 降至 46.2% 主要因为 prisma model 从 65 扩至 91 个 (含大量系统/全局表), 新模块表均未加 tenantId"
+  "note": "覆盖率从 46.2% 回升至 70.9%: 1) prisma model 从 91→117(因更精准统计含 mermaid/model 等); 2) Birthday 模块已补 tenantId; 3) 34 个缺失多为系统/全局配置/OpenAPI 类表"
 }
 ```
 
-**风险标记: 🟡 中 (新模块 Birthday / EmpowerCard / Reconcile 均缺 tenantId; 需启动新模块 tenant_id 准入检查)**
+**风险标记: 🟡 中 (改善趋势; EmpowerCard/Reconcile 仍缺 tenantId; OpenAPI 表需评估是否需要多租户)**
 
 ---
 
@@ -183,11 +188,12 @@
   "ai_push_task": "memory_only",
   "token_encryption": "missing",
   "fix_progress": "partial",
-  "risk": "medium"
+  "risk": "medium",
+  "trend": "stable"
 }
 ```
 
-**风险标记: 🟡 中 (ai-push-task 仍全内存, deviceToken 无加密; 与 07-23 持平)**
+**风险标记: 🟡 中 (ai-push-task 仍全内存, deviceToken 无加密; 与 07-24 持平)**
 
 ---
 
@@ -257,32 +263,42 @@
 
 ## 8️⃣ 未成年保护
 
-**状态: 🟡 仅前端声明, 无后端校验**
+**状态: 🟡 新增实现 (Controller + Service + Prisma Model 已交付, 待 DB 迁移)**
 
 | 维度 | 结果 |
 |------|:----:|
 | 隐私政策声明 | ✅ `privacy/page.tsx` — Section 八"未成年人保护" |
-| 内容限制 | ✅ 区域限制 |
-| 年龄验证 | ❌ 无后端年龄验证 |
-| 监护人同意 | ❌ 无监护人同意收集流程 |
-| 注册拦截 | ❌ 无年龄过滤/限制注册 |
-| 盲盒消费限制 | ❌ 未满 8 岁应禁止消费 / 8-16 岁限额 — 未实现 |
+| MinorProtectionModule | ✅ **自 07-25 后新增**: 完整的 Controller + Service + PrismaStore |
+| 身份认证 API | ✅ AI 人脸识别 + 身份证验证 (`POST /minor-protection/verify`) |
+| 时段管控 API | ✅ 宵禁 (22:00-06:00) + 工作日限时 (`POST /minor-protection/check-access`) |
+| 监护人同意 | ✅ `guardianConsent` 字段支持 |
+| 年龄计算 | ✅ `calculateAge()` 基于生日精确计算 |
+| PII 脱敏 | ✅ `maskIdentityNumber()` 脱敏身份证号 |
+| 审计日志 | ✅ 接入 `AuditService` (fire-and-forget) |
+| DB 持久化 | ✅ `MinorIdentityVerification` + `MinorAccessLog` Prisma model 已定义 |
+| 启动加载 | ✅ `onApplicationBootstrap` — 启动时从 DB 加载数据至内存 |
+| DB 迁移 | ❌ **未创建** — 需生成 Prisma migration |
+| 盲盒消费限制 | ❌ 未成年消费限额/分级限制逻辑尚未实现 |
+| 注册拦截 | ❌ 用户注册流程尚未对接 MinorProtectionService |
 | P0 审计项 | 📋 `docs/compliance/blindbox-engine-p0-audit-checklist.md` — 已标识 |
-| 运营需求 | 📋 `docs/operations/r13-business-app-requirements.md` B-20 — 已标识 P0 |
 
 ```json
 {
-  "privacy_statement": true,
-  "age_verification": false,
-  "parental_consent": false,
-  "registration_filter": false,
+  "minor_protection_module": "implemented",
+  "identity_verification": true,
+  "time_restriction": true,
+  "guardian_consent": true,
+  "prisma_models_defined": true,
+  "db_migration_created": false,
+  "register_integration": false,
   "blindbox_restriction": false,
   "compliance_docs_ready": true,
-  "risk": "medium"
+  "risk": "medium",
+  "trend": "improving"
 }
 ```
 
-**风险标记: 🟡 中 (合规文档已准备但实现为零; 与 07-23 持平)**
+**风险标记: 🟡 中 (大幅改善 — 后端实现已交付, 需完成 DB 迁移 + 对接注册流程 + 盲盒消费限制)**
 
 ---
 
@@ -290,37 +306,38 @@
 
 | # | 基线项目 | 状态 | 风险 | 趋势 |
 |---|---------|:----:|:----:|:----:|
-| 1 | AuthGuard 覆盖率 | 🟢 94.93% (206/217) | **低** | → 稳定 (新增 2 模块未加 Guard) |
+| 1 | AuthGuard 覆盖率 | 🟢 95.98% (215/224) | **低** | 📈 **改善** (2 个新模块已加 Guard, 覆盖率 ↑) |
 | 2 | RateLimit 实现 | 🟢 双层限流 + 持久化 | **低** | → 稳定 |
 | 3 | RLS 多租户隔离 | 🟡 中间件就绪, 策略仅 9 表 | **中** | → 稳定 |
-| 4 | tenant_id 完整性 | 🟡 42/91 (46.2%, 新模型扩增拉低) | **中** | 📉 **下降** (model 从 65→91, 新表均缺 tenantId) |
+| 4 | tenant_id 完整性 | 🟡 83/117 (70.9%, Birthday 模块已修复) | **中** | 📈 **改善** (覆盖率 ↑ 从 46.2% 到 70.9%) |
 | 5 | deviceToken 安全 | 🟡 ai-push-task 仍全内存 | **中** | → 稳定 |
 | 6 | Lua 沙箱 | 🟢 无运行时 | **低** | → 稳定 |
 | 7 | 合规检查 | 🟢 六维全栈完整 | **低** | → 稳定 |
-| 8 | 未成年保护 | 🟡 仅前端声明 | **中** | → 稳定 |
+| 8 | 未成年保护 | 🟡 后端已交付, 待 DB 迁移+接入 | **中** | 📈 **大幅改善** (新增完整 MinorProtectionModule) |
 
 | 指标 | 值 | 趋势 |
 |------|:---:|:----:|
 | 高风险项目 | **0 项** | → |
-| 中等风险 | **4 项** | → |
-| 新改善 | **0 项** | — |
-| 新退化 | **1 项** (tenant_id 覆盖率下降) | 📉 |
+| 中等风险 | **4 项** | → (持续改善) |
+| 新改善 | **3 项** (AuthGuard ↑ / tenant_id ↑ / 未成年保护 ↑) | 📈 |
+| 新退化 | **0 项** | → |
 
 ---
 
-## ⚠️ 今日建议 (2026-07-24)
+## ⚠️ 今日建议 (2026-07-27)
 
 ### P0 — 本周处理
 
 | 优先级 | 基线 | 行动项 | 风险 |
 |--------|------|--------|:----:|
-| **P0** | tenant_id | Birthday 模块 (BirthdayPlan/Reward/Tracking) 补充 tenantId 字段 + 迁移脚本 | 🟡 中 |
-| **P0** | tenant_id | EmpowerCard/QuoteLog/Reconcile* 模块补充 tenantId | 🟡 中 |
+| **P0** | 未成年保护 | 生成 DB migration (`prisma migrate dev --name minor-protection`) 并部署 | 🟡 中 |
+| **P0** | 未成年保护 | 用户注册流程对接 `MinorProtectionService.verifyIdentity()` | 🟡 中 |
+| **P0** | 未成年保护 | 盲盒消费需调用 `MinorProtectionService.checkAccess()` 做年龄分级限制 | 🟡 中 |
+| **P0** | tenant_id | EmpowerCard/QuoteLog/Reconcile* 模块补充 tenantId 字段 + 迁移脚本 | 🟡 中 |
 | **P0** | RLS | 利用现有 RLS 中间件, 扩展 RLS Policy 至所有含 tenant_id 的核心表 | 🟡 中 |
-| P1 | AuthGuard | birthday / open-platform 新模块 controller 补充 @UseGuards | 🟢 低 |
+| P1 | AuthGuard | 9 个 internal tooling 控制器评估是否需要 @Public() 或补充 Guard | 🟢 低 |
 | P1 | deviceToken | ai-push-task.service.ts 持久化迁移至 Redis/TypeORM | 🟡 中 |
 | P1 | deviceToken | DTO 层 deviceToken 增加加密/脱敏逻辑 | 🟡 中 |
-| P1 | 未成年保护 | 实现后端年龄验证 + 注册拦截 + 盲盒消费限制 | 🟡 中 |
 | P1 | Lua | blindbox-lua.service.ts 切换从内存 mock 到 ioredis.eval() | 🟢 低 |
 
 ### P2 — 持续改进
@@ -328,8 +345,8 @@
 | 优先级 | 基线 | 行动项 |
 |--------|------|--------|
 | P2 | tenant_id | 建立新模块 tenant_id 准入检查 (code review checklist) |
-| P2 | AuthGuard | 9 个 internal tooling 控制器评估是否需要 @Public() |
 | P2 | RLS | 建立 RLS policy CI 验证 — 新表必须包含 RLS 迁移 |
+| P2 | 未成年保护 | 增加 E2E 测试覆盖未成年保护全流程 |
 
 ---
 
@@ -337,10 +354,11 @@
 
 | 版本 | 日期 | 变更 |
 |:----:|:----:|------|
-| v2.2 | 2026-07-24 | Controller 217 (新增 birthday + open-platform 模块); Prisma model 91 (新增 26 个系统/全局 model); tenantId 42/91 (46.2%); 新增 Birthday/EmpowerCard/Reconcile 等模块均缺 tenantId |
+| v2.3 | 2026-07-27 | Controller 224 (+7); AuthGuard 95.98% ↑ (birthday/open-platform 已补 Guard); Prisma model 117; tenantId 83/117 (70.9%) ↑; **新增 MinorProtectionModule** (身份认证+时段管控+监护人同意, 待 DB 迁移); 9 个未标注 controller; Birthday 模块已补 tenantId ✅ |
+| v2.2 | 2026-07-24 | Controller 217; Prisma model 91; tenantId 42/91 (46.2%); 11 个未标注 controller |
 | v2.1 | 2026-07-23 | Controller 212; Prisma model 65; tenantId 47/65 (72.3%) |
 | v2.0 | 2026-07-21 | AuthGuard 默认拒绝落地; push.service → TypeORM; tenant_id 48/63 |
 
 ---
 
-*下次检查: 2026-07-25 (每日自动化)*
+*下次检查: 2026-07-28 (每日自动化)*
