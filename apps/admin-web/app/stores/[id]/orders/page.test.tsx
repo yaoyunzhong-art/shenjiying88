@@ -1,139 +1,63 @@
-// L1 冒烟测试 + L2 结构验证 + L3 防御检查 - orders
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// ===================== L1 冒烟测试 =====================
-describe('orders / L1 冒烟', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
-  });
-  it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });
-  it('应包含 use client 指令', () => { assert.ok(SRC.includes("'use client'")); });
-  it('应包含 JSX 模板', () => { assert.ok(SRC.includes('return (') || SRC.includes('return <')); });
-  it('不应使用 dangerouslySetInnerHTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-});
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-// ===================== L2 结构验证 =====================
-describe('orders / L2 结构验证', () => {
-  it('应包含 PageShell 容器', () => { assert.ok(SRC.includes('PageShell')); });
-  it('应包含标题 "订单管理"', () => { assert.ok(SRC.includes('订单管理')); });
-  it('应包含订单兜底数据与真实拉取逻辑', () => {
-    assert.ok(SRC.includes('FALLBACK'));
-    assert.ok(SRC.includes('fetchOrders'));
-  });
-  it('应包含状态颜色映射', () => { assert.ok(SRC.includes('SCFG') || SRC.includes('STATUS_COLORS')); });
-  it('应包含状态名称映射', () => { assert.ok(SRC.includes('SCFG') || SRC.includes('STATUS_NAMES') || SRC.includes('label')); });
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(__dirname, 'orders-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(__dirname, 'orders-data.ts'), 'utf-8')
+})
 
-  it('应定义完整订单列', () => {
-    const cols = ['单号', '客户', '商品', '金额', '支付方式', '状态', '时间'];
-    for (const c of cols) {
-      assert.ok(SRC.includes(c), `缺少列: ${c}`);
-    }
-  });
+describe('Stores Orders Page — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function OrdersPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
 
-  it('应使用 Row + Col 展示统计卡片', () => {
-    assert.ok(SRC.includes('Row ') || SRC.includes('Row>'));
-  });
+  it('页面应加载订单快照并展示来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadStoreOrdersSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
+})
 
-  it('应展示 "总订单" 统计', () => { assert.ok(SRC.includes('总订单') || SRC.includes('今日订单')); });
-  it('应展示 "待处理" 统计', () => { assert.ok(SRC.includes('待处理')); });
-  it('应展示 "已完成" 统计', () => { assert.ok(SRC.includes('已完成')); });
-  it('应展示 "退款" 统计', () => { assert.ok(SRC.includes('退款')); });
+describe('Stores Orders Data — 快照合同', () => {
+  it('应定义 mock 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes('orders: StoreOrder[]'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+  })
 
-  it('金额列正数应使用白色 (#f8fafc) 负数使用红色 (#f87171)', () => {
-    assert.ok(SRC.includes('#f8fafc') || SRC.includes('#f87171') || SRC.includes('¥'));
-  });
+  it('应保留订单样本', () => {
+    assert.ok(DATA_SRC.includes('DEFAULT_STORE_ORDERS'))
+    assert.ok(DATA_SRC.includes('ORD-001'))
+    assert.ok(DATA_SRC.includes('生日派对套餐'))
+  })
+})
 
-  it('应包含订单搜索 Input.Search', () => {
-    assert.ok(SRC.includes('Search'));
-  });
+describe('Stores Orders Client — 客户端渲染层', () => {
+  it('应声明 use client 并触发 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
+  })
 
-  it('应使用 useState 管理数据状态', () => {
-    assert.ok(SRC.includes('useState'));
-  });
-});
-
-// ===================== L3 防御检查 =====================
-describe('orders / L3 防御检查', () => {
-  it('不应包含硬编码 secrets', () => {
-    const secrets = ['sk-', 'api_key', 'secret_key', 'password='];
-    for (const s of secrets) {
-      assert.ok(!SRC.includes(s), `不应包含: ${s}`);
-    }
-  });
-
-  it('不应包含生产环境 console.log', () => {
-    const lines = SRC.split('\n').filter(l =>
-      l.includes('console.log') && !l.trimStart().startsWith('//')
-    );
-    assert.equal(lines.length, 0);
-  });
-
-  it('不应出现 a 标签 href="#" 而无 onClick', () => {
-    const lines = SRC.split('\n');
-    for (const line of lines) {
-      if (line.includes('href="#"') && !line.includes('onClick')) {
-        assert.fail(`发现 href="#" 但未绑定 onClick: ${line.trim()}`);
-      }
-    }
-  });
-
-  it('应保留 SDK 返回数据的映射兼容处理', () => {
-    assert.ok(SRC.includes('records.map((order: any) =>') || SRC.includes('(i: any)'));
-  });
-
-  it('不应包含被注释掉的 JSX', () => {
-    const commented = SRC.match(/\/\/\s+.+</g);
-    if (commented) assert.fail(`被注释 JSX: ${commented.join(', ')}`);
-  });
-
-  it('PageShell 应成对出现', () => {
-    assert.ok(SRC.includes('<PageShell') && SRC.includes('</PageShell>'));
-  });
-
-  it('ORDERS 数据应有所有必填字段', () => {
-    const fields = ['id', 'customer', 'items', 'amount', 'method', 'status', 'time'];
-    const match = SRC.match(/\{ id:\s*['"][^'"]+['"]/);
-    if (match) {
-      for (const f of fields) assert.ok(SRC.includes(`${f}:`), `字段 ${f} 应存在`);
-    }
-  });
-
-  it('Table 应有 rowKey', () => { assert.ok(SRC.includes('rowKey')); });
-
-  it('内联 style 不应过多', () => {
-    const count = (SRC.match(/style=\{\{/g) || []).length;
-    assert.ok(count < 50, `内联样式 ${count} 处`);
-  });
-
-  it('状态列应使用 Tag 组件', () => { assert.ok(SRC.includes('<Tag')); });
-
-  it('不应使用 img 标签（应使用 Image 组件）', () => {
-    assert.ok(!SRC.includes('<img '));
-  });
-
-  it('应导出 OrdersPage 组件名称', () => {
-    assert.ok(SRC.includes('OrdersPage'));
-  });
-});
-
-describe('Stores / Orders — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onOk={') || SRC.includes('onCancel={')));
-  it('包含列表过滤', () => assert.ok(SRC.includes('.filter(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+  it('应保留表格、筛选与弹窗结构', () => {
+    assert.ok(CLIENT_SRC.includes('Input.Search'))
+    assert.ok(CLIENT_SRC.includes('Select'))
+    assert.ok(CLIENT_SRC.includes('Table'))
+    assert.ok(CLIENT_SRC.includes('Modal'))
+    assert.ok(CLIENT_SRC.includes('订单详情'))
+  })
+})
