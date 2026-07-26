@@ -18,7 +18,10 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { AuditService } from './audit.service'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   CreateAuditLogDto,
   AuditLogQueryDto,
@@ -31,11 +34,15 @@ import {
   RiskScoreResponseDto,
 } from './audit.dto'
 
+const AUDIT_READ_PERMISSION = 'audit:read'
+const AUDIT_EXPORT_PERMISSION = 'audit:export'
+
 @ApiTags('审计日志')
 @ApiBearerAuth()
-@Public()
 @Controller('api/audit')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(AUDIT_READ_PERMISSION)
 export class AuditController {
   private readonly logger = new Logger(AuditController.name)
 
@@ -46,6 +53,7 @@ export class AuditController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '创建审计日志', description: '记录一条审计事件' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '创建成功' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '参数错误' })
@@ -65,6 +73,7 @@ export class AuditController {
    */
   @Post('batch')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '批量创建审计日志', description: '批量记录审计事件' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '创建成功' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '参数错误' })
@@ -170,6 +179,7 @@ export class AuditController {
    */
   @Post('settlement')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '记录分账事件', description: '记录分账相关的审计事件' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '记录成功' })
   async logSettlement(@Body() dto: SettlementAuditLogDto): Promise<{ id: string }> {
@@ -204,6 +214,7 @@ export class AuditController {
    */
   @Post('export')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '导出审计报告', description: '导出指定时间范围内的审计报告' })
   @ApiResponse({ status: HttpStatus.OK, description: '导出成功' })
   async exportReport(@Body() dto: AuditReportExportDto): Promise<{ content: string }> {
@@ -221,6 +232,7 @@ export class AuditController {
    * 生成合规报告
    */
   @Get('compliance-report/:tenantId')
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '生成合规报告', description: '根据 GDPR Article 30 生成合规报告' })
   @ApiResponse({ status: HttpStatus.OK, description: '生成成功', type: ComplianceReportDto })
   async generateComplianceReport(
@@ -232,4 +244,3 @@ export class AuditController {
     return report
   }
 }
-

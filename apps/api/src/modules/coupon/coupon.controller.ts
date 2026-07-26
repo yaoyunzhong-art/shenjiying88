@@ -25,8 +25,11 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { CouponService } from './coupon.service'
 import {
   CreateCouponDto,
@@ -45,9 +48,14 @@ import type {
   RedeemResponse,
 } from './coupon.contract'
 
+const COUPON_READ_PERMISSION = 'coupon:read'
+const COUPON_WRITE_PERMISSION = 'coupon:write'
+const COUPON_ISSUE_PERMISSION = 'coupon:issue'
+
 @UseGuards(TenantGuard)
 @Controller('coupons')
-@Public()
+@RequireTenantScope()
+@RequirePermissions(COUPON_READ_PERMISSION)
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
@@ -57,6 +65,7 @@ export class CouponController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(COUPON_WRITE_PERMISSION)
   async create(@Body() body: CreateCouponDto): Promise<CouponContract> {
     const entity = await this.couponService.create({
       code: body.code,
@@ -101,6 +110,7 @@ export class CouponController {
    * 更新优惠券状态 (暂停/恢复)
    */
   @Patch(':id/status')
+  @RequirePermissions(COUPON_WRITE_PERMISSION)
   async updateStatus(
     @Param('id') id: string,
     @Body() body: UpdateCouponStatusDto,
@@ -118,6 +128,7 @@ export class CouponController {
    */
   @Post('redeem')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(COUPON_ISSUE_PERMISSION)
   async redeem(@Body() body: RedeemCouponDto): Promise<RedeemResponse> {
     return this.couponService.redeemCrossStore({
       userId: body.userId,
@@ -136,6 +147,7 @@ export class CouponController {
    */
   @Post('batch-redeem')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(COUPON_ISSUE_PERMISSION)
   async batchRedeem(@Body() body: BatchRedeemDto) {
     const results = await this.couponService.batchRedeem(
       body.redemptions.map((r) => ({

@@ -5,6 +5,7 @@ import {
   RequireTenantScope
 } from '../foundation/identity-access/identity-access.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -45,6 +46,7 @@ export class TransactionsController {
 
   @Post('payments/standardized-callback')
   @Public()
+  @TenantOptional()
   applyPaymentCallback(@Body() body: CashierPaymentCallbackDto) {
     return this.transactionsService.applyPaymentCallback(body)
   }

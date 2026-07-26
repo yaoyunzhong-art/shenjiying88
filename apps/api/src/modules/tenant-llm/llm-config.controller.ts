@@ -21,11 +21,19 @@ import {
   UpdateLLMConfigRequest,
   ApplyLLMConfigRequest,
 } from './llm-config.entity'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const LLM_VIEW_PERMISSION = 'llm:view'
+const LLM_WRITE_PERMISSION = 'llm:write'
+const LLM_APPROVE_PERMISSION = 'llm:approve'
 
 @Controller('llm')
 @UseGuards(TenantScopeGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(LLM_VIEW_PERMISSION)
 export class TenantLLMController {
   constructor(private readonly llmService: TenantLLMService) {}
 
@@ -59,6 +67,7 @@ export class TenantLLMController {
    * 创建LLM配置
    */
   @Post('configs')
+  @RequirePermissions(LLM_WRITE_PERMISSION)
   async createConfig(
     @Headers('x-tenant-id') tenantId: string,
     @Body() request: CreateLLMConfigRequest
@@ -70,6 +79,7 @@ export class TenantLLMController {
    * 更新LLM配置
    */
   @Put('configs/:id')
+  @RequirePermissions(LLM_WRITE_PERMISSION)
   async updateConfig(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -82,6 +92,7 @@ export class TenantLLMController {
    * 删除LLM配置
    */
   @Delete('configs/:id')
+  @RequirePermissions(LLM_WRITE_PERMISSION)
   async deleteConfig(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string
@@ -94,6 +105,7 @@ export class TenantLLMController {
    * 提交接入申请
    */
   @Post('configs/:id/apply')
+  @RequirePermissions(LLM_WRITE_PERMISSION)
   async applyConfig(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -106,6 +118,7 @@ export class TenantLLMController {
    * 审批配置（平台管理员）
    */
   @Post('configs/:id/approve')
+  @RequirePermissions(LLM_APPROVE_PERMISSION)
   async approveConfig(
     @Param('id') id: string,
     @Body() body: {

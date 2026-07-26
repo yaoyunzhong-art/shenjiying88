@@ -26,14 +26,21 @@ import {
   Logger,
   UseGuards,
 } from '@nestjs/common'
-import { Public } from '../../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../../foundation/identity-access/identity-access.decorator'
 import { CashierTransactionPersistenceService } from './persistence.service'
 import { TenantGuard } from '../../agent/tenant.guard'
 import type { TransactionRecord, TransactionStatus, DailySummary, MonthlySummary } from './persistence.types'
 
+const CASHIER_TRANSACTION_ORDER_READ_PERMISSION = 'order:read'
+const CASHIER_TRANSACTION_ORDER_WRITE_PERMISSION = 'order:write'
+
 @Controller('api/cashier/transactions')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(CASHIER_TRANSACTION_ORDER_READ_PERMISSION)
 export class CashierTransactionController {
   private readonly logger = new Logger(CashierTransactionController.name)
 
@@ -45,6 +52,7 @@ export class CashierTransactionController {
 
   /** 创建流水 */
   @Post()
+  @RequirePermissions(CASHIER_TRANSACTION_ORDER_WRITE_PERMISSION)
   create(
     @Body() input: Omit<TransactionRecord, 'transactionId' | 'createdAt' | 'synced' | 'syncRetryCount'>
   ): TransactionRecord {
@@ -108,6 +116,7 @@ export class CashierTransactionController {
 
   /** 离线流水入队 */
   @Post('offline/enqueue')
+  @RequirePermissions(CASHIER_TRANSACTION_ORDER_WRITE_PERMISSION)
   enqueueOffline(@Body() record: TransactionRecord): {
     enqueued: boolean
     cacheSize: number
@@ -119,6 +128,7 @@ export class CashierTransactionController {
   /** 手动触发离线同步 */
   @Post('offline/flush')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(CASHIER_TRANSACTION_ORDER_WRITE_PERMISSION)
   flushOffline(@Body() body: { records: TransactionRecord[] }): { synced: number } {
     const result = this.service.flushOffline(() => ({
       success: body.records.map((r) => r.transactionId),

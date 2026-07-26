@@ -11,9 +11,18 @@ import {
 } from './referral.dto';
 import type { ReferralCode } from './referral.entity';
 import { TenantGuard } from '../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator';
+
+const REFERRAL_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read';
+const REFERRAL_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write';
 
 @Controller('referral')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(REFERRAL_GOVERNANCE_READ_PERMISSION)
 export class ReferralController {
   constructor(private readonly referralService: ReferralService) {}
 
@@ -22,6 +31,7 @@ export class ReferralController {
    * 生成裂变短码
    */
   @Post('code')
+  @RequirePermissions(REFERRAL_GOVERNANCE_WRITE_PERMISSION)
   generateCode(@Body() dto: GenerateCodeDto) {
     const code = this.referralService.generateCode({
       parentUserId: dto.parentUserId,
@@ -52,6 +62,7 @@ export class ReferralController {
    * 记录裂变链接点击
    */
   @Post('click')
+  @RequirePermissions(REFERRAL_GOVERNANCE_WRITE_PERMISSION)
   trackClick(@Body() dto: TrackClickDto) {
     const code = this.referralService.trackClick({
       shortCode: dto.shortCode,
@@ -69,6 +80,7 @@ export class ReferralController {
    * 注册补登（绑定短码和用户）
    */
   @Post('signup')
+  @RequirePermissions(REFERRAL_GOVERNANCE_WRITE_PERMISSION)
   trackSignup(@Body() dto: TrackSignupDto) {
     const record = this.referralService.trackSignup({
       shortCode: dto.shortCode,
@@ -91,6 +103,7 @@ export class ReferralController {
    * 发放裂变奖励
    */
   @Post('rewards/:recordId')
+  @RequirePermissions(REFERRAL_GOVERNANCE_WRITE_PERMISSION)
   issueRewards(@Param('recordId') recordId: string) {
     const rewards = this.referralService.issueRewards(recordId);
     return {

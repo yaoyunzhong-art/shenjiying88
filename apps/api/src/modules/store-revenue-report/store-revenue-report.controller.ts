@@ -16,17 +16,25 @@ import {
 } from './store-revenue-report.dto'
 import { StoreRevenueReportService } from './store-revenue-report.service'
 import { TenantGuard } from '../agent/tenant.guard';
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const STORE_REVENUE_REPORT_READ_PERMISSION = 'report:read'
+const STORE_REVENUE_REPORT_WRITE_PERMISSION = 'report:export'
 
 @Controller('revenue-reports')
 @UseGuards(TenantGuard)
-  @Public()
+@RequireTenantScope()
+@RequirePermissions(STORE_REVENUE_REPORT_READ_PERMISSION)
 export class StoreRevenueReportController {
   constructor(private readonly reportService: StoreRevenueReportService) {}
 
   // ── CRUD ──
 
   @Post()
+  @RequirePermissions(STORE_REVENUE_REPORT_WRITE_PERMISSION)
   generateReport(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateRevenueReportDto
@@ -67,6 +75,7 @@ export class StoreRevenueReportController {
   }
 
   @Delete(':id')
+  @RequirePermissions(STORE_REVENUE_REPORT_WRITE_PERMISSION)
   deleteReport(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('id') id: string

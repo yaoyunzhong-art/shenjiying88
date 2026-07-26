@@ -66,6 +66,8 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const deliveryMode = 'mock' as const;
+  const dataSourceLabel = 'mock' as const;
   const member = useMemo(() => mockMember(id), [id]);
   const points = useMemo(() => mockPoints(), []);
   const recharges = useMemo(() => mockRecharges(), []);
@@ -80,7 +82,20 @@ export default function MemberDetailPage({ params }: { params: Promise<{ id: str
     <AdminPermissionGate {...permissionGate}>
       <main style={{ maxWidth: 1020, margin: '24px auto', padding: '0 16px' }}>
       <WorkspaceBreadcrumb {...buildStandardBreadcrumb({ workspace: 'members', detailLabel: member.name })} />
-      <PageShell title={member.name} subtitle={`${member.memberNo} · ${TIER_LABELS[member.tier]}`}>
+      <PageShell title={member.name} subtitle={`${member.memberNo} · ${TIER_LABELS[member.tier]} · 当前数据源：${dataSourceLabel}`}>
+        <div
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            padding: '12px 14px',
+            border: '1px solid rgba(248, 113, 113, 0.24)',
+            background: 'rgba(127, 29, 29, 0.22)',
+            color: '#fecaca',
+            fontSize: 13
+          }}
+        >
+          {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
+        </div>
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
           <StatCard label="余额" value={fm(member.balance)} />
           <StatCard label="充值" value={fm(member.totalRecharge)} />

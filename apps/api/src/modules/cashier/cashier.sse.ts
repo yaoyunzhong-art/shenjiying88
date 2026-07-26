@@ -14,6 +14,13 @@ import { map, filter, mergeMap } from 'rxjs/operators'
 import type { Response } from 'express'
 import { CashierEventEmitter, CashierEvent, CashierMessageEvent } from './cashier.events'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const CASHIER_SSE_ORDER_READ_PERMISSION = 'order:read'
+const CASHIER_SSE_PAYMENT_READ_PERMISSION = 'payment:read'
 
 /**
  * Phase-35 T164: 收银台 SSE 端点
@@ -37,6 +44,7 @@ interface TenantRequest {
 
 @Controller('api/cashier')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
 export class CashierSseController {
   constructor(private readonly emitter: CashierEventEmitter) {}
 
@@ -44,6 +52,7 @@ export class CashierSseController {
    * SSE 端点 1: 全收银台订单事件流
    */
   @Sse('orders/events')
+  @RequirePermissions(CASHIER_SSE_ORDER_READ_PERMISSION)
   orderEvents(@Req() req: TenantRequest): Observable<MessageEvent> {
     const tenantId = req.tenantId
 
@@ -59,6 +68,7 @@ export class CashierSseController {
    * SSE 端点 2: 单订单事件流
    */
   @Sse('orders/:orderId/events')
+  @RequirePermissions(CASHIER_SSE_ORDER_READ_PERMISSION)
   orderSingleEvents(
     @Req() req: TenantRequest,
     @Param('orderId') orderId: string
@@ -76,6 +86,7 @@ export class CashierSseController {
    * SSE 端点 3: 支付事件流
    */
   @Sse('payments/events')
+  @RequirePermissions(CASHIER_SSE_PAYMENT_READ_PERMISSION)
   paymentEvents(@Req() req: TenantRequest): Observable<MessageEvent> {
     const tenantId = req.tenantId
 
@@ -92,6 +103,7 @@ export class CashierSseController {
    * 返回一次性 replay 事件 (不是流, 而是当前未收到的历史事件)
    */
   @Get('orders/events/replay')
+  @RequirePermissions(CASHIER_SSE_ORDER_READ_PERMISSION)
   replayOrderEvents(
     @Req() req: TenantRequest,
     @Query('lastEventId') lastEventId: string,

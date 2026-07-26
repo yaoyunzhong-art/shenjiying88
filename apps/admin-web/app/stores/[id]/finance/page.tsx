@@ -12,6 +12,9 @@ const permissionGate = {
     '门店财务页已接入管理员本地 session，只有具备 store:read 的账号才能查看营收支出、结算状态与财务报表入口。',
 } as const;
 
+const deliveryMode = 'mock' as const;
+const dataSourceLabel = 'mock' as const;
+
 const TRANSACTIONS = [
   { id: 'T001', date: '2026-07-12', type: '营收', category: '游戏收入', amount: 12800, method: '微信', status: 'settled' },
   { id: 'T002', date: '2026-07-12', type: '营收', category: '饮品销售', amount: 3200, method: '支付宝', status: 'settled' },
@@ -60,8 +63,22 @@ export default function FinancePage() {
       <PageShell>
         <Space style={{ width: '100%', flexDirection: 'column', gap: 16, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><h2 style={{ color: '#f8fafc', margin: 0 }}>💰 财务管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>营收 · 支出 · 对账 · 结算</span></div>
+          <div><h2 style={{ color: '#f8fafc', margin: 0 }}>💰 财务管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>{`营收 · 支出 · 对账 · 结算 · 当前数据源：${dataSourceLabel}`}</span></div>
           <Space><Button onClick={() => setShowSettle(true)}>日结</Button><Button type="primary">月报</Button></Space>
+        </div>
+
+        <div
+          style={{
+            width: '100%',
+            borderRadius: 12,
+            padding: '12px 14px',
+            border: '1px solid rgba(248, 113, 113, 0.24)',
+            background: 'rgba(127, 29, 29, 0.22)',
+            color: '#fecaca',
+            fontSize: 13,
+          }}
+        >
+          {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
         </div>
 
         {/* 财务统计条 — 收入/支出/利润/流水笔数 */}

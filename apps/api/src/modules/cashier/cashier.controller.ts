@@ -19,6 +19,10 @@ import { RefundService } from './refund.service'
 import { CashierService } from './cashier.service'
 import { InventoryItemService } from '../inventory/inventory-item.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
 import type {
   CreateOrderInput,
@@ -29,6 +33,14 @@ import type {
   Payment,
   Refund
 } from '@m5/types'
+
+const CASHIER_ORDER_READ_PERMISSION = 'order:read'
+const CASHIER_ORDER_WRITE_PERMISSION = 'order:write'
+const CASHIER_ORDER_CANCEL_PERMISSION = 'order:cancel'
+const CASHIER_ORDER_REFUND_PERMISSION = 'order:refund'
+const CASHIER_PAYMENT_READ_PERMISSION = 'payment:read'
+const CASHIER_PAYMENT_WRITE_PERMISSION = 'payment:write'
+const CASHIER_PAYMENT_REFUND_PERMISSION = 'payment:refund'
 
 /**
  * Phase-35 T163: CashierController - 收银台 REST API
@@ -51,6 +63,7 @@ import type {
  */
 @Controller('cashier')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
 export class CashierController {
   private readonly logger = new Logger(CashierController.name)
 
@@ -65,6 +78,7 @@ export class CashierController {
   // ── Orders ──
 
   @Post('orders')
+  @RequirePermissions(CASHIER_ORDER_WRITE_PERMISSION)
   createOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Headers('x-user-id') userId: string,
@@ -75,6 +89,7 @@ export class CashierController {
   }
 
   @Post('orders/:id/submit')
+  @RequirePermissions(CASHIER_ORDER_WRITE_PERMISSION)
   submitOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -83,6 +98,7 @@ export class CashierController {
   }
 
   @Post('orders/:id/cancel')
+  @RequirePermissions(CASHIER_ORDER_CANCEL_PERMISSION)
   cancelOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -92,6 +108,7 @@ export class CashierController {
   }
 
   @Post('orders/:id/fulfill')
+  @RequirePermissions(CASHIER_ORDER_WRITE_PERMISSION)
   fulfillOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -100,6 +117,7 @@ export class CashierController {
   }
 
   @Get('orders/:id')
+  @RequirePermissions(CASHIER_ORDER_READ_PERMISSION)
   getOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -110,6 +128,7 @@ export class CashierController {
   }
 
   @Get('orders/:id/items')
+  @RequirePermissions(CASHIER_ORDER_READ_PERMISSION)
   getOrderItems(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -118,6 +137,7 @@ export class CashierController {
   }
 
   @Get('orders')
+  @RequirePermissions(CASHIER_ORDER_READ_PERMISSION)
   listOrders(
     @Headers('x-tenant-id') tenantId: string,
     @Query('status') status?: string,
@@ -143,6 +163,7 @@ export class CashierController {
   // ── Payments ──
 
   @Post('orders/:id/payments')
+  @RequirePermissions(CASHIER_PAYMENT_WRITE_PERMISSION)
   async createPayment(
     @Headers('x-tenant-id') tenantId: string,
     @Headers('x-user-id') userId: string,
@@ -157,6 +178,7 @@ export class CashierController {
   }
 
   @Post('payments/:id/callback')
+  @RequirePermissions(CASHIER_PAYMENT_WRITE_PERMISSION)
   paymentCallback(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') paymentId: string,
@@ -171,6 +193,7 @@ export class CashierController {
   // ── Refunds ──
 
   @Post('orders/:id/refunds')
+  @RequirePermissions(CASHIER_PAYMENT_REFUND_PERMISSION, CASHIER_ORDER_REFUND_PERMISSION)
   createRefund(
     @Headers('x-tenant-id') tenantId: string,
     @Headers('x-user-id') userId: string,
@@ -185,6 +208,7 @@ export class CashierController {
   }
 
   @Get('refunds/:id')
+  @RequirePermissions(CASHIER_PAYMENT_READ_PERMISSION)
   getRefund(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -330,6 +354,7 @@ export class CashierController {
   }
 
   @Get('stats/channels')
+  @RequirePermissions(CASHIER_PAYMENT_READ_PERMISSION)
   @ApiOperation({ summary: 'POS 支付渠道统计' })
   async getChannelStats(
     @Headers('x-tenant-id') tenantId: string

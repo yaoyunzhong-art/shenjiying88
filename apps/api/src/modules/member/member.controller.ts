@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 import {
   RequirePermissions,
   RequireTenantScope,
@@ -168,7 +169,7 @@ export class MemberController {
   /** 注册新会员 */
   @Post('register')
   @Public()
-  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
+  @TenantOptional()
   register(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { memberId: string; nickname: string }
@@ -280,6 +281,7 @@ export class MemberController {
   /** 会员登录 */
   @Post('login')
   @Public()
+  @TenantOptional()
   async login(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: MemberLoginDto

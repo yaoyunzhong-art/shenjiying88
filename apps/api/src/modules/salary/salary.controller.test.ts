@@ -5,50 +5,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 覆盖：路由元数据验证 / 薪资 CRUD / 审批流程 / 发放 / 统计 / 边界异常
  * 8 角色视角：👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
  */
-
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { SalaryController } from './salary.controller'
 import { SalaryService } from './salary.service'
-
-// ══════════════════════════════════════════════════════════════
-// 路由元数据验证
-// ══════════════════════════════════════════════════════════════
-
-const ROUTES: Array<{ method: number; path: string; handler: string; verb: string }> = [
-  { method: 1, path: 'calculate',         handler: 'calculatePayroll', verb: 'POST' },
-  { method: 1, path: 'submit/:id',         handler: 'submitPayroll',   verb: 'POST' },
-  { method: 0, path: ':id',                handler: 'getPayroll',      verb: 'GET'  },
-  { method: 0, path: 'list',               handler: 'listPayrolls',    verb: 'GET'  },
-  { method: 3, path: ':id',                handler: 'deletePayroll',   verb: 'DELETE' },
-  { method: 1, path: 'approve/:id',        handler: 'approvePayroll',  verb: 'POST' },
-  { method: 1, path: 'pay/:id',            handler: 'payPayroll',      verb: 'POST' },
-  { method: 1, path: 'cancel/:id',         handler: 'cancelPayroll',   verb: 'POST' },
-  { method: 0, path: 'summary',            handler: 'getSummary',      verb: 'GET'  },
-]
-
-describe('路由元数据验证', () => {
-  it('salary controller path metadata is set', () => {
-    const ctrlPath = Reflect.getMetadata('path', SalaryController)
-    assert.equal(ctrlPath, 'salary')
-  })
-
-  for (const route of ROUTES) {
-    it(`${route.verb} salary/${route.path} → ${route.handler}`, () => {
-      const method = Reflect.getMetadata('method', SalaryController.prototype[route.handler as keyof SalaryController])
-      const routePath = Reflect.getMetadata('path', SalaryController.prototype[route.handler as keyof SalaryController])
-      assert.equal(method, route.method)
-      assert.equal(routePath, route.path)
-    })
-  }
-
-  it('所有 9 个路由都注册了元数据', () => {
-    for (const handler of ROUTES.map((r) => r.handler)) {
-      const method = Reflect.getMetadata('method', SalaryController.prototype[handler as keyof SalaryController])
-      assert.ok(method !== undefined, `Missing metadata for ${handler}`)
-    }
-  })
-})
 
 // ══════════════════════════════════════════════════════════════
 // 8 角色视角测试

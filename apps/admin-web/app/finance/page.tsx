@@ -80,6 +80,8 @@ const permissionGate = {
 } as const
 
 export default function FinancePage() {
+  const deliveryMode = 'mock' as const
+  const dataSourceLabel = 'mock' as const
   const [tenantId, setTenantId] = useState('demo-tenant')
   const [payments, setPayments] = useState<Payment[]>([])
   const [refunds, setRefunds] = useState<Refund[]>([])
@@ -196,8 +198,21 @@ export default function FinancePage() {
       <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>💰 财务管理 · Payment & Refund</h1>
       <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 24 }}>
-      Phase-38 T168 · 幂等键 + 状态机 + 乐观锁 + Cron 超时清理
+      Phase-38 T168 · 幂等键 + 状态机 + 乐观锁 + Cron 超时清理 · 当前数据源：{dataSourceLabel}
       </p>
+      <div
+      style={{
+      marginBottom: 16,
+      padding: '12px 14px',
+      borderRadius: 12,
+      border: '1px solid rgba(248, 113, 113, 0.24)',
+      background: 'rgba(127, 29, 29, 0.22)',
+      color: '#fecaca',
+      fontSize: 13
+      }}
+      >
+      {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
+      </div>
 
       {/* Tenant Guard */}
       <div style={{ marginBottom: 16, padding: 12, background: '#f3f4f6', borderRadius: 8 }}>

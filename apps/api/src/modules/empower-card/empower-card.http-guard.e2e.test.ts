@@ -92,10 +92,7 @@ describe('EmpowerCardController HTTP guard boundary', () => {
       const res = await request(app.getHttpServer()).get('/empower-cards/card-001')
 
       assert.equal(res.statusCode, 401)
-      assert.equal(
-        res.body.message,
-        'This endpoint is not publicly accessible. Mark with @Public() or provide authentication.'
-      )
+      assert.equal(res.body.message, 'Missing actor context headers.')
       assert.equal(res.body.error, 'Unauthorized')
     } finally {
       await app.close()

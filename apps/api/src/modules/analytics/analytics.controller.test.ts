@@ -3,6 +3,10 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { AnalyticsController } from './analytics.controller'
 import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
+import {
   AnalyticsScope,
   DiagnosticCategory,
   DiagnosticSeverity
@@ -78,6 +82,34 @@ describe('AnalyticsController 路由元数据', () => {
     )
     assert.equal(method, 0) // GET
     assert.equal(path, 'recommendations')
+  })
+})
+
+describe('AnalyticsController access metadata', () => {
+  const resolvePermissions = (handler: Function) =>
+    Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+    ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, AnalyticsController)
+
+  const resolveTenantScope = (handler: Function) =>
+    Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+    ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, AnalyticsController)
+
+  const handlers = [
+    AnalyticsController.prototype.getOperationSnapshot,
+    AnalyticsController.prototype.getDiagnostics,
+    AnalyticsController.prototype.getRecommendations,
+  ]
+
+  it('all routes should require tenant scope', () => {
+    handlers.forEach((handler) => {
+      assert.deepEqual(resolveTenantScope(handler), {})
+    })
+  })
+
+  it('all routes should reuse report:read', () => {
+    handlers.forEach((handler) => {
+      assert.deepEqual(resolvePermissions(handler), ['report:read'])
+    })
   })
 })
 

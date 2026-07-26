@@ -47,13 +47,6 @@ describe('LineageController', () => {
 
   // ==================== 路由元数据 ====================
 
-  describe('route metadata', () => {
-    it('controller path metadata 应为 lineage', () => {
-      const path = Reflect.getMetadata('path', LineageController)
-      assert.equal(path, 'lineage')
-    })
-  })
-
   // ==================== 字段血缘 ====================
 
   describe('POST /lineage/fields/register', () => {

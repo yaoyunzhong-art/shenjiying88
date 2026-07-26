@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
 import {
   RequirePermissions,
   RequireTenantScope
@@ -48,7 +47,6 @@ const SUPPLIERS_DETAIL_PERMISSION = 'suppliers:id:read'
 const SUPPLIERS_FORM_PERMISSION = 'suppliers:form:read'
 
 @UseGuards(TenantGuard)
-@Public()
 @Controller('logistics')
 @RequireTenantScope()
 @RequirePermissions(LOGISTICS_READ_PERMISSION)
@@ -937,4 +935,3 @@ export class LogisticsController {
     return this.logisticsService.getLogisticsReport(tenantId)
   }
 }
-

@@ -1,17 +1,24 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
-import { Public } from '../foundation/identity-access/public.decorator'
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { AlertQueryDto, AlertSummaryDto, CreateInventoryAlertDto, InventoryAlertDto, InventoryAlertListDto } from './inventory-alert.dto'
 import { InventoryAlertService } from './inventory-alert.service'
 import { TenantGuard } from '../agent/tenant.guard'
 
+const INVENTORY_ALERT_READ_PERMISSION = 'inventory:read'
+const INVENTORY_ALERT_WRITE_PERMISSION = 'inventory:update'
+
 @ApiTags('库存预警分析')
 @ApiBearerAuth()
 @Controller('inventory-alert')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(INVENTORY_ALERT_READ_PERMISSION)
 export class InventoryAlertController {
   constructor(private readonly service: InventoryAlertService) {}
 
@@ -51,6 +58,7 @@ export class InventoryAlertController {
   @Post()
   @ApiOperation({ summary: '创建库存预警' })
   @ApiOkResponse({ type: InventoryAlertDto })
+  @RequirePermissions(INVENTORY_ALERT_WRITE_PERMISSION)
   create(
     @TenantContext() ctx: RequestTenantContext,
     @Body() body: CreateInventoryAlertDto,

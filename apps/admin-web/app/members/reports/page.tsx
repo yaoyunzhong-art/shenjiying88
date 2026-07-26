@@ -106,6 +106,9 @@ const permissionGate = {
     '会员数据报告页已接入管理员本地 session，只有具备 member:read 的账号才能查看增长分析、RFM 分群、活跃度与 LTV 指标。',
 } as const;
 
+const deliveryMode = 'mock' as const;
+const dataSourceLabel = 'mock' as const;
+
 export default function MemberReportsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -126,7 +129,20 @@ export default function MemberReportsPage() {
   return (
     <AdminPermissionGate {...permissionGate}>
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell title="会员数据报告" subtitle="增长分析 · RFM分群 · 活跃度 · 留存与LTV">
+      <PageShell title="会员数据报告" subtitle={`增长分析 · RFM分群 · 活跃度 · 留存与LTV · 当前数据源：${dataSourceLabel}`}>
+        <div
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            padding: '12px 14px',
+            border: '1px solid rgba(248, 113, 113, 0.24)',
+            background: 'rgba(127, 29, 29, 0.22)',
+            color: '#fecaca',
+            fontSize: 13,
+          }}
+        >
+          {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
+        </div>
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 20 }}>
           <div style={cardStyle}>
             <div style={{ fontSize: 13, color: '#cbd5e1' }}>当前会员总数</div>

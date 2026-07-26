@@ -6,7 +6,13 @@ import { ProductAdapter } from './datasources/product.adapter'
 import { PurchaseHistoryAdapter } from './datasources/purchase-history.adapter'
 import { MemberPreferenceAdapter } from './datasources/member-preference.adapter'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const RECOMMEND_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const RECOMMEND_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 /**
  * Phase-40 T170: RecommendController
@@ -28,7 +34,8 @@ import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('api/recommend')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(RECOMMEND_GOVERNANCE_READ_PERMISSION)
 export class RecommendController {
   constructor(
     private readonly engine: RecommendationEngine,
@@ -66,6 +73,7 @@ export class RecommendController {
    * 记录浏览
    */
   @Post('track-view')
+  @RequirePermissions(RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   trackView(@Body() body: {
     tenantId: string
     memberId: string
@@ -90,6 +98,7 @@ export class RecommendController {
    * 记录购买
    */
   @Post('track-purchase')
+  @RequirePermissions(RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   trackPurchase(@Body() body: {
     tenantId: string
     memberId: string
@@ -118,6 +127,7 @@ export class RecommendController {
    * 更新会员偏好
    */
   @Post('preferences')
+  @RequirePermissions(RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   updatePreferences(@Body() body: Partial<MemberPreference> & Pick<MemberPreference, 'memberId' | 'tenantId'>): { updated: boolean } {
     if (!body.tenantId || !body.memberId) {
       throw new BadRequestException('tenantId, memberId required')
@@ -130,6 +140,7 @@ export class RecommendController {
    * 缓存失效
    */
   @Post('cache/invalidate')
+  @RequirePermissions(RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   invalidateCache(@Body() body: { tenantId: string }): { invalidated: number } {
     if (!body.tenantId) throw new BadRequestException('tenantId required')
     return { invalidated: this.cache.invalidate(body.tenantId) }

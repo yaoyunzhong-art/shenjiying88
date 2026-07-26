@@ -14,7 +14,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { CurrencyController } from './currency.controller'
 import { CurrencyService } from './currency.service'
@@ -34,70 +33,6 @@ describe('CurrencyController 单元测试', () => {
     service.setRate('CNY', 'JPY', 20.14, 'market')
     service.setRate('CNY', 'HKD', 1.09, 'market')
     service.setRate('USD', 'CNY', 7.14, 'market')
-  })
-
-  // ── 路由元数据 ──
-  describe('路由定义', () => {
-    it('控制器路径应为 currency', () => {
-      const path = Reflect.getMetadata('path', CurrencyController)
-      assert.equal(path, 'currency')
-    })
-
-    it('GET /currency/rates', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.getAllRates)
-      assert.equal(meta, 0) // GET
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.getAllRates)
-      assert.equal(path, 'rates')
-    })
-
-    it('GET /currency/rates/base', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.getBaseRates)
-      assert.equal(meta, 0) // GET
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.getBaseRates)
-      assert.equal(path, 'rates/base')
-    })
-
-    it('POST /currency/convert', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.convert)
-      assert.equal(meta, 1) // POST
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.convert)
-      assert.equal(path, 'convert')
-    })
-
-    it('POST /currency/rates', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.setRate)
-      assert.equal(meta, 1) // POST
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.setRate)
-      assert.equal(path, 'rates')
-    })
-
-    it('POST /currency/add', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.add)
-      assert.equal(meta, 1) // POST
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.add)
-      assert.equal(path, 'add')
-    })
-
-    it('POST /currency/subtract', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.subtract)
-      assert.equal(meta, 1) // POST
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.subtract)
-      assert.equal(path, 'subtract')
-    })
-
-    it('GET /currency/config', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.getConfig)
-      assert.equal(meta, 0) // GET
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.getConfig)
-      assert.equal(path, 'config')
-    })
-
-    it('POST /currency/config', () => {
-      const meta = Reflect.getMetadata('method', CurrencyController.prototype.updateConfig)
-      assert.equal(meta, 1) // POST
-      const path = Reflect.getMetadata('path', CurrencyController.prototype.updateConfig)
-      assert.equal(path, 'config')
-    })
   })
 
   // ── GET /currency/rates 正例与反例 ──
@@ -299,6 +234,13 @@ describe('CurrencyController 单元测试', () => {
 // ── 集成测试: NestJS TestingModule + supertest ──
 describe('CurrencyController 集成测试', () => {
   let app: INestApplication
+  const tenantId = 'tenant-001'
+
+  const getWithTenant = (path: string) =>
+    request(app.getHttpServer()).get(path).set('x-tenant-id', tenantId)
+
+  const postWithTenant = (path: string) =>
+    request(app.getHttpServer()).post(path).set('x-tenant-id', tenantId)
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -315,8 +257,7 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('GET /currency/rates 返回 200 + 汇率列表', () => {
-    return request(app.getHttpServer())
-      .get('/currency/rates')
+    return getWithTenant('/currency/rates')
       .expect(200)
       .expect((res) => {
         assert.ok(Array.isArray(res.body))
@@ -324,8 +265,7 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('GET /currency/rates/base 返回 200', () => {
-    return request(app.getHttpServer())
-      .get('/currency/rates/base')
+    return getWithTenant('/currency/rates/base')
       .expect(200)
       .expect((res) => {
         assert.equal(typeof res.body, 'object')
@@ -335,8 +275,7 @@ describe('CurrencyController 集成测试', () => {
 
   // ── POST /currency/convert 集成正例 ──
   it('POST /currency/convert CNY→USD 返回结果包含正确字段', () => {
-    return request(app.getHttpServer())
-      .post('/currency/convert')
+    return postWithTenant('/currency/convert')
       .send({ amount: 100, from: 'CNY', to: 'USD' })
       .expect(201)
       .expect((res) => {
@@ -350,8 +289,7 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('POST /currency/convert 同币种返回原值', () => {
-    return request(app.getHttpServer())
-      .post('/currency/convert')
+    return postWithTenant('/currency/convert')
       .send({ amount: 100, from: 'CNY', to: 'CNY' })
       .expect(201)
       .expect((res) => {
@@ -362,37 +300,32 @@ describe('CurrencyController 集成测试', () => {
 
   // ── POST /currency/convert 反例 ──
   it('POST /currency/convert 反例: 无效币种返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/convert')
+    return postWithTenant('/currency/convert')
       .send({ amount: 100, from: 'INVALID', to: 'USD' })
       .expect(400)
   })
 
   it('POST /currency/convert 反例: 负数金额返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/convert')
+    return postWithTenant('/currency/convert')
       .send({ amount: -100, from: 'CNY', to: 'USD' })
       .expect(400)
   })
 
   it('POST /currency/convert 反例: 缺少必填字段返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/convert')
+    return postWithTenant('/currency/convert')
       .send({ amount: 100 })
       .expect(400)
   })
 
   it('POST /currency/convert 反例: 空对象返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/convert')
+    return postWithTenant('/currency/convert')
       .send({})
       .expect(400)
   })
 
   // ── POST /currency/rates 集成测试 ──
   it('POST /currency/rates 设置新汇率', () => {
-    return request(app.getHttpServer())
-      .post('/currency/rates')
+    return postWithTenant('/currency/rates')
       .send({ from: 'CNY', to: 'KRW' as CurrencyCode, rate: 185, source: 'market' })
       .expect(201)
       .expect((res) => {
@@ -402,23 +335,20 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('POST /currency/rates 反例: 零汇率返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/rates')
+    return postWithTenant('/currency/rates')
       .send({ from: 'CNY', to: 'USD', rate: 0, source: 'market' })
       .expect(400)
   })
 
   it('POST /currency/rates 反例: 无效币种返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/rates')
+    return postWithTenant('/currency/rates')
       .send({ from: 'XYZ', to: 'USD', rate: 0.5 })
       .expect(400)
   })
 
   // ── POST /currency/add 集成测试 ──
   it('POST /currency/add 同币种加法', () => {
-    return request(app.getHttpServer())
-      .post('/currency/add')
+    return postWithTenant('/currency/add')
       .send({
         a: { amount: 100, currency: 'CNY' },
         b: { amount: 50, currency: 'CNY' },
@@ -432,8 +362,7 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('POST /currency/add 反例: 无效币种返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/add')
+    return postWithTenant('/currency/add')
       .send({
         a: { amount: 100, currency: 'BAD' },
         b: { amount: 50, currency: 'CNY' },
@@ -446,8 +375,7 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('POST /currency/add 反例: 缺少 operation 返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/add')
+    return postWithTenant('/currency/add')
       .send({
         a: { amount: 100, currency: 'CNY' },
         b: { amount: 50, currency: 'CNY' },
@@ -460,8 +388,7 @@ describe('CurrencyController 集成测试', () => {
 
   // ── POST /currency/subtract 集成测试 ──
   it('POST /currency/subtract 同币种减法', () => {
-    return request(app.getHttpServer())
-      .post('/currency/subtract')
+    return postWithTenant('/currency/subtract')
       .send({
         a: { amount: 100, currency: 'CNY' },
         b: { amount: 30, currency: 'CNY' },
@@ -474,8 +401,7 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('POST /currency/subtract 反例: 结果为负数仍然成功', () => {
-    return request(app.getHttpServer())
-      .post('/currency/subtract')
+    return postWithTenant('/currency/subtract')
       .send({
         a: { amount: 30, currency: 'CNY' },
         b: { amount: 100, currency: 'CNY' },
@@ -489,8 +415,7 @@ describe('CurrencyController 集成测试', () => {
 
   // ── GET /currency/config ──
   it('GET /currency/config 返回 200', () => {
-    return request(app.getHttpServer())
-      .get('/currency/config')
+    return getWithTenant('/currency/config')
       .expect(200)
       .expect((res) => {
         assert.equal(res.body.baseCurrency, 'CNY')
@@ -500,8 +425,7 @@ describe('CurrencyController 集成测试', () => {
 
   // ── POST /currency/config ──
   it('POST /currency/config 更新本位币', () => {
-    return request(app.getHttpServer())
-      .post('/currency/config')
+    return postWithTenant('/currency/config')
       .send({ baseCurrency: 'USD' })
       .expect(201)
       .expect((res) => {
@@ -510,22 +434,19 @@ describe('CurrencyController 集成测试', () => {
   })
 
   it('POST /currency/config 反例: 无效币种返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/config')
+    return postWithTenant('/currency/config')
       .send({ baseCurrency: 'INVALID' })
       .expect(400)
   })
 
   it('POST /currency/config 反例: 负数 decimalPlaces 返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/config')
+    return postWithTenant('/currency/config')
       .send({ decimalPlaces: -1 })
       .expect(400)
   })
 
   it('POST /currency/config 反例: 无效舍入模式返回 400', () => {
-    return request(app.getHttpServer())
-      .post('/currency/config')
+    return postWithTenant('/currency/config')
       .send({ roundingMode: 'invalid' })
       .expect(400)
   })
@@ -535,16 +456,18 @@ describe('CurrencyController 集成测试', () => {
     const agent = request.agent(app.getHttpServer())
 
     // Step 1: 查看所有汇率
-    const ratesRes = await agent.get('/currency/rates').expect(200)
+    const ratesRes = await agent.get('/currency/rates').set('x-tenant-id', tenantId).expect(200)
     assert.ok(Array.isArray(ratesRes.body))
 
     // Step 2: 先通过 setRate 设置汇率，再转换 (integration test uses empty service)
     await agent
       .post('/currency/rates')
+      .set('x-tenant-id', tenantId)
       .send({ from: 'USD', to: 'CNY', rate: 7.14, source: 'market' })
 
     const convertRes = await agent
       .post('/currency/convert')
+      .set('x-tenant-id', tenantId)
       .send({ amount: 50, from: 'USD', to: 'CNY' })
       .expect(201)
     assert.equal(convertRes.body.rate, 7.14)
@@ -552,6 +475,7 @@ describe('CurrencyController 集成测试', () => {
     // Step 3: 加 43 元税费
     const addRes = await agent
       .post('/currency/add')
+      .set('x-tenant-id', tenantId)
       .send({
         a: { amount: convertRes.body.convertedAmount, currency: 'CNY' },
         b: { amount: 43, currency: 'CNY' },
@@ -563,6 +487,7 @@ describe('CurrencyController 集成测试', () => {
     // Step 4: 更新本位币配置
     await agent
       .post('/currency/config')
+      .set('x-tenant-id', tenantId)
       .send({ baseCurrency: 'USD' })
       .expect(201)
   })

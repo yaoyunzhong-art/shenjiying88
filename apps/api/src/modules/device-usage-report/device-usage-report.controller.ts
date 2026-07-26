@@ -10,6 +10,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
@@ -23,10 +27,15 @@ import {
 } from './device-usage-report.dto'
 import { DeviceUsageReportService } from './device-usage-report.service'
 
+const DEVICE_USAGE_REPORT_READ_PERMISSION = 'report:read'
+const DEVICE_USAGE_REPORT_WRITE_PERMISSION = 'report:export'
+
 @ApiTags('设备使用率分析')
 @ApiBearerAuth()
 @UseGuards(TenantGuard)
 @Controller('device-usage-report')
+@RequireTenantScope()
+@RequirePermissions(DEVICE_USAGE_REPORT_READ_PERMISSION)
 export class DeviceUsageReportController {
   constructor(private readonly service: DeviceUsageReportService) {}
 
@@ -64,6 +73,7 @@ export class DeviceUsageReportController {
   @Post()
   @ApiOperation({ summary: '创建设备使用率记录' })
   @ApiOkResponse({ type: DeviceUsageDto })
+  @RequirePermissions(DEVICE_USAGE_REPORT_WRITE_PERMISSION)
   create(
     @TenantContext() ctx: RequestTenantContext,
     @Body() body: CreateDeviceUsageDto,
@@ -73,6 +83,7 @@ export class DeviceUsageReportController {
 
   @Delete(':id')
   @ApiOperation({ summary: '删除设备使用率记录' })
+  @RequirePermissions(DEVICE_USAGE_REPORT_WRITE_PERMISSION)
   delete(
     @Param('id') id: string,
     @TenantContext() ctx: RequestTenantContext,

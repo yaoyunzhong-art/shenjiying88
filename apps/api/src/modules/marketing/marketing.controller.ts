@@ -12,6 +12,7 @@ import {
 
 import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 
 import type { Request } from 'express'
 import type { TenantAwareRequest } from '../tenant/tenant.types'
@@ -48,6 +49,7 @@ import type { TenantId, TouchPoint, CouponIssueRequest, AttributionResult } from
 @Controller('marketing')
 @Injectable()
 @Public()
+@TenantOptional()
 export class MarketingController {
   constructor(
     private readonly rfmCalculator: RFMCalculator,

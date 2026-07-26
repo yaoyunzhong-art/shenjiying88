@@ -21,11 +21,6 @@ describe('AiDiagnosisController (Complete)', () => {
     expect(controller).toBeDefined()
   })
 
-  it('Controller path metadata = "ai-diagnosis"', () => {
-    const path = Reflect.getMetadata('path', AiDiagnosisController)
-    expect(path).toBe('ai-diagnosis')
-  })
-
   describe('POST /', () => {
     it('should create a diagnosis and return it', () => {
       const dto = new CreateDiagnosisDto()

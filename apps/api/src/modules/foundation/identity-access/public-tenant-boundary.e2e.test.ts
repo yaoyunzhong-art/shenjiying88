@@ -18,6 +18,17 @@ import { MemberController } from '../../member/member.controller'
 import { MemberService, resetMemberServiceTestState } from '../../member/member.service'
 import type { TenantAwareRequest } from '../../tenant/tenant.types'
 
+function attachTenantContext(req: unknown, _res: unknown, next: () => void) {
+  const request = req as TenantAwareRequest
+  request.tenantContext = {
+    tenantId: 'tenant-demo',
+    brandId: 'brand-demo',
+    storeId: 'store-demo',
+    marketCode: 'us-default',
+  }
+  next()
+}
+
 function attachActorContext(req: unknown, _res: unknown, next: () => void) {
   const request = req as TenantAwareRequest & {
     headers: Record<string, string | string[] | undefined>
@@ -90,6 +101,7 @@ async function buildApp() {
   }).compile()
 
   const app = moduleRef.createNestApplication()
+  app.use(attachTenantContext)
   app.use(attachActorContext)
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -126,16 +138,17 @@ describe('Public endpoints remain tenant-scoped', () => {
     }
   })
 
-  it('e2e: POST /members/register without tenant header is still rejected', async () => {
+  it('e2e: POST /members/register without tenant header should use tenant context middleware', async () => {
     const app = await buildApp()
     try {
       const res = await request(app.getHttpServer())
         .post('/members/register')
         .send({ memberId: 'member-002', nickname: '新会员' })
 
-      assert.equal(res.statusCode, 401)
-      assert.equal(res.body.message, 'Missing x-tenant-id header')
-      assert.equal(res.body.error, 'Unauthorized')
+      assert.equal(res.statusCode, 201)
+      assert.equal(res.body.data.memberId, 'member-002')
+      assert.equal(res.body.data.nickname, '新会员')
+      assert.equal(res.body.data.tenantContext.tenantId, 'tenant-demo')
     } finally {
       await app.close()
     }

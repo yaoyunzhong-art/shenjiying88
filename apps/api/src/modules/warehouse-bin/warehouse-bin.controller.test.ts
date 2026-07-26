@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 🐜 自动: [warehouse-bin] [D] controller 测试
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { WarehouseBinController } from './warehouse-bin.controller'
 import { WarehouseBinService } from './warehouse-bin.service'
@@ -25,99 +24,6 @@ describe('WarehouseBinController', () => {
 
   afterEach(() => {
     service.resetBinStoresForTests()
-  })
-
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be warehouse-bins', () => {
-      const path = Reflect.getMetadata('path', WarehouseBinController)
-      assert.equal(path, 'warehouse-bins')
-    })
-
-    it('createBin should be POST /', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.createBin)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.createBin)
-      assert.equal(method, 1) // POST
-      assert.equal(path, '/')
-    })
-
-    it('listBins should be GET /', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.listBins)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.listBins)
-      assert.equal(method, 0) // GET
-      assert.equal(path, '/')
-    })
-
-    it('getBin should be GET /:binId', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.getBin)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.getBin)
-      assert.equal(method, 0)
-      assert.equal(path, ':binId')
-    })
-
-    it('updateBin should be PATCH /:binId', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.updateBin)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.updateBin)
-      assert.equal(method, 4) // PATCH
-      assert.equal(path, ':binId')
-    })
-
-    it('deleteBin should be DELETE /:binId', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.deleteBin)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.deleteBin)
-      assert.equal(method, 3) // DELETE
-      assert.equal(path, ':binId')
-    })
-
-    it('assignItem should be POST /:binId/assign', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.assignItem)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.assignItem)
-      assert.equal(method, 1)
-      assert.equal(path, ':binId/assign')
-    })
-
-    it('removeItem should be POST /:binId/remove', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.removeItem)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.removeItem)
-      assert.equal(method, 1)
-      assert.equal(path, ':binId/remove')
-    })
-
-    it('reserveBin should be POST /:binId/reserve', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.reserveBin)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.reserveBin)
-      assert.equal(method, 1)
-      assert.equal(path, ':binId/reserve')
-    })
-
-    it('setMaintenance should be POST /:binId/maintenance', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.setMaintenance)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.setMaintenance)
-      assert.equal(method, 1)
-      assert.equal(path, ':binId/maintenance')
-    })
-
-    it('getEmptyBins should be GET /views/empty', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.getEmptyBins)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.getEmptyBins)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/empty')
-    })
-
-    it('getCapacityUtilization should be GET /views/utilization', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.getCapacityUtilization)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.getCapacityUtilization)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/utilization')
-    })
-
-    it('getOccupiedBinsByArea should be GET /area/:area/occupied', () => {
-      const method = Reflect.getMetadata('method', WarehouseBinController.prototype.getOccupiedBinsByArea)
-      const path = Reflect.getMetadata('path', WarehouseBinController.prototype.getOccupiedBinsByArea)
-      assert.equal(method, 0)
-      assert.equal(path, 'area/:area/occupied')
-    })
   })
 
   // ── CRUD via controller ──

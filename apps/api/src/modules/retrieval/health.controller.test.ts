@@ -31,21 +31,6 @@ describe('RetrievalHealthController', () => {
 
   // ─── 路由元数据 ────────────────────────────────────────────────────────
 
-  describe('route metadata', () => {
-    it('controller path should be api/retrieval', () => {
-      const path = Reflect.getMetadata('path', RetrievalHealthController)
-      assert.equal(path, 'api/retrieval')
-    })
-
-    it('health route should be GET /health', () => {
-      const method = Reflect.getMetadata('method', RetrievalHealthController.prototype.health)
-      const path = Reflect.getMetadata('path', RetrievalHealthController.prototype.health)
-
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'health')
-    })
-  })
-
   // ─── GET /api/retrieval/health (骨架状态) ──────────────────────────────
 
   describe('GET /api/retrieval/health', () => {

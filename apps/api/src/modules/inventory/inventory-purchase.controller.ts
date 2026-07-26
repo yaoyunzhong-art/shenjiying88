@@ -27,9 +27,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
 import {
   CurrentActor,
+  RequirePermissions,
+  RequireTenantScope,
   type CurrentActorValue
 } from '../foundation/identity-access/identity-access.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
@@ -45,9 +46,13 @@ function resolveActorName(actorContext: CurrentActorValue, fallback?: string) {
   return actorContext?.actorName ?? actorContext?.actorId ?? fallback
 }
 
+const INVENTORY_PURCHASE_READ_PERMISSION = 'inventory.purchase.read'
+const INVENTORY_PURCHASE_WRITE_PERMISSION = 'inventory.purchase.write'
+
 @UseGuards(TenantGuard)
-@Public()
 @Controller('inventory/purchase')
+@RequireTenantScope()
+@RequirePermissions(INVENTORY_PURCHASE_READ_PERMISSION)
 export class InventoryPurchaseController {
   private readonly logger = new Logger(InventoryPurchaseController.name)
 
@@ -65,6 +70,7 @@ export class InventoryPurchaseController {
    * 创建采购单
    */
   @Post('orders')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createPurchaseOrder(
     @TenantContext() tenantContext: RequestTenantContext,
     @CurrentActor() actorContext: CurrentActorValue,
@@ -131,6 +137,7 @@ export class InventoryPurchaseController {
    * 更新采购单
    */
   @Put('orders/:orderId')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   updatePurchaseOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -158,6 +165,7 @@ export class InventoryPurchaseController {
    * 删除采购单 (仅草稿)
    */
   @Delete('orders/:orderId')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   deletePurchaseOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -175,6 +183,7 @@ export class InventoryPurchaseController {
    * 提交审批
    */
   @Post('orders/:orderId/submit')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   submitForApproval(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -193,6 +202,7 @@ export class InventoryPurchaseController {
    * 审批通过
    */
   @Post('orders/:orderId/approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   approveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -211,6 +221,7 @@ export class InventoryPurchaseController {
    * 驳回
    */
   @Post('orders/:orderId/reject')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   rejectOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -229,6 +240,7 @@ export class InventoryPurchaseController {
    * 下单 (Approved → Ordered)
    */
   @Post('orders/:orderId/place')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   placeOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -247,6 +259,7 @@ export class InventoryPurchaseController {
    * 取消
    */
   @Post('orders/:orderId/cancel')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   cancelOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -268,6 +281,7 @@ export class InventoryPurchaseController {
    * 收货
    */
   @Post('orders/:orderId/receive')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   receiveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -295,6 +309,7 @@ export class InventoryPurchaseController {
    * 记录付款
    */
   @Post('payments')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   recordPayment(
     @TenantContext() tenantContext: RequestTenantContext,
     @CurrentActor() actorContext: CurrentActorValue,
@@ -334,6 +349,7 @@ export class InventoryPurchaseController {
    * 添加备注
    */
   @Post('orders/:orderId/notes')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   addNote(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -368,6 +384,7 @@ export class InventoryPurchaseController {
    * 创建退货单
    */
   @Post('returns')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createReturn(
     @TenantContext() tenantContext: RequestTenantContext,
     @CurrentActor() actorContext: CurrentActorValue,
@@ -394,6 +411,7 @@ export class InventoryPurchaseController {
    * 审批退货
    */
   @Post('returns/:returnId/approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   approveReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -412,6 +430,7 @@ export class InventoryPurchaseController {
    * 退货质检
    */
   @Post('returns/:returnId/inspect')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   inspectReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -430,6 +449,7 @@ export class InventoryPurchaseController {
    * 驳回退货
    */
   @Post('returns/:returnId/reject')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   rejectReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -448,6 +468,7 @@ export class InventoryPurchaseController {
    * 退款
    */
   @Post('returns/:returnId/refund')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   refundReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -466,6 +487,7 @@ export class InventoryPurchaseController {
    * 换货
    */
   @Post('returns/:returnId/exchange')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   exchangeReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -484,6 +506,7 @@ export class InventoryPurchaseController {
    * 关闭退货
    */
   @Post('returns/:returnId/close')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   closeReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -502,6 +525,7 @@ export class InventoryPurchaseController {
    * 完成退货（兼容旧接口，内部收口到 close）
    */
   @Post('returns/:returnId/complete')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   completeReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -518,6 +542,7 @@ export class InventoryPurchaseController {
    * 创建供应商
    */
   @Post('suppliers')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createSupplier(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: {
@@ -572,6 +597,7 @@ export class InventoryPurchaseController {
    * 更新供应商
    */
   @Put('suppliers/:supplierId')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   updateSupplier(
     @Param('supplierId') supplierId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -663,6 +689,7 @@ export class InventoryPurchaseController {
    * 批量审批
    */
   @Post('orders/batch-approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   batchApprove(
     @TenantContext() tenantContext: RequestTenantContext,
     @CurrentActor() actorContext: CurrentActorValue,
@@ -680,4 +707,3 @@ export class InventoryPurchaseController {
     })
   }
 }
-

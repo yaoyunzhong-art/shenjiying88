@@ -2,6 +2,10 @@ import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Q
 import { Public } from '../foundation/identity-access/public.decorator'
 import { randomUUID } from 'node:crypto'
 import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+import {
   type ReportDefinition,
   type CreateReportDefinitionInput,
   type UpdateReportDefinitionInput,
@@ -25,6 +29,9 @@ import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
 import { TenantGuard } from '../agent/tenant.guard'
 import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
+
+const REPORT_READ_PERMISSION = 'report:read'
+const REPORT_EXPORT_PERMISSION = 'report:export'
 
 /**
  * Phase-39 T169: 报表中心 Controller
@@ -65,7 +72,8 @@ interface QueryParams {
 
 @Controller('api/reports')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(REPORT_READ_PERMISSION)
 export class ReportController {
   private definitions = new Map<string, ReportDefinition>()
 
@@ -143,6 +151,7 @@ export class ReportController {
 
   @Post('definitions')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   createDefinition(@Body() input: CreateReportDefinitionInput): ReportDefinition {
     const now = new Date().toISOString()
     const def: ReportDefinition = {
@@ -170,6 +179,7 @@ export class ReportController {
   }
 
   @Put('definitions/:id')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   updateDefinition(
     @Param('id') id: string,
     @Query() q: QueryParams & { version?: string },
@@ -191,6 +201,7 @@ export class ReportController {
   }
 
   @Delete('definitions/:id')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   deleteDefinition(@Param('id') id: string, @Query() q: QueryParams) {
     const def = this.definitions.get(id)
     if (!def || def.tenantId !== q.tenantId) return { deleted: false }
@@ -217,6 +228,7 @@ export class ReportController {
 
   @Post('exports')
   @HttpCode(HttpStatus.ACCEPTED)
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   async createBatchExportTask(@Body() body: QueryParams): Promise<any> {
     this.validateBatchExportRequest(body)
     const format = this.normalizeBatchExportFormat(body.format)
@@ -305,6 +317,7 @@ export class ReportController {
   }
 
   @Delete('exports/:taskId')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   deleteBatchExportTask(@Param('taskId') taskId: string, @Query() q: QueryParams) {
     if (!q.tenantId) {
       return { deleted: false }
@@ -322,6 +335,7 @@ export class ReportController {
   // ─── 缓存管理 ──────────────────────────────────────────
 
   @Post('cache/invalidate')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   invalidateCache(@Body() body: { tenantId: string; type?: ReportType }) {
     const count = this.cache.invalidate(body.tenantId, body.type)
     return { invalidated: count }

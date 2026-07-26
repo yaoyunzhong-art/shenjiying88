@@ -23,6 +23,9 @@ const permissionGate = {
     '会员等级页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级分布、趋势和筛选结果。',
 } as const;
 
+const deliveryMode = 'mock' as const;
+const dataSourceLabel = 'mock' as const;
+
 // ─── 页面组件 ─────────────────────────────────────────
 
 export default function MemberTiersPage() {
@@ -73,7 +76,7 @@ export default function MemberTiersPage() {
             会员等级分布
           </h1>
           <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0 0' }}>
-            查看各等级会员的人数、占比和环比趋势
+            {`查看各等级会员的人数、占比和环比趋势。当前数据源：${dataSourceLabel}。`}
           </p>
         </div>
 
@@ -96,6 +99,20 @@ export default function MemberTiersPage() {
           />
           显示趋势
         </label>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 16,
+          borderRadius: 12,
+          padding: '12px 14px',
+          border: '1px solid rgba(248, 113, 113, 0.24)',
+          background: 'rgba(127, 29, 29, 0.22)',
+          color: '#fecaca',
+          fontSize: 13,
+        }}
+      >
+        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
       </div>
 
       {/* 等级分布组件 */}

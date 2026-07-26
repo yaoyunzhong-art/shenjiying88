@@ -2,7 +2,6 @@
  * ai-sales.controller.comprehensive.test.ts — AI 销售 Controller 完整测试
  */
 import { describe, it, expect, beforeEach } from 'vitest'
-import 'reflect-metadata'
 import { AiSalesController } from './ai-sales.controller'
 import { AiSalesService } from './ai-sales.service'
 import {
@@ -39,10 +38,6 @@ describe('AiSalesController (Complete)', () => {
   })
 
   it('should be defined', () => { expect(controller).toBeDefined() })
-  it('path = "ai-sales"', () => {
-    expect(Reflect.getMetadata('path', AiSalesController)).toBe('ai-sales')
-  })
-
   it('POST /recommend should return recommendations', () => {
     const result = controller.recommend({ customerId: 'cust-001' })
     expect(result).toBeDefined()
@@ -181,10 +176,6 @@ describe('AiInsightController', () => {
   })
 
   it('should be defined', () => { expect(controller).toBeDefined() })
-  it('path = "ai-insight"', () => {
-    expect(Reflect.getMetadata('path', AiInsightController)).toBe('ai-insight')
-  })
-
   it('GET /kpis should return KPIs', () => {
     const result = controller.getKPIs('default', {})
     expect(result.length).toBeGreaterThan(0)

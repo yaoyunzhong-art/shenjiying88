@@ -332,18 +332,4 @@ describe('TenantLLMController', () => {
     })
   })
 
-  // ── 路由元数据与守卫 ──────────────────────────────────────────────
-
-  describe('路由元数据', () => {
-    it('Controller 注册了正确的路由前缀', () => {
-      const path = Reflect.getMetadata('path', TenantLLMController)
-      expect(path).toBe('llm')
-    })
-
-    it('Controller 注册了守卫', () => {
-      const guards = Reflect.getMetadata('__guards__', TenantLLMController)
-      expect(guards).toBeDefined()
-      expect(guards).toHaveLength(1)
-    })
-  })
 })

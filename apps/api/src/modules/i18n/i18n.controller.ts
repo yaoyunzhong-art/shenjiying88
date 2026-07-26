@@ -26,6 +26,7 @@ import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import type { Locale } from './i18n.entity'
 import { I18nService } from './i18n.service'
+import { extractKeysFromSource } from './i18n-extract'
 import {
   BulkRegisterTranslationDto,
   CreateTranslationDto,
@@ -150,7 +151,6 @@ export class I18nController {
       return { keys: [], totalCount: 0 }
     }
 
-    const { extractKeysFromSource } = require('./i18n-extract')
     const keys = extractKeysFromSource(source)
     return { keys, totalCount: keys.length }
   }

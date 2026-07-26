@@ -209,12 +209,15 @@ const permissionGate = {
   description: '该页面已接入管理员权限管控，仅具备 finance:reconciliation:discrepancies:id:read 权限的账号可访问。',
 } as const
 
+type DeliveryMode = 'api' | 'fallback'
+
 export default function DiscrepancyDetailPage() {
   const params = useParams()
   const router = useRouter()
   const diffKey = typeof params.id === 'string' ? params.id : ''
 
   const [detail, setDetail] = useState<DiscrepancyDetail | null>(null)
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('api')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resolveNote, setResolveNote] = useState('')
@@ -232,9 +235,11 @@ export default function DiscrepancyDetailPage() {
     try {
       const data = await apiFetch<DiscrepancyDetail>(`/api/finance/reconciliation/${encodeURIComponent(diffKey)}`)
       setDetail(data)
+      setDeliveryMode('api')
     } catch {
       // Fallback for offline/demo
       setDetail(defaultDetail(diffKey || 'unknown'))
+      setDeliveryMode('fallback')
     } finally {
       setLoading(false)
     }
@@ -310,6 +315,9 @@ export default function DiscrepancyDetailPage() {
 
   if (!detail) return null
 
+  const dataSourceLabel = deliveryMode === 'api' ? '真实 API' : 'fallback'
+  const isReviewable = deliveryMode === 'api'
+
   return (
     <AdminPermissionGate
       requiredPermission={permissionGate.requiredPermission}
@@ -329,7 +337,7 @@ export default function DiscrepancyDetailPage() {
       差异详情 · <span className="font-mono">{detail.orderNo || detail.diffKey}</span>
       </h1>
       <p className="text-sm text-gray-500">
-      对账日期 {detail.reconciliationRun?.date || '-'} · {diffKindLabel(detail.kind)}
+      {`对账日期 ${detail.reconciliationRun?.date || '-'} · ${diffKindLabel(detail.kind)} · 当前数据源：${dataSourceLabel}`}
       </p>
       </div>
       <div className="ml-auto flex items-center gap-2">
@@ -342,6 +350,17 @@ export default function DiscrepancyDetailPage() {
       {detail.resolved ? '已处理' : '待处理'}
       </span>
       </div>
+      </div>
+
+      <div
+        className={`rounded-lg border px-4 py-3 text-sm ${
+          deliveryMode === 'api'
+            ? 'border-green-200 bg-green-50 text-green-700'
+            : 'border-yellow-200 bg-yellow-50 text-yellow-700'
+        }`}
+      >
+        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel}`}
+        {!isReviewable ? ' · 该页面当前不可作为闭环复签证据' : ''}
       </div>
 
       {/* 差异概览统计条 */}

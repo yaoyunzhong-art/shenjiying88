@@ -25,6 +25,7 @@ interface FinanceRule {
 
 type ViewMode = 'active' | 'inactive' | 'all'
 type ModuleFilter = FinanceRule['module'] | 'ALL'
+type DeliveryMode = 'api' | 'fallback'
 
 // ── 工具函数 ──
 
@@ -182,6 +183,7 @@ const permissionGate = {
 
 export default function FinanceRulesPage() {
   const [rules, setRules] = useState<FinanceRule[]>([])
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('api')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('active')
@@ -208,8 +210,10 @@ export default function FinanceRulesPage() {
     try {
       const data = await apiFetch<{ rules: FinanceRule[] }>('/api/finance/rules')
       setRules(data.rules)
+      setDeliveryMode('api')
     } catch {
       setRules(DEFAULT_RULES)
+      setDeliveryMode('fallback')
     } finally {
       setLoading(false)
     }
@@ -302,6 +306,8 @@ export default function FinanceRulesPage() {
 
   const totalEnabled = rules.filter(r => r.enabled).length
   const totalAbnormal = rules.filter(r => r.enabled && r.applyRate != null && r.applyRate < 50).length
+  const dataSourceLabel = deliveryMode === 'api' ? '真实 API' : 'fallback'
+  const isReviewable = deliveryMode === 'api'
 
   return (
     <AdminPermissionGate
@@ -315,7 +321,7 @@ export default function FinanceRulesPage() {
       <div>
       <h1 className="text-2xl font-bold text-gray-900">财务规则管理</h1>
       <p className="text-sm text-gray-500 mt-1">
-      管理对账、审批、审计、结算等模块的自动规则配置
+      {`管理对账、审批、审计、结算等模块的自动规则配置。当前数据源：${dataSourceLabel}。`}
       </p>
       </div>
       <div className="flex items-center gap-2">
@@ -332,6 +338,17 @@ export default function FinanceRulesPage() {
       + 新建规则
       </button>
       </div>
+      </div>
+
+      <div
+        className={`rounded-lg border px-4 py-3 text-sm ${
+          deliveryMode === 'api'
+            ? 'border-green-200 bg-green-50 text-green-700'
+            : 'border-yellow-200 bg-yellow-50 text-yellow-700'
+        }`}
+      >
+        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel}`}
+        {!isReviewable ? ' · 该页面当前不可作为闭环复签证据' : ''}
       </div>
 
       {/* 错误提示 */}

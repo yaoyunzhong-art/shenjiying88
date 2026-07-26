@@ -12,6 +12,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
 import {
   CurrentActor,
@@ -40,6 +41,7 @@ export class AuthController {
    * 手机号+短信验证码登录
    */
   @Public()
+  @TenantOptional()
   @Post('login/sms')
   @HttpCode(HttpStatus.OK)
   async loginBySms(
@@ -67,6 +69,7 @@ export class AuthController {
    * 密码登录
    */
   @Public()
+  @TenantOptional()
   @Post('login/password')
   @HttpCode(HttpStatus.OK)
   async loginByPassword(
@@ -121,6 +124,7 @@ export class AuthController {
    * 微信登录
    */
   @Public()
+  @TenantOptional()
   @Post('login/wechat')
   @HttpCode(HttpStatus.OK)
   async loginByWechat(
@@ -148,6 +152,7 @@ export class AuthController {
    * 刷新Token
    */
   @Public()
+  @TenantOptional()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Body() body: RefreshTokenDto) {
@@ -170,6 +175,7 @@ export class AuthController {
    * 登出
    */
   @Public()
+  @TenantOptional()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
@@ -199,6 +205,7 @@ export class AuthController {
    * 获取当前用户信息
    */
   @Public()
+  @TenantOptional()
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getCurrentUser(@Headers('authorization') auth?: string) {

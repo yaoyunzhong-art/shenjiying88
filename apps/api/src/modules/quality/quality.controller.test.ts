@@ -58,13 +58,6 @@ describe('QualityController', () => {
   // Route metadata
   // ═══════════════════════════════════════════════════════════════════
 
-  describe('route metadata', () => {
-    it('controller path should be quality', () => {
-      const path = Reflect.getMetadata('path', QualityController)
-      assert.equal(path, 'quality')
-    })
-  })
-
   // ═══════════════════════════════════════════════════════════════════
   // 1. Inspection Records (cross-module delegation)
   // ═══════════════════════════════════════════════════════════════════

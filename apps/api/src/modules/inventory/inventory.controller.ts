@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
 import {
   RequirePermissions,
   RequireTenantScope
@@ -34,16 +33,23 @@ import { InventoryService } from './inventory.service'
 
 const STOCK_TRANSFER_READ_PERMISSION = 'stock-transfer:read'
 const STOCK_TRANSFER_FORM_PERMISSION = 'stock-transfer:form:read'
+const PRODUCT_READ_PERMISSION = 'product:read'
+const INVENTORY_WRITE_PERMISSION = 'inventory:update'
+const SUPPLIERS_READ_PERMISSION = 'suppliers:read'
+const SUPPLIERS_FORM_PERMISSION = 'suppliers:form:read'
+const INVENTORY_PURCHASE_READ_PERMISSION = 'inventory.purchase.read'
+const INVENTORY_PURCHASE_WRITE_PERMISSION = 'inventory.purchase.write'
 
 @UseGuards(TenantGuard)
-@Public()
 @Controller('inventory')
+@RequireTenantScope()
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   // ─── Products ─────────────────────────────────────────
 
   @Post('products')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   createProduct(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateProductDto
@@ -52,6 +58,7 @@ export class InventoryController {
   }
 
   @Put('products/:productId')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   updateProduct(
     @Param('productId') productId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -61,6 +68,7 @@ export class InventoryController {
   }
 
   @Get('products/:productId')
+  @RequirePermissions(PRODUCT_READ_PERMISSION)
   getProduct(
     @Param('productId') productId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -69,6 +77,7 @@ export class InventoryController {
   }
 
   @Get('products')
+  @RequirePermissions(PRODUCT_READ_PERMISSION)
   listProducts(
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: ProductQueryDto = {} as ProductQueryDto
@@ -140,12 +149,12 @@ export class InventoryController {
     @Query() query: StockRecordQueryDto = {} as StockRecordQueryDto
   ) {
     return this.inventoryService.getStockRecords(tenantContext, query)
-    return this.inventoryService.getStockRecords(tenantContext, query)
   }
 
   // ─── Suppliers ────────────────────────────────────────
 
   @Post('suppliers')
+  @RequirePermissions(SUPPLIERS_FORM_PERMISSION)
   createSupplier(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateSupplierDto
@@ -154,6 +163,7 @@ export class InventoryController {
   }
 
   @Get('suppliers')
+  @RequirePermissions(SUPPLIERS_READ_PERMISSION)
   listSuppliers(@TenantContext() tenantContext: RequestTenantContext) {
     return this.inventoryService.listSuppliers(tenantContext)
   }
@@ -161,6 +171,7 @@ export class InventoryController {
   // ─── Purchase Orders ──────────────────────────────────
 
   @Post('purchase-orders')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createPurchaseOrder(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreatePurchaseOrderDto
@@ -169,6 +180,7 @@ export class InventoryController {
   }
 
   @Post('purchase-orders/:orderId/confirm')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   confirmOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -177,6 +189,7 @@ export class InventoryController {
   }
 
   @Post('purchase-orders/:orderId/receive')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   receiveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -185,6 +198,7 @@ export class InventoryController {
   }
 
   @Get('purchase-orders')
+  @RequirePermissions(INVENTORY_PURCHASE_READ_PERMISSION)
   listPurchaseOrders(
     @TenantContext() tenantContext: RequestTenantContext,
     @Query() query: PurchaseOrderQueryDto = {} as PurchaseOrderQueryDto
@@ -192,4 +206,3 @@ export class InventoryController {
     return this.inventoryService.listPurchaseOrders(tenantContext, query)
   }
 }
-

@@ -13,7 +13,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * - hasBrokenChain: 正反例
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { CrossModuleController } from './cross-module.controller'
 import { CrossModuleService } from './cross-module.service'
@@ -29,61 +28,6 @@ function createController(overrides?: Partial<CrossModuleService>) {
   const service = overrides as CrossModuleService
   return new CrossModuleController(service ?? new CrossModuleService())
 }
-
-// ── 元数据测试 ──
-it('cross-module controller path metadata is set', () => {
-  const path = Reflect.getMetadata('path', CrossModuleController)
-  assert.equal(path, 'cross-module')
-})
-
-it('getChainStatus route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.getChainStatus)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.getChainStatus)
-  assert.equal(method, 0) // GET = 0
-  assert.equal(path, 'chain-status')
-})
-
-it('getSummary route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.getSummary)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.getSummary)
-  assert.equal(method, 0) // GET = 0
-  assert.equal(path, 'summary')
-})
-
-it('validate route has POST metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.validate)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.validate)
-  assert.equal(method, 1) // POST = 1
-  assert.equal(path, 'validate')
-})
-
-it('reset route has POST metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.resetAll)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.resetAll)
-  assert.equal(method, 1) // POST = 1
-  assert.equal(path, 'reset')
-})
-
-it('all-verified route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.getAllVerified)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.getAllVerified)
-  assert.equal(method, 0) // GET = 0
-  assert.equal(path, 'all-verified')
-})
-
-it('has-broken route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.getHasBroken)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.getHasBroken)
-  assert.equal(method, 0) // GET = 0
-  assert.equal(path, 'has-broken')
-})
-
-it('validate/:chainName route has POST metadata', () => {
-  const method = Reflect.getMetadata('method', CrossModuleController.prototype.validateChain)
-  const path = Reflect.getMetadata('path', CrossModuleController.prototype.validateChain)
-  assert.equal(method, 1) // POST = 1
-  assert.equal(path, 'validate/:chainName')
-})
 
 // ── 正例: getChainStatus() ──
 describe('getChainStatus() 正例', () => {

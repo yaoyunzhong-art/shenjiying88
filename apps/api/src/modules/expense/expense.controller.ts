@@ -11,11 +11,18 @@ import { Controller, Get, Post, Delete, Body, Param, Query, BadRequestException,
 import { ExpenseService } from './expense.service'
 import type { ExpenseReimbursement, ExpenseCategory, ExpenseStatus } from './expense.entity'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const EXPENSE_FINANCE_READ_PERMISSION = 'finance:read'
+const EXPENSE_FINANCE_WRITE_PERMISSION = 'finance:*'
 
 @Controller('expense')
 @UseGuards(TenantGuard)
-  @Public()
+@RequireTenantScope()
+@RequirePermissions(EXPENSE_FINANCE_READ_PERMISSION)
 export class ExpenseController {
   constructor(private readonly service: ExpenseService) {}
 
@@ -28,6 +35,7 @@ export class ExpenseController {
    * POST /expense/create
    */
   @Post('create')
+  @RequirePermissions(EXPENSE_FINANCE_WRITE_PERMISSION)
   createExpense(@Body() body: {
     title: string
     category: string
@@ -53,6 +61,7 @@ export class ExpenseController {
    * POST /expense/submit/:id
    */
   @Post('submit/:id')
+  @RequirePermissions(EXPENSE_FINANCE_WRITE_PERMISSION)
   submitExpense(@Param('id') id: string): ExpenseReimbursement {
     return this.service.submitExpense(id)
   }
@@ -97,6 +106,7 @@ export class ExpenseController {
    * DELETE /expense/:id
    */
   @Delete(':id')
+  @RequirePermissions(EXPENSE_FINANCE_WRITE_PERMISSION)
   deleteExpense(@Param('id') id: string): { success: boolean; id: string } {
     const deleted = this.service.deleteExpense(id)
     if (!deleted) throw new BadRequestException(`Expense ${id} not found`)
@@ -112,6 +122,7 @@ export class ExpenseController {
    * POST /expense/approve/:id
    */
   @Post('approve/:id')
+  @RequirePermissions(EXPENSE_FINANCE_WRITE_PERMISSION)
   approveExpense(
     @Param('id') id: string,
     @Body() body: { action: 'approve' | 'reject'; approverId: string; approverName: string; remark?: string },
@@ -127,6 +138,7 @@ export class ExpenseController {
    * POST /expense/reimburse/:id
    */
   @Post('reimburse/:id')
+  @RequirePermissions(EXPENSE_FINANCE_WRITE_PERMISSION)
   reimburseExpense(
     @Param('id') id: string,
     @Body() body: { method: 'bank' | 'cash' | 'wechat' | 'alipay'; account: string; operatorId: string; operatorName: string },
@@ -142,6 +154,7 @@ export class ExpenseController {
    * POST /expense/cancel/:id
    */
   @Post('cancel/:id')
+  @RequirePermissions(EXPENSE_FINANCE_WRITE_PERMISSION)
   cancelExpense(
     @Param('id') id: string,
     @Body() body: { operatorId: string; operatorName: string; remark?: string },

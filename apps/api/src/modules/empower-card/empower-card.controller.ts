@@ -15,16 +15,30 @@ import { EmpowerCardService } from './empower-card.service'
 import type { CreateEmpowerCardDto, EmpowerCardHealthResponse, EmpowerCardSearchQuery, EmpowerCardEntity } from './empower-card.entity'
 import { TenantGuard } from '../agent/tenant.guard'
 import { TenantOptional } from '../agent/tenant-guard.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
+
+const EMPOWER_CARD_READ_PERMISSION = 'card:read'
+const EMPOWER_CARD_CREATE_PERMISSION = 'card:create'
+const EMPOWER_CARD_SEARCH_PERMISSION = 'card:search'
+const EMPOWER_CARD_QUOTE_PERMISSION = 'card:quote'
+const EMPOWER_CARD_DECAY_PERMISSION = 'card:decay'
+const EMPOWER_CARD_STATS_PERMISSION = 'card:stats'
 
 @Controller('empower-cards')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(EMPOWER_CARD_READ_PERMISSION)
 export class EmpowerCardController {
   private readonly logger = new Logger(EmpowerCardController.name)
 
   constructor(private readonly service: EmpowerCardService) {}
 
   @Post()
+  @RequirePermissions(EMPOWER_CARD_CREATE_PERMISSION)
   async create(@Body() dto: CreateEmpowerCardDto): Promise<EmpowerCardEntity> {
     return this.service.create(dto)
   }
@@ -49,12 +63,14 @@ export class EmpowerCardController {
 
   /** 搜索知识卡片 (关键词/标签/模块) */
   @Post('search')
+  @RequirePermissions(EMPOWER_CARD_SEARCH_PERMISSION)
   async search(@Body() query: EmpowerCardSearchQuery): Promise<any> {
     return this.service.search(query)
   }
 
   /** 派单自动匹配 top-3 */
   @Post('match')
+  @RequirePermissions(EMPOWER_CARD_SEARCH_PERMISSION)
   async matchForDispatch(
     @Body() body: { module: string; keywords?: string[] }
   ): Promise<EmpowerCardEntity[]> {
@@ -63,6 +79,7 @@ export class EmpowerCardController {
 
   /** 记录引用 */
   @Post(':id/quote')
+  @RequirePermissions(EMPOWER_CARD_QUOTE_PERMISSION)
   async recordQuote(
     @Param('id') id: string,
     @Body() body: { taskName: string; moduleName: string; quotedBy: string }
@@ -73,12 +90,14 @@ export class EmpowerCardController {
 
   /** 触发退化曲线 */
   @Post('decay')
+  @RequirePermissions(EMPOWER_CARD_DECAY_PERMISSION)
   async applyDecay(): Promise<{ decayed: number; archived: number }> {
     return this.service.applyDecay()
   }
 
   /** 今日赋能评分 */
   @Get('stats/today')
+  @RequirePermissions(EMPOWER_CARD_STATS_PERMISSION)
   async getTodayScore(): Promise<{ score: number; quotes: number; newCards: number }> {
     return this.service.getTodayEmpowerScore()
   }

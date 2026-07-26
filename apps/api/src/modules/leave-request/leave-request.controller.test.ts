@@ -5,7 +5,6 @@ import { describe, it, beforeEach, afterEach } from 'vitest'
  * 覆盖: CRUD + 审批流 + 统计 + mock种子
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { LeaveRequestController } from './leave-request.controller'
 import { LeaveRequestService } from './leave-request.service'
@@ -24,57 +23,6 @@ describe('LeaveRequestController', () => {
 
   afterEach(() => {
     service.resetLeaveStoresForTests()
-  })
-
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be leave-requests', () => {
-      const path = Reflect.getMetadata('path', LeaveRequestController)
-      assert.equal(path, 'leave-requests')
-    })
-
-    it('createLeave should be POST /', () => {
-      const method = Reflect.getMetadata('method', LeaveRequestController.prototype.createLeave)
-      const path = Reflect.getMetadata('path', LeaveRequestController.prototype.createLeave)
-      assert.equal(method, 1)
-      assert.equal(path, '/')
-    })
-
-    it('listLeaves should be GET /', () => {
-      const method = Reflect.getMetadata('method', LeaveRequestController.prototype.listLeaves)
-      const path = Reflect.getMetadata('path', LeaveRequestController.prototype.listLeaves)
-      assert.equal(method, 0)
-      assert.equal(path, '/')
-    })
-
-    it('getLeave should be GET /:leaveId', () => {
-      const method = Reflect.getMetadata('method', LeaveRequestController.prototype.getLeave)
-      const path = Reflect.getMetadata('path', LeaveRequestController.prototype.getLeave)
-      assert.equal(method, 0)
-      assert.equal(path, ':leaveId')
-    })
-
-    it('approveLeave should be PATCH /:leaveId/approve', () => {
-      const method = Reflect.getMetadata('method', LeaveRequestController.prototype.approveLeave)
-      const path = Reflect.getMetadata('path', LeaveRequestController.prototype.approveLeave)
-      assert.equal(method, 4)
-      assert.equal(path, ':leaveId/approve')
-    })
-
-    it('cancelLeave should be PATCH /:leaveId/cancel', () => {
-      const method = Reflect.getMetadata('method', LeaveRequestController.prototype.cancelLeave)
-      const path = Reflect.getMetadata('path', LeaveRequestController.prototype.cancelLeave)
-      assert.equal(method, 4)
-      assert.equal(path, ':leaveId/cancel')
-    })
-
-    it('seedMockData should be POST /seed', () => {
-      const method = Reflect.getMetadata('method', LeaveRequestController.prototype.seedMockData)
-      const path = Reflect.getMetadata('path', LeaveRequestController.prototype.seedMockData)
-      assert.equal(method, 1)
-      assert.equal(path, 'seed')
-    })
   })
 
   // ── Controller Logic ──

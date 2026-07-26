@@ -30,6 +30,7 @@ interface AutoMatchStrategy {
 }
 
 type RuleTab = 'active' | 'inactive' | 'settings'
+type DeliveryMode = 'api' | 'fallback'
 
 // ── 工具 ──
 
@@ -129,6 +130,7 @@ const permissionGate = {
 
 export default function ReconciliationRulesPage() {
   const [rules, setRules] = useState<ReconciliationRule[]>([])
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('api')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tabView, setTabView] = useState<RuleTab>('active')
@@ -142,9 +144,11 @@ export default function ReconciliationRulesPage() {
     try {
       const data = await apiFetch<{ rules: ReconciliationRule[] }>('/api/finance/reconciliation/rules')
       setRules(data.rules)
+      setDeliveryMode('api')
     } catch {
       // Fallback to default rules for demo/offline
       setRules(defaultRules)
+      setDeliveryMode('fallback')
     } finally {
       setLoading(false)
     }
@@ -209,12 +213,17 @@ export default function ReconciliationRulesPage() {
       description={permissionGate.description}
     >
       <div className="p-6 max-w-5xl mx-auto space-y-6">
+      {(() => {
+        const dataSourceLabel = deliveryMode === 'api' ? '真实 API' : 'fallback'
+        const isReviewable = deliveryMode === 'api'
+        return (
+          <>
       {/* 标题 */}
       <div className="flex items-center justify-between">
       <div>
       <h1 className="text-2xl font-bold text-gray-900">对账规则配置</h1>
       <p className="text-sm text-gray-500 mt-1">
-      管理匹配规则、容差阈值和自动处理策略
+      {`管理匹配规则、容差阈值和自动处理策略。当前数据源：${dataSourceLabel}。`}
       </p>
       </div>
       <button
@@ -224,6 +233,20 @@ export default function ReconciliationRulesPage() {
       刷新
       </button>
       </div>
+
+      <div
+        className={`rounded-lg border px-4 py-3 text-sm ${
+          deliveryMode === 'api'
+            ? 'border-green-200 bg-green-50 text-green-700'
+            : 'border-yellow-200 bg-yellow-50 text-yellow-700'
+        }`}
+      >
+        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel}`}
+        {!isReviewable ? ' · 该页面当前不可作为闭环复签证据' : ''}
+      </div>
+          </>
+        )
+      })()}
 
       {/* 错误提示 */}
       {error && (

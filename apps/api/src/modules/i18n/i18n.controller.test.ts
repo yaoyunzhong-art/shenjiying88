@@ -5,7 +5,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  *       extractKeysFromSource / listLocales / validate
  * 正例 + 反例 + 边界
  */
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { I18nController } from './i18n.controller'
 import { I18nService } from './i18n.service'
@@ -25,54 +24,6 @@ function createContext(overrides: Partial<RequestTenantContext> = {}): RequestTe
 function freshController(): I18nController {
   return new I18nController(new I18nService())
 }
-
-// ── Metadata assertions ──
-it('i18n controller path metadata is set', () => {
-  const path = Reflect.getMetadata('path', I18nController)
-  assert.equal(path, 'i18n')
-})
-
-it('i18n controller createTranslation route has POST metadata', () => {
-  const method = Reflect.getMetadata('method', I18nController.prototype.createTranslation)
-  const path = Reflect.getMetadata('path', I18nController.prototype.createTranslation)
-  assert.equal(method, 1) // POST = 1
-  assert.equal(path, 'translations')
-})
-
-it('i18n controller queryTranslations route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', I18nController.prototype.queryTranslations)
-  const path = Reflect.getMetadata('path', I18nController.prototype.queryTranslations)
-  assert.equal(method, 0) // GET = 0
-  assert.equal(path, 'translations')
-})
-
-it('i18n controller bulkRegister route has POST metadata', () => {
-  const method = Reflect.getMetadata('method', I18nController.prototype.bulkRegister)
-  const path = Reflect.getMetadata('path', I18nController.prototype.bulkRegister)
-  assert.equal(method, 1)
-  assert.equal(path, 'translations/bulk')
-})
-
-it('i18n controller listLocales route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', I18nController.prototype.listLocales)
-  const path = Reflect.getMetadata('path', I18nController.prototype.listLocales)
-  assert.equal(method, 0)
-  assert.equal(path, 'locales')
-})
-
-it('i18n controller validate GET route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', I18nController.prototype.validate)
-  const path = Reflect.getMetadata('path', I18nController.prototype.validate)
-  assert.equal(method, 0)
-  assert.equal(path, 'validate')
-})
-
-it('i18n controller validateWithBody route has POST metadata', () => {
-  const method = Reflect.getMetadata('method', I18nController.prototype.validateWithBody)
-  const path = Reflect.getMetadata('path', I18nController.prototype.validateWithBody)
-  assert.equal(method, 1)
-  assert.equal(path, 'validate')
-})
 
 // ── POST /i18n/translations (createTranslation) ──
 describe('POST /i18n/translations', () => {

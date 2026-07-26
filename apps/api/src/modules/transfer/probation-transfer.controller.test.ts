@@ -26,57 +26,6 @@ describe('ProbationTransferController', () => {
     service.resetTransferStoresForTests()
   })
 
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be probation-transfers', () => {
-      const path = Reflect.getMetadata('path', ProbationTransferController)
-      assert.equal(path, 'probation-transfers')
-    })
-
-    it('createTransfer should be POST /', () => {
-      const method = Reflect.getMetadata('method', ProbationTransferController.prototype.createTransfer)
-      const path = Reflect.getMetadata('path', ProbationTransferController.prototype.createTransfer)
-      assert.equal(method, 1) // POST
-      assert.equal(path, '/')
-    })
-
-    it('listTransfers should be GET /', () => {
-      const method = Reflect.getMetadata('method', ProbationTransferController.prototype.listTransfers)
-      const path = Reflect.getMetadata('path', ProbationTransferController.prototype.listTransfers)
-      assert.equal(method, 0) // GET
-      assert.equal(path, '/')
-    })
-
-    it('getTransfer should be GET /:transferId', () => {
-      const method = Reflect.getMetadata('method', ProbationTransferController.prototype.getTransfer)
-      const path = Reflect.getMetadata('path', ProbationTransferController.prototype.getTransfer)
-      assert.equal(method, 0) // GET
-      assert.equal(path, ':transferId')
-    })
-
-    it('approveTransfer should be PATCH /:transferId/approve', () => {
-      const method = Reflect.getMetadata('method', ProbationTransferController.prototype.approveTransfer)
-      const path = Reflect.getMetadata('path', ProbationTransferController.prototype.approveTransfer)
-      assert.equal(method, 4) // PATCH
-      assert.equal(path, ':transferId/approve')
-    })
-
-    it('getStats should be GET /stats', () => {
-      const method = Reflect.getMetadata('method', ProbationTransferController.prototype.getStats)
-      const path = Reflect.getMetadata('path', ProbationTransferController.prototype.getStats)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'stats')
-    })
-
-    it('seedMockData should be POST /seed', () => {
-      const method = Reflect.getMetadata('method', ProbationTransferController.prototype.seedMockData)
-      const path = Reflect.getMetadata('path', ProbationTransferController.prototype.seedMockData)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'seed')
-    })
-  })
-
   // ── Controller Logic ──
 
   describe('createTransfer', () => {

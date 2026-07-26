@@ -13,7 +13,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   InventoryItemService,
   type CreateInventoryItemInput,
@@ -34,31 +37,38 @@ import {
 interface TenantQuery { tenantId?: string }
 interface StockQuery { tenantId?: string; qty?: number }
 
+const INVENTORY_READ_PERMISSION = 'inventory:read'
+const INVENTORY_WRITE_PERMISSION = 'inventory:update'
+
 @UseGuards(TenantGuard)
-@Public()
 @Controller('api/inventory/items')
+@RequireTenantScope()
 export class InventoryItemController {
   constructor(@Inject(InventoryItemService) private readonly svc: InventoryItemService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   create(@Body() body: CreateInventoryItemInput) {
     return this.svc.create(body)
   }
 
   @Get(':id')
+  @RequirePermissions(INVENTORY_READ_PERMISSION)
   getOne(@Param('id') id: string, @Query() q: TenantQuery) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.getById(id, q.tenantId)
   }
 
   @Get()
+  @RequirePermissions(INVENTORY_READ_PERMISSION)
   list(@Query() q: TenantQuery & Partial<ListInventoryItemFilter>) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.list(q as ListInventoryItemFilter)
   }
 
   @Put(':id')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   update(
     @Param('id') id: string,
     @Query() q: TenantQuery & { version?: string },
@@ -70,27 +80,32 @@ export class InventoryItemController {
   }
 
   @Post(':id/stock-in')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   stockIn(@Param('id') id: string, @Body() body: Omit<StockOpInput, 'itemId'>) {
     return this.svc.stockIn({ ...body, itemId: id })
   }
 
   @Post(':id/stock-out')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   stockOut(@Param('id') id: string, @Body() body: Omit<StockOpInput, 'itemId'>) {
     return this.svc.stockOut({ ...body, itemId: id })
   }
 
   @Post(':id/adjust')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   adjust(@Param('id') id: string, @Body() body: Omit<AdjustInput, 'itemId'>) {
     return this.svc.adjust({ ...body, itemId: id })
   }
 
   @Post(':id/reserve')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   reserve(@Param('id') id: string, @Body() body: Omit<ReserveInput, 'itemId'>) {
     return this.svc.reserve({ ...body, itemId: id })
   }
 
   @Post('reservations/:rid/confirm')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   confirmReservation(
     @Param('rid') rid: string,
     @Query() q: TenantQuery
@@ -100,6 +115,7 @@ export class InventoryItemController {
   }
 
   @Post('reservations/:rid/release')
+  @RequirePermissions(INVENTORY_WRITE_PERMISSION)
   releaseReservation(
     @Param('rid') rid: string,
     @Query() q: TenantQuery,
@@ -110,21 +126,23 @@ export class InventoryItemController {
   }
 
   @Get('reservations/:rid')
+  @RequirePermissions(INVENTORY_READ_PERMISSION)
   getReservation(@Param('rid') rid: string, @Query() q: TenantQuery) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.getReservationById(rid, q.tenantId)
   }
 
   @Get('low-stock/list')
+  @RequirePermissions(INVENTORY_READ_PERMISSION)
   getLowStock(@Query() q: TenantQuery) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.getLowStock(q.tenantId)
   }
 
   @Get(':id/audit')
+  @RequirePermissions(INVENTORY_READ_PERMISSION)
   getAuditLog(@Param('id') id: string, @Query() q: TenantQuery) {
     if (!q.tenantId) throw new Error('tenantId required')
     return this.svc.getAuditLog(id, q.tenantId)
   }
 }
-

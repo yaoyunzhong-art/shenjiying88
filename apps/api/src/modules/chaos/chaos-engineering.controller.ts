@@ -30,12 +30,19 @@ import type {
   SystemMetrics,
 } from './chaos-engineering.entity'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const CHAOS_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const CHAOS_RECOVERY_WRITE_PERMISSION = 'foundation.operations.recovery.write'
 
 @Controller('chaos')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(CHAOS_GOVERNANCE_READ_PERMISSION)
 export class ChaosEngineeringController {
   constructor(
     private readonly experimentService: ChaosExperimentService,
@@ -47,6 +54,7 @@ export class ChaosEngineeringController {
 
   /** POST /chaos/experiments — 创建混沌实验 */
   @Post('experiments')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   createExperiment(@Body() dto: CreateExperimentDto): ChaosExperiment {
     return this.experimentService.createExperiment(
       dto.name,
@@ -73,6 +81,7 @@ export class ChaosEngineeringController {
 
   /** POST /chaos/experiments/:id/run — 运行实验 */
   @Post('experiments/:id/run')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   async runExperiment(@Param('id') id: string): Promise<ChaosExperiment> {
     const result = await this.experimentService.runExperiment(id)
     if (!result) throw new NotFoundException(`Experiment ${id} not found`)
@@ -81,6 +90,7 @@ export class ChaosEngineeringController {
 
   /** POST /chaos/experiments/:id/pause — 暂停实验 */
   @Post('experiments/:id/pause')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   async pauseExperiment(@Param('id') id: string): Promise<ChaosExperiment> {
     const result = await this.experimentService.pauseExperiment(id)
     if (!result) throw new NotFoundException(`Experiment ${id} not found`)
@@ -99,30 +109,35 @@ export class ChaosEngineeringController {
 
   /** POST /chaos/faults/latency — 注入延迟故障 */
   @Post('faults/latency')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   injectLatency(@Body() dto: InjectFaultDto): FaultInjection {
     return this.faultService.injectLatency(dto.target, dto.paramValue)
   }
 
   /** POST /chaos/faults/error — 注入错误故障 */
   @Post('faults/error')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   injectError(@Body() dto: InjectFaultDto): FaultInjection {
     return this.faultService.injectError(dto.target, dto.paramValue)
   }
 
   /** POST /chaos/faults/timeout — 注入超时故障 */
   @Post('faults/timeout')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   injectTimeout(@Body() dto: InjectFaultDto): FaultInjection {
     return this.faultService.injectTimeout(dto.target, dto.paramValue)
   }
 
   /** POST /chaos/faults/cpu-burn — 注入 CPU 燃烧故障 */
   @Post('faults/cpu-burn')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   injectCPUBurn(@Body() dto: InjectFaultDto): FaultInjection {
     return this.faultService.injectCPUBurn(dto.target, dto.paramValue)
   }
 
   /** DELETE /chaos/faults/:target — 停止故障注入 */
   @Post('faults/:target/stop')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   stopFault(@Param('target') target: string): { stopped: boolean } {
     const stopped = this.faultService.stopInjection(target)
     if (!stopped) throw new NotFoundException(`No active fault for target ${target}`)
@@ -139,6 +154,7 @@ export class ChaosEngineeringController {
 
   /** POST /chaos/health/monitor — 监控实验健康状态 */
   @Post('health/monitor')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   monitorHealth(
     @Query('experimentId') experimentId: string,
     @Body() dto: HealthMetricDto,
@@ -163,6 +179,7 @@ export class ChaosEngineeringController {
 
   /** POST /chaos/health/rollback — 触发自动回滚 */
   @Post('health/rollback')
+  @RequirePermissions(CHAOS_RECOVERY_WRITE_PERMISSION)
   async triggerRollback(
     @Query('experimentId') experimentId: string,
     @Body('reason') reason: string,

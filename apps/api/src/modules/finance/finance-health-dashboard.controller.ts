@@ -20,12 +20,19 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
 import { StorePAndLService, BrandPAndLService } from './finance-dashboard.service'
 import { CostAnalysisService, CashFlowService } from './finance-cost-cash-flow.service'
+
+const FINANCE_HEALTH_DASHBOARD_READ_PERMISSION = 'finance:read'
+const FINANCE_HEALTH_DASHBOARD_WRITE_PERMISSION = 'finance:*'
 
 // ─── DTO ──────────────────────────────────────────────────
 
@@ -50,6 +57,8 @@ export class RecordCashFlowDto {
 
 @UseGuards(TenantGuard)
 @Controller('finance/dashboard')
+@RequireTenantScope()
+@RequirePermissions(FINANCE_HEALTH_DASHBOARD_READ_PERMISSION)
 export class FinanceHealthDashboardController {
   private readonly logger = new Logger(FinanceHealthDashboardController.name)
 
@@ -189,6 +198,7 @@ export class FinanceHealthDashboardController {
    * 记录一笔现金流入
    */
   @Post('cash-flow/inflow')
+  @RequirePermissions(FINANCE_HEALTH_DASHBOARD_WRITE_PERMISSION)
   async recordInflow(
     @TenantContext() _tenantContext: RequestTenantContext,
     @Body() body: RecordCashFlowDto
@@ -212,6 +222,7 @@ export class FinanceHealthDashboardController {
    * 记录一笔现金流出
    */
   @Post('cash-flow/outflow')
+  @RequirePermissions(FINANCE_HEALTH_DASHBOARD_WRITE_PERMISSION)
   async recordOutflow(
     @TenantContext() _tenantContext: RequestTenantContext,
     @Body() body: RecordCashFlowDto

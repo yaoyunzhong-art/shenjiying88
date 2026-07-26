@@ -206,6 +206,9 @@ const permissionGate = {
     '支付详情页已接入管理员本地 session，只有具备 finance:id:read 的账号才能查看支付档案、状态流转与退款列表。',
 } as const
 
+const deliveryMode = 'mock' as const;
+const dataSourceLabel = 'mock' as const;
+
 export default function FinanceDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -309,7 +312,7 @@ export default function FinanceDetailPage() {
             支付详情
           </h1>
           <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 4 }}>
-            ID: {payment.id} | Version: {payment.version} | 幂等键: {payment.idempotencyKey.slice(0, 8)}...
+            ID: {payment.id} | Version: {payment.version} | 幂等键: {payment.idempotencyKey.slice(0, 8)}... | 当前数据源: {dataSourceLabel}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -378,6 +381,20 @@ export default function FinanceDetailPage() {
             </>
           )}
         </div>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 24,
+          borderRadius: 12,
+          padding: '12px 14px',
+          border: '1px solid rgba(248, 113, 113, 0.24)',
+          background: 'rgba(127, 29, 29, 0.12)',
+          color: '#b91c1c',
+          fontSize: 13,
+        }}
+      >
+        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
       </div>
 
       {/* 状态流转按钮组 */}

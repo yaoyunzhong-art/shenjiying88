@@ -17,11 +17,13 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
+import { TENANT_OPTIONAL_KEY } from '../agent/tenant-guard.decorator'
 import {
   PERMISSIONS_METADATA_KEY,
   ROLES_METADATA_KEY,
   TENANT_SCOPE_METADATA_KEY,
 } from '../foundation/identity-access/identity-access.decorator'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 import { CustomDomainController } from './custom-domain.controller'
 import { CustomDomainService } from './custom-domain.service'
 import { buildVerificationValue } from './custom-domain.entity'
@@ -100,6 +102,10 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       'OPERATIONS',
     ]
 
+    it('controller should no longer stay public', () => {
+      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, CustomDomainController), undefined)
+    })
+
     it('治理读端点要求 tenant scope + foundation.governance.read', () => {
       const handlers = [
         CustomDomainController.prototype.list,
@@ -136,13 +142,15 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       })
     })
 
-    it('公开端点保持无显式访问元数据', () => {
+    it('公开端点保持无权限要求且允许跳过 tenant guard', () => {
       const publicHandlers = [
         CustomDomainController.prototype.resolveHost,
         CustomDomainController.prototype.validateDomain,
       ]
 
       publicHandlers.forEach((handler) => {
+        assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, handler), true)
+        assert.equal(Reflect.getMetadata(TENANT_OPTIONAL_KEY, handler), true)
         assert.equal(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), undefined)
         assert.equal(Reflect.getMetadata(ROLES_METADATA_KEY, handler), undefined)
         assert.equal(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), undefined)

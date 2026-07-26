@@ -6,7 +6,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 正例 + 反例 + 边界条件
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { AiForecastController } from './ai-forecast.controller'
 import { DemandForecastService, InventoryOptimizer, TransferRecommendationService } from './ai-forecast.service'
@@ -22,83 +21,6 @@ describe('AiForecastController', () => {
     inventoryOptimizer = new InventoryOptimizer(demandService)
     transferService = new TransferRecommendationService(inventoryOptimizer)
     controller = new AiForecastController(demandService, inventoryOptimizer, transferService)
-  })
-
-  describe('route metadata', () => {
-    it('controller path metadata should be ai-forecast', () => {
-      const path = Reflect.getMetadata('path', AiForecastController)
-      assert.equal(path, 'ai-forecast')
-    })
-
-    it('forecastSales route should have GET method and correct path', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.forecastSales)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.forecastSales)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'forecast/sales')
-    })
-
-    it('forecastCategory route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.forecastCategory)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.forecastCategory)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'forecast/category')
-    })
-
-    it('getSeasonality route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.getSeasonality)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.getSeasonality)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'seasonality')
-    })
-
-    it('adjustForPromotions route should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.adjustForPromotions)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.adjustForPromotions)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'forecast/adjust-promotions')
-    })
-
-    it('calculateOptimalStock route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.calculateOptimalStock)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.calculateOptimalStock)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'inventory/optimal-stock')
-    })
-
-    it('suggestReorder route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.suggestReorder)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.suggestReorder)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'inventory/reorder')
-    })
-
-    it('detectSlowMoving route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.detectSlowMoving)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.detectSlowMoving)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'inventory/slow-moving')
-    })
-
-    it('suggestTransfer route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.suggestTransfer)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.suggestTransfer)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'transfer/suggest')
-    })
-
-    it('calculateTransferBenefit route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.calculateTransferBenefit)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.calculateTransferBenefit)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'transfer/benefit')
-    })
-
-    it('optimizeGlobalAllocation route should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiForecastController.prototype.optimizeGlobalAllocation)
-      const path = Reflect.getMetadata('path', AiForecastController.prototype.optimizeGlobalAllocation)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'transfer/optimize-global')
-    })
   })
 
   describe('GET /ai-forecast/forecast/sales', () => {

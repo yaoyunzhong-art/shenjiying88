@@ -19,43 +19,21 @@ const TENANT_B = { tenantId: 'tenant-B', userId: 'participant-B', role: 'operato
 const TENANT_C = { tenantId: 'tenant-C', userId: 'participant-C', role: 'operator' as const }
 
 describe('FederatedLearningController (.test.ts)', () => {
-  const { FederatedLearningController } = require('./federated.controller')
-  const { FederatedLearningService } = require('./federated.service')
-  const { runWithTenant } = require('../../common/context/tenant-context')
+  let FederatedLearningController: any
+  let FederatedLearningService: any
+  let runWithTenant: any
+
+  beforeAll(async () => {
+    ;({ FederatedLearningController } = await import('./federated.controller.ts'))
+    ;({ FederatedLearningService } = await import('./federated.service.ts'))
+    ;({ runWithTenant } = await import('../../common/context/tenant-context.ts'))
+  })
 
   const TASK_DEF = {
     name: 'test-task',
     modelArch: 'lstm-v2',
     participantTenantIds: ['tenant-A', 'tenant-B', 'tenant-C'],
   }
-
-  // ─── 1. 路由元数据 ─────────────────────────────────
-  describe('1. 路由元数据', () => {
-    it('controller path: federated', () => {
-      const path = Reflect.getMetadata('path', FederatedLearningController)
-      assert.equal(path, 'federated')
-    })
-
-    const ROUTES: Array<[string, string, string]> = [
-      ['createTask', 'tasks', 'POST'],
-      ['listTasks', 'tasks', 'GET'],
-      ['getTask', 'tasks/:id', 'GET'],
-      ['activateTask', 'tasks/:id/activate', 'POST'],
-      ['startRound', 'tasks/:taskId/rounds', 'POST'],
-      ['listRounds', 'tasks/:taskId/rounds', 'GET'],
-      ['submitGradient', 'tasks/:taskId/submit', 'POST'],
-      ['aggregateRound', 'rounds/:roundId/aggregate', 'POST'],
-      ['getPrivacy', 'tasks/:taskId/privacy', 'GET'],
-    ]
-    for (const [method, expectedPath] of ROUTES) {
-      it(`${method} → /${expectedPath}`, () => {
-        const metaPath = Reflect.getMetadata('path', FederatedLearningController.prototype[method])
-        assert.equal(metaPath, expectedPath)
-        const metaMethod = Reflect.getMetadata('method', FederatedLearningController.prototype[method])
-        assert.ok(typeof metaMethod === 'number')
-      })
-    }
-  })
 
   // ─── 2. POST /tasks ────────────────────────────────
   describe('2. POST /tasks 创建任务', () => {

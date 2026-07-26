@@ -20,10 +20,19 @@ import {
 } from './recommender.dto'
 import type { RecommendationItem, RecommendationLog } from './recommender.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const RECOMMENDER_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const RECOMMENDER_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('recommender')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(RECOMMENDER_GOVERNANCE_READ_PERMISSION)
 export class RecommenderController {
   constructor(
     private readonly personalizedRecommender: PersonalizedRecommenderService,
@@ -70,6 +79,7 @@ export class RecommenderController {
    * POST /recommender/feedback
    */
   @Post('feedback')
+  @RequirePermissions(RECOMMENDER_GOVERNANCE_WRITE_PERMISSION)
   recordFeedback(@Body() dto: RecommendFeedbackDto): { success: boolean } {
     this.recommenderService.recordFeedback(
       dto.championId,

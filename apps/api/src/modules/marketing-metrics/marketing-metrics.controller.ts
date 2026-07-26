@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 
 import type { Request } from 'express';
 import type { TenantAwareRequest } from '../tenant/tenant.types';
@@ -26,7 +27,8 @@ import {
 
 @UseGuards(TenantGuard)
 @Controller('marketing-metrics')
-  @Public()
+@Public()
+@TenantOptional()
 export class MarketingMetricsController {
   constructor(private readonly metricsService: MarketingMetricsService) {}
 

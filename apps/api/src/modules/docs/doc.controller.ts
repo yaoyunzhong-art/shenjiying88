@@ -20,12 +20,14 @@ import type {
   DocStats,
 } from './doc.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('docs')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
 @Public()
+@TenantOptional()
 export class DocController {
   constructor(
     private readonly docService: DocService,

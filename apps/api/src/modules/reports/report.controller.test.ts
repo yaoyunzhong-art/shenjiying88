@@ -6,6 +6,10 @@ import { ReportAggregationService } from './report-aggregation.service'
 import { ReportCacheService } from './report-cache.service'
 import { ReportExportService } from './report-export.service'
 import { ReportQueryService } from './report-query.service'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
 
 const TENANT = 'T-001'
 const OTHER_TENANT = 'T-099'
@@ -206,6 +210,63 @@ describe('ReportController 路由元数据', () => {
     const path = Reflect.getMetadata('path', ReportController.prototype.cacheStats)
     assert.equal(method, 0)
     assert.equal(path, 'cache/stats')
+  })
+})
+
+describe('ReportController access metadata', () => {
+  const resolvePermissions = (handler: Function) =>
+    Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+    ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, ReportController)
+
+  const resolveTenantScope = (handler: Function) =>
+    Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+    ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, ReportController)
+
+  const readHandlers = [
+    ReportController.prototype.revenueReport,
+    ReportController.prototype.inventoryReport,
+    ReportController.prototype.memberReport,
+    ReportController.prototype.refundReport,
+    ReportController.prototype.orderReport,
+    ReportController.prototype.productRankingReport,
+    ReportController.prototype.paymentMixReport,
+    ReportController.prototype.hourlyHeatmapReport,
+    ReportController.prototype.channelFunnelReport,
+    ReportController.prototype.inventoryAlertReport,
+    ReportController.prototype.listDefinitions,
+    ReportController.prototype.getDefinition,
+    ReportController.prototype.exportReport,
+    ReportController.prototype.listBatchExportTasks,
+    ReportController.prototype.getBatchExportTask,
+    ReportController.prototype.downloadBatchExportTask,
+    ReportController.prototype.cacheStats,
+  ]
+
+  const writeHandlers = [
+    ReportController.prototype.createDefinition,
+    ReportController.prototype.updateDefinition,
+    ReportController.prototype.deleteDefinition,
+    ReportController.prototype.createBatchExportTask,
+    ReportController.prototype.deleteBatchExportTask,
+    ReportController.prototype.invalidateCache,
+  ]
+
+  it('all routes should require tenant scope', () => {
+    ;[...readHandlers, ...writeHandlers].forEach((handler) => {
+      assert.deepEqual(resolveTenantScope(handler), {})
+    })
+  })
+
+  it('read routes should reuse report:read', () => {
+    readHandlers.forEach((handler) => {
+      assert.deepEqual(resolvePermissions(handler), ['report:read'])
+    })
+  })
+
+  it('write routes should reuse report:export', () => {
+    writeHandlers.forEach((handler) => {
+      assert.deepEqual(resolvePermissions(handler), ['report:export'])
+    })
   })
 })
 

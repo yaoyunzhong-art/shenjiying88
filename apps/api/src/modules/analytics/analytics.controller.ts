@@ -4,11 +4,17 @@ import type { RequestTenantContext } from '../tenant/tenant.types'
 import { GetDiagnosticsDto, GetOperationSnapshotDto, GetRecommendationsDto } from './analytics.dto'
 import { AnalyticsService } from './analytics.service'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
-@Public()
+const ANALYTICS_REPORT_READ_PERMISSION = 'report:read'
+
 @Controller('analytics')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(ANALYTICS_REPORT_READ_PERMISSION)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
@@ -48,4 +54,3 @@ export class AnalyticsController {
     })
   }
 }
-

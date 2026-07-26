@@ -12,8 +12,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   HrService,
   type Employee,
@@ -27,9 +30,13 @@ import {
   type HrStats,
 } from './hr.service'
 
+const HR_STAFF_READ_PERMISSION = 'staff:read'
+const HR_STAFF_DETAIL_PERMISSION = 'staff:id:read'
+const HR_STAFF_WRITE_PERMISSION = 'staff:*'
+
 @Controller('hr')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
 export class HrController {
   constructor(private readonly service: HrService) {}
 
@@ -42,6 +49,7 @@ export class HrController {
    * 员工列表（支持 department/status/search 筛选）
    */
   @Get('employees')
+  @RequirePermissions(HR_STAFF_READ_PERMISSION)
   findAll(
     @Headers('x-tenant-id') tenantId: string,
     @Query('department') department?: string,
@@ -56,6 +64,7 @@ export class HrController {
    * 员工详情
    */
   @Get('employees/:id')
+  @RequirePermissions(HR_STAFF_DETAIL_PERMISSION)
   findById(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -73,6 +82,7 @@ export class HrController {
    */
   @Post('employees')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   create(
     @Headers('x-tenant-id') tenantId: string,
     @Body()
@@ -95,6 +105,7 @@ export class HrController {
    * 更新员工
    */
   @Patch('employees/:id')
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   update(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -120,6 +131,7 @@ export class HrController {
    */
   @Delete('employees/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   delete(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -136,6 +148,7 @@ export class HrController {
    * 统计（总人数/在职/试用/离职）
    */
   @Get('stats')
+  @RequirePermissions(HR_STAFF_READ_PERMISSION)
   getStats(
     @Headers('x-tenant-id') tenantId: string,
   ): HrStats {
@@ -147,6 +160,7 @@ export class HrController {
    * 部门列表
    */
   @Get('departments')
+  @RequirePermissions(HR_STAFF_READ_PERMISSION)
   getDepartments(): string[] {
     return this.service.getDepartments()
   }
@@ -161,6 +175,7 @@ export class HrController {
    */
   @Post('employees/:id/attendance')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   recordAttendance(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -184,6 +199,7 @@ export class HrController {
    * 查询考勤记录
    */
   @Get('employees/:id/attendance')
+  @RequirePermissions(HR_STAFF_DETAIL_PERMISSION)
   getAttendance(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -198,6 +214,7 @@ export class HrController {
    * 考勤统计
    */
   @Get('employees/:id/attendance/stats')
+  @RequirePermissions(HR_STAFF_DETAIL_PERMISSION)
   getAttendanceStats(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -215,6 +232,7 @@ export class HrController {
    */
   @Post('employees/:id/onboard')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   onboard(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -234,6 +252,7 @@ export class HrController {
    * 入职列表
    */
   @Get('onboarding')
+  @RequirePermissions(HR_STAFF_READ_PERMISSION)
   getOnboardingList(
     @Headers('x-tenant-id') tenantId: string,
   ): OnboardingRecord[] {
@@ -246,6 +265,7 @@ export class HrController {
    */
   @Post('employees/:id/offboard')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   offboard(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -267,6 +287,7 @@ export class HrController {
    * 离职列表
    */
   @Get('offboarding')
+  @RequirePermissions(HR_STAFF_READ_PERMISSION)
   getOffboardingList(
     @Headers('x-tenant-id') tenantId: string,
   ): OffboardingRecord[] {
@@ -282,6 +303,7 @@ export class HrController {
    * 合同列表
    */
   @Get('employees/:id/contracts')
+  @RequirePermissions(HR_STAFF_DETAIL_PERMISSION)
   getContracts(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -295,6 +317,7 @@ export class HrController {
    */
   @Post('employees/:id/contracts')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   createContract(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -315,6 +338,7 @@ export class HrController {
    * 续签合同
    */
   @Patch('contracts/:id/renew')
+  @RequirePermissions(HR_STAFF_WRITE_PERMISSION)
   renewContract(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,

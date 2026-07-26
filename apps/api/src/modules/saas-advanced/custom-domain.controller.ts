@@ -53,7 +53,8 @@ import {
   ValidateDomainRequest,
   ValidateDomainResponse,
 } from './custom-domain.dto'
-import { TenantGuard } from '../agent/tenant.guard';
+import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
 
 const DOMAIN_GOVERNANCE_READ_ROLES = [
@@ -79,7 +80,6 @@ const DOMAIN_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 @ApiTags('saas-domain')
 @Controller('saas/domain')
 @UseGuards(TenantGuard)
-@Public()
 export class CustomDomainController {
   constructor(private readonly service: CustomDomainService) {}
 
@@ -343,6 +343,8 @@ export class CustomDomainController {
    * Host → tenantId 解析 (CDN/网关用, 无需租户上下文)
    * GET /saas/domain/resolve/host?host=acme.shenjiying88.com
    */
+  @Public()
+  @TenantOptional()
   @Get('resolve/host')
   @ApiOperation({ summary: '按 Host 解析租户上下文' })
   @ApiQuery({ name: 'host', type: String, required: true, description: '需要解析的访问 Host' })
@@ -357,6 +359,8 @@ export class CustomDomainController {
    * POST /saas/domain/validate
    */
   @ApiOperation({ summary: '预校验域名格式' })
+  @Public()
+  @TenantOptional()
   @Post('validate')
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: ValidateDomainRequest })

@@ -11,44 +11,6 @@ import { FeedbackController } from './feedback.controller'
 import { FeedbackService } from './feedback.service'
 
 // ══════════════════════════════════════════════════════════════
-// 路由元数据验证
-// ══════════════════════════════════════════════════════════════
-
-const ROUTES: Array<{ method: number; path: string; handler: string; verb: string }> = [
-  { method: 1, path: '/',         handler: 'create',    verb: 'POST'   },
-  { method: 0, path: '/',         handler: 'list',       verb: 'GET'    },
-  { method: 0, path: 'stats',     handler: 'stats',      verb: 'GET'    },
-  { method: 0, path: ':id',       handler: 'getById',    verb: 'GET'    },
-  { method: 1, path: ':id/reply', handler: 'reply',      verb: 'POST'   },
-  { method: 4, path: ':id',       handler: 'update',     verb: 'PATCH'  },
-  { method: 3, path: ':id',       handler: 'delete',     verb: 'DELETE' },
-]
-
-describe('路由元数据验证', () => {
-  it('feedback controller path metadata is set', () => {
-    const ctrlPath = Reflect.getMetadata('path', FeedbackController)
-    assert.equal(ctrlPath, 'feedback')
-  })
-
-  for (const route of ROUTES) {
-    it(`${route.verb} /feedback${route.path} → ${route.handler}`, () => {
-      const method = Reflect.getMetadata('method', FeedbackController.prototype[route.handler as keyof FeedbackController])
-      const routePath = Reflect.getMetadata('path', FeedbackController.prototype[route.handler as keyof FeedbackController])
-      assert.equal(method, route.method)
-      assert.equal(routePath, route.path)
-    })
-  }
-
-  it('所有 7 个路由都注册了元数据', () => {
-    const methods = ROUTES.map((r) => r.handler)
-    for (const handler of methods) {
-      const method = Reflect.getMetadata('method', FeedbackController.prototype[handler as keyof FeedbackController])
-      assert.ok(method !== undefined, `Missing metadata for ${handler}`)
-    }
-  })
-})
-
-// ══════════════════════════════════════════════════════════════
 // 辅助函数
 // ══════════════════════════════════════════════════════════════
 

@@ -8,11 +8,18 @@ import type {
   ReportDefinition, ReportMetric, ReportQueryResponse, DashboardLayout, ReportPeriod,
 } from './report.entity'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
-@Public()
+const REPORT_READ_PERMISSION = 'report:read'
+const REPORT_EXPORT_PERMISSION = 'report:export'
+
 @Controller('report')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(REPORT_READ_PERMISSION)
 export class ReportController {
   constructor(private readonly service: ReportService) {}
 
@@ -30,6 +37,7 @@ export class ReportController {
   }
 
   @Post('create')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   createReport(@Body() body: Omit<ReportDefinition, 'id' | 'createdAt' | 'updatedAt'>): ReportDefinition {
     return this.service.createReport(body)
   }
@@ -40,6 +48,7 @@ export class ReportController {
   }
 
   @Post('ingest')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   ingest(@Body() body: { points: any[] }): { ingested: number } {
     this.service.ingestDataPoints(body.points)
     return { ingested: body.points.length }
@@ -68,11 +77,13 @@ export class ReportController {
   }
 
   @Post('dashboard/create')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   createDashboard(@Body() body: Omit<DashboardLayout, 'id' | 'createdAt' | 'updatedAt'>): DashboardLayout {
     return this.service.createDashboard(body)
   }
 
   @Delete(':id')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   deleteReport(@Param('id') id: string): { success: boolean; id: string } {
     const deleted = this.service.deleteReport(id)
     if (!deleted) throw new BadRequestException(`Report ${id} not found`)
@@ -80,6 +91,7 @@ export class ReportController {
   }
 
   @Post('dashboard/update/:id')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   updateDashboard(
     @Param('id') id: string,
     @Body() body: Partial<DashboardLayout>,
@@ -138,4 +150,3 @@ export class ReportController {
     return { period: p, from, to, totals: Object.fromEntries(totals) }
   }
 }
-

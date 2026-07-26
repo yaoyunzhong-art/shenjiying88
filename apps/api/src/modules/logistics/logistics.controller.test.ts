@@ -5,6 +5,7 @@ import {
   PERMISSIONS_METADATA_KEY,
   TENANT_SCOPE_METADATA_KEY,
 } from '../foundation/identity-access/identity-access.decorator'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 import { LogisticsController } from './logistics.controller'
 
 function resolvePermissions(handler: Function) {
@@ -124,6 +125,10 @@ describe('LogisticsController metadata', () => {
 
   it('controller path should be logistics', () => {
     assert.equal(Reflect.getMetadata('path', LogisticsController), 'logistics')
+  })
+
+  it('controller should no longer stay public', () => {
+    assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, LogisticsController), undefined)
   })
 
   it('all protected routes should require tenant scope', () => {

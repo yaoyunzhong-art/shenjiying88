@@ -31,10 +31,19 @@ import type {
   GenerateRecommendationsOutput
 } from './ai-recommend.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const AI_RECOMMEND_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('ai-recommend')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(AI_RECOMMEND_GOVERNANCE_READ_PERMISSION)
 export class AiRecommendController {
   constructor(private readonly aiRecommendService: AiRecommendService) {}
 
@@ -94,6 +103,7 @@ export class AiRecommendController {
 
   /** 创建推荐策略 */
   @Post('strategies')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   createStrategy(@Body() dto: CreateStrategyDto): RecommendationStrategy {
     return this.aiRecommendService.createStrategy(dto)
   }
@@ -112,6 +122,7 @@ export class AiRecommendController {
 
   /** 更新策略 */
   @Put('strategies/:id')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   updateStrategy(
     @Param('id') id: string,
     @Body() dto: UpdateStrategyDto
@@ -121,12 +132,14 @@ export class AiRecommendController {
 
   /** 启用策略 */
   @Patch('strategies/:id/enable')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   enableStrategy(@Param('id') id: string): RecommendationStrategy {
     return this.aiRecommendService.enableStrategy(id)
   }
 
   /** 禁用策略 */
   @Patch('strategies/:id/disable')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   disableStrategy(@Param('id') id: string): RecommendationStrategy {
     return this.aiRecommendService.disableStrategy(id)
   }
@@ -141,6 +154,7 @@ export class AiRecommendController {
 
   /** 创建/更新用户画像 */
   @Put('profiles/:memberId')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   updateProfile(
     @Param('memberId') memberId: string,
     @Body() dto: UpdateProfileDto
@@ -152,12 +166,14 @@ export class AiRecommendController {
 
   /** 记录物品评分 */
   @Post('interactions/score')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   recordScore(@Body() dto: ItemScoreDto): ItemScore {
     return this.aiRecommendService.recordInteraction(dto)
   }
 
   /** 记录交互行为（简化版） */
   @Post('interactions')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   recordInteraction(@Body() dto: RecordInteractionDto): ItemScore {
     // 自动计算 weight 和 rating
     const weightMap: Record<string, number> = {
@@ -185,6 +201,7 @@ export class AiRecommendController {
 
   /** 记录推荐转化 */
   @Post('conversions')
+  @RequirePermissions(AI_RECOMMEND_GOVERNANCE_WRITE_PERMISSION)
   recordConversion(
     @Body() dto: RecordConversionDto
   ): Recommendation | undefined {

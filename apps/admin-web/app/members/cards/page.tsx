@@ -38,6 +38,9 @@ const permissionGate = {
     '会员卡管理页已接入管理员本地 session，只有具备 member:read 的账号才能查看卡片列表、发行记录、状态筛选与余额信息。',
 } as const;
 
+const deliveryMode = 'mock' as const;
+const dataSourceLabel = 'mock' as const;
+
 // ---- 样式工具 ----
 
 function cardTypeColor(type: MemberCard['cardType']): string {
@@ -328,8 +331,21 @@ export default function MemberCardsPage() {
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <PageShell
           title="会员卡管理"
-          subtitle="管理所有会员卡，包括虚拟卡、实体卡和数字卡的发行、状态管理和余额查看"
+          subtitle={`管理所有会员卡，包括虚拟卡、实体卡和数字卡的发行、状态管理和余额查看。当前数据源：${dataSourceLabel}。`}
         >
+        <div
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            padding: '12px 14px',
+            border: '1px solid rgba(248, 113, 113, 0.24)',
+            background: 'rgba(127, 29, 29, 0.22)',
+            color: '#fecaca',
+            fontSize: 13,
+          }}
+        >
+          {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
+        </div>
         {/* 统计卡片 */}
         <div
           style={{

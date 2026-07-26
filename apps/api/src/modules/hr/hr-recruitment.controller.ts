@@ -11,8 +11,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   HrRecruitmentService,
   type Position,
@@ -25,9 +28,13 @@ import {
   type RecruitmentStats,
 } from './hr-recruitment.service'
 
+const HR_RECRUITMENT_READ_PERMISSION = 'staff:read'
+const HR_RECRUITMENT_WRITE_PERMISSION = 'staff:*'
+
 @Controller('hr/recruitment')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(HR_RECRUITMENT_READ_PERMISSION)
 export class HrRecruitmentController {
   constructor(private readonly service: HrRecruitmentService) {}
 
@@ -41,6 +48,7 @@ export class HrRecruitmentController {
    */
   @Post('positions')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_RECRUITMENT_WRITE_PERMISSION)
   createPosition(
     @Headers('x-tenant-id') tenantId: string,
     @Body()
@@ -90,6 +98,7 @@ export class HrRecruitmentController {
    * 更新职位
    */
   @Patch('positions/:id')
+  @RequirePermissions(HR_RECRUITMENT_WRITE_PERMISSION)
   updatePosition(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -119,6 +128,7 @@ export class HrRecruitmentController {
    */
   @Post('candidates')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_RECRUITMENT_WRITE_PERMISSION)
   createCandidate(
     @Headers('x-tenant-id') tenantId: string,
     @Body()
@@ -153,6 +163,7 @@ export class HrRecruitmentController {
    * 更新候选人状态（面试流转）
    */
   @Patch('candidates/:id')
+  @RequirePermissions(HR_RECRUITMENT_WRITE_PERMISSION)
   updateCandidateStatus(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -178,6 +189,7 @@ export class HrRecruitmentController {
    */
   @Post('referrals')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_RECRUITMENT_WRITE_PERMISSION)
   createReferral(
     @Headers('x-tenant-id') tenantId: string,
     @Body()

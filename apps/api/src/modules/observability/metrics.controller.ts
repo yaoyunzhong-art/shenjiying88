@@ -6,13 +6,22 @@ import { ObservabilityService } from './observability.service'
 import type { CreateAlertRuleRequest, UpdateAlertRuleRequest, AlertRuleResponse } from './metrics.dto'
 import type { ChaosScope, ChaosType } from './chaos-engine'
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
+
+const METRICS_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const METRICS_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Injectable()
 @ApiTags('observability')
 @Controller()
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(METRICS_GOVERNANCE_READ_PERMISSION)
 export class MetricsController {
   constructor(
     @Inject(MetricsService) private readonly metricsService: MetricsService,
@@ -24,6 +33,8 @@ export class MetricsController {
    * GET /metrics
    */
   @Get('metrics')
+  @Public()
+  @TenantOptional()
   async getMetrics(@Res() res: Response) {
     const body = this.metricsService.render()
     res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
@@ -35,6 +46,8 @@ export class MetricsController {
    * GET /healthz
    */
   @Get('healthz')
+  @Public()
+  @TenantOptional()
   getHealth() {
     return { status: 'ok', metrics: this.metricsService.listMetrics().length }
   }
@@ -59,6 +72,7 @@ export class MetricsController {
   @Post('api/observability/alerts')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '创建告警规则' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   createAlertRule(@Body() body: CreateAlertRuleRequest): AlertRuleResponse {
     return this.observability.createAlertRule(body)
   }
@@ -89,6 +103,7 @@ export class MetricsController {
    */
   @Put('api/observability/alerts/:id')
   @ApiOperation({ summary: '更新告警规则' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   updateAlertRule(
     @Param('id') id: string,
     @Body() body: UpdateAlertRuleRequest,
@@ -102,6 +117,7 @@ export class MetricsController {
   @Delete('api/observability/alerts/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: '删除告警规则' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   async deleteAlertRule(@Param('id') id: string): Promise<void> {
     this.observability.deleteAlertRule(id)
   }
@@ -114,6 +130,7 @@ export class MetricsController {
   @Post('api/observability/alerts/evaluate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '评估告警规则' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   evaluateAlerts() {
     return { items: this.observability.evaluateAlerts() }
   }
@@ -153,6 +170,7 @@ export class MetricsController {
   @Post('api/observability/chaos/experiments')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '启动故障演练' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   startChaosExperiment(@Body() body: {
     type: ChaosType; scope: ChaosScope; target?: string;
     params?: Record<string, number | string>; description?: string; autoRevertMs?: number
@@ -194,6 +212,7 @@ export class MetricsController {
   @Post('api/observability/chaos/experiments/:id/rollback')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '回滚故障演练' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   rollbackChaosExperiment(@Param('id') id: string) {
     return this.observability.rollbackChaosExperiment(id)
   }
@@ -204,6 +223,7 @@ export class MetricsController {
   @Post('api/observability/chaos/rollback-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '全部回滚故障演练' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   rollbackAllChaosExperiments() {
     const count = this.observability.rollbackAllChaosExperiments()
     return { rolledBack: count }
@@ -226,6 +246,7 @@ export class MetricsController {
   @Post('api/observability/slo/evaluate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '评估 SLO' })
+  @RequirePermissions(METRICS_GOVERNANCE_WRITE_PERMISSION)
   evaluateSLO(@Body() body: { targetId: string; points: any[] }) {
     return this.observability.evaluateSLO(body.targetId, body.points)
   }

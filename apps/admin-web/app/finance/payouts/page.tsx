@@ -250,6 +250,9 @@ const permissionGate = {
   description: '该页面已接入管理员权限管控，仅具备 finance:payouts:read 权限的账号可访问。',
 } as const
 
+const deliveryMode = 'mock' as const;
+const dataSourceLabel = 'mock' as const;
+
 export default function FinancePayoutsPage() {
   const [payouts, setPayouts] = useState<PayoutRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -400,8 +403,22 @@ export default function FinancePayoutsPage() {
       <div style={{ marginBottom: 24 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>💰 提现管理</h1>
       <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0 0' }}>
-      Phase-38 · 提现审核 · 状态机 · 金额单位: 分
+      Phase-38 · 提现审核 · 状态机 · 金额单位: 分 · 当前数据源: {dataSourceLabel}
       </p>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 16,
+          borderRadius: 12,
+          padding: '12px 14px',
+          border: '1px solid rgba(248, 113, 113, 0.24)',
+          background: 'rgba(127, 29, 29, 0.12)',
+          color: '#b91c1c',
+          fontSize: 13,
+        }}
+      >
+        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
       </div>
 
       {/* 统计卡片 */}

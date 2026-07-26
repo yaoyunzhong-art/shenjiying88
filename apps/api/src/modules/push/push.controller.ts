@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Param, Post, Patch, Query, UseGuards } from '@nestjs/common'
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   BroadcastMessageDto,
   CancelScheduledPushDto,
@@ -100,9 +103,13 @@ function toEntityWSClient(
   }
 }
 
+const NOTIFICATION_READ_PERMISSION = 'notification:read'
+const NOTIFICATION_WRITE_PERMISSION = 'notification:write'
+
 @Controller('push')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(NOTIFICATION_READ_PERMISSION)
 export class PushController {
   constructor(
     private readonly apnsService: APNsService,
@@ -129,6 +136,7 @@ export class PushController {
    * 📢 营销: 统一营销模板管理
    */
   @Post('templates')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   registerTemplate(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: RegisterPushTemplateDto
@@ -160,6 +168,7 @@ export class PushController {
    * 📢 营销: 精准推送营销活动
    */
   @Post('send')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async sendPush(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: SendPushDto
@@ -192,6 +201,7 @@ export class PushController {
    * 发送高优先级推送（紧急通知）
    */
   @Post('send-high-priority')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async sendHighPriority(
     @Body() body: { deviceToken: string; alert: string }
   ): Promise<{ success: boolean }> {
@@ -207,6 +217,7 @@ export class PushController {
    * 🔧 安监: 安保人员设备吊销
    */
   @Post('revoke-token')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async revokeToken(
     @Body() body: { deviceToken: string }
   ): Promise<{ success: boolean }> {
@@ -221,6 +232,7 @@ export class PushController {
    * 🎮 导玩员: 定时推送活动预告
    */
   @Post('schedule')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   schedulePush(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: SchedulePushDto
@@ -237,6 +249,7 @@ export class PushController {
    * 取消定时推送
    */
   @Post('schedule/cancel')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   cancelScheduledPush(
     @Body() body: CancelScheduledPushDto
   ): { success: boolean } {
@@ -263,6 +276,7 @@ export class PushController {
    * 建立 WebSocket 连接
    */
   @Post('ws/connect')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   connectWS(
     @Body() body: { clientId: string; userId: string; platform?: PushPlatform }
   ): WSClient {
@@ -274,6 +288,7 @@ export class PushController {
    * 断开 WebSocket 连接
    */
   @Post('ws/disconnect')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   disconnectWS(
     @Body() body: { clientId: string }
   ): { success: boolean } {
@@ -285,6 +300,7 @@ export class PushController {
    * 发送 WebSocket 消息
    */
   @Post('ws/send')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   sendWS(
     @Body() body: SendWSMessageDto
   ): { success: boolean } {
@@ -300,6 +316,7 @@ export class PushController {
    * 🛒 前台: 向前台所有设备广播公告
    */
   @Post('ws/broadcast')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   broadcastWS(
     @Body() body: BroadcastMessageDto
   ): { sent: number } {
@@ -311,6 +328,7 @@ export class PushController {
    * WebSocket 重连（session 恢复）
    */
   @Post('ws/reconnect')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   reconnectWS(
     @Body() body: { clientId: string; oldSessionId: string }
   ): { restored: boolean; sessionId?: string } {
@@ -325,6 +343,7 @@ export class PushController {
    * 在发送前预览推送是否会被拦截
    */
   @Post('priority/check')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   checkPriority(
     @Body() body: {
       priority: PushBusinessPriority
@@ -379,6 +398,7 @@ export class PushController {
    * PATCH /push/dnd/:tenantId
    */
   @Patch('dnd/:tenantId')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   updateDndConfig(
     @Param('tenantId') tenantId: string,
     @Body() body: { enabled?: boolean; startTime?: string; endTime?: string }
@@ -415,6 +435,7 @@ export class PushController {
    * PATCH /push/frequency-cap/:tenantId
    */
   @Patch('frequency-cap/:tenantId')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   updateFrequencyCapConfig(
     @Param('tenantId') tenantId: string,
     @Body() body: { dailyMax?: number; weeklyMax?: number; perMinuteMax?: number; cooldownSeconds?: number }
@@ -439,6 +460,7 @@ export class PushController {
    * POST /push/frequency-cap/:tenantId/check/:memberId
    */
   @Post('frequency-cap/:tenantId/check/:memberId')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   checkFrequencyCap(
     @Param('tenantId') tenantId: string,
     @Param('memberId') memberId: string
@@ -467,6 +489,7 @@ export class PushController {
    * POST /push/channels/email
    */
   @Post('channels/email')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async sendEmail(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { recipient: string; subject: string; body: string; priority?: PushBusinessPriority }
@@ -499,6 +522,7 @@ export class PushController {
    * POST /push/channels/sms
    */
   @Post('channels/sms')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async sendSms(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { recipient: string; body: string; priority?: PushBusinessPriority }
@@ -530,6 +554,7 @@ export class PushController {
    * POST /push/channels/send-dual
    */
   @Post('channels/send-dual')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async sendDualChannel(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: {
@@ -635,6 +660,7 @@ export class PushController {
    * BS-0164: 用户推送偏好设置
    */
   @Patch('preference/:tenantId/:memberId')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   updateUserPreference(
     @Param('tenantId') tenantId: string,
     @Param('memberId') memberId: string,
@@ -649,6 +675,7 @@ export class PushController {
    * BS-0167: 一键关闭 P3 营销推送
    */
   @Post('preference/:tenantId/:memberId/disable-marketing')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   disableMarketingPush(
     @Param('tenantId') tenantId: string,
     @Param('memberId') memberId: string,
@@ -661,6 +688,7 @@ export class PushController {
    * POST /push/preference/:tenantId/:memberId/enable-marketing
    */
   @Post('preference/:tenantId/:memberId/enable-marketing')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   enableMarketingPush(
     @Param('tenantId') tenantId: string,
     @Param('memberId') memberId: string,
@@ -674,6 +702,7 @@ export class PushController {
    * BS-0165: 用户自定义免打扰时间段
    */
   @Post('preference/:tenantId/:memberId/dnd')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   setUserDndHours(
     @Param('tenantId') tenantId: string,
     @Param('memberId') memberId: string,
@@ -690,6 +719,7 @@ export class PushController {
    * BS-0172: 通道优先级配置
    */
   @Post('preference/:tenantId/:memberId/channel')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   setPreferredChannel(
     @Param('tenantId') tenantId: string,
     @Param('memberId') memberId: string,
@@ -742,6 +772,7 @@ export class PushController {
    * BS-0171: 多通道路由 (自动选择用户首选通道)
    */
   @Post('channels/send-smart')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   async sendSmartChannel(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: {
@@ -790,6 +821,7 @@ export class PushController {
    * BS-0185: 推送事件回传 (送达/点击/失败)
    */
   @Post('events')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   recordPushEvent(
     @Body() body: RecordPushEventDto,
   ) {
@@ -812,6 +844,7 @@ export class PushController {
    * BS-0186: 点击率统计
    */
   @Post('events/click')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   recordClickEvent(
     @Body() body: {
       pushRecordId: string

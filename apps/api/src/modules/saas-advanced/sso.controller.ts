@@ -23,12 +23,21 @@ import type {
   SsoLoginInitiateDto,
   SsoLoginCompleteDto,
 } from './sso.dto'
-import { TenantGuard } from '../agent/tenant.guard';
+import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
+
+const SSO_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const SSO_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('saas/sso')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(SSO_GOVERNANCE_READ_PERMISSION)
 export class SsoController {
   constructor(private readonly service: SsoService) {}
 
@@ -40,6 +49,7 @@ export class SsoController {
    */
   @Post('saml')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(SSO_GOVERNANCE_WRITE_PERMISSION)
   async createSaml(@Body() body: CreateSamlConnectionDto) {
     const conn = await this.service.createSamlConnection(body)
     return { id: conn.id, protocol: conn.protocol, name: conn.name, status: conn.status }
@@ -51,6 +61,7 @@ export class SsoController {
    */
   @Post('oidc')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(SSO_GOVERNANCE_WRITE_PERMISSION)
   async createOidc(@Body() body: CreateOidcConnectionDto) {
     const conn = await this.service.createOidcConnection(body)
     return { id: conn.id, protocol: conn.protocol, name: conn.name, status: conn.status }
@@ -80,6 +91,7 @@ export class SsoController {
    * PATCH /saas/sso/connections/:id
    */
   @Patch('connections/:id')
+  @RequirePermissions(SSO_GOVERNANCE_WRITE_PERMISSION)
   async update(@Param('id') id: string, @Body() body: UpdateSsoConnectionDto) {
     return this.service.updateConnection(id, body)
   }
@@ -90,6 +102,7 @@ export class SsoController {
    */
   @Delete('connections/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(SSO_GOVERNANCE_WRITE_PERMISSION)
   async delete(@Param('id') id: string) {
     await this.service.deleteConnection(id)
   }
@@ -102,6 +115,8 @@ export class SsoController {
    */
   @Post('login/initiate/:connectionId')
   @HttpCode(HttpStatus.OK)
+  @Public()
+  @TenantOptional()
   async initiateLogin(
     @Param('connectionId') connectionId: string,
     @Body() body: SsoLoginInitiateDto,
@@ -115,6 +130,8 @@ export class SsoController {
    */
   @Post('login/complete')
   @HttpCode(HttpStatus.OK)
+  @Public()
+  @TenantOptional()
   async completeLogin(@Body() body: SsoLoginCompleteDto) {
     return this.service.completeLogin(body)
   }
@@ -125,6 +142,8 @@ export class SsoController {
    */
   @Post('verify')
   @HttpCode(HttpStatus.OK)
+  @Public()
+  @TenantOptional()
   async verify(@Body() body: { token: string }) {
     const claims = this.service.verifyAccessToken(body.token)
     return { valid: claims != null, claims }

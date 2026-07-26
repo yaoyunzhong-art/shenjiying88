@@ -11,8 +11,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   HrPerformanceService,
   type PerformanceTemplate,
@@ -26,9 +29,13 @@ import {
   type PerformanceStats,
 } from './hr-performance.service'
 
+const HR_PERFORMANCE_READ_PERMISSION = 'staff:read'
+const HR_PERFORMANCE_WRITE_PERMISSION = 'staff:*'
+
 @Controller('hr/performance')
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions(HR_PERFORMANCE_READ_PERMISSION)
 export class HrPerformanceController {
   constructor(private readonly service: HrPerformanceService) {}
 
@@ -42,6 +49,7 @@ export class HrPerformanceController {
    */
   @Post('templates')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_PERFORMANCE_WRITE_PERMISSION)
   createTemplate(
     @Headers('x-tenant-id') tenantId: string,
     @Body()
@@ -91,6 +99,7 @@ export class HrPerformanceController {
    */
   @Post('evaluations')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_PERFORMANCE_WRITE_PERMISSION)
   createEvaluation(
     @Headers('x-tenant-id') tenantId: string,
     @Body()
@@ -139,6 +148,7 @@ export class HrPerformanceController {
    * 更新评估（支持审核流转）
    */
   @Patch('evaluations/:id')
+  @RequirePermissions(HR_PERFORMANCE_WRITE_PERMISSION)
   updateEvaluation(
     @Param('id') id: string,
     @Headers('x-tenant-id') tenantId: string,
@@ -165,6 +175,7 @@ export class HrPerformanceController {
    */
   @Post('interviews')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_PERFORMANCE_WRITE_PERMISSION)
   createInterview(
     @Headers('x-tenant-id') tenantId: string,
     @Body()
@@ -204,6 +215,7 @@ export class HrPerformanceController {
    */
   @Post('star-employees')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(HR_PERFORMANCE_WRITE_PERMISSION)
   createStarEmployee(
     @Headers('x-tenant-id') tenantId: string,
     @Body()

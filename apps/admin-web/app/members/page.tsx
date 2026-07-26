@@ -279,6 +279,9 @@ function MembersPageContent() {
   }, []);
 
   const members = membersState.members;
+  const dataSourceLabel =
+    membersState.deliveryMode === 'api' ? '真实 API' : 'fallback';
+  const isReviewable = membersState.deliveryMode === 'api';
 
   // 搜索过滤
   const searchFields = useMemo<(keyof MemberItem)[]>(
@@ -430,9 +433,7 @@ function MembersPageContent() {
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
       <PageShell
         title="会员管理中心"
-        subtitle={`统一管理所有市场的会员数据，支持按等级、状态、消费金额多维度筛选与排序。当前数据源：${
-          membersState.deliveryMode === 'api' ? '真实 API' : 'fallback'
-        }。`}
+        subtitle={`统一管理所有市场的会员数据，支持按等级、状态、消费金额多维度筛选与排序。当前数据源：${dataSourceLabel}。`}
       >
         {isLoading ? (
           <div
@@ -447,6 +448,30 @@ function MembersPageContent() {
             }}
           >
             正在同步会员档案...
+          </div>
+        ) : null}
+
+        {!isLoading ? (
+          <div
+            style={{
+              marginBottom: 16,
+              borderRadius: 12,
+              padding: '12px 14px',
+              border:
+                membersState.deliveryMode === 'api'
+                  ? '1px solid rgba(74, 222, 128, 0.22)'
+                  : '1px solid rgba(251, 191, 36, 0.22)',
+              background:
+                membersState.deliveryMode === 'api'
+                  ? 'rgba(20, 83, 45, 0.18)'
+                  : 'rgba(120, 53, 15, 0.18)',
+              color:
+                membersState.deliveryMode === 'api' ? '#bbf7d0' : '#fde68a',
+              fontSize: 13,
+            }}
+          >
+            {`deliveryMode: ${membersState.deliveryMode} · dataSourceLabel: ${dataSourceLabel}`}
+            {!isReviewable ? ' · 该页面当前不可作为闭环复签证据' : ''}
           </div>
         ) : null}
 

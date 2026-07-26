@@ -44,6 +44,8 @@ const COLUMNS = [
 ];
 
 export default function ReservationsPage() {
+  const deliveryMode = 'mock' as const;
+  const dataSourceLabel = 'mock' as const;
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -65,8 +67,22 @@ export default function ReservationsPage() {
       <PageShell>
         <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><h2 style={{ color: '#f8fafc', margin: 0 }}>📅 预约管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>场地预约 · 设备预约 · 批量管理</span></div>
+          <div><h2 style={{ color: '#f8fafc', margin: 0 }}>📅 预约管理</h2><span style={{ color: '#94a3b8', fontSize: 13 }}>{`场地预约 · 设备预约 · 批量管理 · 当前数据源：${dataSourceLabel}`}</span></div>
           <Button type="primary" onClick={() => setShowCreate(true)}>+ 创建预约</Button>
+        </div>
+
+        <div
+          style={{
+            width: '100%',
+            borderRadius: 12,
+            padding: '12px 14px',
+            border: '1px solid rgba(248, 113, 113, 0.24)',
+            background: 'rgba(127, 29, 29, 0.22)',
+            color: '#fecaca',
+            fontSize: 13
+          }}
+        >
+          {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
         </div>
 
         <Row gutter={[16, 16]}>

@@ -405,7 +405,11 @@ describe('IoTController', () => {
 
   describe('POST /iot/work-orders', () => {
     it('should create a work order for a registered device', async () => {
-      // deviceOnline also registers the device
+      controller.registerDevice({
+        deviceId: 'dev-001',
+        type: 'ESP32' as any,
+      })
+
       const result = await controller.createWorkOrder({
         deviceId: 'dev-001',
         issue: '设备离线',

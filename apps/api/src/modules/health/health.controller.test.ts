@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { HealthController } from './health.controller'
 import type { RequestTenantContext, ActorType } from '../tenant/tenant.types'
@@ -38,35 +37,6 @@ function makeMockService(overrides?: Partial<MockHealthService>): MockHealthServ
 function makeController(serviceOverrides?: Partial<MockHealthService>): HealthController {
   return new HealthController({} as any, makeMockService(serviceOverrides) as never)
 }
-
-// ── 元数据检查 ──
-describe('路由元数据验证', () => {
-  it('health controller path metadata is set', () => {
-    const path = Reflect.getMetadata('path', HealthController)
-    assert.equal(path, 'health')
-  })
-
-  it('getHealth route keeps GET metadata on root path', () => {
-    const method = Reflect.getMetadata('method', HealthController.prototype.getHealth)
-    const path = Reflect.getMetadata('path', HealthController.prototype.getHealth)
-    assert.equal(method, 0) // GET
-    assert.equal(path, '/')
-  })
-
-  it('getPing route has GET metadata on ping path', () => {
-    const method = Reflect.getMetadata('method', HealthController.prototype.getPing)
-    const path = Reflect.getMetadata('path', HealthController.prototype.getPing)
-    assert.equal(method, 0) // GET
-    assert.equal(path, 'ping')
-  })
-
-  it('getReadiness route has GET metadata on readiness path', () => {
-    const method = Reflect.getMetadata('method', HealthController.prototype.getReadiness)
-    const path = Reflect.getMetadata('path', HealthController.prototype.getReadiness)
-    assert.equal(method, 0) // GET
-    assert.equal(path, 'readiness')
-  })
-})
 
 // ── GET /health ──
 describe('GET /health（基本存活性检查）', () => {

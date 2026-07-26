@@ -13,7 +13,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { BrandOperationsService } from './brand-operations.service'
 import {
   CreateBrandAssetDto,
@@ -105,11 +108,14 @@ import type {
 // 当前 Phase-47 骨架阶段使用硬编码 tenant/brand; 上线后替换为真实租户上下文
 const MOCK_TENANT_ID = 'tenant-1'
 const MOCK_BRAND_ID = 'brand-1'
+const BRAND_OPERATIONS_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @UseGuards(TenantGuard)
-@Public()
 @Controller('brand-operations')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@RequireTenantScope()
+@RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_READ_PERMISSION)
 export class BrandOperationsController {
   constructor(private readonly service: BrandOperationsService) {}
 
@@ -118,6 +124,7 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('assets')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createAsset(@Body() body: CreateBrandAssetDto): BrandAsset {
     return this.service.createAsset({
       tenantId: MOCK_TENANT_ID,
@@ -149,6 +156,7 @@ export class BrandOperationsController {
   }
 
   @Patch('assets/:assetId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateAsset(
     @Param('assetId') assetId: string,
     @Body() body: UpdateBrandAssetDto,
@@ -157,6 +165,7 @@ export class BrandOperationsController {
   }
 
   @Delete('assets/:assetId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteAsset(@Param('assetId') assetId: string): { success: boolean } {
     const result = this.service.deleteAsset(assetId, MOCK_TENANT_ID)
     return { success: result }
@@ -167,11 +176,13 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('campaigns/:campaignId/submit')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   submitCampaign(@Param('campaignId') campaignId: string): BrandCampaign {
     return this.service.submitCampaignForReview(campaignId, MOCK_TENANT_ID)
   }
 
   @Post('campaigns/:campaignId/approve')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   approveCampaign(
     @Param('campaignId') campaignId: string,
     @Body() body: ApproveCampaignDto,
@@ -180,6 +191,7 @@ export class BrandOperationsController {
   }
 
   @Post('campaigns/:campaignId/reject')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   rejectCampaign(
     @Param('campaignId') campaignId: string,
     @Body() body: RejectCampaignDto,
@@ -188,6 +200,7 @@ export class BrandOperationsController {
   }
 
   @Post('campaigns/:campaignId/publish')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   publishCampaign(
     @Param('campaignId') campaignId: string,
     @Body() body: PublishCampaignDto,
@@ -200,6 +213,7 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('campaigns')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createCampaign(@Body() body: CreateBrandCampaignDto): BrandCampaign {
     return this.service.createCampaign({
       tenantId: MOCK_TENANT_ID,
@@ -231,6 +245,7 @@ export class BrandOperationsController {
   }
 
   @Patch('campaigns/:campaignId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateCampaign(
     @Param('campaignId') campaignId: string,
     @Body() body: UpdateBrandCampaignDto,
@@ -239,6 +254,7 @@ export class BrandOperationsController {
   }
 
   @Delete('campaigns/:campaignId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteCampaign(@Param('campaignId') campaignId: string): { success: boolean } {
     const result = this.service.deleteCampaign(campaignId, MOCK_TENANT_ID)
     return { success: result }
@@ -249,6 +265,7 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('campaigns/:campaignId/sync')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   syncToStores(@Param('campaignId') campaignId: string): BrandSyncRecord[] {
     return this.service.syncToStores(campaignId, MOCK_TENANT_ID)
   }
@@ -268,6 +285,7 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('templates')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createTemplate(@Body() body: CreateBrandCampaignTemplateDto): BrandCampaignTemplate {
     return this.service.createTemplate({
       tenantId: MOCK_TENANT_ID,
@@ -299,6 +317,7 @@ export class BrandOperationsController {
   }
 
   @Patch('templates/:templateId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateTemplate(
     @Param('templateId') templateId: string,
     @Body() body: UpdateBrandCampaignTemplateDto,
@@ -307,6 +326,7 @@ export class BrandOperationsController {
   }
 
   @Delete('templates/:templateId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteTemplate(@Param('templateId') templateId: string): { success: boolean } {
     const result = this.service.deleteTemplate(templateId, MOCK_TENANT_ID)
     return { success: result }
@@ -317,6 +337,7 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('templates/:templateId/apply')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   applyTemplate(
     @Param('templateId') templateId: string,
     @Body() body: ApplyTemplateToCampaignDto,
@@ -339,6 +360,7 @@ export class BrandOperationsController {
   // ═══════════════════════════════════════════
 
   @Post('collaborations')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createCollaboration(@Body() body: CreateCollaborationDto): Collaboration {
     return this.service.createCollaboration({
       tenantId: MOCK_TENANT_ID,
@@ -384,6 +406,7 @@ export class BrandOperationsController {
   }
 
   @Patch('collaborations/:collabId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateCollaboration(
     @Param('collabId') collabId: string,
     @Body() body: UpdateCollaborationDto,
@@ -419,6 +442,7 @@ export class BrandOperationsController {
   }
 
   @Delete('collaborations/:collabId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteCollaboration(@Param('collabId') collabId: string): { success: boolean } {
     const result = this.service.deleteCollaboration(collabId, MOCK_TENANT_ID)
     return { success: result }
@@ -430,6 +454,7 @@ export class BrandOperationsController {
   }
 
   @Post('collaborations/:collabId/link/:campaignId')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   linkCampaignToCollaboration(
     @Param('collabId') collabId: string,
     @Param('campaignId') campaignId: string,
@@ -451,6 +476,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('campaign-schedules')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createCampaignSchedule(@Body() body: CreateCampaignScheduleDto): CampaignSchedule {
     return this.service.createCampaignSchedule({
       tenantId: MOCK_TENANT_ID,
@@ -480,11 +506,13 @@ export class BrandOperationsController {
   }
 
   @Post('campaign-schedules/:id/cancel')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   cancelCampaignSchedule(@Param('id') id: string): CampaignSchedule {
     return this.service.cancelCampaignSchedule(id, MOCK_TENANT_ID)
   }
 
   @Post('campaign-schedules/sweep')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   executeDueSchedules(@Body() body: { now?: string }): CampaignSchedule[] {
     return this.service.executeDueSchedules(body.now)
   }
@@ -494,6 +522,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('revenue-shares/calculate')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   calculateRevenueShare(@Body() body: CreateRevenueShareRecordDto): RevenueShareRecord {
     return this.service.calculateRevenueShare({
       tenantId: MOCK_TENANT_ID,
@@ -522,6 +551,7 @@ export class BrandOperationsController {
   }
 
   @Post('revenue-shares/:id/settle')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   settleRevenueShare(
     @Param('id') id: string,
     @Body() body: SettleRevenueShareDto,
@@ -530,6 +560,7 @@ export class BrandOperationsController {
   }
 
   @Post('revenue-shares/:id/dispute')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   disputeRevenueShare(
     @Param('id') id: string,
     @Body() body: { reason: string },
@@ -547,6 +578,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('asset-categories')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createAssetCategory(@Body() body: CreateAssetCategoryDto): AssetCategory {
     return this.service.createAssetCategory({
       tenantId: MOCK_TENANT_ID,
@@ -573,6 +605,7 @@ export class BrandOperationsController {
   }
 
   @Patch('asset-categories/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateAssetCategory(
     @Param('id') id: string,
     @Body() body: UpdateAssetCategoryDto,
@@ -581,6 +614,7 @@ export class BrandOperationsController {
   }
 
   @Delete('asset-categories/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteAssetCategory(@Param('id') id: string): { success: boolean } {
     const result = this.service.deleteAssetCategory(id, MOCK_TENANT_ID)
     return { success: result }
@@ -591,6 +625,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('asset-tags')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createAssetTag(@Body() body: CreateAssetTagDto): AssetTag {
     return this.service.createAssetTag({
       tenantId: MOCK_TENANT_ID,
@@ -605,6 +640,7 @@ export class BrandOperationsController {
   }
 
   @Delete('asset-tags/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteAssetTag(@Param('id') id: string): { success: boolean } {
     const result = this.service.deleteAssetTag(id, MOCK_TENANT_ID)
     return { success: result }
@@ -624,6 +660,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('exports')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   requestExport(@Body() body: CreateExportRecordDto): ExportRecord {
     return this.service.requestExport({
       tenantId: MOCK_TENANT_ID,
@@ -652,6 +689,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('collaboration-contracts')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createCollaborationContract(@Body() body: CreateCollaborationContractDto): CollaborationContract {
     return this.service.createCollaborationContract({
       tenantId: MOCK_TENANT_ID,
@@ -685,6 +723,7 @@ export class BrandOperationsController {
   }
 
   @Patch('collaboration-contracts/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateCollaborationContract(
     @Param('id') id: string,
     @Body() body: UpdateCollaborationContractDto,
@@ -693,6 +732,7 @@ export class BrandOperationsController {
   }
 
   @Delete('collaboration-contracts/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteCollaborationContract(@Param('id') id: string): { success: boolean } {
     const result = this.service.deleteCollaborationContract(id, MOCK_TENANT_ID)
     return { success: result }
@@ -703,6 +743,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('campaign-ab-tests')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createCampaignABTest(@Body() body: CreateCampaignABTestDto): CampaignABTest {
     return this.service.createCampaignABTest({
       tenantId: MOCK_TENANT_ID,
@@ -735,21 +776,25 @@ export class BrandOperationsController {
   }
 
   @Post('campaign-ab-tests/:id/start')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   startCampaignABTest(@Param('id') id: string): CampaignABTest {
     return this.service.startCampaignABTest(id, MOCK_TENANT_ID)
   }
 
   @Post('campaign-ab-tests/:id/pause')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   pauseCampaignABTest(@Param('id') id: string): CampaignABTest {
     return this.service.pauseCampaignABTest(id, MOCK_TENANT_ID)
   }
 
   @Post('campaign-ab-tests/:id/resume')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   resumeCampaignABTest(@Param('id') id: string): CampaignABTest {
     return this.service.resumeCampaignABTest(id, MOCK_TENANT_ID)
   }
 
   @Post('campaign-ab-tests/:id/variants/:variantId/metrics')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   recordVariantMetrics(
     @Param('id') id: string,
     @Param('variantId') variantId: string,
@@ -759,6 +804,7 @@ export class BrandOperationsController {
   }
 
   @Post('campaign-ab-tests/:id/decide-winner')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   decideABTestWinner(
     @Param('id') id: string,
     @Body() body: DecideABTestWinnerDto,
@@ -785,6 +831,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('recycle-bin/soft-delete')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   softDeleteEntity(@Body() body: { entityType: string; entityId: string; deletedBy: string }): RecycleBinItem {
     return this.service.softDeleteEntity({
       tenantId: MOCK_TENANT_ID,
@@ -795,11 +842,13 @@ export class BrandOperationsController {
   }
 
   @Post('recycle-bin/:id/restore')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   restoreFromRecycleBin(@Param('id') id: string): RecycleBinItem {
     return this.service.restoreFromRecycleBin(id, MOCK_TENANT_ID)
   }
 
   @Delete('recycle-bin/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   permanentlyDeleteFromRecycleBin(@Param('id') id: string): { success: boolean } {
     const result = this.service.permanentlyDeleteFromRecycleBin(id, MOCK_TENANT_ID)
     return { success: result }
@@ -816,6 +865,7 @@ export class BrandOperationsController {
   }
 
   @Post('recycle-bin/clean-expired')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   cleanExpiredRecycleBinItems(@Body() body: { now?: string }): { deleted: number } {
     const deleted = this.service.cleanExpiredRecycleBinItems(body.now)
     return { deleted }
@@ -826,6 +876,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('channels')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createBrandChannel(@Body() body: CreateBrandChannelDto): BrandChannel {
     return this.service.createBrandChannel({
       tenantId: MOCK_TENANT_ID,
@@ -859,6 +910,7 @@ export class BrandOperationsController {
   }
 
   @Patch('channels/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateBrandChannel(
     @Param('id') id: string,
     @Body() body: UpdateBrandChannelDto,
@@ -867,6 +919,7 @@ export class BrandOperationsController {
   }
 
   @Delete('channels/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteBrandChannel(@Param('id') id: string): { success: boolean } {
     const result = this.service.deleteBrandChannel(id, MOCK_TENANT_ID)
     return { success: result }
@@ -877,6 +930,7 @@ export class BrandOperationsController {
   // ════════════════════════════════════════════════════════
 
   @Post('kpis')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   createBrandKPI(@Body() body: CreateBrandKPIDto): BrandKPI {
     return this.service.createBrandKPI({
       tenantId: MOCK_TENANT_ID,
@@ -914,6 +968,7 @@ export class BrandOperationsController {
   }
 
   @Patch('kpis/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   updateBrandKPI(
     @Param('id') id: string,
     @Body() body: UpdateBrandKPIDto,
@@ -922,6 +977,7 @@ export class BrandOperationsController {
   }
 
   @Delete('kpis/:id')
+  @RequirePermissions(BRAND_OPERATIONS_GOVERNANCE_WRITE_PERMISSION)
   deleteBrandKPI(@Param('id') id: string): { success: boolean } {
     const result = this.service.deleteBrandKPI(id, MOCK_TENANT_ID)
     return { success: result }
@@ -932,4 +988,3 @@ export class BrandOperationsController {
     return this.service.getBrandKPISummary(MOCK_TENANT_ID)
   }
 }
-

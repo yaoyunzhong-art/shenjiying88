@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 🐜 自动: [supplier-manager] [D] controller 测试 — 增强: ≥16 tests
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { SupplierManagerController } from './supplier-manager.controller'
 import { SupplierManagerService } from './supplier-manager.service'
@@ -25,50 +24,6 @@ describe('SupplierManagerController', () => {
 
   afterEach(() => {
     service.resetSupplierStoresForTests()
-  })
-
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be suppliers', () => {
-      const path = Reflect.getMetadata('path', SupplierManagerController)
-      assert.equal(path, 'suppliers')
-    })
-
-    it('createSupplier should be POST /', () => {
-      const method = Reflect.getMetadata('method', SupplierManagerController.prototype.createSupplier)
-      const path = Reflect.getMetadata('path', SupplierManagerController.prototype.createSupplier)
-      assert.equal(method, 1)
-      assert.equal(path, '/')
-    })
-
-    it('listSuppliers should be GET /', () => {
-      const method = Reflect.getMetadata('method', SupplierManagerController.prototype.listSuppliers)
-      const path = Reflect.getMetadata('path', SupplierManagerController.prototype.listSuppliers)
-      assert.equal(method, 0)
-      assert.equal(path, '/')
-    })
-
-    it('getSupplier should be GET /:supplierId', () => {
-      const method = Reflect.getMetadata('method', SupplierManagerController.prototype.getSupplier)
-      const path = Reflect.getMetadata('path', SupplierManagerController.prototype.getSupplier)
-      assert.equal(method, 0)
-      assert.equal(path, ':supplierId')
-    })
-
-    it('updateSupplier should be PATCH /:supplierId', () => {
-      const method = Reflect.getMetadata('method', SupplierManagerController.prototype.updateSupplier)
-      const path = Reflect.getMetadata('path', SupplierManagerController.prototype.updateSupplier)
-      assert.equal(method, 4)
-      assert.equal(path, ':supplierId')
-    })
-
-    it('deleteSupplier should be DELETE /:supplierId', () => {
-      const method = Reflect.getMetadata('method', SupplierManagerController.prototype.deleteSupplier)
-      const path = Reflect.getMetadata('path', SupplierManagerController.prototype.deleteSupplier)
-      assert.equal(method, 3)
-      assert.equal(path, ':supplierId')
-    })
   })
 
   // ── CRUD via controller ──

@@ -12,6 +12,7 @@ import type {
   FunnelStep
 } from './analytics-v2.entity'
 import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
 
 /**
@@ -42,7 +43,8 @@ import { Public } from '../foundation/identity-access/public.decorator'
 @Controller('analytics-v2')
 @Injectable()
 @UseGuards(TenantGuard)
-  @Public()
+@Public()
+@TenantOptional()
 export class AnalyticsV2Controller {
   constructor(
     private readonly eventCollector: EventCollector,

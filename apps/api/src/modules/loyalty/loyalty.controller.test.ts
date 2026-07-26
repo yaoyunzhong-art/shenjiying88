@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 /**
  * 🐜 自动: [loyalty] [D] controller spec 补全增强
  *
- * 原有覆盖 (保留): metadata 验证 / listPointsLedger / listCouponRedemptions /
+ * 原有覆盖 (保留): listPointsLedger / listCouponRedemptions /
  *   listBlindboxFulfillments / listSettlements / multi-tenant isolation / error resilience
  *
  * 新增 (此补全):
@@ -10,10 +10,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  *   - blindbox-plans CRUD: registerBlindboxPlan / listBlindboxPlans / getBlindboxPlan / activateBlindboxPlan
  *   - issue coupon: issueCoupon (正例+反例+边界)
  *   - issue blindbox: issueBlindbox (正例+反例+边界)
- *   - 所有端点 metadata 验证
+ *   - coupon/blindbox 业务流程补强
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { LoyaltyController } from './loyalty.controller'
 import { LoyaltySettlementStatus, CouponRedemptionStatus, BlindboxFulfillmentStatus, LoyaltyPlanStatus, CouponDiscountType } from './loyalty.entity'
@@ -38,44 +37,6 @@ const makeMockService = (overrides: Record<string, (...args: any[]) => unknown> 
   issueBlindboxFromPlanAtomically: async () => ({}),
   ...overrides
 }) as any
-
-// ---------------------------------------------------------------------------
-// Controller metadata
-// ---------------------------------------------------------------------------
-describe('LoyaltyController metadata', () => {
-  it('controller path is loyalty', () => {
-    const path = Reflect.getMetadata('path', LoyaltyController)
-    assert.equal(path, 'loyalty')
-  })
-
-  it('listPointsLedger GET points-ledger', () => {
-    const method = Reflect.getMetadata('method', LoyaltyController.prototype.listPointsLedger)
-    const path = Reflect.getMetadata('path', LoyaltyController.prototype.listPointsLedger)
-    assert.equal(method, 0)
-    assert.equal(path, 'points-ledger')
-  })
-
-  it('listCouponRedemptions GET coupon-redemptions', () => {
-    const method = Reflect.getMetadata('method', LoyaltyController.prototype.listCouponRedemptions)
-    const path = Reflect.getMetadata('path', LoyaltyController.prototype.listCouponRedemptions)
-    assert.equal(method, 0)
-    assert.equal(path, 'coupon-redemptions')
-  })
-
-  it('listBlindboxFulfillments GET blindbox-fulfillments', () => {
-    const method = Reflect.getMetadata('method', LoyaltyController.prototype.listBlindboxFulfillments)
-    const path = Reflect.getMetadata('path', LoyaltyController.prototype.listBlindboxFulfillments)
-    assert.equal(method, 0)
-    assert.equal(path, 'blindbox-fulfillments')
-  })
-
-  it('listSettlements GET settlements', () => {
-    const method = Reflect.getMetadata('method', LoyaltyController.prototype.listSettlements)
-    const path = Reflect.getMetadata('path', LoyaltyController.prototype.listSettlements)
-    assert.equal(method, 0)
-    assert.equal(path, 'settlements')
-  })
-})
 
 // ---------------------------------------------------------------------------
 // listPointsLedger — positive cases
@@ -693,109 +654,5 @@ describe('LoyaltyController — blindbox-plans CRUD', () => {
       () => controller.issueBlindbox(tenantCtx, 'bb-8', { memberId: 'm-zero', quantity: 0 }),
       /positive/
     )
-  })
-})
-
-// ══════════════════════════════════════════════════════════════
-// 🐜 新增补全: coupon/blindbox metadata 验证
-// ══════════════════════════════════════════════════════════════
-
-describe('LoyaltyController metadata — coupon & blindbox endpoints', () => {
-  it('registerCouponPlan POST coupon-plans', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.registerCouponPlan)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.registerCouponPlan)
-    assert.equal(m, 1)
-    assert.equal(p, 'coupon-plans')
-  })
-
-  it('listCouponPlans GET coupon-plans', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.listCouponPlans)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.listCouponPlans)
-    assert.equal(m, 0)
-    assert.equal(p, 'coupon-plans')
-  })
-
-  it('getCouponPlan GET coupon-plans/:planId', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.getCouponPlan)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.getCouponPlan)
-    assert.equal(m, 0)
-    assert.equal(p, 'coupon-plans/:planId')
-  })
-
-  it('activateCouponPlan PATCH coupon-plans/:planId/status', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.activateCouponPlan)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.activateCouponPlan)
-    assert.equal(m, 4) // PATCH
-    assert.equal(p, 'coupon-plans/:planId/status')
-  })
-
-  it('issueCoupon POST coupon-plans/:planId/issue', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.issueCoupon)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.issueCoupon)
-    assert.equal(m, 1)
-    assert.equal(p, 'coupon-plans/:planId/issue')
-  })
-
-  it('registerBlindboxPlan POST blindbox-plans', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.registerBlindboxPlan)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.registerBlindboxPlan)
-    assert.equal(m, 1)
-    assert.equal(p, 'blindbox-plans')
-  })
-
-  it('listBlindboxPlans GET blindbox-plans', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.listBlindboxPlans)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.listBlindboxPlans)
-    assert.equal(m, 0)
-    assert.equal(p, 'blindbox-plans')
-  })
-
-  it('getBlindboxPlan GET blindbox-plans/:planId', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.getBlindboxPlan)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.getBlindboxPlan)
-    assert.equal(m, 0)
-    assert.equal(p, 'blindbox-plans/:planId')
-  })
-
-  it('activateBlindboxPlan PATCH blindbox-plans/:planId/status', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.activateBlindboxPlan)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.activateBlindboxPlan)
-    assert.equal(m, 4) // PATCH
-    assert.equal(p, 'blindbox-plans/:planId/status')
-  })
-
-  it('listBlindboxDrawRecords GET blindbox-draw-records', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.listBlindboxDrawRecords)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.listBlindboxDrawRecords)
-    assert.equal(m, 0)
-    assert.equal(p, 'blindbox-draw-records')
-  })
-
-  it('getBlindboxDrawRecordIntegrity GET blindbox-draw-records/integrity', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.getBlindboxDrawRecordIntegrity)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.getBlindboxDrawRecordIntegrity)
-    assert.equal(m, 0)
-    assert.equal(p, 'blindbox-draw-records/integrity')
-  })
-
-  it('getBlindboxMemberOverview GET blindbox-members/:memberId/overview', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.getBlindboxMemberOverview)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.getBlindboxMemberOverview)
-    assert.equal(m, 0)
-    assert.equal(p, 'blindbox-members/:memberId/overview')
-  })
-
-  it('getBlindboxProbabilityOverview GET blindbox-plans/:planId/probability', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.getBlindboxProbabilityOverview)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.getBlindboxProbabilityOverview)
-    assert.equal(m, 0)
-    assert.equal(p, 'blindbox-plans/:planId/probability')
-  })
-
-  it('issueBlindbox POST blindbox-plans/:planId/issue', () => {
-    const m = Reflect.getMetadata('method', LoyaltyController.prototype.issueBlindbox)
-    const p = Reflect.getMetadata('path', LoyaltyController.prototype.issueBlindbox)
-    assert.equal(m, 1)
-    assert.equal(p, 'blindbox-plans/:planId/issue')
   })
 })

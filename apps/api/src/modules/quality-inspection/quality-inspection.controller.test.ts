@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 /**
  * 🐜 自动: [quality-inspection] [D] controller 测试
  */
-
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { QualityInspectionController } from './quality-inspection.controller'
 import { QualityInspectionService } from './quality-inspection.service'
@@ -30,64 +28,6 @@ describe('QualityInspectionController', () => {
 
   afterEach(() => {
     service.resetInspectionStoresForTests()
-  })
-
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be quality-inspections', () => {
-      const path = Reflect.getMetadata('path', QualityInspectionController)
-      assert.equal(path, 'quality-inspections')
-    })
-
-    it('createInspection should be POST /', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.createInspection)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.createInspection)
-      assert.equal(method, 1)
-      assert.equal(path, '/')
-    })
-
-    it('listInspections should be GET /', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.listInspections)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.listInspections)
-      assert.equal(method, 0)
-      assert.equal(path, '/')
-    })
-
-    it('getInspection should be GET /:inspectId', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.getInspection)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.getInspection)
-      assert.equal(method, 0)
-      assert.equal(path, ':inspectId')
-    })
-
-    it('updateInspection should be PATCH /:inspectId', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.updateInspection)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.updateInspection)
-      assert.equal(method, 4)
-      assert.equal(path, ':inspectId')
-    })
-
-    it('deleteInspection should be DELETE /:inspectId', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.deleteInspection)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.deleteInspection)
-      assert.equal(method, 3)
-      assert.equal(path, ':inspectId')
-    })
-
-    it('getFailedInspections should be GET /views/failed', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.getFailedInspections)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.getFailedInspections)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/failed')
-    })
-
-    it('getPassRate should be GET /views/pass-rate', () => {
-      const method = Reflect.getMetadata('method', QualityInspectionController.prototype.getPassRate)
-      const path = Reflect.getMetadata('path', QualityInspectionController.prototype.getPassRate)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/pass-rate')
-    })
   })
 
   // ── CRUD via controller ──

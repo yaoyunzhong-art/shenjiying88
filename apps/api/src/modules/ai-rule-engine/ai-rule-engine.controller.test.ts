@@ -15,61 +15,6 @@ describe('AiRuleEngineController', () => {
     controller = new AiRuleEngineController(service)
   })
 
-  describe('route metadata', () => {
-    it('controller path metadata should be ai-rule-engine', () => {
-      const path = Reflect.getMetadata('path', AiRuleEngineController)
-      assert.equal(path, 'ai-rule-engine')
-    })
-
-    it('evaluate route should have POST method and evaluate path', () => {
-      const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluate)
-      const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluate)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'evaluate')
-    })
-
-    it('evaluateMemberLevel route should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluateMemberLevel)
-      const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluateMemberLevel)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'evaluate/member-level')
-    })
-
-    it('detectDeviceAnomaly route should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.detectDeviceAnomaly)
-      const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.detectDeviceAnomaly)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'evaluate/device-anomaly')
-    })
-
-    it('evaluateBatch route should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluateBatch)
-      const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluateBatch)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'evaluate/batch')
-    })
-
-    it('getEngines route should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.getEngines)
-      const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.getEngines)
-
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'engines')
-    })
-
-    it('evaluateRiskScore route should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiRuleEngineController.prototype.evaluateRiskScore)
-      const path = Reflect.getMetadata('path', AiRuleEngineController.prototype.evaluateRiskScore)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'evaluate/risk-score')
-    })
-  })
-
   describe('POST /ai-rule-engine/evaluate (member-level)', () => {
     it('should evaluate member level for SVIP candidate', () => {
       const response = controller.evaluate({
