@@ -9,6 +9,10 @@ import {
 } from '@nestjs/common'
 
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 
 import type {
   LytMemberSnapshotContract,
@@ -37,9 +41,13 @@ import {
   MemberStatusAdjustDto
 } from './member.dto';
 
+const MEMBER_READ_PERMISSION = 'member:read'
+const MEMBER_UPDATE_PERMISSION = 'member:update'
+
 @UseGuards(TenantGuard)
-@Public()
 @Controller('members')
+@RequireTenantScope()
+@RequirePermissions(MEMBER_READ_PERMISSION)
 export class MemberController {
   constructor(@Inject(MemberService) private readonly memberService: MemberService) {}
 
@@ -144,6 +152,7 @@ export class MemberController {
 
   /** 对某条会员运营执行回执触发 runtime replay */
   @Post('persistent/:memberId/operations-receipts/:executionId/replay')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async replayOperationsExecution(
     @Param('memberId') memberId: string,
     @Param('executionId') executionId: string,
@@ -159,6 +168,7 @@ export class MemberController {
   /** 注册新会员 */
   @Post('register')
   @Public()
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   register(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: { memberId: string; nickname: string }
@@ -172,6 +182,7 @@ export class MemberController {
 
   /** 持久化注册会员 */
   @Post('persistent/register')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async registerPersistent(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: MemberPersistentRegisterDto
@@ -186,6 +197,7 @@ export class MemberController {
 
   /** 更新持久化会员基础资料 */
   @Post('persistent/:memberId/profile')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async updatePersistentProfile(
     @Param('memberId') memberId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -204,6 +216,7 @@ export class MemberController {
 
   /** 持久化会员加积分 */
   @Post('persistent/:memberId/points/award')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async awardPersistentPoints(
     @Param('memberId') memberId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -214,6 +227,7 @@ export class MemberController {
 
   /** 持久化会员扣减积分 */
   @Post('persistent/:memberId/points/rollback')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async rollbackPersistentPoints(
     @Param('memberId') memberId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -224,6 +238,7 @@ export class MemberController {
 
   /** 更新持久化会员状态 */
   @Post('persistent/:memberId/status')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async updatePersistentStatus(
     @Param('memberId') memberId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -234,6 +249,7 @@ export class MemberController {
 
   /** 手工调整持久化会员等级 */
   @Post('persistent/:memberId/level')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async overridePersistentLevel(
     @Param('memberId') memberId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -244,6 +260,7 @@ export class MemberController {
 
   /** 记录持久化会员支付行为 */
   @Post('persistent/:memberId/payment-activity')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   async recordPersistentPaymentActivity(
     @Param('memberId') memberId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -262,6 +279,7 @@ export class MemberController {
 
   /** 会员登录 */
   @Post('login')
+  @Public()
   async login(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: MemberLoginDto
@@ -330,6 +348,7 @@ export class MemberController {
 
   /** 增加积分 */
   @Post(':memberId/add-points')
+  @RequirePermissions(MEMBER_UPDATE_PERMISSION)
   addPoints(
     @Param('memberId') memberId: string,
     @Body() body: { points: number }

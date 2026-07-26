@@ -12,11 +12,21 @@
 
 import { Controller, Get, Post, Param, Body, Headers, HttpException, HttpStatus, UseGuards } from '@nestjs/common'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { PaymentGatewayService, PaymentError } from './payment-gateway.service'
 import { PayRequestDto, PayResultDto, RefundRequestDto } from './payment-gateway.dto'
 
+const PAYMENT_GATEWAY_READ_PERMISSION = 'payment:read'
+const PAYMENT_GATEWAY_WRITE_PERMISSION = 'payment:write'
+const PAYMENT_GATEWAY_REFUND_PERMISSION = 'payment:refund'
+
 @Controller('payment-gateway')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(PAYMENT_GATEWAY_READ_PERMISSION)
 export class PaymentGatewayController {
   constructor(private readonly paymentGatewayService: PaymentGatewayService) {}
 
@@ -25,6 +35,7 @@ export class PaymentGatewayController {
    * POST /payment-gateway/pay
    */
   @Post('pay')
+  @RequirePermissions(PAYMENT_GATEWAY_WRITE_PERMISSION)
   async pay(@Headers('x-tenant-id') tenantId: string, @Body() dto: PayRequestDto): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.pay({
@@ -77,6 +88,7 @@ export class PaymentGatewayController {
    * POST /payment-gateway/refund
    */
   @Post('refund')
+  @RequirePermissions(PAYMENT_GATEWAY_REFUND_PERMISSION)
   async refund(@Headers('x-tenant-id') tenantId: string, @Body() dto: RefundRequestDto): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.refund({

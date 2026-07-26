@@ -41,6 +41,10 @@ import {
 } from '@nestjs/common'
 import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { MembershipService, type MemberLevel } from './membership.service'
 import type {
   RegisterMemberDto,
@@ -53,10 +57,15 @@ import type {
   PayWithBalanceDto,
 } from './membership.dto'
 
+const MEMBERSHIP_MEMBER_READ_PERMISSION = 'member:read'
+const MEMBERSHIP_MEMBER_UPDATE_PERMISSION = 'member:update'
+const MEMBERSHIP_SETTLEMENT_PAY_PERMISSION = 'settlement:pay'
+
 @Controller('membership')
 @UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-@Public()
+@RequireTenantScope()
+@RequirePermissions(MEMBERSHIP_MEMBER_READ_PERMISSION)
 export class MembershipController {
   constructor(private readonly svc: MembershipService) {}
 
@@ -68,6 +77,7 @@ export class MembershipController {
    */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   register(
     @Body() body: RegisterMemberDto,
     @Headers('x-tenant-id') tenantId: string,
@@ -89,6 +99,7 @@ export class MembershipController {
    */
   @Post('get-or-create')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   getOrCreate(
     @Body() body: RegisterMemberDto,
     @Headers('x-tenant-id') tenantId: string,
@@ -133,6 +144,7 @@ export class MembershipController {
    * 更新会员信息
    */
   @Put(':id')
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   update(@Param('id') id: string, @Body() body: UpdateMemberDto) {
     try {
       const member = this.svc.update(id, body)
@@ -147,6 +159,7 @@ export class MembershipController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   delete(@Param('id') id: string) {
     try {
       this.svc.delete(id)
@@ -209,6 +222,7 @@ export class MembershipController {
    * 刷新等级（自动升级/降级）
    */
   @Post(':id/refresh-level')
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   refreshLevel(@Param('id') id: string) {
     try {
       const member = this.svc.refreshLevel(id)
@@ -225,6 +239,7 @@ export class MembershipController {
    * RQ-36-04: 消费完成后自动增加积分
    */
   @Post(':id/points/earn')
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   earnPoints(@Param('id') id: string, @Body() body: EarnPointsDto) {
     try {
       const tx = this.svc.earnPoints(id, body.amount, body.orderId)
@@ -239,6 +254,7 @@ export class MembershipController {
    * RQ-36-05: 用积分抵扣
    */
   @Post(':id/points/redeem')
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   redeemPoints(@Param('id') id: string, @Body() body: RedeemPointsDto) {
     try {
       const result = this.svc.redeemPoints(id, body.points, body.orderId)
@@ -263,6 +279,7 @@ export class MembershipController {
    * 管理员调整积分
    */
   @Post(':id/points/adjust')
+  @RequirePermissions(MEMBERSHIP_MEMBER_UPDATE_PERMISSION)
   adjustPoints(@Param('id') id: string, @Body() body: AdjustPointsDto) {
     try {
       const member = this.svc.adjustPoints(id, body.amount, body.remark)
@@ -279,6 +296,7 @@ export class MembershipController {
    * RQ-36-06: 充值→余额增加
    */
   @Post(':id/balance/recharge')
+  @RequirePermissions(MEMBERSHIP_SETTLEMENT_PAY_PERMISSION)
   recharge(
     @Param('id') id: string,
     @Body() body: RechargeBalanceDto,
@@ -296,6 +314,7 @@ export class MembershipController {
    * RQ-36-07: 余额支付→扣减余额
    */
   @Post(':id/balance/pay')
+  @RequirePermissions(MEMBERSHIP_SETTLEMENT_PAY_PERMISSION)
   payWithBalance(@Param('id') id: string, @Body() body: PayWithBalanceDto) {
     try {
       const paid = this.svc.payWithBalance(id, body.amount, body.orderId)

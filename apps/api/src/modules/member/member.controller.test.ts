@@ -10,6 +10,10 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MemberController } from './member.controller'
 import { MemberService } from './member.service'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
 import type {
   MemberLoginResult,
   MemberProfile,
@@ -162,6 +166,99 @@ it('member controller login route has POST metadata', () => {
   const path = Reflect.getMetadata('path', MemberController.prototype.login)
   assert.equal(method, 1)
   assert.equal(path, 'login')
+})
+
+const resolvePermissions = (handler: Function) =>
+  Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+  ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, MemberController)
+
+const resolveTenantScope = (handler: Function) =>
+  Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+  ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, MemberController)
+
+it('member controller routes should require tenant scope', () => {
+  const handlers = [
+    MemberController.prototype.getBootstrap,
+    MemberController.prototype.listPersistentProfiles,
+    MemberController.prototype.listLytMemberSnapshots,
+    MemberController.prototype.getLytMemberSnapshot,
+    MemberController.prototype.getPersistentProfile,
+    MemberController.prototype.listPersistentMutationHistory,
+    MemberController.prototype.getOperationsProfile,
+    MemberController.prototype.listOperationsTasks,
+    MemberController.prototype.listOperationsReceipts,
+    MemberController.prototype.getOperationsRuntimeReceipt,
+    MemberController.prototype.replayOperationsExecution,
+    MemberController.prototype.register,
+    MemberController.prototype.registerPersistent,
+    MemberController.prototype.updatePersistentProfile,
+    MemberController.prototype.awardPersistentPoints,
+    MemberController.prototype.rollbackPersistentPoints,
+    MemberController.prototype.updatePersistentStatus,
+    MemberController.prototype.overridePersistentLevel,
+    MemberController.prototype.recordPersistentPaymentActivity,
+    MemberController.prototype.login,
+    MemberController.prototype.getSession,
+    MemberController.prototype.getPayments,
+    MemberController.prototype.getLoginHistory,
+    MemberController.prototype.getSecurityEvents,
+    MemberController.prototype.getChurnPredictions,
+    MemberController.prototype.getChurnDiagnosis,
+    MemberController.prototype.getProfile,
+    MemberController.prototype.listProfiles,
+    MemberController.prototype.addPoints,
+    MemberController.prototype.checkUpgrade,
+    MemberController.prototype.getBalance,
+  ]
+
+  handlers.forEach((handler) => {
+    assert.deepEqual(resolveTenantScope(handler), {})
+  })
+})
+
+it('member controller read routes should reuse member:read', () => {
+  ;[
+    MemberController.prototype.getBootstrap,
+    MemberController.prototype.listPersistentProfiles,
+    MemberController.prototype.listLytMemberSnapshots,
+    MemberController.prototype.getLytMemberSnapshot,
+    MemberController.prototype.getPersistentProfile,
+    MemberController.prototype.listPersistentMutationHistory,
+    MemberController.prototype.getOperationsProfile,
+    MemberController.prototype.listOperationsTasks,
+    MemberController.prototype.listOperationsReceipts,
+    MemberController.prototype.getOperationsRuntimeReceipt,
+    MemberController.prototype.login,
+    MemberController.prototype.getSession,
+    MemberController.prototype.getPayments,
+    MemberController.prototype.getLoginHistory,
+    MemberController.prototype.getSecurityEvents,
+    MemberController.prototype.getChurnPredictions,
+    MemberController.prototype.getChurnDiagnosis,
+    MemberController.prototype.getProfile,
+    MemberController.prototype.listProfiles,
+    MemberController.prototype.checkUpgrade,
+    MemberController.prototype.getBalance,
+  ].forEach((handler) => {
+    assert.deepEqual(resolvePermissions(handler), ['member:read'])
+  })
+})
+
+it('member controller write routes should reuse member:update', () => {
+  ;[
+    MemberController.prototype.replayOperationsExecution,
+    MemberController.prototype.register,
+    MemberController.prototype.registerPersistent,
+    MemberController.prototype.updatePersistentProfile,
+    MemberController.prototype.awardPersistentPoints,
+    MemberController.prototype.rollbackPersistentPoints,
+    MemberController.prototype.updatePersistentStatus,
+    MemberController.prototype.overridePersistentLevel,
+    MemberController.prototype.recordPersistentPaymentActivity,
+    MemberController.prototype.addPoints,
+  ].forEach((handler) => {
+    assert.deepEqual(resolvePermissions(handler), ['member:update'])
+  })
 })
 
 // ── getBootstrap ──
