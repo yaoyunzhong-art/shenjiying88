@@ -1,351 +1,132 @@
-/**
- * finance/[id]/page.test.tsx — 支付详情页 L1 测试
- *
- * 覆盖: 支付状态流转、金额格式化、退款状态枚举、幂等键生成、日期格式化
- * 正例: 正常支付单、退款列表、状态流转、编辑保存
- * 反例: 无效状态流转、空退款列表、版本号冲突
- * 边界: 零金额(0分)、大金额、状态流转PENDING→FAILED→(无)、非CNY货币
- */
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
-import FinanceDetailPage from './page';
-import fs from 'node:fs';
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'finance-detail-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'finance-detail-data.ts'), 'utf-8')
+})
 
-/* ── 类型 ── */
+describe('FinanceDetailPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function FinanceDetailPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
 
-type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
-type PaymentMethod = 'WECHAT' | 'ALIPAY' | 'CARD' | 'CASH' | 'BALANCE';
-type RefundStatus = 'REQUESTED' | 'APPROVED' | 'COMPLETED' | 'REJECTED';
+  it('页面应解析 params 并加载支付详情快照', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadFinanceDetailSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes("import { loadFinanceDetailSnapshot } from './finance-detail-data'"))
+  })
 
-interface PaymentDetail {
-  id: string;
-  tenantId: string;
-  orderId: string;
-  amountCents: number;
-  currency: string;
-  method: PaymentMethod;
-  status: PaymentStatus;
-  version: number;
-  idempotencyKey: string;
-  transactionId?: string;
-  failureReason?: string;
-  createdAt: string;
-  updatedAt: string;
-  payerName?: string;
-  payerPhone?: string;
-  remark?: string;
-}
+  it('页面应导出 dynamic 与 revalidate', () => {
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+  })
 
-interface RefundRecord {
-  id: string;
-  paymentId: string;
-  orderId: string;
-  amountCents: number;
-  reason: string;
-  status: RefundStatus;
-  version: number;
-  requestedBy: string;
-  createdAt: string;
-}
+  it('页面应接入管理员权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'finance:id:read'"))
+  })
+})
 
-const STATUS_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
-  PENDING: ['SUCCESS', 'FAILED'],
-  SUCCESS: ['REFUNDED'],
-  FAILED: [],
-  REFUNDED: [],
-};
+describe('FinanceDetailPage — 来源态透明化', () => {
+  it('页面应展示支付详情来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {snapshot.sourceLabel}'))
+  })
 
-const STATUS_LABEL: Record<PaymentStatus, string> = {
-  PENDING: '待支付',
-  SUCCESS: '支付成功',
-  FAILED: '支付失败',
-  REFUNDED: '已退款',
-};
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadFinanceDetailSnapshot -> loadFinanceSnapshot -> api/finance/payments + api/finance/refunds'))
+    assert.ok(PAGE_SRC.includes('loadFinanceDetailSnapshot -> defaultPayments/defaultRefunds fallback'))
+    assert.ok(PAGE_SRC.includes('local finance detail samples'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
 
-const METHOD_LABEL: Record<PaymentMethod, string> = {
-  WECHAT: '微信支付',
-  ALIPAY: '支付宝',
-  CARD: '银行卡',
-  CASH: '现金',
-  BALANCE: '余额',
-};
+describe('FinanceDetailData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('payment: PaymentDetail'))
+    assert.ok(DATA_SRC.includes('refunds: RefundRecord[]'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+    assert.ok(DATA_SRC.includes('sourceLabel: string'))
+  })
 
-const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
-  REQUESTED: '退款申请',
-  APPROVED: '已审批',
-  COMPLETED: '已完成',
-  REJECTED: '已拒绝',
-};
+  it('应基于 finance 列表快照构造详情快照', () => {
+    assert.ok(DATA_SRC.includes('loadFinanceSnapshot'))
+    assert.ok(DATA_SRC.includes('snapshot.payments.find((item) => item.id === normalizedId)'))
+    assert.ok(DATA_SRC.includes('snapshot.refunds.filter((item) => item.paymentId === normalizedId)'))
+  })
 
-function formatAmount(cents: number, currency = 'CNY'): string {
-  const yuan = (cents / 100).toFixed(2);
-  return currency === 'CNY' ? `¥${yuan}` : `${currency} ${yuan}`;
-}
+  it('应定义 fallback 样本与错误提示', () => {
+    assert.ok(DATA_SRC.includes('FALLBACK_PAYMENT_OVERRIDES'))
+    assert.ok(DATA_SRC.includes('defaultPayments/defaultRefunds fallback'))
+    assert.ok(DATA_SRC.includes('支付详情实时接口不可达或未命中记录，已切换到 fallback 样本数据。'))
+  })
+})
 
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
-}
+describe('FinanceDetailClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+  })
 
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
+  it('客户端组件应接收 snapshot 并同步本地状态', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: FinanceDetailSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('useEffect(() => {'))
+    assert.ok(CLIENT_SRC.includes('setPayment(snapshot.payment)'))
+    assert.ok(CLIENT_SRC.includes('setRefunds(snapshot.refunds)'))
+  })
 
-function canTransition(from: PaymentStatus, to: PaymentStatus): boolean {
-  return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
-}
+  it('客户端组件应支持刷新按钮并触发 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新快照'"))
+  })
 
-/* ── 辅助 ── */
+  it('客户端组件应保留状态流转、编辑和删除操作', () => {
+    assert.ok(CLIENT_SRC.includes('STATUS_TRANSITIONS'))
+    assert.ok(CLIENT_SRC.includes('setConfirmAction'))
+    assert.ok(CLIENT_SRC.includes('handleSave'))
+    assert.ok(CLIENT_SRC.includes("router.push('/finance')"))
+  })
 
-function setup() {
-  cleanup();
-  return render(<FinanceDetailPage />);
-}
+  it('客户端组件应渲染错误提示、退款列表与空态', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
+    assert.ok(CLIENT_SRC.includes('关联退款'))
+    assert.ok(CLIENT_SRC.includes('暂无退款记录'))
+    assert.ok(CLIENT_SRC.includes('.map((refund) => ('))
+  })
+})
 
-/* ============================================================ */
+describe('FinanceDetail — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
 
-describe.skip('finance/[id]: 页面渲染', () => {
-  it('component is a function', () => {
-    assert.equal(typeof FinanceDetailPage, 'function');
-  });
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
 
-  it('renders without error', () => {
-    assert.doesNotThrow(() => setup());
-  });
-
-  it('renders title', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('支付详情'));
-  });
-
-  it('renders breadcrumb link', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('财务管理'));
-  });
-
-  it('renders basic info card', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('基本信息'));
-  });
-
-  it('renders refund list', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('关联退款'));
-  });
-
-  it('renders tenant info', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('Tenant'));
-  });
-
-  it('has edit button', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('编辑'));
-  });
-
-  it('has delete button', () => {
-    const { container } = setup();
-    assert.ok(container.textContent?.includes('删除'));
-  });
-});
-
-describe.skip('finance/[id]: 数据类型', () => {
-  it('PaymentStatus has 4 values', () => {
-    const statuses: PaymentStatus[] = ['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'];
-    assert.equal(statuses.length, 4);
-  });
-
-  it('PaymentMethod has 5 values', () => {
-    const methods: PaymentMethod[] = ['WECHAT', 'ALIPAY', 'CARD', 'CASH', 'BALANCE'];
-    assert.equal(methods.length, 5);
-  });
-
-  it('RefundStatus has 4 values', () => {
-    const statuses: RefundStatus[] = ['REQUESTED', 'APPROVED', 'COMPLETED', 'REJECTED'];
-    assert.equal(statuses.length, 4);
-  });
-
-  it('STATUS_LABEL all present', () => {
-    assert.equal(Object.keys(STATUS_LABEL).length, 4);
-  });
-
-  it('METHOD_LABEL all present', () => {
-    assert.equal(Object.keys(METHOD_LABEL).length, 5);
-  });
-
-  it('version is a non-negative integer', () => {
-    assert.equal(typeof 1, 'number');
-    assert.ok(1 >= 0);
-  });
-
-  it('amountCents is a positive integer', () => {
-    assert.equal(typeof 9900, 'number');
-    assert.ok(9900 >= 0);
-  });
-});
-
-describe.skip('finance/[id]: 业务逻辑', () => {
-  it('formatAmount 0 cents is ¥0.00', () => {
-    assert.equal(formatAmount(0), '¥0.00');
-  });
-
-  it('formatAmount 1 cent is ¥0.01', () => {
-    assert.equal(formatAmount(1), '¥0.01');
-  });
-
-  it('formatAmount 100 cents is ¥1.00', () => {
-    assert.equal(formatAmount(100), '¥1.00');
-  });
-
-  it('formatAmount 9900 cents wechat', () => {
-    assert.equal(formatAmount(9900), '¥99.00');
-  });
-
-  it('formatAmount with USD currency', () => {
-    assert.equal(formatAmount(9900, 'USD'), 'USD 99.00');
-  });
-
-  it('formatAmount large amount', () => {
-    assert.equal(formatAmount(9999999), '¥99999.99');
-  });
-
-  it('formatAmount negative amount (refund scenario)', () => {
-    assert.equal(formatAmount(-500), '¥-5.00');
-  });
-
-  it('canTransition PENDING→SUCCESS', () => {
-    assert.ok(canTransition('PENDING', 'SUCCESS'));
-  });
-
-  it('canTransition PENDING→FAILED', () => {
-    assert.ok(canTransition('PENDING', 'FAILED'));
-  });
-
-  it('canTransition SUCCESS→REFUNDED', () => {
-    assert.ok(canTransition('SUCCESS', 'REFUNDED'));
-  });
-
-  it('canTransition FAILED→any returns false', () => {
-    assert.ok(!canTransition('FAILED', 'SUCCESS'));
-    assert.ok(!canTransition('FAILED', 'PENDING'));
-  });
-
-  it('canTransition REFUNDED→any returns false', () => {
-    assert.ok(!canTransition('REFUNDED', 'SUCCESS'));
-    assert.ok(!canTransition('REFUNDED', 'PENDING'));
-  });
-
-  it('canTransition PENDING→REFUNDED (invalid)', () => {
-    assert.ok(!canTransition('PENDING', 'REFUNDED'));
-  });
-
-  it('canTransition SUCCESS→FAILED (invalid)', () => {
-    assert.ok(!canTransition('SUCCESS', 'FAILED'));
-  });
-
-  it('generateUUID produces string of length 36', () => {
-    const uuid = generateUUID();
-    assert.equal(uuid.length, 36);
-  });
-
-  it('generateUUID has hyphens at positions 8-13-18-23', () => {
-    const uuid = generateUUID();
-    assert.equal(uuid[8], '-');
-    assert.equal(uuid[13], '-');
-    assert.equal(uuid[18], '-');
-    assert.equal(uuid[23], '-');
-  });
-
-  it('generateUUID version is 4', () => {
-    const uuid = generateUUID();
-    assert.equal(uuid[14], '4');
-  });
-
-  it('formatDate with valid ISO string', () => {
-    const result = formatDate('2026-07-17T00:00:00.000Z');
-    assert.ok(typeof result === 'string');
-    assert.ok(result.length > 0);
-  });
-
-  it('formatDate with invalid date returns input', () => {
-    const result = formatDate('not-a-date');
-    assert.equal(result, 'not-a-date');
-  });
-
-  it('STATUS_LABEL PENDING', () => {
-    assert.equal(STATUS_LABEL['PENDING'], '待支付');
-  });
-
-  it('STATUS_LABEL REFUNDED', () => {
-    assert.equal(STATUS_LABEL['REFUNDED'], '已退款');
-  });
-
-  it('METHOD_LABEL all mapped to Chinese', () => {
-    assert.equal(METHOD_LABEL['WECHAT'], '微信支付');
-    assert.equal(METHOD_LABEL['ALIPAY'], '支付宝');
-  });
-
-  it('REFUND_STATUS_LABEL all mapped', () => {
-    assert.equal(REFUND_STATUS_LABEL['COMPLETED'], '已完成');
-    assert.equal(REFUND_STATUS_LABEL['REJECTED'], '已拒绝');
-  });
-
-  it('version increments after status change', () => {
-    const v1 = 1;
-    const v2 = v1 + 1;
-    assert.equal(v2, 2);
-  });
-
-  it('transactionId is optional (undefined)', () => {
-    const p: PaymentDetail = { id: 'p1', tenantId: 't1', orderId: 'o1', amountCents: 100, currency: 'CNY', method: 'CASH', status: 'SUCCESS', version: 1, idempotencyKey: 'k1', createdAt: '', updatedAt: '' };
-    assert.equal(p.transactionId, undefined);
-  });
-
-  it('failureReason is present only when FAILED', () => {
-    const failed: PaymentDetail = { id: 'p1', tenantId: 't1', orderId: 'o1', amountCents: 100, currency: 'CNY', method: 'WECHAT', status: 'FAILED', version: 1, idempotencyKey: 'k1', failureReason: '余额不足', createdAt: '', updatedAt: '' };
-    assert.equal(failed.failureReason, '余额不足');
-  });
-
-  it('payment with CASH method has no transactionId', () => {
-    const cash: PaymentDetail = { id: 'p-cash', tenantId: 't1', orderId: 'o1', amountCents: 5000, currency: 'CNY', method: 'CASH', status: 'SUCCESS', version: 1, idempotencyKey: 'k1', createdAt: '', updatedAt: '' };
-    assert.equal(cash.method, 'CASH');
-    assert.ok(!cash.transactionId);
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe.skip('Finance — hooks验证', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'finance:id:read'"));
-  });
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+  it('客户端应处理无效日期与空退款边界', () => {
+    assert.ok(CLIENT_SRC.includes('Number.isNaN(parsed.getTime())'))
+    assert.ok(CLIENT_SRC.includes('refunds.length > 0'))
+    assert.ok(CLIENT_SRC.includes('暂无退款记录'))
+  })
+})

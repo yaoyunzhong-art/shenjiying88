@@ -29,27 +29,30 @@ describe('ContractsPage — 服务端壳层', () => {
   it('页面应展示来源态证据', () => {
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('sourceLabel: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('客户端 fake write'))
+    assert.ok(PAGE_SRC.includes('/api/contracts 代理写链路'))
   })
 })
 
-describe('ContractsData — 快照与假写合同', () => {
-  it('应定义 mock 快照结构与默认样本', () => {
-    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+describe('ContractsData — 快照与真实读写优先合同', () => {
+  it('应定义 api/fallback 快照结构与默认样本', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'contracts-api' | 'contracts-fallback'"))
     assert.ok(DATA_SRC.includes('contracts: ContractRecord[]'))
     assert.ok(DATA_SRC.includes('export const defaultContracts'))
     assert.ok(DATA_SRC.includes('export const CONTRACT_TYPE_LABEL'))
     assert.ok(DATA_SRC.includes('export const CONTRACT_STATUS_LABEL'))
   })
 
-  it('应定义辅助函数与假写方法', () => {
+  it('应定义辅助函数与真实 API 写入方法', () => {
     assert.ok(DATA_SRC.includes('formatContractAmount'))
     assert.ok(DATA_SRC.includes('formatContractDate'))
     assert.ok(DATA_SRC.includes('isContractExpiringSoon'))
-    assert.ok(DATA_SRC.includes('mockSignContract'))
-    assert.ok(DATA_SRC.includes('mockCommentContract'))
+    assert.ok(DATA_SRC.includes('signContractViaApi'))
+    assert.ok(DATA_SRC.includes('updateContractCommentViaApi'))
+    assert.ok(DATA_SRC.includes('loadContractsSnapshot'))
   })
 })
 
@@ -63,9 +66,10 @@ describe('ContractsClient — 客户端交互层', () => {
 
   it('客户端组件应保留签署、备注和 tab 切换', () => {
     assert.ok(CLIENT_SRC.includes('tabKey'))
-    assert.ok(CLIENT_SRC.includes('mockSignContract'))
-    assert.ok(CLIENT_SRC.includes('mockCommentContract'))
+    assert.ok(CLIENT_SRC.includes('signContractViaApi'))
+    assert.ok(CLIENT_SRC.includes('updateContractCommentViaApi'))
     assert.ok(CLIENT_SRC.includes('签署中...'))
     assert.ok(CLIENT_SRC.includes('提交备注'))
+    assert.ok(CLIENT_SRC.includes('snapshot.sourceLabel'))
   })
 })

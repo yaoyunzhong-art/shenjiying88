@@ -10,9 +10,9 @@ import {
   formatContractAmount,
   formatContractDate,
   isContractExpiringSoon,
-  mockCommentContract,
-  mockSignContract,
   summarizeContracts,
+  signContractViaApi,
+  updateContractCommentViaApi,
 } from './contracts-data'
 
 export default function ContractsClient({
@@ -26,39 +26,56 @@ export default function ContractsClient({
   const [contracts, setContracts] = useState(snapshot.contracts)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [submittingId, setSubmittingId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(snapshot.error ?? null)
 
   const filteredContracts = useMemo(() => filterContracts(contracts, tabKey), [contracts, tabKey])
   const stats = useMemo(() => summarizeContracts(contracts), [contracts])
 
   async function handleSign(id: string) {
+    const contract = contracts.find((item) => item.id === id)
+    if (!contract) return
+
     setSubmittingId(id)
-    const result = await mockSignContract(id)
-    if (result.ok) {
+    setActionError(null)
+    try {
+      const updated = await signContractViaApi(contract.upstreamId)
       setContracts((current) =>
         current.map((contract) =>
-          contract.id === id
-            ? { ...contract, status: 'in_progress', signedAt: result.signedAt }
+          contract.upstreamId === updated.upstreamId
+            ? updated
             : contract,
         ),
       )
+      startRefresh(() => router.refresh())
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '合同签署失败')
+    } finally {
+      setSubmittingId(null)
     }
-    setSubmittingId(null)
   }
 
   async function handleComment(id: string) {
     const draft = drafts[id]?.trim()
     if (!draft) return
+    const contract = contracts.find((item) => item.id === id)
+    if (!contract) return
+
     setSubmittingId(id)
-    const result = await mockCommentContract(id, draft)
-    if (result.ok) {
+    setActionError(null)
+    try {
+      const updated = await updateContractCommentViaApi(contract.upstreamId, draft)
       setContracts((current) =>
         current.map((contract) =>
-          contract.id === id ? { ...contract, comment: result.comment } : contract,
+          contract.upstreamId === updated.upstreamId ? updated : contract,
         ),
       )
       setDrafts((current) => ({ ...current, [id]: '' }))
+      startRefresh(() => router.refresh())
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '合同备注提交失败')
+    } finally {
+      setSubmittingId(null)
     }
-    setSubmittingId(null)
   }
 
   return (
@@ -66,7 +83,9 @@ export default function ContractsClient({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">合同管理</h1>
-          <p className="mt-1 text-sm text-slate-500">首屏读取服务端快照，签署与备注仍是客户端假写链路。</p>
+          <p className="mt-1 text-sm text-slate-500">
+            首屏读取服务端快照，当前来源标签为 {snapshot.sourceLabel}。
+          </p>
         </div>
         <button
           type="button"
@@ -77,6 +96,12 @@ export default function ContractsClient({
           {isRefreshing ? '刷新中...' : '刷新'}
         </button>
       </div>
+
+      {actionError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+          {actionError}
+        </div>
+      )}
 
       <div className="grid gap-3 md:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

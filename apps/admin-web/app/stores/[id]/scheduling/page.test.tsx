@@ -1,131 +1,125 @@
-// L1 冒烟测试 + L2 结构验证 + L3 防御检查 - scheduling
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-// ===================== L1 冒烟测试 =====================
-describe.skip('scheduling / L1 冒烟', () => {
-  it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });
-  it('应包含 use client 指令', () => { assert.ok(SRC.includes("'use client'")); });
-  it('应包含 JSX 模板', () => { assert.ok(SRC.includes('return (') || SRC.includes('return <')); });
-  it('不应使用 dangerouslySetInnerHTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-});
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'scheduling-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'scheduling-data.ts'), 'utf-8')
+})
 
-// ===================== L2 结构验证 =====================
-describe.skip('scheduling / L2 结构验证', () => {
-  it('应包含 PageShell 容器', () => { assert.ok(SRC.includes('PageShell')); });
-  it('应包含标题 "排班管理"', () => { assert.ok(SRC.includes('排班管理')); });
-  it('应包含排班数据 SCHEDULES 数组', () => { assert.ok(SRC.includes('COLUMNS') || SRC.includes('TAB_ITEMS') || SRC.includes('COLUMNS') || SRC.includes('TAB_ITEMS') || SRC.includes('SCHEDULES')); });
-  it('应包含列定义 COLUMNS', () => { assert.ok(SRC.includes('COLUMNS')); });
+describe('SchedulingPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function SchedulingPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
 
-  it('应定义完整列（姓名/角色/班次/时间/日期/状态）', () => {
-    for (const c of ['姓名', '角色', '班次', '时间', '日期', '状态']) {
-      assert.ok(SRC.includes(c), `缺少列: ${c}`);
-    }
-  });
+  it('页面应接收动态路由参数并加载门店排班快照', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadSchedulingSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes("import { loadSchedulingSnapshot } from './scheduling-data'"))
+  })
 
-  it('应展示统计卡片：今日在岗/缺勤/休息/员工总数', () => {
-    assert.ok(SRC.includes('今日在岗') || SRC.includes('在岗'));
-    assert.ok(SRC.includes('缺勤'));
-    assert.ok(SRC.includes('休息'));
-    assert.ok(SRC.includes('员工总数'));
-  });
+  it('页面应导出 dynamic/revalidate 并展示来源态证据', () => {
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  })
+})
 
-  it('状态映射应包含 "在岗/缺勤/休息"', () => {
-    assert.ok(SRC.includes('在岗'));
-    assert.ok(SRC.includes('缺勤'));
-    assert.ok(SRC.includes('休息'));
-  });
+describe('SchedulingPage — 来源态透明化', () => {
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadSchedulingSnapshot -> logistics/clean-schedules'))
+    assert.ok(PAGE_SRC.includes('loadSchedulingSnapshot -> buildFallbackSchedules fallback'))
+    assert.ok(PAGE_SRC.includes('local clean schedule samples'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
 
-  it('状态渲染应有绿色在岗/红色缺勤/灰色休息', () => {
-    assert.ok(SRC.includes('green') || SRC.includes('red') || SRC.includes('default'));
-  });
+describe('SchedulingData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('storeId: string'))
+    assert.ok(DATA_SRC.includes('schedules: CleanScheduleItem[]'))
+    assert.ok(DATA_SRC.includes('stats: SchedulingStatsSnapshot'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+  })
 
-  it('应包含 "排班表" / "调班申请" / "考勤统计" 按钮', () => {
-    assert.ok(SRC.includes('排班表'));
-    assert.ok(SRC.includes('调班申请'));
-    assert.ok(SRC.includes('考勤统计'));
-  });
+  it('应保留 fallback 样本、状态映射与统计函数', () => {
+    assert.ok(DATA_SRC.includes('buildFallbackSchedules'))
+    assert.ok(DATA_SRC.includes('张三'))
+    assert.ok(DATA_SRC.includes('A 区机台'))
+    assert.ok(DATA_SRC.includes('computeSchedulingStats'))
+    assert.ok(DATA_SRC.includes('coverageRate'))
+  })
 
-  it('应使用 Row + Col 布局', () => {
-    assert.ok(SRC.includes('Row ') || SRC.includes('Row>'));
-  });
+  it('应尝试读取 clean-schedules 上游并在失败时回退', () => {
+    assert.ok(DATA_SRC.includes("'logistics/clean-schedules'"))
+    assert.ok(DATA_SRC.includes("'x-tenant-id': DEFAULT_TENANT_ID"))
+    assert.ok(DATA_SRC.includes('filter((item) => item.storeId === storeId)'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes('门店排班实时接口不可达，已切换到 fallback 样本数据。'))
+  })
+})
 
-  it('应使用 useState', () => { assert.ok(SRC.includes('useState')); });
-  it('Table 应有 rowKey', () => { assert.ok(SRC.includes('rowKey')); });
-  it('班次应包含 "早班"、"晚班"', () => {
-    assert.ok(SRC.includes('早班') && SRC.includes('晚班'));
-  });
-});
+describe('SchedulingClient — 客户端渲染层', () => {
+  it('客户端应声明 use client 并支持 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+  })
 
-// ===================== L3 防御检查 =====================
-describe.skip('scheduling / L3 防御检查', () => {
-  it('不应包含硬编码 secrets', () => {
-    for (const s of ['sk-', 'api_key', 'secret_key', 'password=']) {
-      assert.ok(!SRC.includes(s));
-    }
-  });
+  it('客户端应保留 route proxy 动作链路', () => {
+    assert.ok(CLIENT_SRC.includes('buildActorHeaders'))
+    assert.ok(CLIENT_SRC.includes('/api/logistics/clean-schedules'))
+    assert.ok(CLIENT_SRC.includes('/check-in'))
+    assert.ok(CLIENT_SRC.includes("message.success('排班创建成功')"))
+    assert.ok(CLIENT_SRC.includes("message.success('签到成功')"))
+  })
 
-  it('不应包含生产环境 console.log', () => {
-    const lines = SRC.split('\n').filter(l =>
-      l.includes('console.log') && !l.trimStart().startsWith('//')
-    );
-    assert.equal(lines.length, 0);
-  });
+  it('客户端应保留排班列表、区域视图和统计分析', () => {
+    assert.ok(CLIENT_SRC.includes("label: '排班列表'"))
+    assert.ok(CLIENT_SRC.includes("label: '区域视图'"))
+    assert.ok(CLIENT_SRC.includes("label: '统计分析'"))
+    assert.ok(CLIENT_SRC.includes('Table'))
+    assert.ok(CLIENT_SRC.includes('暂无排班数据'))
+  })
 
-  it('不应出现 href="#" 而无 onClick', () => {
-    for (const line of SRC.split('\n')) {
-      if (line.includes('href="#"') && !line.includes('onClick')) {
-        assert.fail(`href="#" 无 onClick: ${line.trim()}`);
-      }
-    }
-  });
+  it('客户端应保留筛选、新建排班与签到按钮', () => {
+    assert.ok(CLIENT_SRC.includes('setShiftFilter'))
+    assert.ok(CLIENT_SRC.includes('setStatusFilter'))
+    assert.ok(CLIENT_SRC.includes('title="新建排班"'))
+    assert.ok(CLIENT_SRC.includes('签到'))
+    assert.ok(CLIENT_SRC.includes('调班申请'))
+  })
+})
 
-  it('不应使用 any 类型', () => { assert.ok(!SRC.includes(': any')); });
+describe('Scheduling — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
 
-  it('不应包含被注释掉的 JSX', () => {
-    const c = SRC.match(/\/\/\s+.+</g);
-    if (c) assert.fail(`被注释 JSX: ${c.join(', ')}`);
-  });
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
 
-  it('PageShell 应成对出现', () => {
-    assert.ok(SRC.includes('<PageShell') && SRC.includes('</PageShell>'));
-  });
-
-  it('SCHEDULES 数据应有必填字段', () => {
-    const fields = ['id', 'name', 'role', 'shift', 'time', 'date', 'status'];
-    const match = SRC.match(/\{ id:\s*['"][^'"]+['"]/);
-    if (match) {
-      for (const f of fields) assert.ok(SRC.includes(`${f}:`), `字段 ${f} 应存在`);
-    }
-  });
-
-  it('内联 style 不应过多', () => {
-    assert.ok((SRC.match(/style=\{\{/g) || []).length < 50);
-  });
-
-  it('不应使用 img 标签', () => { assert.ok(!SRC.includes('<img ')); });
-
-  it('组件名称应为 SchedulingPage', () => {
-    assert.ok(SRC.includes('SchedulingPage'));
-  });
-});
-
-describe.skip('Stores / Scheduling — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onOk={') || SRC.includes('onCancel={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含日期格式化', () => assert.ok(true));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+  it('客户端应处理 snapshot.error 与空态边界', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
+    assert.ok(CLIENT_SRC.includes('暂无排班'))
+    assert.ok(CLIENT_SRC.includes('filteredSchedules.length === 0'))
+  })
+})

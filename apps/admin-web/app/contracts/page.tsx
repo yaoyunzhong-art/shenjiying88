@@ -15,11 +15,19 @@ export default async function ContractsPage() {
   const snapshot = await loadContractsSnapshot()
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource: 'loadContractsSnapshot -> defaultContracts',
-    businessDataSource: 'local contract samples',
+    sourceLabel: snapshot.sourceLabel,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'api'
+        ? 'loadContractsSnapshot -> contracts'
+        : 'loadContractsSnapshot -> defaultContracts fallback',
+    businessDataSource:
+      snapshot.deliveryMode === 'api' ? 'contract-manager upstream contracts' : 'local contract samples',
     refreshPath: 'ContractsPage -> loadContractsSnapshot',
     generatedAt: snapshot.generatedAt,
-    note: '当前页面使用本地合同样本；签署与备注链路仍为客户端 fake write，不可作为闭环复签证据。',
+    note:
+      snapshot.deliveryMode === 'api'
+        ? '当前页面优先消费合同管理真实接口；签署与备注优先走 /api/contracts 代理写链路。'
+        : '当前页面已回退到本地合同样本；签署与备注写链路若上游不可达将失败，不可作为闭环复签证据。',
   } as const
 
   return (
@@ -30,7 +38,10 @@ export default async function ContractsPage() {
             Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
           </div>
           <div>
-            业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+            sourceLabel: {sourceEvidence.sourceLabel} · 业务数据: {sourceEvidence.businessDataSource}
+          </div>
+          <div>
+            刷新路径: {sourceEvidence.refreshPath}
           </div>
           <div>
             generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
