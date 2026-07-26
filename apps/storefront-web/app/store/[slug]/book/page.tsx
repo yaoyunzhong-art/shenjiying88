@@ -7,6 +7,7 @@ import {
   Heading, Text, Space, Badge, ToastContainer, useToast, Result,
 } from '@m5/ui'
 import { track } from '../../analytics'
+import ShareCTA from '../_components/share-cta'
 
 interface ServiceOption { id: string; name: string; price: number; duration: string; category: string }
 interface TimeSlot { time: string; available: boolean }
@@ -150,9 +151,19 @@ export default function BookPage() {
   // ── Booking Success ──
   if (bookingResult) {
     const ci = bookingResult.couponMatch
+    const storeName = slug === 'beijing-chaoyang' ? '神机营 · 北京朝阳店' : '神机营 · 上海浦东店'
+    const selService = services.find(s => s.id === selectedService)
     return (
       <div style={{ maxWidth: 500, margin: '0 auto', padding: 40 }}>
         <ToastContainer toasts={toasts} onDismiss={dismiss} />
+        {/* ShareCTA — 预约成功炫耀 */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <ShareCTA
+            storeSlug={slug} storeName={storeName}
+            shareType="booking_success"
+            shareText={`我在${storeName}预约了${selService?.name ?? ''}，快来一起玩！`}
+          />
+        </div>
         <Result status="success" title="预约成功！" subTitle={bookingResult.storeName}
           extra={<Space direction="vertical" size="middle">
             <div style={{ background: '#f0f0f0', padding: 24, borderRadius: 12, textAlign: 'center' }}>

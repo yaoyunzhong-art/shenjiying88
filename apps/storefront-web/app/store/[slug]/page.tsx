@@ -6,6 +6,7 @@ import {
   Button, Card, Badge, Tabs, Tag, Rating,
   Heading, Text, Paragraph, Space, FormField, Select,
 } from '@m5/ui'
+import ShareCTA from './_components/share-cta'
 
 interface StoreData {
   name: string; address: string; rating: number; reviewCount: number
@@ -89,6 +90,11 @@ export default function StoreHomePage() {
         <Button variant="primary" onClick={() => window.location.href = `/store/${slug}/book`}>📅 预约体验</Button>
         <Button variant="secondary" onClick={() => window.location.href = `/store/${slug}/packages`}>🎫 查看套餐</Button>
         <Button variant="ghost" onClick={() => window.open(`https://uri.amap.com/navigation?to=116.4074,39.9042`, '_blank')}>🗺️ 门店导航</Button>
+      </div>
+
+      {/* ShareCTA — 社媒裂变 */}
+      <div style={{ marginBottom: 24, textAlign: 'center' }}>
+        <ShareCTA storeSlug={slug} storeName={MOCK_STORE.name} shareType="homepage" />
       </div>
 
       {/* KPI */}

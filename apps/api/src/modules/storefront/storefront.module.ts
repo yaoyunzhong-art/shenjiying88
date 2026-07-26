@@ -25,6 +25,7 @@ import { Module } from '@nestjs/common'
 import { StoreFrontController } from './storefront.controller'
 import { StoreFrontService } from './storefront.service'
 import { ReferralTrackingService } from './referral-tracking.service'
+import { StorefrontReminderService } from './storefront-reminder.service'
 
 // 已有系统模块 — TOC 聚合入口直接注入
 import { PrismaModule } from '../../prisma/prisma.module'
@@ -46,7 +47,7 @@ import { MarketingModule } from '../marketing/marketing.module'
     MarketingModule,  // 营销归因 (attribution/RFM/coupon-issue)
   ],
   controllers: [StoreFrontController],
-  providers: [StoreFrontService, ReferralTrackingService],
-  exports: [StoreFrontService, ReferralTrackingService],
+  providers: [StoreFrontService, ReferralTrackingService, StorefrontReminderService],
+  exports: [StoreFrontService, ReferralTrackingService, StorefrontReminderService],
 })
 export class StoreFrontModule {}

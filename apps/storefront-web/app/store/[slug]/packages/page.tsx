@@ -6,6 +6,7 @@ import {
   Button, Card, Tag, Tabs, Heading, Text, Paragraph,
   Space, Spinner, Result, useToast, ToastContainer, Badge,
 } from '@m5/ui'
+import ShareCTA from '../_components/share-cta'
 
 interface PackageItem {
   id: string; name: string; price: number; originalPrice: number
@@ -37,6 +38,7 @@ const TABS = [
 export default function PackagesPage() {
   const params = useParams()
   const slug = (params?.slug as string) ?? 'beijing-chaoyang'
+  const storeName = slug === 'beijing-chaoyang' ? '神机营 · 北京朝阳店' : '神机营 · 上海浦东店'
 
   const [activeTab, setActiveTab] = useState('all')
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null)
@@ -126,6 +128,11 @@ export default function PackagesPage() {
           <Button variant="primary" loading={buying} onClick={handleBuy}>立即购买 ¥{currentPkg.price * quantity}</Button>
         </div>
       )}
+
+      {/* ShareCTA — 套餐分享 */}
+      <div style={{ marginTop: 24, textAlign: 'center', paddingBottom: 80 }}>
+        <ShareCTA storeSlug={slug} storeName={storeName} shareType="package" />
+      </div>
     </div>
   )
 }

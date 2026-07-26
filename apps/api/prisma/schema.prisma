@@ -334,6 +334,12 @@ model MemberProfile {
   createdAt   DateTime                @default(now())
   updatedAt   DateTime                @updatedAt
   extension   MemberProfileExtension?
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([svipStatus])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
 }
 
 model MemberProfileExtension {

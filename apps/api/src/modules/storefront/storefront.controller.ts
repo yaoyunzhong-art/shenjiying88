@@ -28,6 +28,8 @@ import { StoreFrontService } from './storefront.service'
 import { ReferralTrackingService } from './referral-tracking.service'
 import { CouponService } from '../coupon/coupon.service'
 import { QueueService } from '../queue/queue.service'
+import { StorefrontReminderService } from './storefront-reminder.service'
+import { PaymentService } from '../cashier/payment.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
 import { CancelBookingDto, RescheduleBookingDto } from './dto/cancellation.dto'
 
@@ -41,6 +43,8 @@ export class StoreFrontController {
     private readonly referral: ReferralTrackingService,
     private readonly couponSvc: CouponService,
     private readonly queueSvc: QueueService,
+    private readonly reminderSvc: StorefrontReminderService,
+    private readonly paymentSvc: PaymentService,
   ) {}
 
   // ═══════════════════════════════════════════════════════
@@ -74,6 +78,18 @@ export class StoreFrontController {
   async createBooking(@Body() dto: CreateBookingDto) {
     const result = await this.store.createBooking(dto)
     this.logger.log(`[TOC] P0 预约确认: ${result.bookingId}`)
+
+    // 到店提醒调度
+    this.reminderSvc.scheduleReminders({
+      bookingId: result.bookingId,
+      storeName: result.storeName,
+      serviceName: result.serviceName,
+      customerPhone: dto.customerPhone,
+      customerName: dto.customerName,
+      date: result.date,
+      timeSlot: result.timeSlot,
+    })
+
     return { success: true, data: result }
   }
 
@@ -87,6 +103,10 @@ export class StoreFrontController {
   async cancelBooking(@Param('bookingId') bookingId: string, @Body() dto: CancelBookingDto) {
     const result = await this.store.cancelBooking(bookingId, dto)
     this.logger.log(`[TOC] P0 取消确认: ${result.bookingId}`)
+
+    // 取消到店提醒
+    this.reminderSvc.cancelReminders(bookingId)
+
     return { success: true, data: result, message: '预约已取消，时段已释放' }
   }
 
@@ -95,6 +115,18 @@ export class StoreFrontController {
   async rescheduleBooking(@Param('bookingId') bookingId: string, @Body() dto: RescheduleBookingDto) {
     const result = await this.store.rescheduleBooking(bookingId, dto)
     this.logger.log(`[TOC] P0 改期确认: ${result.bookingId} → ${dto.newDate} ${dto.newTimeSlot}`)
+
+    // 重新调度提醒
+    this.reminderSvc.rescheduleReminders(bookingId, {
+      bookingId: result.bookingId,
+      storeName: result.storeName,
+      serviceName: result.serviceName,
+      customerPhone: result.customerPhone,
+      customerName: result.customerName,
+      date: result.date,
+      timeSlot: result.timeSlot,
+    })
+
     return { success: true, data: result, message: `已改期至 ${dto.newDate} ${dto.newTimeSlot}` }
   }
 
@@ -147,7 +179,48 @@ export class StoreFrontController {
   }
 
   // ═══════════════════════════════════════════════════════
-  // 全员营销 & KOL 推广 (待 Prisma 迁移 — BL-6)
+  // 支付 (→ cashier/ 模块)
+  // ═══════════════════════════════════════════════════════
+
+  @Public() @Post('payments/create')
+  async createPayment(@Body() body: { bookingId: string; orderId: string; amountCents: number; method: 'WECHAT' | 'ALIPAY' }) {
+    try {
+      const prepay = await (this.paymentSvc as any).createPrepay(
+        { id: body.orderId, totalCents: body.amountCents },
+        body.method,
+      )
+      return { success: true, data: { prepayId: prepay.prepayId, orderId: body.orderId, bookingId: body.bookingId } }
+    } catch (err: any) {
+      this.logger.error(`[TOC→Payment] 支付失败: ${err?.message ?? err}`)
+      return { success: false, message: '支付服务暂不可用，请稍后重试', code: 'PAYMENT_UNAVAILABLE' }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // 排队取号 (→ queue/ 模块)
+  // ═══════════════════════════════════════════════════════
+
+  @Public() @Post('queue/join')
+  joinQueue(@Body() body: { storeSlug: string; memberId: string; memberName?: string; resourceId?: string; resourceName?: string; remark?: string }) {
+    const entry = this.queueSvc.joinQueue({
+      tenantId: 'tenant-default',
+      queueType: 'Booking' as any,
+      memberId: body.memberId,
+      memberName: body.memberName,
+      resourceId: body.resourceId ?? body.storeSlug,
+      remark: body.remark,
+    })
+    return { success: true, data: entry }
+  }
+
+  @Public() @Get('queue/status/:resourceId')
+  getQueueStatus(@Param('resourceId') resourceId: string) {
+    const status = this.queueSvc.getQueueStatus(resourceId, 'tenant-default')
+    return { success: true, data: status }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // 全员营销 & KOL 推广
   // ═══════════════════════════════════════════════════════
 
   @Public() @Post('referral/create-code')
