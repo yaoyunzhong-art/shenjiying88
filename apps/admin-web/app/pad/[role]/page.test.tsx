@@ -228,6 +228,13 @@ describe('pad-workbench: 权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes('requiredPermission="workbench.read"'));
   });
+
+  it('详情页应包含来源态与角色映射证据', () => {
+    assert.ok(SRC.includes('mapToBackendRole'));
+    assert.ok(SRC.includes('snapshot.deliveryMode'));
+    assert.ok(SRC.includes('tenant-config 角色映射'));
+    assert.ok(SRC.includes('operator 桥接'));
+  });
 });
 
 describe('pad-workbench: 业务逻辑', () => {

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { FoundationConsumerWiringSection, GovernanceQuickViewSection, LoadingSkeleton, PageShell, StatCard, WorkspaceBreadcrumb, DetailClosureBar } from '@m5/ui';
 import { getRoleWorkbench, getAdminWorkbenchConsumerSnapshot, normalizeWorkbenchRoleKey } from '../../bootstrap';
+import { mapToBackendRole } from '@m5/types';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import { PadModuleList } from '../../components/pad-module-list';
 import { DetailPageActions } from '../../components/detail-page-actions';
@@ -24,6 +25,10 @@ export default async function PadWorkbenchPage({
   const padWorkbenches = snapshot.workbenches.filter(
     (wb) => wb.channel === 'PAD' && normalizeWorkbenchRoleKey(wb.role) === normalizedRole
   );
+  const backendRole = mapToBackendRole(workbench.role);
+  const usesOperatorBridge =
+    backendRole === 'operator'
+    && ['GUIDE', 'CASHIER', 'WAREHOUSE', 'FINANCE', 'COACH'].includes(workbench.role);
 
   return (
     <main style={{ maxWidth: 860, margin: '0 auto', padding: 20 }}>
@@ -44,6 +49,29 @@ export default async function PadWorkbenchPage({
             <StatCard label="渠道" value={workbench.channel} helper="工作台载体" />
             <StatCard label="模块数" value={String(workbench.navItems.length)} helper="可执行功能模块" />
             <StatCard label="市场" value={String(workbench.marketCodes.length)} helper={workbench.marketCodes.join(' / ')} />
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              padding: 16,
+              borderRadius: 12,
+              background: 'rgba(15, 23, 42, 0.38)',
+              border: '1px solid rgba(148, 163, 184, 0.12)',
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 8 }}>
+              角色来源态
+            </div>
+            <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.7 }}>
+              Delivery: {snapshot.deliveryMode} · 前端角色: {workbench.role} · tenant-config 角色映射:{' '}
+              {backendRole ?? '未映射'}
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
+              {usesOperatorBridge
+                ? '当前 Pad 角色仍通过 operator 桥接到 tenant-config，属于 E54 M1 待正式角色落标的过渡态。'
+                : '当前 Pad 角色已具备明确的前后端角色映射，可继续对齐页面/API/权限证据。'}
+            </div>
           </div>
 
           {/* 治理告警快速视图 */}
