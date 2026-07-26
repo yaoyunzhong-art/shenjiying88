@@ -6,6 +6,13 @@
 import { getBizClient } from '../lib/sdk';
 import type { RefundItem } from './refund-types';
 
+export interface RefundSnapshotDelivery {
+  deliveryMode: 'api' | 'fallback';
+  refunds: RefundItem[];
+  generatedAt: string;
+  error?: string;
+}
+
 /** 将后端退款记录映射为前端 RefundItem */
 function mapApiRefundToRefundItem(apiRefund: any, index: number): RefundItem {
   // 后端 status 映射
@@ -242,6 +249,11 @@ export function getRefunds(): RefundItem[] {
   ];
 }
 
+function getLatestRefundTimestamp(refunds: RefundItem[]): string {
+  if (refunds.length === 0) return '—';
+  return refunds.reduce((latest, item) => (item.createdAt > latest ? item.createdAt : latest), refunds[0]!.createdAt);
+}
+
 /** 按状态计数 */
 export function countByStatus(items: RefundItem[], status: string): number {
   return items.filter((i) => i.status === status).length;
@@ -267,6 +279,29 @@ export async function loadRefundsFromApi(): Promise<RefundItem[] | null> {
   } catch {
     return null;
   }
+}
+
+export async function loadRefundSnapshot(): Promise<RefundSnapshotDelivery> {
+  try {
+    const apiRefunds = await loadRefundsFromApi();
+    if (apiRefunds && apiRefunds.length > 0) {
+      return {
+        deliveryMode: 'api',
+        refunds: apiRefunds,
+        generatedAt: new Date().toISOString(),
+      };
+    }
+  } catch {
+    // keep fallback below
+  }
+
+  const fallbackRefunds = getRefunds();
+  return {
+    deliveryMode: 'fallback',
+    refunds: fallbackRefunds,
+    generatedAt: getLatestRefundTimestamp(fallbackRefunds),
+    error: '真实退款接口不可达，当前展示 fallback 样本。',
+  };
 }
 
 /** 按门店分组退款数 */

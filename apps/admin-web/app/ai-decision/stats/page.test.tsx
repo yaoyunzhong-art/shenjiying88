@@ -397,3 +397,20 @@ describe('Ai Decision / Stats — hooks验证', () => {
   it('包含 AiDecisionSummary 接口', () => assert.ok(SRC.includes('AiDecisionSummary')));
   it('包含 AI 决策统计条文案', () => assert.ok(SRC.includes('AI 决策总数') && SRC.includes('已采纳') && SRC.includes('已拒绝') && SRC.includes('待审核')));
 });
+
+describe('Ai Decision / Stats — 来源态透明化', () => {
+  it('页面应展示 AI 决策统计来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应将统计页显式标记为 mock 样本', () => {
+    assert.ok(SRC.includes("deliveryMode: 'mock' as const"));
+    assert.ok(SRC.includes('MOCK_RULES'));
+    assert.ok(SRC.includes('local AI decision sample stats'));
+    assert.ok(SRC.includes('不可作为闭环复签证据'));
+  });
+});

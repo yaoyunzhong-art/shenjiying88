@@ -9,10 +9,12 @@ import { resolve } from 'node:path';
 
 let SRC: string;
 let CLIENT_SRC: string;
+let DATA_SRC: string;
 
 beforeEach(() => {
   SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
   CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'dashboard-client.tsx'), 'utf-8');
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'dashboard-data.ts'), 'utf-8');
 });
 
 // ---- 页面级验证 ----
@@ -26,7 +28,10 @@ describe('Dashboard — 服务端页面', () => {
   it('包含LoadingSkeleton', () => assert.ok(SRC.includes('LoadingSkeleton')));
   it('包含ErrorBoundary', () => assert.ok(SRC.includes('<ErrorBoundary')));
   it('包含dashboard-client引用', () => assert.ok(SRC.includes('dashboard-client')));
-  it('包含统计卡片数据加载', () => assert.ok(SRC.includes('async function loadDashboardStats')));
+  it('包含统计卡片快照加载', () => {
+    assert.ok(SRC.includes('const snapshot = await loadDashboardSnapshot()'));
+    assert.ok(SRC.includes('const stats = snapshot.stats'));
+  });
   it('使用force-dynamic模式', () => assert.ok(SRC.includes("export const dynamic = 'force-dynamic'")));
   it('DashboardViewTabs组件含4个视图Tab', () => assert.ok(SRC.includes('总览') && SRC.includes('运营') && SRC.includes('财务') && SRC.includes('增长')));
   it('包含视图Tab按钮role=tablist', () => assert.ok(SRC.includes('role=\"tablist\"')));
@@ -42,6 +47,24 @@ describe('Dashboard — 权限边界', () => {
   it('接入管理员权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"));
+  });
+});
+
+describe('Dashboard — 来源态透明化', () => {
+  it('页面应展示概览仪表盘来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应显式标记仪表盘为 mock 样本', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"));
+    assert.ok(DATA_SRC.includes('async function loadDashboardStats'));
+    assert.ok(SRC.includes('loadDashboardSnapshot -> loadDashboardStats'));
+    assert.ok(SRC.includes('local dashboard stats snapshot'));
+    assert.ok(SRC.includes('不可作为闭环复签证据'));
   });
 });
 

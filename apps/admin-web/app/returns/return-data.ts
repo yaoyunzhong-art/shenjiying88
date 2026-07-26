@@ -40,6 +40,12 @@ interface ReturnRequest {
   exchangeExtra?: number;
 }
 
+export interface ReturnSnapshotDelivery {
+  deliveryMode: 'mock';
+  returns: ReturnRequest[];
+  generatedAt: string;
+}
+
 /** 模拟退换货申请数据 */
 export function getReturns(): ReturnRequest[] {
   return [
@@ -168,6 +174,20 @@ export function getReturns(): ReturnRequest[] {
       ],
     },
   ];
+}
+
+function getLatestReturnTimestamp(items: ReturnRequest[]): string {
+  if (items.length === 0) return '—';
+  return items.reduce((latest, item) => (item.appliedAt > latest ? item.appliedAt : latest), items[0]!.appliedAt);
+}
+
+export async function loadReturnsSnapshot(): Promise<ReturnSnapshotDelivery> {
+  const returns = getReturns();
+  return {
+    deliveryMode: 'mock',
+    returns,
+    generatedAt: getLatestReturnTimestamp(returns),
+  };
 }
 
 /** 按状态统计 */

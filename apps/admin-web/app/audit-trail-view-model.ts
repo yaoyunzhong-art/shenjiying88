@@ -13,6 +13,7 @@ export interface AuditTrailSnapshot {
   trail: AuditTrailResponse;
   summary?: AuditTrailSummary;
   query: AuditTrailQuery;
+  generatedAt: string;
 }
 
 const FALLBACK_TENANT_ID = 'tenant-demo';
@@ -62,7 +63,8 @@ export async function loadAuditTrail(
         query: normalized
       },
       summary,
-      query: normalized
+      query: normalized,
+      generatedAt: new Date().toISOString()
     };
   } catch {
     return {
@@ -73,7 +75,8 @@ export async function loadAuditTrail(
         query: normalized
       },
       summary: emptySummary(),
-      query: normalized
+      query: normalized,
+      generatedAt: new Date().toISOString()
     };
   }
 }

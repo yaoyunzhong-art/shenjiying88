@@ -1,5 +1,3 @@
-'use client'
-
 import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 /**
@@ -15,20 +13,20 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  */
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { getReturns } from './return-data';
+import { loadReturnsSnapshot } from './return-data';
 import { ReturnListClient } from './return-list-client';
 
 
 /** 退换货统计摘要 */
 function ReturnSummaryCards({ returns }: { returns: unknown[] }) {
   const pending = returns.filter(
-    (r: any) => r.status === 'pending' || r.status === 'review'
+    (r: any) => r.status === 'pending_review' || r.status === 'approved'
   ).length;
   const processing = returns.filter(
-    (r: any) => r.status === 'processing' || r.status === 'received'
+    (r: any) => r.status === 'return_received' || r.status === 'replacement_sent'
   ).length;
   const completed = returns.filter(
-    (r: any) => r.status === 'completed' || r.status === 'refunded'
+    (r: any) => r.status === 'refund_issued'
   ).length;
   const closed = returns.filter((r: any) => r.status === 'closed' || r.status === 'rejected').length;
 
@@ -112,8 +110,19 @@ const permissionGate = {
   description: '该页面已接入管理员权限管控，仅具备 returns:read 权限的账号可访问。',
 } as const
 
-export default function ReturnsPage() {
-  const returns = getReturns();
+export const dynamic = 'force-dynamic';
+
+export default async function ReturnsPage() {
+  const snapshot = await loadReturnsSnapshot();
+  const returns = snapshot.returns;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource: 'loadReturnsSnapshot -> getReturns',
+    businessDataSource: 'return-data local return samples',
+    refreshPath: 'ReturnsPage -> loadReturnsSnapshot',
+    generatedAt: snapshot.generatedAt,
+    note: '当前退换货页使用本地退换样本，不代表真实售后链路，也不可作为闭环复签证据。',
+  } as const;
 
   return (
     <AdminPermissionGate
@@ -136,6 +145,29 @@ export default function ReturnsPage() {
       }),
       }}
       />
+
+      <div
+      style={{
+      padding: '12px 16px',
+      borderRadius: 12,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(148,163,184,0.08)',
+      fontSize: 12,
+      color: '#cbd5e1',
+      lineHeight: 1.7,
+      marginBottom: 16,
+      }}
+      >
+      <div>
+      Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+      </div>
+      <div>
+      业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+      </div>
+      <div>
+      generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+      </div>
+      </div>
 
       {/* 统计摘要 */}
       {returns && returns.length > 0 && <ReturnSummaryCards returns={returns} />}

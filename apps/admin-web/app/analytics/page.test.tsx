@@ -258,6 +258,27 @@ describe('analytics page', () => {
     });
   });
 
+  describe('来源态透明化', () => {
+    it('页面应展示数据分析来源态证据', () => {
+      const src = extractPageSource();
+      assert.ok(src);
+      assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'));
+      assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+      assert.ok(src.includes('业务数据: {sourceEvidence.businessDataSource}'));
+      assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'));
+      assert.ok(src.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    });
+
+    it('应显式标记数据分析页为 mock 样本', () => {
+      const src = extractPageSource();
+      assert.ok(src);
+      assert.ok(src.includes("deliveryMode: 'mock' as const"));
+      assert.ok(src.includes('loadAnalytics'));
+      assert.ok(src.includes('local analytics snapshot'));
+      assert.ok(src.includes('不可作为闭环复签证据'));
+    });
+  });
+
   describe('加载与错误处理', () => {
     it('应使用 LoadingSkeleton 或加载态处理', () => {
       const src = extractPageSource();

@@ -63,10 +63,12 @@ export default function BrandsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Brand[] | null>(null);
+  const [generatedAt, setGeneratedAt] = useState('—');
 
   useEffect(() => {
     try {
       setData(brands);
+      setGeneratedAt(new Date().toISOString());
     } catch (e) {
       setError(e instanceof Error ? e.message : '数据加载失败');
     } finally {
@@ -97,11 +99,33 @@ export default function BrandsPage() {
   const sorted=useSortedItems(statusFiltered,columns,sortConfig);
   const pagination=usePagination({initialPageSize:15});
   const pageItems=pagination.paginate(sorted);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode: 'mock' as const,
+      controlPlaneSource: 'brands local constant + useEffect(setData)',
+      businessDataSource: 'embedded brand sample records',
+      refreshPath: 'BrandsPage.useEffect -> setData(brands)',
+      generatedAt,
+      note: '当前品牌页使用本地样本，不代表真实品牌运营主数据，也不可作为闭环复签证据。',
+    }),
+    [generatedAt]
+  );
 
   return (
     <AdminPermissionGate {...permissionGate}>
       <main style={{maxWidth:1200,margin:'0 auto',padding:32}}>
         <PageShell title="品牌运营管理" subtitle={`${stats.total}个品牌 · 年营收${fm(stats.revenue)} · ${stats.stores}家门店`}>
+          <div style={{padding:'12px 16px',borderRadius:12,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(148,163,184,0.08)',fontSize:12,color:'#cbd5e1',lineHeight:1.7,marginBottom:16}}>
+            <div>
+              Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+            </div>
+            <div>
+              业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+            </div>
+            <div>
+              generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+            </div>
+          </div>
           <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(3,1fr)',marginBottom:20}}>
             <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>品牌总数</div><div style={{marginTop:6,fontSize:28,fontWeight:700}}>{stats.total}</div><div style={{marginTop:4,fontSize:12,color:'#22c55e'}}>合作中: {stats.active} · 洽谈: {stats.pending}</div></div>
             <div style={card}><div style={{fontSize:13,color:'#cbd5e1'}}>总营收</div><div style={{marginTop:6,fontSize:28,fontWeight:700,color:'#22c55e'}}>{fm(stats.revenue)}</div><div style={{marginTop:4,fontSize:12,color:'#94a3b8'}}>平均毛利率: {stats.avgMargin}%</div></div>

@@ -12,6 +12,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
 
 import {
   MOCK_BRANDS,
@@ -25,6 +26,8 @@ import {
   type BrandStatus,
   type BrandTier,
 } from './brands-data';
+
+const PAGE_SRC = fs.readFileSync(new URL('./brands/page.tsx', import.meta.url), 'utf-8');
 
 // ---- Page-level filter helpers (mirrors BrandsPage logic) ----
 
@@ -419,5 +422,22 @@ describe('brands-page: 排序后分页反例', () => {
     const sorted = [...MOCK_BRANDS].sort((a, b) => b.storeCount - a.storeCount);
     const filtered = filterByMarket(sorted, 'jp-tokyo');
     assert.equal(filtered.length, 0);
+  });
+});
+
+describe('brands-page: 来源态透明化', () => {
+  it('页面应展示品牌列表来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应将品牌页显式标记为 mock 样本', () => {
+    assert.ok(PAGE_SRC.includes("deliveryMode: 'mock' as const"));
+    assert.ok(PAGE_SRC.includes('brands local constant + useEffect(setData)'));
+    assert.ok(PAGE_SRC.includes('embedded brand sample records'));
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'));
   });
 });

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 // ─── 类型定义 ──────────────────────────────────────
@@ -101,6 +101,8 @@ export default function SystemMonitorPage() {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deliveryMode, setDeliveryMode] = useState<'api' | 'fallback'>('fallback')
+  const [generatedAt, setGeneratedAt] = useState('—')
   const [refreshKey, setRefreshKey] = useState(0)
 
   const loadData = useCallback(async () => {
@@ -115,10 +117,15 @@ export default function SystemMonitorPage() {
       setMetrics(metricsData.metrics)
       setServices(servicesData.services)
       setLogs(logsData.logs)
+      setDeliveryMode('api')
+      setGeneratedAt(new Date().toISOString())
     } catch {
       setMetrics(defaultMetrics)
       setServices(defaultServices)
       setLogs(defaultLogs)
+      setDeliveryMode('fallback')
+      setGeneratedAt(new Date().toISOString())
+      setError('实时接口不可达，已切换到 fallback 样本数据。')
     } finally {
       setLoading(false)
     }
@@ -143,6 +150,26 @@ export default function SystemMonitorPage() {
   const warningMetricCount = metrics.filter(m => m.status === 'warning').length + services.filter(s => s.status === 'degraded').length
   const criticalCount = metrics.filter(m => m.status === 'critical').length + services.filter(s => s.status === 'down').length
   const totalMonitoredItems = metrics.length + services.length
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api'
+          ? '/api/system/metrics + /api/system/services + /api/system/activities'
+          : 'defaultMetrics/defaultServices/defaultLogs',
+      businessDataSource:
+        deliveryMode === 'api'
+          ? 'system monitor live API responses'
+          : 'local fallback monitor samples',
+      refreshPath: 'handleRefresh -> loadData -> apiFetch',
+      generatedAt,
+      note:
+        deliveryMode === 'api'
+          ? '当前页面直接消费 system-monitor 实时接口结果。'
+          : '当前页面已回退到本地样本，不可作为闭环复签证据。'
+    }),
+    [deliveryMode, generatedAt]
+  )
 
   if (loading && refreshKey === 0) {
     return (
@@ -164,6 +191,18 @@ export default function SystemMonitorPage() {
             <p className="text-sm text-gray-500 mt-1">服务健康 · 实时指标 · 活动日志</p>
           </div>
           <button onClick={handleRefresh} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">刷新</button>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700">
+          <div>
+            Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+          </div>
+          <div>
+            业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+          </div>
+          <div>
+            generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+          </div>
         </div>
 
       {error && (

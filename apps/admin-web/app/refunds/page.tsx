@@ -1,7 +1,6 @@
-'use client';
 /**
  * 退款管理 — Refund List Page (Next.js App Router)
- * P1-3 共享层收口: API 优先加载, 不可用时回落 mock
+ * P1-3 共享层收口: server snapshot 优先加载, 不可用时回落 fallback
  *
  * 功能:
  * - 管理门店退款申请审批与处理流程
@@ -12,11 +11,9 @@
  * - 空状态 / 加载中 / 搜索无结果 / 错误回退
  */
 
-import { useState, useEffect, useRef } from 'react';
-import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { getRefunds, loadRefundsFromApi } from './refund-data';
+import { loadRefundSnapshot } from './refund-data';
 import type { RefundItem } from './refund-types';
 import { RefundListClient } from './refund-list-client';
 import { AdminPermissionGate } from '../components/admin-permission-gate';
@@ -103,7 +100,7 @@ function RefundEmptyState() {
   );
 }
 
-/** 主页面: API 优先加载, 不可用时回落 mock */
+export const dynamic = 'force-dynamic';
 
 const permissionGate = {
   requiredPermission: 'refunds:read',
@@ -112,26 +109,22 @@ const permissionGate = {
     '退款管理页已接入管理员本地 session，只有具备 refunds:read 的账号才能查看退款列表、统计摘要与处理说明。',
 } as const
 
-export default function RefundsPage() {
-  const [refunds, setRefunds] = useState<RefundItem[]>(getRefunds());
-  const [loading, setLoading] = useState(true);
-  const loadedRef = useRef(false);
-
-  useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-
-    loadRefundsFromApi()
-      .then((apiRefunds) => {
-        if (apiRefunds && apiRefunds.length > 0) {
-          setRefunds(apiRefunds);
-        }
-      })
-      .catch(() => {
-        // API 不可用, 保持 mock fallback
-      })
-      .finally(() => setLoading(false));
-  }, []);
+export default async function RefundsPage() {
+  const snapshot = await loadRefundSnapshot();
+  const refunds = snapshot.refunds;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'api' ? 'loadRefundSnapshot -> loadRefundsFromApi' : 'loadRefundSnapshot -> getRefunds fallback samples',
+    businessDataSource:
+      snapshot.deliveryMode === 'api' ? 'RefundItem[] mapped from biz.refunds.list()' : 'local refund sample records',
+    refreshPath: 'RefundsPage -> loadRefundSnapshot',
+    generatedAt: snapshot.generatedAt,
+    note:
+      snapshot.deliveryMode === 'api'
+        ? '当前页面优先消费退款 API 快照。'
+        : '当前页面已回退到本地退款样本，不可作为真实退款链路复签证据。'
+  } as const;
 
   return (
     <AdminPermissionGate {...permissionGate}>
@@ -151,19 +144,56 @@ export default function RefundsPage() {
         }}
       />
 
+      <div
+        style={{
+          padding: '12px 16px',
+          borderRadius: 12,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(148,163,184,0.08)',
+          fontSize: 12,
+          color: '#cbd5e1',
+          lineHeight: 1.7,
+          marginBottom: 16,
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>
+          generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+        </div>
+      </div>
+
+      {snapshot.error && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: 'rgba(251, 191, 36, 0.12)',
+            border: '1px solid rgba(251, 191, 36, 0.28)',
+            color: '#fde68a',
+            fontSize: 12,
+          }}
+        >
+          {snapshot.error}
+        </div>
+      )}
+
       {/* 统计摘要 */}
-      {!loading && refunds && refunds.length > 0 && <RefundSummaryCards refunds={refunds} />}
+      {refunds.length > 0 && <RefundSummaryCards refunds={refunds} />}
 
       {/* 主列表 */}
       <ErrorBoundary fallback={<RefundListErrorFallback />}>
         <Suspense fallback={<RefundListLoadingFallback />}>
-          {loading ? (
-            <RefundListLoadingFallback />
-          ) : refunds && refunds.length > 0 ? (
+          {refunds.length > 0 ? (
             <RefundListClient refunds={refunds} />
-          ) : refunds && refunds.length === 0 ? (
+          ) : (
             <RefundEmptyState />
-          ) : null}
+          )}
         </Suspense>
       </ErrorBoundary>
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 /**
@@ -14,7 +12,7 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  */
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { getHelpArticles } from './help-center-data';
+import { loadHelpCenterSnapshot } from './help-center-data';
 import { HelpCenterClient } from './help-center-client';
 
 
@@ -87,9 +85,20 @@ const permissionGate = {
   description: '该页面已接入管理员权限管控，仅具备 help-center:read 权限的账号可访问。',
 } as const
 
-export default function HelpCenterPage() {
-  const articles = getHelpArticles();
-  const articleCount = articles?.length ?? 0;
+export const dynamic = 'force-dynamic';
+
+export default async function HelpCenterPage() {
+  const snapshot = await loadHelpCenterSnapshot();
+  const articles = snapshot.articles;
+  const articleCount = articles.length;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource: 'loadHelpCenterSnapshot -> getHelpArticles',
+    businessDataSource: 'help-center-data local articles',
+    refreshPath: 'HelpCenterPage -> loadHelpCenterSnapshot',
+    generatedAt: snapshot.generatedAt,
+    note: '当前帮助中心使用本地知识库样本，不代表真实知识中心主数据，也不可作为闭环复签证据。',
+  } as const;
 
   return (
     <AdminPermissionGate
@@ -137,7 +146,7 @@ export default function HelpCenterPage() {
       <div>
       <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 4 }}>
       总计 <strong style={{ color: '#f8fafc' }}>{articleCount}</strong> 篇文档
-      · 最后更新: 2026-07-12
+      · 最后更新: {sourceEvidence.generatedAt}
       </div>
       </div>
       <div
@@ -169,6 +178,28 @@ export default function HelpCenterPage() {
       <span style={{ color: '#64748b', fontSize: 11 }}>({cat.count})</span>
       </div>
       ))}
+      </div>
+      <div
+      style={{
+      padding: '12px 16px',
+      borderRadius: 12,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(148,163,184,0.08)',
+      fontSize: 12,
+      color: '#cbd5e1',
+      lineHeight: 1.7,
+      marginBottom: 16,
+      }}
+      >
+      <div>
+      Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+      </div>
+      <div>
+      业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+      </div>
+      <div>
+      generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+      </div>
       </div>
       </div>
       </div>

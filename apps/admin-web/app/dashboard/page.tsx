@@ -9,6 +9,7 @@ import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell, ErrorBoundary, Card, StatCard } from '@m5/ui';
 import DashboardClient from './dashboard-client';
 import { AdminPermissionGate } from '../components/admin-permission-gate';
+import { loadDashboardSnapshot } from './dashboard-data';
 
 export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth';
 
@@ -23,41 +24,17 @@ const permissionGate = {
     '概览仪表盘已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看门店运营指标、趋势分析与快捷入口。',
 } as const;
 
-interface DashboardStats {
-  todayRevenue: number;
-  todayOrders: number;
-  activeDevices: number;
-  totalDevices: number;
-  currentCustomers: number;
-  pendingAlerts: number;
-  completionRate: number;
-  avgVisitDuration: number; // minutes
-  monthlyRevenue: number;
-  monthlyOrders: number;
-  weeklyGrowth: number;
-  customerSatisfaction: number;
-}
-
-async function loadDashboardStats(): Promise<DashboardStats> {
-  // 模拟数据; 生产环境将从 API 获取
-  return {
-    todayRevenue: 12580,
-    todayOrders: 86,
-    activeDevices: 42,
-    totalDevices: 48,
-    currentCustomers: 23,
-    pendingAlerts: 3,
-    completionRate: 78,
-    avgVisitDuration: 45,
-    monthlyRevenue: 312800,
-    monthlyOrders: 2460,
-    weeklyGrowth: 8.5,
-    customerSatisfaction: 92,
-  };
-}
-
 export default async function DashboardPage() {
-  const stats = await loadDashboardStats();
+  const snapshot = await loadDashboardSnapshot();
+  const stats = snapshot.stats;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource: 'loadDashboardSnapshot -> loadDashboardStats',
+    businessDataSource: 'local dashboard stats snapshot',
+    refreshPath: 'DashboardPage -> loadDashboardSnapshot',
+    generatedAt: snapshot.generatedAt,
+    note: '当前概览仪表盘使用本地统计样本，不代表真实经营主链，也不可作为闭环复签证据。',
+  } as const;
 
   const summaryCards = [
     { label: '今日营收', value: `¥${stats.todayRevenue.toLocaleString()}`, variant: 'success' as const, detail: '较昨日 +12%' },
@@ -76,6 +53,17 @@ export default async function DashboardPage() {
             title="📊 概览仪表盘"
             subtitle="门店运营核心指标一览 · 实时数据 · 快速入口"
           >
+            <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(148,163,184,0.08)', fontSize: 12, color: '#cbd5e1', lineHeight: 1.7, marginBottom: 16 }}>
+              <div>
+                Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+              </div>
+              <div>
+                业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+              </div>
+              <div>
+                generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+              </div>
+            </div>
             {/* 视图切换Tab: 总览/运营/财务/增长 */}
             <DashboardViewTabs />
 

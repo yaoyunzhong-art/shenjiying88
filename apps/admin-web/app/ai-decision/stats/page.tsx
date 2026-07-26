@@ -88,9 +88,21 @@ const permissionGate = {
 
 export default function AiDecisionStatsPage() {
   const [rules] = useState<RuleStat[]>(MOCK_RULES);
+  const [generatedAt] = useState(() => new Date().toISOString());
 
   const stats = useMemo(() => computeStats(rules), [rules]);
   const aiSummary = useMemo(() => computeAiDecisionSummary(rules), [rules]);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode: 'mock' as const,
+      controlPlaneSource: 'MOCK_RULES',
+      businessDataSource: 'local AI decision sample stats',
+      refreshPath: 'AiDecisionStatsPage -> useState(MOCK_RULES)',
+      generatedAt,
+      note: '当前统计页使用本地 AI 决策样本，不代表真实规则执行链路，也不可作为闭环复签证据。',
+    }),
+    [generatedAt]
+  );
 
   // 结果分布: 按规则的 successCount 反推 partial+failure 简化示意
   const resultSlices: DonutSlice[] = useMemo(() => {
@@ -126,6 +138,17 @@ export default function AiDecisionStatsPage() {
           title="AI 决策统计分析"
           subtitle="决策执行效果总览 — 成功率、来源构成、规则排名与性能监控"
         >
+        <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(148,163,184,0.08)', fontSize: 12, color: '#cbd5e1', lineHeight: 1.7, marginBottom: 16 }}>
+          <div>
+            Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+          </div>
+          <div>
+            业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+          </div>
+          <div>
+            generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+          </div>
+        </div>
         {/* 概览统计卡 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
           <StatCard label="总执行次数" value={stats.total.toLocaleString()} variant="info" />

@@ -1,5 +1,3 @@
-'use client'
-
 import { AdminPermissionGate } from '../components/admin-permission-gate'
 
 /**
@@ -14,7 +12,7 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  */
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { getDevices } from './devices-data';
+import { loadDevicesSnapshot } from './devices-data';
 import { DeviceListClient } from './device-list-client';
 
 
@@ -109,8 +107,19 @@ const permissionGate = {
   description: '该页面已接入管理员权限管控，仅具备 devices:read 权限的账号可访问。',
 } as const
 
-export default function DevicesPage() {
-  const devices = getDevices();
+export const dynamic = 'force-dynamic';
+
+export default async function DevicesPage() {
+  const snapshot = await loadDevicesSnapshot();
+  const devices = snapshot.devices;
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource: 'loadDevicesSnapshot -> getDevices',
+    businessDataSource: 'devices-data local samples',
+    refreshPath: 'DevicesPage -> loadDevicesSnapshot',
+    generatedAt: snapshot.generatedAt,
+    note: '当前页面使用本地设备样本，不代表真实设备遥测，也不可作为闭环复签证据。',
+  } as const;
 
   return (
     <AdminPermissionGate
@@ -133,6 +142,29 @@ export default function DevicesPage() {
       }),
       }}
       />
+
+      <div
+        style={{
+          padding: '12px 16px',
+          borderRadius: 12,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(148,163,184,0.08)',
+          fontSize: 12,
+          color: '#cbd5e1',
+          lineHeight: 1.7,
+          marginBottom: 16,
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>
+          generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+        </div>
+      </div>
 
       {/* 统计摘要 */}
       {devices && devices.length > 0 && <DeviceSummaryStats devices={devices} />}

@@ -360,6 +360,21 @@ describe('KnowledgePage — 正例', () => {
         }
       }
     });
+
+    it('页面应展示知识库来源态证据', () => {
+      assert.ok(/Delivery \{sourceEvidence\.deliveryMode\}/.test(sourceContent));
+      assert.ok(/控制面来源: \{sourceEvidence\.controlPlaneSource\}/.test(sourceContent));
+      assert.ok(/业务数据: \{sourceEvidence\.businessDataSource\}/.test(sourceContent));
+      assert.ok(/刷新路径: \{sourceEvidence\.refreshPath\}/.test(sourceContent));
+      assert.ok(/generatedAt: \{sourceEvidence\.generatedAt\}/.test(sourceContent));
+    });
+
+    it('应显式标记知识库页为 mock 样本', () => {
+      assert.ok(/deliveryMode:\s*'mock' as const/.test(sourceContent));
+      assert.ok(/loadKnowledge/.test(sourceContent));
+      assert.ok(/local knowledge snapshot/.test(sourceContent));
+      assert.ok(/不可作为闭环复签证据/.test(sourceContent));
+    });
   });
 
   describe('知识分类标签 — 组件源码', () => {

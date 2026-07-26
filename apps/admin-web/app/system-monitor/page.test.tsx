@@ -90,6 +90,38 @@ describe('SystemMonitorPage — 数据模拟', () => {
   })
 })
 
+describe('SystemMonitorPage — 来源态透明化', () => {
+  it('应声明 deliveryMode 与 generatedAt 状态', () => {
+    assert.ok(SRC.includes("useState<'api' | 'fallback'>('fallback')"))
+    assert.ok(SRC.includes("useState('—')"))
+  })
+
+  it('成功与回退分支都应显式设置来源态', () => {
+    assert.ok(SRC.includes("setDeliveryMode('api')"))
+    assert.ok(SRC.includes("setDeliveryMode('fallback')"))
+    assert.ok(SRC.includes("setGeneratedAt(new Date().toISOString())"))
+  })
+
+  it('回退分支应提示已切换到 fallback 样本', () => {
+    assert.ok(SRC.includes('实时接口不可达，已切换到 fallback 样本数据。'))
+  })
+
+  it('页面应展示系统监控来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
+
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(SRC.includes('/api/system/metrics + /api/system/services + /api/system/activities'))
+    assert.ok(SRC.includes('defaultMetrics/defaultServices/defaultLogs'))
+    assert.ok(SRC.includes('local fallback monitor samples'))
+    assert.ok(SRC.includes('不可作为闭环复签证据'))
+  })
+})
+
 // ─── 反例 ─────────────────────
 describe('SystemMonitorPage — 反例', () => {
   it('无 as any', () => { assert.ok(!SRC.includes('as any')) })

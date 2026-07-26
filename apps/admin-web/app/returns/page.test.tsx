@@ -98,14 +98,14 @@ describe('returns — 文件结构', () => {
     assert.equal(fs.existsSync(path.join(__dirname, 'page.tsx')), true);
   });
 
-  it('2. page.tsx 是 Client Component', () => {
+  it('2. page.tsx 是 Server Component', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(source.includes("'use client'"));
+    assert.ok(!source.includes("'use client'"));
   });
 
   it('3. 导出了 async 函数', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(source.includes('export default'));
+    assert.ok(source.includes('export default async function ReturnsPage'));
   });
 });
 
@@ -314,12 +314,35 @@ const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 describe('Returns — hooks验证', () => {
   it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));
+  it('包含异步快照加载', () => assert.ok(SRC.includes('await loadReturnsSnapshot')));
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
   it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default async function')));
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+});
+
+describe('Returns — 来源态透明化', () => {
+  it('页面应通过 snapshot 壳层加载退换货数据', () => {
+    assert.ok(SRC.includes('const snapshot = await loadReturnsSnapshot()'));
+    assert.ok(SRC.includes('const returns = snapshot.returns'));
+    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"));
+  });
+
+  it('页面应展示退换货来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应显式标记退换货页为 mock 样本', () => {
+    assert.ok(SRC.includes('deliveryMode: snapshot.deliveryMode'));
+    assert.ok(SRC.includes('loadReturnsSnapshot -> getReturns'));
+    assert.ok(SRC.includes('return-data local return samples'));
+    assert.ok(SRC.includes('不可作为闭环复签证据'));
+  });
 });
