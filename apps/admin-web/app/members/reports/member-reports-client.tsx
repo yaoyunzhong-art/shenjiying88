@@ -260,18 +260,17 @@ export default function MemberReportsClient({
                 <div style={{ display: 'grid', gap: 10 }}>
                   <InfoRow label="新增会员" value={`${latest.newMembers}人`} />
                   <InfoRow
-                    label="营收"
+                    label={`营收 (充值:${formatMemberReportMoney(latest.avgRecharge)})`}
                     value={formatMemberReportMoney(latest.totalRevenue)}
-                    helper={`充值:${formatMemberReportMoney(latest.avgRecharge)}`}
                   />
                   <InfoRow
                     label="客单价"
                     value={formatMemberReportMoney(latest.avgSpend)}
                   />
+                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: -8 }}>{`充值:${formatMemberReportMoney(latest.avgRecharge)}`}</div>
                   <InfoRow
-                    label="30日LTV"
+                    label={`30日LTV (90日: ${formatMemberReportMoney(latest.ltv90)})`}
                     value={formatMemberReportMoney(latest.ltv30)}
-                    helper={`90日: ${formatMemberReportMoney(latest.ltv90)}`}
                   />
                 </div>
               </div>

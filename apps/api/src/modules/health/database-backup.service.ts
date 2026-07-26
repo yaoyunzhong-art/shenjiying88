@@ -93,7 +93,7 @@ export class DatabaseBackupService implements OnModuleInit {
       return filepath
     } catch (err: unknown) {
       // 降级: 如果 pg_dump 不可用，记录警告但不崩溃
-      if (err.message?.includes('command not found') || err.message?.includes('ENOENT')) {
+      if ((err as Error).message?.includes('command not found') || (err as Error).message?.includes('ENOENT')) {
         this.logger.warn('pg_dump 未安装，备份降级为 SQL 文件导出 (仅测试环境)')
         // 创建空占位文件标记备份已尝试
         const placeholder = filepath.replace('.sql.gz', '.placeholder')
@@ -101,7 +101,7 @@ export class DatabaseBackupService implements OnModuleInit {
         return null
       }
 
-      this.logger.error(`备份失败: ${err.message?.slice(0, 200)}`)
+      this.logger.error(`备份失败: ${(err as Error).message?.slice(0, 200)}`)
       return null
     }
   }
@@ -157,7 +157,7 @@ export class DatabaseBackupService implements OnModuleInit {
         this.logger.log(`🗑️  删除旧备份: ${backups[i]}`)
       }
     } catch (err: unknown) {
-      this.logger.warn(`清理失败: ${err.message}`)
+      this.logger.warn(`清理失败: ${(err as Error).message}`)
     }
   }
 

@@ -20,7 +20,8 @@ import {
 } from './notification.service'
 import {
   FoundationScopeType,
-  NotificationChannelType
+  NotificationChannelType,
+  NotificationStatus
 } from './notification.entity'
 import { MetricsService } from '../observability/metrics.service'
 
@@ -386,8 +387,8 @@ describe('Notification Metrics E2E - Enhanced', () => {
       notification.send({ channel: NotificationChannelType.Email, scopeType: FoundationScopeType.Tenant, recipient: 'status-a@test.com', payload: {} })
       notification.send({ channel: NotificationChannelType.Email, scopeType: FoundationScopeType.Tenant, recipient: 'fail-bounce-status@test.com', payload: {} })
 
-      const sent = notification.listDispatches({ status: 'SENT' })
-      const failed = notification.listDispatches({ status: 'FAILED' })
+      const sent = notification.listDispatches({ status: NotificationStatus.Sent })
+      const failed = notification.listDispatches({ status: NotificationStatus.Failed })
 
       assert.ok(sent.length >= 1)
       assert.ok(failed.length >= 1)

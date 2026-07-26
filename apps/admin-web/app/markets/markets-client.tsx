@@ -206,12 +206,11 @@ export default function MarketsClient({
             {
               key: 'status',
               label: MARKET_STATUS_MAP[statusFilter].label,
-              tone:
-                MARKET_STATUS_MAP[statusFilter].variant === 'success'
+              tone: (MARKET_STATUS_MAP[statusFilter].variant === 'success'
                   ? 'success'
                   : MARKET_STATUS_MAP[statusFilter].variant === 'warning'
                     ? 'warning'
-                    : 'neutral',
+                    : 'neutral') as 'warning' | 'success' | 'danger' | 'neutral',
               count: filteredItems.filter((item) => item.status === statusFilter).length,
             },
           ]
@@ -221,12 +220,11 @@ export default function MarketsClient({
             {
               key: 'region',
               label: MARKET_REGION_MAP[regionFilter].label,
-              tone:
-                MARKET_REGION_MAP[regionFilter].variant === 'success'
+              tone: (MARKET_REGION_MAP[regionFilter].variant === 'success'
                   ? 'success'
                   : MARKET_REGION_MAP[regionFilter].variant === 'danger'
                     ? 'danger'
-                    : 'neutral',
+                    : 'neutral') as 'warning' | 'success' | 'danger' | 'neutral',
               count: statusFiltered.filter((item) => item.region === regionFilter).length,
             },
           ]

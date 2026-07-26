@@ -97,7 +97,7 @@ export class BrandOperationsPrismaStore implements OnApplicationBootstrap {
   private async persistEntity<T>(
     store: Map<string, T>,
     id: string,
-    prismaModel: { upsert: (args: { where: { id: string }; create: T; update: T }) => Promise<unknown> },
+    prismaModel: any,
   ): Promise<void> {
     const entity = store.get(id)
     if (!entity) return

@@ -256,10 +256,11 @@ export class CouponService {
         this.logger.warn(`Business check failed: ${err.code} - ${err.message}`);
         return { success: false, error: { code: err.code, message: err.message } };
       }
-      this.logger.error(`redeemCrossStore failed: ${err.message}`);
+      const e = err as Error
+      this.logger.error(`redeemCrossStore failed: ${e.message}`);
       return {
         success: false,
-        error: { code: 'COUPON_NOT_FOUND', message: err.message },
+        error: { code: 'COUPON_NOT_FOUND', message: e.message },
       };
     }
   }

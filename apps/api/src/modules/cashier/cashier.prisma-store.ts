@@ -72,6 +72,7 @@ export class CashierPrismaStore implements OnModuleInit {
       await this.prisma.cashierPayment.upsert({
         where: { paymentId: payment.paymentId },
         create: {
+          tenantId: payment.paymentId,
           paymentId: payment.paymentId,
           orderId: payment.orderId,
           externalPaymentId: payment.externalPaymentId,

@@ -1,7 +1,7 @@
 import { PageShell, StatCard } from '@m5/ui';
 import type { AuditRiskLevel, AuditTrailQuery } from '@m5/types';
 import { AdminPermissionGate } from '../components/admin-permission-gate';
-import AuditTrailClient from './audit-trail/audit-trail-client';
+import AuditTrailClient from './audit-trail-client';
 import { loadAuditTrail } from '../audit-trail-view-model';
 
 export const dynamic = 'force-dynamic';

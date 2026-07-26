@@ -401,19 +401,19 @@ export class EmpowerCardService {
 
   private rowToEntity(row: Record<string, unknown>): EmpowerCardEntity {
     return {
-      id: row.id,
-      tag: row.tag,
-      summary: row.summary,
-      source: row.source,
-      freshnessScore: row.freshness_score,
-      moduleMapping: row.module_mapping,
-      quoteCount: row.quote_count,
-      lastQuotedAt: row.last_quoted_at?.toISOString?.() ?? row.last_quoted_at ?? null,
-      confidence: row.confidence,
-      expertVetted: row.expert_vetted,
-      detailUrl: row.detail_url,
-      createdAt: row.created_at?.toISOString?.() ?? row.created_at,
-      updatedAt: row.updated_at?.toISOString?.() ?? row.updated_at,
+      id: row.id as string,
+      tag: row.tag as string,
+      summary: row.summary as string,
+      source: row.source as string,
+      freshnessScore: row.freshness_score as number,
+      moduleMapping: row.module_mapping as string | null,
+      quoteCount: row.quote_count as number,
+      lastQuotedAt: (row.last_quoted_at as Date)?.toISOString?.() ?? (row.last_quoted_at as string) ?? null,
+      confidence: row.confidence as number,
+      expertVetted: row.expert_vetted as boolean,
+      detailUrl: row.detail_url as string | null,
+      createdAt: (row.created_at as Date)?.toISOString?.() ?? row.created_at as string,
+      updatedAt: (row.updated_at as Date)?.toISOString?.() ?? row.updated_at as string,
     }
   }
 }

@@ -37,7 +37,7 @@ export class DeepSeekProvider extends BaseAIProvider {
       return { available: this.healthy, latencyMs: Date.now() - start }
     } catch (e: unknown) {
       this.healthy = false
-      return { available: false, errorMessage: e.message }
+      return { available: false, errorMessage: (e as Error).message }
     }
   }
 
@@ -57,7 +57,7 @@ export class DeepSeekProvider extends BaseAIProvider {
       return this.buildResponse(content, 'deepseek', start, 90, confidence)
     } catch (e: unknown) {
       this.healthy = false
-      throw new Error(`DeepSeek failed: ${e.message}`)
+      throw new Error(`DeepSeek failed: ${(e as Error).message}`)
     }
   }
 

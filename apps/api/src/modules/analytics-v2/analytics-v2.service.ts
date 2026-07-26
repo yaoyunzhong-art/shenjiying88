@@ -169,7 +169,7 @@ export class AnalyticsV2Service {
         }
         return { eventId: event.eventId, accepted: true }
       } catch (err: unknown) {
-        return { eventId: event.eventId, accepted: false, reason: err.message || 'unknown_error' }
+        return { eventId: event.eventId, accepted: false, reason: (err as Error).message || 'unknown_error' }
       }
     })
 

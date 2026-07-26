@@ -5,7 +5,7 @@ import { useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SecuritySnapshotDelivery } from './security-data'
 
-const styles: Record<string, CSSProperties> = {
+const styles: Record<string, any> = {
   page: { padding: 32, maxWidth: 1080, margin: '0 auto' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: 0 },

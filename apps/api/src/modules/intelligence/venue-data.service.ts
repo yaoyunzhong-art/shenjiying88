@@ -86,7 +86,7 @@ export class VenueDataService {
         const result = await pool.query('SELECT id, name, city, region, category, rating FROM venues WHERE city = $1 LIMIT 50', [city])
         return result.rows.map((r: any) => ({ ...r, price: null, equipment: null }))
       } catch (e: unknown) {
-        this.logger.warn(`DB query failed for city=${city}: ${e.message}, falling back`)
+        this.logger.warn(`DB query failed for city=${city}: ${(e as Error).message}, falling back`)
       }
     }
     // 检查是否有任何该城市的条目
@@ -154,7 +154,7 @@ export class VenueDataService {
           status: r.status,
         }))
       } catch (e: unknown) {
-        this.logger.warn(`DB device query failed for city=${city}: ${e.message}, falling back`)
+        this.logger.warn(`DB device query failed for city=${city}: ${(e as Error).message}, falling back`)
       }
     }
     // 降级返回 mock 数据

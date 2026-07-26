@@ -296,7 +296,7 @@ describe(`${ROLES.Guide} analytics-v2 角色 V3 测试`, () => {
     const gameEvent = events.find(e => e.eventId === 'game-mahjong')
     assert.ok(gameEvent, '游戏事件应持久化')
     assert.ok(gameEvent.properties, '自定义属性应保留')
-    assert.equal(gameEvent.properties.opponents.length, 3, '属性数组应保留')
+    assert.equal((gameEvent.properties as any).opponents.length, 3, '属性数组应保留')
   })
 
   it('🎮导玩员-V3: 游戏会话多事件关联 - 漏斗视图', () => {

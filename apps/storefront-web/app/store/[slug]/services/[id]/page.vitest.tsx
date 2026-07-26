@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ══════════════════════════════════════════════════════════
 // Mocks
@@ -51,7 +51,7 @@ const mockPush = vi.fn();
 const mockUseParams = vi.fn(() => ({ slug: 'flagship-beijing', id: 'svc-1' }));
 
 vi.mock('next/navigation', () => ({
-  useParams: (...args: any[]) => mockUseParams(...args),
+  useParams: () => mockUseParams(),
   useRouter: () => ({ push: mockPush }),
 }));
 

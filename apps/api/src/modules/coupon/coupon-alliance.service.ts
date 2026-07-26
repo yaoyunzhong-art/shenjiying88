@@ -345,14 +345,14 @@ export class CouponDistributionEngine {
   autoIssueByRule(couponId: string, trigger: DistributionTrigger, context: Record<string, unknown> = {}): { issued: boolean; trigger: DistributionTrigger; couponId: string } {
     const handlers: Record<DistributionTrigger, () => boolean> = {
       on_register: () => {
-        const memberId = context.memberId
+        const memberId = context.memberId as string | undefined
         if (!memberId) return false
         this.distributeToMember(couponId, memberId, `trigger:${trigger}`)
         return true
       },
       on_consume: () => {
-        const memberId = context.memberId
-        const orderAmount = context.orderAmount ?? 0
+        const memberId = context.memberId as string | undefined
+        const orderAmount = (context.orderAmount as number) ?? 0
         if (!memberId) return false
         // 消费满 100 才发券
         if (orderAmount >= 100) {
@@ -362,13 +362,13 @@ export class CouponDistributionEngine {
         return false
       },
       on_birthday: () => {
-        const memberId = context.memberId
+        const memberId = context.memberId as string | undefined
         if (!memberId) return false
         this.distributeToMember(couponId, memberId, `trigger:${trigger}`)
         return true
       },
       on_level_up: () => {
-        const memberId = context.memberId
+        const memberId = context.memberId as string | undefined
         if (!memberId) return false
         this.distributeToMember(couponId, memberId, `trigger:${trigger}`)
         return true

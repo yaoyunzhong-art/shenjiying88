@@ -144,10 +144,10 @@ export default function StoreReportsClient({
     return [...filteredRows].sort((left, right) => {
       const leftValue = column.sortValue
         ? column.sortValue(left)
-        : (left as Record<string, unknown>)[column.dataKey ?? column.key];
+        : (left as unknown as Record<string, unknown>)[column.dataKey ?? column.key];
       const rightValue = column.sortValue
         ? column.sortValue(right)
-        : (right as Record<string, unknown>)[column.dataKey ?? column.key];
+        : (right as unknown as Record<string, unknown>)[column.dataKey ?? column.key];
 
       if (leftValue == null) return 1;
       if (rightValue == null) return -1;

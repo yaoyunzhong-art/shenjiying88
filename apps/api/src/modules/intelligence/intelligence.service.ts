@@ -927,7 +927,7 @@ ${tier === 'luxury' ? '豪华' : tier === 'deluxe' ? '精装' : tier === 'standa
           })
           entries++
         } catch (err: unknown) {
-          this.logger.warn('知识卡片创建失败(city=' + city + '): ' + err.message)
+          this.logger.warn('知识卡片创建失败(city=' + city + '): ' + (err as Error).message)
         }
       }
     }

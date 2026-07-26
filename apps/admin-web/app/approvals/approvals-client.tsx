@@ -214,7 +214,7 @@ export default function ApprovalsClient({ snapshot }: { snapshot: ApprovalsSnaps
       >
         <div>deliveryMode: {snapshot.deliveryMode} · latestUpdatedAt: {latestUpdatedAt}</div>
         <div>首屏快照 generatedAt: {snapshot.generatedAt}</div>
-        <div>写入链路: submitApprovalComment / approveApproval / rejectApproval -> local state mutation only</div>
+        <div>写入链路: submitApprovalComment / approveApproval / rejectApproval {'->'} local state mutation only</div>
       </div>
 
       {feedback ? (

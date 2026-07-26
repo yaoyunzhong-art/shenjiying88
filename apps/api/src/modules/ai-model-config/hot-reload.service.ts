@@ -189,13 +189,13 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
       
     } catch (error: unknown){
       const latencyMs = Date.now() - startTime
-      this.logger.error(`Hot reload failed: ${error.message}`, error.stack)
+      this.logger.error(`Hot reload failed: ${(error as Error).message}`, (error as any).stack)
       
       return {
         success: false,
         latencyMs,
         healthCheckOk: false,
-        error: error.message,
+        error: (error as Error).message,
       }
     }
   }

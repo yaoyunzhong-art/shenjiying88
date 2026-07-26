@@ -62,7 +62,7 @@ export class FallbackService {
           }
           return result
         } catch (e: unknown) {
-          errors.push({ provider: provider.name, error: e.message })
+          errors.push({ provider: provider.name, error: (e as Error).message })
           if (attempt === this.MAX_RETRIES - 1) break
         }
       }

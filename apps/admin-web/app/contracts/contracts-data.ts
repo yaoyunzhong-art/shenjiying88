@@ -152,7 +152,7 @@ function mapBackendContract(value: unknown): ContractRecord | null {
   if (!isRecord(value)) {
     return null
   }
-  const backend = value as BackendContractRecord
+  const backend = value as unknown as BackendContractRecord
   const upstreamId = readString(backend.id)
   const displayId = readString(backend.contractNo, upstreamId || 'CT-UNKNOWN')
   const fileName = readString(backend.fileName)

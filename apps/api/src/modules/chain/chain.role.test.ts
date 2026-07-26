@@ -92,7 +92,7 @@ describe(`${ROLES.TenantAdmin} chain 角色测试`, () => {
       amount: 1000,
       timestamp: Date.now(),
     })
-    assert.equal(trail.transactionId, 'tx-chain-001')
+    assert.equal(trail.entity, 'tx-chain-001')
 
     const result = auditService.verifyAuditTrail(trail.id)
     assert.equal(result.verified, true)
@@ -162,8 +162,8 @@ describe(`${ROLES.Safety} chain 角色测试`, () => {
 
     const alert = auditService.alertOnAnomaly('suspicious-user')
     assert.ok(alert)
-    assert.equal(alert.userId, 'suspicious-user')
-    assert.ok(alert.reason)
+    assert.equal(alert.operator, 'suspicious-user')
+    assert.ok(alert.metadata)
   })
 
   it('安监查询不存在的审计跟踪应返回未验证（边界）', () => {
@@ -298,9 +298,9 @@ describe(`${ROLES.HR} chain 角色测试`, () => {
       toRole: '导玩员',
       timestamp: Date.now(),
     })
-    assert.equal(trail.transactionId, 'tx-hr-001')
-    assert.equal(trail.action, 'employee.role.change')
-    assert.equal(trail.userId, 'hr-user')
+    assert.equal(trail.entity, 'tx-hr-001')
+    assert.equal(trail.entityId, 'employee.role.change')
+    assert.equal(trail.operator, 'hr-user')
     assert.ok(trail.metadata)
   })
 

@@ -144,16 +144,16 @@ export default function TenantsClient({
 
   const chips: FilterChip[] = [
     ...(statusFilter !== 'ALL'
-      ? [{ key: 'status', label: TENANT_STATUS_MAP[statusFilter].label, tone: 'neutral', count: statusFiltered.length }]
+      ? [{ key: 'status', label: TENANT_STATUS_MAP[statusFilter].label, tone: 'neutral' as const, count: statusFiltered.length }]
       : []),
     ...(planFilter !== 'ALL'
-      ? [{ key: 'plan', label: TENANT_PLAN_MAP[planFilter].label, tone: 'neutral', count: planFiltered.length }]
+      ? [{ key: 'plan', label: TENANT_PLAN_MAP[planFilter].label, tone: 'neutral' as const, count: planFiltered.length }]
       : []),
     ...(billingFilter !== 'ALL'
-      ? [{ key: 'billing', label: TENANT_BILLING_MAP[billingFilter], tone: 'neutral', count: billingFiltered.length }]
+      ? [{ key: 'billing', label: TENANT_BILLING_MAP[billingFilter], tone: 'neutral' as const, count: billingFiltered.length }]
       : []),
     ...(marketFilter !== 'ALL'
-      ? [{ key: 'market', label: marketFilter, tone: 'neutral', count: marketFiltered.length }]
+      ? [{ key: 'market', label: marketFilter, tone: 'neutral' as const, count: marketFiltered.length }]
       : []),
   ]
 

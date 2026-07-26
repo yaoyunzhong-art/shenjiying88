@@ -457,7 +457,7 @@ export class ConflictResolver {
 }
 // ── Test wrapper ──
 
-interface CollabSession {
+export interface CollabSession {
   id: string
   documentId: string
   ownerId: string
@@ -465,7 +465,7 @@ interface CollabSession {
   createdAt: string
 }
 
-interface CursorPosition {
+export interface CursorPosition {
   userId: string
   position: { line: number; column: number }
   sessionId: string
@@ -478,7 +478,7 @@ interface PresenceEntry {
   updatedAt: string
 }
 
-interface CommentEntry {
+export interface CommentEntry {
   id: string
   userId: string
   sessionId: string

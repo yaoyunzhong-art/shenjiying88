@@ -136,11 +136,11 @@ export class AllianceService {
         resourceId: partner.id,
         riskLevel: 'low',
         metadata: { partnerName: partner.name, businessType: partner.businessType },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: partner }
     } catch (err: unknown) {
-      this.logger.error(`registerPartner failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message }
+      this.logger.error(`registerPartner failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -157,11 +157,11 @@ export class AllianceService {
         resourceId: partnerId,
         riskLevel: 'low',
         metadata: { updates: req },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: partner }
     } catch (err: unknown) {
-      this.logger.error(`updatePartner failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message }
+      this.logger.error(`updatePartner failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -177,11 +177,11 @@ export class AllianceService {
         resourceId: partnerId,
         riskLevel: 'medium',
         metadata: { action: 'deactivate', reason },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: partner, message: reason ?? 'Partner deactivated' }
     } catch (err: unknown) {
-      this.logger.error(`deactivatePartner failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message }
+      this.logger.error(`deactivatePartner failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -197,11 +197,11 @@ export class AllianceService {
         resourceId: partnerId,
         riskLevel: 'medium',
         metadata: { action: 'reactivate' },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: partner }
     } catch (err: unknown) {
-      this.logger.error(`reactivatePartner failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message }
+      this.logger.error(`reactivatePartner failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -251,7 +251,7 @@ export class AllianceService {
       resourceId: partnerId,
       riskLevel: 'medium',
       metadata: { grade },
-    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
     return { success: true, message: `Grade ${grade} assigned to ${partnerId}` }
   }
 
@@ -347,11 +347,11 @@ export class AllianceService {
         settlementId: settlement.settlementId,
         settlementAmount: req.totalAmount,
         metadata: { orderId: req.orderId, type: req.type, participantCount: req.participants.length },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      this.logger.error(`createSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+      this.logger.error(`createSettlement failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -370,11 +370,11 @@ export class AllianceService {
         settlementId,
         settlementAmount: settlement.totalAmount,
         metadata: { settlementId, orderId: settlement.orderId },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      this.logger.error(`approveSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+      this.logger.error(`approveSettlement failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -391,11 +391,11 @@ export class AllianceService {
         riskLevel: 'medium',
         settlementId,
         metadata: { settlementId },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      this.logger.error(`rejectSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+      this.logger.error(`rejectSettlement failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -412,11 +412,11 @@ export class AllianceService {
         riskLevel: 'medium',
         settlementId,
         metadata: { settlementId, action: 'cancel_after_approval' },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      this.logger.error(`cancelSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+      this.logger.error(`cancelSettlement failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -435,11 +435,11 @@ export class AllianceService {
         settlementId,
         settlementAmount: settlement.totalAmount,
         metadata: { settlementId, orderId: settlement.orderId, participantCount: settlement.participants?.length },
-      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${e.message}`))
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      this.logger.error(`executeSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+      this.logger.error(`executeSettlement failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -490,8 +490,8 @@ export class AllianceService {
       const result = this.orderDetector.manualLink(orderId, partnerId)
       return { success: true, data: result }
     } catch (err: unknown) {
-      this.logger.error(`linkOrder failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+      this.logger.error(`linkOrder failed: ${(err as Error).message}`, (err as any).stack)
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -567,7 +567,7 @@ export class AllianceService {
       const coupon = this.couponService.issueCoupon(req)
       return { success: true, data: coupon }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -577,7 +577,7 @@ export class AllianceService {
       const redemption = this.couponService.redeemCoupon(couponId, partnerId, partnerName, orderId, memberId, orderAmount)
       return { success: true, data: redemption }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -587,7 +587,7 @@ export class AllianceService {
       const coupon = this.couponService.cancelCoupon(couponId)
       return { success: true, data: coupon }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -610,7 +610,7 @@ export class AllianceService {
       const settlement = this.couponService.settleCoupon(couponId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -636,7 +636,7 @@ export class AllianceService {
       const record = this.dataService.receiveCallback(partnerId, dataType, payload)
       return { success: true, data: record }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -668,7 +668,7 @@ export class AllianceService {
       const anomaly = this.reviewService.reportAnomaly(partnerId, partnerName, type as AnomalyType, severity as AnomalySeverity, amount, description, relatedId)
       return { success: true, data: anomaly }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 
@@ -684,7 +684,7 @@ export class AllianceService {
       const review = this.reviewService.submitReview(anomalyId, decision, reviewer, note)
       return { success: true, data: review }
     } catch (err: unknown) {
-      return { success: false, message: err.message, code: err.code }
+      return { success: false, message: (err as any).message, code: (err as any).code }
     }
   }
 

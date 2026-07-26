@@ -23,6 +23,8 @@ import type {
   AiModelStoreConfig,
   AiModelConfigHistory,
   AiModelProvider,
+  IndustryType,
+  ConfigChangeType,
 } from './ai-model-config.entity'
 
 // ============ Repository 接口 ============
@@ -525,55 +527,55 @@ class MemoryRepository implements AiModelConfigRepository {
 
 function mapPresetRow(row: Record<string, unknown>): AiModelPreset {
   return {
-    id: row.id,
-    presetCode: row.preset_code,
-    displayName: row.display_name,
-    provider: row.provider,
-    modelName: row.model_name,
+    id: row.id as string,
+    presetCode: row.preset_code as string,
+    displayName: row.display_name as string,
+    provider: row.provider as AiModelProvider,
+    modelName: row.model_name as string,
     defaultParams: typeof row.default_params === 'string' ? JSON.parse(row.default_params) : row.default_params,
-    industry: row.industry,
-    presetId: row.preset_id ?? row.id,
-    name: row.name ?? row.display_name,
-    industryType: row.industry_type ?? row.industry,
-    isActive: row.is_active,
-    description: row.description ?? undefined,
-    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
-    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+    industry: row.industry as IndustryType,
+    presetId: (row.preset_id as string) ?? (row.id as string),
+    name: (row.name as string) ?? (row.display_name as string),
+    industryType: (row.industry_type as IndustryType) ?? (row.industry as IndustryType),
+    isActive: row.is_active as boolean,
+    description: row.description as string | undefined,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at as string,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at as string,
   }
 }
 
 function mapStoreConfigRow(row: Record<string, unknown>): AiModelStoreConfig {
   return {
-    id: row.id,
-    tenantId: row.tenant_id,
-    storeId: row.store_id,
-    configName: row.config_name,
-    provider: row.provider,
-    endpointUrl: row.endpoint_url_enc,
-    apiKeyEncrypted: row.api_key_enc,
-    contextWindow: row.context_window,
-    temperature: typeof row.temperature === 'string' ? parseFloat(row.temperature) : row.temperature,
-    maxTokens: row.max_tokens,
+    id: row.id as string,
+    tenantId: row.tenant_id as string,
+    storeId: row.store_id as string,
+    configName: row.config_name as string,
+    provider: row.provider as AiModelProvider,
+    endpointUrl: row.endpoint_url_enc as string,
+    apiKeyEncrypted: row.api_key_enc as string,
+    contextWindow: row.context_window as number,
+    temperature: typeof row.temperature === 'string' ? parseFloat(row.temperature) : row.temperature as number,
+    maxTokens: row.max_tokens as number,
     customHeaders: row.custom_headers
-      ? typeof row.custom_headers === 'string' ? JSON.parse(row.custom_headers) : row.custom_headers
+      ? typeof row.custom_headers === 'string' ? JSON.parse(row.custom_headers) : row.custom_headers as Record<string, unknown>
       : undefined,
-    isCurrent: row.is_current,
-    createdBy: row.created_by,
-    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
-    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+    isCurrent: row.is_current as boolean,
+    createdBy: row.created_by as string,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at as string,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at as string,
   }
 }
 
 function mapHistoryRow(row: Record<string, unknown>): AiModelConfigHistory {
   return {
-    id: row.id,
-    configId: row.config_id,
+    id: row.id as string,
+    configId: row.config_id as string,
     snapshot: typeof row.snapshot === 'string' ? JSON.parse(row.snapshot) : row.snapshot,
-    versionNumber: row.version_number,
-    changeType: row.change_type,
-    changedBy: row.changed_by,
-    changedAt: row.changed_at instanceof Date ? row.changed_at.toISOString() : row.changed_at,
-    reason: row.reason ?? undefined,
+    versionNumber: row.version_number as number,
+    changeType: row.change_type as ConfigChangeType,
+    changedBy: row.changed_by as string,
+    changedAt: row.changed_at instanceof Date ? row.changed_at.toISOString() : row.changed_at as string,
+    reason: (row.reason as string | undefined) ?? undefined,
   }
 }
 

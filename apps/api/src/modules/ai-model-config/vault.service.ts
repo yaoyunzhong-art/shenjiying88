@@ -42,7 +42,7 @@ export class VaultService {
       this.logger.log('Successfully fetched encryption key from Vault')
       return vaultKey
     } catch (error: unknown){
-      this.logger.warn(`Failed to fetch from Vault: ${error.message}`)
+      this.logger.warn(`Failed to fetch from Vault: ${(error as Error).message}`)
       
       // 检查环境
       if (process.env.NODE_ENV === 'production') {

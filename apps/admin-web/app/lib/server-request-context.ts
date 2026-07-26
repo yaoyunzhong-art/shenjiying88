@@ -87,12 +87,12 @@ export function headersToRecord(
   }
 
   if (source instanceof Headers) {
-    return Object.fromEntries(source.entries())
+    return Object.fromEntries((source as any).entries())
   }
 
   if (Array.isArray(source)) {
     const headers = new Headers(source)
-    return Object.fromEntries(headers.entries())
+    return Object.fromEntries((headers as any).entries())
   }
 
   const record = source as HeaderRecordLike
@@ -124,7 +124,7 @@ export function pickForwardedRequestHeaders(
     }
   }
 
-  return Object.fromEntries(forwarded.entries())
+  return Object.fromEntries((forwarded as any).entries())
 }
 
 function hasForwardedActorHeaders(headers: Record<string, string>): boolean {

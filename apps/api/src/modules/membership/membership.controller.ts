@@ -90,7 +90,7 @@ export class MembershipController {
       })
       return { success: true, data: member }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -150,7 +150,7 @@ export class MembershipController {
       const member = this.svc.update(id, body)
       return { success: true, data: member }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -165,7 +165,7 @@ export class MembershipController {
       this.svc.delete(id)
       return { success: true, data: { id, deleted: true } }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -214,7 +214,7 @@ export class MembershipController {
       const progress = this.svc.getUpgradeProgress(id)
       return { success: true, data: progress }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -228,7 +228,7 @@ export class MembershipController {
       const member = this.svc.refreshLevel(id)
       return { success: true, data: member }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -245,7 +245,7 @@ export class MembershipController {
       const tx = this.svc.earnPoints(id, body.amount, body.orderId)
       return { success: true, data: tx }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -260,7 +260,7 @@ export class MembershipController {
       const result = this.svc.redeemPoints(id, body.points, body.orderId)
       return { success: true, data: result }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -285,7 +285,7 @@ export class MembershipController {
       const member = this.svc.adjustPoints(id, body.amount, body.remark)
       return { success: true, data: member }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -305,7 +305,7 @@ export class MembershipController {
       const member = this.svc.recharge(id, body.amount, body.paymentMethod, body.orderId)
       return { success: true, data: member }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -320,7 +320,7 @@ export class MembershipController {
       const paid = this.svc.payWithBalance(id, body.amount, body.orderId)
       return { success: true, data: { paid } }
     } catch (err: unknown) {
-      return { success: false, message: err.message }
+      return { success: false, message: (err as Error).message }
     }
   }
 

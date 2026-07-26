@@ -44,7 +44,7 @@ export class OpenAIProvider extends BaseAIProvider {
       }
     } catch (e: unknown) {
       this.healthy = false
-      return { available: false, errorMessage: e.message }
+      return { available: false, errorMessage: (e as Error).message }
     }
   }
 
@@ -66,7 +66,7 @@ export class OpenAIProvider extends BaseAIProvider {
       return this.buildResponse(content, 'openai', start, 100, confidence)
     } catch (e: unknown) {
       this.healthy = false
-      throw new Error(`OpenAI failed: ${e.message}`)
+      throw new Error(`OpenAI failed: ${(e as Error).message}`)
     }
   }
 

@@ -861,8 +861,8 @@ export class BrandOperationsService {
         this.logger.debug(`Executed campaign schedule ${s.id}: ${s.action} campaign ${s.campaignId}`)
       } catch (error: unknown) {
         s.status = 'failed'
-        s.errorMessage = error.message
-        this.logger.warn(`Failed campaign schedule ${s.id}: ${error.message}`)
+        s.errorMessage = (error as Error).message
+        this.logger.warn(`Failed campaign schedule ${s.id}: ${(error as Error).message}`)
       }
       s.updatedAt = now
       campaignScheduleStore.set(s.id, s)
@@ -1185,7 +1185,7 @@ export class BrandOperationsService {
     if (this.prismaStore) void this.prismaStore.persistExportRecord(id)
     } catch (error: unknown) {
       record.status = 'failed'
-      record.errorMessage = error.message
+      record.errorMessage = (error as Error).message
       exportRecordStore.set(id, record)
     if (this.prismaStore) void this.prismaStore.persistExportRecord(id)
     }
@@ -1737,7 +1737,7 @@ export class BrandOperationsService {
       recycleBinStore.set(id, item)
       this.logger.debug(`Restored ${item.entityType} ${item.entityId} from recycle bin`)
     } catch (error: unknown) {
-      throw new Error(`Failed to restore entity: ${error.message}`)
+      throw new Error(`Failed to restore entity: ${(error as Error).message}`)
     }
 
     return { ...item }

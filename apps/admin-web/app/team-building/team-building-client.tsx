@@ -80,7 +80,7 @@ export default function TeamBuildingClient({
         render: (item) => (
           <StatusBadge
             label={ACTIVITY_STATUS_LABEL[item.status]}
-            variant={ACTIVITY_STATUS_VARIANT[item.status]}
+            variant={ACTIVITY_STATUS_VARIANT[item.status] as any}
           />
         ),
       },

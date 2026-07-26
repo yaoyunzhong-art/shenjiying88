@@ -95,9 +95,9 @@ export class AllianceDataService {
     try {
       this.processCallback(id)
     } catch (err: unknown) {
-      this.logger.warn(`Callback ${id} processing failed: ${err.message}`)
+      this.logger.warn(`Callback ${id} processing failed: ${(err as Error).message}`)
       record.processStatus = 'failed'
-      record.processResult = err.message
+      record.processResult = (err as Error).message
     }
 
     this.logger.log(`Data callback received: ${id} partner=${partnerId} type=${dataType}`)

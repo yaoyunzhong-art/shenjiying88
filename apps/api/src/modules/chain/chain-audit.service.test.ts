@@ -15,8 +15,8 @@ describe('ChainAuditService', () => {
         blockNumber: 12345,
         txHash: '0x123',
       })
-      expect(trail.transactionId).toBe('tx-001')
-      expect(trail.action).toBe('action')
+      expect(trail.entity).toBe('tx-001')
+      expect(trail.entityId).toBe('action')
     })
   })
 
@@ -45,7 +45,7 @@ describe('ChainAuditService', () => {
         txHash: '0x123',
       })
       const trail = service.getAuditTrail(created.id)
-      expect(trail?.transactionId).toBe('tx-001')
+      expect(trail?.entity).toBe('tx-001')
     })
   })
 

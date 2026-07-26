@@ -43,11 +43,12 @@ export class PermissionService {
 
     // 3. 检查资源归属 (如果提供了resourceId)
     if (request.resourceId && request.data) {
+      const d = request.data as any
       const canAccess = this.dataScopeService.canAccessResource(
         context,
-        request.data.tenantId || context.tenantId,
-        request.data.brandId || context.brandId,
-        request.data.storeId || context.storeId,
+        d?.tenantId || context.tenantId,
+        d?.brandId || context.brandId,
+        d?.storeId || context.storeId,
       )
 
       if (!canAccess) {
