@@ -34,6 +34,14 @@ function extractPageSource(): string | null {
   } catch { return null; }
 }
 
+function extractAnalyticsDataSource(): string | null {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    return fs.readFileSync(path.join(__dirname, 'analytics-data.ts'), 'utf-8');
+  } catch { return null; }
+}
+
 function extractAnalysisTabsSource(): string | null {
   try {
     const fs = require('fs');
@@ -60,7 +68,7 @@ describe('analytics page', () => {
 
   describe('类型定义', () => {
     it('应定义 AnalyticsSnapshot 接口', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('AnalyticsSnapshot'));
       assert.ok(src.includes('periodRevenue'));
@@ -69,7 +77,7 @@ describe('analytics page', () => {
     });
 
     it('应定义 topSellingProducts 类型', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('topSellingProducts'));
       assert.ok(src.includes('sales'));
@@ -77,14 +85,14 @@ describe('analytics page', () => {
     });
 
     it('应定义品类数据接口', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('Category') || src.includes('category'));
     });
 
     // 新增: 反例 — 不应有错误类型字段
     it('不应包含未知的接口字段（反例）', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(!src.includes('unknownField'));
       assert.ok(!src.includes('AnalyticsSnapshot2'));
@@ -92,7 +100,7 @@ describe('analytics page', () => {
 
     // 新增: 边界 — 字段类型约束
     it('periodRevenue 应包含 current/previous/growth 三个数值字段', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('current: number'));
       assert.ok(src.includes('previous: number'));
@@ -101,7 +109,7 @@ describe('analytics page', () => {
 
     // 新增: 边界 — 品类数据字段完整性
     it('categoryBreakdown 应包含 category/revenue/percentage', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       const idx = src.indexOf('categoryBreakdown');
       assert.ok(idx >= 0);
@@ -157,7 +165,7 @@ describe('analytics page', () => {
 
   describe('数据结构', () => {
     it('应包含营收数据字段', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('periodRevenue'));
       assert.ok(src.includes('current'));
@@ -166,14 +174,14 @@ describe('analytics page', () => {
     });
 
     it('应支持同比环比', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('growth') || src.includes('同比') || src.includes('环比'));
     });
 
     // 新增: 正例 — 包含留存率数据
     it('应包含客户留存率数据', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       assert.ok(src.includes('customerRetentionRate'));
       assert.ok(src.includes('newCustomerRate'));
@@ -181,7 +189,7 @@ describe('analytics page', () => {
 
     // 新增: 正例 — 时段分布数据完整性
     it('应包含 7 个时段的客流分布数据', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       const matches = src.match(/hour: '/g);
       assert.ok(matches);
@@ -190,7 +198,7 @@ describe('analytics page', () => {
 
     // 新增: 边界 — 时段客流不重复
     it('时段数据应无重复时段', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       const hours = ['09-11', '11-13', '13-15', '15-17', '17-19', '19-21', '21-23'];
       for (const h of hours) {
@@ -200,7 +208,7 @@ describe('analytics page', () => {
 
     // 新增: 反例 — 品类占比数据合理
     it('品类百分比总和应约为 100%', () => {
-      const src = extractPageSource();
+      const src = extractAnalyticsDataSource();
       assert.ok(src);
       const percentages = [40, 20, 15, 10, 15];
       const sum = percentages.reduce((a, b) => a + b, 0);
@@ -270,12 +278,15 @@ describe('analytics page', () => {
     });
 
     it('应显式标记数据分析页为 mock 样本', () => {
-      const src = extractPageSource();
-      assert.ok(src);
-      assert.ok(src.includes("deliveryMode: 'mock' as const"));
-      assert.ok(src.includes('loadAnalytics'));
-      assert.ok(src.includes('local analytics snapshot'));
-      assert.ok(src.includes('不可作为闭环复签证据'));
+      const pageSrc = extractPageSource();
+      const dataSrc = extractAnalyticsDataSource();
+      assert.ok(pageSrc);
+      assert.ok(dataSrc);
+      assert.ok(dataSrc.includes("deliveryMode: 'mock'"));
+      assert.ok(dataSrc.includes('loadAnalyticsSnapshot'));
+      assert.ok(pageSrc.includes('loadAnalyticsSnapshot -> loadAnalytics'));
+      assert.ok(pageSrc.includes('local analytics snapshot'));
+      assert.ok(pageSrc.includes('不可作为闭环复签证据'));
     });
   });
 

@@ -320,6 +320,10 @@ describe('KnowledgePage — 正例', () => {
       new URL('./page.tsx', import.meta.url),
       'utf-8',
     );
+    const dataSourceContent = fs.readFileSync(
+      new URL('./knowledge-data.ts', import.meta.url),
+      'utf-8',
+    );
 
     it('使用 ErrorBoundary 包裹页面', () => {
       assert.ok(/<ErrorBoundary>/.test(sourceContent));
@@ -370,8 +374,10 @@ describe('KnowledgePage — 正例', () => {
     });
 
     it('应显式标记知识库页为 mock 样本', () => {
-      assert.ok(/deliveryMode:\s*'mock' as const/.test(sourceContent));
-      assert.ok(/loadKnowledge/.test(sourceContent));
+      assert.ok(/deliveryMode:\s*snapshot\.deliveryMode/.test(sourceContent));
+      assert.ok(/deliveryMode:\s*'mock'/.test(dataSourceContent));
+      assert.ok(/loadKnowledgeSnapshot/.test(sourceContent));
+      assert.ok(/loadKnowledgeSnapshot -> loadKnowledge/.test(sourceContent));
       assert.ok(/local knowledge snapshot/.test(sourceContent));
       assert.ok(/不可作为闭环复签证据/.test(sourceContent));
     });

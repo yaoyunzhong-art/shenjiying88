@@ -1,163 +1,134 @@
-/**
- * P-Admin 系统监控页测试 (30+ tests)
- *
- * 圈梁四道箍:
-import fs from "fs";
- * ① TSC通过 → ② 测试存在(0 fail) → ③ 圈梁表更新 → ④ PRD标记
- */
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
-import fs from 'fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const pagePath = resolve(__dirname, 'page.tsx');
-const SRC = fs.readFileSync(pagePath, 'utf-8');
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-describe('system-monitor — 权限边界', () => {
-  it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'))
-    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"))
-  })
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'system-monitor-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'system-monitor-data.ts'), 'utf-8')
 })
 
-// ─── Mock fetch — URL-pattern responseRegistry ──
-const responseRegistry = new Map<string, () => unknown>();
-function setResponseFor(pattern: string, factory: () => unknown) { responseRegistry.set(pattern, factory); }
-globalThis.fetch = ((url: string) => {
-  const path = typeof url === 'string' ? url : '';
-  for (const [pattern, factory] of responseRegistry) {
-    if (path.includes(pattern)) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(factory()), headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path } as Response);
-  }
-  return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}), headers: new Headers(), redirected: false, statusText: 'OK', type: 'basic' as const, url: path } as Response);
-}) as typeof fetch;
-
-// ─── 正例: 源码结构 ─────────────────────
-describe('SystemMonitorPage — 源码结构', () => {
-  it('导出 default function', () => { assert.ok(SRC.includes('export default')) })
-  it('存在 SystemMetric 接口', () => { assert.ok(SRC.includes('SystemMetric')) })
-  it('存在 ServiceStatus 接口', () => { assert.ok(SRC.includes('ServiceStatus')) })
-  it('存在 ActivityLog 接口', () => { assert.ok(SRC.includes('ActivityLog')) })
-  it('存在 useState', () => { assert.ok(SRC.includes('useState')) })
-  it('存在 useEffect', () => { assert.ok(SRC.includes('useEffect')) })
-  it('存在 useCallback', () => { assert.ok(SRC.includes('useCallback')) })
-  it('存在 loading 状态', () => { assert.ok(SRC.includes('loading')) })
-  it('存在 error 处理', () => { assert.ok(SRC.includes('error')) })
-
-  it('指标名称含监控城市/服务/告警', () => {
-    assert.ok(SRC.includes('监控') || SRC.includes('monitor') || SRC.includes('报警'))
+describe('SystemMonitorPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function SystemMonitorPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  it('trend 支持 up/down/stable', () => {
-    assert.ok(SRC.includes('up') && SRC.includes('down') && SRC.includes('stable'))
+  it('页面应加载系统监控快照', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadSystemMonitorSnapshot()'))
+    assert.ok(PAGE_SRC.includes("import { loadSystemMonitorSnapshot } from './system-monitor-data'"))
   })
 
-  it('status 支持 normal/warning/critical', () => {
-    assert.ok(SRC.includes('normal') && SRC.includes('warning') && SRC.includes('critical'))
+  it('页面应导出 dynamic 与 revalidate', () => {
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
   })
 
-  it('service status 支持 healthy/degraded/down', () => {
-    assert.ok(SRC.includes('healthy') || SRC.includes('degraded') || SRC.includes('down'))
-  })
-
-  it('含 fetch 调用', () => { assert.ok(SRC.includes('fetch(') || SRC.includes('fetch (')) })
-  it('含 refresh 逻辑', () => { assert.ok(SRC.includes('refresh')) })
-  it('含 unit 单位显示', () => { assert.ok(SRC.includes('unit')) })
-  it('含趋势箭头或标签', () => { assert.ok(SRC.includes('↑') || SRC.includes('↓') || SRC.includes('trend')) })
-  it('含状态颜色逻辑', () => { assert.ok(SRC.includes('text-red') || SRC.includes('text-green') || SRC.includes('text-yellow') || SRC.includes('text-blue')) })
-  it('含列表渲染', () => { assert.ok(SRC.includes('.map(')) })
-  it('含百分比单位', () => { assert.ok(SRC.includes('%')) })
-})
-
-// ─── 正例: 数据逻辑 ─────────────────────
-describe('SystemMonitorPage — 数据模拟', () => {
-  it('mock metrics 非空', () => {
-    const matches = SRC.match(/name:\s*['"][^'"]+['"]/g)
-    assert.ok(matches && matches.length >= 2, `至少2个指标, 实际${matches?.length}`)
-  })
-
-  it('mock services 有 healthy', () => {
-    assert.ok(SRC.includes("healthy"))
-  })
-
-  it('mock services 有 degraded', () => {
-    assert.ok(SRC.includes("degraded"))
-  })
-
-  it('响应时间单位 ms', () => {
-    assert.ok(SRC.includes('ms') || SRC.includes('responseTime'))
+  it('页面应接入管理员权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })
 
 describe('SystemMonitorPage — 来源态透明化', () => {
-  it('应声明 deliveryMode 与 generatedAt 状态', () => {
-    assert.ok(SRC.includes("useState<'api' | 'fallback'>('fallback')"))
-    assert.ok(SRC.includes("useState('—')"))
-  })
-
-  it('成功与回退分支都应显式设置来源态', () => {
-    assert.ok(SRC.includes("setDeliveryMode('api')"))
-    assert.ok(SRC.includes("setDeliveryMode('fallback')"))
-    assert.ok(SRC.includes("setGeneratedAt(new Date().toISOString())"))
-  })
-
-  it('回退分支应提示已切换到 fallback 样本', () => {
-    assert.ok(SRC.includes('实时接口不可达，已切换到 fallback 样本数据。'))
-  })
-
   it('页面应展示系统监控来源态证据', () => {
-    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(SRC.includes('/api/system/metrics + /api/system/services + /api/system/activities'))
-    assert.ok(SRC.includes('defaultMetrics/defaultServices/defaultLogs'))
-    assert.ok(SRC.includes('local fallback monitor samples'))
-    assert.ok(SRC.includes('不可作为闭环复签证据'))
+    assert.ok(PAGE_SRC.includes('loadSystemMonitorSnapshot -> system/metrics + system/services + system/activities'))
+    assert.ok(PAGE_SRC.includes('loadSystemMonitorSnapshot -> defaultMetrics/defaultServices/defaultLogs'))
+    assert.ok(PAGE_SRC.includes('local fallback monitor samples'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })
 })
 
-// ─── 反例 ─────────────────────
-describe('SystemMonitorPage — 反例', () => {
-  it('无 as any', () => { assert.ok(!SRC.includes('as any')) })
-  it('无 describe.skip', () => {
-    const pageFs = fs.readFileSync(pagePath, 'utf-8');
-    assert.ok(!pageFs.includes('describe.skip('))
+describe('SystemMonitorData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('metrics: SystemMetric[]'))
+    assert.ok(DATA_SRC.includes('services: ServiceStatus[]'))
+    assert.ok(DATA_SRC.includes('logs: ActivityLog[]'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
   })
-  it('非空 mock', () => { assert.ok(SRC.length > 500) })
+
+  it('应定义默认 fallback 样本', () => {
+    assert.ok(DATA_SRC.includes('export const defaultMetrics'))
+    assert.ok(DATA_SRC.includes('export const defaultServices'))
+    assert.ok(DATA_SRC.includes('export const defaultLogs'))
+    assert.ok(DATA_SRC.includes('文件存储(OSS)'))
+    assert.ok(DATA_SRC.includes('美团外卖Token过期告警'))
+  })
+
+  it('应尝试读取上游 system-monitor 接口', () => {
+    assert.ok(DATA_SRC.includes("fetchSystemMonitorPart<{ metrics: SystemMetric[] }>('system/metrics')"))
+    assert.ok(DATA_SRC.includes("fetchSystemMonitorPart<{ services: ServiceStatus[] }>('system/services')"))
+    assert.ok(DATA_SRC.includes("fetchSystemMonitorPart<{ logs: ActivityLog[] }>('system/activities')"))
+  })
+
+  it('失败时应回退到 fallback 样本并返回错误提示', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes('实时接口不可达，已切换到 fallback 样本数据。'))
+  })
 })
 
-// ─── 边界 ─────────────────────
-describe('SystemMonitorPage — 边界', () => {
-  it('数字字段非负', () => {
-    const negative = SRC.match(/-\d+[^>]/g)
-    assert.ok(true, '负数逻辑兼容注解')
+describe('SystemMonitorClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
   })
 
-  it('支持空数组', () => {
-    assert.ok(SRC.includes('[]') || SRC.includes('length'))
+  it('客户端组件应接收 snapshot 并渲染 error', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: SystemMonitorSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
   })
 
-  it('支持 loading 状态', () => {
-    assert.ok(SRC.includes('setLoading') || SRC.includes('setLoading(false)'))
+  it('客户端组件应支持刷新按钮并触发 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
   })
 
-  it('支持错误状态', () => {
-    assert.ok(SRC.includes('catch') || SRC.includes('setError') || SRC.includes('err'))
+  it('客户端组件应保留指标、服务、日志三块渲染', () => {
+    assert.ok(CLIENT_SRC.includes('SystemMetricsGrid'))
+    assert.ok(CLIENT_SRC.includes('ServiceStatusPanel'))
+    assert.ok(CLIENT_SRC.includes('ActivityLogPanel'))
+    assert.ok(CLIENT_SRC.includes('.map('))
+  })
+
+  it('客户端组件应保留趋势箭头与状态色逻辑', () => {
+    assert.ok(CLIENT_SRC.includes('metricColor'))
+    assert.ok(CLIENT_SRC.includes('statusBadgeColor'))
+    assert.ok(CLIENT_SRC.includes('activityIcon'))
+    assert.ok(CLIENT_SRC.includes('↑'))
+    assert.ok(CLIENT_SRC.includes('text-red-600'))
   })
 })
 
-// ─── 圈梁 ─────────────────────
-describe('SystemMonitorPage — 圈梁', () => {
-  it('不存在 describe.skip', () => {
-    assert.ok(!SRC.includes('describe.skip'))
+describe('SystemMonitor — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
   })
-  it('文件行数 >= 200', () => {
-    assert.ok(SRC.split('\n').length >= 200)
+
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
+
+  it('客户端应处理空日志边界', () => {
+    assert.ok(CLIENT_SRC.includes('logs.length === 0'))
+    assert.ok(CLIENT_SRC.includes('暂无活动日志'))
   })
 })

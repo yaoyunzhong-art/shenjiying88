@@ -302,6 +302,96 @@ export const MOCK_CRM_STATS: CrmStats = (() => {
   }
 })()
 
+export interface CrmSnapshotDelivery {
+  deliveryMode: 'api' | 'fallback'
+  customers: CustomerProfile[]
+  stats: CrmStats
+  generatedAt: string
+  error?: string
+}
+
+const DEFAULT_API_ORIGIN = 'http://localhost:3001'
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`
+}
+
+function resolveCrmApiBaseUrl(): string {
+  const configured =
+    process.env.M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_API_ORIGIN
+
+  const normalized = configured.trim()
+  if (!normalized.length) {
+    return `${DEFAULT_API_ORIGIN}/api/`
+  }
+  if (normalized.endsWith('/api') || normalized.endsWith('/api/')) {
+    return ensureTrailingSlash(normalized)
+  }
+  if (normalized.endsWith('/api/v1') || normalized.endsWith('/api/v1/')) {
+    return ensureTrailingSlash(normalized.replace(/\/v1\/?$/, '/'))
+  }
+  return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/api`)
+}
+
+function unwrapApiPayload<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    const wrapped = payload as { success?: boolean; data?: T; message?: string }
+    if (!wrapped.success) {
+      throw new Error(wrapped.message ?? 'API error')
+    }
+    return wrapped.data as T
+  }
+  return payload as T
+}
+
+async function fetchCrmPart<T>(path: string): Promise<T> {
+  const upstreamUrl = new URL(path, resolveCrmApiBaseUrl()).toString()
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`crm upstream failed: ${response.status}`)
+  }
+  const payload = await response.json()
+  return unwrapApiPayload<T>(payload)
+}
+
+function getFallbackGeneratedAt(customers: CustomerProfile[]): string {
+  if (customers.length === 0) return '—'
+  return customers.reduce(
+    (latest, customer) => (customer.updatedAt > latest ? customer.updatedAt : latest),
+    customers[0]!.updatedAt,
+  )
+}
+
+export async function loadCrmSnapshot(): Promise<CrmSnapshotDelivery> {
+  try {
+    const [customersData, stats] = await Promise.all([
+      fetchCrmPart<{ customers: CustomerProfile[]; total?: number }>('crm/customers'),
+      fetchCrmPart<CrmStats>('crm/stats'),
+    ])
+
+    return {
+      deliveryMode: 'api',
+      customers: customersData.customers,
+      stats,
+      generatedAt: new Date().toISOString(),
+    }
+  } catch {
+    return {
+      deliveryMode: 'fallback',
+      customers: MOCK_CRM_CUSTOMERS,
+      stats: MOCK_CRM_STATS,
+      generatedAt: getFallbackGeneratedAt(MOCK_CRM_CUSTOMERS),
+      error: 'CRM 实时接口不可达，已切换到 fallback 样本数据。',
+    }
+  }
+}
+
 // ─── 格式化辅助 ───
 
 export function formatCents(n: number): string {

@@ -36,11 +36,11 @@ describe('Dashboard — 服务端页面', () => {
   it('DashboardViewTabs组件含4个视图Tab', () => assert.ok(SRC.includes('总览') && SRC.includes('运营') && SRC.includes('财务') && SRC.includes('增长')));
   it('包含视图Tab按钮role=tablist', () => assert.ok(SRC.includes('role=\"tablist\"')));
   it('包含DashboardViewTabs组件声明', () => assert.ok(SRC.includes('DashboardViewTabs')));
-  it('包含monthlyRevenue数据类型', () => assert.ok(SRC.includes('monthlyRevenue')));
-  it('包含customerSatisfaction数据类型', () => assert.ok(SRC.includes('customerSatisfaction')));
+  it('包含monthlyRevenue数据类型', () => assert.ok(DATA_SRC.includes('monthlyRevenue')));
+  it('包含customerSatisfaction数据类型', () => assert.ok(DATA_SRC.includes('customerSatisfaction')));
   it('包含DashboardView类型导出', () => assert.ok(SRC.includes('export type DashboardView')));
   it('包含isDashboardView类型守卫', () => assert.ok(SRC.includes('isDashboardView')));
-  it('包含weeklyGrowth数据类型', () => assert.ok(SRC.includes('weeklyGrowth')));
+  it('包含weeklyGrowth数据类型', () => assert.ok(DATA_SRC.includes('weeklyGrowth')));
 });
 
 describe('Dashboard — 权限边界', () => {
