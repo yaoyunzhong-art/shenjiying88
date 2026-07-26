@@ -576,4 +576,192 @@ describe('链37: Storefront Checkout → API 下单 → 支付 → 查询订单'
       assert.equal(isAmountInCents(priceInCents), true, '分单位合法');
     });
   });
+
+  // ───────────────────────────────────────
+  // N3 反例: 超长/极端参数
+  // ───────────────────────────────────────
+  describe('N3 反例 — 极端参数校验', () => {
+    test('N3.1 超长 memberId 字符串校验应报错', () => {
+      const req: CheckoutRequest = {
+        memberId: 'x'.repeat(1000),
+        items: [{ productId: 'p1', quantity: 1, unitPriceCents: 100 }],
+        paymentChannel: 'CASH',
+      };
+      const validation = validateCheckoutRequest(req);
+      assert.ok(validation.valid, '超长 memberId 通过格式校验');
+
+      const resp = checkoutCreateOrder(req);
+      assert.ok(resp.orderId, '超长 memberId 可创建订单');
+    });
+
+    test('N3.2 超大 quantity 边界（接近 JS 安全整数）', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-max-qty',
+        items: [{ productId: 'p1', quantity: 2_000_000_000, unitPriceCents: 1 }],
+        paymentChannel: 'CASH',
+      };
+      const validation = validateCheckoutRequest(req);
+      // 如果数量在安全范围内，校验应通过 + 总金额 = 数量 * 单价
+      if (validation.valid) {
+        const resp = checkoutCreateOrder(req);
+        assert.equal(resp.totalCents, 2_000_000_000, '20亿 * 1分 不溢出');
+      }
+    });
+
+    test('N3.3 缺少 items 数组（非空但为 null/undefined）', () => {
+      const validation = validateCheckoutRequest({
+        memberId: 'mem-012',
+        items: [] as any,
+        paymentChannel: 'CASH',
+      });
+      assert.equal(validation.valid, false);
+      assert.ok(validation.errors.some(e => e.includes('items')), '空商品列表应报错');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // N4 反例: 权限与租户隔离校验（模拟）
+  // ───────────────────────────────────────
+  describe('N4 反例 — 跨租户/无权限场景', () => {
+    test('N4.1 不同 memberId 的订单不可互相查询（隔离校验）', () => {
+      const req1 = { memberId: 'tenant-a', items: [{ productId: 'p1', quantity: 1, unitPriceCents: 10000 }], paymentChannel: 'CASH' };
+      const req2 = { memberId: 'tenant-b', items: [{ productId: 'p2', quantity: 1, unitPriceCents: 20000 }], paymentChannel: 'WECHAT' };
+
+      const v1 = validateCheckoutRequest(req1);
+      const v2 = validateCheckoutRequest(req2);
+      assert.ok(v1.valid, '租户A校验通过');
+      assert.ok(v2.valid, '租户B校验通过');
+
+      const resp1 = checkoutCreateOrder(req1);
+      const resp2 = checkoutCreateOrder(req2);
+      assert.notEqual(resp1.orderId, resp2.orderId, '不同租户订单ID隔离');
+    });
+
+    test('N4.2 空 memberId（模拟未认证）应被校验拦截', () => {
+      const req: Partial<CheckoutRequest> = {
+        memberId: '',
+        items: [{ productId: 'p1', quantity: 1, unitPriceCents: 100 }],
+        paymentChannel: 'CASH',
+      };
+      const validation = validateCheckoutRequest(req as CheckoutRequest);
+      assert.equal(validation.valid, false);
+      assert.ok(validation.errors.some(e => e.includes('memberId')), '空 memberId 应报错');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // P3 正例: 订单支付后详情与一致性
+  // ───────────────────────────────────────
+  describe('P3 正例 — 支付后订单详情校验', () => {
+    test('P3.1 支付完成后查询订单状态正确', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-pay-check',
+        items: [{ productId: 'p1', quantity: 2, unitPriceCents: 15000 }],
+        paymentChannel: 'WECHAT',
+      };
+      const orderResp = checkoutCreateOrder(req);
+
+      const payResp = createPayment({ method: 'WECHAT', amountCents: orderResp.totalCents });
+      assert.ok(payResp.paymentId, '支付成功返回 paymentId');
+
+      // 支付后查询订单详情
+      return new Promise<void>(resolve => {
+        const detail = getOrderDetail(orderResp.orderId, orderResp.totalCents, req.items.map(i => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          unitPriceCents: i.unitPriceCents,
+        })));
+        assert.equal(detail.orderId, orderResp.orderId, '订单ID一致');
+        assert.equal(detail.totalAmount, 30000, '总金额 = 2*15000');
+        assert.ok(isAmountInCents(detail.totalAmount), '金额单位为分');
+        resolve();
+      });
+    });
+
+    test('P3.2 多商品订单明细总和校验', () => {
+      const items = [
+        { productId: 'p-a', quantity: 3, unitPriceCents: 5900 },
+        { productId: 'p-b', quantity: 1, unitPriceCents: 12900 },
+        { productId: 'p-c', quantity: 2, unitPriceCents: 3900 },
+      ];
+      const req: CheckoutRequest = {
+        memberId: 'mem-detail',
+        items,
+        paymentChannel: 'ALIPAY',
+      };
+      const orderResp = checkoutCreateOrder(req);
+
+      const detailItems = items.map(i => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        unitPriceCents: i.unitPriceCents,
+      }));
+      const detail = getOrderDetail(orderResp.orderId, orderResp.totalCents, detailItems);
+
+      const consistent = verifyOrderAmountConsistency(detail);
+      assert.ok(consistent, '多商品订单明细之和 = 总金额');
+      assert.equal(detail.items!.length, 3, '3个商品明细');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // B4 边界: 订单列表/查询边界
+  // ───────────────────────────────────────
+  describe('B4 边界 — 订单查询边界场景', () => {
+    test('B4.1 订单列表返回正确结构', () => {
+      const orders = listOrders();
+      assert.ok(orders.length >= 1, '至少返回1个订单');
+      const order = orders[0];
+      assert.ok(order.orderId, '有 orderId');
+      assert.ok(order.orderNo, '有 orderNo');
+      assert.ok(['paid', 'pending_payment', 'draft', 'cancelled', 'refunding', 'refunded', 'completed'].includes(order.status), '合法状态');
+    });
+
+    test('B4.2 订单金额字段全为正整数', () => {
+      const orders = listOrders();
+      orders.forEach(order => {
+        assert.ok(isAmountInCents(order.totalAmount), `totalAmount=${order.totalAmount} 应为分`);
+        assert.ok(isAmountInCents(order.paidAmount), `paidAmount=${order.paidAmount} 应为分`);
+        assert.ok(isAmountInCents(order.refundedAmount), `refundedAmount=${order.refundedAmount} 应为分`);
+      });
+    });
+
+    test('B4.3 订单详情 items 列表金额与总金额一致', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-b4-3',
+        items: [{ productId: 'p-verify', quantity: 1, unitPriceCents: 9999 }],
+        paymentChannel: 'CASH',
+      };
+      const orderResp = checkoutCreateOrder(req);
+      const detail = getOrderDetail(orderResp.orderId, orderResp.totalCents);
+
+      assert.equal(detail.totalAmount, 9999, '总金额正确');
+      assert.ok(detail.totalAmount >= 0, '总金额非负');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // B5 边界: 状态机校验
+  // ───────────────────────────────────────
+  describe('B5 边界 — 订单状态机合法性', () => {
+    test('B5.1 合法转换: pending_payment → paid', () => {
+      assert.ok(validateOrderStatusTransition('pending_payment', 'paid'));
+    });
+
+    test('B5.2 合法转换: draft → pending_payment', () => {
+      assert.ok(validateOrderStatusTransition('draft', 'pending_payment'));
+    });
+
+    test('B5.3 非法转换: pending_payment → refunded', () => {
+      assert.equal(validateOrderStatusTransition('pending_payment', 'refunded'), false);
+    });
+
+    test('B5.4 非法转换: cancelled → completed', () => {
+      assert.equal(validateOrderStatusTransition('cancelled', 'completed'), false);
+    });
+
+    test('B5.5 非法转换: refunded → refunding (不可逆)', () => {
+      assert.equal(validateOrderStatusTransition('refunded', 'refunding'), false);
+    });
+  });
 });

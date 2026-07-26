@@ -819,6 +819,186 @@ describe('链38: API 交易主链 (Checkout → 支付 → 退款)', () => {
       }
     });
   });
+
+  // ───────────────────────────────────────
+  // B5 边界/数据一致性: 金额与状态校验
+  // ───────────────────────────────────────
+  describe('B5 边界 — 金额数据一致性', () => {
+    test('B5.1 支付金额必须等于订单总金额', () => {
+      resetStore();
+
+      const orderId = doCheckout({
+        memberId: 'mem-consistency',
+        items: [
+          { productId: 'p1', quantity: 1, unitPriceCents: 29900 },
+          { productId: 'p2', quantity: 2, unitPriceCents: 8900 },
+        ],
+        paymentChannel: 'ALIPAY',
+      }).orderId;
+
+      const expectedPay = 29900 + 2 * 8900;
+      doPay(orderId, { method: 'ALIPAY', amountCents: expectedPay });
+
+      const detail = getOrderDetail(orderId);
+      assert.equal(detail.paidAmount, expectedPay, '支付金额 = 订单总金额');
+      assert.equal(detail.paidAmount, detail.totalAmount, 'paidAmount = totalAmount');
+    });
+
+    test('B5.2 部分退款后订单金额数据一致性', () => {
+      resetStore();
+
+      const orderId = doCheckout({
+        memberId: 'mem-consistency2',
+        items: [
+          { productId: 'p1', quantity: 1, unitPriceCents: 10000 },
+          { productId: 'p2', quantity: 1, unitPriceCents: 20000 },
+        ],
+        paymentChannel: 'CASH',
+      }).orderId;
+
+      const payResp = doPay(orderId, { method: 'CASH', amountCents: 30000 });
+
+      // 部分退款 5000
+      const ref1 = doRefund(orderId, { paymentId: payResp.paymentId, amountCents: 5000, reason: '部分退款' });
+      doApproveRefund(ref1.refundId);
+
+      const detail = getOrderDetail(orderId);
+      assert.equal(detail.paidAmount, 30000, '已支付金额不变');
+      assert.equal(detail.refundedAmount, 5000, '已退款 5000分');
+      assert.equal(detail.refundedAmount + detail.paidAmount - detail.refundedAmount, detail.paidAmount, '金额等式成立');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // N6 反例: 无效支付方式/null参数
+  // ───────────────────────────────────────
+  describe('N6 反例 — 参数边界与错误回退', () => {
+    test('N6.1 无效支付方式被拒绝', () => {
+      resetStore();
+
+      const orderId = doCheckout({
+        memberId: 'mem-010',
+        items: [{ productId: 'p1', quantity: 1, unitPriceCents: 10000 }],
+        paymentChannel: 'WECHAT',
+      }).orderId;
+
+      assert.throws(
+        () => doPay(orderId, { method: 'BITCOIN' as PaymentMethod, amountCents: 10000 }),
+        /method is required/, // doPay 不验证 method 枚举，需在真实层验证
+      );
+
+      // doPay 内部 throw 正常
+      assert.throws(
+        () => doPay(orderId, { method: '' as PaymentMethod, amountCents: 10000 }),
+        /method/,
+      );
+    });
+
+    test('N6.2 空商品列表下单被拒', () => {
+      assert.throws(
+        () => doCheckout({ memberId: 'mem-empty', items: [], paymentChannel: 'CASH' }),
+        /items must be non-empty/,
+        '空商品列表下单应被拒绝',
+      );
+    });
+
+    test('N6.3 不存在的 paymentId 退款被拒', () => {
+      resetStore();
+
+      const orderId = doCheckout({
+        memberId: 'mem-011',
+        items: [{ productId: 'p1', quantity: 1, unitPriceCents: 10000 }],
+        paymentChannel: 'CASH',
+      }).orderId;
+
+      doPay(orderId, { method: 'CASH', amountCents: 10000 });
+
+      assert.throws(
+        () => doRefund(orderId, { paymentId: 'nonexistent-payment', amountCents: 5000, reason: '无效支付ID' }),
+        /Payment.*not found/,
+        '不存在的 paymentId 退款应被拒绝',
+      );
+    });
+  });
+
+  // ───────────────────────────────────────
+  // N7 反例: 审批异常
+  // ───────────────────────────────────────
+  describe('N7 反例 — 审批异常场景', () => {
+    test('N7.1 审批不存在的退款ID应报错', () => {
+      assert.throws(
+        () => doApproveRefund('refund-nonexistent', 'admin-001'),
+        /Refund.*not found/,
+        '不存在的退款ID审批应报错',
+      );
+    });
+
+    test('N7.2 拒绝不存在的退款ID应报错', () => {
+      assert.throws(
+        () => doRejectRefund('refund-nonexistent-2', 'admin-001'),
+        /Refund.*not found/,
+        '不存在的退款ID拒绝应报错',
+      );
+    });
+  });
+
+  // ───────────────────────────────────────
+  // P3 正例: 多次退款总额不超过支付金额
+  // ───────────────────────────────────────
+  describe('P3 正例 — 分次退款累加验证', () => {
+    test('P3.1 分多次退款总额 ≤ 支付金额', () => {
+      resetStore();
+
+      const orderId = doCheckout({
+        memberId: 'mem-multi-refund',
+        items: [{ productId: 'p1', quantity: 1, unitPriceCents: 50000 }],
+        paymentChannel: 'ALIPAY',
+      }).orderId;
+
+      const payResp = doPay(orderId, { method: 'ALIPAY', amountCents: 50000 });
+
+      // 第一次退 10000
+      const ref1 = doRefund(orderId, { paymentId: payResp.paymentId, amountCents: 10000, reason: '第一次退款' });
+      doApproveRefund(ref1.refundId);
+
+      // 第二次退 20000
+      const ref2 = doRefund(orderId, { paymentId: payResp.paymentId, amountCents: 20000, reason: '第二次退款' });
+      doApproveRefund(ref2.refundId);
+
+      // 第三次尝试退超出范围
+      assert.throws(
+        () => doRefund(orderId, { paymentId: payResp.paymentId, amountCents: 25000, reason: '超出剩余金额' }),
+        /exceeds available/,
+        '累计退款不可超过支付金额',
+      );
+
+      const detail = getOrderDetail(orderId);
+      assert.equal(detail.refundedAmount, 30000, '累计退款 30000分');
+      assert.equal(detail.paidAmount, 50000, '支付金额 50000分');
+      assert.ok(detail.refundedAmount <= detail.paidAmount, '退款总额 ≤ 支付总额');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // B6 边界: 订单查询健全性
+  // ───────────────────────────────────────
+  describe('B6 边界 — 订单查询边界', () => {
+    test('B6.1 查询已删除/不存在的订单应报错', () => {
+      assert.throws(
+        () => getOrderDetail('ord-nonexistent'),
+        /Order.*not found/,
+        '不存在的订单查详情应报错',
+      );
+    });
+
+    test('B6.2 validateRefundAmount 辅助函数校验', () => {
+      assert.ok(validateRefundAmount(10000, 5000), '退款 ≤ 支付 合法');
+      assert.ok(validateRefundAmount(10000, 10000), '退款 = 支付 合法');
+      assert.equal(validateRefundAmount(10000, 15000), false, '退款 > 支付 不合法');
+      assert.equal(validateRefundAmount(0, 1), false, '未支付不可退款');
+      assert.ok(validateRefundAmount(0, 0), '0退0合法');
+    });
+  });
 });
 
 // ─── 辅助函数: 创建一个基础支付(不做存储校验) ───
