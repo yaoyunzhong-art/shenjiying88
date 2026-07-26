@@ -1,53 +1,61 @@
-/**
- * settings/payment-config/page.test.tsx — 支付配置 L1 测试
- *
- * 覆盖: 页面结构、通道数据完整性、结算配置验证
- * 圈梁: TSC通过 → 测试存在 → 圈梁表更新 → PRD标记
- */
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { resolve } from 'node:path'
-import fs from 'fs'
+import { readFileSync } from 'node:fs'
+import { describe, it } from 'node:test'
 
-const PAGE = resolve(import.meta.dirname, 'page.tsx')
-const content = fs.readFileSync(PAGE, 'utf-8')
+const PAGE_SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf8')
+const DATA_SRC = readFileSync(new URL('./payment-config-data.ts', import.meta.url), 'utf8')
+const CLIENT_SRC = readFileSync(new URL('./payment-config-client.tsx', import.meta.url), 'utf8')
 
-describe('settings/payment-config', () => {
-  // ── 页面存在与导出 ──
-  it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
-  it('包含 default export 函数', () => {
-    assert.ok(content.includes('export default function '))
-  })
-  it('仅一个 export default', () => {
-    const matches = content.match(/export default/g)
-    assert.equal(matches?.length, 1)
-  })
-  it('TSC兼容: 无 as any', () => { assert.ok(!content.includes('as any')) })
-
-  // ── 数据完整性 ──
-  it('包含 ACTIVE_CHANNELS 数组', () => { assert.ok(content.includes('ACTIVE_CHANNELS')) })
-  it('包含 3 个支付通道', () => {
-    const channels = Array.from(content.matchAll(/provider:\s*['"][^'"]+['"]/g))
-    assert.equal(channels.length, 3, `got ${channels.length} channels`)
-  })
-  it('支持微信支付', () => { assert.ok(content.includes('微信支付') || content.includes('wechat')) })
-  it('支持支付宝', () => { assert.ok(content.includes('支付宝') || content.includes('alipay')) })
-  it('支持现金支付', () => { assert.ok(content.includes('现金') || content.includes('cash')) })
-  it('每个通道有 name/provider/status/feeRate 字段', () => {
-    assert.ok(content.includes('name:'))
-    assert.ok(content.includes('provider:'))
-    assert.ok(content.includes('status:'))
-    assert.ok(content.includes('feeRate'))
+describe('settings/payment-config 页面结构固证', () => {
+  it('page 为 server wrapper 并加载快照', () => {
+    assert.ok(PAGE_SRC.includes('export default async function PaymentConfigPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadPaymentConfigSnapshot()'))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  // ── 页面结构 ──
-  it('包含表格渲染', () => { assert.ok(content.includes('map(') || content.includes('table')) })
-  it('包含标题 "支付配置"', () => { assert.ok(content.includes('支付配置')) })
-  it('包含通道概览 section', () => { assert.ok(content.includes('通道概览')) })
-  it('包含结算配置 section', () => { assert.ok(content.includes('结算配置') || content.includes('结算周期')) })
-  it('包含费率信息', () => { assert.ok(content.includes('费率') || content.includes('feeRate')) })
-  it('接入管理员权限边界', () => {
-    assert.ok(content.includes('AdminPermissionGate'))
-    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  it('page 显式展示来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
+
+  it('page 保留权限门禁并挂载 client renderer', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(PAGE_SRC.includes('<PaymentConfigClient snapshot={snapshot} />'))
+  })
+})
+
+describe('settings/payment-config snapshot loader 固证', () => {
+  it('data 文件定义 mock 快照合同与来源标签', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'local-payment-config-snapshot'"))
+    assert.ok(DATA_SRC.includes('export interface PaymentConfigSnapshotDelivery'))
+    assert.ok(DATA_SRC.includes('export async function loadPaymentConfigSnapshot()'))
+  })
+
+  it('data 文件保留通道与结算规则样本', () => {
+    assert.ok(DATA_SRC.includes('export const defaultPaymentChannels'))
+    assert.ok(DATA_SRC.includes('export const defaultSettlementRules'))
+    assert.ok(DATA_SRC.includes('微信支付'))
+    assert.ok(DATA_SRC.includes('银联刷卡'))
+  })
+})
+
+describe('settings/payment-config client 固证', () => {
+  it('client 文件为 client component 并使用 router.refresh()', () => {
+    assert.ok(CLIENT_SRC.startsWith("'use client'"))
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+  })
+
+  it('client 文件保留支付通道、状态与结算规则渲染', () => {
+    assert.ok(CLIENT_SRC.includes('支付通道'))
+    assert.ok(CLIENT_SRC.includes('snapshot.channels.map'))
+    assert.ok(CLIENT_SRC.includes('statusLabel(channel.status)'))
+    assert.ok(CLIENT_SRC.includes('snapshot.settlementRules.map'))
   })
 })

@@ -28,6 +28,25 @@ export interface CustomerRecord {
   remark: string
 }
 
+export interface CustomerStats {
+  total: number
+  active: number
+  totalSpent: number
+  diamond: number
+}
+
+export interface CustomersPageSnapshot {
+  deliveryMode: 'fallback'
+  sourceLabel: 'customers-local-snapshot'
+  generatedAt: string
+  controlPlaneSource: string
+  businessDataSource: string
+  refreshPath: string
+  note: string
+  customers: CustomerRecord[]
+  stats: CustomerStats
+}
+
 export type StatusBadgeVariant = 'success' | 'warning' | 'danger' | 'neutral'
 export type MemberLevelBadgeVariant = 'neutral' | 'default' | 'success' | 'info'
 
@@ -150,3 +169,61 @@ export const MOCK_CUSTOMERS: CustomerRecord[] = [
     city: '佛山', tags: [], remark: '已流失',
   },
 ]
+
+export function formatCustomerCurrency(amount: number): string {
+  if (amount >= 1_000_000) return `¥${(amount / 10_000).toFixed(1)}万`
+  if (amount >= 1_000) return `¥${(amount / 1000).toFixed(1)}K`
+  return `¥${amount}`
+}
+
+export function filterCustomers(
+  items: CustomerRecord[],
+  search: string,
+  statusFilter: CustomerStatus | 'all',
+  levelFilter: MemberLevel | 'all'
+): CustomerRecord[] {
+  let result = items
+
+  if (search.trim()) {
+    const lower = search.toLowerCase()
+    const searchFields: Array<keyof CustomerRecord> = ['name', 'phone', 'city']
+    result = result.filter((customer) =>
+      searchFields.some((field) =>
+        String(customer[field]).toLowerCase().includes(lower)
+      )
+    )
+  }
+
+  if (statusFilter !== 'all') {
+    result = result.filter((customer) => customer.status === statusFilter)
+  }
+
+  if (levelFilter !== 'all') {
+    result = result.filter((customer) => customer.memberLevel === levelFilter)
+  }
+
+  return result
+}
+
+export function computeCustomerStats(items: CustomerRecord[]): CustomerStats {
+  return {
+    total: items.length,
+    active: items.filter((customer) => customer.status === 'active').length,
+    totalSpent: items.reduce((sum, customer) => sum + customer.totalSpent, 0),
+    diamond: items.filter((customer) => customer.memberLevel === 'diamond').length,
+  }
+}
+
+export async function loadCustomersSnapshot(): Promise<CustomersPageSnapshot> {
+  return {
+    deliveryMode: 'fallback',
+    sourceLabel: 'customers-local-snapshot',
+    generatedAt: '2026-07-27T15:10:00Z',
+    controlPlaneSource: 'loadCustomersSnapshot -> MOCK_CUSTOMERS',
+    businessDataSource: 'local customer workspace samples',
+    refreshPath: 'CustomersPage -> loadCustomersSnapshot',
+    note: '当前客户管理页展示的是本地样本快照，已显式暴露来源态与刷新路径，不可作为实时复签证据。',
+    customers: MOCK_CUSTOMERS,
+    stats: computeCustomerStats(MOCK_CUSTOMERS),
+  }
+}

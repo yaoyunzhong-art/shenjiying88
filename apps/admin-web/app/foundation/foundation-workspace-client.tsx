@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   DataTable,
   DetailActionBar,
@@ -35,8 +36,10 @@ interface FoundationWorkspaceClientProps {
 type TabKey = 'overview' | 'modules' | 'consumers' | 'baselines';
 
 export default function FoundationWorkspaceClient({ workspace, query }: FoundationWorkspaceClientProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
+  const [isRefreshing, startRefresh] = useTransition();
   const { actions } = useDetailActions({
     workspace: 'foundation',
     detailId: query.moduleKey ?? 'overview',
@@ -177,6 +180,19 @@ export default function FoundationWorkspaceClient({ workspace, query }: Foundati
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={topBarStyle}>
+        <div style={topBarMetaStyle}>
+          当前模块 {query.moduleKey} · 当前消费方 {query.consumer} · 模块数 {workspace.summary.modules}
+        </div>
+        <button
+          type="button"
+          onClick={() => startRefresh(() => router.refresh())}
+          disabled={isRefreshing}
+          style={refreshButtonStyle}
+        >
+          {isRefreshing ? '刷新中...' : '刷新快照'}
+        </button>
+      </div>
       <div style={{ marginBottom: 4 }}>
         <Tabs
           items={[
@@ -409,4 +425,26 @@ const linkStyle: React.CSSProperties = {
   textDecoration: 'none',
   fontSize: 13,
   fontWeight: 600
+};
+
+const topBarStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 12,
+  flexWrap: 'wrap'
+};
+
+const topBarMetaStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#94a3b8'
+};
+
+const refreshButtonStyle: React.CSSProperties = {
+  borderRadius: 10,
+  border: '1px solid rgba(148,163,184,0.28)',
+  padding: '8px 14px',
+  background: 'rgba(15,23,42,0.55)',
+  color: '#e2e8f0',
+  cursor: 'pointer'
 };
