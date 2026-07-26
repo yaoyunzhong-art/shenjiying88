@@ -4,7 +4,7 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { AuthModule } from './modules/auth/auth.module'
-import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 describe('debug3', () => {
   let app: INestApplication

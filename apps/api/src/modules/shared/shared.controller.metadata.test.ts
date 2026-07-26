@@ -6,7 +6,7 @@ describe('SharedController metadata', () => {
   let SharedController: any
 
   beforeAll(async () => {
-    ;({ SharedController } = await import('./shared.controller.ts'))
+    ;({ SharedController } = await import('./shared.controller'))
   })
 
   it('controller should keep shared path', () => {

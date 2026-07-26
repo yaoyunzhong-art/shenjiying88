@@ -98,7 +98,7 @@ export class SeoController {
   @Get('geo-locations/search')
   searchGeoLocations(@Query('city') city: string, @Query('district') district: string, @Query('keyword') keyword?: string) {
     try { return this.seoService.searchGeoLocations(city, district, keyword) } catch (err: unknown) {
-      throw new HttpException(err.message || '搜索失败', HttpStatus.BAD_REQUEST)
+      throw new HttpException(err instanceof Error ? err.message : '搜索失败', HttpStatus.BAD_REQUEST)
     }
   }
 

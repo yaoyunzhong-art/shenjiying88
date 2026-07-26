@@ -119,7 +119,7 @@ describe('ReferralTrackingService — createCode', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   function makeCreateParams(type: string = 'employee') {
@@ -170,7 +170,7 @@ describe('ReferralTrackingService — trackScan', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   it('[B4] 正例: trackScan 扫码归因成功', async () => {
@@ -220,7 +220,7 @@ describe('ReferralTrackingService — trackConversion', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   const dbCode = makeDbCode({
@@ -285,7 +285,7 @@ describe('ReferralTrackingService — getLeaderboard', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   it('[B9] 正例: getLeaderboard 返回排行榜', async () => {
@@ -323,7 +323,7 @@ describe('ReferralTrackingService — getReferrerDashboard', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   it('[B11] 正例: getReferrerDashboard 返回完整面板', async () => {
@@ -363,7 +363,7 @@ describe('ReferralTrackingService — createKolLink', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   it('[B13] 正例: createKolLink 创建达人专属链接', async () => {
@@ -393,7 +393,7 @@ describe('ReferralTrackingService — 推广关系管理', () => {
   })
 
   afterEach(() => {
-    service.onModuleDestroy?.()
+    
   })
 
   it('[B14] 正例: getReferralsByCustomer 返回推广关系', async () => {

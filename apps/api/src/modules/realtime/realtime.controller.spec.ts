@@ -550,7 +550,7 @@ describe('RealtimeController', () => {
         ownerId: 'user-A',
       })
       const result = controller.addComment({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-B',
         content: '需要修改此处',
         selection: { start: 10, end: 20 },
@@ -568,12 +568,12 @@ describe('RealtimeController', () => {
         ownerId: 'user-A',
       })
       controller.addComment({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-B',
         content: '评论1',
         selection: { start: 0, end: 5 },
       })
-      const result = controller.listComments(session.data.sessionId)
+      const result = controller.listComments(session.data.id)
       expect(result.success).toBe(true)
       expect(result.data).toHaveLength(1)
       expect(result.data[0].content).toBe('评论1')
@@ -587,13 +587,13 @@ describe('RealtimeController', () => {
         ownerId: 'user-A',
       })
       const comment = controller.addComment({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-B',
         content: '已修复',
         selection: { start: 0, end: 1 },
       })
       const result = controller.resolveComment({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         commentId: comment.data.id,
       })
       expect(result.success).toBe(true)
@@ -630,7 +630,7 @@ describe('RealtimeController', () => {
         ownerId: 'user-A',
       })
       const result = controller.broadcastChange({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-A',
         change: { type: 'insert', text: 'new' },
       })
@@ -645,12 +645,12 @@ describe('RealtimeController', () => {
         ownerId: 'user-A',
       })
       controller.addCursor({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-A',
         line: 1,
         column: 5,
       })
-      const list = controller.listCursors(session.data.sessionId)
+      const list = controller.listCursors(session.data.id)
       expect(list.success).toBe(true)
       expect(list.data!.length).toBeGreaterThanOrEqual(1)
     })
@@ -661,13 +661,13 @@ describe('RealtimeController', () => {
         ownerId: 'user-A',
       })
       controller.addCursor({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-A',
         line: 3,
         column: 10,
       })
       const result = controller.removeCursor({
-        sessionId: session.data.sessionId,
+        sessionId: session.data.id,
         userId: 'user-A',
       })
       expect(result.success).toBe(true)

@@ -134,7 +134,7 @@ describe(`${ROLES.HR} realtime 角色测试`, () => {
     const sessionData = assertData(session)
 
     const comment = ctrl.addComment({
-      sessionId: sessionData.sessionId,
+      sessionId: sessionData.id,
       userId: 'hr-01',
       content: '请补充第二章内容',
       selection: { start: 10, end: 50 },
@@ -149,10 +149,10 @@ describe(`${ROLES.HR} realtime 角色测试`, () => {
     const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-02' })
     const sessionData = assertData(session)
 
-    ctrl.addComment({ sessionId: sessionData.sessionId, userId: 'hr-02', content: '值班调整', selection: { start: 1, end: 10 } })
-    ctrl.addComment({ sessionId: sessionData.sessionId, userId: 'store-mgr-01', content: '同意', selection: { start: 1, end: 5 } })
+    ctrl.addComment({ sessionId: sessionData.id, userId: 'hr-02', content: '值班调整', selection: { start: 1, end: 10 } })
+    ctrl.addComment({ sessionId: sessionData.id, userId: 'store-mgr-01', content: '同意', selection: { start: 1, end: 5 } })
 
-    const comments = ctrl.listComments(sessionData.sessionId)
+    const comments = ctrl.listComments(sessionData.id)
     assert.ok(comments.success)
     assert.equal(comments.data.length, 2)
   })
@@ -163,9 +163,9 @@ describe(`${ROLES.HR} realtime 角色测试`, () => {
     const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-03' })
     const sessionData = assertData(session)
 
-    ctrl.addComment({ sessionId: sessionData.sessionId, userId: 'hr-03', content: '已完成', selection: { start: 0, end: 5 } })
+    ctrl.addComment({ sessionId: sessionData.id, userId: 'hr-03', content: '已完成', selection: { start: 0, end: 5 } })
 
-    const resolve = ctrl.resolveComment({ sessionId: sessionData.sessionId, commentId: 'c1' })
+    const resolve = ctrl.resolveComment({ sessionId: sessionData.id, commentId: 'c1' })
     assert.ok(resolve.success)
   })
 
@@ -175,7 +175,7 @@ describe(`${ROLES.HR} realtime 角色测试`, () => {
     const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'hr-04' })
     const sessionData = assertData(session)
 
-    const result = ctrl.listComments(sessionData.sessionId)
+    const result = ctrl.listComments(sessionData.id)
     assert.equal(result.data.length, 0)
   })
 })
@@ -442,15 +442,15 @@ describe(`${ROLES.Marketing} realtime 角色测试`, () => {
     const session = ctrl.createCollabSession({ docId: docData.id, ownerId: 'mkt-04' })
     const sessionData = assertData(session)
 
-    ctrl.addCursor({ sessionId: sessionData.sessionId, userId: 'mkt-04', line: 3, column: 10 })
-    ctrl.addCursor({ sessionId: sessionData.sessionId, userId: 'design-01', line: 5, column: 20 })
+    ctrl.addCursor({ sessionId: sessionData.id, userId: 'mkt-04', line: 3, column: 10 })
+    ctrl.addCursor({ sessionId: sessionData.id, userId: 'design-01', line: 5, column: 20 })
 
-    const cursors = ctrl.listCursors(sessionData.sessionId)
+    const cursors = ctrl.listCursors(sessionData.id)
     assert.ok(cursors.success)
     assert.equal(cursors.data.length, 2)
 
-    ctrl.removeCursor({ sessionId: sessionData.sessionId, userId: 'design-01' })
-    const afterRemove = ctrl.listCursors(sessionData.sessionId)
+    ctrl.removeCursor({ sessionId: sessionData.id, userId: 'design-01' })
+    const afterRemove = ctrl.listCursors(sessionData.id)
     assert.equal(afterRemove.data.length, 1)
   })
 
