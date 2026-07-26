@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   computeCustomerStats,
@@ -10,12 +10,80 @@ import {
   MEMBER_LEVELS,
 } from './customers-data'
 
+const originalFetch = globalThis.fetch
+
+beforeEach(() => {
+  globalThis.fetch = originalFetch
+})
+
+afterEach(() => {
+  globalThis.fetch = originalFetch
+})
+
 describe('Customers snapshot contract', () => {
-  it('应返回 fallback 快照与来源态证据', async () => {
+  it('应在 CRM API 可用时返回 api 快照与来源态证据', async () => {
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('crm/customers')) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              customers: [
+                {
+                  id: 'crm-001',
+                  name: '张明',
+                  phone: '138****0001',
+                  status: 'active',
+                  engagementScore: 92,
+                  totalSpentCents: 888800,
+                  visitCount: 18,
+                  lastVisitAt: '2026-07-26T12:00:00.000Z',
+                  createdAt: '2024-03-10T08:00:00.000Z',
+                  tags: ['VIP'],
+                },
+              ],
+            },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+
+      if (url.includes('crm/stats')) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              totalCustomers: 1,
+              activeCustomers: 1,
+              totalSpent: 888800,
+            },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+
+      throw new Error(`unexpected fetch: ${url}`)
+    }) as typeof fetch
+
+    const snapshot = await loadCustomersSnapshot()
+    assert.equal(snapshot.deliveryMode, 'api')
+    assert.equal(snapshot.sourceLabel, 'customers-api-live')
+    assert.ok(snapshot.controlPlaneSource.includes('crm/customers + crm/stats'))
+    assert.equal(snapshot.customers[0]?.name, '张明')
+    assert.equal(snapshot.stats.totalSpent, 8888)
+  })
+
+  it('应在 CRM API 不可用时回退到 fallback 快照', async () => {
+    globalThis.fetch = (async () => {
+      throw new Error('crm down')
+    }) as typeof fetch
+
     const snapshot = await loadCustomersSnapshot()
     assert.equal(snapshot.deliveryMode, 'fallback')
     assert.equal(snapshot.sourceLabel, 'customers-local-snapshot')
     assert.ok(snapshot.controlPlaneSource.includes('MOCK_CUSTOMERS'))
+    assert.ok(snapshot.error?.includes('已切换到 fallback 样本数据'))
     assert.equal(snapshot.customers.length >= 10, true)
   })
 

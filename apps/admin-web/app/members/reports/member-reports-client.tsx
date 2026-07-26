@@ -82,6 +82,38 @@ export default function MemberReportsClient({
           </button>
         </div>
 
+        {snapshot.error ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(250, 204, 21, 0.24)',
+              background: 'rgba(250, 204, 21, 0.08)',
+              color: '#fde68a',
+              fontSize: 13,
+            }}
+          >
+            {snapshot.error}
+          </div>
+        ) : null}
+
+        {snapshot.fallbackFields.length > 0 ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1px solid rgba(148,163,184,0.16)',
+              background: 'rgba(15,23,42,0.24)',
+              color: '#cbd5e1',
+              fontSize: 13,
+            }}
+          >
+            真实字段: {snapshot.apiBackedFields.join(' / ') || '无'}；Fallback字段: {snapshot.fallbackFields.join(' / ') || '无'}
+          </div>
+        ) : null}
+
         <div
           style={{
             display: 'grid',

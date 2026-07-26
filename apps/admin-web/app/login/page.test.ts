@@ -1,16 +1,54 @@
 import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   computeSecurityScore,
   filterHistory,
+  loginAdmin,
   loadLoginPageSnapshot,
-  mockLoginApi,
   validatePasswordPolicy,
 } from './login-data'
 
+const originalFetch = globalThis.fetch
+
+beforeEach(() => {
+  globalThis.fetch = originalFetch
+})
+
+afterEach(() => {
+  globalThis.fetch = originalFetch
+})
+
 describe('Login snapshot contract', () => {
-  it('应返回 fallback 快照与安全 bootstrap 证据', async () => {
+  it('应在存在真实认证头时返回 api 快照', async () => {
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input)
+      assert.ok(url.includes('/auth/me'))
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            userId: 'api-user-001',
+            tenantId: 'tenant-live',
+            email: 'admin@sportsant.net',
+            roles: ['TENANT_ADMIN'],
+            permissions: ['dashboard:read', 'security:read'],
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    }) as typeof fetch
+
+    const snapshot = await loadLoginPageSnapshot({
+      requestHeaders: new Headers({ authorization: 'Bearer live-token' }),
+    })
+    assert.equal(snapshot.deliveryMode, 'api')
+    assert.equal(snapshot.sourceLabel, 'login-api-live')
+    assert.ok(snapshot.controlPlaneSource.includes('auth/me'))
+    assert.equal(snapshot.currentUser?.userId, 'api-user-001')
+  })
+
+  it('无认证头时应返回 fallback 快照与安全 bootstrap 证据', async () => {
     const snapshot = await loadLoginPageSnapshot()
     assert.equal(snapshot.deliveryMode, 'fallback')
     assert.equal(snapshot.sourceLabel, 'login-local-snapshot')
@@ -41,8 +79,44 @@ describe('Login snapshot contract', () => {
     assert.ok(filtered.every((entry) => entry.success === false))
   })
 
-  it('mock 登录接口应在正确账号密码下返回 session 载荷', async () => {
-    const result = await mockLoginApi('admin', 'admin123')
+  it('登录动作应优先调用真实认证 API', async () => {
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input)
+      assert.ok(url.includes('/auth/login/password'))
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            user: {
+              userId: 'api-user-001',
+              tenantId: 'tenant-live',
+              email: 'admin@sportsant.net',
+              roles: ['TENANT_ADMIN'],
+              permissions: ['dashboard:read'],
+            },
+            accessToken: 'api-access-token',
+            refreshToken: 'api-refresh-token',
+            expiresIn: 3600,
+            tokenType: 'Bearer',
+          },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    }) as typeof fetch
+
+    const result = await loginAdmin('admin@sportsant.net', 'Admin123')
+    assert.equal(result.deliveryMode, 'api')
+    assert.equal(result.token, 'api-access-token')
+    assert.equal(result.userId, 'api-user-001')
+  })
+
+  it('登录动作在 demo 凭据且 API 失败时应回退到 fallback/mock', async () => {
+    globalThis.fetch = (async () => {
+      throw new Error('auth down')
+    }) as typeof fetch
+
+    const result = await loginAdmin('admin', 'admin123')
+    assert.equal(result.deliveryMode, 'fallback')
     assert.equal(result.role, 'super_admin')
     assert.ok(result.permissions.includes('dashboard:read'))
   })

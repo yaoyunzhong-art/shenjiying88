@@ -2,12 +2,17 @@ import { adminWebBootstrap } from '../bootstrap'
 
 export interface LoginResult {
   token: string
+  refreshToken: string
   role: string
   permissions: string[]
+  userId: string
+  username?: string
+  email?: string
   tenantId: string
   brandId: string
   storeId: string
   marketCode: string
+  deliveryMode: 'api' | 'fallback'
 }
 
 export interface LoginHistoryEntry {
@@ -40,22 +45,61 @@ export interface PasswordPolicy {
 }
 
 export interface LoginPageSnapshot {
-  deliveryMode: 'fallback'
-  sourceLabel: 'login-local-snapshot'
+  deliveryMode: 'api' | 'fallback'
+  sourceLabel: 'login-api-live' | 'login-local-snapshot'
   generatedAt: string
   controlPlaneSource: string
   businessDataSource: string
   refreshPath: string
   note: string
+  error?: string
   history: LoginHistoryEntry[]
   passwordPolicy: PasswordPolicy
   recommendedIps: Array<{ ip: string; label: string }>
+  currentUser: {
+    userId: string
+    email?: string
+    mobile?: string
+    roles: string[]
+    permissions: string[]
+    tenantId: string
+  } | null
   bootstrap: {
     tenantScopeResolver: string
     riskChallengeEnforcement: string
     revalidateOn: string[]
   }
 }
+
+interface AuthApiUser {
+  userId: string
+  tenantId: string
+  mobile?: string
+  email?: string
+  nickname?: string
+  roles: string[]
+  permissions: string[]
+}
+
+interface AuthPasswordResponse {
+  user: AuthApiUser
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+  tokenType: 'Bearer'
+}
+
+class LoginApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number
+  ) {
+    super(message)
+    this.name = 'LoginApiError'
+  }
+}
+
+const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export const PASSWORD_POLICY: PasswordPolicy = {
   minLength: 8,
@@ -81,6 +125,148 @@ export const MOCK_LOGIN_HISTORY: LoginHistoryEntry[] = [
   { id: 'lh-7', username: 'admin', ip: '192.168.1.100', timestamp: '2026-07-14 08:15:00', success: true, failReason: '', userAgent: 'Chrome 128 / macOS' },
   { id: 'lh-8', username: 'operator', ip: '203.0.113.50', timestamp: '2026-07-13 19:45:00', success: false, failReason: '账户锁定', userAgent: 'Edge / Windows' },
 ]
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`
+}
+
+function resolveLoginApiBaseUrl(): string {
+  const configured =
+    process.env.M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_API_ORIGIN
+
+  const normalized = configured.trim()
+  if (!normalized.length) {
+    return `${DEFAULT_API_ORIGIN}/api/v1/`
+  }
+  if (normalized.endsWith('/api/v1') || normalized.endsWith('/api/v1/')) {
+    return ensureTrailingSlash(normalized)
+  }
+  if (normalized.endsWith('/api') || normalized.endsWith('/api/')) {
+    return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/v1`)
+  }
+  return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/api/v1`)
+}
+
+function unwrapApiPayload<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    const wrapped = payload as { success?: boolean; data?: T; message?: string }
+    if (!wrapped.success) {
+      throw new LoginApiError(wrapped.message ?? 'API error')
+    }
+    return wrapped.data as T
+  }
+  return payload as T
+}
+
+function readHeader(
+  requestHeaders: Headers | HeadersInit | null | undefined,
+  name: string
+): string | undefined {
+  if (!requestHeaders) return undefined
+  const normalizedName = name.toLowerCase()
+  if (requestHeaders instanceof Headers) {
+    const value = requestHeaders.get(normalizedName) ?? requestHeaders.get(name)
+    return value && value.trim() ? value : undefined
+  }
+  if (Array.isArray(requestHeaders)) {
+    const headers = new Headers(requestHeaders)
+    const value = headers.get(normalizedName) ?? headers.get(name)
+    return value && value.trim() ? value : undefined
+  }
+  const record = requestHeaders as Record<string, string | undefined>
+  const value = record[normalizedName] ?? record[name]
+  return typeof value === 'string' && value.trim() ? value : undefined
+}
+
+async function fetchAuthPart<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const upstreamUrl = new URL(path, resolveLoginApiBaseUrl()).toString()
+  let response: Response
+  try {
+    response = await fetch(upstreamUrl, {
+      ...init,
+      cache: 'no-store',
+    })
+  } catch (error) {
+    throw new LoginApiError(
+      error instanceof Error ? error.message : 'auth request failed'
+    )
+  }
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { message?: string }
+    throw new LoginApiError(
+      payload.message ?? `auth upstream failed: ${response.status}`,
+      response.status
+    )
+  }
+
+  const payload = await response.json()
+  return unwrapApiPayload<T>(payload)
+}
+
+function normalizeApiLoginResult(
+  username: string,
+  payload: AuthPasswordResponse
+): LoginResult {
+  const role = payload.user.roles[0]?.toLowerCase() ?? 'tenant_admin'
+  return {
+    token: payload.accessToken,
+    refreshToken: payload.refreshToken,
+    role,
+    permissions: payload.user.permissions,
+    userId: payload.user.userId,
+    username,
+    email: payload.user.email,
+    tenantId: payload.user.tenantId,
+    brandId: 'brand-demo',
+    storeId: 'store-001',
+    marketCode: 'cn-mainland',
+    deliveryMode: 'api',
+  }
+}
+
+function isDemoCredential(username: string, password: string): boolean {
+  return username.trim() === 'admin' && password === 'admin123'
+}
+
+function shouldUseFallbackLogin(
+  error: unknown,
+  username: string,
+  password: string
+): boolean {
+  if (isDemoCredential(username, password)) {
+    return true
+  }
+  if (error instanceof LoginApiError) {
+    return typeof error.status !== 'number' || error.status >= 500
+  }
+  return true
+}
+
+function createFallbackSnapshot(error?: string): LoginPageSnapshot {
+  return {
+    deliveryMode: 'fallback',
+    sourceLabel: 'login-local-snapshot',
+    generatedAt: '2026-07-16 04:30:00',
+    controlPlaneSource: 'loadLoginPageSnapshot -> adminWebBootstrap + MOCK_LOGIN_HISTORY fallback',
+    businessDataSource: 'local login samples and security bootstrap snapshot',
+    refreshPath: 'LoginPage -> loadLoginPageSnapshot',
+    note: '当前登录页展示的是本地认证演练快照，已显式暴露来源态与安全策略证据。',
+    error,
+    history: MOCK_LOGIN_HISTORY,
+    passwordPolicy: PASSWORD_POLICY,
+    recommendedIps: [...RECOMMENDED_IPS],
+    currentUser: null,
+    bootstrap: {
+      tenantScopeResolver: adminWebBootstrap.tenantScope.resolver,
+      riskChallengeEnforcement: adminWebBootstrap.riskChallenge.enforcement,
+      revalidateOn: [...adminWebBootstrap.tenantScope.revalidateOn],
+    },
+  }
+}
 
 export function computeSecurityScore(history: LoginHistoryEntry[]): SecurityScore {
   const total = history.length
@@ -153,11 +339,15 @@ export async function mockLoginApi(username: string, password: string): Promise<
 
   return {
     token: 'mock-jwt-token',
+    refreshToken: 'mock-refresh-token',
     role: 'super_admin',
+    userId: `admin:${username.trim()}`,
+    username: username.trim(),
     tenantId: 'tenant-demo',
     brandId: 'brand-demo',
     storeId: 'store-001',
     marketCode: 'cn-mainland',
+    deliveryMode: 'fallback',
     permissions: [
       'dashboard:read',
       'dashboard:operations:read',
@@ -176,22 +366,84 @@ export async function mockLoginApi(username: string, password: string): Promise<
   }
 }
 
-export async function loadLoginPageSnapshot(): Promise<LoginPageSnapshot> {
-  return {
-    deliveryMode: 'fallback',
-    sourceLabel: 'login-local-snapshot',
-    generatedAt: '2026-07-16 04:30:00',
-    controlPlaneSource: 'loadLoginPageSnapshot -> adminWebBootstrap + MOCK_LOGIN_HISTORY',
-    businessDataSource: 'local login samples and security bootstrap snapshot',
-    refreshPath: 'LoginPage -> loadLoginPageSnapshot',
-    note: '当前登录页展示的是本地认证演练快照，已显式暴露来源态与安全策略证据。',
-    history: MOCK_LOGIN_HISTORY,
-    passwordPolicy: PASSWORD_POLICY,
-    recommendedIps: [...RECOMMENDED_IPS],
-    bootstrap: {
-      tenantScopeResolver: adminWebBootstrap.tenantScope.resolver,
-      riskChallengeEnforcement: adminWebBootstrap.riskChallenge.enforcement,
-      revalidateOn: [...adminWebBootstrap.tenantScope.revalidateOn],
-    },
+export async function loginAdmin(username: string, password: string): Promise<LoginResult> {
+  const normalizedUsername = username.trim()
+  const requestBody = normalizedUsername.includes('@')
+    ? {
+        email: normalizedUsername,
+        password,
+        loginType: 'email_password',
+      }
+    : {
+        mobile: normalizedUsername,
+        password,
+        loginType: 'mobile_password',
+      }
+
+  try {
+    const result = await fetchAuthPart<AuthPasswordResponse>('auth/login/password', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+    return normalizeApiLoginResult(normalizedUsername, result)
+  } catch (error) {
+    if (!shouldUseFallbackLogin(error, normalizedUsername, password)) {
+      throw error
+    }
+    return mockLoginApi(normalizedUsername, password)
+  }
+}
+
+export async function loadLoginPageSnapshot(options?: {
+  requestHeaders?: Headers | HeadersInit | null
+}): Promise<LoginPageSnapshot> {
+  const authorization = readHeader(options?.requestHeaders, 'authorization')
+  if (!authorization) {
+    return createFallbackSnapshot()
+  }
+
+  try {
+    const currentUser = await fetchAuthPart<AuthApiUser>('auth/me', {
+      method: 'GET',
+      headers: {
+        authorization,
+      },
+    })
+
+    return {
+      deliveryMode: 'api',
+      sourceLabel: 'login-api-live',
+      generatedAt: new Date().toISOString(),
+      controlPlaneSource: 'loadLoginPageSnapshot -> auth/me',
+      businessDataSource:
+        'auth current session API response + fallback login history/password policy',
+      refreshPath: 'LoginPage -> loadLoginPageSnapshot',
+      note: '当前登录页已探测到真实认证会话；登录历史与密码策略面板仍保留 fallback 演练快照。',
+      history: MOCK_LOGIN_HISTORY,
+      passwordPolicy: PASSWORD_POLICY,
+      recommendedIps: [...RECOMMENDED_IPS],
+      currentUser: {
+        userId: currentUser.userId,
+        email: currentUser.email,
+        mobile: currentUser.mobile,
+        roles: currentUser.roles,
+        permissions: currentUser.permissions,
+        tenantId: currentUser.tenantId,
+      },
+      bootstrap: {
+        tenantScopeResolver: adminWebBootstrap.tenantScope.resolver,
+        riskChallengeEnforcement: adminWebBootstrap.riskChallenge.enforcement,
+        revalidateOn: [...adminWebBootstrap.tenantScope.revalidateOn],
+      },
+    }
+  } catch (error) {
+    return createFallbackSnapshot(
+      error instanceof Error
+        ? `${error.message}，已回退到本地认证演练快照。`
+        : 'auth/me 探测失败，已回退到本地认证演练快照。'
+    )
   }
 }

@@ -14,15 +14,18 @@ describe('Customers page structure', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('export default async function CustomersPage'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadCustomersSnapshot()'))
+    assert.ok(PAGE_SRC.includes('const sourceEvidence = {'))
     assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(PAGE_SRC.includes('<CustomersClient snapshot={snapshot} />'))
   })
 
   it('page 应显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {snapshot.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {snapshot.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {snapshot.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {snapshot.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> crm/customers + crm/stats'))
+    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> MOCK_CUSTOMERS fallback'))
   })
 
   it('client 应保留筛选、分页与 router.refresh', () => {
@@ -37,8 +40,10 @@ describe('Customers page structure', () => {
 
   it('data 应暴露 snapshot loader 与纯逻辑函数', () => {
     assert.ok(DATA_SRC.includes('export interface CustomersPageSnapshot'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
     assert.ok(DATA_SRC.includes('computeCustomerStats'))
     assert.ok(DATA_SRC.includes('filterCustomers'))
     assert.ok(DATA_SRC.includes('loadCustomersSnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'customers-api-live' | 'customers-local-snapshot'"))
   })
 })

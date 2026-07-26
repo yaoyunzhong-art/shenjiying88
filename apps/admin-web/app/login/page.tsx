@@ -1,3 +1,5 @@
+import { headers } from 'next/headers'
+
 import LoginClient from './login-client'
 import { loadLoginPageSnapshot } from './login-data'
 
@@ -5,7 +7,26 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default async function LoginPage() {
-  const snapshot = await loadLoginPageSnapshot()
+  const requestHeaders = await headers()
+  const snapshot = await loadLoginPageSnapshot({ requestHeaders })
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'api'
+        ? 'loadLoginPageSnapshot -> auth/me'
+        : 'loadLoginPageSnapshot -> adminWebBootstrap + MOCK_LOGIN_HISTORY fallback',
+    businessDataSource:
+      snapshot.deliveryMode === 'api'
+        ? 'auth current session API response + fallback login history/password policy'
+        : 'local login samples and security bootstrap snapshot',
+    refreshPath: 'LoginPage -> loadLoginPageSnapshot',
+    generatedAt: snapshot.generatedAt,
+    sourceLabel: snapshot.sourceLabel,
+    note:
+      snapshot.deliveryMode === 'api'
+        ? '当前登录页已探测到真实认证会话，历史与策略看板仍保留 fallback 演练快照。'
+        : '当前登录页展示的是本地认证演练快照，已显式暴露来源态与安全策略证据。',
+  } as const
 
   return (
     <div style={{ minHeight: '100vh', background: '#020617' }}>
@@ -22,10 +43,10 @@ export default async function LoginPage() {
             lineHeight: 1.8,
           }}
         >
-          <div>Delivery {snapshot.deliveryMode} · 控制面来源: {snapshot.controlPlaneSource}</div>
-          <div>业务数据: {snapshot.businessDataSource} · 刷新路径: {snapshot.refreshPath}</div>
-          <div>generatedAt: {snapshot.generatedAt} · 来源标签: {snapshot.sourceLabel}</div>
-          <div>{snapshot.note}</div>
+          <div>Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}</div>
+          <div>业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}</div>
+          <div>generatedAt: {sourceEvidence.generatedAt} · 来源标签: {sourceEvidence.sourceLabel}</div>
+          <div>{sourceEvidence.note}</div>
         </div>
         <LoginClient snapshot={snapshot} />
       </div>

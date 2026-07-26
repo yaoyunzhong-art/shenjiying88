@@ -36,13 +36,14 @@ export interface CustomerStats {
 }
 
 export interface CustomersPageSnapshot {
-  deliveryMode: 'fallback'
-  sourceLabel: 'customers-local-snapshot'
+  deliveryMode: 'api' | 'fallback'
+  sourceLabel: 'customers-api-live' | 'customers-local-snapshot'
   generatedAt: string
   controlPlaneSource: string
   businessDataSource: string
   refreshPath: string
   note: string
+  error?: string
   customers: CustomerRecord[]
   stats: CustomerStats
 }
@@ -170,6 +171,201 @@ export const MOCK_CUSTOMERS: CustomerRecord[] = [
   },
 ]
 
+interface CrmCustomerRecord {
+  id?: string
+  name?: string
+  email?: string
+  phone?: string
+  status?: 'active' | 'inactive' | 'churned' | 'lead'
+  engagementScore?: number
+  totalSpentCents?: number
+  visitCount?: number
+  lastVisitAt?: string
+  tags?: string[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface CrmCustomersResponse {
+  customers?: CrmCustomerRecord[]
+  total?: number
+}
+
+interface CrmStatsResponse {
+  totalCustomers?: number
+  activeCustomers?: number
+  totalSpent?: number
+}
+
+const DEFAULT_API_ORIGIN = 'http://localhost:3001'
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`
+}
+
+function resolveCustomersApiBaseUrl(): string {
+  const configured =
+    process.env.M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_API_ORIGIN
+
+  const normalized = configured.trim()
+  if (!normalized.length) {
+    return `${DEFAULT_API_ORIGIN}/api/`
+  }
+  if (normalized.endsWith('/api') || normalized.endsWith('/api/')) {
+    return ensureTrailingSlash(normalized)
+  }
+  if (normalized.endsWith('/api/v1') || normalized.endsWith('/api/v1/')) {
+    return ensureTrailingSlash(normalized.replace(/\/v1\/?$/, '/'))
+  }
+  return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/api`)
+}
+
+function unwrapApiPayload<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    const wrapped = payload as { success?: boolean; data?: T; message?: string }
+    if (!wrapped.success) {
+      throw new Error(wrapped.message ?? 'API error')
+    }
+    return wrapped.data as T
+  }
+  return payload as T
+}
+
+async function fetchCustomersPart<T>(path: string): Promise<T> {
+  const upstreamUrl = new URL(path, resolveCustomersApiBaseUrl()).toString()
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`customers upstream failed: ${response.status}`)
+  }
+  const payload = await response.json()
+  return unwrapApiPayload<T>(payload)
+}
+
+function normalizeDate(value: string | undefined, fallback: string): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    return fallback
+  }
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+  return parsed.toISOString().slice(0, 10)
+}
+
+function inferMemberLevel(score: number, totalSpent: number, fallback?: CustomerRecord): MemberLevel {
+  if (fallback) {
+    return fallback.memberLevel
+  }
+  if (score >= 90 || totalSpent >= 40_000) return 'diamond'
+  if (score >= 75 || totalSpent >= 12_000) return 'gold'
+  if (score >= 45 || totalSpent >= 4_000) return 'silver'
+  if (score >= 20 || totalSpent >= 800) return 'bronze'
+  return 'none'
+}
+
+function mapCrmStatus(status: CrmCustomerRecord['status'], fallback?: CustomerRecord): CustomerStatus {
+  switch (status) {
+    case 'active':
+      return 'active'
+    case 'inactive':
+      return 'inactive'
+    case 'churned':
+      return 'churned'
+    case 'lead':
+      return 'inactive'
+    default:
+      return fallback?.status ?? 'inactive'
+  }
+}
+
+function inferCustomerSource(record: CrmCustomerRecord, fallback?: CustomerRecord): CustomerSource {
+  if (fallback) {
+    return fallback.source
+  }
+  const tags = new Set((record.tags ?? []).map((tag) => tag.toLowerCase()))
+  if (tags.has('vip') || tags.has('企业团购客户')) return 'partner'
+  if (tags.has('潜在客户')) return 'online'
+  if (tags.has('高消费') || tags.has('活跃')) return 'referral'
+  return 'walkin'
+}
+
+function findFallbackCustomer(record: CrmCustomerRecord): CustomerRecord | undefined {
+  const normalizedPhone = record.phone?.replace(/\D/g, '').slice(-4)
+  return MOCK_CUSTOMERS.find((customer) => {
+    if (record.name && customer.name === record.name) {
+      return true
+    }
+    if (!normalizedPhone) {
+      return false
+    }
+    return customer.phone.replace(/\D/g, '').slice(-4) === normalizedPhone
+  })
+}
+
+function mapCrmCustomer(record: CrmCustomerRecord, index: number): CustomerRecord {
+  const fallback = findFallbackCustomer(record)
+  const totalSpent = Math.round((record.totalSpentCents ?? 0) / 100)
+  const registeredAt = normalizeDate(record.createdAt, fallback?.registeredAt ?? '—')
+  const lastVisit = normalizeDate(
+    record.lastVisitAt || record.updatedAt,
+    fallback?.lastVisit ?? registeredAt
+  )
+  const age = fallback?.age ?? 0
+  const birthDate = fallback?.birthDate ?? '—'
+
+  return {
+    id: record.id ?? fallback?.id ?? `c-api-${String(index + 1).padStart(3, '0')}`,
+    name: record.name ?? fallback?.name ?? `客户 ${index + 1}`,
+    phone: record.phone ?? fallback?.phone ?? '—',
+    gender: fallback?.gender ?? 'unknown',
+    memberLevel: inferMemberLevel(record.engagementScore ?? 0, totalSpent, fallback),
+    status: mapCrmStatus(record.status, fallback),
+    source: inferCustomerSource(record, fallback),
+    totalVisits: Number(record.visitCount ?? fallback?.totalVisits ?? 0),
+    totalSpent: totalSpent > 0 ? totalSpent : fallback?.totalSpent ?? 0,
+    lastVisit,
+    registeredAt,
+    birthDate,
+    age,
+    city: fallback?.city ?? '—',
+    tags: record.tags && record.tags.length > 0 ? record.tags : fallback?.tags ?? [],
+    remark:
+      fallback?.remark ??
+      (record.status === 'lead'
+        ? '真实 CRM 客户线索，客户画像字段仍由 fallback 样本补全。'
+        : ''),
+  }
+}
+
+function getLatestCustomerTimestamp(items: CustomerRecord[]): string {
+  const latest = items
+    .flatMap((customer) => [customer.lastVisit, customer.registeredAt])
+    .filter((value) => value && value !== '—')
+    .sort()
+  return latest.at(-1) ?? new Date().toISOString()
+}
+
+function buildFallbackCustomersSnapshot(error?: string): CustomersPageSnapshot {
+  return {
+    deliveryMode: 'fallback',
+    sourceLabel: 'customers-local-snapshot',
+    generatedAt: '2026-07-27T15:10:00Z',
+    controlPlaneSource: 'loadCustomersSnapshot -> MOCK_CUSTOMERS fallback',
+    businessDataSource: 'local customer workspace samples',
+    refreshPath: 'CustomersPage -> loadCustomersSnapshot',
+    note: '当前客户管理页展示的是本地样本快照，已显式暴露来源态与刷新路径，不可作为实时复签证据。',
+    error,
+    customers: MOCK_CUSTOMERS,
+    stats: computeCustomerStats(MOCK_CUSTOMERS),
+  }
+}
+
 export function formatCustomerCurrency(amount: number): string {
   if (amount >= 1_000_000) return `¥${(amount / 10_000).toFixed(1)}万`
   if (amount >= 1_000) return `¥${(amount / 1000).toFixed(1)}K`
@@ -215,15 +411,49 @@ export function computeCustomerStats(items: CustomerRecord[]): CustomerStats {
 }
 
 export async function loadCustomersSnapshot(): Promise<CustomersPageSnapshot> {
-  return {
-    deliveryMode: 'fallback',
-    sourceLabel: 'customers-local-snapshot',
-    generatedAt: '2026-07-27T15:10:00Z',
-    controlPlaneSource: 'loadCustomersSnapshot -> MOCK_CUSTOMERS',
-    businessDataSource: 'local customer workspace samples',
-    refreshPath: 'CustomersPage -> loadCustomersSnapshot',
-    note: '当前客户管理页展示的是本地样本快照，已显式暴露来源态与刷新路径，不可作为实时复签证据。',
-    customers: MOCK_CUSTOMERS,
-    stats: computeCustomerStats(MOCK_CUSTOMERS),
+  try {
+    const [customersData, statsData] = await Promise.all([
+      fetchCustomersPart<CrmCustomersResponse>('crm/customers'),
+      fetchCustomersPart<CrmStatsResponse>('crm/stats').catch(() => null),
+    ])
+
+    const customers = (customersData.customers ?? []).map(mapCrmCustomer)
+    if (customers.length > 0) {
+      return {
+        deliveryMode: 'api',
+        sourceLabel: 'customers-api-live',
+        generatedAt: getLatestCustomerTimestamp(customers),
+        controlPlaneSource: 'loadCustomersSnapshot -> crm/customers + crm/stats',
+        businessDataSource:
+          'crm upstream API response with fallback-enriched customer profile fields',
+        refreshPath: 'CustomersPage -> loadCustomersSnapshot',
+        note:
+          '当前客户管理页优先消费 CRM 实时快照；姓名/手机号/消费等主字段来自 API，画像补充字段不足时会保留 fallback 补洞。',
+        customers,
+        stats: {
+          total: Number(statsData?.totalCustomers ?? customers.length),
+          active: Number(
+            statsData?.activeCustomers ??
+              customers.filter((customer) => customer.status === 'active').length
+          ),
+          totalSpent: Number(
+            typeof statsData?.totalSpent === 'number'
+              ? Math.round(statsData.totalSpent / 100)
+              : computeCustomerStats(customers).totalSpent
+          ),
+          diamond: customers.filter((customer) => customer.memberLevel === 'diamond').length,
+        },
+      }
+    }
+  } catch (error) {
+    return buildFallbackCustomersSnapshot(
+      error instanceof Error
+        ? `${error.message}，已切换到 fallback 样本数据。`
+        : 'customers 实时接口不可达，已切换到 fallback 样本数据。'
+    )
   }
+
+  return buildFallbackCustomersSnapshot(
+    'customers 实时接口返回空列表，已切换到 fallback 样本数据。'
+  )
 }

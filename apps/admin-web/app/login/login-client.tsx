@@ -16,7 +16,7 @@ import { clearAdminSession, storeAdminSession } from '../lib/admin-session'
 import {
   computeSecurityScore,
   filterHistory,
-  mockLoginApi,
+  loginAdmin,
   validatePasswordPolicy,
   type LoginHistoryEntry,
   type LoginPageSnapshot,
@@ -111,15 +111,20 @@ export default function LoginClient({ snapshot }: { snapshot: LoginPageSnapshot 
     clearAdminSession()
 
     try {
-      const result = await mockLoginApi(username, password)
+      const result = await loginAdmin(username, password)
       storeAdminSession({
         accessToken: result.token,
-        refreshToken: rememberMe ? 'mock-refresh-token' : '',
+        refreshToken: rememberMe ? result.refreshToken : '',
         user: {
-          userId: `admin:${username.trim()}`,
-          username: username.trim(),
+          userId: result.userId,
+          username: result.username ?? username.trim(),
+          email: result.email,
           role: result.role,
           permissions: result.permissions,
+          tenantId: result.tenantId,
+          brandId: result.brandId,
+          storeId: result.storeId,
+          marketCode: result.marketCode,
         },
       })
       setLoginResult(result)
@@ -151,10 +156,18 @@ export default function LoginClient({ snapshot }: { snapshot: LoginPageSnapshot 
             </button>
           </div>
 
+          {snapshot.currentUser ? (
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#93c5fd', fontSize: 13, marginBottom: 16 }}>
+              已探测到真实认证会话: {snapshot.currentUser.userId} · 角色数 {snapshot.currentUser.roles.length} · 权限数 {snapshot.currentUser.permissions.length}
+            </div>
+          ) : null}
+
+          {snapshot.error ? <FormSubmitFeedback error={snapshot.error} onDismissError={() => undefined} /> : null}
+
           {loginSuccess ? (
             <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)', color: '#22c55e', fontSize: 13, marginBottom: 16 }}>
               <div>登录成功，已写入本地管理员 session。</div>
-              {loginResult ? <div style={{ marginTop: 8 }}>角色: {loginResult.role} · 权限数: {loginResult.permissions.length}</div> : null}
+              {loginResult ? <div style={{ marginTop: 8 }}>来源: {loginResult.deliveryMode} · 角色: {loginResult.role} · 权限数: {loginResult.permissions.length}</div> : null}
             </div>
           ) : null}
 

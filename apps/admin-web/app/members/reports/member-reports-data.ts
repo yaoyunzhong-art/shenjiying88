@@ -1,3 +1,10 @@
+import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk'
+
+import {
+  buildMemberItemFromApi,
+  type MemberApiProfile,
+} from '../../members-view-model'
+
 export interface MemberMetrics {
   date: string
   newMembers: number
@@ -47,13 +54,16 @@ export interface MemberReportsTotals {
 }
 
 export interface MemberReportsPageSnapshot {
-  deliveryMode: 'fallback'
-  sourceLabel: 'member-reports-fallback-snapshot'
+  deliveryMode: 'api' | 'fallback'
+  sourceLabel: 'member-reports-api-partial' | 'member-reports-fallback-snapshot'
   generatedAt: string
   controlPlaneSource: string
   businessDataSource: string
   refreshPath: string
   note: string
+  apiBackedFields: string[]
+  fallbackFields: string[]
+  error?: string
   metrics: MemberMetrics[]
   rfm: RFMSegment[]
   activity: MemberActivity
@@ -104,6 +114,149 @@ export function buildRfmSegments(): RFMSegment[] {
   ]
 }
 
+function createMemberReportsClient() {
+  return new ApiClient({
+    baseUrl: getDefaultApiBaseUrl(),
+    tenantId: 'tenant-demo',
+    brandId: 'brand-demo',
+    storeId: 'store-001',
+    marketCode: 'cn-mainland',
+  })
+}
+
+function diffDaysFromNow(value: string): number {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return 999
+  }
+  const diff = Date.now() - parsed.getTime()
+  return Math.max(0, Math.floor(diff / (24 * 60 * 60 * 1000)))
+}
+
+function buildLiveRfmSegments(profiles: MemberApiProfile[]): RFMSegment[] {
+  const baseSegments = buildRfmSegments()
+  const buckets = new Map<string, RFMSegment>(
+    baseSegments.map((segment) => [
+      segment.segment,
+      {
+        ...segment,
+        count: 0,
+        avgRecency: 0,
+        avgFrequency: 0,
+        avgMonetary: 0,
+        totalValue: 0,
+        pctOfRevenue: 0,
+      },
+    ])
+  )
+
+  const liveMembers = profiles.map(buildMemberItemFromApi)
+  const totalRevenue = liveMembers.reduce((sum, member) => sum + member.totalSpent, 0)
+
+  function classifyMember(member: ReturnType<typeof buildMemberItemFromApi>) {
+    const recencyDays = diffDaysFromNow(member.lastVisitAt)
+    const frequency = member.visitCount
+    const monetary = member.totalSpent
+
+    if (recencyDays <= 7 && frequency >= 200 && monetary >= 180_000) return '重要价值会员'
+    if (recencyDays <= 15 && frequency >= 100 && monetary >= 80_000) return '重要发展会员'
+    if (recencyDays <= 30 && frequency >= 80 && monetary >= 50_000) return '重要保持会员'
+    if (recencyDays > 30 && monetary >= 30_000) return '重要挽留会员'
+    if (recencyDays <= 14 && monetary >= 20_000) return '一般价值会员'
+    if (recencyDays <= 30 && frequency >= 30) return '一般发展会员'
+    if (recencyDays <= 60) return '一般保持会员'
+    return '流失会员'
+  }
+
+  for (const member of liveMembers) {
+    const segmentName = classifyMember(member)
+    const segment = buckets.get(segmentName)
+    if (!segment) {
+      continue
+    }
+    const recencyDays = diffDaysFromNow(member.lastVisitAt)
+    segment.count += 1
+    segment.avgRecency += recencyDays
+    segment.avgFrequency += member.visitCount
+    segment.avgMonetary += member.avgOrderValue
+    segment.totalValue += member.totalSpent
+  }
+
+  return baseSegments.map((baseSegment) => {
+    const segment = buckets.get(baseSegment.segment) ?? baseSegment
+    if (segment.count === 0) {
+      return {
+        ...segment,
+        avgRecency: 0,
+        avgFrequency: 0,
+        avgMonetary: 0,
+        pctOfRevenue: 0,
+      }
+    }
+    return {
+      ...segment,
+      avgRecency: Math.round((segment.avgRecency / segment.count) * 10) / 10,
+      avgFrequency: Math.round((segment.avgFrequency / segment.count) * 10) / 10,
+      avgMonetary: Math.round(segment.avgMonetary / segment.count),
+      pctOfRevenue:
+        totalRevenue > 0 ? Math.round((segment.totalValue / totalRevenue) * 1000) / 10 : 0,
+    }
+  })
+}
+
+function buildApiBackedMetrics(
+  profiles: MemberApiProfile[],
+  fallbackMetrics: MemberMetrics[]
+): MemberMetrics[] {
+  if (!fallbackMetrics.length) {
+    return fallbackMetrics
+  }
+
+  const activeMembers = profiles.filter((profile) => profile.status === 'ACTIVE').length
+  const totalMembers = profiles.length
+  const newMembers90d = profiles.filter((profile) => {
+    const registeredAt = new Date(profile.registeredAt)
+    if (Number.isNaN(registeredAt.getTime())) {
+      return false
+    }
+    return Date.now() - registeredAt.getTime() <= 90 * 24 * 60 * 60 * 1000
+  }).length
+
+  return fallbackMetrics.map((metric, index) =>
+    index === 0
+      ? {
+          ...metric,
+          totalMembers,
+          activeMembers,
+          activeRate:
+            totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 10000) / 100 : 0,
+          newMembers: newMembers90d,
+        }
+      : metric
+  )
+}
+
+function createFallbackSnapshot(error?: string): MemberReportsPageSnapshot {
+  const metrics = buildMemberMetrics()
+  return {
+    deliveryMode: 'fallback',
+    sourceLabel: 'member-reports-fallback-snapshot',
+    generatedAt: '2026-07-27T15:30:00Z',
+    controlPlaneSource:
+      'loadMemberReportsPageSnapshot -> buildMemberMetrics / buildRfmSegments / buildMemberActivity fallback',
+    businessDataSource: 'local member analytics samples',
+    refreshPath: 'MemberReportsPage -> loadMemberReportsPageSnapshot',
+    note: '当前会员报表页使用本地样本快照，已显式暴露来源态与刷新路径，不可作为实时复签证据。',
+    apiBackedFields: [],
+    fallbackFields: ['current overview', 'rfm', 'activity', 'trend', 'ltv'],
+    error,
+    metrics,
+    rfm: buildRfmSegments(),
+    activity: buildMemberActivity(),
+    totals: computeMemberReportsTotals(metrics),
+  }
+}
+
 export function buildMemberActivity(): MemberActivity {
   return {
     period: '近30天',
@@ -137,19 +290,41 @@ export function computeMemberReportsTotals(
 }
 
 export async function loadMemberReportsPageSnapshot(): Promise<MemberReportsPageSnapshot> {
-  const metrics = buildMemberMetrics()
-  return {
-    deliveryMode: 'fallback',
-    sourceLabel: 'member-reports-fallback-snapshot',
-    generatedAt: '2026-07-27T15:30:00Z',
-    controlPlaneSource:
-      'loadMemberReportsPageSnapshot -> buildMemberMetrics / buildRfmSegments / buildMemberActivity',
-    businessDataSource: 'local member analytics samples',
-    refreshPath: 'MemberReportsPage -> loadMemberReportsPageSnapshot',
-    note: '当前会员报表页使用本地样本快照，已显式暴露来源态与刷新路径，不可作为实时复签证据。',
-    metrics,
-    rfm: buildRfmSegments(),
-    activity: buildMemberActivity(),
-    totals: computeMemberReportsTotals(metrics),
+  const fallbackMetrics = buildMemberMetrics()
+
+  try {
+    const profiles = await createMemberReportsClient().getData<MemberApiProfile[]>(
+      '/members/persistent',
+      { cache: 'no-store' }
+    )
+
+    if (profiles.length > 0) {
+      const metrics = buildApiBackedMetrics(profiles, fallbackMetrics)
+      return {
+        deliveryMode: 'api',
+        sourceLabel: 'member-reports-api-partial',
+        generatedAt: new Date().toISOString(),
+        controlPlaneSource: 'loadMemberReportsPageSnapshot -> members/persistent',
+        businessDataSource:
+          'real members/persistent profile list + fallback analytics trend/activity/LTV samples',
+        refreshPath: 'MemberReportsPage -> loadMemberReportsPageSnapshot',
+        note:
+          '当前会员报表页已接入真实会员持久化列表，并用真实会员重算当前概览与 RFM；趋势、活跃和 LTV 因缺少历史分析接口仍显式保留 fallback。',
+        apiBackedFields: ['members/persistent current overview', 'rfm segmentation'],
+        fallbackFields: ['trend metrics', 'activity overview', 'ltv aggregates'],
+        metrics,
+        rfm: buildLiveRfmSegments(profiles),
+        activity: buildMemberActivity(),
+        totals: computeMemberReportsTotals(metrics),
+      }
+    }
+  } catch (error) {
+    return createFallbackSnapshot(
+      error instanceof Error
+        ? `${error.message}，已切换到 fallback 报表样本。`
+        : 'member reports upstream failed，已切换到 fallback 报表样本。'
+    )
   }
+
+  return createFallbackSnapshot('members/persistent 返回空列表，已切换到 fallback 报表样本。')
 }

@@ -14,14 +14,17 @@ describe('Member reports page structure', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('export default async function MemberReportsPage'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadMemberReportsPageSnapshot()'))
+    assert.ok(PAGE_SRC.includes('const sourceEvidence = {'))
     assert.ok(PAGE_SRC.includes('<MemberReportsClient snapshot={snapshot} />'))
   })
 
   it('page 应显式展示来源态证据并保留权限边界', () => {
     assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(PAGE_SRC.includes("requiredPermission: 'member:read'"))
-    assert.ok(PAGE_SRC.includes('Delivery {snapshot.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {snapshot.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('API字段: {snapshot.apiBackedFields.join'))
+    assert.ok(PAGE_SRC.includes('Fallback字段: {snapshot.fallbackFields.join'))
   })
 
   it('client 应保留 tabs、导出动作与 router.refresh', () => {
@@ -34,7 +37,9 @@ describe('Member reports page structure', () => {
 
   it('data 应定义报表快照合同与 totals 聚合', () => {
     assert.ok(DATA_SRC.includes('export interface MemberReportsPageSnapshot'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
     assert.ok(DATA_SRC.includes('buildMemberMetrics'))
+    assert.ok(DATA_SRC.includes('buildLiveRfmSegments'))
     assert.ok(DATA_SRC.includes('computeMemberReportsTotals'))
     assert.ok(DATA_SRC.includes('loadMemberReportsPageSnapshot'))
   })

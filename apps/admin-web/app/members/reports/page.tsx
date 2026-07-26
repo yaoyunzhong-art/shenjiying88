@@ -14,6 +14,24 @@ export const revalidate = 0
 
 export default async function MemberReportsPage() {
   const snapshot = await loadMemberReportsPageSnapshot()
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    controlPlaneSource:
+      snapshot.deliveryMode === 'api'
+        ? 'loadMemberReportsPageSnapshot -> members/persistent'
+        : 'loadMemberReportsPageSnapshot -> buildMemberMetrics / buildRfmSegments / buildMemberActivity fallback',
+    businessDataSource:
+      snapshot.deliveryMode === 'api'
+        ? 'real members/persistent profile list + fallback analytics trend/activity/LTV samples'
+        : 'local member analytics samples',
+    refreshPath: 'MemberReportsPage -> loadMemberReportsPageSnapshot',
+    generatedAt: snapshot.generatedAt,
+    sourceLabel: snapshot.sourceLabel,
+    note:
+      snapshot.deliveryMode === 'api'
+        ? '当前页为部分真替换：当前概览与 RFM 来自真实会员列表，趋势/活跃/LTV 仍保留 fallback。'
+        : '当前会员报表页使用本地样本快照，不可作为实时复签证据。',
+  } as const
 
   return (
     <AdminPermissionGate {...permissionGate}>
@@ -30,10 +48,11 @@ export default async function MemberReportsPage() {
             lineHeight: 1.8,
           }}
         >
-          <div>Delivery {snapshot.deliveryMode} · 控制面来源: {snapshot.controlPlaneSource}</div>
-          <div>业务数据: {snapshot.businessDataSource} · 刷新路径: {snapshot.refreshPath}</div>
-          <div>generatedAt: {snapshot.generatedAt} · 来源标签: {snapshot.sourceLabel}</div>
-          <div>{snapshot.note}</div>
+          <div>Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}</div>
+          <div>业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}</div>
+          <div>generatedAt: {sourceEvidence.generatedAt} · 来源标签: {sourceEvidence.sourceLabel}</div>
+          <div>API字段: {snapshot.apiBackedFields.join(' / ') || '无'} · Fallback字段: {snapshot.fallbackFields.join(' / ') || '无'}</div>
+          <div>{sourceEvidence.note}</div>
         </div>
         <MemberReportsClient snapshot={snapshot} />
       </div>
