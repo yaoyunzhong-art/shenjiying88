@@ -1,10 +1,11 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SecuritySnapshotDelivery } from './security-data'
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: { padding: 32, maxWidth: 1080, margin: '0 auto' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: 0 },
@@ -32,7 +33,7 @@ const styles: Record<string, React.CSSProperties> = {
   key: { fontSize: 13, color: '#94a3b8' },
   value: { fontSize: 13, color: '#f8fafc', fontWeight: 600 },
   checklist: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 },
-  checklistItem: (enabled: boolean): React.CSSProperties => ({
+  checklistItem: (enabled: boolean): CSSProperties => ({
     borderRadius: 12,
     padding: '14px 16px',
     border: enabled ? '1px solid rgba(34, 197, 94, 0.28)' : '1px solid rgba(148, 163, 184, 0.12)',

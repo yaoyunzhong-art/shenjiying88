@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { PaymentConfigSnapshotDelivery } from './payment-config-data'
@@ -10,7 +11,7 @@ function statusLabel(status: 'normal' | 'degraded' | 'offline'): string {
   return '离线'
 }
 
-function statusColor(status: 'normal' | 'degraded' | 'offline'): React.CSSProperties {
+function statusColor(status: 'normal' | 'degraded' | 'offline'): CSSProperties {
   if (status === 'normal') {
     return { color: '#86efac', background: 'rgba(34, 197, 94, 0.12)' }
   }
@@ -20,7 +21,7 @@ function statusColor(status: 'normal' | 'degraded' | 'offline'): React.CSSProper
   return { color: '#fca5a5', background: 'rgba(239, 68, 68, 0.12)' }
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   page: { padding: 32, maxWidth: 1080, margin: '0 auto' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 700, color: '#f8fafc', margin: 0 },
