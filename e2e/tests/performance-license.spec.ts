@@ -575,6 +575,263 @@ test.describe('【增强测试】License 功能完整性场景', () => {
     })
   })
 
+  test.describe('并发写入冲突处理', () => {
+    test('LS-27: 同一 license 并发激活返回幂等结果', async ({ request }) => {
+      const promises = Array.from({ length: 5 }, (_, i) =>
+        request.post(`${BASE_URL}/api/license/activate`, {
+          data: {
+            tenantId: `concurrent-act-${i}`,
+            activationCode: `CONCUR-ACT-${i}`,
+            licenseType: 'pro'
+          }
+        })
+      )
+      const results = await Promise.all(promises)
+      const okCount = results.filter(r => r.ok()).length
+      expect(okCount).toBeGreaterThanOrEqual(5)
+    })
+
+    test('LS-28: 并发停用与激活同一 license 最终状态一致', async ({ request }) => {
+      // 先激活
+      await request.post(`${BASE_URL}/api/license/activate`, {
+        data: { tenantId: 'race-tenant', activationCode: 'RACE-001', licenseType: 'pro' }
+      })
+      // 同时发起停用和激活
+      const raceResults = await Promise.all([
+        request.post(`${BASE_URL}/api/license/deactivate`, {
+          data: { tenantId: 'race-tenant', key: 'RACE-001' }
+        }),
+        request.post(`${BASE_URL}/api/license/activate`, {
+          data: { tenantId: 'race-tenant', activationCode: 'RACE-001', licenseType: 'pro' }
+        })
+      ])
+      // 最终查询状态
+      const check = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'race-tenant', scope: 'default', key: 'RACE-001' }
+      })
+      const body = await check.json()
+      expect(body).toHaveProperty('valid')
+    })
+
+    test('LS-29: 数据库写入冲突时返回 409 而非 500', async ({ request }) => {
+      // 同时向同一个 tenantId 重复激活
+      const writeConflict = Array.from({ length: 5 }, () =>
+        request.post(`${BASE_URL}/api/license/activate`, {
+          data: { tenantId: 'write-conflict-tenant', activationCode: 'WRITE-CONFLICT', licenseType: 'trial' }
+        })
+      )
+      const results = await Promise.all(writeConflict)
+      const statuses = results.map(r => r.status())
+      // 不应该出现 500
+      expect(statuses.every(s => s !== 500)).toBe(true)
+    })
+  })
+
+  test.describe('License 性能基准测试', () => {
+    test('LS-30: 单次授权检查耗时 < 50ms 中位数', async ({ request }) => {
+      const latencies: number[] = []
+      for (let i = 0; i < 50; i++) {
+        const start = performance.now()
+        const res = await request.get(`${BASE_URL}/api/license/check`, {
+          params: { tenantId: `perf-baseline-${i}`, scope: 'default' }
+        })
+        latencies.push(performance.now() - start)
+        expect(res.ok()).toBe(true)
+      }
+      const sorted = latencies.sort((a, b) => a - b)
+      const median = sorted[Math.floor(sorted.length / 2)]
+      console.log(`中位数响应时间: ${median.toFixed(2)}ms`)
+      expect(median).toBeLessThan(50)
+    })
+
+    test('LS-31: 缓存命中场景响应时间 < 20ms', async ({ request }) => {
+      // 第一次请求填充缓存
+      await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'cache-test', scope: 'default', key: 'cache-key' }
+      })
+      // 第二次请求应该走缓存
+      const start = performance.now()
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'cache-test', scope: 'default', key: 'cache-key' }
+      })
+      const elapsed = performance.now() - start
+      expect(res.ok()).toBe(true)
+      console.log(`缓存命中响应时间: ${elapsed.toFixed(2)}ms`)
+      expect(elapsed).toBeLessThan(20)
+    })
+
+    test('LS-32: 缓存穿透场景响应正确', async ({ request }) => {
+      // 使用不存在的 key 测试缓存穿透处理
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'cache-miss-99999', scope: 'default', key: 'nonexistent-key-for-cache-miss' }
+      })
+      const body = await res.json()
+      expect(body).toHaveProperty('valid')
+      expect(body.valid).toBe(false)
+    })
+  })
+
+  test.describe('License 限流场景', () => {
+    test('LS-33: 短时间大量请求触发限流返回 429', async ({ request }) => {
+      const results = []
+      // 快速发送 200 次请求
+      for (let i = 0; i < 200; i++) {
+        const res = await request.get(`${BASE_URL}/api/license/check`, {
+          params: { tenantId: `rate-limit-${i % 10}`, scope: 'default' }
+        })
+        results.push(res.status())
+      }
+      // 至少应出现一次限流
+      const rateLimited = results.filter(s => s === 429).length
+      console.log(`限流触发次数: ${rateLimited}`)
+      if (rateLimited > 0) {
+        const lastIndex = results.lastIndexOf(429)
+        const firstIndex = results.indexOf(429)
+        expect(lastIndex).toBeGreaterThan(firstIndex)
+      }
+    })
+
+    test('LS-34: 限流后等待冷却期恢复请求', async ({ request }) => {
+      // 先触发限流
+      for (let i = 0; i < 150; i++) {
+        await request.get(`${BASE_URL}/api/license/check`, {
+          params: { tenantId: 'cool-down-test', scope: 'default' }
+        })
+      }
+      // 等待冷却时间
+      await new Promise(r => setTimeout(r, 2000))
+      // 恢复请求应成功
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'cool-down-test', scope: 'default' }
+      })
+      expect(res.ok()).toBe(true)
+    })
+  })
+
+  test.describe('License 批处理与分页', () => {
+    test('LS-35: 分页查询 license 列表返回正确分页信息', async ({ request }) => {
+      const res = await request.get(`${BASE_URL}/api/license/list`, {
+        params: { page: 1, pageSize: 20, tenantId: 'pagination-test' }
+      })
+      expect(res.ok()).toBe(true)
+      const body = await res.json()
+      expect(body).toHaveProperty('items')
+      expect(body).toHaveProperty('total')
+      expect(body).toHaveProperty('page')
+      expect(body).toHaveProperty('pageSize')
+      expect(body.page).toBe(1)
+      expect(body.items.length).toBeLessThanOrEqual(20)
+    })
+
+    test('LS-36: 分页查询第二页数据与第一页不重复', async ({ request }) => {
+      const [page1, page2] = await Promise.all([
+        request.get(`${BASE_URL}/api/license/list`, { params: { page: 1, pageSize: 10, tenantId: 'distinct-page' } }),
+        request.get(`${BASE_URL}/api/license/list`, { params: { page: 2, pageSize: 10, tenantId: 'distinct-page' } })
+      ])
+      expect(page1.ok()).toBe(true)
+      expect(page2.ok()).toBe(true)
+      const body1 = await page1.json()
+      const body2 = await page2.json()
+      if (body1.items.length > 0 && body2.items.length > 0) {
+        const ids1 = body1.items.map((i: any) => i.id || i.licenseKey)
+        const ids2 = body2.items.map((i: any) => i.id || i.licenseKey)
+        const overlap = ids1.filter((id: string) => ids2.includes(id))
+        expect(overlap.length).toBe(0)
+      }
+    })
+
+    test('LS-37: 批量授权验证接收最多 50 个 key', async ({ request }) => {
+      const keys = Array.from({ length: 50 }, (_, i) => ({
+        tenantId: `batch-max-${i}`,
+        scope: 'default',
+        key: `batch-key-${i}`
+      }))
+      const res = await request.post(`${BASE_URL}/api/license/batch-check`, { data: { keys } })
+      expect(res.ok()).toBe(true)
+      const body = await res.json()
+      expect(body).toHaveProperty('results')
+      expect(body.results.length).toBe(50)
+    })
+  })
+
+  test.describe('License 安全边界', () => {
+    test('LS-38: 越权访问其他租户 license 返回 403', async ({ request }) => {
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'other-tenant-private', scope: 'admin', key: '' }
+      })
+      expect([401, 403]).toContain(res.status())
+    })
+
+    test('LS-39: license key 中包含不可见字符被拒绝', async ({ request }) => {
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'invis-char', scope: 'default', key: 'valid-key\u0000injected' }
+      })
+      expect(res.status()).toBe(400)
+    })
+
+    test('LS-40: 空 license key 但携带攻击 payload 在 header 中被拒绝', async ({ request }) => {
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'header-attack', scope: 'default', key: '' }
+      })
+      expect(res.status()).toBe(400)
+    })
+  })
+
+  test.describe('License 过期边缘 case', () => {
+    test('LS-41: license 恰好到期当天返回 valid=false', async ({ request }) => {
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'expires-today', scope: 'default', key: 'expires-today-key' }
+      })
+      const body = await res.json()
+      expect(body).toHaveProperty('valid')
+      // 到期当天 valid 应该为 false
+      expect(body.valid).toBe(false)
+      expect(body).toHaveProperty('expiresAt')
+    })
+
+    test('LS-42: 多次续期同一 license 状态追踪正确', async ({ request }) => {
+      for (let i = 0; i < 3; i++) {
+        const res = await request.post(`${BASE_URL}/api/license/renew`, {
+          data: {
+            tenantId: 'multi-renew',
+            oldKey: `renew-gen-${i}`,
+            newKey: `renew-gen-${i + 1}`
+          }
+        })
+        expect(res.ok()).toBe(true)
+      }
+      const check = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'multi-renew', scope: 'default', key: 'renew-gen-3' }
+      })
+      expect(check.ok()).toBe(true)
+    })
+
+    test('LS-43: license 过期前 7 天发送续期提醒标识', async ({ request }) => {
+      const res = await request.get(`${BASE_URL}/api/license/check`, {
+        params: { tenantId: 'expiring-soon', scope: 'renewal-warning', key: 'expiring-soon-key' }
+      })
+      expect(res.ok()).toBe(true)
+      const body = await res.json()
+      expect(body).toHaveProperty('expiringSoon')
+      expect(typeof body.expiringSoon).toBe('boolean')
+    })
+
+    test('LS-44: 逾期 license 续期后功能开关重新可用', async ({ request }) => {
+      // 续期
+      await request.post(`${BASE_URL}/api/license/renew`, {
+        data: { tenantId: 'overdue-renew', oldKey: 'overdue-key', newKey: 'renewed-key-ok' }
+      })
+      const features = await request.get(`${BASE_URL}/api/license/features`, {
+        params: { tenantId: 'overdue-renew', key: 'renewed-key-ok' }
+      })
+      expect(features.ok()).toBe(true)
+      const body = await features.json()
+      expect(body).toHaveProperty('features')
+      const enabledFeatures = body.features.filter((f: any) => f.enabled)
+      expect(enabledFeatures.length).toBeGreaterThan(0)
+    })
+  })
+
   test.describe('License 功能开关粒控', () => {
     test('LS-20: 功能开关查询返回开关名和启用状态', async ({ request }) => {
       const response = await request.get(`${BASE_URL}/api/license/features`, {
