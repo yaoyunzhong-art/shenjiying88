@@ -325,3 +325,87 @@ export const MOCK_CUSTOMERS: CustomerItem[] = [
     lastActivity: '2026-06-16',
   },
 ];
+
+export interface CustomersSnapshotDelivery {
+  deliveryMode: 'api' | 'fallback'
+  customers: CustomerItem[]
+  generatedAt: string
+  error?: string
+}
+
+const DEFAULT_API_ORIGIN = 'http://localhost:3001'
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`
+}
+
+function resolveCustomersApiBaseUrl(): string {
+  const configured =
+    process.env.M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_API_ORIGIN
+
+  const normalized = configured.trim()
+  if (!normalized.length) {
+    return `${DEFAULT_API_ORIGIN}/api/v1/`
+  }
+  if (normalized.endsWith('/api/v1') || normalized.endsWith('/api/v1/')) {
+    return ensureTrailingSlash(normalized)
+  }
+  if (normalized.endsWith('/api') || normalized.endsWith('/api/')) {
+    return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/v1`)
+  }
+  return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/api/v1`)
+}
+
+function unwrapApiPayload<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    const wrapped = payload as { success?: boolean; data?: T; message?: string }
+    if (!wrapped.success) {
+      throw new Error(wrapped.message ?? 'API error')
+    }
+    return wrapped.data as T
+  }
+  return payload as T
+}
+
+async function fetchCustomers(): Promise<CustomerItem[]> {
+  const upstreamUrl = new URL('customers', resolveCustomersApiBaseUrl()).toString()
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`customers upstream failed: ${response.status}`)
+  }
+  const payload = await response.json()
+  const data = unwrapApiPayload<{ customers: CustomerItem[] }>(payload)
+  return data.customers
+}
+
+function getLatestCustomerTimestamp(items: CustomerItem[]): string {
+  if (items.length === 0) return '—'
+  return items.reduce(
+    (latest, item) => (item.lastActivity > latest ? item.lastActivity : latest),
+    items[0]!.lastActivity,
+  )
+}
+
+export async function loadCustomersSnapshot(): Promise<CustomersSnapshotDelivery> {
+  try {
+    const customers = await fetchCustomers()
+    return {
+      deliveryMode: 'api',
+      customers,
+      generatedAt: new Date().toISOString(),
+    }
+  } catch {
+    return {
+      deliveryMode: 'fallback',
+      customers: MOCK_CUSTOMERS,
+      generatedAt: getLatestCustomerTimestamp(MOCK_CUSTOMERS),
+      error: '企业客户实时接口不可达，已切换到 fallback 样本数据。',
+    }
+  }
+}
