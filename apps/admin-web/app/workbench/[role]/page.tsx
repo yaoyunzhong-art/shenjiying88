@@ -189,7 +189,10 @@ export default async function RoleWorkbenchPage({
             highRiskLine={`高风险入口：${snapshot.consumerDescriptor.highRiskEntrypoints.join(' / ')}`}
             touchpointsLine={`治理触点：${snapshot.consumerDescriptor.governanceTouchpoints.slice(0, 3).join(' / ')}`}
           />
-          <RuntimeGovernancePanel tenantContext={snapshot.tenantContext} />
+          <RuntimeGovernancePanel
+            tenantContext={snapshot.tenantContext}
+            deliveryMode={snapshot.deliveryMode}
+          />
         </section>
 
         <DetailPageActions

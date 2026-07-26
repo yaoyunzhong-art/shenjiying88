@@ -155,6 +155,24 @@ describe('agents — 数据校验', () => {
     assert.ok(src.includes('loadAgentConfigs') && src.includes('loadAgentTools'), '缺少数据加载函数');
     assert.ok(src.includes('loadAgentEvaluations'), '缺少评估加载函数');
   });
+
+  it('应展示 Agent 多快照来源态证据', () => {
+    const src = readSource();
+    assert.ok(src.includes("label: 'dashboard'"), '缺少 dashboard 来源态');
+    assert.ok(src.includes("label: 'configs'"), '缺少 configs 来源态');
+    assert.ok(src.includes("label: 'tools'"), '缺少 tools 来源态');
+    assert.ok(src.includes("label: 'evaluations'"), '缺少 evaluations 来源态');
+    assert.ok(src.includes('控制面来源: agent dashboard/configs/tools/evaluations snapshots'), '缺少来源态文案');
+  });
+
+  it('应固证 fallback 与错误态来源明细', () => {
+    const src = readSource();
+    assert.ok(src.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS'), '缺少 dashboard fallback 来源');
+    assert.ok(src.includes('FALLBACK_AGENT_CONFIGS'), '缺少 configs fallback 来源');
+    assert.ok(src.includes('FALLBACK_AGENT_TOOLS'), '缺少 tools fallback 来源');
+    assert.ok(src.includes('FALLBACK_AGENT_EVALUATIONS'), '缺少 evaluations fallback 来源');
+    assert.ok(src.includes('fallback errors:'), '缺少 fallback error 证据');
+  });
 });
 
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');

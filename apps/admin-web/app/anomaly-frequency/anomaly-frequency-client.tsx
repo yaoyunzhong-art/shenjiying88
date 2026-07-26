@@ -164,6 +164,25 @@ export function AnomalyFrequencyClient({ initialGovernance }: AnomalyFrequencyCl
 
   // 使用 governance 判断是否使用 mock 数据
   const isFallback = safeGovernance.deliveryMode === 'fallback';
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode: safeGovernance.deliveryMode,
+      controlPlaneSource:
+        safeGovernance.deliveryMode === 'api'
+          ? 'loadAdminGovernanceReadModel / snapshot.governance'
+          : 'fallback governance snapshot',
+      businessDataSource: 'generateMockBuckets(timeRange, severityFilter)',
+      generatedAt:
+        typeof safeGovernance === 'object' && safeGovernance && 'generatedAt' in safeGovernance
+          ? String(safeGovernance.generatedAt ?? 'unknown')
+          : 'unknown',
+      note:
+        safeGovernance.deliveryMode === 'api'
+          ? '异常频率页当前已接入治理读模型壳层，但时序频率桶仍由本地 mock 工厂生成，属于 E54 M1 透明化过渡态。'
+          : '异常频率页当前回退到 fallback governance 快照，时序频率桶仍由本地 mock 工厂生成，属于 E54 M1 透明化过渡态。'
+    }),
+    [safeGovernance]
+  );
 
   const buckets = useMemo(
     () => generateMockBuckets(timeRange, severityFilter),
@@ -207,6 +226,25 @@ export function AnomalyFrequencyClient({ initialGovernance }: AnomalyFrequencyCl
           <button style={STYLES.refreshBtn} onClick={handleRefresh}>
             刷新
           </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          ...STYLES.card,
+          padding: 16,
+          marginBottom: 16,
+          background: '#f8fafc'
+        }}
+      >
+        <div style={{ fontSize: 13, color: '#0f172a' }}>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 13, color: '#475569', lineHeight: 1.7 }}>
+          业务数据: {sourceEvidence.businessDataSource} · generatedAt: {sourceEvidence.generatedAt}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 12, color: '#64748b', lineHeight: 1.7 }}>
+          {sourceEvidence.note}
         </div>
       </div>
 

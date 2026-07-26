@@ -26,6 +26,19 @@ describe('AdminAlertsPage (alerts/page.tsx)', () => {
     assert.match(pageSource, /AdminAlertsClient/);
   });
 
+  test('页面固证告警中心来源态区块', () => {
+    assert.match(pageSource, /Delivery \{sourceEvidence\.deliveryMode\}/);
+    assert.match(pageSource, /控制面来源: \{sourceEvidence\.controlPlaneSource\}/);
+    assert.match(pageSource, /刷新路径: \{sourceEvidence\.refreshPath\}/);
+    assert.match(pageSource, /generatedAt: \{sourceEvidence\.generatedAt \?\? '—'\}/);
+  });
+
+  test('页面固证治理来源与刷新路径', () => {
+    assert.match(pageSource, /loadAdminGovernanceReadModel \/ snapshot\.governance/);
+    assert.match(pageSource, /fallback governance snapshot/);
+    assert.match(pageSource, /AdminAlertsClient -> loadAdminGovernanceReadModel/);
+  });
+
   test('AdminAlertsClient 导出命名函数', () => {
     assert.match(clientSource, /export function AdminAlertsClient/);
     assert.match(clientSource, /function AdminAlertsClient/);

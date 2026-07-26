@@ -6,6 +6,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
 
 import {
   adminGovernanceApprovalsRoute,
@@ -29,6 +30,11 @@ import {
   type GovernanceApprovalListFilter,
   type GovernanceApprovalResourceCategory,
 } from './approvals-view-model';
+
+const APPROVAL_DETAIL_PAGE_SOURCE = fs.readFileSync(
+  new URL('./approvals/[ticket]/page.tsx', import.meta.url),
+  'utf-8'
+);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -568,5 +574,28 @@ describe('fallback approvals data integrity', () => {
     for (const [_, count] of Object.entries(snap.summary.statuses)) {
       assert.ok(count >= 0);
     }
+  });
+});
+
+describe('approvals detail page source evidence', () => {
+  it('should render approval detail source evidence banner', () => {
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('Delivery {approvalSourceEvidence.deliveryMode}'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('详情来源: {approvalSourceEvidence.controlPlaneSource}'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('刷新路径: {approvalSourceEvidence.refreshPath}'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('generatedAt: {approvalSourceEvidence.generatedAt}'));
+  });
+
+  it('should render outcome audit source evidence details', () => {
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('Delivery {outcomeAuditSourceEvidence.deliveryMode}'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('控制面来源: {outcomeAuditSourceEvidence.controlPlaneSource}'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('查询条件: {outcomeAuditSourceEvidence.query}'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('generatedAt: {outcomeAuditSourceEvidence.generatedAt}'));
+  });
+
+  it('should fix approval and outcome source labels to read model paths', () => {
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('loadGovernanceApprovalDetail'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('fallback governance approval detail snapshot'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('loadGovernanceApprovalOutcomeAuditLogs'));
+    assert.ok(APPROVAL_DETAIL_PAGE_SOURCE.includes('fallback member-approval-outcome audit snapshot'));
   });
 });

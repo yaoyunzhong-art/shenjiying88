@@ -125,7 +125,7 @@ async function RateLimitsContent({
   const subjectKey = readQueryParam(params.subjectKey);
   const status = readQueryParam(params.status) as QuotaLedgerStatus | 'ALL' | undefined;
 
-  const { workspace } = await loadRateLimitWorkspace(
+  const { workspace, deliveryMode, generatedAt, query } = await loadRateLimitWorkspace(
     {
       tenantId,
       policyCode,
@@ -135,7 +135,14 @@ async function RateLimitsContent({
     { cache: 'no-store' },
   );
 
-  return <RateLimitsWorkspaceClient workspace={workspace} />;
+  return (
+    <RateLimitsWorkspaceClient
+      workspace={workspace}
+      deliveryMode={deliveryMode}
+      generatedAt={generatedAt}
+      query={query}
+    />
+  );
 }
 
 export default async function RateLimitsPage({

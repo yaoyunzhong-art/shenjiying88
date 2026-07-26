@@ -107,6 +107,16 @@ test('COMPLETED 完成状态 — 包含执行记录和评估卡片', () => {
     evaluation,
     config,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'AgentSessionDetailSnapshot.execution',
+      evaluationSource: 'AgentSessionDetailSnapshot.evaluation',
+      configSource: 'AgentSessionDetailSnapshot.config',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:07.000Z',
+    },
   });
 
   assert.ok(element, '组件应成功创建');
@@ -130,6 +140,16 @@ test('RUNNING 运行中 — 无执行记录，无评估，无最终输出', () =
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.ok(element, '组件应成功创建');
@@ -151,6 +171,16 @@ test('FAILED 失败状态 — 含错误信息', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.ok(element, '组件应成功创建');
@@ -166,6 +196,16 @@ test('CANCELLED 已取消 — 正常渲染无异常', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.ok(element, '组件应成功创建');
@@ -182,11 +222,22 @@ test('Fallback 降级模式 — 显示降级横幅', () => {
     config: null,
     deliveryMode: 'fallback',
     error: '后端不可达，展示 fallback 数据',
+    sourceEvidence: {
+      deliveryMode: 'fallback',
+      detailSource: 'loadAgentSessionDetail fallback snapshot',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'stream disabled in fallback',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.ok(element, '组件应成功创建');
   assert.equal(element.props.deliveryMode, 'fallback');
   assert.ok(element.props.error.includes('fallback'));
+  assert.equal(element.props.sourceEvidence.streamSource, 'stream disabled in fallback');
 });
 
 test('消息过滤按钮选项齐全', () => {
@@ -197,6 +248,16 @@ test('消息过滤按钮选项齐全', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.equal(element.props.deliveryMode, 'api');
@@ -220,6 +281,16 @@ test('Evaluation 评估卡片 — 六个维度分数传递', () => {
     evaluation,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'AgentSessionDetailSnapshot.evaluation',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:07.000Z',
+    },
   });
 
   assert.ok(element.props.evaluation.overallScore > 0.5);
@@ -239,6 +310,16 @@ test('Config 配置信息 — 含 model 和 allowedTools', () => {
     evaluation: null,
     config,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'AgentSessionDetailSnapshot.config',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.equal(element.props.config.model, 'deepseek-v4');
@@ -254,6 +335,16 @@ test('空消息提示 — messages 为空数组时无异常', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.ok(element, '空消息应正常渲染');
@@ -272,6 +363,16 @@ test('最终输出和错误信息均存在 — 两种都传递', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:05.000Z',
+    },
   });
 
   assert.ok(element.props.session.finalOutput);
@@ -287,6 +388,16 @@ test('无执行记录 — execution 为 null', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.equal(element.props.execution, null);
@@ -356,6 +467,16 @@ test('加载状态 — 执行记录含 steps/duration/llmCalls/toolCalls', () =>
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'AgentSessionDetailSnapshot.execution',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:05.000Z',
+    },
   });
 
   assert.equal(element.props.execution.status, 'RUNNING');
@@ -374,6 +495,16 @@ test('PENDING 等待中 — 不报错', () => {
     evaluation: null,
     config: null,
     deliveryMode: 'api',
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
   });
 
   assert.ok(element, 'PENDING 状态应正常创建');

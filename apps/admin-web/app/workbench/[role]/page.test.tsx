@@ -174,6 +174,12 @@ describe('workbench-[role]: 权限边界', () => {
     assert.ok(SRC.includes('fallbackWorkbenchMap'));
     assert.ok(SRC.includes('tenant-config 角色映射'));
   });
+
+  it('角色详情页向 runtime 治理面板透传来源态', () => {
+    assert.ok(SRC.includes('RuntimeGovernancePanel'));
+    assert.ok(SRC.includes('tenantContext={snapshot.tenantContext}'));
+    assert.ok(SRC.includes('deliveryMode={snapshot.deliveryMode}'));
+  });
 });
 
 describe('workbench-[role]: 数据类型', () => {

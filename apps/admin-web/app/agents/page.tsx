@@ -89,6 +89,45 @@ async function OverviewStats() {
   const evalCount = evalSnap?.evaluations.length ?? 0;
   const avgDuration = dashSnap?.avgDurationMs ?? 0;
   const avgSteps = dashSnap?.avgSteps ?? 0;
+  const sourceEvidence = [
+    {
+      label: 'dashboard',
+      deliveryMode: dashSnap?.deliveryMode ?? 'fallback',
+      source:
+        dashSnap?.deliveryMode === 'api'
+          ? 'loadAgentDashboardSnapshot'
+          : 'FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS',
+      error: dashSnap?.error,
+    },
+    {
+      label: 'configs',
+      deliveryMode: configSnap?.deliveryMode ?? 'fallback',
+      source:
+        configSnap?.deliveryMode === 'api'
+          ? 'loadAgentConfigs'
+          : 'FALLBACK_AGENT_CONFIGS',
+      error: configSnap?.error,
+    },
+    {
+      label: 'tools',
+      deliveryMode: toolSnap?.deliveryMode ?? 'fallback',
+      source:
+        toolSnap?.deliveryMode === 'api'
+          ? 'loadAgentTools'
+          : 'FALLBACK_AGENT_TOOLS',
+      error: toolSnap?.error,
+    },
+    {
+      label: 'evaluations',
+      deliveryMode: evalSnap?.deliveryMode ?? 'fallback',
+      source:
+        evalSnap?.deliveryMode === 'api'
+          ? 'loadAgentEvaluations'
+          : 'FALLBACK_AGENT_EVALUATIONS',
+      error: evalSnap?.error,
+    },
+  ] as const;
+  const fallbackCount = sourceEvidence.filter((item) => item.deliveryMode === 'fallback').length;
   const passRate =
     evalCount > 0
       ? Math.round(
@@ -98,6 +137,34 @@ async function OverviewStats() {
 
   return (
     <div style={{ marginBottom: 28 }} data-testid="agents-overview-stats">
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '14px 16px',
+          borderRadius: 12,
+          background: 'rgba(15, 23, 42, 0.35)',
+          border: '1px solid rgba(148,163,184,0.18)',
+          color: '#e2e8f0',
+        }}
+      >
+        <div style={{ fontSize: 13 }}>
+          Delivery {fallbackCount === 0 ? 'api' : fallbackCount === sourceEvidence.length ? 'fallback' : 'mixed'} ·
+          控制面来源: agent dashboard/configs/tools/evaluations snapshots
+        </div>
+        <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 13, lineHeight: 1.7 }}>
+          {sourceEvidence.map((item) => `${item.label}:${item.deliveryMode}/${item.source}`).join(' · ')}
+        </div>
+        <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 12, lineHeight: 1.7 }}>
+          {fallbackCount > 0
+            ? `当前有 ${fallbackCount} 条 Agent 控制面快照已回退到 fallback，实时统计与模块数值需结合错误态一起判断。`
+            : `当前 Agent 概览统计已命中实时 snapshot，可区分 dashboard/configs/tools/evaluations 四条控制面来源。`}
+        </div>
+        {sourceEvidence.some((item) => item.error) ? (
+          <div style={{ marginTop: 6, color: '#fbbf24', fontSize: 12 }}>
+            fallback errors: {sourceEvidence.filter((item) => item.error).map((item) => `${item.label}:${item.error}`).join(' / ')}
+          </div>
+        ) : null}
+      </div>
       <div
         style={{
           display: 'grid',

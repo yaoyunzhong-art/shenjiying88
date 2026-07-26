@@ -43,6 +43,7 @@ interface AgentDashboardSnapshot {
 }
 
 const SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf-8');
+const CLIENT_SRC = readFileSync(new URL('./dashboard-client.tsx', import.meta.url), 'utf-8');
 
 // ── 排序工具 ──
 
@@ -224,5 +225,20 @@ describe('agents/dashboard — 权限边界', () => {
   it('接入管理员权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+
+  it('应向 dashboard client 透传时间戳并固证来源态区块', () => {
+    assert.ok(SRC.includes('timestamp={snapshot.timestamp}'));
+    assert.ok(CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(CLIENT_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应固证 dashboard snapshot 与 stream 来源', () => {
+    assert.ok(CLIENT_SRC.includes('loadAgentDashboardSnapshot'));
+    assert.ok(CLIENT_SRC.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS'));
+    assert.ok(CLIENT_SRC.includes('runAgentSessionStream (RUNNING sessions only)'));
+    assert.ok(CLIENT_SRC.includes('stream disabled in fallback'));
   });
 });

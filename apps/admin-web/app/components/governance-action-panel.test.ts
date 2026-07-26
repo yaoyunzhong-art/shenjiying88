@@ -7,6 +7,9 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ─── Replicated helpers from governance-action-panel.tsx ─────────────────
 
@@ -17,6 +20,12 @@ interface ActionConfig {
   action: AlertAction;
   enabled: boolean;
   label: string;
+}
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function readSource(): string {
+  return readFileSync(resolve(__dirname, 'governance-action-panel.tsx'), 'utf-8');
 }
 
 /**
@@ -255,5 +264,29 @@ describe('governance-action-panel: 🎯运行专员视角', () => {
     const slackKey = buildTimelineQueryKey(null, 'slack', 'default');
     const webhookKey = buildTimelineQueryKey(null, 'webhook', 'default');
     assert.notEqual(slackKey, webhookKey);
+  });
+});
+
+describe('governance-action-panel: 来源态固证', () => {
+  it('应显式展示初始治理来源态', () => {
+    const src = readSource();
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(src.includes('初始治理来源'));
+    assert.ok(src.includes('snapshot.governance'));
+    assert.ok(src.includes('fallback governance snapshot'));
+  });
+
+  it('应显式展示刷新路径与 generatedAt', () => {
+    const src = readSource();
+    assert.ok(src.includes('refreshSource:'));
+    assert.ok(src.includes('loadAdminGovernanceReadModel'));
+    assert.ok(src.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
+
+  it('应保留 FoundationAlertPanelSurface 与来源说明', () => {
+    const src = readSource();
+    assert.ok(src.includes('FoundationAlertPanelSurface'));
+    assert.ok(src.includes('治理动作面板当前以 bootstrap governance 快照作为首屏证据'));
+    assert.ok(src.includes('治理动作面板当前先展示 fallback governance 快照'));
   });
 });

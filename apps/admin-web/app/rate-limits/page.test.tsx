@@ -317,6 +317,12 @@ describe('rate-limits — 权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
   });
+
+  it('透传限流工作台来源态到客户端', () => {
+    assert.ok(SRC.includes('deliveryMode={deliveryMode}'));
+    assert.ok(SRC.includes('generatedAt={generatedAt}'));
+    assert.ok(SRC.includes('query={query}'));
+  });
 });
 
 describe('Rate Limits — hooks验证', () => {

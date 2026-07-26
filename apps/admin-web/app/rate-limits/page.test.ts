@@ -34,6 +34,9 @@ test('[正例] 页面应引用限流业务模块', () => {
   const src = readFileSync(SOURCE, 'utf-8');
   assert.ok(src.includes('loadRateLimitWorkspace'), '缺少 loadRateLimitWorkspace 引入');
   assert.ok(src.includes('RateLimitsWorkspaceClient'), '缺少 RateLimitsWorkspaceClient 引入');
+  assert.ok(src.includes('deliveryMode={deliveryMode}'), '缺少 deliveryMode 透传');
+  assert.ok(src.includes('generatedAt={generatedAt}'), '缺少 generatedAt 透传');
+  assert.ok(src.includes('query={query}'), '缺少 query 透传');
 });
 
 test('[正例] 页面应有 Suspense 懒加载', () => {

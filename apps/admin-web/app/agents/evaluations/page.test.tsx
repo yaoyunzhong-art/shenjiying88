@@ -10,9 +10,14 @@ import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCE = resolve(__dirname, 'page.tsx');
+const CLIENT_SOURCE = resolve(__dirname, 'agent-evaluations-client.tsx');
 
 function readSource(): string {
   return readFileSync(SOURCE, 'utf-8');
+}
+
+function readClientSource(): string {
+  return readFileSync(CLIENT_SOURCE, 'utf-8');
 }
 
 // ---- 正例: 模块结构 & 数据映射 ----
@@ -164,5 +169,20 @@ describe('agents/evaluations — 权限边界', () => {
   it('接入管理员权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+  });
+
+  it('client 应展示评估来源态证据', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(src.includes('latestEvaluatedAt: {sourceEvidence.latestEvaluatedAt}'));
+  });
+
+  it('client 应固证实时与 fallback 评估来源', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('loadAgentEvaluations'));
+    assert.ok(src.includes('FALLBACK_AGENT_EVALUATIONS'));
+    assert.ok(src.includes('fallback quality evaluations'));
   });
 });

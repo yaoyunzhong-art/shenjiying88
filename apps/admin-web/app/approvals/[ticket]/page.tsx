@@ -109,6 +109,39 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ ticke
     () => (approval ? describeGovernanceApprovalRequest(approval) : null),
     [approval]
   );
+  const approvalSourceEvidence = useMemo(
+    () => ({
+      deliveryMode: snapshot.deliveryMode,
+      controlPlaneSource:
+        snapshot.deliveryMode === 'api'
+          ? 'loadGovernanceApprovalDetail'
+          : 'fallback governance approval detail snapshot',
+      refreshPath: 'ApprovalDetailPage.refresh -> loadGovernanceApprovalDetail',
+      generatedAt: snapshot.generatedAt,
+      note:
+        snapshot.deliveryMode === 'api'
+          ? '审批详情首屏来自治理审批详情读模型，后续 approve/reject/cancel/resubmit 都会重新拉取 detail snapshot。'
+          : '审批详情当前回退到 fallback detail snapshot，动作按钮是否成功仍取决于真实写链路与 API 可达性。'
+    }),
+    [snapshot.deliveryMode, snapshot.generatedAt]
+  );
+  const outcomeAuditSourceEvidence = useMemo(
+    () => ({
+      deliveryMode: outcomeAudit.deliveryMode,
+      controlPlaneSource:
+        outcomeAudit.deliveryMode === 'api'
+          ? 'loadGovernanceApprovalOutcomeAuditLogs'
+          : 'fallback member-approval-outcome audit snapshot',
+      query:
+        `purpose=member-approval-outcome · ticket=${outcomeAudit.ticket}`,
+      generatedAt: outcomeAudit.generatedAt,
+      note:
+        outcomeAudit.deliveryMode === 'api'
+          ? '审计区当前直接消费 outcome audit 读模型，可区分审批详情与 outcome 审计两条证据链。'
+          : '审计区当前回退到 fallback outcome audit snapshot，仅保留审批结果链路的离线证据。'
+    }),
+    [outcomeAudit.deliveryMode, outcomeAudit.generatedAt, outcomeAudit.ticket]
+  );
   const memberReceiptHref =
     memberContext?.memberId && memberContext.executionId
       ? buildMemberOperationsReceiptDetailHref(memberContext.memberId, memberContext.executionId)
@@ -217,6 +250,27 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ ticke
               ? `状态 ${approval.status} / 数据源 ${snapshot.deliveryMode}`
               : adminGovernanceApprovalsRoute.emptyMessage(ticket)}
         </div>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 20,
+          borderRadius: 12,
+          padding: '12px 14px',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          background: 'rgba(15, 23, 42, 0.35)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.7,
+        }}
+      >
+        <div>
+          Delivery {approvalSourceEvidence.deliveryMode} · 详情来源: {approvalSourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          刷新路径: {approvalSourceEvidence.refreshPath} · generatedAt: {approvalSourceEvidence.generatedAt}
+        </div>
+        <div style={{ color: '#94a3b8' }}>{approvalSourceEvidence.note}</div>
       </div>
 
       {message ? (
@@ -404,11 +458,14 @@ export default function ApprovalDetailPage({ params }: { params: Promise<{ ticke
                 member-approval-outcome 审计日志
               </div>
               <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                数据源 {outcomeAudit.deliveryMode} · 共 {outcomeAudit.entries.length} 条
+                Delivery {outcomeAuditSourceEvidence.deliveryMode} · 共 {outcomeAudit.entries.length} 条
               </div>
             </div>
             <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
-              服务端按 purpose=member-approval-outcome 与当前审批单 ticket 过滤。
+              控制面来源: {outcomeAuditSourceEvidence.controlPlaneSource} · 查询条件: {outcomeAuditSourceEvidence.query}
+            </div>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
+              generatedAt: {outcomeAuditSourceEvidence.generatedAt} · {outcomeAuditSourceEvidence.note}
             </div>
             {outcomeAudit.entries.length === 0 ? (
               <div style={{ color: '#64748b', fontSize: 13 }}>

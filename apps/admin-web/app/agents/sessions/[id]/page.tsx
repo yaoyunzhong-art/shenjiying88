@@ -16,6 +16,17 @@ interface AgentSessionDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+interface AgentSessionSourceEvidence {
+  deliveryMode: 'api' | 'fallback';
+  detailSource: string;
+  executionSource: string;
+  evaluationSource: string;
+  configSource: string;
+  refreshPath: string;
+  streamSource: string;
+  referenceTime: string;
+}
+
 export default async function AgentSessionDetailPage({ params }: AgentSessionDetailPageProps) {
   const { id } = await params;
   const snapshot = await loadAgentSessionDetail(id, { cache: 'no-store' });
@@ -39,6 +50,34 @@ export default async function AgentSessionDetailPage({ params }: AgentSessionDet
   const totalDurationMs = execution?.totalDurationMs ?? 0;
   const llmCalls = execution?.llmCalls ?? 0;
   const toolCalls = execution?.toolCalls ?? 0;
+  const sourceEvidence: AgentSessionSourceEvidence = {
+    deliveryMode,
+    detailSource:
+      deliveryMode === 'api'
+        ? 'loadAgentSessionDetail'
+        : 'loadAgentSessionDetail fallback snapshot',
+    executionSource: execution
+      ? deliveryMode === 'api'
+        ? 'AgentSessionDetailSnapshot.execution'
+        : 'FALLBACK_AGENT_EXECUTION'
+      : 'no execution snapshot',
+    evaluationSource: evaluation
+      ? deliveryMode === 'api'
+        ? 'AgentSessionDetailSnapshot.evaluation'
+        : 'FALLBACK_AGENT_EVALUATIONS'
+      : 'no evaluation snapshot',
+    configSource: config
+      ? deliveryMode === 'api'
+        ? 'AgentSessionDetailSnapshot.config'
+        : 'FALLBACK_AGENT_CONFIGS'
+      : 'no config snapshot',
+    refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+    streamSource:
+      deliveryMode === 'api'
+        ? 'runAgentSessionStream (RUNNING only)'
+        : 'stream disabled in fallback',
+    referenceTime: evaluation?.evaluatedAt ?? execution?.completedAt ?? session.completedAt ?? session.createdAt,
+  };
 
   return (
     <AdminPermissionGate {...permissionGate}>
@@ -99,6 +138,7 @@ export default async function AgentSessionDetailPage({ params }: AgentSessionDet
               config={config}
               deliveryMode={deliveryMode}
               error={error}
+              sourceEvidence={sourceEvidence}
             />
           </div>
         </PageShell>

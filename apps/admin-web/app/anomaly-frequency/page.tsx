@@ -200,6 +200,18 @@ export default async function AnomalyFrequencyPage() {
 
   const alertCount: number =
     (governance?.alerts as unknown[])?.length ?? 0;
+  const sourceEvidence = {
+    deliveryMode: governance.deliveryMode,
+    controlPlaneSource:
+      governance.deliveryMode === 'api'
+        ? 'loadAdminGovernanceReadModel / snapshot.governance'
+        : 'fallback governance snapshot',
+    generatedAt: governance.generatedAt,
+    note:
+      governance.deliveryMode === 'api'
+        ? '异常频率页当前以治理读模型作为控制面证据来源，但时序桶统计仍由客户端 mock 工厂生成。'
+        : '异常频率页当前回退到 fallback governance 快照，时序桶统计仍由客户端 mock 工厂生成。'
+  };
 
   return (
     <AdminPermissionGate {...permissionGate}>
@@ -218,6 +230,25 @@ export default async function AnomalyFrequencyPage() {
             }),
           }}
         />
+
+      <div
+        style={{
+          marginBottom: 20,
+          padding: '12px 16px',
+          borderRadius: 10,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(148,163,184,0.08)',
+          fontSize: 13,
+          color: '#cbd5e1',
+          lineHeight: 1.7,
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 治理来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>generatedAt: {sourceEvidence.generatedAt}</div>
+        <div style={{ color: '#94a3b8' }}>{sourceEvidence.note}</div>
+      </div>
 
       {/* 统计摘要 */}
       <AnomalySummaryCards governance={governance} />
@@ -251,7 +282,7 @@ export default async function AnomalyFrequencyPage() {
         >
           <strong style={{ color: '#e2e8f0' }}>数据说明</strong>
           <br />
-          异常数据来源：M5 平台治理告警模型。时序图表展示各时间段的异常事件分布密度。
+          异常数据来源：M5 平台治理告警模型 + 客户端 mock 时序桶。时序图表展示各时间段的异常事件分布密度。
           严重异常（红）需要立即关注，警告异常（黄）建议 24 小时内处理。
         </div>
       </>

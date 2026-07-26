@@ -13,6 +13,7 @@ import {
 import {
   type QuotaLedgerRecord,
   type RateLimitPolicyRecord,
+  type RateLimitWorkspaceQuery,
   type RateLimitWorkspace,
   buildRateLimitsLedgerDetailHref,
   buildRateLimitsPolicyDetailHref
@@ -30,13 +31,21 @@ import { useDetailActions } from '../components/use-detail-actions';
 
 interface RateLimitsWorkspaceClientProps {
   workspace: RateLimitWorkspace;
+  deliveryMode: 'api' | 'fallback';
+  generatedAt: string;
+  query: RateLimitWorkspaceQuery;
 }
 
 type TabKey = 'overview' | 'policies' | 'ledgers';
 
 const STATUS_FILTER_OPTIONS = ['ALL', 'healthy', 'warning', 'blocked'] as const;
 
-export default function RateLimitsWorkspaceClient({ workspace }: RateLimitsWorkspaceClientProps) {
+export default function RateLimitsWorkspaceClient({
+  workspace,
+  deliveryMode,
+  generatedAt,
+  query
+}: RateLimitsWorkspaceClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTER_OPTIONS)[number]>('ALL');
@@ -47,6 +56,21 @@ export default function RateLimitsWorkspaceClient({ workspace }: RateLimitsWorks
     shareTitle: '限流与配额工作台',
     shareText: '查看策略/账本快照'
   });
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api' ? 'loadRateLimitWorkspace / rate-limit workspace API' : 'loadRateLimitWorkspace fallback emptyWorkspace',
+      businessDataSource:
+        deliveryMode === 'api' ? 'RateLimitWorkspace.policies + RateLimitWorkspace.ledgers' : 'emptyWorkspace fallback snapshot',
+      querySummary: `tenant=${query.tenantId ?? '-'} · policy=${query.policyCode ?? '-'} · subject=${query.subjectKey ?? '-'} · status=${query.status ?? 'ALL'}`,
+      note:
+        deliveryMode === 'api'
+          ? '限流工作台当前已接入真实策略/账本快照，页面显式展示 query 条件与生成时间。'
+          : '限流工作台当前回退到 emptyWorkspace，仅保留查询条件与控制面来源证据，避免页面被误判为实时账本。'
+    }),
+    [deliveryMode, query]
+  );
 
   const policyCounts = useMemo(() => {
     const counts = { total: workspace.policies.length, active: 0, inactive: 0 };
@@ -234,6 +258,30 @@ export default function RateLimitsWorkspaceClient({ workspace }: RateLimitsWorks
 
   return (
     <div>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: '14px 16px',
+          borderRadius: 12,
+          background: 'rgba(15, 23, 42, 0.35)',
+          border: '1px solid rgba(148,163,184,0.18)',
+          color: '#e2e8f0'
+        }}
+      >
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <StatusBadge label={`Delivery ${sourceEvidence.deliveryMode}`} variant="neutral" size="sm" />
+          <span style={{ fontSize: 13 }}>控制面来源: {sourceEvidence.controlPlaneSource}</span>
+        </div>
+        <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 13, lineHeight: 1.7 }}>
+          业务数据: {sourceEvidence.businessDataSource} · 查询条件: {sourceEvidence.querySummary}
+        </div>
+        <div style={{ marginTop: 6, color: '#cbd5e1', fontSize: 13 }}>
+          generatedAt: {generatedAt}
+        </div>
+        <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13, lineHeight: 1.7 }}>
+          {sourceEvidence.note}
+        </div>
+      </div>
       <div style={{ marginBottom: 18 }}>
         <Tabs
           items={[

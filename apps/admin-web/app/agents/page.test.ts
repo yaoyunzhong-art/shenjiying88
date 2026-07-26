@@ -8,6 +8,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
 
 import {
   FALLBACK_AGENT_CONFIGS,
@@ -22,6 +23,11 @@ import {
 } from './agent-view-model';
 
 import type { AgentConfig } from '@m5/types';
+
+const PAGE_SOURCE = fs.readFileSync(
+  '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/agents/page.tsx',
+  'utf8',
+);
 
 // ---- Page-level helper replicas (same logic as page.tsx components) ----
 
@@ -267,5 +273,22 @@ describe('agents-page: 边界 (boundary cases)', () => {
     for (const c of FALLBACK_AGENT_CONFIGS) {
       assert.strictEqual(c.model, 'deepseek-v4');
     }
+  });
+
+  it('page 应固证多 snapshot 来源态聚合', () => {
+    assert.ok(PAGE_SOURCE.includes('sourceEvidence = ['), '缺少来源态聚合数组');
+    assert.ok(PAGE_SOURCE.includes("fallbackCount === 0 ? 'api'"), '缺少 mixed/api/fallback 聚合逻辑');
+    assert.ok(
+      PAGE_SOURCE.includes('sourceEvidence.map((item) => `${item.label}:${item.deliveryMode}/${item.source}`).join(\' · \')'),
+      '缺少来源态明细拼接',
+    );
+  });
+
+  it('page 应固证各条 Agent fallback 来源与错误态', () => {
+    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS'));
+    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_CONFIGS'));
+    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_TOOLS'));
+    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_EVALUATIONS'));
+    assert.ok(PAGE_SOURCE.includes('fallback errors:'));
   });
 });

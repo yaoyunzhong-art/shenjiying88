@@ -116,6 +116,20 @@ export default async function AdminAlertsPage() {
     );
   }
 
+  const sourceEvidence = {
+    deliveryMode: governance.deliveryMode,
+    controlPlaneSource:
+      governance.deliveryMode === 'api'
+        ? 'loadAdminGovernanceReadModel / snapshot.governance'
+        : 'fallback governance snapshot',
+    refreshPath: 'AdminAlertsClient -> loadAdminGovernanceReadModel',
+    generatedAt: governance.generatedAt,
+    note:
+      governance.deliveryMode === 'api'
+        ? '告警中心当前直接消费治理读模型快照，告警确认后会重新拉取治理快照刷新列表。'
+        : '告警中心当前回退到 fallback governance snapshot，列表可读但确认动作会受治理写路径和 API 可达性影响。'
+  };
+
   return (
     <AdminPermissionGate {...permissionGate}>
       {/* JSON-LD 结构化数据 */}
@@ -133,6 +147,27 @@ export default async function AdminAlertsPage() {
           }),
         }}
       />
+
+      <div
+        style={{
+          marginBottom: 20,
+          padding: '12px 16px',
+          borderRadius: 8,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(148,163,184,0.08)',
+          fontSize: 12,
+          color: '#cbd5e1',
+          lineHeight: 1.7,
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          刷新路径: {sourceEvidence.refreshPath} · generatedAt: {sourceEvidence.generatedAt ?? '—'}
+        </div>
+        <div style={{ color: '#94a3b8' }}>{sourceEvidence.note}</div>
+      </div>
 
       {/* 数据面板 — 加载 / 空状态 / 错误各层级覆盖 */}
       <ErrorBoundary fallback={<AlertsErrorFallback />}>

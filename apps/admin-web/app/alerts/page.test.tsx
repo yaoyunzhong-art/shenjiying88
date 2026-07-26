@@ -187,4 +187,15 @@ describe('Alerts — hooks验证', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
+  it('页面展示告警中心来源态证据', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(SRC.includes("generatedAt: {sourceEvidence.generatedAt ?? '—'}"));
+  });
+  it('页面固证 governance source 与 refresh path', () => {
+    assert.ok(SRC.includes('loadAdminGovernanceReadModel / snapshot.governance'));
+    assert.ok(SRC.includes('fallback governance snapshot'));
+    assert.ok(SRC.includes('AdminAlertsClient -> loadAdminGovernanceReadModel'));
+  });
 });

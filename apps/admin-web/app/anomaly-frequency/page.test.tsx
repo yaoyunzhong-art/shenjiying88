@@ -187,6 +187,13 @@ describe('anomaly-frequency — 权限边界', () => {
     assert.ok(SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
+
+  it('页面显式展示治理来源态', () => {
+    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(SRC.includes('治理来源'));
+    assert.ok(SRC.includes('loadAdminGovernanceReadModel / snapshot.governance'));
+    assert.ok(SRC.includes('fallback governance snapshot'));
+  });
 });
 
 describe('Anomaly Frequency — hooks验证', () => {
