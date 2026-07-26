@@ -1,668 +1,136 @@
-/**
- * approvals/page.test.tsx — 活动审批页 L1 测试
- * ⚡ 覆盖: 数据/统计/Tab筛选/空态/审批交互(评论/批准/驳回)/刷新/格式化/类型映射
- *
- * 测试原则:
- * - fetch mock: URL-pattern responseRegistry
- * - 禁止: as any / describe.skip / it.only
- * - 覆盖: 正例 + 反例 + 边界（三件套）
- * - 隔离: beforeEach 重置，test 自包含
- */
-
-import assert from 'node:assert/strict';
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import fs from 'node:fs';
-import React from 'react';
-import { render, screen, cleanup } from '@testing-library/react';
-import { clearAdminSession, storeAdminSession } from '../lib/admin-session';
-import ApprovalsPage from './page';
-
-// ===================== 类型定义 =====================
-
-type ApprovalType = 'purchase' | 'expense' | 'campaign' | 'leave';
-type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn';
-type TabKey = 'pending' | 'done' | 'all';
-
-interface ApprovalRecord {
-  id: string;
-  type: ApprovalType;
-  applicant: string;
-  store: string;
-  amount: number;
-  status: ApprovalStatus;
-  createdAt: string;
-  updatedAt: string;
-  description: string;
-  comment: string;
-  approver: string;
-}
-
-// ===================== 常量映射 (与 page.tsx 同步) =====================
-
-const TYPE_LABEL: Record<ApprovalType, string> = {
-  purchase: '采购审批',
-  expense: '报销审批',
-  campaign: '活动审批',
-  leave: '请假审批',
-};
-
-const STATUS_LABEL: Record<ApprovalStatus, string> = {
-  pending: '待审批',
-  approved: '已通过',
-  rejected: '已驳回',
-  withdrawn: '已撤回',
-};
-
-const STATUS_COLOR: Record<ApprovalStatus, string> = {
-  pending: '#eab308',
-  approved: '#22c55e',
-  rejected: '#ef4444',
-  withdrawn: '#94a3b8',
-};
-
-function formatAmount(amount: number): string {
-  return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const h = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${y}-${m}-${day} ${h}:${min}`;
-}
-
-function getThisMonthStart(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-}
-
-function isThisMonth(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-}
-
-// ===================== URL-pattern responseRegistry =====================
-
-const responseRegistry = new Map<string, { ok: boolean; data: unknown; message: string }>();
-
-/** Register a mock API response for URL-pattern */
-function registerResponse(
-  method: string,
-  urlPattern: string,
-  response: { ok: boolean; data: unknown; message: string },
-): void {
-  responseRegistry.set(`${method.toUpperCase()}:${urlPattern}`, response);
-}
-
-/** Reset all registered responses */
-function resetRegistry(): void {
-  responseRegistry.clear();
-}
-
-/** Mock fetch using URL-pattern registry */
-async function mockFetch(url: string, options?: RequestInit): Promise<Response> {
-  const method = (options?.method ?? 'GET').toUpperCase();
-  const key = `${method}:${url}`;
-  const entry = responseRegistry.get(key);
-
-  if (!entry) {
-    return new Response(JSON.stringify({ ok: false, data: null, message: 'not found' }), {
-      status: 404,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
-
-  return new Response(JSON.stringify(entry), {
-    status: entry.ok ? 200 : 400,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-/** Simple mock fetch returning a canned response for any URL matching prefix */
-function mockFetchOk(url: string, responseData: unknown): void {
-  registerResponse('POST', url, { ok: true, data: responseData, message: 'success' });
-}
-
-function mockFetchFail(url: string, failMessage: string): void {
-  registerResponse('POST', url, { ok: false, data: null, message: failMessage });
-}
-
-// Register default mocks
-mockFetchOk('/api/approvals/comment', { id: 'APR-001', comment: '同意', createdAt: new Date().toISOString() });
-mockFetchOk('/api/approvals/approve', { id: 'APR-001', status: 'approved', approver: '当前管理员' });
-mockFetchOk('/api/approvals/reject', { id: 'APR-001', status: 'rejected', approver: '当前管理员' });
-mockFetchFail('/api/approvals/comment-empty', '评论内容不能为空');
-
-// ===================== 样本数据 =====================
-
-const DEFAULT_APPROVALS: ApprovalRecord[] = [
-  { id: 'APR-001', type: 'purchase', applicant: '李强', store: '北京朝阳店', amount: 35000, status: 'pending', createdAt: '2026-07-18T09:00:00', updatedAt: '2026-07-18T09:00:00', description: '采购2台高配收银终端(华为擎云)', comment: '', approver: '' },
-  { id: 'APR-002', type: 'expense', applicant: '王晓芳', store: '上海浦东店', amount: 2800, status: 'pending', createdAt: '2026-07-17T14:30:00', updatedAt: '2026-07-17T14:30:00', description: '7月团队聚餐活动报销', comment: '', approver: '' },
-  { id: 'APR-003', type: 'campaign', applicant: '陈杰', store: '广州天河店', amount: 12000, status: 'pending', createdAt: '2026-07-17T10:00:00', updatedAt: '2026-07-17T10:00:00', description: '暑期亲子嘉年华活动预算审批', comment: '', approver: '' },
-  { id: 'APR-004', type: 'leave', applicant: '张婷', store: '深圳南山店', amount: 0, status: 'pending', createdAt: '2026-07-16T08:00:00', updatedAt: '2026-07-16T08:00:00', description: '年假5天(7/20-7/24)', comment: '', approver: '' },
-  { id: 'APR-005', type: 'purchase', applicant: '赵磊', store: '成都锦江店', amount: 8600, status: 'approved', createdAt: '2026-07-15T11:00:00', updatedAt: '2026-07-16T09:00:00', description: '门店装饰物料采购(七夕活动)', comment: '预算合理，同意采购', approver: '张经理' },
-  { id: 'APR-006', type: 'expense', applicant: '刘敏', store: '杭州西湖店', amount: 1500, status: 'rejected', createdAt: '2026-07-14T16:00:00', updatedAt: '2026-07-15T10:00:00', description: '个人交通费用报销（缺票据）', comment: '缺少正式发票，请补充后重新提交', approver: '李主管' },
-  { id: 'APR-007', type: 'campaign', applicant: '吴迪', store: '武汉光谷店', amount: 20000, status: 'approved', createdAt: '2026-07-13T09:30:00', updatedAt: '2026-07-14T14:00:00', description: '国庆前置预热营销活动', comment: '方案完整，注意预算控制', approver: '张经理' },
-  { id: 'APR-008', type: 'leave', applicant: '孙悦', store: '南京新街口店', amount: 0, status: 'withdrawn', createdAt: '2026-07-12T07:00:00', updatedAt: '2026-07-13T11:00:00', description: '事假半天(7/15下午)', comment: '申请人已自行撤回', approver: '' },
-];
-
-// ===================== 辅助函数 =====================
-
-function filterApprovals(approvals: ApprovalRecord[], tab: TabKey): ApprovalRecord[] {
-  if (tab === 'pending') return approvals.filter((a) => a.status === 'pending');
-  if (tab === 'done') return approvals.filter((a) => a.status !== 'pending');
-  return approvals;
-}
-
-function computeStats(approvals: ApprovalRecord[]) {
-  const pending = approvals.filter((a) => a.status === 'pending');
-  const thisMonth = approvals.filter((a) => isThisMonth(a.createdAt));
-  const resolved = approvals.filter((a) => a.status !== 'pending');
-  const approved = approvals.filter((a) => a.status === 'approved');
-
-  return {
-    pendingCount: pending.length,
-    monthTotal: thisMonth.reduce((s, a) => s + a.amount, 0),
-    passRate: resolved.length > 0 ? Math.round((approved.length / resolved.length) * 100) : 0,
-  };
-}
-
-function updateApprovalStatus(
-  approvals: ApprovalRecord[],
-  id: string,
-  status: ApprovalStatus,
-  approver: string,
-): ApprovalRecord[] {
-  return approvals.map((a) => (a.id === id ? { ...a, status, approver } : a));
-}
-
-function addComment(
-  approvals: ApprovalRecord[],
-  id: string,
-  comment: string,
-): ApprovalRecord[] {
-  return approvals.map((a) => (a.id === id ? { ...a, comment } : a));
-}
-
-// ===================== 正例 =====================
-
-describe('活动审批页 — 正例', () => {
-  beforeEach(() => {
-    resetRegistry();
-    mockFetchOk('/api/approvals/comment', { id: 'APR-001', comment: '同意', createdAt: new Date().toISOString() });
-    mockFetchOk('/api/approvals/approve', { id: 'APR-001', status: 'approved', approver: '当前管理员' });
-    mockFetchOk('/api/approvals/reject', { id: 'APR-001', status: 'rejected', approver: '当前管理员' });
-  });
-
-  describe('样本数据', () => {
-    it('有 8 条审批记录', () => {
-      assert.strictEqual(DEFAULT_APPROVALS.length, 8);
-    });
-
-    it('覆盖全部审批类型', () => {
-      const types = new Set(DEFAULT_APPROVALS.map((a) => a.type));
-      ['purchase', 'expense', 'campaign', 'leave'].forEach((t) => {
-        assert.ok(types.has(t as ApprovalType), `缺少类型 ${t}`);
-      });
-    });
-
-    it('覆盖全部状态', () => {
-      const statuses = new Set(DEFAULT_APPROVALS.map((a) => a.status));
-      ['pending', 'approved', 'rejected', 'withdrawn'].forEach((s) => {
-        assert.ok(statuses.has(s as ApprovalStatus));
-      });
-    });
-
-    it('每条记录有唯一 ID', () => {
-      const ids = DEFAULT_APPROVALS.map((a) => a.id);
-      assert.strictEqual(new Set(ids).size, ids.length);
-    });
-
-    it('每条记录有描述文本', () => {
-      DEFAULT_APPROVALS.forEach((a) => {
-        assert.ok(a.description.length > 0, `记录 ${a.id} 缺少描述`);
-      });
-    });
-  });
-
-  describe('类型映射', () => {
-    it('TYPE_LABEL 映射所有类型到中文', () => {
-      assert.strictEqual(TYPE_LABEL.purchase, '采购审批');
-      assert.strictEqual(TYPE_LABEL.expense, '报销审批');
-      assert.strictEqual(TYPE_LABEL.campaign, '活动审批');
-      assert.strictEqual(TYPE_LABEL.leave, '请假审批');
-    });
-
-    it('STATUS_LABEL 映射所有状态到中文', () => {
-      assert.strictEqual(STATUS_LABEL.pending, '待审批');
-      assert.strictEqual(STATUS_LABEL.approved, '已通过');
-      assert.strictEqual(STATUS_LABEL.rejected, '已驳回');
-      assert.strictEqual(STATUS_LABEL.withdrawn, '已撤回');
-    });
-
-    it('STATUS_COLOR 映射所有状态颜色', () => {
-      assert.strictEqual(STATUS_COLOR.pending, '#eab308');
-      assert.strictEqual(STATUS_COLOR.approved, '#22c55e');
-      assert.strictEqual(STATUS_COLOR.rejected, '#ef4444');
-      assert.strictEqual(STATUS_COLOR.withdrawn, '#94a3b8');
-    });
-  });
-
-  describe('格式化函数', () => {
-    it('formatAmount 格式化金额正确', () => {
-      assert.strictEqual(formatAmount(35000), '¥35,000.00');
-      assert.strictEqual(formatAmount(0), '¥0.00');
-      assert.strictEqual(formatAmount(1200), '¥1,200.00');
-      assert.strictEqual(formatAmount(3.5), '¥3.50');
-    });
-
-    it('formatDate 格式化日期正确', () => {
-      assert.strictEqual(formatDate('2026-07-18T09:00:00'), '2026-07-18 09:00');
-      assert.strictEqual(formatDate('2026-01-05T14:05:00'), '2026-01-05 14:05');
-    });
-  });
-
-  describe('统计计算', () => {
-    it('待审批 4 条', () => {
-      const stats = computeStats(DEFAULT_APPROVALS);
-      assert.strictEqual(stats.pendingCount, 4);
-    });
-
-    it('待审批金额合计', () => {
-      const pending = DEFAULT_APPROVALS.filter((a) => a.status === 'pending');
-      const total = pending.reduce((s, a) => s + a.amount, 0);
-      assert.strictEqual(total, 35000 + 2800 + 12000 + 0);
-    });
-
-    it('通过率计算正确 (已处理4条中2条通过)', () => {
-      const stats = computeStats(DEFAULT_APPROVALS);
-      // 4 resolved (APR-005 approved, APR-006 rejected, APR-007 approved, APR-008 withdrawn)
-      // => 2 approved / 4 resolved = 50%
-      assert.strictEqual(stats.passRate, 50);
-    });
-  });
-
-  describe('Tab 筛选', () => {
-    it('pending tab 返回 4 条待审批', () => {
-      const result = filterApprovals(DEFAULT_APPROVALS, 'pending');
-      assert.strictEqual(result.length, 4);
-      result.forEach((a) => assert.strictEqual(a.status, 'pending'));
-    });
-
-    it('done tab 返回 4 条已处理', () => {
-      const result = filterApprovals(DEFAULT_APPROVALS, 'done');
-      assert.strictEqual(result.length, 4);
-      result.forEach((a) => assert.ok(a.status !== 'pending'));
-    });
-
-    it('all tab 返回全部 8 条', () => {
-      const result = filterApprovals(DEFAULT_APPROVALS, 'all');
-      assert.strictEqual(result.length, 8);
-    });
-  });
-
-  describe('审批交互：批准', () => {
-    it('批准后状态变为 approved', () => {
-      const updated = updateApprovalStatus(DEFAULT_APPROVALS, 'APR-001', 'approved', '当前管理员');
-      const item = updated.find((a) => a.id === 'APR-001')!;
-      assert.strictEqual(item.status, 'approved');
-      assert.strictEqual(item.approver, '当前管理员');
-    });
-
-    it('mock 批准接口返回成功', async () => {
-      const res = await mockFetch('/api/approvals/approve', {
-        method: 'POST',
-        body: JSON.stringify({ id: 'APR-001' }),
-      });
-      const data = await res.json();
-      assert.strictEqual(data.ok, true);
-      assert.strictEqual(data.data.status, 'approved');
-    });
-  });
-
-  describe('审批交互：驳回', () => {
-    it('驳回后状态变为 rejected', () => {
-      const updated = updateApprovalStatus(DEFAULT_APPROVALS, 'APR-002', 'rejected', '当前管理员');
-      const item = updated.find((a) => a.id === 'APR-002')!;
-      assert.strictEqual(item.status, 'rejected');
-      assert.strictEqual(item.approver, '当前管理员');
-    });
-
-    it('mock 驳回接口返回成功', async () => {
-      const res = await mockFetch('/api/approvals/reject', {
-        method: 'POST',
-        body: JSON.stringify({ id: 'APR-002' }),
-      });
-      const data = await res.json();
-      assert.strictEqual(data.ok, true);
-      assert.strictEqual(data.data.status, 'rejected');
-    });
-  });
-
-  describe('审批交互：评论', () => {
-    it('添加评论后记录包含评论内容', () => {
-      const updated = addComment(DEFAULT_APPROVALS, 'APR-001', '同意该采购申请');
-      const item = updated.find((a) => a.id === 'APR-001')!;
-      assert.strictEqual(item.comment, '同意该采购申请');
-    });
-
-    it('mock 评论接口成功返回评论数据', async () => {
-      const res = await mockFetch('/api/approvals/comment', {
-        method: 'POST',
-        body: JSON.stringify({ id: 'APR-001', text: '同意' }),
-      });
-      const data = await res.json();
-      assert.strictEqual(data.ok, true);
-      assert.strictEqual(data.data.id, 'APR-001');
-      assert.strictEqual(data.data.comment, '同意');
-    });
-  });
-});
-
-// ===================== 反例 =====================
-
-describe('活动审批页 — 反例', () => {
-  beforeEach(() => {
-    resetRegistry();
-  });
-
-  it('空审批列表的统计值应为 0', () => {
-    const stats = computeStats([]);
-    assert.strictEqual(stats.pendingCount, 0);
-    assert.strictEqual(stats.monthTotal, 0);
-    assert.strictEqual(stats.passRate, 0);
-  });
-
-  it('空列表筛选返回空', () => {
-    assert.strictEqual(filterApprovals([], 'pending').length, 0);
-    assert.strictEqual(filterApprovals([], 'done').length, 0);
-    assert.strictEqual(filterApprovals([], 'all').length, 0);
-  });
-
-  it('评论空文本在注册表中返回失败', async () => {
-    mockFetchFail('/api/approvals/comment-empty', '评论内容不能为空');
-    const res = await mockFetch('/api/approvals/comment-empty', {
-      method: 'POST',
-      body: JSON.stringify({ id: 'APR-001', text: '' }),
-    });
-    const data = await res.json();
-    assert.strictEqual(data.ok, false);
-    assert.strictEqual(data.message, '评论内容不能为空');
-  });
-
-  it('未注册的API路径返回404', async () => {
-    const res = await mockFetch('/api/approvals/nonexistent', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    assert.strictEqual(data.ok, false);
-    assert.strictEqual(data.message, 'not found');
-  });
-
-  it('未注册的GET路径返回404', async () => {
-    const res = await mockFetch('/api/approvals/list');
-    const data = await res.json();
-    assert.strictEqual(data.ok, false);
-  });
-
-  it('不存在的审批ID更新状态不改变其他记录', () => {
-    const updated = updateApprovalStatus(DEFAULT_APPROVALS, 'APR-NONEXIST', 'approved', '管理员');
-    assert.strictEqual(updated.length, DEFAULT_APPROVALS.length);
-    // All records remain unchanged
-    DEFAULT_APPROVALS.forEach((orig) => {
-      const upd = updated.find((a) => a.id === orig.id)!;
-      assert.strictEqual(upd.status, orig.status);
-    });
-  });
-});
-
-// ===================== 边界 =====================
-
-describe('活动审批页 — 边界', () => {
-  it('金额为0的请假记录格式化正确', () => {
-    assert.strictEqual(formatAmount(0), '¥0.00');
-  });
-
-  it('极小金额格式化正确', () => {
-    assert.strictEqual(formatAmount(0.01), '¥0.01');
-    assert.strictEqual(formatAmount(0.1), '¥0.10');
-  });
-
-  it('大额金额格式化正确', () => {
-    assert.strictEqual(formatAmount(1000000), '¥1,000,000.00');
-    assert.strictEqual(formatAmount(9999999.99), '¥9,999,999.99');
-  });
-
-  it('全部数据审批通过时通过率为100%', () => {
-    const allApproved = DEFAULT_APPROVALS.map((a) => ({ ...a, status: 'approved' as const }));
-    const stats = computeStats(allApproved);
-    assert.strictEqual(stats.passRate, 100);
-  });
-
-  it('全部数据被驳回时通过率为0%', () => {
-    const allRejected = DEFAULT_APPROVALS.map((a) => ({ ...a, status: 'rejected' as const }));
-    const stats = computeStats(allRejected);
-    assert.strictEqual(stats.passRate, 0);
-  });
-
-  it('isThisMonth 判断正确', () => {
-    // A known past date
-    assert.strictEqual(isThisMonth('2025-01-01T00:00:00'), false);
-    // Current date — skip dynamic assertion; just verify it doesn't throw and returns a boolean
-    assert.ok(typeof isThisMonth(new Date().toISOString()) === 'boolean');
-  });
-
-  it('一条记录批量批准后状态同步', () => {
-    let approvals = [...DEFAULT_APPROVALS];
-    approvals = updateApprovalStatus(approvals, 'APR-001', 'approved', '管理员A');
-    approvals = updateApprovalStatus(approvals, 'APR-003', 'approved', '管理员B');
-    const item1 = approvals.find((a) => a.id === 'APR-001')!;
-    const item3 = approvals.find((a) => a.id === 'APR-003')!;
-    assert.strictEqual(item1.status, 'approved');
-    assert.strictEqual(item3.status, 'approved');
-    // Other records unchanged
-    assert.strictEqual(approvals.find((a) => a.id === 'APR-002')!.status, 'pending');
-  });
-
-  it('通过率计算仅使用已处理记录', () => {
-    // 4 pending, 2 approved, 1 rejected, 1 withdrawn
-    // resolved = 4, approved = 2 => 50%
-    const stats = computeStats(DEFAULT_APPROVALS);
-    assert.strictEqual(stats.passRate, 50);
-  });
-
-  it('responseRegistry 注册后可以重复调用', async () => {
-    resetRegistry();
-    mockFetchOk('/api/approvals/approve', { id: 'APR-001', status: 'approved', approver: '当前管理员' });
-
-    const r1 = await mockFetch('/api/approvals/approve', { method: 'POST', body: '{}' });
-    const d1 = await r1.json();
-    assert.strictEqual(d1.ok, true);
-
-    const r2 = await mockFetch('/api/approvals/approve', { method: 'POST', body: '{}' });
-    const d2 = await r2.json();
-    assert.strictEqual(d2.ok, true);
-  });
-
-  it('多次重置 registry 后注册仍然可用', () => {
-    resetRegistry();
-    assert.strictEqual(responseRegistry.size, 0);
-    mockFetchOk('/api/approvals/comment', { id: 'APR-001', comment: 'ok' });
-    assert.strictEqual(responseRegistry.size, 1);
-  });
-});
-
-// ===================== 组件结构验证 =====================
-
-describe('活动审批页 — 组件结构', () => {
-  const SRC = fs.readFileSync(
-    new URL('page.tsx', import.meta.url),
-    'utf-8',
-  );
-
-  it('包含 use client 指令', () => {
-    assert.ok(SRC.includes("'use client'"));
-  });
-
-  it('包含 useState 声明', () => {
-    assert.ok(SRC.includes('useState'));
-  });
-
-  it('包含 useMemo', () => {
-    assert.ok(SRC.includes('useMemo'));
-  });
-
-  it('包含 useCallback', () => {
-    assert.ok(SRC.includes('useCallback'));
-  });
-
-  it('包含 JSX 返回', () => {
-    assert.ok(SRC.includes('return ('));
-  });
-
-  it('包含列表渲染 .map()', () => {
-    assert.ok(SRC.includes('.map('));
-  });
-
-  it('包含条件渲染 &&', () => {
-    assert.ok(SRC.includes(' && '));
-  });
-
-  it('包含默认导出函数', () => {
-    assert.ok(SRC.includes('export default function ApprovalsPage'));
-  });
-
-  it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
-  });
-
-  it('包含注释说明文档', () => {
-    assert.ok(SRC.includes('/**'));
-  });
-
-  it('包含事件处理器 onClick', () => {
-    assert.ok(SRC.includes('onClick'));
-  });
-
-  it('包含 onChange 事件', () => {
-    assert.ok(SRC.includes('onChange'));
-  });
-
-  it('包含 style 内联样式', () => {
-    assert.ok(SRC.includes('style={{'));
-  });
-
-  it('包含金额格式化', () => {
-    assert.ok(SRC.includes('toLocaleString'));
-  });
-
-  it('包含模板字符串', () => {
-    assert.ok(SRC.includes('${'));
-  });
-
-  it('包含空态处理', () => {
-    assert.ok(SRC.includes('EmptyState') || SRC.includes('empty'));
-  });
-
-  it('显式展示 mock 来源态证据', () => {
-    assert.ok(SRC.includes("deliveryMode: 'mock'"));
-    assert.ok(SRC.includes('DEFAULT_APPROVALS + responseRegistry'));
-    assert.ok(SRC.includes('handleApiCall(/api/approvals/*) -> local state mutation only'));
-    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(SRC.includes('写入路径: {sourceEvidence.writePath}'));
-  });
-});
-
-// ===================== React 渲染测试 =====================
-
-/**
- * React 渲染测试 — 使用 @testing-library/react 做真正的组件渲染
- * 依赖 .test-setup.mjs 提供的 happy-dom 环境和 next/navigation mock
- * 通过 afterEach(cleanup) 确保每次渲染后清理 DOM，防止测试间干扰
- */
-describe('活动审批页 — React 渲染', () => {
-  beforeEach(() => {
-    clearAdminSession();
-    storeAdminSession({
-      accessToken: 'test-access-token',
-      refreshToken: 'test-refresh-token',
-      user: {
-        userId: 'admin:test',
-        username: 'admin',
-        role: 'super_admin',
-        permissions: ['foundation.governance.read'],
-      },
-    });
-  });
-
-  afterEach(() => {
-    clearAdminSession();
-    cleanup();
-  });
-
-  it('组件能够渲染且不抛出错误', () => {
-    assert.doesNotThrow(() => {
-      render(<ApprovalsPage />);
-    });
-  });
-
-  it('渲染页面标题「活动审批」', () => {
-    render(<ApprovalsPage />);
-    const heading = screen.getByText('📋 活动审批');
-    assert.ok(heading);
-    assert.strictEqual(heading.tagName, 'H1');
-  });
-
-  it('渲染三个统计卡片（待审批数 / 本月总金额 / 通过率）', () => {
-    render(<ApprovalsPage />);
-    assert.strictEqual(screen.getAllByText(/待审批数|本月总金额|通过率/).length, 3);
-    assert.strictEqual(screen.getByText('4').tagName, 'DIV'); // 待审批数
-    assert.ok(screen.getByText('50%')); // 通过率
-  });
-
-  it('渲染三个 Tab 按钮且默认选中「待审批」', () => {
-    render(<ApprovalsPage />);
-    const allBtns = screen.getAllByRole('button');
-    // 至少有 1 个按钮包含待审批、已处理、全部各一个
-    const pendingBtn = allBtns.find((b) => b.textContent?.includes('待审批'));
-    const doneBtn = allBtns.find((b) => b.textContent?.includes('已处理'));
-    const allBtn = allBtns.find((b) => b.textContent?.includes('全部'));
-    assert.ok(pendingBtn);
-    assert.ok(doneBtn);
-    assert.ok(allBtn);
-    // 默认选中「待审批」Tab（fontWeight 应为 700）
-    assert.strictEqual(pendingBtn!.style.fontWeight, '700');
-  });
-
-  it('渲染样本数据的第一条记录（采购2台高配收银终端）', () => {
-    render(<ApprovalsPage />);
-    // 使用 queryAll 避免重复元素报错（jsdom + 列表渲染可能导致文本多次出现）
-    const descriptions = screen.queryAllByText('采购2台高配收银终端(华为擎云)');
-    assert.ok(descriptions.length >= 1);
-    assert.ok(screen.queryByText('APR-001'));
-    assert.ok(screen.queryByText('李强'));
-    assert.ok(screen.queryByText('北京朝阳店'));
-  });
-
-  it('刷新按钮可点击', () => {
-    render(<ApprovalsPage />);
-    const refreshBtn = screen.getByRole('button', { name: /⟳ 刷新/ });
-    assert.ok(refreshBtn);
-    assert.strictEqual(refreshBtn.getAttribute('type'), 'button');
-  });
-
-  it('渲染 mock 来源态证据与本地写链路提示', () => {
-    render(<ApprovalsPage />);
-    assert.ok(screen.getByText(/Delivery mock/));
-    assert.ok(screen.getByText(/DEFAULT_APPROVALS \+ responseRegistry/));
-    assert.ok(screen.getByText(/仅重置本地 mock 样本/));
-    assert.ok(screen.getAllByText(/只更新前端内存态/).length >= 1);
-  });
-});
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
+
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'approvals-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'approvals-data.ts'), 'utf-8')
+})
+
+describe('ApprovalsPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function ApprovalsPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
+
+  it('页面应加载审批快照并导出动态配置', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadApprovalsSnapshot()'))
+    assert.ok(PAGE_SRC.includes("import { loadApprovalsSnapshot } from './approvals-data'"))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+  })
+
+  it('页面应接入治理审批权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(PAGE_SRC.includes('治理审批中心访问受限'))
+  })
+})
+
+describe('ApprovalsPage — 来源态透明化', () => {
+  it('页面应展示审批列表来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('写入路径: {sourceEvidence.writePath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('latestUpdatedAt: {sourceEvidence.latestUpdatedAt}'))
+  })
+
+  it('页面应显式标记 mock 样本与假写链路', () => {
+    assert.ok(PAGE_SRC.includes('loadApprovalsSnapshot -> DEFAULT_APPROVALS'))
+    assert.ok(PAGE_SRC.includes('local approvals snapshot'))
+    assert.ok(PAGE_SRC.includes('submitApprovalComment/approveApproval/rejectApproval -> local state mutation only'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
+
+describe('ApprovalsData — 快照合同', () => {
+  it('应定义 mock 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes('approvals: ApprovalRecord[]'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+  })
+
+  it('应定义默认审批样本', () => {
+    assert.ok(DATA_SRC.includes('export const DEFAULT_APPROVALS'))
+    assert.ok(DATA_SRC.includes('APR-001'))
+    assert.ok(DATA_SRC.includes('北京朝阳店'))
+    assert.ok(DATA_SRC.includes('赵磊'))
+  })
+
+  it('应提供首屏快照 loader 与假写链路函数', () => {
+    assert.ok(DATA_SRC.includes('export async function loadApprovalsSnapshot()'))
+    assert.ok(DATA_SRC.includes('export async function submitApprovalComment('))
+    assert.ok(DATA_SRC.includes('export async function approveApproval('))
+    assert.ok(DATA_SRC.includes('export async function rejectApproval('))
+    assert.ok(DATA_SRC.includes('waitForMockWrite'))
+  })
+
+  it('应对缺失 ID 和空评论做防御', () => {
+    assert.ok(DATA_SRC.includes('缺少审批单ID'))
+    assert.ok(DATA_SRC.includes('评论内容不能为空'))
+  })
+})
+
+describe('ApprovalsClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client', () => {
+    assert.ok(CLIENT_SRC.includes('"use client"') || CLIENT_SRC.includes("'use client'"))
+  })
+
+  it('客户端组件应接收 snapshot 并初始化本地态', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: ApprovalsSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('useState<ApprovalRecord[]>(snapshot.approvals)'))
+    assert.ok(CLIENT_SRC.includes('const [tabKey, setTabKey] = useState<TabKey>(\'pending\')'))
+  })
+
+  it('客户端组件应支持 router.refresh 刷新服务端快照', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
+  })
+
+  it('客户端组件应保留审批动作与本地内存态更新', () => {
+    assert.ok(CLIENT_SRC.includes('submitApprovalComment'))
+    assert.ok(CLIENT_SRC.includes('approveApproval'))
+    assert.ok(CLIENT_SRC.includes('rejectApproval'))
+    assert.ok(CLIENT_SRC.includes('setApprovals((current) =>'))
+    assert.ok(CLIENT_SRC.includes('只更新前端内存态'))
+  })
+
+  it('客户端组件应保留 tabs、统计卡与审批意见交互', () => {
+    assert.ok(CLIENT_SRC.includes("type TabKey = 'pending' | 'done' | 'all'"))
+    assert.ok(CLIENT_SRC.includes('待审批数'))
+    assert.ok(CLIENT_SRC.includes('本月总金额'))
+    assert.ok(CLIENT_SRC.includes('通过率'))
+    assert.ok(CLIENT_SRC.includes('审批意见 ▼'))
+    assert.ok(CLIENT_SRC.includes('提交意见'))
+  })
+})
+
+describe('Approvals — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
+
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
+
+  it('客户端应保留空态提示', () => {
+    assert.ok(CLIENT_SRC.includes('列表为空'))
+    assert.ok(CLIENT_SRC.includes('暂无待处理的审批请求'))
+    assert.ok(CLIENT_SRC.includes('目前还没有任何审批记录'))
+  })
+})

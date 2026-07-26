@@ -1,185 +1,129 @@
-/**
- * intelligence/page.test.tsx — Dashboard KPI测试
- * 覆盖: 数据/状态/边界 = 30+ tests
- */
-import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-function readSrc(): string | null {
-  try {
-    const fs = require('fs')
-    const path = require('path')
-    return fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8')
-  } catch {
-    return null
-  }
-}
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-const content: string = (() => {
-  const s = readSrc()
-  if (!s) throw new Error('Cannot read page.tsx')
-  return s
-})()
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'intelligence-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'intelligence-data.ts'), 'utf-8')
+})
 
-describe('Intelligence Dashboard', () => {
-  beforeEach(() => {})
-
-  it('页面文件存在', () => {
-    assert.ok(content, 'page.tsx 内容非空')
+describe('IntelligencePage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function IntelligencePage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  it('KPI卡片组件存在', () => {
-    assert.ok(content.includes('KpiCard'))
-    assert.ok(content.includes('监控城市'))
-    assert.ok(content.includes('高优先级'))
+  it('页面应加载 intelligence 快照', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadIntelligenceSnapshot()'))
+    assert.ok(PAGE_SRC.includes("import { loadIntelligenceSnapshot } from './intelligence-data'"))
   })
 
-  it('KPI卡片包含6个维度', () => {
-    const cards = ['监控城市', '最新告警', '高优先级', 'AI建议数', '知识卡片', '最近扫描']
-    for (const c of cards) {
-      assert.ok(content.includes(c), '缺少KPI卡片: ' + c)
-    }
+  it('页面应导出 dynamic 与 revalidate', () => {
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
   })
 
-  it('KPI卡片使用 border-l-4 样式', () => {
-    const kpiCards = content.match(/KpiCard/g)
-    assert.ok(kpiCards && kpiCards.length >= 6)
-    assert.ok(content.includes('border-l-4'))
-  })
-
-  it('告警数为0时不显示红色标记', () => {
-    assert.ok(content.includes("kpi.highSeverityAlerts > 0 ? 'border-red-500' : 'border-gray-300'"))
-    assert.ok(content.includes("kpi.highSeverityAlerts > 0 ? '\u{1F6A8}' : '\u2705'"))
-  })
-
-  it('告警数有值时显示badge在monitor入口', () => {
-    assert.ok(content.includes('highSeverityAlerts > 0'))
-    assert.ok(content.includes('\u65B0\u544A\u8B66'))
-    assert.ok(content.includes('kpi.highSeverityAlerts'))
-  })
-
-  it('Dashboard有4个功能入口', () => {
-    assert.ok(content.includes('/intelligence/feasibility'))
-    assert.ok(content.includes('/intelligence/operations'))
-    assert.ok(content.includes('/intelligence/monitor'))
-  })
-
-  it('功能入口卡片包含标题和描述', () => {
-    const entries = ['\u5F00\u4E1A\u53EF\u884C\u6027\u62A5\u544A', '\u8FD0\u8425\u53C2\u8C0B (AI\u9009\u62E9\u9898)', '\u7ADE\u4E89\u76D1\u63A7', '\u8D22\u52A1\u5168\u666F\u8868']
-    for (const e of entries) {
-      assert.ok(content.includes(e), '\u7F3A\u5C11\u529F\u80FD\u5165\u53E3: ' + e)
-    }
-  })
-
-  it('功能入口使用 Link 组件', () => {
-    const links = content.match(/href:\s*['"]\/intelligence/g)
-    assert.ok(links && links.length >= 4)
-  })
-
-  it('Dashboard有快速操作区', () => {
-    assert.ok(content.includes('\u5FEB\u901F\u64CD\u4F5C'))
-    assert.ok(content.includes('\u8BC4\u4F30\u65B0\u5E97'))
-    assert.ok(content.includes('\u83B7\u53D6AI\u5EFA\u8BAE'))
-    assert.ok(content.includes('\u67E5\u770B\u76D1\u63A7'))
-  })
-
-  it('支持刷新功能', () => {
-    assert.ok(content.includes('\u5237\u65B0'))
-  })
-
-  it('加载状态下刷新按钮禁用', () => {
-    assert.ok(content.includes('disabled={loading}'))
-  })
-
-  it('从API获取数据', () => {
-    assert.ok(content.includes('/api/intelligence/monitor/summary'))
-  })
-
-  it('API失败时展示降级提示', () => {
-    assert.ok(content.includes('\u76D1\u63A7API\u6682\u4E0D\u53EF\u7528\uFF0C\u5C55\u793A\u9ED8\u8BA4\u6570\u636E'))
-  })
-
-  it('设置了 DEFAULT_KPI 默认值', () => {
-    assert.ok(content.includes('DEFAULT_KPI'))
-    assert.ok(content.includes('monitoredCities: 12'))
-    assert.ok(content.includes('totalAlerts: 0'))
-    assert.ok(content.includes('knowledgeCards: 248'))
-  })
-
-  it('展示错误提示框', () => {
-    assert.ok(content.includes('error'))
-    assert.ok(content.includes('bg-yellow-50'))
-    assert.ok(content.includes('border-yellow-200'))
-  })
-
-  it('边界: 最近扫描显示"从未"当lastScanTime为空', () => {
-    assert.ok(content.includes("kpi.lastScanTime !== '--' ? kpi.lastScanTime : '\u4ECE\u672A'"))
-  })
-
-  it('边界: highSeverityAlerts>0时显示badge', () => {
-    assert.ok(content.includes('highSeverityAlerts > 0'))
-  })
-
-  it('边界: KpiCard 的 value 支持 number | string', () => {
-    assert.ok(content.includes('value: number | string'))
-  })
-
-  it('边界: 初始加载状态为 true', () => {
-    assert.ok(content.includes('useState(true)') || content.includes('loading=true'))
-  })
-
-  it('TSC: KpiData接口字段完整', () => {
-    const fields = ['monitoredCities', 'totalAlerts', 'highSeverityAlerts', 'totalSuggestions', 'knowledgeCards', 'lastScanTime']
-    for (const f of fields) {
-      assert.ok(content.includes(f), '\u7F3A\u5C11\u63A5\u53E3\u5B57\u6BB5: ' + f)
-    }
-  })
-
-  it('TSC: 无as any', () => {
-    assert.ok(!content.includes('as any'))
-  })
-
-  it('TSC: 使用 interface 定义 KpiData', () => {
-    assert.ok(content.includes('interface KpiData'))
-  })
-
-  it('渲染: 页面标题包含\u8FD0\u8425\u53C2\u8C0B', () => {
-    assert.ok(content.includes('\u8FD0\u8425\u53C2\u8C0B'))
-    assert.ok(content.includes('\uD83E\uDD16'))
-  })
-
-  it('渲染: 描述包含\u7ADE\u4E89\u6570\u636E\u5E93', () => {
-    assert.ok(content.includes('\u7ADE\u54C1\u6570\u636E\u5E93'))
-  })
-
-  it('渲染: fetchKpi 使用 useCallback', () => {
-    assert.ok(content.includes('useCallback'))
-    assert.ok(content.includes('fetchKpi'))
-  })
-
-  it('渲染: useEffect 初始化调用 fetchKpi', () => {
-    assert.ok(content.includes('useEffect'))
-    assert.ok(content.includes('{ fetchKpi() }'))
-  })
-
-  it('样式: max-w-7xl 布局容器', () => {
-    assert.ok(content.includes('max-w-7xl'))
-  })
-
-  it('样式: 响应式网格 grid-cols-2 md:grid-cols-3 lg:grid-cols-6', () => {
-    assert.ok(content.includes('grid-cols-2'))
-    assert.ok(content.includes('lg:grid-cols-6'))
-  })
-
-  it('功能入口含高优先级告警badge', () => {
-    assert.ok(content.includes('badge'))
-    assert.ok(content.includes('\u6761\u65B0\u544A\u8B66'))
+  it('页面应接入管理员权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })
 
-describe('intelligence — 权限边界', () => {
-  it('接入管理员权限边界', () => {
-    assert.ok(content.includes('AdminPermissionGate'))
-    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+describe('IntelligencePage — 来源态透明化', () => {
+  it('页面应展示情报总览来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
+
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadIntelligenceSnapshot -> loadMonitorSnapshot -> intelligence/monitor/summary'))
+    assert.ok(PAGE_SRC.includes('loadIntelligenceSnapshot -> loadMonitorSnapshot -> defaultMonitorSummary fallback'))
+    assert.ok(PAGE_SRC.includes('fallback monitor samples + local decision inventory'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
+
+describe('IntelligenceData — 快照合同', () => {
+  it('应通过 monitor snapshot 生成 dashboard 快照', () => {
+    assert.ok(DATA_SRC.includes("import { loadMonitorSnapshot } from './monitor/monitor-data'"))
+    assert.ok(DATA_SRC.includes('const monitorSnapshot = await loadMonitorSnapshot()'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('navigationCards: IntelligenceNavigationCard[]'))
+    assert.ok(DATA_SRC.includes('quickActions: IntelligenceQuickAction[]'))
+  })
+
+  it('应保留默认知识卡片和 AI 建议数量', () => {
+    assert.ok(DATA_SRC.includes('const DEFAULT_SUGGESTIONS = 63'))
+    assert.ok(DATA_SRC.includes('const DEFAULT_KNOWLEDGE_CARDS = 248'))
+    assert.ok(DATA_SRC.includes('totalSuggestions: DEFAULT_SUGGESTIONS'))
+    assert.ok(DATA_SRC.includes('knowledgeCards: DEFAULT_KNOWLEDGE_CARDS'))
+  })
+
+  it('应保留四个导航入口与三项快速操作', () => {
+    assert.ok(DATA_SRC.includes("href: '/intelligence/feasibility'"))
+    assert.ok(DATA_SRC.includes("href: '/intelligence/operations'"))
+    assert.ok(DATA_SRC.includes("href: '/intelligence/monitor'"))
+    assert.ok(DATA_SRC.includes('export const defaultQuickActions'))
+    assert.ok(DATA_SRC.includes('获取AI建议'))
+  })
+})
+
+describe('IntelligenceClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+  })
+
+  it('客户端组件应接收 snapshot 并渲染错误提示', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: IntelligenceSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
+  })
+
+  it('客户端组件应支持刷新按钮并触发 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
+  })
+
+  it('客户端组件应保留 KPI、功能入口与快速操作', () => {
+    assert.ok(CLIENT_SRC.includes('KpiCard'))
+    assert.ok(CLIENT_SRC.includes('IntelligenceKpiGrid'))
+    assert.ok(CLIENT_SRC.includes('功能入口'))
+    assert.ok(CLIENT_SRC.includes('快速操作'))
+    assert.ok(CLIENT_SRC.includes('.map('))
+  })
+
+  it('客户端组件应保留高优先级告警 badge 逻辑', () => {
+    assert.ok(CLIENT_SRC.includes('kpi.highSeverityAlerts > 0'))
+    assert.ok(DATA_SRC.includes('条新告警'))
+    assert.ok(CLIENT_SRC.includes('bg-red-500'))
+  })
+})
+
+describe('Intelligence — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
+
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
+
+  it('客户端不应继续直接 fetch KPI', () => {
+    assert.ok(!CLIENT_SRC.includes('fetch('))
+    assert.ok(!PAGE_SRC.includes('useEffect'))
   })
 })

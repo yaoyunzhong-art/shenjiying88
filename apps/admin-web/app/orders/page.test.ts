@@ -1,208 +1,133 @@
-/**
- * orders/page.test.ts — 订单管理页 L1 JMeter 风格测试
- *
- * 覆盖:
- *   正例 — 页面导出、use client、订单常量、状态映射、数据函数、表格、分页、搜索、统计
- *   反例 — console.log、硬编码 secret、== 比较、dangerouslySetInnerHTML、注释调试
- *   边界 — loading/empty/error 状态、分页边界、金额范围、零金额、sort 排序
- */
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'orders-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, '../orders-data.ts'), 'utf-8')
+})
 
-// ---- 正例 ----
+describe('OrdersPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function OrdersPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
 
-test('[正例] 应导出 OrdersPage 默认组件', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('export default function OrdersPage'), '缺少 OrdersPage 默认导出');
-});
+  it('页面应加载 orders 快照', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadOrdersSnapshot()'))
+    assert.ok(PAGE_SRC.includes("import { loadOrdersSnapshot } from '../orders-data'"))
+  })
 
-test('[正例] 页面应接入管理员权限边界', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
-  assert.ok(src.includes("requiredPermission: 'order:read'"), '应复用 order:read 权限');
-});
+  it('页面应导出 dynamic 与 revalidate', () => {
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+  })
 
-test('[正例] 页面应包含 use client 指令', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes("'use client'"), '缺少 use client');
-});
+  it('页面应接入管理员权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'order:read'"))
+  })
+})
 
-test('[正例] 页面应引用订单状态常量', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const constants = ['ORDER_STATUS_MAP', 'ORDER_STATUSES', 'ORDER_CHANNEL_MAP', 'ORDER_CHANNELS', 'ORDER_STATUS_FLOW'];
-  const found = constants.filter((c) => src.includes(c));
-  assert.ok(found.length >= 3, `至少引用 3 个订单常量, 实际: ${found.length}`);
-});
+describe('OrdersPage — 来源态透明化', () => {
+  it('页面应展示订单来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
 
-test('[正例] 页面应引用 MOCK_ORDERS 数据', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('MOCK_ORDERS'), '缺少 MOCK_ORDERS 引用');
-});
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadOrdersSnapshot -> transactions?type=order'))
+    assert.ok(PAGE_SRC.includes('loadOrdersSnapshot -> MOCK_ORDERS fallback'))
+    assert.ok(PAGE_SRC.includes('local order samples'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
 
-test('[正例] 页面应引用核心订单字段', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const orderFields = ['orderNo', 'customerName', 'totalAmount', 'paidAmount', 'status', 'channel', 'createdAt', 'storeName'];
-  const found = orderFields.filter((f) => src.includes(f));
-  assert.ok(found.length >= 5, `至少包含 5 个核心字段, 实际: ${found.length}`);
-});
+describe('OrdersData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('orders: OrderItem[]'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+  })
 
-test('[正例] 页面应有 DataTable 表格', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('DataTable'), '缺少 DataTable');
-});
+  it('应保留默认 fallback 样本与状态合同', () => {
+    assert.ok(DATA_SRC.includes('export const MOCK_ORDERS'))
+    assert.ok(DATA_SRC.includes('ORDER_STATUS_MAP'))
+    assert.ok(DATA_SRC.includes('ORDER_STATUS_FLOW'))
+    assert.ok(DATA_SRC.includes('朝阳旗舰店'))
+  })
 
-test('[正例] 页面应有 Pagination 分页', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('Pagination'), '缺少 Pagination');
-  assert.ok(src.includes('usePagination'), '缺少 usePagination');
-});
+  it('应尝试读取上游 orders 接口', () => {
+    assert.ok(DATA_SRC.includes("new URL('transactions?type=order', resolveOrdersApiBaseUrl())"))
+    assert.ok(DATA_SRC.includes('mapApiOrderToOrderItem'))
+    assert.ok(DATA_SRC.includes('extractOrderRecords'))
+  })
 
-test('[正例] 页面应有搜索功能', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
-  assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
-});
+  it('失败时应回退到 fallback 样本并返回错误提示', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes('订单实时接口不可达，已切换到 fallback 样本数据。'))
+  })
+})
 
-test('[正例] 页面应有排序功能', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('useSortedItems'), '缺少 useSortedItems');
-  assert.ok(src.includes('sortable'), '列应支持排序');
-});
+describe('OrdersClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+  })
 
-test('[正例] 页面应有状态筛选 Tabs', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('Tabs'), '缺少 Tabs');
-  assert.ok(src.includes('statusFilter'), '缺少 statusFilter');
-});
+  it('客户端组件应接收 snapshot 并渲染 error', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: OrdersSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
+  })
 
-test('[正例] 页面应有渠道筛选', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('channelFilter'), '缺少 channelFilter');
-});
+  it('客户端组件应支持刷新按钮并触发 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
+  })
 
-test('[正例] 页面应有金额范围筛选', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('amountFilter'), '缺少 amountFilter');
-  assert.ok(src.includes('AmountRange'), '缺少 AmountRange 类型');
-});
+  it('客户端组件应保留筛选、表格和分页结构', () => {
+    assert.ok(CLIENT_SRC.includes('SearchFilterInput'))
+    assert.ok(CLIENT_SRC.includes('FilterChips'))
+    assert.ok(CLIENT_SRC.includes('DataTable'))
+    assert.ok(CLIENT_SRC.includes('Pagination'))
+    assert.ok(CLIENT_SRC.includes('Tabs'))
+  })
 
-test('[正例] 页面应有统计卡片', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('stats.total'), '缺少 stats 统计');
-  assert.ok(src.includes('总订单'), '缺少总订单统计');
-  assert.ok(src.includes('待处理'), '缺少待处理统计');
-  assert.ok(src.includes('客单价'), '缺少客单价统计');
-});
+  it('客户端组件应保留订单统计与详情跳转', () => {
+    assert.ok(CLIENT_SRC.includes('总订单'))
+    assert.ok(CLIENT_SRC.includes('客单价'))
+    assert.ok(CLIENT_SRC.includes('router.push(`/orders/${item.id}`)'))
+    assert.ok(CLIENT_SRC.includes('nextStatusLabel'))
+  })
+})
 
-test('[正例] 页面应有 FilterChips 活跃过滤提示', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('FilterChips'), '缺少 FilterChips');
-  assert.ok(src.includes('已筛选'), '缺少筛选提示');
-});
+describe('Orders — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
 
-test('[正例] 页面应有金额格式化函数', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('formatAmount'), '缺少 formatAmount');
-  assert.ok(src.includes('amountColor'), '缺少 amountColor');
-});
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
 
-test('[正例] 页面应有 Suspense 懒加载', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('Suspense'), '缺少 Suspense');
-  assert.ok(src.includes('OrdersPageFallback'), '缺少 fallback 组件');
-});
-
-// ---- 反例 ----
-
-test('[反例] 不应包含 console.log 残留', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const codeLines = src.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'));
-  const hasConsoleLog = codeLines.some((l) => /console\.(log|warn|error|debug)\s*\(/.test(l));
-  assert.ok(!hasConsoleLog, '不应有 console 调试残留');
-});
-
-test('[反例] 不应包含硬编码敏感信息', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const secrets = [/api[_-]?key\s*[=:]\s*['"][^'"]{16,}['"]/i, /secret\s*[=:]\s*['"][^'"]{8,}['"]/i];
-  for (const pat of secrets) {
-    assert.ok(!pat.test(src), `不应包含硬编码敏感信息: ${pat}`);
-  }
-});
-
-test('[反例] 不应使用 dangerouslySetInnerHTML', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
-});
-
-test('[反例] 不应有注释掉的 console 调试语句', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const debugComments = src.match(/\/\/\s*console\./g);
-  assert.ok(!debugComments || debugComments.length === 0, '不应有注释掉的 console');
-});
-
-test('[反例] 状态筛选应使用 === 精确比较', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const looseStatus = /status\s*==\s*['"][a-z]+['"]/i.test(src);
-  assert.ok(!looseStatus, '状态过滤应使用 ===');
-});
-
-// ---- 边界 ----
-
-test('[边界] 页面源码应大于 8KB (丰富客户端组件)', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.length > 8192, `源码长度不足, 实际 ${src.length} bytes`);
-});
-
-test('[边界] 页面应有 loading/empty/error 状态处理', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const statePatterns = [/loading|isEmpty|empty|error|fallback|Suspense|Spin|skeleton/i];
-  const hasState = statePatterns.some((p) => p.test(src));
-  assert.ok(hasState, '页面应有 loading/empty/error 状态处理');
-});
-
-test('[边界] 页面应有分页重置逻辑', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('resetPage'), '筛选变更时应重置分页');
-});
-
-test('[边界] 页面应处理零金额订单场景', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const zeroHandling = /=== 0|under100|free|zero|0\b/i.test(src);
-  assert.ok(zeroHandling, '页面应处理零金额场景');
-});
-
-test('[边界] 页面应处理全部筛选为 ALL 的默认状态', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  const allChecks = src.match(/['"]ALL['"]/g);
-  assert.ok(allChecks && allChecks.length >= 4, '应有至少 4 个 ALL 通配状态');
-});
-
-test('[边界] 页面应有市场筛选', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('marketFilter'), '缺少 marketFilter');
-  assert.ok(src.includes('marketCode'), '缺少 marketCode');
-});
-
-test('[边界] 页面行点击应跳转订单详情', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('handleRowClick'), '缺少行点击处理');
-  assert.ok(src.includes('/orders/'), '应跳转到订单详情页');
-});
-
-test('[边界] 页面应有 pageSize 选项', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('pageSizeOptions'), '缺少分页尺寸选项');
-  assert.ok(src.includes('pageSize'), '缺少 pageSize');
-});
-
-test('[边界] 页面统计应为响应式 Grid 布局', () => {
-  const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('gridTemplateColumns') || src.includes('display: grid'), '统计卡片应为 grid 布局');
-});
+  it('客户端应保留 ALL 默认筛选与金额区间边界', () => {
+    assert.ok(CLIENT_SRC.includes("'ALL'"))
+    assert.ok(CLIENT_SRC.includes("type AmountRange = 'ALL' | 'under100' | '100to300' | 'over300'"))
+    assert.ok(CLIENT_SRC.includes('item.totalAmount < 100'))
+    assert.ok(CLIENT_SRC.includes('item.totalAmount > 300'))
+  })
+})

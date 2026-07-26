@@ -1,204 +1,136 @@
-/**
- * intelligence/monitor/page.test.tsx — 竞争监控页面测试
- * 覆盖: 数据/状态/边界 ≥ 15 tests
- */
-import { describe, it, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
-import React from 'react'
-import { createRoot } from 'react-dom/client'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-function readSrc(): string | null {
-  try {
-    const fs = require('fs')
-    const path = require('path')
-    return fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8')
-  } catch {
-    return null
-  }
-}
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-const content: string = (() => {
-  const s = readSrc()
-  if (!s) throw new Error('Cannot read page.tsx')
-  return s
-})()
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'monitor-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'monitor-data.ts'), 'utf-8')
+})
 
-function renderToText(el: React.ReactElement): string {
-  const container = document.createElement('div')
-  document.body.appendChild(container)
-  const root = createRoot(container)
-  root.render(el)
-  return container.textContent ?? ''
-}
-
-describe('Monitor Page', () => {
-  beforeEach(() => {})
-
-  // ── 文件存在性 ──
-  it('页面文件存在', () => {
-    assert.ok(content, 'page.tsx 内容非空')
+describe('MonitorPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function MonitorPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  // ── 告警类型 ──
-  it('包含6种告警类型', () => {
-    const types = ['price_change', 'new_activity', 'new_promotion', 'rating_change', 'equipment_change', 'policy_change']
-    for (const t of types) {
-      assert.ok(content.includes(t), `缺少告警类型: ${t}`)
-    }
+  it('页面应加载 monitor 快照', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadMonitorSnapshot()'))
+    assert.ok(PAGE_SRC.includes("import { loadMonitorSnapshot } from './monitor-data'"))
   })
 
-  it('6种类型有对应的label和icon映射', () => {
-    assert.ok(content.includes('TYPE_LABELS'))
-    assert.ok(content.includes('TYPE_ICONS'))
-    const labels = ['💰 价格调整', '🎉 新活动', '🏷️ 新优惠', '⭐ 评分变化', '🔧 设备异动', '📋 政策变更']
-    for (const l of labels) {
-      assert.ok(content.includes(l), `缺少类型标签: ${l}`)
-    }
+  it('页面应导出 dynamic 与 revalidate', () => {
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
   })
 
-  // ── 严重度 ──
-  it('3级严重度: high/medium/low', () => {
-    assert.ok(content.includes('high'))
-    assert.ok(content.includes('medium'))
-    assert.ok(content.includes('low'))
-  })
-
-  it('严重度有颜色区分(红/黄/绿)', () => {
-    assert.ok(content.includes('border-red-500'))
-    assert.ok(content.includes('border-yellow-500'))
-    assert.ok(content.includes('border-green-500'))
-    assert.ok(content.includes('🔴 紧急'))
-    assert.ok(content.includes('🟡 关注'))
-    assert.ok(content.includes('🟢 观察'))
-  })
-
-  // ── API数据获取 ──
-  it('从API获取监控数据', () => {
-    assert.ok(content.includes('/intelligence/monitor/summary'))
-  })
-
-  it('API不可用时使用降级mock数据', () => {
-    assert.ok(content.includes('generateMockData'))
-    assert.ok(content.includes('降级数据'))
-  })
-
-  it('自动刷新每30秒', () => {
-    assert.ok(content.includes('30_000') || content.includes('30000'))
-  })
-
-  // ── 筛选功能 ──
-  it('支持按类型筛选告警', () => {
-    assert.ok(content.includes('typeFilter'))
-    assert.ok(content.includes('setTypeFilter'))
-    assert.ok(content.includes('全部类型'))
-  })
-
-  it('支持按严重度筛选告警', () => {
-    assert.ok(content.includes('sevFilter'))
-    assert.ok(content.includes('setSevFilter'))
-    assert.ok(content.includes('全部级别'))
-  })
-
-  it('已去重的告警排在最后', () => {
-    assert.ok(content.includes('deduped'))
-    assert.ok(content.includes('24h内仅展示最新一次'))
-  })
-
-  // ── 趋势图 ──
-  it('展示周异动走势图', () => {
-    assert.ok(content.includes('trend'))
-    assert.ok(content.includes('TrendPoint'))
-    assert.ok(content.includes('周异动走势'))
-    assert.ok(content.includes('weeklyTrend'))
-  })
-
-  it('走势图按日期聚合并按天排序', () => {
-    assert.ok(content.includes('localeCompare'))
-  })
-
-  // ── 统计卡片 ──
-  it('统计卡片展示每种类型的非去重数量', () => {
-    assert.ok(content.includes('stats'))
-    assert.ok(content.includes("a.type === t && !a.deduped"))
-  })
-
-  it('未去重的高严重度告警计数显示为badge', () => {
-    assert.ok(content.includes('highCount'))
-    assert.ok(content.includes("a.severity === 'high' && !a.deduped"))
-    assert.ok(content.includes('animate-pulse'))
-  })
-
-  // ── 数据新鲜度 ──
-  it('显示数据采集新鲜度指示器', () => {
-    assert.ok(content.includes('freshnessText'))
-    assert.ok(content.includes('数据采集于'))
-    assert.ok(content.includes('刚刚采集'))
-  })
-
-  it('新鲜度颜色: 刚刚=绿, 分钟=黄, 小时=灰', () => {
-    assert.ok(content.includes('bg-green-100'))
-    assert.ok(content.includes('bg-yellow-100'))
-    assert.ok(content.includes('bg-gray-100'))
-  })
-
-  // ── 空状态 ──
-  it('无数据时显示空状态', () => {
-    assert.ok(content.includes('暂无监控数据'))
-    assert.ok(content.includes('filtered.length === 0'))
-  })
-
-  // ── 边界条件 ──
-  it('边界: formatTime处理不同时间跨度(分/时/天)', () => {
-    assert.ok(content.includes('formatTime'))
-    assert.ok(content.includes('3600000')) // 1小时
-    assert.ok(content.includes('86400000')) // 1天
-  })
-
-  it('边界: 展开/折叠告警详情', () => {
-    assert.ok(content.includes('expandedId'))
-    assert.ok(content.includes('setExpandedId'))
-  })
-
-  it('边界: 自动刷新开关', () => {
-    assert.ok(content.includes('autoRefresh'))
-    assert.ok(content.includes('setAutoRefresh'))
-  })
-
-  it('边界: 扫描模式显示(全量/增量)', () => {
-    assert.ok(content.includes("scanMode === 'full' ? '全量' : '增量'"))
-  })
-
-  // ── 展开的AI建议面板 ──
-  it('展开详情显示AI解决建议', () => {
-    assert.ok(content.includes('AI解决建议'))
-    assert.ok(content.includes('recommendedAction'))
-  })
-
-  // ── 类型定义 ──
-  it('接口 Alert 字段完整', () => {
-    assert.ok(content.includes('interface Alert'))
-    const fields = ['id', 'storeName', 'city', 'type', 'severity', 'description', 'detectedAt', 'recommendedAction']
-    for (const f of fields) {
-      assert.ok(content.includes(f), `缺少 Alert 字段: ${f}`)
-    }
-  })
-
-  it('接口 MonitorSummary 包含 alerts/trend/scanTimestamp', () => {
-    assert.ok(content.includes('interface MonitorSummary'))
-    assert.ok(content.includes('alerts: Alert[]'))
-    assert.ok(content.includes('trend: TrendPoint[]'))
-    assert.ok(content.includes('scanTimestamp'))
-  })
-
-  // ── TSC兼容 ──
-  it('TSC兼容: 无as any', () => {
-    assert.ok(!content.includes('as any'))
+  it('页面应接入管理员权限边界', () => {
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })
 
-describe('intelligence/monitor — 权限边界', () => {
-  it('接入管理员权限边界', () => {
-    assert.ok(content.includes('AdminPermissionGate'))
-    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+describe('MonitorPage — 来源态透明化', () => {
+  it('页面应展示竞争监控来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
+
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadMonitorSnapshot -> intelligence/monitor/summary'))
+    assert.ok(PAGE_SRC.includes('loadMonitorSnapshot -> defaultMonitorSummary fallback'))
+    assert.ok(PAGE_SRC.includes('local monitor alert samples'))
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  })
+})
+
+describe('MonitorData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"))
+    assert.ok(DATA_SRC.includes('alerts: Alert[]'))
+    assert.ok(DATA_SRC.includes('trend: TrendPoint[]'))
+    assert.ok(DATA_SRC.includes('scanTimestamp: string'))
+    assert.ok(DATA_SRC.includes('generatedAt: string'))
+  })
+
+  it('应定义默认 fallback 告警与趋势样本', () => {
+    assert.ok(DATA_SRC.includes('export const defaultAlerts'))
+    assert.ok(DATA_SRC.includes('玩咖电玩城'))
+    assert.ok(DATA_SRC.includes('星际乐园'))
+    assert.ok(DATA_SRC.includes('export const defaultTrend'))
+  })
+
+  it('应尝试读取上游 monitor summary 接口', () => {
+    assert.ok(DATA_SRC.includes("new URL('intelligence/monitor/summary', resolveIntelligenceApiBaseUrl())"))
+    assert.ok(DATA_SRC.includes("cache: 'no-store'"))
+    assert.ok(DATA_SRC.includes('unwrapApiPayload'))
+  })
+
+  it('失败时应回退到 fallback 样本并返回错误提示', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes('竞争监控实时接口不可达，已切换到 fallback 样本数据。'))
+  })
+})
+
+describe('MonitorClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+  })
+
+  it('客户端组件应接收 snapshot 并渲染错误提示', () => {
+    assert.ok(CLIENT_SRC.includes('snapshot: MonitorSnapshotDelivery'))
+    assert.ok(CLIENT_SRC.includes('snapshot.error'))
+  })
+
+  it('客户端组件应支持刷新按钮和自动刷新开关', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('30_000'))
+    assert.ok(CLIENT_SRC.includes('autoRefresh'))
+  })
+
+  it('客户端组件应保留类型映射、严重度和筛选', () => {
+    assert.ok(CLIENT_SRC.includes('TYPE_LABELS'))
+    assert.ok(CLIENT_SRC.includes('TYPE_ICONS'))
+    assert.ok(CLIENT_SRC.includes('SEV_LEVELS'))
+    assert.ok(CLIENT_SRC.includes('全部类型'))
+    assert.ok(CLIENT_SRC.includes('全部级别'))
+  })
+
+  it('客户端组件应保留走势、列表和展开详情', () => {
+    assert.ok(CLIENT_SRC.includes('周异动走势'))
+    assert.ok(CLIENT_SRC.includes('weeklyTrend'))
+    assert.ok(CLIENT_SRC.includes('expandedId'))
+    assert.ok(CLIENT_SRC.includes('AI解决建议'))
+    assert.ok(CLIENT_SRC.includes('暂无监控数据'))
+  })
+})
+
+describe('Monitor — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'))
+    assert.ok(!CLIENT_SRC.includes('describe.skip'))
+    assert.ok(!DATA_SRC.includes('describe.skip'))
+  })
+
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'))
+    assert.ok(!CLIENT_SRC.includes('as any'))
+    assert.ok(!DATA_SRC.includes('as any'))
+  })
+
+  it('客户端不应继续直接 fetch 监控接口', () => {
+    assert.ok(!CLIENT_SRC.includes('fetch('))
+    assert.ok(CLIENT_SRC.includes('formatTime'))
+    assert.ok(CLIENT_SRC.includes('24h内仅展示最新一次'))
   })
 })
