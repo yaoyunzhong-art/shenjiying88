@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 import type { MarketDetailSnapshot } from './market-detail-data'
 import MarketDetailLegacy from './market-detail-legacy'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',

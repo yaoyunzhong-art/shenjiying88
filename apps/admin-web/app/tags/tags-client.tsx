@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import type { TagsPageSnapshot } from './tags-page-data'
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const cardStyle = {
   borderRadius: 16,
@@ -41,14 +42,15 @@ export default function TagsClient({ snapshot }: { snapshot: TagsPageSnapshot })
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh} style={buttonStyle}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
-      </div>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
         <div style={cardStyle}><div>总标签数</div><div style={{ marginTop: 8, fontSize: 24, fontWeight: 700 }}>{snapshot.tags.length}</div></div>

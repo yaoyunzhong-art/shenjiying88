@@ -15,6 +15,7 @@ import type {
 interface AnomalyFrequencyClientProps {
   snapshot: AnomalyFrequencySnapshot;
 }
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const TIME_RANGE_LABELS: Record<AnomalyTimeRange, string> = {
   '6h': '近6小时',

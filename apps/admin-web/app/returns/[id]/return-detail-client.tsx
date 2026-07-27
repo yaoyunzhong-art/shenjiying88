@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 import type { ReturnDetailSnapshot } from './return-detail-data'
 import ReturnDetailLegacy from './return-detail-legacy'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',

@@ -16,6 +16,7 @@ interface TransferFormValues {
   urgency: string
   remark: string
 }
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const DEFAULT_VALUES: TransferFormValues = {
   sourceStore: '',

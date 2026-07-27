@@ -5,29 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button, Card, Input, Modal, PageShell, Select, Space, Statistic, Tabs, Tag } from '@m5/ui'
 import type { LicenseRenewalSnapshot } from './license-renewal-data'
 import type { RenewalRecord, RenewalStrategy } from './types'
-
-const refreshCardStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: 12,
-  borderRadius: 12,
-  border: '1px solid rgba(148, 163, 184, 0.18)',
-  background: 'rgba(15, 23, 42, 0.3)',
-  padding: 12,
-  color: '#cbd5e1',
-  fontSize: 12,
-} as const
-
-const refreshButtonStyle = {
-  borderRadius: 8,
-  border: '1px solid rgba(96, 165, 250, 0.35)',
-  background: 'rgba(59, 130, 246, 0.12)',
-  color: '#bfdbfe',
-  padding: '8px 14px',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-} as const
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const panelStyle = {
   borderRadius: 16,
@@ -230,14 +208,15 @@ export default function LicenseRenewalClient({ snapshot }: { snapshot: LicenseRe
   return (
     <PageShell title="License 续费管理">
       <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
-        <div style={refreshCardStyle}>
-          <div>
-            客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-          </div>
-          <button type="button" onClick={handleRefresh} style={refreshButtonStyle}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
-        </div>
+        <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
           <Card>

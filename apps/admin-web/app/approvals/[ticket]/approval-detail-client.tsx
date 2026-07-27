@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 import type { ApprovalDetailSnapshot } from './approval-detail-data'
 import ApprovalDetailLegacy from './approval-detail-legacy'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',

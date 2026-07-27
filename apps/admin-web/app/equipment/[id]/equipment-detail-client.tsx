@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 import type { EquipmentDetailSnapshot } from './equipment-detail-data'
 import EquipmentDetailLegacy from './equipment-detail-legacy'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',

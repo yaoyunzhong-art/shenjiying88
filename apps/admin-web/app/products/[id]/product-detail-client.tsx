@@ -9,6 +9,7 @@ import {
   PRODUCT_STATUS_MAP,
 } from '../../products-data'
 import type { ProductDetailSnapshot } from './product-detail-data'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',
@@ -21,16 +22,6 @@ const cardStyle = {
   background: 'rgba(15, 23, 42, 0.42)',
   padding: 20,
   color: '#e2e8f0',
-} as const
-
-const refreshButtonStyle = {
-  borderRadius: 8,
-  border: '1px solid rgba(96, 165, 250, 0.35)',
-  background: 'rgba(59, 130, 246, 0.12)',
-  color: '#bfdbfe',
-  padding: '8px 14px',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
 } as const
 
 export default function ProductDetailClient({ snapshot }: { snapshot: ProductDetailSnapshot }) {

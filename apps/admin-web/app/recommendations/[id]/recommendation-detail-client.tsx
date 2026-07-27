@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import type { RecommendationDetailSnapshot, RecommendationStatus } from './recommendation-detail-data'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const STATUS_LABEL: Record<RecommendationStatus, string> = {
   active: '运行中',
@@ -48,14 +49,15 @@ export default function RecommendationDetailClient({ snapshot }: { snapshot: Rec
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh} style={buttonStyle}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
-      </div>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
 
       <div style={{ ...cardStyle, display: 'grid', gap: 12 }}>
         <div style={{ fontSize: 24, fontWeight: 700 }}>{snapshot.strategy.name}</div>

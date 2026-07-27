@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 import TrainingLegacy from './training-legacy'
 import type { TrainingPageShellSnapshot } from './training-page-data'
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',

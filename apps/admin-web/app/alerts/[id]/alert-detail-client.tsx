@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { AdminAlertDetailRouteView } from './detail-presenter'
 import type { AlertDetailSnapshot } from './alert-detail-data'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const cardStyle = {
   borderRadius: 16,
@@ -32,14 +33,15 @@ export default function AlertDetailClient({ snapshot }: { snapshot: AlertDetailS
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh} style={buttonStyle}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
-      </div>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
 
       <div style={cardStyle}>
         <AdminAlertDetailRouteView alertId={snapshot.alertId} governance={snapshot.governance} />

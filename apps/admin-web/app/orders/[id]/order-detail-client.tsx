@@ -12,6 +12,7 @@ import {
   StatusBadge,
   type DescriptionItem,
 } from '@m5/ui'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 import { ORDER_CHANNEL_MAP } from '../../orders-data'
 import { formatAmount, type OrderDetailSnapshot } from './order-detail-data'
 
@@ -27,11 +28,16 @@ export default function OrderDetailClient({ snapshot }: { snapshot: OrderDetailS
   if (!vm) {
     return (
       <main style={{ maxWidth: 900, margin: '0 auto', padding: 32 }}>
-        <div style={{ marginBottom: 16, fontSize: 12, color: '#cbd5e1' }}>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-          <button type="button" onClick={handleRefresh} style={{ marginLeft: 12 }}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
+        <div style={{ marginBottom: 16 }}>
+          <SnapshotRefreshCard
+            sourceLabel={snapshot.sourceLabel}
+            refreshPath={snapshot.refreshPath}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            contextLabel="客户端快照上下文"
+            loadingLabel="刷新中..."
+            idleLabel="刷新快照"
+          />
         </div>
         <div style={{ color: '#f87171' }}>
           <h2>订单不存在</h2>
@@ -50,26 +56,17 @@ export default function OrderDetailClient({ snapshot }: { snapshot: OrderDetailS
   return (
     <main style={{ maxWidth: 900, margin: '0 auto', padding: 32 }}>
       <PageShell title={`订单详情 - ${order.orderNo}`} subtitle={`客户: ${order.customerName} | ${order.customerPhone}`}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 20,
-            padding: '16px 20px',
-            borderRadius: 12,
-            background: 'rgba(15, 23, 42, 0.35)',
-            border: '1px solid rgba(148, 163, 184, 0.18)',
-            color: '#cbd5e1',
-            fontSize: 12,
-          }}
-        >
-          <div>
-            客户端快照上下文: {snapshot.sourceLabel} · 订单样本: {order.id} · 刷新路径: {snapshot.refreshPath}
-          </div>
-          <button type="button" onClick={handleRefresh}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
+        <div style={{ marginBottom: 20 }}>
+          <SnapshotRefreshCard
+            sourceLabel={snapshot.sourceLabel}
+            refreshPath={snapshot.refreshPath}
+            extra={<>订单样本: {order.id}</>}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            contextLabel="客户端快照上下文"
+            loadingLabel="刷新中..."
+            idleLabel="刷新快照"
+          />
         </div>
 
         <div

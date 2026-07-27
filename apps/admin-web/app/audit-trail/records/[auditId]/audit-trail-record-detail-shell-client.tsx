@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 import AuditTrailRecordDetailClient from './audit-trail-record-detail-client'
 import type { AuditTrailRecordDetailSnapshot } from './audit-trail-record-detail-data'
+import SnapshotRefreshCard from '../../../components/snapshot-refresh-card'
 
 const shellStyle = {
   display: 'grid',

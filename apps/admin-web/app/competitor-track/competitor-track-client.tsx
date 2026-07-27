@@ -9,6 +9,7 @@ import {
   filterCompetitors,
   formatPrice,
 } from './competitor-track-data'
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const TREND_COLOR: Record<CompetitorRecord['heatTrend'], string> = {
   up: '#22c55e',
@@ -231,138 +232,18 @@ const cityTagStyle: CSSProperties = {
 
 function CompetitorDetailModal({ competitor, onClose }: { competitor: CompetitorRecord; onClose: () => void }) {
   return (
-    <div style={S.modalOverlay} onClick={onClose}>
-      <div style={S.modal} onClick={(event) => event.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <div style={S.modalTitle}>{competitor.name}</div>
-            <div style={S.modalSubtitle}>{competitor.description}</div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(148, 163, 184, 0.1)',
-              border: 'none',
-              borderRadius: 6,
-              color: '#94a3b8',
-              cursor: 'pointer',
-              fontSize: 16,
-              padding: '4px 8px',
-            }}
-          >
-            x
-          </button>
-        </div>
-
-        <div style={S.infoGrid}>
-          <div>
-            <div style={S.infoLabel}>所属城市</div>
-            <div style={S.infoValue}>{competitor.city}</div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>品类</div>
-            <div style={S.infoValue}>{competitor.category}</div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>综合评分</div>
-            <div style={{ ...S.infoValue, color: scoreTagStyle(competitor.score).color }}>{competitor.score.toFixed(1)}</div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>价格区间</div>
-            <div style={S.infoValue}>{formatPrice(competitor.priceMin, competitor.priceMax)}</div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>抖音热度</div>
-            <div style={S.infoValue}>
-              <span style={heatBarStyle()}>
-                <span style={heatFillStyle(competitor.douyinHeat)} />
-              </span>
-              {competitor.douyinHeat}
-            </div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>热度趋势</div>
-            <div style={{ ...S.infoValue, color: TREND_COLOR[competitor.heatTrend] }}>
-              {TREND_LABEL[competitor.heatTrend]}
-            </div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>门店总数</div>
-            <div style={S.infoValue}>{competitor.storeCount.toLocaleString()} 家</div>
-          </div>
-          <div>
-            <div style={S.infoLabel}>主要区域</div>
-            <div style={S.infoValue}>{competitor.mainDistricts.join(' / ')}</div>
-          </div>
-        </div>
-
-        <div style={S.sectionTitle}>品牌介绍</div>
-        <div style={S.descriptionBox}>{competitor.brandIntro}</div>
-      </div>
-    </div>
-  )
-}
-
-export default function CompetitorTrackClient({ snapshot }: { snapshot: CompetitorTrackSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-  const [search, setSearch] = useState('')
-  const [cityFilter, setCityFilter] = useState('all')
-  const [scoreFilter, setScoreFilter] = useState<ScoreLevel | 'all'>('all')
-  const [page, setPage] = useState(1)
-  const [detailTarget, setDetailTarget] = useState<CompetitorRecord | null>(null)
-  const pageSize = 5
-
-  const stats = useMemo(
-    () => ({
-      total: snapshot.competitors.length,
-      cities: new Set(snapshot.competitors.map((item) => item.city)).size,
-      highScore: snapshot.competitors.filter((item) => item.score >= 4.0).length,
-      highHeat: snapshot.competitors.filter((item) => item.douyinHeat >= 80).length,
-    }),
-    [snapshot.competitors],
-  )
-
-  const filteredCompetitors = useMemo(
-    () => filterCompetitors(snapshot.competitors, search, cityFilter, scoreFilter),
-    [snapshot.competitors, search, cityFilter, scoreFilter],
-  )
-
-  const totalPages = Math.max(1, Math.ceil(filteredCompetitors.length / pageSize))
-
-  const pagedCompetitors = useMemo(() => {
-    const start = (page - 1) * pageSize
-    return filteredCompetitors.slice(start, start + pageSize)
-  }, [filteredCompetitors, page])
-
-  function safeSetPage(nextPage: number) {
-    setPage(Math.max(1, Math.min(nextPage, totalPages)))
-  }
-
-  function resetFilter() {
-    setSearch('')
-    setCityFilter('all')
-    setScoreFilter('all')
-    safeSetPage(1)
-  }
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
-
-  return (
-    <div style={S.page}>
-      <h1 style={S.title}>竞品跟踪</h1>
-      <p style={S.subtitle}>品牌竞品监控看板，覆盖评分、价格区间、抖音热度等维度，辅助市场决策。</p>
-
-      <div style={S.refreshRow}>
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 竞品样本: {snapshot.competitors.length} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh} style={btnPrimary}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
-      </div>
+    <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        extra={<>
+          竞品样本: {snapshot.competitors.length}
+        </>}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
 
       <div style={S.statsRow}>
         <div style={S.statCard}>

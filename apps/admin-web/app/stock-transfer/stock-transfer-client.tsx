@@ -11,6 +11,7 @@ import {
   type TransferStatus,
 } from './stock-transfer-data'
 import type { StockTransferPageSnapshot } from './stock-transfer-page-data'
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const cardStyle = {
   borderRadius: 16,

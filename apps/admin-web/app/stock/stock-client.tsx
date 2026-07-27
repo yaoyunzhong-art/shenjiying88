@@ -12,6 +12,7 @@ interface StockRow {
   availableQty: number
   warehouse: string
 }
+import SnapshotRefreshCard from '../components/snapshot-refresh-card'
 
 const STOCK_ROWS: StockRow[] = [
   { sku: 'STK-1001', name: '澳洲和牛西冷', category: '牛肉', totalQty: 128, availableQty: 92, warehouse: '主仓库' },
@@ -26,15 +27,6 @@ const cardStyle = {
   background: 'rgba(15, 23, 42, 0.42)',
   padding: 20,
   color: '#e2e8f0',
-} as const
-
-const refreshButtonStyle = {
-  borderRadius: 8,
-  border: '1px solid rgba(96, 165, 250, 0.35)',
-  background: 'rgba(59, 130, 246, 0.12)',
-  color: '#bfdbfe',
-  padding: '8px 14px',
-  cursor: 'pointer',
 } as const
 
 export default function StockClient({ snapshot }: { snapshot: StockPageSnapshot }) {

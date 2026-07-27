@@ -13,6 +13,7 @@ import {
   ToastContainer,
   useToast,
 } from '@m5/ui'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 import {
   REFUND_CHANNEL_LABEL,
   REFUND_STATUS_LABEL,
@@ -127,11 +128,16 @@ export default function RefundDetailClient({ snapshot }: { snapshot: RefundDetai
   if (!refund) {
     return (
       <PageShell title="退款详情" description="未找到该退款记录">
-        <div style={{ padding: 16, marginBottom: 16, borderRadius: 12, border: '1px solid rgba(148, 163, 184, 0.18)' }}>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-          <button type="button" onClick={handleRefresh} style={{ marginLeft: 12 }}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
+        <div style={{ marginBottom: 16 }}>
+          <SnapshotRefreshCard
+            sourceLabel={snapshot.sourceLabel}
+            refreshPath={snapshot.refreshPath}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            contextLabel="客户端快照上下文"
+            loadingLabel="刷新中..."
+            idleLabel="刷新快照"
+          />
         </div>
         <div style={{ textAlign: 'center', padding: 60, color: '#64748b' }}>
           <p style={{ fontSize: 18, marginBottom: 16 }}>未找到退款记录</p>
@@ -156,27 +162,17 @@ export default function RefundDetailClient({ snapshot }: { snapshot: RefundDetai
 
   return (
     <PageShell title={`退款详情 · ${refund.id}`} description={`${REFUND_TYPE_LABEL[refund.type]} — ${refund.customerName}`}>
-      <div
-        style={{
-          marginBottom: 16,
-          padding: 14,
-          borderRadius: 12,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-          color: '#cbd5e1',
-          fontSize: 12,
-        }}
-      >
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 当前状态: {REFUND_STATUS_LABEL[refund.status]} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
+      <div style={{ marginBottom: 16 }}>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          extra={<>当前状态: {REFUND_STATUS_LABEL[refund.status]}</>}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          contextLabel="客户端快照上下文"
+          loadingLabel="刷新中..."
+          idleLabel="刷新快照"
+        />
       </div>
 
       <Breadcrumb

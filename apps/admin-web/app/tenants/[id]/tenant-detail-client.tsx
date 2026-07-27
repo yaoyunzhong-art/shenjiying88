@@ -29,6 +29,7 @@ import {
   type EditFormErrors,
   type TenantDetailSnapshot,
 } from './tenant-detail-data'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const inputStyle: CSSProperties = {
   width: '100%',
