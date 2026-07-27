@@ -1,24 +1,24 @@
 import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
-import MarketDetailClient from './market-detail-client'
-import { loadMarketDetailSnapshot } from './market-detail-data'
+import EquipmentDetailClient from './equipment-detail-client'
+import { loadEquipmentDetailSnapshot } from './equipment-detail-data'
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 const permissionGate = {
-  requiredPermission: 'dashboard:read',
-  title: 'markets 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 dashboard:read 权限的账号可访问。',
+  requiredPermission: 'equipment:read',
+  title: '设备详情访问受限',
+  description: '该页面已接入管理员权限管控，仅具备 equipment:read 权限的账号可访问。',
 } as const
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function MarketDetailPage({ params }: PageProps) {
+export default async function EquipmentDetailPage({ params }: PageProps) {
   const { id } = await params
-  const snapshot = await loadMarketDetailSnapshot(id)
+  const snapshot = await loadEquipmentDetailSnapshot(id)
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,
     sourceLabel: snapshot.sourceLabel,
@@ -55,7 +55,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
             generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
           </div>
         </div>
-        <MarketDetailClient snapshot={snapshot} />
+        <EquipmentDetailClient snapshot={snapshot} />
       </div>
     </AdminPermissionGate>
   )

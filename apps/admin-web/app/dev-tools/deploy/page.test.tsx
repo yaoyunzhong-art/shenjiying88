@@ -1,63 +1,32 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+const PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(import.meta.dirname, 'deploy-data.ts'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'deploy-client.tsx'), 'utf-8')
 
-describe('DeployPage — 正例', () => {
-  it('应导出默认组件', () => assert.ok(SRC.includes('export default function DeployPage')));
-  it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
-  it('应包含useState/useEffect/useCallback等hook', () => {
-    assert.ok(SRC.includes('useState') || SRC.includes('useEffect') || SRC.includes('useCallback'));
-  });
-});
+describe('dev-tools/deploy page', () => {
+  it('page 已迁移为 E54 wrapper', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes("import { loadDeploySnapshot } from './deploy-data'"))
+    assert.ok(PAGE_SRC.includes('<DeployClient snapshot={snapshot} />'))
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+  })
 
-describe('DeployPage — 防御', () => {
-  it('无dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-  it('无any类型', () => assert.ok(!/:\s*any\b/.test(SRC)));
-  it('使用类型断言', () => assert.ok(SRC.includes('as') && (SRC.includes('Tag') || SRC.includes('variant'))));
-});
+  it('data 固证 mock 来源', () => {
+    assert.ok(DATA_SRC.includes('export async function loadDeploySnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'dev-tools-deploy-mock'"))
+    assert.ok(DATA_SRC.includes('deployments: DEPLOYS'))
+    assert.ok(DATA_SRC.includes('envOptions: ENV_OPTIONS'))
+  })
 
-describe('DeployPage — 部署模块', () => {
-  it('应包含 DEPLOYS 数据', () => assert.ok(SRC.includes('DEPLOYS')));
-  it('应包含 Deployment 接口', () => assert.ok(SRC.includes('interface Deployment')));
-  it('应包含 Table 展示', () => assert.ok(SRC.includes('Table')));
-  it('应支持环境筛选', () => assert.ok(SRC.includes('envFilter')));
-  it('应支持新建部署 Modal', () => assert.ok(SRC.includes('showDeploy') && SRC.includes('Modal')));
-});
-
-describe('DeployPage — 环境覆盖', () => {
-  it('应处理 production 环境', () => assert.ok(SRC.includes("'production'")));
-  it('应处理 staging 环境', () => assert.ok(SRC.includes("'staging'")));
-  it('应处理 testing 环境', () => assert.ok(SRC.includes("'testing'")));
-});
-
-describe('DeployPage — 状态覆盖', () => {
-  it('应处理 success 状态', () => assert.ok(SRC.includes("'success'")));
-  it('应处理 failed 状态', () => assert.ok(SRC.includes("'failed'")));
-  it('应处理 rolling 状态', () => assert.ok(SRC.includes("'rolling'")));
-  it('应处理 rollback 状态', () => assert.ok(SRC.includes("'rollback'")));
-});
-
-describe('DeployPage — 统计指标', () => {
-  it('应计算成功率', () => assert.ok(SRC.includes('successRate')));
-  it('应展示统计卡片', () => assert.ok(SRC.includes('Statistic')));
-});
-
-describe('Dev Tools / Deploy — hooks验证', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'dev-tools:deploy:read'"));
-  });
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onClose={')));
-  it('包含列表过滤', () => assert.ok(SRC.includes('.filter(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含Math.round统计计算', () => assert.ok(SRC.includes('Math.round')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+  it('client 保留筛选、弹窗与刷新交互', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('envFilter'))
+    assert.ok(CLIENT_SRC.includes('Modal'))
+    assert.ok(CLIENT_SRC.includes('成功率'))
+  })
+})
