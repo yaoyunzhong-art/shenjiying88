@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   DetailActionBar,
   DetailClosureBar,
-  InfoRow,
-  StatCard,
   WorkspaceBreadcrumb,
 } from '@m5/ui'
 import {
@@ -391,29 +389,6 @@ const linkCardMetaStyle = {
   color: '#94a3b8',
   fontSize: 12,
 } as const
-                </div>
-                <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.7 }}>
-                  <div>Target：{receipt.targetType}:{receipt.targetId}</div>
-                  <div>执行时间：{receipt.executedAt}</div>
-                  {receipt.runtimeReceiptCode ? (
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      <a
-                        href={buildMemberOperationsRuntimeDetailHref(receipt.runtimeReceiptCode)}
-                        style={{ color: '#93c5fd', textDecoration: 'none' }}
-                      >
-                        Runtime 详情
-                      </a>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function StatCard({ label, value, helper }: { label: string; value: string; helper: string }) {
   return (
@@ -428,22 +403,6 @@ function StatCard({ label, value, helper }: { label: string; value: string; help
       <div style={{ color: '#94a3b8', fontSize: 13 }}>{label}</div>
       <div style={{ color: '#e2e8f0', fontSize: 22, fontWeight: 800, marginTop: 8 }}>{value}</div>
       <div style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>{helper}</div>
-    </div>
-  );
-}
-
-function InfoPanel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        borderRadius: 18,
-        padding: 20,
-        background: 'rgba(15, 23, 42, 0.35)',
-        border: '1px solid rgba(148, 163, 184, 0.18)',
-      }}
-    >
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 12 }}>{title}</div>
-      <div style={{ display: 'grid', gap: 8 }}>{children}</div>
     </div>
   );
 }

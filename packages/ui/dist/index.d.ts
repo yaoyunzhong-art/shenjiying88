@@ -6378,13 +6378,14 @@ declare const SubmitButton: React__default.ForwardRefExoticComponent<SubmitButto
 interface InfoRowProps {
     label: string;
     value: React__default.ReactNode;
+    href?: string;
     labelColor?: string;
     valueColor?: string;
     labelFontSize?: number;
     valueFontSize?: number;
     gap?: number;
 }
-declare function InfoRow({ label, value, labelColor, valueColor, labelFontSize, valueFontSize, gap, }: InfoRowProps): React__default.JSX.Element;
+declare function InfoRow({ label, value, href, labelColor, valueColor, labelFontSize, valueFontSize, gap, }: InfoRowProps): React__default.JSX.Element;
 interface ConfirmDialogProps {
     open: boolean;
     title: string;

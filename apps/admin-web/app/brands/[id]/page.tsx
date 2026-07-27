@@ -1,5 +1,5 @@
 import { AdminPermissionGate } from '../../components/admin-permission-gate'
-import BrandDetailClient from './brand-detail-client'
+import BrandDetailClient from './brand-detail-shell-client'
 import { loadBrandDetailSnapshot } from './brand-detail-data'
 
 const permissionGate = {

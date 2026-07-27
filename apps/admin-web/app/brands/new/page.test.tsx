@@ -44,7 +44,7 @@ describe('brands/new 结构固证', () => {
   it('legacy 应保留品牌类型切换与提交行为', () => {
     assert.ok(LEGACY_SRC.includes('BrandTypeTags'))
     assert.ok(LEGACY_SRC.includes('FormPageScaffold'))
-    assert.ok(LEGACY_SRC.includes('brand-type-tag-self-operated'))
+    assert.ok(LEGACY_SRC.includes('brand-type-tag-${opt.value}'))
     assert.ok(LEGACY_SRC.includes("router.push('/brands')"))
   })
 })

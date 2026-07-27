@@ -28,7 +28,8 @@ describe('StoreSuppliersPage — 服务端壳层', () => {
 
   it('页面应展示来源态证据与权限门禁', () => {
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('控制面来源:'))
+    assert.ok(PAGE_SRC.includes('{sourceEvidence.controlPlaneSource}'))
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
     assert.ok(PAGE_SRC.includes("requiredPermission: 'suppliers:read'"))

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
 const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
-const CLIENT_SRC = readFileSync(resolve(DIR, 'brand-detail-client.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'brand-detail-shell-client.tsx'), 'utf-8')
 const DATA_SRC = readFileSync(resolve(DIR, 'brand-detail-data.ts'), 'utf-8')
 const LEGACY_SRC = readFileSync(resolve(DIR, 'brand-detail-legacy.tsx'), 'utf-8')
 

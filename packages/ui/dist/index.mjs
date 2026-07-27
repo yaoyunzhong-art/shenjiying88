@@ -26220,15 +26220,22 @@ import { jsx as jsx112, jsxs as jsxs108 } from "react/jsx-runtime";
 function InfoRow({
   label,
   value,
+  href,
   labelColor = "#94a3b8",
   valueColor = "#f8fafc",
   labelFontSize = 13,
   valueFontSize = 14,
   gap = 4
 }) {
+  const renderValue = () => {
+    if (href && typeof value === "string") {
+      return /* @__PURE__ */ jsx112("a", { href, style: { color: "#bfdbfe", textDecoration: "none" }, children: value });
+    }
+    return value;
+  };
   return /* @__PURE__ */ jsxs108("div", { children: [
     /* @__PURE__ */ jsx112("div", { style: { fontSize: labelFontSize, color: labelColor, marginBottom: gap }, children: label }),
-    /* @__PURE__ */ jsx112("div", { style: { fontSize: valueFontSize, color: valueColor }, children: value })
+    /* @__PURE__ */ jsx112("div", { style: { fontSize: valueFontSize, color: valueColor }, children: renderValue() })
   ] });
 }
 function ConfirmDialog({

@@ -26670,15 +26670,22 @@ var import_jsx_runtime112 = require("react/jsx-runtime");
 function InfoRow({
   label,
   value,
+  href,
   labelColor = "#94a3b8",
   valueColor = "#f8fafc",
   labelFontSize = 13,
   valueFontSize = 14,
   gap = 4
 }) {
+  const renderValue = () => {
+    if (href && typeof value === "string") {
+      return /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("a", { href, style: { color: "#bfdbfe", textDecoration: "none" }, children: value });
+    }
+    return value;
+  };
   return /* @__PURE__ */ (0, import_jsx_runtime112.jsxs)("div", { children: [
     /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("div", { style: { fontSize: labelFontSize, color: labelColor, marginBottom: gap }, children: label }),
-    /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("div", { style: { fontSize: valueFontSize, color: valueColor }, children: value })
+    /* @__PURE__ */ (0, import_jsx_runtime112.jsx)("div", { style: { fontSize: valueFontSize, color: valueColor }, children: renderValue() })
   ] });
 }
 function ConfirmDialog({

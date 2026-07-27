@@ -43,6 +43,6 @@ describe('notifications/new 结构固证', () => {
     assert.ok(LEGACY_SRC.includes('function validateForm'))
     assert.ok(LEGACY_SRC.includes('通知标题不能为空'))
     assert.ok(LEGACY_SRC.includes('创建通知'))
-    assert.ok(LEGACY_SRC.includes(\"router.push('/notifications')\"))
+    assert.ok(LEGACY_SRC.includes("router.push('/notifications')"))
   })
 })
