@@ -1,154 +1,54 @@
-// L1 冒烟测试 + L2 结构验证 + L3 防御检查 - members (P-36)
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'members-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'members-data.ts'), 'utf-8')
 
-describe('members / 权限边界', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
-  });
-});
+describe('stores/[id]/members/page.tsx 结构固证', () => {
+  it('page 应为 server wrapper 并加载会员快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function MembersPage'))
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadMembersSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes('<MembersClient snapshot={snapshot} />'))
+  })
 
-// ===================== L1 冒烟测试 =====================
-describe.skip('members / L1 冒烟', () => {
-  it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });
-  it('应包含 use client 指令', () => { assert.ok(SRC.includes("'use client'")); });
-  it('应包含 JSX 模板', () => { assert.ok(SRC.includes('return (') || SRC.includes('return <')); });
-  it('不应使用 dangerouslySetInnerHTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-});
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('控制面来源:'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  })
+})
 
-// ===================== L2 结构验证 =====================
-describe.skip('members / L2 结构验证', () => {
-  it('应包含 PageShell 容器', () => { assert.ok(SRC.includes('PageShell')); });
-  it('应包含标题 "会员管理"', () => { assert.ok(SRC.includes('会员管理')); });
-  it('应包含表格列定义', () => { assert.ok(SRC.includes("title: '姓名'") && SRC.includes("title: '等级'")); });
-  it('应包含会员数据数组', () => { assert.ok(SRC.includes('MOCK_MEMBERS')); });
+describe('stores/[id]/members/client 结构固证', () => {
+  it('client 应保留筛选、详情、等级分布与刷新能力', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('useMemo'))
+    assert.ok(CLIENT_SRC.includes('会员列表'))
+    assert.ok(CLIENT_SRC.includes('等级分布'))
+    assert.ok(CLIENT_SRC.includes('新增会员'))
+  })
+})
 
-  it('等级列应有渲染函数 render', () => {
-    assert.ok(SRC.includes('dataIndex:') && SRC.includes('render:'));
-  });
-
-  it('应使用 Statistic 展示统计卡片', () => {
-    assert.ok(SRC.includes('Statistic'));
-  });
-
-  it('应包含搜索框', () => {
-    assert.ok(SRC.includes('Input.Search') || SRC.includes('Search'));
-  });
-
-  it('应包含等级颜色映射 TIER_COLORS', () => {
-    assert.ok(SRC.includes('TIER_COLORS'));
-  });
-
-  it('应包含等级名称映射 TIER_NAMES', () => {
-    assert.ok(SRC.includes('TIER_NAMES'));
-  });
-
-  it('应使用 Row + Col 栅格布局', () => {
-    assert.ok(SRC.includes('Row ') || SRC.includes('Row>'));
-  });
-
-  it('应使用 useState 管理状态', () => {
-    assert.ok(SRC.includes('useState'));
-  });
-
-  it('应包含统计看板(6个指标)', () => {
-    assert.ok(SRC.includes('总会员') && SRC.includes('本月新增') && SRC.includes('7天活跃'));
-  });
-
-  it('应包含等级配置 Modal', () => {
-    assert.ok(SRC.includes('等级配置') || SRC.includes('showLevelModal'));
-  });
-
-  it('应包含批量导入 Modal', () => {
-    assert.ok(SRC.includes('批量导入') || SRC.includes('showImportModal'));
-  });
-
-  it('应包含会员详情 Drawer', () => {
-    assert.ok(SRC.includes('Drawer') || SRC.includes('showDrawer'));
-  });
-
-  it('应包含积分操作 Modal', () => {
-    assert.ok(SRC.includes('积分操作') || SRC.includes('showPointsModal'));
-  });
-
-  it('应包含会员等级分布 Tab', () => {
-    assert.ok(SRC.includes('等级分布'));
-  });
-
-  it('等级列应有 TierTag 组件', () => {
-    assert.ok(SRC.includes('LevelTag'));
-  });
-
-  it('应使用 Tab 切换', () => {
-    assert.ok(SRC.includes('Tabs'));
-  });
-});
-
-// ===================== L3 防御检查 =====================
-describe.skip('members / L3 防御检查', () => {
-  it('不应包含硬编码 Token', () => {
-    const secrets = ['sk-', 'api_key', 'secret_key', 'password='];
-    for (const s of secrets) {
-      assert.ok(!SRC.includes(s), `不应包含: ${s}`);
-    }
-  });
-
-  it('不应包含生产环境 console.log', () => {
-    const lines = SRC.split('\n').filter(l =>
-      l.includes('console.log') && !l.trimStart().startsWith('//')
-    );
-    assert.equal(lines.length, 0, '不应包含 console.log');
-  });
-
-  it('不应出现 href="#" 而未绑定 onClick', () => {
-    const lines = SRC.split('\n');
-    for (const line of lines) {
-      if (line.includes('href="#"') && !line.includes('onClick')) {
-        assert.fail(`发现 href="#" 但未绑定 onClick: ${line.trim()}`);
-      }
-    }
-  });
-
-  it('不应包含被注释掉的 JSX', () => {
-    const commentedCode = SRC.match(/\/\/\s+.+</g);
-    if (commentedCode) {
-      assert.fail(`发现被注释掉的 JSX: ${commentedCode.join(', ')}`);
-    }
-  });
-
-  it('PageShell 应成对出现', () => {
-    const opens = (SRC.match(/<PageShell/g) || []).length;
-    const closes = (SRC.match(/<\/PageShell>/g) || []).length;
-    assert.equal(opens, closes, 'PageShell 应成对出现');
-  });
-
-  it('Table 应有 rowKey 属性', () => {
-    assert.ok(SRC.includes('rowKey'), 'Table 应有 rowKey');
-  });
-
-  it('应使用内联样式但不超过25处', () => {
-    const inlineCount = (SRC.match(/style=\{\{/g) || []).length;
-    assert.ok(inlineCount < 25, `内联样式过多 (${inlineCount} 处)`);
-  });
-});
-
-describe.skip('Stores / Members — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onClose={') || SRC.includes('onOk={') || SRC.includes('onCancel={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+describe('stores/[id]/members/data 结构固证', () => {
+  it('data 应定义会员快照合同与等级样本', () => {
+    assert.ok(DATA_SRC.includes('export interface MembersSnapshot'))
+    assert.ok(DATA_SRC.includes('MEMBER_LEVELS'))
+    assert.ok(DATA_SRC.includes('MEMBER_RECORDS'))
+    assert.ok(DATA_SRC.includes('buildMembersSummary'))
+    assert.ok(DATA_SRC.includes('loadMembersSnapshot'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'store-members-mock'"))
+  })
+})
