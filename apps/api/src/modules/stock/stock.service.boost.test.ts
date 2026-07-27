@@ -57,8 +57,8 @@ function createMockRepo<T extends Record<string, any>>(initialData: T[] = []) {
           if (v !== null && v !== undefined && typeof v === 'object' && !Array.isArray(v)) {
             // Handle TypeORM FindOperator (e.g. LessThanOrEqual)
             // This mock checks for common operator shapes
-            if ('_value' in v && v._value !== undefined) {
-              results = results.filter((item: any) => item[k] <= v._value)
+            if ('_value' in v && (v as any)._value !== undefined) {
+              results = results.filter((item: any) => item[k] <= (v as any)._value)
             }
           } else {
             results = results.filter((item: any) => item[k] === v)
