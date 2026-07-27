@@ -61,9 +61,7 @@ export default function MetadataClient({
     closeEdit()
   }, [closeEdit, editForm, editingId])
 
-  const refreshSnapshot = useCallback(() => {
-    handleRefresh()
-  }, [router, startRefresh])
+  const refreshSnapshot = useCallback(() => { handleRefresh() }, [handleRefresh])
 
   return (
     <div className="space-y-6">

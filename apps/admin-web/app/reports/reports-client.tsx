@@ -47,12 +47,9 @@ export default function ReportsClient({
     (tenantId = snapshot.tenantId) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set('tenantId', tenantId);
-      startRefresh(() => {
-        router.replace(`${pathname}?${params.toString()}`);
-        router.refresh();
-      });
+      router.replace(`${pathname}?${params.toString()}`); handleRefresh();
     },
-    [pathname, router, searchParams, snapshot.tenantId, startRefresh],
+    [pathname, router, searchParams, snapshot.tenantId],
   );
 
   const filteredCatalog = useMemo(() => {

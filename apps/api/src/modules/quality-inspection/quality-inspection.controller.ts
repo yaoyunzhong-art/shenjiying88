@@ -9,17 +9,19 @@ import {
 import { InspectionType } from './quality-inspection.entity'
 import { QualityInspectionService } from './quality-inspection.service'
 import { TenantGuard } from '../agent/tenant.guard'
-import { Public } from '../foundation/identity-access/public.decorator'
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
 
-@Public()
 @Controller('quality-inspections')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions('quality:read')
 export class QualityInspectionController {
   constructor(private readonly inspectionService: QualityInspectionService) {}
 
   // ── CRUD ──
 
   @Post()
+  @RequirePermissions('quality:update')
   createInspection(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateInspectionRecordDto
@@ -66,6 +68,7 @@ export class QualityInspectionController {
   }
 
   @Patch(':inspectId')
+  @RequirePermissions('quality:update')
   updateInspection(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('inspectId') inspectId: string,
@@ -75,6 +78,7 @@ export class QualityInspectionController {
   }
 
   @Delete(':inspectId')
+  @RequirePermissions('quality:update')
   deleteInspection(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('inspectId') inspectId: string

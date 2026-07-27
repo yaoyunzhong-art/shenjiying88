@@ -45,10 +45,7 @@ export default function RuleDetailClient({ snapshot }: RuleDetailClientProps) {
     [detail]
   )
 
-  function handleRefresh() {
-    handleRefresh()
-    toast('规则详情快照已请求刷新')
-  }
+  
 
   function handleToggleStatus() {
     setDetail((current) => {

@@ -8,6 +8,11 @@ describe('QualityInspectionController metadata', () => {
     assert.equal(Reflect.getMetadata('path', QualityInspectionController), 'quality-inspections')
   })
 
+  it('controller should have proper tenant scope and permissions', () => {
+    assert.deepEqual(Reflect.getMetadata('identity-access:tenant-scope', QualityInspectionController), {})
+    assert.deepEqual(Reflect.getMetadata('identity-access:permissions', QualityInspectionController), ['quality:read'])
+  })
+
   it('routes should keep REST metadata', () => {
     const cases = [
       [QualityInspectionController.prototype.createInspection, 1, '/'],
@@ -25,5 +30,20 @@ describe('QualityInspectionController metadata', () => {
       assert.equal(Reflect.getMetadata('method', handler), method)
       assert.equal(Reflect.getMetadata('path', handler), path)
     })
+  })
+
+  it('mutating routes should require update permission', () => {
+    assert.deepEqual(
+      Reflect.getMetadata('identity-access:permissions', QualityInspectionController.prototype.createInspection),
+      ['quality:update']
+    )
+    assert.deepEqual(
+      Reflect.getMetadata('identity-access:permissions', QualityInspectionController.prototype.updateInspection),
+      ['quality:update']
+    )
+    assert.deepEqual(
+      Reflect.getMetadata('identity-access:permissions', QualityInspectionController.prototype.deleteInspection),
+      ['quality:update']
+    )
   })
 })

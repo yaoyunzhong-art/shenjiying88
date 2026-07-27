@@ -217,14 +217,12 @@ export default function RulesClient({
           </div>
           <button
             type="button"
-            onClick={() =>
-              startRefresh(() => {
-                setSearchTerm('')
-                setStatusFilter('ALL')
-                setCategoryFilter('ALL')
-                router.refresh()
-              })
-            }
+            onClick={() => {
+              setSearchTerm('')
+              setStatusFilter('ALL')
+              setCategoryFilter('ALL')
+              handleRefresh()
+            }}
             disabled={isRefreshing}
             style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.38)', color: '#94a3b8', fontSize: 13, cursor: 'pointer' }}
           >

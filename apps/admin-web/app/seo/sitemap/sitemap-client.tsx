@@ -24,9 +24,7 @@ export default function SitemapClient({
     return snapshot.rows.filter((row) => row.changefreq === freqFilter)
   }, [freqFilter, snapshot.rows])
 
-  const refreshSnapshot = useCallback(() => {
-    handleRefresh()
-  }, [router, startRefresh])
+  const refreshSnapshot = useCallback(() => { handleRefresh() }, [handleRefresh])
 
   return (
     <div className="space-y-6">

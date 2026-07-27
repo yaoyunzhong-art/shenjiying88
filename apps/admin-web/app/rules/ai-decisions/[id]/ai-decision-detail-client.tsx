@@ -30,10 +30,7 @@ export default function AiDecisionDetailClient({ snapshot }: AiDecisionDetailCli
   const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [detail, setDetail] = useState(snapshot.detail)
 
-  function handleRefresh() {
-    handleRefresh()
-    toast('AI 决策详情快照已请求刷新')
-  }
+  
 
   function handleRetry() {
     setDetail((current) => ({

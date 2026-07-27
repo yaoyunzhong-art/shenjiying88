@@ -9,8 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { Public } from '../foundation/identity-access/public.decorator'
 import { TenantGuard } from '../agent/tenant.guard'
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
 
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -28,7 +28,8 @@ import { LoyaltyService } from './loyalty.service'
 
 @UseGuards(TenantGuard)
 @Controller('loyalty')
-@Public()
+@RequireTenantScope()
+@RequirePermissions('loyalty:read')
 export class LoyaltyController {
   constructor(private readonly loyaltyService: LoyaltyService) {}
 
@@ -74,6 +75,7 @@ export class LoyaltyController {
   }
 
   @Post('coupon-plans')
+  @RequirePermissions('loyalty:update')
   registerCouponPlan(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: RegisterCouponPlanDto
@@ -107,6 +109,7 @@ export class LoyaltyController {
   }
 
   @Patch('coupon-plans/:planId/status')
+  @RequirePermissions('loyalty:update')
   activateCouponPlan(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('planId') planId: string,
@@ -120,6 +123,7 @@ export class LoyaltyController {
   }
 
   @Post('coupon-plans/:planId/issue')
+  @RequirePermissions('loyalty:update')
   issueCoupon(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('planId') planId: string,
@@ -134,6 +138,7 @@ export class LoyaltyController {
   }
 
   @Post('blindbox-plans')
+  @RequirePermissions('loyalty:update')
   registerBlindboxPlan(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: RegisterBlindboxPlanDto
@@ -175,6 +180,7 @@ export class LoyaltyController {
   }
 
   @Patch('blindbox-plans/:planId/status')
+  @RequirePermissions('loyalty:update')
   activateBlindboxPlan(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('planId') planId: string,
@@ -188,6 +194,7 @@ export class LoyaltyController {
   }
 
   @Post('blindbox-plans/:planId/issue')
+  @RequirePermissions('loyalty:update')
   async issueBlindbox(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('planId') planId: string,

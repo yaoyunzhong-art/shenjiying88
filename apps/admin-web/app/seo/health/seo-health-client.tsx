@@ -29,11 +29,8 @@ export default function SeoHealthClient({
   const refreshSnapshot = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tenantId', snapshot.tenantId);
-    startRefresh(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-      router.refresh();
-    });
-  }, [pathname, router, searchParams, snapshot.tenantId, startRefresh]);
+    router.replace(`${pathname}?${params.toString()}`); handleRefresh();
+  }, [pathname, router, searchParams, snapshot.tenantId]);
 
   const filteredIssues: SeoHealthIssue[] = useMemo(() => {
     if (severityFilter === 'all') return snapshot.issues;
