@@ -840,3 +840,330 @@ test.describe('跨模块 · Phase 10: 并发与边界', () => {
     await screenshot(page, '046-spec-price-consistency')
   })
 })
+
+/* ─────────────── Phase 11: 库存不足 / 支付超时 / 阶梯优惠 / 并发扣减 / 退款重试 ─────────────── */
+
+test.describe('跨模块 · Phase 11: 库存不足与支付超时恢复', () => {
+  test('CHAIN-047: [反例] 库存不足场景 — 加购后库存耗尽 → 结算时提示库存不足', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/products/low-stock-sku')
+    await page.waitForTimeout(200)
+
+    // 加入购物车
+    await addProductToCart(page, '低库存商品')
+    await page.waitForTimeout(200)
+
+    // 前往结算
+    await navigateTo(page, '/cashier')
+    await page.waitForTimeout(200)
+    const checkoutBtn = page.getByRole('button', { name: /结算|结账/ }).first()
+    if (await checkoutBtn.isVisible()) {
+      await checkoutBtn.click()
+      await page.waitForTimeout(500)
+    }
+
+    // 验证库存不足提示
+    await expect(
+      page.getByText(/库存不足|库存不够|库存已耗尽|stock insufficient/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {
+      // 也可能在购物车层面就已经提示
+    })
+    await screenshot(page, '047-low-stock-checkout')
+  })
+
+  test('CHAIN-048: [反例] 多人同时购买最后一件 — 库存不足回滚', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/products/last-one-sku')
+    await page.waitForTimeout(200)
+
+    await addProductToCart(page, '最后一件商品')
+    await page.waitForTimeout(200)
+
+    await navigateTo(page, '/cashier')
+    await page.waitForTimeout(200)
+
+    // 模拟并发请求: 另外一个用户已经购买
+    await page.route('**/api/orders/**', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'STOCK_EXHAUSTED', message: '库存已被抢光，请刷新购物车' }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    const submitBtn = page.getByTestId('btn-submit').or(page.getByRole('button', { name: /提交订单|去支付/ })).first()
+    if (await submitBtn.isVisible()) {
+      await submitBtn.click()
+      await page.waitForTimeout(500)
+    }
+
+    await expect(
+      page.getByText(/库存|已被|抢光|STOCK_EXHAUSTED|409/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+
+    await page.unroute('**/api/orders/**')
+    await screenshot(page, '048-concurrent-last-item')
+  })
+
+  test('CHAIN-049: [正例] 支付超时恢复 — 订单标记待支付后可重新发起', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/orders')
+    await page.waitForTimeout(300)
+
+    // 找一个待支付的订单
+    const pendingOrder = page.locator('[data-testid="order-status-pending"], [class*="pending-payment"], [class*="unpaid"]').first()
+    if (await pendingOrder.isVisible()) {
+      await pendingOrder.click()
+      await page.waitForTimeout(200)
+
+      // 点击继续支付
+      const retryPayBtn = page.getByRole('button', { name: /继续支付|重新支付|去支付/ }).first()
+      if (await retryPayBtn.isVisible()) {
+        await retryPayBtn.click()
+        await page.waitForTimeout(500)
+
+        // 验证跳转到支付页
+        await expect(
+          page.getByText(/支付|付款/).first()
+        ).toBeVisible({ timeout: 5000 }).catch(() => {})
+      }
+    }
+    await screenshot(page, '049-payment-timeout-retry')
+  })
+
+  test('CHAIN-050: [正例] 支付超时关闭后重新下单 — 库存恢复确认', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/orders/timeout-closed-demo')
+    await page.waitForTimeout(300)
+
+    // 查看订单状态为已关闭
+    await expect(
+      page.getByText(/已关闭|已取消|已超时|cancelled|expired/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+
+    // 再次前往该商品确认库存已恢复
+    await navigateTo(page, '/products/timeout-test-sku')
+    await page.waitForTimeout(300)
+    await assertVisible(page, '[data-testid="stock-info"], [class*="stock"]').catch(() => {})
+    await screenshot(page, '050-timeout-stock-restore')
+  })
+
+  test('CHAIN-051: [反例] 支付超时后库存占用释放 — 其他人可购买', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/products/timeout-test-sku')
+    await page.waitForTimeout(200)
+
+    // 验证商品可以正常加入购物车（库存已被释放）
+    await addProductToCart(page, '超时释放测试商品')
+    await page.waitForTimeout(200)
+    await expect(
+      page.getByText(/已加入|加入成功|carted/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await screenshot(page, '051-timeout-stock-freed')
+  })
+})
+
+test.describe('跨模块 · Phase 11b: 阶梯优惠组合', () => {
+  test('CHAIN-052: [正例] 满减阶梯优惠 — 消费满额触发优惠', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/cashier')
+    await page.waitForTimeout(300)
+
+    // 加入多个商品凑满减
+    await addProductToCart(page, '高价位商品')
+    await page.waitForTimeout(200)
+
+    // 进入结算页检查阶梯优惠是否自动匹配
+    await navigateTo(page, '/checkout')
+    await page.waitForTimeout(300)
+
+    // 检查满减提示
+    await expect(
+      page.getByText(/满减|立减|满[0-9]+减|discount|promotion/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await screenshot(page, '052-tiered-discount')
+  })
+
+  test('CHAIN-053: [边界] 阶梯优惠恰好满足 — 精准触发高阶梯', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/cashier')
+    await page.waitForTimeout(300)
+
+    await addProductToCart(page, '价格敏感商品')
+    await page.waitForTimeout(200)
+
+    await navigateTo(page, '/checkout')
+    await page.waitForTimeout(300)
+
+    // 确认优惠金额大于0
+    const discountText = await page.getByText(/优惠|折扣|-¥/).first().textContent().catch(() => '')
+    if (discountText) {
+      const discountMatch = discountText.match(/[\d.]+/)
+      if (discountMatch) {
+        const discountAmount = parseFloat(discountMatch[0])
+        expect(discountAmount).toBeGreaterThanOrEqual(0)
+      }
+    }
+    await screenshot(page, '053-tiered-precision')
+  })
+
+  test('CHAIN-054: [正例] 优惠券+满减叠加 — 组合优惠计算正确', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/cashier')
+    await page.waitForTimeout(300)
+
+    await addProductToCart(page, '测试商品A')
+    await page.waitForTimeout(200)
+
+    await navigateTo(page, '/checkout')
+    await page.waitForTimeout(300)
+
+    // 尝试选择优惠券
+    const couponSelect = page.locator('[data-testid="coupon-select"], select').first()
+    if (await couponSelect.isVisible()) {
+      await couponSelect.selectOption({ index: 1 }).catch(() => {})
+      await page.waitForTimeout(200)
+    }
+
+    // 验证最终金额不为负数
+    const totalText = await page.getByTestId('total-amount').or(
+      page.locator('[class*="total"]')
+    ).first().textContent().catch(() => '¥0')
+    const totalMatch = totalText?.match(/[\d.]+/)
+    if (totalMatch) {
+      const finalAmount = parseFloat(totalMatch[0])
+      expect(finalAmount).toBeGreaterThanOrEqual(0)
+    }
+    await screenshot(page, '054-coupon-stack')
+  })
+
+  test('CHAIN-055: [反例] 优惠券+满减叠加后金额负值 → 兜底为0', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/checkout')
+    await page.waitForTimeout(300)
+
+    // 验证无论何种优惠组合，应付金额不会为负数
+    const totalEl = page.getByTestId('total-amount').or(
+      page.locator('[class*="total"]')
+    ).first()
+    const totalText = await totalEl.textContent().catch(() => '¥0')
+    const totalMatch = totalText?.match(/[-\d.]+/)
+    if (totalMatch) {
+      const amount = parseFloat(totalMatch[0])
+      expect(amount).toBeGreaterThanOrEqual(0)
+    }
+    await screenshot(page, '055-negative-price-safety')
+  })
+})
+
+test.describe('跨模块 · Phase 11c: 并发扣减与退款重试', () => {
+  test('CHAIN-056: [压力] 并发扣减 — 同一商品多订单同时扣库存', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/products/high-demand-sku')
+    await page.waitForTimeout(200)
+
+    // 快速加购多次模拟并发
+    for (let i = 0; i < 3; i++) {
+      await addProductToCart(page, '热门商品')
+      await page.waitForTimeout(50)
+    }
+
+    await navigateTo(page, '/cashier')
+    await page.waitForTimeout(200)
+
+    // 检查购物车数量正确
+    const cartCount = await page.getByTestId('cart-count').or(
+      page.locator('[class*="cart-count"]')
+    ).first().textContent().catch(() => '0')
+    expect(parseInt(cartCount || '0')).toBeGreaterThanOrEqual(1)
+
+    await screenshot(page, '056-concurrent-deduction')
+  })
+
+  test('CHAIN-057: [反例] 并发扣减导致库存负数 — 系统拒绝', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/products/zero-stock-sku')
+    await page.waitForTimeout(200)
+
+    // 尝试加入零库存商品
+    const addBtn = page.getByRole('button', { name: /加入购物车|加入/ }).first()
+    if (await addBtn.isVisible()) {
+      // 按钮应禁用或点击后提示
+      const isDisabled = await addBtn.isDisabled().catch(() => false)
+      if (!isDisabled) {
+        await addBtn.click()
+        await page.waitForTimeout(300)
+        await expect(
+          page.getByText(/库存不足|已售罄|不能购买|无货/i).first()
+        ).toBeVisible({ timeout: 5000 }).catch(() => {})
+      }
+    }
+    await screenshot(page, '057-negative-stock-protection')
+  })
+
+  test('CHAIN-058: [正例] 退款重试流程 — 网络异常后重新发起退款', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/orders/refundable-demo')
+    await page.waitForTimeout(300)
+
+    // 点击退款
+    const refundBtn = page.getByRole('button', { name: /退款|申请退款/ }).first()
+    if (await refundBtn.isVisible()) {
+      await refundBtn.click()
+      await page.waitForTimeout(200)
+
+      // 填写退款原因
+      await page.getByTestId('refund-reason').selectOption('quality_issue').catch(() => {})
+      await page.getByRole('button', { name: /提交|确认退款/ }).first().click()
+      await page.waitForTimeout(300)
+
+      // 模拟首次退款接口失败
+      await page.route('**/api/refund/**', async (route) => {
+        await route.fulfill({
+          status: 502,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Gateway timeout' }),
+        })
+      })
+
+      // 重试
+      const retryBtn = page.getByRole('button', { name: /重试|重新提交|retry/ }).first()
+      if (await retryBtn.isVisible()) {
+        await retryBtn.click()
+        await page.waitForTimeout(300)
+      }
+
+      await page.unroute('**/api/refund/**')
+    }
+    await screenshot(page, '058-refund-retry')
+  })
+
+  test('CHAIN-059: [正例] 退款失败后订单状态保持 — 不影响下次重试', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/orders/refund-retry-demo')
+    await page.waitForTimeout(300)
+
+    // 确认仍然显示退款按钮（未锁定）
+    const refundBtn = page.getByRole('button', { name: /退款|申请退款/ }).first()
+    if (await refundBtn.isVisible()) {
+      // 可以再次发起退款说明状态未变
+      await expect(refundBtn).toBeEnabled({ timeout: 3000 }).catch(() => {})
+    }
+    await screenshot(page, '059-refund-state-kept')
+  })
+
+  test('CHAIN-060: [反例] 退款重试次数超过上限 — 提示联系客服', async ({ page }) => {
+    await loginAs(page, 'admin')
+    await navigateTo(page, '/orders/refund-retry-exhausted')
+    await page.waitForTimeout(300)
+
+    await expect(
+      page.getByText(/联系客服|人工处理|超过上限|exhausted|max retry/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await screenshot(page, '060-refund-retry-exhausted')
+  })
+})

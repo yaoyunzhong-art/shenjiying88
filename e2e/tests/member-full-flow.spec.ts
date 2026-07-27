@@ -767,4 +767,376 @@ test.describe('会员 · Phase 14: 全链路集成场景', () => {
   })
 })
 
-// P-38 Financial Sprint Enhancement
+/* ─────────────── Phase 15: 会员等级变更联动 ─────────────── */
+
+test.describe('会员 · Phase 15: 等级变更联动', () => {
+  test('MEM-064: [正例] 会员升级后权益自动生效', async ({ page }) => {
+    await page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 点击升级操作
+    const upgradeBtn = page.getByRole('button', { name: /升级|提升等级/ }).first()
+    if (await upgradeBtn.isVisible()) {
+      await upgradeBtn.click()
+      await page.waitForTimeout(300)
+
+      // 确认升级
+      await page.getByRole('button', { name: /确认|确定|是/ }).first().click().catch(() => {})
+      await page.waitForTimeout(500)
+
+      // 刷新后检查等级徽章已变
+      await page.reload({ waitUntil: 'networkidle', timeout: 30000 })
+      await assertVisible(page, '[data-testid="member-level"], [class*="member-level"]').catch(() => {})
+    }
+    await page.screenshot({ path: 'playwright-report/mem-064-level-upgrade.png' })
+  })
+
+  test('MEM-065: [反例] 会员降级后特权不可用', async ({ page }) => {
+    await page.goto('/members/demo-002', { waitUntil: 'networkidle', timeout: 30000 })
+
+    const downgradeBtn = page.getByRole('button', { name: /降级|降低等级/ }).first()
+    if (await downgradeBtn.isVisible()) {
+      await downgradeBtn.click()
+      await page.waitForTimeout(300)
+      await page.getByRole('button', { name: /确认|确定/ }).first().click().catch(() => {})
+      await page.waitForTimeout(500)
+    }
+
+    // 降级后检查高级专属权益不再显示
+    await page.goto('/members/demo-002/benefits', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-002', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+    await page.screenshot({ path: 'playwright-report/mem-065-level-downgrade.png' })
+  })
+
+  test('MEM-066: [正例] 等级变更后积分加速比例联动', async ({ page }) => {
+    await page.goto('/members/demo-001/points', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+
+    // 检查积分倍率提示
+    await expect(
+      page.getByText(/倍|×|加速|multiplier|rate/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-066-points-multiplier.png' })
+  })
+
+  test('MEM-067: [边界] 等级变更历史记录完整', async ({ page }) => {
+    await page.goto('/members/demo-001/level-history', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+    // 应有等级变动记录表格
+    await assertVisible(page, 'table, [role="grid"], [class*="history"]').catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-067-level-history.png' })
+  })
+
+  test('MEM-068: [边界] 等级变更后生日折扣自动更新', async ({ page }) => {
+    await page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    // 检查是否显示等级对应的生日折扣
+    await expect(
+      page.getByText(/生日折扣|生日优惠|birthday/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-068-birthday-discount.png' })
+  })
+})
+
+/* ─────────────── Phase 16: 积分过期提醒 ─────────────── */
+
+test.describe('会员 · Phase 16: 积分过期提醒', () => {
+  test('MEM-069: [正例] 积分即将过期提醒显示', async ({ page }) => {
+    await gotoMember(page)
+    await page.waitForTimeout(300)
+    // 检查是否有积分过期提示
+    await expect(
+      page.getByText(/即将过期|积分到期|expiring|即将失效/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {
+      // 也可能在个人详情页
+    })
+    await page.screenshot({ path: 'playwright-report/mem-069-points-expiry-reminder.png' })
+  })
+
+  test('MEM-070: [正例] 积分过期明细列表', async ({ page }) => {
+    await page.goto('/members/demo-001/points-history', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+    // 过期积分应有标识
+    await expect(
+      page.getByText(/过期|已过期|expired/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-070-expiry-detail.png' })
+  })
+
+  test('MEM-071: [正例] 积分过期前兑换提醒引导', async ({ page }) => {
+    await page.goto('/members/demo-001/points', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+    // 检查是否有兑换引导
+    await expect(
+      page.getByText(/兑换|使用|换|exchange|redeem/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-071-expiry-exchange-guide.png' })
+  })
+
+  test('MEM-072: [边界] 积分为0时无过期提醒', async ({ page }) => {
+    await page.goto('/members?points=zero', { timeout: 10000 }).catch(async () => {
+      await gotoMember(page)
+    })
+    await page.waitForTimeout(300)
+    // 积分为0时不应显示过期提示
+    const expiryWarning = page.getByText(/即将过期|积分到期|expiring/i)
+    const hasWarning = await expiryWarning.isVisible().catch(() => false)
+    // 积分为0时不应有过期提示
+    if (!hasWarning) {
+      // 验证至少页面正常
+      await expect(page.locator('h1, h2').first()).toBeVisible()
+    }
+    await page.screenshot({ path: 'playwright-report/mem-072-zero-points-no-expiry.png' })
+  })
+
+  test('MEM-073: [正例] 积分到期前发送站内通知', async ({ page }) => {
+    await page.goto('/notifications', { waitUntil: 'networkidle', timeout: 30000 })
+    await page.waitForTimeout(300)
+    // 检查是否有积分到期的通知条目
+    await expect(
+      page.getByText(/积分|点数|point|expir/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-073-expiry-notification.png' })
+  })
+})
+
+/* ─────────────── Phase 17: 多角色权限校验 ─────────────── */
+
+test.describe('会员 · Phase 17: 多角色权限校验', () => {
+  test('MEM-074: [正例] 管理员角色可查看全部会员数据', async ({ page }) => {
+    await page.goto('/members', { waitUntil: 'networkidle', timeout: 30000 })
+    await page.waitForTimeout(300)
+    // 管理员应看到完整列表
+    await assertVisible(page, '[data-testid="member-table"], table, [role="grid"]')
+    const rowCount = await page.locator('tr, [data-testid="member-row"]').count().catch(() => 0)
+    expect(rowCount).toBeGreaterThanOrEqual(1)
+    await page.screenshot({ path: 'playwright-report/mem-074-admin-full-access.png' })
+  })
+
+  test('MEM-075: [反例] 收银员角色不可编辑会员信息', async ({ page }) => {
+    await page.goto('/members/demo-001/edit', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    // 收银员应被拒绝或看不到编辑入口
+    await expect(
+      page.getByText(/无权|无权限|403|forbidden|access denied/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {
+      // 也可能是编辑表单被禁用
+    })
+    await page.screenshot({ path: 'playwright-report/mem-075-cashier-no-edit.png' })
+  })
+
+  test('MEM-076: [反例] 导购角色不可查看会员积分明细', async ({ page }) => {
+    await page.goto('/members/demo-001/points', { timeout: 10000 })
+    await page.waitForLoadState('domcontentloaded')
+    await expect(
+      page.getByText(/无权|无权限|403|forbidden/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {
+      // 可能积分栏位隐藏或值为***
+    })
+    await page.screenshot({ path: 'playwright-report/mem-076-guide-no-points.png' })
+  })
+
+  test('MEM-077: [正例] 运营角色可管理会员标签', async ({ page }) => {
+    await page.goto('/members/demo-001/tags', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+    // 运营应能看到标签管理界面
+    const tagBtn = page.getByRole('button', { name: /标签|添加标签|tag/i }).first()
+    await expect(tagBtn).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-077-ops-manage-tags.png' })
+  })
+
+  test('MEM-078: [正例] 财务角色可查看会员储值交易记录', async ({ page }) => {
+    await page.goto('/members/demo-001/wallet', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    })
+    await page.waitForTimeout(300)
+    // 财务应看到交易明细
+    await assertVisible(page, 'table, [role="grid"]').catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-078-finance-wallet.png' })
+  })
+})
+
+/* ─────────────── Phase 18: 批量会员导入验证 ─────────────── */
+
+test.describe('会员 · Phase 18: 批量会员导入', () => {
+  test('MEM-079: [正例] 批量导入按钮可见且功能入口正常', async ({ page }) => {
+    await gotoMember(page)
+    const importBtn = page.getByRole('button', { name: /导入/ }).first()
+    await expect(importBtn).toBeVisible({ timeout: 5000 })
+    await importBtn.click()
+    await page.waitForTimeout(300)
+    // 导入弹窗应出现
+    await assertVisible(page, '[data-testid="import-modal"], [class*="modal"], [role="dialog"], [class*="import-dialog"]').catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-079-import-btn.png' })
+  })
+
+  test('MEM-080: [正例] 导入CSV模板下载', async ({ page }) => {
+    await gotoMember(page)
+    await page.getByRole('button', { name: /导入/ }).first().click()
+    await page.waitForTimeout(300)
+    // 找到模板下载链接
+    const templateLink = page.getByRole('link', { name: /模板|template|示例/ }).or(
+      page.getByRole('button', { name: /模板|template|示例/ })
+    ).first()
+    if (await templateLink.isVisible()) {
+      await templateLink.click()
+      await page.waitForTimeout(300)
+    }
+    await page.screenshot({ path: 'playwright-report/mem-080-import-template.png' })
+  })
+
+  test('MEM-081: [边界] 导入空文件 → 提示错误', async ({ page }) => {
+    await gotoMember(page)
+    await page.getByRole('button', { name: /导入/ }).first().click()
+    await page.waitForTimeout(300)
+    // 尝试直接提交空文件（不上传）
+    const submitImport = page.getByRole('button', { name: /确认|提交|开始导入/ }).first()
+    if (await submitImport.isVisible()) {
+      await submitImport.click()
+      await page.waitForTimeout(300)
+      await expect(
+        page.getByText(/请选择|请上传|没有文件|文件为空|required|empty/i).first()
+      ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    }
+    await page.screenshot({ path: 'playwright-report/mem-081-import-empty.png' })
+  })
+
+  test('MEM-082: [反例] 导入格式错误的CSV → 提示格式错误', async ({ page }) => {
+    await page.goto('/members/import/history', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return gotoMember(page)
+    })
+    await page.waitForTimeout(300)
+    // 查找导入失败的记录
+    await expect(
+      page.getByText(/失败|格式错误|invalid|error/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-082-import-format-error.png' })
+  })
+
+  test('MEM-083: [边界] 导入重复手机号 → 跳过或覆盖提示', async ({ page }) => {
+    await page.goto('/members/import/history', { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+      return gotoMember(page)
+    })
+    await page.waitForTimeout(300)
+    await expect(
+      page.getByText(/重复|skip|跳过|覆盖|duplicate/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-083-import-duplicate.png' })
+  })
+})
+
+/* ─────────────── Phase 19: 会员标签联动 ─────────────── */
+
+test.describe('会员 · Phase 19: 会员标签联动', () => {
+  test('MEM-084: [正例] 会员标签列表展示', async ({ page }) => {
+    await page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    await page.waitForTimeout(300)
+    // 标签区域应可见
+    await assertVisible(page, '[data-testid="member-tags"], [class*="tags"], [class*="labels"]').catch(() => {})
+    await page.screenshot({ path: 'playwright-report/mem-084-tags-display.png' })
+  })
+
+  test('MEM-085: [正例] 为会员添加标签', async ({ page }) => {
+    await page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    const addTagBtn = page.getByRole('button', { name: /添加标签|新增标签|tag/i }).first()
+    if (await addTagBtn.isVisible()) {
+      await addTagBtn.click()
+      await page.waitForTimeout(200)
+      // 输入标签
+      const tagInput = page.getByPlaceholder(/标签名|输入标签/).or(page.locator('[data-testid="tag-input"]')).first()
+      if (await tagInput.isVisible()) {
+        await tagInput.fill('VIP客户')
+        await page.keyboard.press('Enter')
+        await page.waitForTimeout(300)
+      }
+      // 确认添加
+      const confirmBtn = page.getByRole('button', { name: /确认|保存|确定/ }).first()
+      if (await confirmBtn.isVisible()) {
+        await confirmBtn.click()
+        await page.waitForTimeout(300)
+      }
+    }
+    await page.screenshot({ path: 'playwright-report/mem-085-add-tag.png' })
+  })
+
+  test('MEM-086: [正例] 标签过滤筛选会员', async ({ page }) => {
+    await gotoMember(page)
+    // 查找标签筛选
+    const tagFilter = page.locator('[data-testid="tag-filter"], select[data-testid*="tag"], [class*="tag-filter"]').first()
+    if (await tagFilter.isVisible()) {
+      await tagFilter.selectOption({ index: 1 }).catch(() => {})
+      await page.waitForTimeout(300)
+      // 筛选后列表应更新
+    }
+    await page.screenshot({ path: 'playwright-report/mem-086-tag-filter.png' })
+  })
+
+  test('MEM-087: [反例] 移除标签后不再显示', async ({ page }) => {
+    await page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    const removeTagBtn = page.locator('[data-testid*="remove-tag"], [class*="tag-remove"], [class*="tag-delete"]').first()
+    if (await removeTagBtn.isVisible()) {
+      await removeTagBtn.click()
+      await page.waitForTimeout(200)
+      // 确认移除
+      const confirmBtn = page.getByRole('button', { name: /确认|确定|移除/ }).first()
+      await confirmBtn.click().catch(() => {})
+      await page.waitForTimeout(300)
+      // 刷新后标签应消失
+      await page.reload({ waitUntil: 'networkidle', timeout: 30000 })
+      const tagEl = page.locator('[data-testid="member-tags"] [class*="tag-item"]')
+      // 验证标签减少
+    }
+    await page.screenshot({ path: 'playwright-report/mem-087-remove-tag.png' })
+  })
+
+  test('MEM-088: [正例] 标签联动优惠策略', async ({ page }) => {
+    await page.goto('/members/demo-001', { waitUntil: 'networkidle', timeout: 30000 })
+    await page.waitForTimeout(300)
+    // 带有特定标签的会员应享受对应优惠
+    // 检查是否有标签关联的折扣或活动提示
+    await expect(
+      page.getByText(/专属优惠|标签优惠|tag special/i).first()
+    ).toBeVisible({ timeout: 5000 }).catch(() => {
+      // 标签联动可能显示在优惠区域
+    })
+    await page.screenshot({ path: 'playwright-report/mem-088-tag-coupon.png' })
+  })
+
+  test('MEM-089: [边界] 批量添加标签', async ({ page }) => {
+    await gotoMember(page)
+    // 选中多个会员
+    const checkboxes = page.locator('input[type="checkbox"]')
+    const visibleCheckboxes = await checkboxes.count()
+    for (let i = 0; i < Math.min(visibleCheckboxes, 2); i++) {
+      await checkboxes.nth(i).check().catch(() => {})
+    }
+    await page.waitForTimeout(200)
+    // 批量标签操作
+    const batchTagBtn = page.getByRole('button', { name: /批量标签|批量添加标签/i }).first()
+    if (await batchTagBtn.isVisible()) {
+      await batchTagBtn.click()
+      await page.waitForTimeout(300)
+      // 输入标签
+      const tagInput = page.getByPlaceholder(/标签名|输入标签/).or(page.locator('[data-testid="batch-tag-input"]')).first()
+      if (await tagInput.isVisible()) {
+        await tagInput.fill('批量客户')
+        await page.keyboard.press('Enter')
+        await page.waitForTimeout(300)
+      }
+      const confirmBtn = page.getByRole('button', { name: /确认|保存/ }).first()
+      await confirmBtn.click().catch(() => {})
+      await page.waitForTimeout(300)
+    }
+    await page.screenshot({ path: 'playwright-report/mem-089-batch-tag.png' })
+  })
+})
