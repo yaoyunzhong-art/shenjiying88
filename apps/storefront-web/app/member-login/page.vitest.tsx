@@ -34,13 +34,16 @@ vi.mock('@m5/ui', () => ({
       {error && <span data-testid="field-error" style={{ color: '#ef4444', fontSize: 12 }}>{error}</span>}
     </div>
   ),
-  useFormSubmit: (...args: unknown[]) => mockUseFormSubmit(...args),
-  FormSubmitFeedback: ({ state, onRetry }: { state: Record<string, unknown>; onRetry?: () => void }) => (
-    <div data-testid="form-feedback">
-      {state.error?.message as string && <span>{state.error?.message as string}</span>}
-      {onRetry && <button data-testid="retry-btn" onClick={onRetry}>重试</button>}
-    </div>
-  ),
+  useFormSubmit: (args: unknown) => { mockSubmit(args); return mockUseFormSubmit(); },
+  FormSubmitFeedback: ({ state, onRetry }: { state: Record<string, unknown>; onRetry?: () => void }) => {
+    const errMsg = state.error ? (state.error as { message?: string }).message : undefined;
+    return (
+      <div data-testid="form-feedback">
+        {errMsg && <span>{errMsg}</span>}
+        {onRetry && <button data-testid="retry-btn" onClick={onRetry}>重试</button>}
+      </div>
+    );
+  },
   SubmitButton: ({ loading, label, loadingLabel }: { loading?: boolean; label: string; loadingLabel?: string }) => (
     <button data-testid="submit-btn" disabled={loading}>{loading ? loadingLabel : label}</button>
   ),
@@ -52,8 +55,8 @@ const mockSendSmsCode = vi.fn();
 
 vi.mock('../../lib/member-auth-service', () => ({
   memberAuthService: {
-    login: (...args: unknown[]) => mockLogin(...args),
-    sendSmsCode: (...args: unknown[]) => mockSendSmsCode(...args),
+    login: (args: unknown) => mockLogin(args as Parameters<typeof mockLogin>[0]),
+    sendSmsCode: (args: unknown) => mockSendSmsCode(args as Parameters<typeof mockSendSmsCode>[0]),
   },
 }));
 
