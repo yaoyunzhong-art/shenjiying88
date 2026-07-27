@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
+
 import {
   PageShell,
   StatCard,
@@ -262,7 +262,16 @@ export default function CampaignPerformanceLegacy({ id }: { id: string }) {
   ];
 
   return (
-    <AdminPermissionGate {...permissionGate}>
+    <div style={{ display: 'grid', gap: 16 }}>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
       <PageShell title={`${analytics.campaignName} — 性能分析`}>
         <div style={{ padding: '1.5rem 0' }}>
         {/* 面包屑 */}
@@ -486,7 +495,7 @@ export default function CampaignPerformanceLegacy({ id }: { id: string }) {
         )}
         </div>
       </PageShell>
-    </AdminPermissionGate>
+    </div>
   );
 }
 
