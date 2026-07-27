@@ -21,12 +21,14 @@ import type {
 } from './doc.entity'
 import { TenantGuard } from '../agent/tenant.guard'
 import { TenantOptional } from '../agent/tenant-guard.decorator'
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
 import { Public } from '../foundation/identity-access/public.decorator'
 
 @Controller('docs')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @UseGuards(TenantGuard)
-@Public()
+@RequireTenantScope()
+@RequirePermissions('docs:read')
 @TenantOptional()
 export class DocController {
   constructor(
@@ -36,6 +38,7 @@ export class DocController {
 
   /** 生成文档（可指定格式） */
   @Post('generate')
+  @RequirePermissions('docs:update')
   generate(@Body() body: DocGenerateRequestDto): DocGenerateResponse {
     return this.docService.generate(
       body.title,
@@ -49,6 +52,7 @@ export class DocController {
 
   /** 注册端点 */
   @Post('endpoints')
+  @RequirePermissions('docs:update')
   registerEndpoint(@Body() body: RegisterEndpointRequestDto): {
     success: true
     endpoint: DocEndpointInfo
@@ -69,6 +73,7 @@ export class DocController {
 
   /** 注册 Schema */
   @Post('schemas')
+  @RequirePermissions('docs:update')
   registerSchema(@Body() body: RegisterSchemaRequestDto): { success: true; name: string } {
     this.docService.registerSchema(body.name, body.schema)
     return { success: true, name: body.name }
@@ -76,6 +81,7 @@ export class DocController {
 
   /** 注册安全方案 */
   @Post('security-schemes')
+  @RequirePermissions('docs:update')
   registerSecurityScheme(
     @Body() body: { name: string; type: string; scheme?: string; description?: string },
   ): { success: true; name: string } {
@@ -89,6 +95,7 @@ export class DocController {
 
   /** 添加 Tag */
   @Post('tags')
+  @RequirePermissions('docs:update')
   addTag(@Body() body: AddTagRequestDto): { success: true; name: string } {
     this.swaggerGenService.addTag(body.name, body.description)
     return { success: true, name: body.name }
@@ -124,12 +131,14 @@ export class DocController {
 
   /** 更新文档配置 */
   @Post('config')
+  @RequirePermissions('docs:update')
   updateConfig(@Body() _body: DocConfigUpdateDto): { success: true; message: string } {
     return this.docService.updateConfig()
   }
 
   /** 生成文档索引页 HTML */
   @Get('index')
+  @Public()
   getIndexPage(
     @Query('title') title?: string,
     @Query('version') version?: string,
@@ -141,6 +150,7 @@ export class DocController {
 
   /** 健康检查 */
   @Get('health')
+  @Public()
   healthCheck(): { status: 'ok'; uptime: number } {
     return { status: 'ok', uptime: process.uptime() }
   }
