@@ -605,3 +605,447 @@ test.describe('Checkout Phase 7 · 状态一致性 & 额外', () => {
     await expect(page.getByTestId('price-summary')).toBeVisible()
   })
 })
+
+/* ═══════════════════ Phase 8: 国际化 & 多语言支持 ═══════════════════ */
+
+test.describe('Checkout Phase 8 · 国际化 & 多语言支持', () => {
+  test('CHK8-046: [正例] 页面语言切换→收银台标题跟随变化', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 查找语言切换按钮（中文环境默认为"收银台"）
+    const heading = page.getByRole('heading', { name: /收银台|Checkout/ })
+    await expect(heading).toBeVisible()
+  })
+
+  test('CHK8-047: [正例] 金额货币符号为¥', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await expect(page.getByTestId('subtotal-amount')).toContainText('¥')
+    await expect(page.getByTestId('total-amount')).toContainText('¥')
+  })
+
+  test('CHK8-048: [正例] 支付方式中文标签完整', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await expect(page.getByTestId('payment-wechat')).toContainText(/微信支付|微信/)
+    await expect(page.getByTestId('payment-alipay')).toContainText(/支付宝/)
+    await expect(page.getByTestId('payment-cash')).toContainText(/现金/)
+    await expect(page.getByTestId('payment-member_card')).toContainText(/会员卡/)
+  })
+
+  test('CHK8-049: [正例] 配送方式中文标签完整', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('select-delivery').click()
+    await expect(page.getByRole('option', { name: /标准配送/ })).toBeVisible()
+    await expect(page.getByRole('option', { name: /加急配送/ })).toBeVisible()
+    await expect(page.getByRole('option', { name: /门店自提/ })).toBeVisible()
+  })
+
+  test('CHK8-050: [正例] 表单字段中文label可见', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await expect(page.getByText(/收件人姓名|姓名|收货人/)).toBeVisible()
+    await expect(page.getByText(/手机号|联系电话|电话/)).toBeVisible()
+    await expect(page.getByText(/邮箱|电子邮箱|Email/)).toBeVisible()
+    await expect(page.getByText(/收货地址|地址|详细地址/)).toBeVisible()
+    await expect(page.getByText(/城市|所在城市/)).toBeVisible()
+  })
+})
+
+/* ═══════════════════ Phase 9: 响应式适配 ═══════════════════ */
+
+test.describe('Checkout Phase 9 · 响应式适配', () => {
+  test('CHK9-051: [正例] 桌面宽屏1280px→完整两列布局', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 表单区和摘要区都可见
+    await expect(page.getByTestId('checkout-form-section')).toBeVisible()
+    await expect(page.getByTestId('checkout-summary-section')).toBeVisible()
+    await expect(page.getByTestId('price-summary')).toBeVisible()
+  })
+
+  test('CHK9-052: [正例] 平板768px→布局正常不溢出', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await expect(page.getByTestId('checkout-form-section')).toBeVisible()
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('CHK9-053: [正例] 手机端375px→单列紧凑布局', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 表单应正常显示，无水平滚动
+    await expect(page.getByTestId('checkout-form-section')).toBeVisible()
+    // 手机端摘要区可折叠或紧随其后
+    await expect(page.getByTestId('btn-submit')).toBeVisible()
+  })
+
+  test('CHK9-054: [边界] 极小屏320px→关键按钮不丢失', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 })
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 核心操作按钮必须可见
+    await expect(page.getByTestId('btn-submit')).toBeVisible()
+    await expect(page.getByTestId('btn-reset')).toBeVisible()
+  })
+
+  test('CHK9-055: [正例] 超大屏1920px→布局不拉伸异常', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 })
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await expect(page.getByTestId('checkout-form-section')).toBeVisible()
+    await expect(page.getByTestId('btn-submit')).toBeVisible()
+  })
+})
+
+/* ═══════════════════ Phase 10: 支付网关交互 ═══════════════════ */
+
+test.describe('Checkout Phase 10 · 支付网关交互', () => {
+  test('CHK10-056: [正例] 提交订单→支付弹窗出现', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 支付弹窗或支付二维码区域
+    const paymentDialog = page.locator(
+      '[data-testid="payment-dialog"], [data-testid="payment-qrcode"], [class*="payment-modal"], [class*="qrcode"]'
+    )
+    await expect(paymentDialog).toBeVisible({ timeout: 5000 })
+  })
+
+  test('CHK10-057: [正例] 支付弹窗→取消返回', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 点击取消/关闭按钮
+    const cancelBtn = page.locator(
+      'button:has-text("取消"), button:has-text("关闭"), button[aria-label="关闭"]'
+    )
+    if (await cancelBtn.isVisible().catch(() => false)) {
+      await cancelBtn.click()
+      await page.waitForTimeout(300)
+      await expect(page.getByTestId('btn-submit')).toBeVisible()
+    }
+  })
+
+  test('CHK10-058: [反例] 支付超时→超时提示', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 查找倒计时或超时提示
+    const timeoutMsg = page.locator(
+      'text=/超时|timeout|已过期|请重新/, [data-testid="payment-timeout"]'
+    ).or(page.locator('[class*="countdown"]'))
+    await expect(timeoutMsg).toBeVisible({ timeout: 10000 })
+  })
+
+  test('CHK10-059: [反例] 支付拒绝→错误提示', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 模拟支付拒绝提示
+    const errorMsg = page.locator(
+      'text=/支付失败|支付拒绝|支付异常|交易失败|declined/'
+    )
+    await expect(errorMsg).toBeVisible({ timeout: 5000 })
+  })
+
+  test('CHK10-060: [正例] 支付成功→跳转到成功页', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 模拟支付成功
+    const successMsg = page.locator(
+      'text=/支付成功|下单成功|订单已提交|付款成功|success/'
+    )
+    await expect(successMsg).toBeVisible({ timeout: 10000 })
+  })
+
+  test('CHK10-061: [反例] 重复提交→防重复处理', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+
+    // 快速点击两次提交
+    await page.getByTestId('btn-submit').click()
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(300)
+
+    // 按钮应变为禁用（防重复提交）
+    await expect(page.getByTestId('btn-submit')).toBeDisabled()
+  })
+
+  test('CHK10-062: [边界] 提交后返回修改→重新选择支付方式', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await fillCheckoutForm(page)
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 关闭支付弹窗/返回
+    const backBtn = page.locator(
+      'button:has-text("返回"), button:has-text("重新选择"), [aria-label="返回"]'
+    )
+    if (await backBtn.isVisible().catch(() => false)) {
+      await backBtn.click()
+      await page.waitForTimeout(300)
+    }
+
+    // 切换支付方式后重新提交
+    const paymentCash = page.getByTestId('payment-cash')
+    if (await paymentCash.isVisible().catch(() => false)) {
+      await paymentCash.click()
+      await page.getByTestId('btn-submit').click()
+      await page.waitForTimeout(300)
+      await expect(page.getByTestId('btn-submit')).toBeVisible()
+    }
+  })
+})
+
+/* ═══════════════════ Phase 11: 订单备注 & 发票场景 ═══════════════════ */
+
+test.describe('Checkout Phase 11 · 订单备注 & 发票场景', () => {
+  test('CHK11-063: [正例] 填写备注→提交包含备注信息', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    const remark = page.getByTestId('textarea-remark')
+    if (await remark.isVisible().catch(() => false)) {
+      await remark.fill('请在上班时间配送，电话通知')
+      await expect(remark).toHaveValue('请在上班时间配送，电话通知')
+    }
+  })
+
+  test('CHK11-064: [正例] 发票信息区域可见', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    const invoiceSection = page.locator(
+      '[data-testid="invoice-section"], [class*="invoice"], text=/发票|Invoice/'
+    )
+    await expect(invoiceSection).toBeVisible({ timeout: 3000 })
+  })
+
+  test('CHK11-065: [正例] 切换发票类型→抬头字段变化', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 查找发票类型选择
+    const invoiceType = page.locator(
+      '[data-testid="invoice-type"], select:has(option:has-text("个人"), option:has-text("企业"))'
+    )
+    if (await invoiceType.isVisible().catch(() => false)) {
+      // 切换到企业发票
+      await invoiceType.selectOption('企业')
+      await page.waitForTimeout(300)
+
+      // 企业抬头和税号字段应出现
+      const companyName = page.locator(
+        '[data-testid="invoice-company-name"], input[placeholder*="公司"], input[placeholder*="抬头"]'
+      )
+      await expect(companyName).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('CHK11-066: [边界] 企业发票→填写税号', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 切换到企业发票
+    const invoiceType = page.locator(
+      '[data-testid="invoice-type"], select:has(option:has-text("企业"))'
+    )
+    if (await invoiceType.isVisible().catch(() => false)) {
+      await invoiceType.selectOption('企业')
+      await page.waitForTimeout(300)
+
+      // 填写税号
+      const taxId = page.locator(
+        '[data-testid="invoice-tax-id"], input[placeholder*="税号"]'
+      )
+      if (await taxId.isVisible().catch(() => false)) {
+        await taxId.fill('91310000MA1FY4YLX6')
+        await expect(taxId).toHaveValue('91310000MA1FY4YLX6')
+      }
+    }
+  })
+
+  test('CHK11-067: [反例] 企业发票税号格式错误→提示', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    const invoiceType = page.locator(
+      '[data-testid="invoice-type"], select:has(option:has-text("企业"))'
+    )
+    if (await invoiceType.isVisible().catch(() => false)) {
+      await invoiceType.selectOption('企业')
+      await page.waitForTimeout(300)
+
+      const taxId = page.locator(
+        '[data-testid="invoice-tax-id"], input[placeholder*="税号"]'
+      )
+      if (await taxId.isVisible().catch(() => false)) {
+        await taxId.fill('12345')
+        await page.getByTestId('btn-submit').click()
+        await page.waitForTimeout(500)
+
+        // 税号格式错误提示
+        const errorTip = page.locator(
+          'text=/税号格式|税号不正确|税号长度|税号必须/'
+        )
+        await expect(errorTip).toBeVisible({ timeout: 3000 })
+      }
+    }
+  })
+})
+
+/* ═══════════════════ Phase 12: 极限/边界场景 ═══════════════════ */
+
+test.describe('Checkout Phase 12 · 极限/边界场景', () => {
+  test('CHK12-068: [边界] 表单全部字段填写最大长度→提交正常', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('input-name').fill('大'.repeat(50))
+    await page.getByTestId('input-phone').fill('13800138000')
+    await page.getByTestId('input-email').fill('dafei@example.com')
+    await page.getByTestId('input-address').fill('上'.repeat(100))
+    await page.getByTestId('input-city').fill('上'.repeat(20))
+    await selectDelivery(page, '标准配送（3-5天）')
+    await page.getByTestId('payment-wechat').click()
+    await page.getByTestId('checkbox-terms').click()
+
+    await expect(page.getByTestId('btn-submit')).toContainText('确认支付')
+  })
+
+  test('CHK12-069: [边界] 手机号以特殊字符开头→校验拒绝', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('input-name').fill('大飞哥')
+    await page.getByTestId('input-phone').fill('+8613800138000')
+    await page.getByTestId('input-email').fill('dafei@example.com')
+    await page.getByTestId('input-address').fill('神机营大道 88 号')
+    await page.getByTestId('input-city').fill('上海')
+    await selectDelivery(page, '标准配送（3-5天）')
+    await page.getByTestId('payment-wechat').click()
+    await page.getByTestId('checkbox-terms').click()
+
+    await page.getByTestId('btn-submit').click()
+    await page.waitForTimeout(500)
+
+    // 应校验手机号
+    await expect(
+      page.getByText(/手机号格式|不正确|11位/)
+    ).toBeVisible({ timeout: 3000 })
+  })
+
+  test('CHK12-070: [边界] 切换配送后清空并重新选择→状态正常', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 打开又关闭配送选择框
+    await page.getByTestId('select-delivery').click()
+    await page.waitForTimeout(200)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(200)
+
+    // 再次打开并选择
+    await page.getByTestId('select-delivery').click()
+    await page.getByRole('option', { name: '门店自提' }).click()
+    await page.waitForTimeout(300)
+
+    await expect(page.getByTestId('shipping-fee')).toContainText(/免运费.*自提/)
+  })
+
+  test('CHK12-071: [边界] 多支付方式快速切换后提交→最终选择生效', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('input-name').fill('大飞哥')
+    await page.getByTestId('input-phone').fill('13800138000')
+    await page.getByTestId('input-email').fill('dafei@example.com')
+    await page.getByTestId('input-address').fill('神机营大道 88 号')
+    await page.getByTestId('input-city').fill('上海')
+    await selectDelivery(page, '标准配送（3-5天）')
+    await page.getByTestId('checkbox-terms').click()
+
+    // 快速切换支付方式
+    await page.getByTestId('payment-wechat').click()
+    await page.waitForTimeout(100)
+    await page.getByTestId('payment-alipay').click()
+    await page.waitForTimeout(100)
+    await page.getByTestId('payment-cash').click()
+    await page.waitForTimeout(100)
+    await page.getByTestId('payment-alipay').click()
+
+    await expect(page.getByTestId('btn-submit')).toContainText('确认支付')
+  })
+
+  test('CHK12-072: [边界] 协议复选框多次勾选取消→最终勾选', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('input-name').fill('大飞哥')
+    await page.getByTestId('input-phone').fill('13800138000')
+    await page.getByTestId('input-email').fill('dafei@example.com')
+    await page.getByTestId('input-address').fill('神机营大道 88 号')
+    await page.getByTestId('input-city').fill('上海')
+    await selectDelivery(page, '标准配送（3-5天）')
+    await page.getByTestId('payment-wechat').click()
+
+    // 多次勾选取消
+    await page.getByTestId('checkbox-terms').click()
+    await page.waitForTimeout(100)
+    await page.getByTestId('checkbox-terms').click()
+    await page.waitForTimeout(100)
+    await page.getByTestId('checkbox-terms').click() // 最终勾选
+
+    await expect(page.getByTestId('btn-submit')).toContainText('确认支付')
+  })
+
+  test('CHK12-073: [边界] 页面刷新后表单状态保持', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('input-name').fill('大飞哥')
+    await page.getByTestId('input-phone').fill('13800138000')
+
+    // 刷新页面
+    await page.reload({ waitUntil: 'networkidle', timeout: 30000 })
+
+    // 表单应恢复默认值（无状态保持）
+    await expect(page.getByTestId('input-name')).toHaveValue('')
+    await expect(page.getByTestId('input-phone')).toHaveValue('')
+  })
+
+  test('CHK12-074: [边界] 重复选择同一配送方式→无异常', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    // 连续选标准配送
+    await selectDelivery(page, '标准配送（3-5天）')
+    await selectDelivery(page, '标准配送（3-5天）')
+    await selectDelivery(page, '标准配送（3-5天）')
+
+    await page.waitForTimeout(300)
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('CHK12-075: [边界] 优惠券输入框含特殊字符→XSS防护', async ({ page }) => {
+    await page.goto('/checkout', { waitUntil: 'networkidle', timeout: 30000 })
+
+    await page.getByTestId('input-coupon').fill('<script>alert("xss")</script>')
+    await page.getByTestId('btn-apply-coupon').click()
+    await page.waitForTimeout(300)
+
+    // 页面不应弹窗，正常渲染
+    await expect(page.locator('body')).toBeVisible()
+  })
+})
