@@ -301,12 +301,16 @@ describe('ProductsPage — 商品管理', () => {
   test('both category and status tab groups are rendered', async () => {
     render(<ProductsPage />);
     await waitForLoaded();
-    // Category tabs
-    expect(screen.getByTestId('tab-ALL')).toBeInTheDocument();
+    // Category tabs — use testid text content
+    const allTabs = screen.getAllByTestId('tab-ALL');
+    expect(allTabs.length).toBe(2); // 全部分类 + 全部状态
     expect(screen.getByTestId('tab-class')).toBeInTheDocument();
     expect(screen.getByTestId('tab-equipment')).toBeInTheDocument();
     // Status tabs
     expect(screen.getByTestId('tab-on_sale')).toBeInTheDocument();
+    // Both tab groups have distinct labels
+    expect(screen.getByText('全部分类')).toBeInTheDocument();
+    expect(screen.getByText('全部状态')).toBeInTheDocument();
   });
 
   // ====== 增强: 搜索交互 ======
@@ -341,7 +345,9 @@ describe('ProductsPage — 商品管理', () => {
     render(<ProductsPage />);
     await waitForLoaded();
     expect(screen.getByText('总商品')).toBeInTheDocument();
-    expect(screen.getByText('在售')).toBeInTheDocument();
+    // Use getAllByText for '在售' since it appears also in status tab
+    const onSaleElements = screen.getAllByText('在售');
+    expect(onSaleElements.length).toBeGreaterThanOrEqual(2); // stat card + status tab
     expect(screen.getByText('缺货')).toBeInTheDocument();
     expect(screen.getByText('总库存')).toBeInTheDocument();
     expect(screen.getByText('平均评分')).toBeInTheDocument();
