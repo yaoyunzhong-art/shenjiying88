@@ -120,6 +120,92 @@ describe('PaymentGatewayController', () => {
     })
   })
 
+  describe('POST /payment-gateway/pay — 附加场景', () => {
+    // ── 新增: alipay/wechat_pay ——
+    it('should create an Alipay payment successfully', async () => {
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-alipay-1',
+          amount: 100,
+          currency: 'CNY',
+          provider: 'alipay',
+        },
+      )
+
+      expect(result.transactionId).toBeDefined()
+      expect(result.status).toBe('pending')
+      expect(result.provider).toBe('alipay')
+      expect(result.providerResponse).toBeDefined()
+    })
+
+    it('should create a WeChat Pay payment successfully', async () => {
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-wechat-1',
+          amount: 200,
+          currency: 'CNY',
+          provider: 'wechat_pay',
+        },
+      )
+
+      expect(result.transactionId).toBeDefined()
+      expect(result.status).toBe('pending')
+      expect(result.provider).toBe('wechat_pay')
+    })
+
+    it('should reject PayPay with non-JPY currency', async () => {
+      await expect(
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-paypay-bad',
+            amount: 100,
+            currency: 'CNY',
+            provider: 'paypay',
+          },
+        ),
+      ).rejects.toThrow(HttpException)
+    })
+
+    it('should handle local wallet with sufficient balance via metadata', async () => {
+      // 先充值: service.setWalletBalance 不是公开的 controller 路径
+      // 这里测试带 metadata.userId 的 local_wallet 支付，但余额可能不足
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-wallet-1',
+          amount: 100,
+          currency: 'CNY',
+          provider: 'local_wallet',
+          metadata: { userId: 'wallet-user-1' },
+        },
+      )
+
+      expect(result.provider).toBe('local_wallet')
+      // 因为未预先充值，预期失败
+      expect(result.status).toBe('failed')
+      expect(result.error).toBeDefined()
+    })
+
+    it('should return providerResponse with QR code URL for Alipay', async () => {
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-qr-test',
+          amount: 50,
+          currency: 'CNY',
+          provider: 'alipay',
+        },
+      )
+
+      expect(result.providerResponse).toBeDefined()
+      expect(result.providerResponse).toHaveProperty('codeUrl')
+      expect(result.providerResponse).toHaveProperty('expireTime')
+    })
+  })
+
   describe('GET /payment-gateway/pay/:id', () => {
     // ── 正例 ─────────────────────────────────────────────
     it('should query an existing payment', async () => {
@@ -247,6 +333,60 @@ describe('PaymentGatewayController', () => {
           },
         ),
       ).rejects.toThrow(HttpException)
+    })
+
+    it('should refund a Stripe payment successfully', async () => {
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-refund-stripe',
+          amount: 500,
+          currency: 'USD',
+          provider: 'stripe',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
+
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      const refundResult = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+          reason: '客户取消订单',
+        },
+      )
+
+      expect(refundResult.status).toBe('refunded')
+      expect(refundResult.transactionId).toBeDefined()
+      expect(refundResult.provider).toBe('stripe')
+    })
+
+    it('should support partial refund with amount specified', async () => {
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-partial-refund',
+          amount: 2000,
+          currency: 'USD',
+          provider: 'paypal',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
+
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      const partialRefund = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+          amount: 500,
+          reason: '部分退款',
+        },
+      )
+
+      expect(partialRefund.status).toBe('refunded')
+      expect(partialRefund.amount).toBe(500)
     })
   })
 

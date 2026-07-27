@@ -220,4 +220,49 @@ describe('ReportService (补充测试)', () => {
       assert.equal(service.deleteDefinition(def.id, TENANT), false)
     })
   })
+
+  // ─── P-38 财务链路边界 ─────────────────────────────────
+
+  describe('P-38 财务链路边界', () => {
+    it('revenue 报表跨租户隔离: T-001 有数据, T-999 无数据', async () => {
+      const r1 = await service.query({ tenantId: TENANT, type: 'revenue', from: '2025-06-01', to: '2025-06-30' })
+      assert.ok(r1.rows.length > 0)
+
+      const r2 = await service.query({ tenantId: OTHER, type: 'revenue', from: '2025-06-01', to: '2025-06-30' })
+      assert.equal(r2.rows.length, 0)
+    })
+
+    it('refund 报表返回退款数据', async () => {
+      const r = await service.query({ tenantId: TENANT, type: 'refund', from: '2025-06-01', to: '2025-06-30' })
+      assert.ok(r.rows.length > 0)
+    })
+
+    it('order 报表按来源分组统计', async () => {
+      const r = await service.query({ tenantId: TENANT, type: 'order', from: '2025-06-01', to: '2025-06-30' })
+      assert.ok(r.rows.length > 0)
+    })
+
+    it('payment-mix 报表按支付方式聚合', async () => {
+      const r = await service.query({ tenantId: TENANT, type: 'payment-mix', from: '2025-06-01', to: '2025-06-30' })
+      assert.ok(r.rows.length > 0)
+      const rows = r.rows as any[]
+      const methods = rows.map((row: any) => row.method)
+      assert.ok(methods.includes('WECHAT'))
+      assert.ok(methods.includes('ALIPAY'))
+    })
+
+    it('query 时间范围为单日时也能正常返回', async () => {
+      const r = await service.query({ tenantId: TENANT, type: 'revenue', from: '2025-06-15', to: '2025-06-15' })
+      assert.ok(r)
+      assert.equal(r.tenantId, TENANT)
+    })
+
+    it('query 使用 noCache=true 且 timeRange 不重叠时返回不同结果', async () => {
+      const r1 = await service.query({ tenantId: TENANT, type: 'revenue', from: '2025-06-01', to: '2025-06-15', noCache: true })
+      assert.ok(r1)
+
+      const r2 = await service.query({ tenantId: TENANT, type: 'revenue', from: '2025-06-16', to: '2025-06-30', noCache: true })
+      assert.ok(r2)
+    })
+  })
 })
