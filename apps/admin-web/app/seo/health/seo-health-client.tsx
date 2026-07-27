@@ -3,7 +3,9 @@
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import type { SeoHealthIssue, SeoHealthIssueSeverity, SeoHealthSnapshotDelivery } from './seo-health-data';
+import type { SeoHealthIssue, SeoIssueSeverity, SeoHealthSnapshotDelivery } from './seo-health-data';
+
+type SeoHealthIssueSeverity = SeoIssueSeverity;
 
 function severityColor(severity: SeoHealthIssueSeverity) {
   if (severity === 'high') return '#ef4444';
