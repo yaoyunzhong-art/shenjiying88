@@ -1,18 +1,18 @@
 "use client"
 
 import type * as React from 'react'
-import { useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import type { PermissionRolePreview, PermissionsSnapshotDelivery } from './permissions-data'
+import SnapshotRefreshButton from '../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 export default function PermissionsClient({
   snapshot,
 }: {
   snapshot: PermissionsSnapshotDelivery
 }) {
-  const router = useRouter()
   const [roles, setRoles] = useState<PermissionRolePreview[]>(snapshot.roles)
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
 
   useEffect(() => {
     setRoles(snapshot.roles)
@@ -40,14 +40,13 @@ export default function PermissionsClient({
             {snapshot.generatedAt}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          disabled={isRefreshing}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="light"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
       </section>
 
       {snapshot.error ? <section style={warningStyle}>{snapshot.error}</section> : null}
@@ -163,14 +162,6 @@ const metaStyle: React.CSSProperties = {
   color: '#64748b',
 }
 
-const refreshButtonStyle: React.CSSProperties = {
-  padding: '10px 16px',
-  borderRadius: 10,
-  border: '1px solid rgba(148, 163, 184, 0.4)',
-  background: '#fff',
-  color: '#0f172a',
-  cursor: 'pointer',
-}
 
 const warningStyle: React.CSSProperties = {
   padding: '12px 14px',

@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { type CSSProperties, useTransition } from 'react';
+import { type CSSProperties } from 'react';
 import {
   DataTable,
   type DataTableColumn,
@@ -16,6 +15,8 @@ import { buildIntegrationOrchestrationEventDetailHref } from '@m5/types';
 import type { IntegrationOrchestrationIdempotencyDetail } from '../../../integration-orchestration-detail-view-model';
 import { useDetailActions } from '../../../components/use-detail-actions';
 import { buildStandardBreadcrumb } from '../../../components/detail-workspace-registry';
+import SnapshotRefreshButton from '../../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 interface IntegrationOrchestrationIdempotencyDetailClientProps {
   snapshot: IntegrationOrchestrationIdempotencyDetail;
@@ -37,8 +38,7 @@ function IdempotencyBoard({
   record: NonNullable<IntegrationOrchestrationIdempotencyDetail['record']>;
   snapshot: IntegrationOrchestrationIdempotencyDetail;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const { actions } = useDetailActions({
     workspace: 'integration-orchestration',
     detailId: record.key,
@@ -65,13 +65,13 @@ function IdempotencyBoard({
   return (
     <div style={{ display: 'grid', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'integration-orchestration', detailLabel: record.key })}
@@ -143,19 +143,17 @@ function IdempotencyBoard({
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: IntegrationOrchestrationIdempotencyDetail }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'integration-orchestration', detailLabel: snapshot.key || '未找到' })}
@@ -198,16 +196,6 @@ function SummaryCard({ title, value, detail }: { title: string; value: string; d
 
 // DeepLinkCard has been removed in favor of <DetailClosureBar> from @m5/ui.
 
-const refreshButtonStyle: CSSProperties = {
-  border: '1px solid rgba(59,130,246,0.35)',
-  borderRadius: 8,
-  padding: '8px 14px',
-  background: 'rgba(59,130,246,0.12)',
-  color: '#93c5fd',
-  cursor: 'pointer',
-  fontSize: 12,
-  fontWeight: 600
-};
 
 const summaryGridStyle: CSSProperties = {
   display: 'grid',

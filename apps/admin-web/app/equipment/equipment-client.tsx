@@ -1,7 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition, type CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, type CSSProperties } from 'react'
 import {
   DataTable,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui'
+import SnapshotRefreshButton from '../components/snapshot-refresh-button'
 import {
   EQUIPMENT_STATUS_MAP,
   EQUIPMENT_TYPE_MAP,
@@ -24,6 +24,7 @@ import {
   type EquipmentStatus,
   type EquipmentType,
 } from './equipment-data'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000)
@@ -47,8 +48,7 @@ export default function EquipmentClient({
 }: {
   snapshot: EquipmentSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [statusFilter, setStatusFilter] = useState<EquipmentStatus | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<EquipmentType | 'ALL'>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
@@ -189,14 +189,13 @@ export default function EquipmentClient({
           placeholder="搜索设备名称/型号/门店/供应商..."
           width={360}
         />
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          disabled={isRefreshing}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="dark"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </div>
 
       <div style={{ display: 'grid', gap: 16, marginBottom: 16 }}>
@@ -273,16 +272,6 @@ export default function EquipmentClient({
   )
 }
 
-const refreshButtonStyle: CSSProperties = {
-  padding: '8px 18px',
-  borderRadius: 8,
-  border: '1px solid rgba(148,163,184,0.2)',
-  background: 'rgba(15,23,42,0.4)',
-  color: '#e2e8f0',
-  fontSize: 13,
-  cursor: 'pointer',
-  outline: 'none',
-}
 
 const tipBoxStyle: CSSProperties = {
   marginTop: 24,

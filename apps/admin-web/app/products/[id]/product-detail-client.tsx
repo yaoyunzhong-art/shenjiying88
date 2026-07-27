@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useMemo, useTransition } from 'react'
+import { useMemo } from 'react'
 import {
   MOCK_PRODUCTS,
   PRODUCT_CATEGORY_MAP,
@@ -10,6 +9,7 @@ import {
 } from '../../products-data'
 import type { ProductDetailSnapshot } from './product-detail-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -25,16 +25,11 @@ const cardStyle = {
 } as const
 
 export default function ProductDetailClient({ snapshot }: { snapshot: ProductDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const product = useMemo(
     () => MOCK_PRODUCTS.find((item) => item.id === snapshot.id),
     [snapshot.id]
   )
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   if (!product) {
     return (

@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   DataTable,
   DetailActionBar,
@@ -25,6 +24,8 @@ import {
   summarizeIntegrationEvent
 } from '../../integration-orchestration-view-model';
 import { useDetailActions } from '../../components/use-detail-actions';
+import SnapshotRefreshButton from '../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 interface IntegrationOrchestrationEventsClientProps {
   events: IntegrationEventEnvelopeContract[];
@@ -37,8 +38,7 @@ export default function IntegrationOrchestrationEventsClient({
   events,
   sources
 }: IntegrationOrchestrationEventsClientProps) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
@@ -170,13 +170,13 @@ export default function IntegrationOrchestrationEventsClient({
   return (
     <div style={{ display: 'grid', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <SearchFilterInput
@@ -235,14 +235,3 @@ export default function IntegrationOrchestrationEventsClient({
     </div>
   );
 }
-
-const refreshButtonStyle: React.CSSProperties = {
-  border: '1px solid rgba(59,130,246,0.35)',
-  borderRadius: 8,
-  padding: '8px 14px',
-  background: 'rgba(59,130,246,0.12)',
-  color: '#93c5fd',
-  cursor: 'pointer',
-  fontSize: 12,
-  fontWeight: 600
-};

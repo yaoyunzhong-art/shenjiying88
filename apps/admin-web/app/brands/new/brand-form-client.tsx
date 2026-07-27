@@ -1,11 +1,9 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
-
 import LegacyView from './brand-new-legacy'
 import type { BrandFormSnapshot } from './brand-form-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -13,12 +11,7 @@ const shellStyle = {
 } as const
 
 export default function BrandFormClient({ snapshot }: { snapshot: BrandFormSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={shellStyle}>

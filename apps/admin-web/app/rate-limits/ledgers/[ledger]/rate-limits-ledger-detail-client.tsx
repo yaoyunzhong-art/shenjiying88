@@ -1,10 +1,7 @@
 'use client';
 
- 'use client';
- 
 import Link from 'next/link';
- import { useRouter } from 'next/navigation';
- import { type CSSProperties, useTransition } from 'react';
+import { type CSSProperties } from 'react';
 import { StatusBadge, DetailActionBar, DetailClosureBar, WorkspaceBreadcrumb, type DetailClosureLink } from '@m5/ui';
 import type { RateLimitsLedgerDetail } from '../../../rate-limits-detail-view-model';
 import {
@@ -16,6 +13,8 @@ import {
 import { buildRateLimitsPolicyDetailHref } from '@m5/types';
 import { useDetailActions } from '../../../components/use-detail-actions';
 import { buildStandardBreadcrumb } from '../../../components/detail-workspace-registry';
+import SnapshotRefreshButton from '../../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 interface RateLimitsLedgerDetailClientProps {
   snapshot: RateLimitsLedgerDetail;
@@ -35,8 +34,7 @@ function LedgerBoard({
   record: NonNullable<RateLimitsLedgerDetail['record']>;
   snapshot: RateLimitsLedgerDetail;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const ratio = ledgerConsumptionRatio(record);
   const blocked = isLedgerBlocked(record);
   const statusLabel = blocked ? '封禁' : ratio >= 0.8 ? '告警' : '健康';
@@ -51,13 +49,13 @@ function LedgerBoard({
   return (
     <div style={{ display: 'grid', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'rate-limits', detailLabel: snapshot.ledgerId })}
@@ -165,19 +163,17 @@ function LedgerBoard({
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: RateLimitsLedgerDetail }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'rate-limits', detailLabel: snapshot.ledgerId || '未找到' })}
@@ -218,16 +214,6 @@ function SummaryCard({ title, value, detail }: { title: string; value: string; d
   );
 }
 
-const refreshButtonStyle: CSSProperties = {
-  border: '1px solid rgba(59,130,246,0.35)',
-  borderRadius: 8,
-  padding: '8px 14px',
-  background: 'rgba(59,130,246,0.12)',
-  color: '#93c5fd',
-  cursor: 'pointer',
-  fontSize: 12,
-  fontWeight: 600
-};
 
 const summaryGridStyle: CSSProperties = {
   display: 'grid',

@@ -1,8 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
 import type * as React from 'react'
-import { useRouter } from 'next/navigation'
 import { DataTable, DetailActionBar, StatusBadge, type DataTableColumn } from '@m5/ui'
 import {
   type IdentityAccessValidationResult,
@@ -10,6 +8,8 @@ import {
 import { formatIdentityCheckLabel, summarizeIdentityValidation } from '../identity-access-view-model'
 import { useDetailActions } from '../components/use-detail-actions'
 import type { IdentityAccessPageSnapshot } from './identity-access-data'
+import SnapshotRefreshButton from '../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 interface IdentityAccessWorkspaceClientProps {
   snapshot: IdentityAccessPageSnapshot
@@ -23,8 +23,7 @@ interface IdentityCheckRow {
 export default function IdentityAccessWorkspaceClient({
   snapshot,
 }: IdentityAccessWorkspaceClientProps) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const actor = snapshot.workspace.context.actor
   const checkRows: IdentityCheckRow[] = [
     { key: 'role', result: snapshot.workspace.roleValidation },
@@ -87,14 +86,13 @@ export default function IdentityAccessWorkspaceClient({
             generatedAt: {snapshot.generatedAt} · workspace {snapshot.workspaceDeliveryMode} / workbench {snapshot.bootstrapDeliveryMode}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          disabled={isRefreshing}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="dark"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
       </section>
 
       <section style={panelStyle}>
@@ -212,14 +210,6 @@ const heroMetaStyle: React.CSSProperties = {
   color: '#94a3b8',
 }
 
-const refreshButtonStyle: React.CSSProperties = {
-  padding: '10px 16px',
-  borderRadius: 10,
-  border: '1px solid rgba(148,163,184,0.24)',
-  background: 'rgba(15,23,42,0.72)',
-  color: '#e2e8f0',
-  cursor: 'pointer',
-}
 
 const panelStyle: React.CSSProperties = {
   border: '1px solid rgba(148,163,184,0.2)',

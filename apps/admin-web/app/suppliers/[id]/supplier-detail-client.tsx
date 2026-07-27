@@ -1,10 +1,9 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 import LegacyView from './supplier-detail-legacy'
 import type { SupplierDetailSnapshot } from './supplier-detail-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -12,12 +11,7 @@ const shellStyle = {
 } as const
 
 export default function SupplierDetailClient({ snapshot }: { snapshot: SupplierDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={shellStyle}>

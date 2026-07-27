@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   DataTable,
   DetailActionBar,
@@ -31,6 +30,7 @@ import {
 } from '@m5/types';
 import { adminGovernanceApprovalsRoute } from '../approvals-data';
 import { useDetailActions } from '../components/use-detail-actions';
+import SnapshotRefreshButton from '../components/snapshot-refresh-button'
 import {
   CERTIFICATE_STATUS_LABEL,
   CERTIFICATE_STATUS_VARIANT,
@@ -42,6 +42,7 @@ import {
   summarizeConfigEntry,
   summarizeSecret
 } from '../configuration-view-model';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 interface ConfigurationWorkspaceClientProps {
   overview: ConfigurationOverview;
@@ -68,8 +69,7 @@ export default function ConfigurationWorkspaceClient({
   managementMetadata,
   scopeChain
 }: ConfigurationWorkspaceClientProps) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
   const { actions } = useDetailActions({
@@ -369,14 +369,13 @@ export default function ConfigurationWorkspaceClient({
         <div style={topBarMetaStyle}>
           Delivery evidence time {new Date(overview.generatedAt).toLocaleString('zh-CN')} · scopeChain {scopeChain.length}
         </div>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          disabled={isRefreshing}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="dark"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
       </div>
 
       <div style={{ marginBottom: 18 }}>
@@ -515,14 +514,6 @@ const topBarMetaStyle: React.CSSProperties = {
   color: '#94a3b8',
 };
 
-const refreshButtonStyle: React.CSSProperties = {
-  borderRadius: 10,
-  border: '1px solid rgba(148,163,184,0.28)',
-  padding: '8px 14px',
-  background: 'rgba(15,23,42,0.55)',
-  color: '#e2e8f0',
-  cursor: 'pointer',
-};
 
 function OverviewBoard({
   overview,

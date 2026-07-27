@@ -1,23 +1,23 @@
 "use client"
 
 import type * as React from 'react'
-import { useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import SnapshotRefreshButton from '../../components/snapshot-refresh-button'
 import type {
   WorkflowConfigItem,
   WorkflowNodeType,
   WorkflowSnapshotDelivery,
 } from './workflow-data'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 export default function WorkflowClient({
   snapshot,
 }: {
   snapshot: WorkflowSnapshotDelivery
 }) {
-  const router = useRouter()
   const [configs, setConfigs] = useState<WorkflowConfigItem[]>(snapshot.configs)
   const [nodeTypes, setNodeTypes] = useState<WorkflowNodeType[]>(snapshot.nodeTypes)
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
 
   useEffect(() => {
     setConfigs(snapshot.configs)
@@ -37,14 +37,13 @@ export default function WorkflowClient({
             {snapshot.generatedAt}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => startRefresh(() => router.refresh())}
-          disabled={isRefreshing}
-          style={refreshButtonStyle}
-        >
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="light"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
       </section>
 
       {snapshot.error ? <section style={warningStyle}>{snapshot.error}</section> : null}
@@ -143,14 +142,6 @@ const subtitleStyle: React.CSSProperties = {
   color: '#475569',
 }
 const metaStyle: React.CSSProperties = { fontSize: 12, color: '#64748b' }
-const refreshButtonStyle: React.CSSProperties = {
-  padding: '10px 16px',
-  borderRadius: 10,
-  border: '1px solid rgba(148, 163, 184, 0.4)',
-  background: '#fff',
-  color: '#0f172a',
-  cursor: 'pointer',
-}
 const warningStyle: React.CSSProperties = {
   padding: '12px 14px',
   borderRadius: 12,

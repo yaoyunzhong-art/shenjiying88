@@ -86,16 +86,6 @@ const STYLES: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
   },
-  refreshBtn: {
-    padding: '6px 14px',
-    fontSize: 13,
-    fontWeight: 500,
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    background: '#fff',
-    color: '#475569',
-    cursor: 'pointer',
-  },
   card: {
     background: '#fff',
     borderRadius: 12,
@@ -203,9 +193,6 @@ export function AnomalyFrequencyClient({ snapshot }: AnomalyFrequencyClientProps
               {TIME_RANGE_LABELS[range]}
             </button>
           ))}
-          <button style={STYLES.refreshBtn} onClick={handleRefresh}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
         </div>
       </div>
 
@@ -217,9 +204,12 @@ export function AnomalyFrequencyClient({ snapshot }: AnomalyFrequencyClientProps
           background: '#f8fafc',
         }}
       >
-        <div style={{ fontSize: 13, color: '#0f172a' }}>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-        </div>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
         <div style={{ marginTop: 6, fontSize: 13, color: '#475569', lineHeight: 1.7 }}>
           Delivery {snapshot.deliveryMode} · 业务数据: {snapshot.businessDataSource}
         </div>

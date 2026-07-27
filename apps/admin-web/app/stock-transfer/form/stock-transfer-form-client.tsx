@@ -90,17 +90,17 @@ export default function StockTransferFormClient({ snapshot }: { snapshot: StockT
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Link href="/stock-transfer" style={{ ...buttonStyle, textDecoration: 'none' }}>
             返回列表
           </Link>
-          <button type="button" onClick={handleRefresh} style={buttonStyle}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
         </div>
       </div>
 
