@@ -56,6 +56,12 @@ docs/
 | [evolution-log.md](evolution-log.md) | 平台架构演进记录 |
 | [modules/](modules/) | 各业务模块架构文档 |
 
+### 👩‍💻 开发指南
+| 文档 | 说明 |
+|------|------|
+| [development/](development/) | 开发环境搭建指南 & 开发者上手文档 |
+| [development/setup-guide.md](development/setup-guide.md) | 完整开发环境搭建（含 macOS/Linux/WSL2） |
+
 ### 🚀 部署运维
 | 文档 | 说明 |
 |------|------|
