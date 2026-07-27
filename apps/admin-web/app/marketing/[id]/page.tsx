@@ -2,8 +2,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import MarketingDetailClient from './marketing-detail-client'
 import { loadMarketingDetailSnapshot } from './marketing-detail-data'
 
-export * from './marketing-detail-legacy'
-
 const permissionGate = {
   requiredPermission: 'marketing:id:read',
   title: 'marketing detail 访问受限',

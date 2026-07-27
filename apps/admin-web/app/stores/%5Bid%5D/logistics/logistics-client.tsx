@@ -1,8 +1,8 @@
 // 🅿️ P-30 后勤管理 · 预约/场地/物资/物流调度
 'use client';
 
-import SnapshotRefreshCard from '../../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
 import type { LogisticsSnapshot } from './logistics-data'
 
 import { useState, useMemo } from 'react';

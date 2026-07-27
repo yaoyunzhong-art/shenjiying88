@@ -1,8 +1,8 @@
 // 💳 P-38 财务对账 · 营收/对账/报表
 'use client';
 
-import SnapshotRefreshCard from '../../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
 import type { FinanceSnapshot } from './finance-data'
 
 import { useState } from 'react';

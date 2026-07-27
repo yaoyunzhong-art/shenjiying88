@@ -1,8 +1,8 @@
 // 📦 P-37 库存采购 · 供应商/采购单/到货
 'use client';
 
-import SnapshotRefreshCard from '../../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
 import type { PurchasingSnapshot } from './purchasing-data'
 
 import { useState } from 'react';

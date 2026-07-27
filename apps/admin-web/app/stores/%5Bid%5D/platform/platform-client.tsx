@@ -1,8 +1,8 @@
 // 🔗 开放平台 · API密钥/开发者/接口管理
 'use client';
 
-import SnapshotRefreshCard from '../../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
 import type { PlatformSnapshot } from './platform-data'
 
 import { useState } from 'react';
