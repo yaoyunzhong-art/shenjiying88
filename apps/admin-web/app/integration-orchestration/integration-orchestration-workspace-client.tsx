@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 import { DataTable, DetailActionBar, SearchFilterInput, Tabs, type DataTableColumn } from '@m5/ui';
 import type {
   IntegrationEventEnvelopeContract,
@@ -32,6 +34,8 @@ export default function IntegrationOrchestrationWorkspaceClient({
   workspace,
   foundationDependencies
 }: IntegrationOrchestrationWorkspaceClientProps) {
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
   const { actions } = useDetailActions({
@@ -208,6 +212,15 @@ export default function IntegrationOrchestrationWorkspaceClient({
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          onClick={() => startRefresh(() => router.refresh())}
+          style={refreshButtonStyle}
+        >
+          {isRefreshing ? '刷新中...' : '刷新'}
+        </button>
+      </div>
       <div style={{ marginBottom: 4 }}>
         <Tabs
           items={[
@@ -316,4 +329,15 @@ const summaryCardStyle: React.CSSProperties = {
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
+};
+
+const refreshButtonStyle: React.CSSProperties = {
+  border: '1px solid rgba(59,130,246,0.35)',
+  borderRadius: 8,
+  padding: '8px 14px',
+  background: 'rgba(59,130,246,0.12)',
+  color: '#93c5fd',
+  cursor: 'pointer',
+  fontSize: 12,
+  fontWeight: 600
 };

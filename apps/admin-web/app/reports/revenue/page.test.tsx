@@ -1,285 +1,52 @@
-/**
- * reports/revenue/page.test.tsx — 营收报表 L1 测试
- *
- * 覆盖: 营收数据聚合、日周月趋势、同比环比计算
- * 正例: 数据完整性、趋势计算、增长率验证
- * 反例: 空数据、零营收、负值处理
- * 边界: 大额营收、长周期、单日数据
- */
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'revenue-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'revenue-data.ts'), 'utf-8')
 
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
-import RevenuePage from './page';
-import fs from 'node:fs';
+describe('reports/revenue/page.tsx 结构固证', () => {
+  it('page 应为 server wrapper 并加载营收快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function RevenuePage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadRevenueSnapshot()'))
+    assert.ok(PAGE_SRC.includes('<RevenueClient snapshot={snapshot} />'))
+  })
 
-/* ── 类型 ── */
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+  })
+})
 
-interface RevenueRecord {
-  date: string;
-  revenueCents: number;
-  orderCount: number;
-  avgOrderValueCents: number;
-  refundCents: number;
-  netRevenueCents: number;
-}
+describe('reports/revenue/client 结构固证', () => {
+  it('client 应保留筛选、导出与刷新能力', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('useMemo'))
+    assert.ok(CLIENT_SRC.includes('搜索日期，例如 07-27'))
+    assert.ok(CLIENT_SRC.includes('导出营收快照'))
+    assert.ok(CLIENT_SRC.includes('每日营收明细'))
+  })
+})
 
-interface RevenueTrend {
-  daily: RevenueRecord[];
-  weekly: { week: string; totalCents: number; orderCount: number }[];
-  monthly: { month: string; totalCents: number; orderCount: number }[];
-  totalCents: number;
-  totalOrders: number;
-  avgDailyCents: number;
-}
-
-interface CompareResult {
-  current: number;
-  previous: number;
-  change: number;
-  changePercent: number;
-}
-
-function computeRevenueTrend(records: RevenueRecord[]): RevenueTrend {
-  const totalCents = records.reduce((s, r) => s + r.netRevenueCents, 0);
-  const totalOrders = records.reduce((s, r) => s + r.orderCount, 0);
-  return {
-    daily: records,
-    weekly: [],
-    monthly: [],
-    totalCents,
-    totalOrders,
-    avgDailyCents: records.length > 0 ? Math.round(totalCents / records.length) : 0,
-  };
-}
-
-function compareRevenue(current: number, previous: number): CompareResult {
-  const change = current - previous;
-  const changePercent = previous !== 0 ? Math.round((change / previous) * 10000) / 100 : 0;
-  return { current, previous, change, changePercent };
-}
-
-function parseDateStr(date: string): Date {
-  const d = new Date(date);
-  return d;
-}
-
-function isWeekend(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  const day = d.getDay();
-  return day === 0 || day === 6;
-}
-
-/* ── 辅助 ── */
-
-function setup() {
-  cleanup();
-  return render(React.createElement(RevenuePage));
-}
-
-/* ============================================================
- * 1. 页面渲染测试
- * ============================================================ */
-
-describe('revenue: 页面渲染', () => {
-  it('包含页面标题', () => {
-    assert.ok(SRC.includes('营收报表'));
-  });
-
-  it('包含页面说明', () => {
-    assert.ok(SRC.includes('每日营收趋势与同比环比分析'));
-  });
-
-  it('包含门禁标题与说明', () => {
-    assert.ok(SRC.includes('营收报表访问受限'));
-    assert.ok(SRC.includes('dashboard:read'));
-  });
-
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"));
-  });
-
-  it('通过 PageShell 传递页面标题', () => {
-    assert.ok(SRC.includes('PageShell title="📈 营收报表"'));
-  });
-
-  it('component is a function', () => {
-    assert.equal(typeof RevenuePage, 'function');
-  });
-});
-
-/* ============================================================
- * 2. 数据类型验证
- * ============================================================ */
-
-describe('revenue: 数据类型', () => {
-  it('RevenueRecord has all required fields', () => {
-    const r: RevenueRecord = { date: '2026-07-01', revenueCents: 500000, orderCount: 120, avgOrderValueCents: 4167, refundCents: 5000, netRevenueCents: 495000 };
-    assert.equal(typeof r.date, 'string');
-    assert.equal(typeof r.revenueCents, 'number');
-    assert.equal(typeof r.orderCount, 'number');
-    assert.equal(typeof r.avgOrderValueCents, 'number');
-    assert.equal(typeof r.refundCents, 'number');
-    assert.equal(typeof r.netRevenueCents, 'number');
-  });
-
-  it('netRevenueCents equals revenueCents minus refundCents', () => {
-    const r = { date: '2026-07-01', revenueCents: 500000, refundCents: 5000 };
-    const net = r.revenueCents - r.refundCents;
-    assert.equal(net, 495000);
-  });
-
-  it('avgOrderValueCents is revenueCents per order', () => {
-    const r: RevenueRecord = { date: '2026-07-01', revenueCents: 500000, orderCount: 100, avgOrderValueCents: 0, refundCents: 0, netRevenueCents: 500000 };
-    const avg = r.orderCount > 0 ? Math.round(r.revenueCents / r.orderCount) : 0;
-    assert.equal(avg, 5000);
-  });
-
-  it('date format is YYYY-MM-DD', () => {
-    const dates = ['2026-07-01', '2026-01-15', '2026-12-31'];
-    for (const d of dates) {
-      assert.match(d, /^\d{4}-\d{2}-\d{2}$/);
-      const parsed = parseDateStr(d);
-      assert.ok(parsed instanceof Date);
-      assert.ok(!Number.isNaN(parsed.getTime()));
-    }
-  });
-
-  it('orderCount is non-negative integer', () => {
-    assert.equal(typeof 120, 'number');
-    assert.ok(Number.isInteger(120));
-    assert.ok(120 >= 0);
-  });
-});
-
-/* ============================================================
- * 3. 业务逻辑验证
- * ============================================================ */
-
-describe('revenue: 业务逻辑', () => {
-  const MOCK_RECORDS: RevenueRecord[] = [
-    { date: '2026-07-01', revenueCents: 500000, orderCount: 120, avgOrderValueCents: 4167, refundCents: 5000, netRevenueCents: 495000 },
-    { date: '2026-07-02', revenueCents: 620000, orderCount: 145, avgOrderValueCents: 4276, refundCents: 8000, netRevenueCents: 612000 },
-    { date: '2026-07-03', revenueCents: 480000, orderCount: 110, avgOrderValueCents: 4364, refundCents: 3000, netRevenueCents: 477000 },
-    { date: '2026-07-04', revenueCents: 750000, orderCount: 180, avgOrderValueCents: 4167, refundCents: 12000, netRevenueCents: 738000 },
-    { date: '2026-07-05', revenueCents: 890000, orderCount: 210, avgOrderValueCents: 4238, refundCents: 15000, netRevenueCents: 875000 },
-    { date: '2026-07-06', revenueCents: 0, orderCount: 0, avgOrderValueCents: 0, refundCents: 0, netRevenueCents: 0 },
-    { date: '2026-07-07', revenueCents: 340000, orderCount: 80, avgOrderValueCents: 4250, refundCents: 2000, netRevenueCents: 338000 },
-  ];
-
-  it('computeRevenueTrend totalCents sums net revenue', () => {
-    const trend = computeRevenueTrend(MOCK_RECORDS);
-    const expected = MOCK_RECORDS.reduce((s, r) => s + r.netRevenueCents, 0);
-    assert.equal(trend.totalCents, expected);
-  });
-
-  it('computeRevenueTrend totalOrders sums order count', () => {
-    const trend = computeRevenueTrend(MOCK_RECORDS);
-    const expected = MOCK_RECORDS.reduce((s, r) => s + r.orderCount, 0);
-    assert.equal(trend.totalOrders, expected);
-  });
-
-  it('computeRevenueTrend avgDailyCents is total / days', () => {
-    const trend = computeRevenueTrend(MOCK_RECORDS);
-    const total = MOCK_RECORDS.reduce((s, r) => s + r.netRevenueCents, 0);
-    assert.equal(trend.avgDailyCents, Math.round(total / MOCK_RECORDS.length));
-  });
-
-  it('compareRevenue calculates correct change and percent', () => {
-    const result = compareRevenue(500000, 400000);
-    assert.equal(result.current, 500000);
-    assert.equal(result.previous, 400000);
-    assert.equal(result.change, 100000);
-    assert.equal(result.changePercent, 25);
-  });
-
-  it('compareRevenue with zero previous returns 0%', () => {
-    const result = compareRevenue(500000, 0);
-    assert.equal(result.changePercent, 0);
-  });
-
-  it('compareRevenue with negative change', () => {
-    const result = compareRevenue(300000, 500000);
-    assert.equal(result.change, -200000);
-    assert.equal(result.changePercent, -40);
-  });
-
-  it('isWeekend returns true for Saturday', () => {
-    assert.ok(isWeekend('2026-07-04'));
-  });
-
-  it('isWeekend returns true for Sunday', () => {
-    assert.ok(isWeekend('2026-07-05'));
-  });
-
-  it('isWeekend returns false for Monday', () => {
-    assert.ok(!isWeekend('2026-07-06'));
-  });
-
-  it('empty records trend returns zero values', () => {
-    const trend = computeRevenueTrend([]);
-    assert.equal(trend.totalCents, 0);
-    assert.equal(trend.totalOrders, 0);
-    assert.equal(trend.avgDailyCents, 0);
-  });
-
-  it('single-day trend works', () => {
-    const trend = computeRevenueTrend([MOCK_RECORDS[0]]);
-    assert.equal(trend.totalCents, MOCK_RECORDS[0].netRevenueCents);
-    assert.equal(trend.totalOrders, MOCK_RECORDS[0].orderCount);
-  });
-
-  it('zero revenue day does not break total', () => {
-    const zeroDay = MOCK_RECORDS[5];
-    assert.equal(zeroDay.revenueCents, 0);
-    assert.equal(zeroDay.orderCount, 0);
-    const trend = computeRevenueTrend([zeroDay]);
-    assert.equal(trend.totalCents, 0);
-  });
-
-  it('parseDateStr handles valid date strings', () => {
-    const d = parseDateStr('2026-07-01');
-    assert.ok(d instanceof Date);
-    assert.equal(d.getFullYear(), 2026);
-    assert.equal(d.getMonth(), 6);
-    assert.equal(d.getDate(), 1);
-  });
-
-  it('refundCents never exceeds revenueCents', () => {
-    for (const r of MOCK_RECORDS) {
-      assert.ok(r.refundCents <= r.revenueCents, `退款(${r.refundCents})不超过营收(${r.revenueCents})`);
-    }
-  });
-
-  it('avgOrderValueCents consistency check', () => {
-    for (const r of MOCK_RECORDS) {
-      if (r.orderCount > 0) {
-        const calc = Math.round(r.revenueCents / r.orderCount);
-        assert.ok(Math.abs(calc - r.avgOrderValueCents) < 100, `avgOrderValueCents should be close to calculated`);
-      }
-    }
-  });
-
-  it('large revenue values handled correctly', () => {
-    const big = { date: '2026-12-31', revenueCents: 9999999999, orderCount: 100000, avgOrderValueCents: 100000, refundCents: 0, netRevenueCents: 9999999999 };
-    assert.equal(big.revenueCents, 9999999999);
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe('Reports / Revenue — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+describe('reports/revenue/data 结构固证', () => {
+  it('data 应定义营收快照合同与样本数据', () => {
+    assert.ok(DATA_SRC.includes('export interface RevenueSnapshot'))
+    assert.ok(DATA_SRC.includes('REVENUE_TREND'))
+    assert.ok(DATA_SRC.includes('SOURCE_BREAKDOWN'))
+    assert.ok(DATA_SRC.includes('loadRevenueSnapshot'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'reports-revenue-mock'"))
+  })
+})
