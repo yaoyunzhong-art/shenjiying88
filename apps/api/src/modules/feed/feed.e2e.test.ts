@@ -30,55 +30,49 @@ class TestFeedController {
   @Get()
   getFeed(@Query('channel') channel?: FeedChannel, @Query('status') status?: PostStatus, @Query('limit') limit?: string, @Query('offset') offset?: string) {
     const posts = this.svc.getFeed(channel, status, limit ? Number(limit) : 20, offset ? Number(offset) : 0)
-    return { success: true, data: { posts, total: posts.length } }
+    return { posts, total: posts.length }
   }
 
   @Get('posts/:id')
   getPost(@Param('id') id: string) {
-    const post = this.svc.getPost(id)
-    return { success: true, data: post }
+    return this.svc.getPost(id)
   }
 
   @Post('posts')
   createPost(@Body() body: { channel: FeedChannel; title: string; content: string; authorId: string; authorName: string; tags?: string[] }) {
-    const post = this.svc.createPost(body)
-    return { success: true, data: post }
+    return this.svc.createPost(body)
   }
 
   @Post('posts/:id/like')
   likePost(@Param('id') id: string, @Body() body: { userId: string }) {
-    const post = this.svc.likePost(id, body.userId)
-    return { success: true, data: post }
+    return this.svc.likePost(id, body.userId)
   }
 
   @Post('posts/:id/unlike')
   unlikePost(@Param('id') id: string, @Body() body: { userId: string }) {
-    const post = this.svc.unlikePost(id, body.userId)
-    return { success: true, data: post }
+    return this.svc.unlikePost(id, body.userId)
   }
 
   @Post('posts/:id/comments')
   commentPost(@Param('id') id: string, @Body() body: { userId: string; userName: string; content: string }) {
-    const comment = this.svc.commentPost(id, body)
-    return { success: true, data: comment }
+    return this.svc.commentPost(id, body)
   }
 
   @Post('subscriptions')
   subscribe(@Body() body: { userId: string; channel: FeedChannel }) {
-    const sub = this.svc.subscribeFeed(body.userId, body.channel)
-    return { success: true, data: sub }
+    return this.svc.subscribeFeed(body.userId, body.channel)
   }
 
   @Delete('subscriptions')
   unsubscribe(@Body() body: { userId: string; channel: FeedChannel }) {
     this.svc.unsubscribeFeed(body.userId, body.channel)
-    return { success: true, data: null }
+    return null
   }
 
   @Get('subscriptions')
   getSubscriptions(@Query('userId') userId: string) {
     const subscriptions = this.svc.getSubscriptions(userId)
-    return { success: true, data: { subscriptions, total: subscriptions.length } }
+    return { subscriptions, total: subscriptions.length }
   }
 }
 
@@ -137,7 +131,6 @@ it('e2e: filter feed by non-existent channel returns empty', async () => {
 it('e2e: feed with limit parameter returns reduced results', async () => {
   const { app, feedService } = await buildApp()
   try {
-    // Create extra posts so we have more than the limit
     feedService.createPost({ channel: 'activity', title: 'Post 1', content: 'c1', authorId: 'u1', authorName: 'u1' })
     feedService.createPost({ channel: 'activity', title: 'Post 2', content: 'c2', authorId: 'u2', authorName: 'u2' })
     feedService.createPost({ channel: 'activity', title: 'Post 3', content: 'c3', authorId: 'u3', authorName: 'u3' })
@@ -180,7 +173,7 @@ it('e2e: create post then query by id', async () => {
     assert.equal(getRes.body.data.authorName, '人力资源部')
   } finally {
     await app.close()
-  })
+  }
 })
 
 it('e2e: create post with tags includes tags in response', async () => {
@@ -251,7 +244,7 @@ it('e2e: double like is idempotent — likes do not increase again', async () =>
 
     await request(app.getHttpServer()).post(`/test/feed/posts/${postId}/like`).send({ userId: 'user-idempotent' })
     const secondLike = await request(app.getHttpServer()).post(`/test/feed/posts/${postId}/like`).send({ userId: 'user-idempotent' })
-    assert.equal(secondLike.body.data.likes, initialLikes + 1) // no further increase
+    assert.equal(secondLike.body.data.likes, initialLikes + 1)
   } finally {
     await app.close()
   }
@@ -365,7 +358,7 @@ it('e2e: subscribe to channel and list subscriptions', async () => {
     assert.equal(listRes.body.data.total, 1)
   } finally {
     await app.close()
-  })
+  }
 })
 
 it('e2e: subscribe to multiple channels lists all', async () => {
@@ -389,7 +382,7 @@ it('e2e: duplicate subscription is idempotent', async () => {
     await request(app.getHttpServer()).post('/test/feed/subscriptions').send({ userId: 'dup-user', channel: 'system' })
 
     const listRes = await request(app.getHttpServer()).get('/test/feed/subscriptions?userId=dup-user')
-    assert.equal(listRes.body.data.total, 1) // still 1
+    assert.equal(listRes.body.data.total, 1)
   } finally {
     await app.close()
   }
@@ -490,7 +483,9 @@ it('e2e: create posts in all four channel types and verify via filter', async ()
     }
     for (const ch of channels) {
       const res = await request(app.getHttpServer()).get(`/test/feed?channel=${ch}`)
-      assert.equal(res.body.data.total, 1, `Expected 1 post for channel ${ch}`)
+      // system and promotion have 1 default post + 1 new post = 2; activity and member have 1 new post = 1
+      const expected = ch === 'system' || ch === 'promotion' ? 2 : 1
+      assert.equal(res.body.data.total, expected, `Expected ${expected} posts for channel ${ch}`)
     }
   } finally {
     await app.close()
