@@ -1,4 +1,4 @@
-import { readRateLimitsLedgerDetailParam } from '@m5/types'
+import { readRateLimitsLedgerDetailParam, type QuotaLedgerStatus } from '@m5/types'
 import { AdminPermissionGate } from '../../../components/admin-permission-gate'
 import RateLimitsLedgerDetailClient from './rate-limits-ledger-detail-client'
 import { loadRateLimitsLedgerDetailPageSnapshot } from './rate-limits-ledger-detail-data'
@@ -32,11 +32,12 @@ function readQueryParam(value: string | string[] | undefined): string | undefine
 export default async function RateLimitsLedgerDetailPage({ params, searchParams }: PageProps) {
   const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams])
   const ledgerId = readLedgerId(resolvedParams.ledger)
+  const status = readQueryParam(resolvedSearch.status) as QuotaLedgerStatus | 'ALL' | undefined
   const snapshot = await loadRateLimitsLedgerDetailPageSnapshot(ledgerId ?? '', {
     tenantId: readQueryParam(resolvedSearch.tenantId),
     policyCode: readQueryParam(resolvedSearch.policyCode),
     subjectKey: readQueryParam(resolvedSearch.subjectKey),
-    status: readQueryParam(resolvedSearch.status),
+    status,
   })
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,

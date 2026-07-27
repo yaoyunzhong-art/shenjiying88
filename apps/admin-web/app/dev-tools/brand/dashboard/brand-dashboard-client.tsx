@@ -39,14 +39,13 @@ export default function BrandDashboardClient({ snapshot }: { snapshot: BrandDash
   return (
     <PageShell title="品牌运营看板">
       <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
-        <div style={refreshCardStyle}>
-          <div>
-            客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath} · 周期过滤: {period}
-          </div>
-          <button type="button" onClick={handleRefresh} style={refreshButtonStyle}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
-        </div>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          extra={<>周期过滤: {period}</>}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
 
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>品牌运营看板</h2>

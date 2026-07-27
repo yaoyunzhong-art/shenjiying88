@@ -10,12 +10,13 @@ export default function CategoryDetailClient({
 }: {
   snapshot: CategoryDetailSnapshot
 }) {
+  type CategoryStatus = 'active' | 'inactive' | 'pending'
   const router = useRouter()
   const [isRefreshing, startRefresh] = useTransition()
   const [message, setMessage] = useState('')
   const [name, setName] = useState(snapshot.item?.name ?? '')
   const [sortOrder, setSortOrder] = useState(snapshot.item?.sortOrder ?? 0)
-  const [status, setStatus] = useState(snapshot.item?.status ?? 'active')
+  const [status, setStatus] = useState<CategoryStatus>(snapshot.item?.status ?? 'active')
 
   useEffect(() => {
     setName(snapshot.item?.name ?? '')
@@ -66,7 +67,11 @@ export default function CategoryDetailClient({
             </label>
             <label className="text-sm text-slate-600">
               分类状态
-              <select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value as CategoryStatus)}
+                className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+              >
                 <option value="active">active</option>
                 <option value="inactive">inactive</option>
                 <option value="pending">pending</option>

@@ -45,14 +45,12 @@ export default function StockClient({ snapshot }: { snapshot: StockPageSnapshot 
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh} style={refreshButtonStyle}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
-      </div>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}>
         <div style={cardStyle}><div>品项数</div><div style={{ marginTop: 8, fontSize: 24, fontWeight: 700 }}>{STOCK_ROWS.length}</div></div>
         <div style={cardStyle}><div>总库存</div><div style={{ marginTop: 8, fontSize: 24, fontWeight: 700 }}>{summary.totalQty}</div></div>

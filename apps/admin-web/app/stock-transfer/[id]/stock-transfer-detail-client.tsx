@@ -177,28 +177,13 @@ export default function StockTransferDetailClient({
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div
-        style={{
-          padding: 14,
-          borderRadius: 12,
-          background: 'rgba(15, 23, 42, 0.35)',
-          border: '1px solid rgba(148, 163, 184, 0.18)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-          color: '#cbd5e1',
-          fontSize: 12,
-        }}
-      >
-        <div>
-          客户端快照上下文: {snapshot.sourceLabel} · 调拨单样本: {snapshot.id} · 刷新路径:{' '}
-          {snapshot.refreshPath}
-        </div>
-        <button type="button" onClick={handleRefresh}>
-          {isRefreshing ? '刷新中...' : '刷新快照'}
-        </button>
-      </div>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        extra={<>调拨单样本: {snapshot.id}</>}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+      />
 
       {!transfer ? (
         <main style={{ maxWidth: 860, margin: '0 auto', padding: 32, color: '#f87171' }}>

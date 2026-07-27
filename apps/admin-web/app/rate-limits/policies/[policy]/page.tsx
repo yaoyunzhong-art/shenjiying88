@@ -1,4 +1,4 @@
-import { readRateLimitsPolicyDetailParam } from '@m5/types'
+import { readRateLimitsPolicyDetailParam, type QuotaLedgerStatus } from '@m5/types'
 import { AdminPermissionGate } from '../../../components/admin-permission-gate'
 import RateLimitsPolicyDetailClient from './rate-limits-policy-detail-client'
 import { loadRateLimitsPolicyDetailPageSnapshot } from './rate-limits-policy-detail-data'
@@ -32,11 +32,12 @@ function readQueryParam(value: string | string[] | undefined): string | undefine
 export default async function RateLimitsPolicyDetailPage({ params, searchParams }: PageProps) {
   const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams])
   const policyId = readPolicyId(resolvedParams.policy)
+  const status = readQueryParam(resolvedSearch.status) as QuotaLedgerStatus | 'ALL' | undefined
   const snapshot = await loadRateLimitsPolicyDetailPageSnapshot(policyId ?? '', {
     tenantId: readQueryParam(resolvedSearch.tenantId),
     policyCode: readQueryParam(resolvedSearch.policyCode),
     subjectKey: readQueryParam(resolvedSearch.subjectKey),
-    status: readQueryParam(resolvedSearch.status),
+    status,
   })
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,

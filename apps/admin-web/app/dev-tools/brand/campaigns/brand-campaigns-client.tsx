@@ -47,14 +47,13 @@ export default function BrandCampaignsClient({ snapshot }: { snapshot: BrandCamp
   return (
     <PageShell title="营销活动">
       <Space style={{ width: '100%', flexDirection: 'column', gap: 16 }}>
-        <div style={refreshCardStyle}>
-          <div>
-            客户端快照上下文: {snapshot.sourceLabel} · 刷新路径: {snapshot.refreshPath} · 渠道过滤: {channelFilter}
-          </div>
-          <button type="button" onClick={handleRefresh} style={refreshButtonStyle}>
-            {isRefreshing ? '刷新中...' : '刷新快照'}
-          </button>
-        </div>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          extra={<>渠道过滤: {channelFilter}</>}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
 
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <h2 style={{ color: '#f8fafc', margin: 0 }}>营销活动</h2>
