@@ -13,7 +13,7 @@
  *  - getEdgeNodeStats:    正例
  *  - 测试辅助:            正例（add/remove/list entries）
  *
- * 全部内联 mock。≥ 18 项测试。
+ * 全部内联 mock。≥ 30 项测试。
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -328,6 +328,118 @@ describe('CdnCacheService', () => {
       expect(service.listCacheEntriesForTesting()).toHaveLength(1)
       service.removeCacheEntryForTesting('/test')
       expect(service.listCacheEntriesForTesting()).toHaveLength(0)
+    })
+  })
+
+  // ── matchRule: disabled 规则 ──────────────────────────────
+  describe('matchRule disabled', () => {
+    it('🔲 边界: disabled 规则不参与匹配', async () => {
+      await service.createRule({
+        name: 'disabled-api',
+        urlPattern: '/api/*',
+        enabled: false,
+        priority: 100,
+      } as CreateRuleDto)
+      const rule = await service.matchRule('/api/orders')
+      expect(rule).toBeNull()
+    })
+
+    it('🔲 边界: method 不匹配', async () => {
+      await service.createRule({
+        name: 'only-get',
+        urlPattern: '/api/*',
+        methods: ['GET'],
+      } as CreateRuleDto)
+      const rule = await service.matchRule('/api/orders', 'POST')
+      expect(rule).toBeNull()
+    })
+  })
+
+  // ── getCacheControlForUrl: different strategies ────────────
+  describe('getCacheControlForUrl strategies', () => {
+    it('✅ 正例: no-store 策略返回 no-store', async () => {
+      await service.createRule({
+        name: 'no-store-rule',
+        urlPattern: '/auth/*',
+        strategy: 'no-store',
+        maxAge: 0,
+      } as CreateRuleDto)
+      const header = await service.getCacheControlForUrl('/auth/login')
+      expect(header).toContain('no-store')
+      expect(header).not.toContain('max-age')
+    })
+
+    it('✅ 正例: immutable 策略', async () => {
+      await service.createRule({
+        name: 'immutable-rule',
+        urlPattern: '/static/*',
+        strategy: 'immutable',
+        maxAge: 31536000,
+      } as CreateRuleDto)
+      const header = await service.getCacheControlForUrl('/static/v1/bundle.js')
+      expect(header).toContain('immutable')
+      expect(header).toContain('max-age=31536000')
+    })
+  })
+
+  // ── invalidate with edgeNodeIds ───────────────────────────
+  describe('invalidate with specific nodes', () => {
+    it('✅ 正例: 指定边缘节点失效', async () => {
+      const node = await service.addEdgeNode({
+        name: 'node-1', region: 'r1', endpoint: 'https://n1',
+      } as AddEdgeNodeDto)
+      service.addCacheEntryForTesting({
+        key: '/data', url: '/data', etag: '"a"', statusCode: 200, sizeBytes: 100,
+        ttlMs: 300000, cachedAt: Date.now(), expiresAt: Date.now() + 300000,
+      } as never)
+
+      const inv = await service.invalidate({
+        mode: 'url', target: '/data', edgeNodeIds: [node.id],
+      } as InvalidateDto)
+      expect(inv.edgeNodeIds).toContain(node.id)
+      expect(inv.affectedEntries).toBe(1)
+    })
+  })
+
+  // ── listInvalidations ─────────────────────────────────────
+  describe('listInvalidations', () => {
+    it('✅ 正例: 列出失效记录', async () => {
+      await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1',
+      } as AddEdgeNodeDto)
+      service.addCacheEntryForTesting({
+        key: '/x', url: '/x', etag: '"e"', statusCode: 200, sizeBytes: 10,
+        ttlMs: 1000, cachedAt: Date.now(), expiresAt: Date.now() + 1000,
+      } as never)
+
+      await service.invalidate({ mode: 'url', target: '/x' } as InvalidateDto)
+      const list = await service.listInvalidations()
+      expect(list.length).toBeGreaterThanOrEqual(1)
+      expect(list[0].status).toBe('completed')
+    })
+  })
+
+  // ── getEdgeNodeStats empty ────────────────────────────────
+  describe('getEdgeNodeStats empty', () => {
+    it('🔲 边界: 无节点返回零值', () => {
+      const fresh = new CdnCacheService()
+      const stats = fresh.getEdgeNodeStats()
+      expect(stats.totalNodes).toBe(0)
+      expect(stats.onlineNodes).toBe(0)
+      expect(stats.totalCapacityBytes).toBe(0)
+      expect(stats.averageHitRate).toBe(0)
+    })
+  })
+
+  // ── updateRule no-op ──────────────────────────────────────
+  describe('updateRule edge', () => {
+    it('🔲 边界: 空更新不改变字段', async () => {
+      const rule = await service.createRule({
+        name: 'noop', urlPattern: '/noop/*',
+      } as CreateRuleDto)
+      const updated = await service.updateRule(rule.id, {} as UpdateRuleDto)
+      expect(updated.name).toBe('noop')
+      expect(updated.maxAge).toBe(3600) // default
     })
   })
 })
