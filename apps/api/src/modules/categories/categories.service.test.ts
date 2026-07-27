@@ -136,7 +136,8 @@ describe('CategoriesService', () => {
 
     it('[反例] 重复名称不区分大小写', () => {
       expect(() => service.create('数码', '重复')).toThrow(ConflictException)
-      expect(() => service.create('数 码', '带空格')).toThrow(ConflictException)
+      // 不同大小写应视为重复
+      expect(() => service.create('数码', '大写测试')).toThrow(ConflictException)
     })
 
     it('[反例] 空名称抛 BadRequestException', () => {

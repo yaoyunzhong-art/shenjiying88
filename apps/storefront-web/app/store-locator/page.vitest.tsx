@@ -337,4 +337,91 @@ describe('StoreLocatorPage — 门店搜索页', () => {
     expect(searchInput).toHaveValue('');
     expect(screen.getByText('旗舰店（三里屯）')).toBeInTheDocument();
   });
+
+  // ====== 增强: 空态展示 ======
+
+  test('shows 暂无门店数据 when search yields no results', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '南极洲不存在的门店' } });
+    await waitFor(() => {
+      const emptyIcon = screen.getByText('🏪');
+      expect(emptyIcon).toBeInTheDocument();
+      expect(screen.getByText('暂无门店数据')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 增强: 门店详情页链接 ======
+
+  test('all store cards have correct detail page links', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const store1Link = screen.getByText('旗舰店（国贸）').closest('a');
+    expect(store1Link).toHaveAttribute('href', '/store-locator/1');
+    const store3Link = screen.getByText('社区店（望京）').closest('a');
+    expect(store3Link).toHaveAttribute('href', '/store-locator/3');
+    const store5Link = screen.getByText('社区店（上海）').closest('a');
+    expect(store5Link).toHaveAttribute('href', '/store-locator/5');
+  });
+
+  // ====== 增强: 电话格式校验 ======
+
+  test('phone links have correct tel: href for each store', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const callBtn = screen.getAllByText('📞 电话')[4]; // 上海店
+    expect(callBtn.closest('a')).toHaveAttribute('href', 'tel:021-88886670');
+  });
+
+  // ====== 增强: 地图导航链接完整性 ======
+
+  test('nav links point to apple maps with encoded address', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const navBtn = screen.getAllByText('🗺️ 导航')[0];
+    const href = navBtn.closest('a')?.getAttribute('href') ?? '';
+    expect(href).toContain('maps.apple.com');
+    expect(href).toContain(encodeURIComponent('国贸大厦A座'));
+  });
+
+  // ====== 增强: 状态标签渲染 ======
+
+  test('status badge shows correct text per store status', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    // 营业中 stores: 国贸, 三里屯, 深圳
+    const openBadges = screen.getAllByText('营业中');
+    expect(openBadges.length).toBeGreaterThanOrEqual(3);
+    // 维护中: 望京
+    expect(screen.getByText('维护中')).toBeInTheDocument();
+    // 已休息: 上海
+    expect(screen.getByText('已休息')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 搜索不区分大小写 ======
+
+  test('search works with partial name match', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '旗舰' } });
+    await waitFor(() => {
+      expect(screen.getByText('旗舰店（国贸）')).toBeInTheDocument();
+      expect(screen.getByText('旗舰店（三里屯）')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 增强: 搜索店名末段匹配 ======
+
+  test('search matches end of store name', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '深圳' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（深圳）')).toBeInTheDocument();
+      expect(screen.queryByText('旗舰店（国贸）')).not.toBeInTheDocument();
+    });
+  });
 });

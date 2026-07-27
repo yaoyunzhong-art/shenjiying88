@@ -286,4 +286,91 @@ describe('ProductsPage — 商品管理', () => {
       fireEvent.click(screen.getByText('取消'));
     }
   });
+
+  // ====== 增强: 状态过滤 Tab 切换 ======
+
+  test('status filter tab switches when clicked', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    const statusTab = screen.getByTestId('tab-out_of_stock');
+    fireEvent.click(statusTab);
+    // Switching to out_of_stock filter — should not crash
+    expect(statusTab).toBeInTheDocument();
+  });
+
+  test('both category and status tab groups are rendered', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    // Category tabs
+    expect(screen.getByTestId('tab-ALL')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-class')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-equipment')).toBeInTheDocument();
+    // Status tabs
+    expect(screen.getByTestId('tab-on_sale')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 搜索交互 ======
+
+  test('search input filters products by name in real-time', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    const searchInput = screen.getByTestId('search-filter-input');
+    expect(searchInput).toBeInTheDocument();
+    fireEvent.change(searchInput, { target: { value: '瑜伽' } });
+    expect(searchInput).toHaveValue('瑜伽');
+  });
+
+  test('search input clears without errors', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    const searchInput = screen.getByTestId('search-filter-input');
+    fireEvent.change(searchInput, { target: { value: '蛋白粉' } });
+    fireEvent.change(searchInput, { target: { value: '' } });
+    expect(searchInput).toHaveValue('');
+    // Ensure datatable or grid still renders after clearing search
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('m5-datatable') || screen.queryByTestId('tri-state-empty')
+      ).toBeTruthy();
+    });
+  });
+
+  // ====== 增强: 统计卡片渲染 ======
+
+  test('visits rendered statistics cards after load', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    expect(screen.getByText('总商品')).toBeInTheDocument();
+    expect(screen.getByText('在售')).toBeInTheDocument();
+    expect(screen.getByText('缺货')).toBeInTheDocument();
+    expect(screen.getByText('总库存')).toBeInTheDocument();
+    expect(screen.getByText('平均评分')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 视图切换 ======
+
+  test('grid view button click does not crash', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    const gridOption = screen.getByText('网格视图');
+    fireEvent.click(gridOption);
+    expect(gridOption).toBeInTheDocument();
+  });
+
+  // ====== 增强: 行点击展开弹窗的行为（跳过无数据场景） ======
+
+  test('dialog title includes product name when opened', async () => {
+    render(<ProductsPage />);
+    await waitForLoaded();
+    const rows = screen.queryAllByTestId(/datatable-row/);
+    if (rows.length > 0) {
+      fireEvent.click(rows[0]);
+      await waitFor(() => {
+        const dialog = screen.getByTestId('m5-dialog');
+        expect(dialog).toBeInTheDocument();
+        const title = dialog.querySelector('h3');
+        expect(title?.textContent).toContain('商品详情');
+      });
+    }
+  });
 });

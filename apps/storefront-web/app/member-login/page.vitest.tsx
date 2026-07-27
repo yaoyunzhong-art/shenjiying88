@@ -366,4 +366,100 @@ describe('MemberLoginPage — 会员登录', () => {
     render(<MemberLoginPage />);
     expect(screen.getByText(/© 2024 神机营 SaaS/)).toBeInTheDocument();
   });
+
+  // ====== 增强: 微信登录交互 ======
+
+  test('WeChat login button is clickable', () => {
+    render(<MemberLoginPage />);
+    const wechatBtn = screen.getByText('微信一键登录');
+    expect(wechatBtn).toBeInTheDocument();
+    expect(wechatBtn.tagName).toBe('BUTTON');
+    fireEvent.click(wechatBtn);
+    // 确保点击不会导致崩溃
+    expect(screen.getByText('微信一键登录')).toBeInTheDocument();
+  });
+
+  test('WeChat login button has green styling', () => {
+    render(<MemberLoginPage />);
+    const wechatBtn = screen.getByText('微信一键登录');
+    expect(wechatBtn).toHaveStyle('background: rgba(34, 197, 94, 0.15)');
+    expect(wechatBtn).toHaveStyle('color: #4ade80');
+  });
+
+  // ====== 增强: 表单提交禁用态 ======
+
+  test('submit button is disabled during form submission', async () => {
+    mockUseFormSubmit.mockReturnValue({ state: { isSubmitting: true }, submit: mockSubmit });
+    render(<MemberLoginPage />);
+    const submitBtn = screen.getByTestId('submit-btn');
+    expect(submitBtn).toBeDisabled();
+  });
+
+  test('submit button shows loading label when submitting', async () => {
+    mockUseFormSubmit.mockReturnValue({ state: { isSubmitting: true }, submit: mockSubmit });
+    render(<MemberLoginPage />);
+    expect(screen.getByText('登录中...')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 注册链接导航 ======
+
+  test('register link navigates to /member-register', () => {
+    render(<MemberLoginPage />);
+    const registerLink = screen.getByText('立即注册').closest('a');
+    expect(registerLink).toHaveAttribute('href', '/member-register');
+    expect(registerLink).toHaveStyle('color: #f59e0b');
+  });
+
+  test('other login methods section is visible', () => {
+    render(<MemberLoginPage />);
+    expect(screen.getByText('其他登录方式')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 安全事件面板交互 ======
+
+  test('security events panel toggle shows all events', async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/security-events')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([
+          { id: 'e1', type: 'failed_attempt' as const, time: '10:30', detail: '来自北京IP登录失败', severity: 'medium' as const },
+          { id: 'e2', type: 'new_device' as const, time: '09:15', detail: '新设备 iPhone 15', severity: 'low' as const },
+          { id: 'e3', type: 'location_change' as const, time: '08:00', detail: '异地登录 上海', severity: 'high' as const },
+        ]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    localStorageStore['member_info'] = JSON.stringify({ memberId: 'mem-001' });
+    render(<MemberLoginPage />);
+    await waitFor(() => {
+      expect(screen.getByText('3 条')).toBeInTheDocument();
+    });
+    const expandBtn = screen.getByText('查看全部 3 条');
+    expect(expandBtn).toBeInTheDocument();
+    fireEvent.click(expandBtn);
+    await waitFor(() => {
+      expect(screen.getByText('收起')).toBeInTheDocument();
+    });
+  });
+
+  test('login history table search filters records', async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/login-history')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([
+          { id: 'r1', mobile: '138****0000', time: '10:00', ip: '192.168.1.1', device: 'iPhone', success: true },
+          { id: 'r2', mobile: '139****1111', time: '09:00', ip: '10.0.0.1', device: 'Android', success: false },
+        ]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    localStorageStore['member_info'] = JSON.stringify({ memberId: 'mem-001' });
+    render(<MemberLoginPage />);
+    await waitFor(() => {
+      expect(screen.getByText('登录记录')).toBeInTheDocument();
+    });
+    const searchInput = screen.getByPlaceholderText('搜索手机号/IP…');
+    fireEvent.change(searchInput, { target: { value: '138' } });
+    await waitFor(() => {
+      expect(screen.getByText('138****0000')).toBeInTheDocument();
+    });
+  });
 });
