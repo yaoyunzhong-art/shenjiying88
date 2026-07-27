@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import { Button, Card, Modal, PageShell, Progress, Select, Space, Statistic, Table, Tabs, Tag } from '@m5/ui'
 import type { AnalyticsSnapshot, AnalyticsTrendPoint } from './analytics-data'
@@ -13,8 +13,7 @@ const DIAGNOSTIC_COLORS = {
 } as const
 
 export default function AnalyticsClient({ snapshot }: { snapshot: AnalyticsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('week')
   const [tabKey, setTabKey] = useState('revenue')
   const [detailPoint, setDetailPoint] = useState<AnalyticsTrendPoint | null>(null)
@@ -54,9 +53,7 @@ export default function AnalyticsClient({ snapshot }: { snapshot: AnalyticsSnaps
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="经营分析" subtitle="server wrapper + snapshot loader + client renderer">

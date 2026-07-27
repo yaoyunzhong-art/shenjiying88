@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -31,8 +31,7 @@ export default function ReportsClient({
 }: {
   snapshot: ReportsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [tabKey, setTabKey] = useState('overview')
@@ -58,9 +57,7 @@ export default function ReportsClient({
     )
   }, [search, snapshot.customReports])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockCreate() {
     message.success('报表创建中（mock）')

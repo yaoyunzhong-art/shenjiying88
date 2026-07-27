@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -63,7 +64,7 @@ export default function TenantClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [keyword, setKeyword] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<TenantStatus | 'all'>('all');

@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import {
   FormField,
   FormSubmitFeedback,
@@ -36,13 +36,15 @@ import {
 
 type SubmitState = 'idle' | 'submitting' | 'success'
 
+import { useRouter } from 'next/navigation'
+
 export default function AnnouncementsClient({
   snapshot,
 }: {
   snapshot: AnnouncementsSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [announcements, setAnnouncements] = useState<Announcement[]>(snapshot.announcements)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -261,12 +263,10 @@ export default function AnnouncementsClient({
           </button>
           <button
             type="button"
-            onClick={() =>
-              startRefresh(() => {
-                resetForm()
-                router.refresh()
-              })
-            }
+            onClick={() => {
+              resetForm()
+              handleRefresh()
+            }}
             disabled={isRefreshing}
             style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d9d9d9', background: '#fff', cursor: 'pointer' }}
           >

@@ -1,10 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 import { AdminAlertDetailRouteView } from './detail-presenter'
 import type { AlertDetailSnapshot } from './alert-detail-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 const cardStyle = {
   borderRadius: 16,
@@ -24,12 +23,7 @@ const buttonStyle = {
 } as const
 
 export default function AlertDetailClient({ snapshot }: { snapshot: AlertDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

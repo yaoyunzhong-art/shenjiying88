@@ -1,8 +1,8 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { Dialog, FormField, FormSubmitFeedback, PageShell, SubmitButton, WorkspaceBreadcrumb } from '@m5/ui';
 
@@ -22,19 +22,14 @@ interface ActionFeedback {
 }
 
 export default function MemberCardsClient({ snapshot }: { snapshot: MemberCardsPageSnapshot }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [cards, setCards] = useState<MemberCard[]>(snapshot.cards);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<IssueCardFormData>({ memberId: '', memberName: '', cardType: 'virtual' });
   const [submitState, setSubmitState] = useState<ActionFeedback>({ isSubmitting: false });
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   const filteredCards = useMemo(
     () => cards.filter((item) => [item.cardNumber, item.memberName, item.cardType].join(' ').toLowerCase().includes(searchTerm.toLowerCase())),

@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
@@ -14,7 +15,7 @@ function statusLabel(isValid: boolean): string {
 
 export default function ImportMembersClient({ snapshot }: { snapshot: ImportMembersPageSnapshot }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [stage, setStage] = useState<ImportStage>('upload');
   const [selectedFileName, setSelectedFileName] = useState('');
   const [config, setConfig] = useState<ImportConfig>(snapshot.defaultConfig);
@@ -29,11 +30,7 @@ export default function ImportMembersClient({ snapshot }: { snapshot: ImportMemb
     setProgress(null);
   }, [snapshot]);
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   const stats = useMemo(() => {
     const success = previewData.filter((item) => item.isValid).length;

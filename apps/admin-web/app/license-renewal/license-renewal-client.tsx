@@ -1,11 +1,11 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import { Button, Card, Input, Modal, PageShell, Select, Space, Statistic, Tabs, Tag } from '@m5/ui'
 import type { LicenseRenewalSnapshot } from './license-renewal-data'
 import type { RenewalRecord, RenewalStrategy } from './types'
 import SnapshotRefreshCard from '../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 const panelStyle = {
   borderRadius: 16,
@@ -88,8 +88,7 @@ function renderRecordStatus(status: RenewalRecord['status']) {
 }
 
 export default function LicenseRenewalClient({ snapshot }: { snapshot: LicenseRenewalSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activeTab, setActiveTab] = useState('strategy')
   const [strategies, setStrategies] = useState<RenewalStrategy[]>(snapshot.strategies)
   const [records, setRecords] = useState<RenewalRecord[]>(snapshot.records)
@@ -127,10 +126,6 @@ export default function LicenseRenewalClient({ snapshot }: { snapshot: LicenseRe
       autoRenewalEnabled,
     }
   }, [records, strategies])
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   function handleOpenCreate() {
     setEditingStrategyId(null)

@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { ReconciliationRule, ReconciliationRulesSnapshotDelivery } from './rules-data'
 
 type RuleTab = 'active' | 'inactive' | 'settings'
@@ -33,12 +33,11 @@ export default function ReconciliationRulesClient({
 }: {
   snapshot: ReconciliationRulesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [tabView, setTabView] = useState<RuleTab>('active')
+    const [tabView, setTabView] = useState<RuleTab>('active')
   const [editingRule, setEditingRule] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<ReconciliationRule>>({})
   const [saving, setSaving] = useState(false)
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [rules, setRules] = useState<ReconciliationRule[]>(snapshot.rules)
   const [mutationError, setMutationError] = useState<string | null>(null)
 
@@ -73,7 +72,7 @@ export default function ReconciliationRulesClient({
         )
         setEditingRule(null)
         setEditForm({})
-        startRefresh(() => router.refresh())
+        handleRefresh()
       } catch (error) {
         setMutationError(error instanceof Error ? error.message : '保存失败')
       } finally {
@@ -100,7 +99,7 @@ export default function ReconciliationRulesClient({
             item.id === ruleId ? { ...item, enabled, updatedAt: new Date().toISOString() } as ReconciliationRule : item
           )
         )
-        startRefresh(() => router.refresh())
+        handleRefresh()
       } catch (error) {
         setMutationError(error instanceof Error ? error.message : '切换状态失败')
       }
@@ -124,7 +123,7 @@ export default function ReconciliationRulesClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

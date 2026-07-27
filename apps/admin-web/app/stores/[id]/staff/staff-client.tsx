@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Avatar,
@@ -34,8 +34,7 @@ export default function StaffClient({
 }: {
   snapshot: StaffSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [showAdd, setShowAdd] = useState(false)
   const [detailEmployee, setDetailEmployee] = useState<Employee | null>(null)
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | 'all'>('all')
@@ -125,9 +124,7 @@ export default function StaffClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell>

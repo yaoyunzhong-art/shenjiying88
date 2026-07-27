@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   STAFF_ROLE_MAP,
   STAFF_STATUS_MAP,
@@ -21,12 +21,10 @@ export default function StaffClient({
 }: {
   snapshot: StaffSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [keyword, setKeyword] = useState('')
+    const [keyword, setKeyword] = useState('')
   const [status, setStatus] = useState<StaffStatus | 'all'>('all')
   const [role, setRole] = useState<StaffRole | 'all'>('all')
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const loweredKeyword = keyword.trim().toLowerCase()
 
   const filteredStaff = useMemo(
@@ -57,7 +55,7 @@ export default function StaffClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

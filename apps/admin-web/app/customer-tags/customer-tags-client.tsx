@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   FormField,
   FormSubmitFeedback,
@@ -53,8 +53,7 @@ export default function CustomerTagsClient({
 }: {
   snapshot: CustomerTagsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tags, setTags] = useState<Tag[]>(snapshot.tags)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -172,7 +171,7 @@ export default function CustomerTagsClient({
         </select>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #d9d9d9', background: '#fff', cursor: 'pointer' }}
         >
           {isRefreshing ? '刷新中...' : '刷新'}

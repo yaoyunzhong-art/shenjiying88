@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import {
   USER_LEVEL_OPTIONS,
@@ -33,8 +33,7 @@ export default function UserPortraitClient({
 }: {
   snapshot: UserPortraitSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [levelFilter, setLevelFilter] = useState('all')
   const [page, setPage] = useState(0)
@@ -57,7 +56,7 @@ export default function UserPortraitClient({
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="button" style={{ ...styles.btn, background: 'rgba(67, 97, 238, 0.7)' }} onClick={() => startRefresh(() => router.refresh())} disabled={isRefreshing}>
+          <button type="button" style={{ ...styles.btn, background: 'rgba(67, 97, 238, 0.7)' }} onClick={() => handleRefresh()} disabled={isRefreshing}>
             {isRefreshing ? '刷新中...' : '刷新'}
           </button>
           <select

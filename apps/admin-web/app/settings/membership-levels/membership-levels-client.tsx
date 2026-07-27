@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { MembershipLevelsSnapshot } from './membership-levels-data'
 import { summarizeMembershipLevels } from './membership-levels-data'
 
@@ -41,8 +41,7 @@ const styles = {
 } as const
 
 export default function MembershipLevelsClient({ snapshot }: { snapshot: MembershipLevelsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeLevel, setActiveLevel] = useState<number>(snapshot.levels[0]?.level ?? 1)
 
   const summary = useMemo(() => summarizeMembershipLevels(snapshot.levels), [snapshot.levels])
@@ -63,7 +62,7 @@ export default function MembershipLevelsClient({ snapshot }: { snapshot: Members
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

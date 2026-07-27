@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import React, { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   AIScenarioSimulator,
   Button,
@@ -31,8 +31,7 @@ export default function AiScenarioSimulatorClient({
 }: {
   snapshot: AiScenarioSimulatorSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activePreset, setActivePreset] = useState<string>(snapshot.presets[0]?.id ?? '')
   const [showDescription, setShowDescription] = useState(true)
   const [history, setHistory] = useState<HistoryRecord[]>([])
@@ -158,7 +157,7 @@ export default function AiScenarioSimulatorClient({
           </div>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={{
               padding: '8px 16px',

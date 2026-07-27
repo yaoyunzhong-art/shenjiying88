@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import type { AdminDashboardSnapshotDelivery } from './dashboard-data'
 
 type DashboardTab = 'overview' | 'trend' | 'distribution'
@@ -15,8 +15,7 @@ export default function AdminDashboardClient({
 }: {
   snapshot: AdminDashboardSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview')
 
   const totals = useMemo(() => {
@@ -36,7 +35,7 @@ export default function AdminDashboardClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
         >

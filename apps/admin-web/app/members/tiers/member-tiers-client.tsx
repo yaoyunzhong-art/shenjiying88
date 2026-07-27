@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useMemo, useState, useTransition } from 'react';
@@ -10,7 +11,7 @@ import type { MemberTiersPageSnapshot } from './member-tiers-data';
 
 export default function MemberTiersClient({ snapshot }: { snapshot: MemberTiersPageSnapshot }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTiers = useMemo(
@@ -21,11 +22,7 @@ export default function MemberTiersClient({ snapshot }: { snapshot: MemberTiersP
     [searchTerm, snapshot.tiers]
   );
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   return (
     <div style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>

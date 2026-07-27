@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { HR_STATUS_MAP, type HrEmployeeStatus, type HrSnapshotDelivery } from './hr-data'
 
 export default function HrClient({
@@ -9,12 +9,10 @@ export default function HrClient({
 }: {
   snapshot: HrSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [keyword, setKeyword] = useState('')
+    const [keyword, setKeyword] = useState('')
   const [department, setDepartment] = useState<string>('all')
   const [status, setStatus] = useState<HrEmployeeStatus | 'all'>('all')
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const loweredKeyword = keyword.trim().toLowerCase()
 
   const filteredEmployees = useMemo(
@@ -51,7 +49,7 @@ export default function HrClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

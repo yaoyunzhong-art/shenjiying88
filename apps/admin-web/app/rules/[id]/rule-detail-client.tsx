@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { StatusBadge, useToast } from '@m5/ui'
 import type { RuleDetailSnapshotDelivery, RulePriority, RuleStatus } from './rule-detail-data'
 
@@ -31,9 +31,8 @@ const priorityLabel: Record<RulePriority, string> = {
 }
 
 export default function RuleDetailClient({ snapshot }: RuleDetailClientProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { toast } = useToast()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [detail, setDetail] = useState(snapshot.detail)
 
   const stats = useMemo(
@@ -47,7 +46,7 @@ export default function RuleDetailClient({ snapshot }: RuleDetailClientProps) {
   )
 
   function handleRefresh() {
-    startRefresh(() => router.refresh())
+    handleRefresh()
     toast('规则详情快照已请求刷新')
   }
 

@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { buildActorHeaders } from '@m5/sdk'
 import { Col, Row, message } from 'antd'
 import {
@@ -48,8 +48,7 @@ export default function SchedulingClient({
 }: {
   snapshot: SchedulingSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [shiftFilter, setShiftFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState<SchedulingStatus | 'all'>('all')
   const [tabKey, setTabKey] = useState('list')
@@ -120,7 +119,7 @@ export default function SchedulingClient({
 
       message.success('排班创建成功')
       setShowCreate(false)
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch {
       message.error('创建排班失败')
     } finally {
@@ -147,7 +146,7 @@ export default function SchedulingClient({
       }
 
       message.success('签到成功')
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch {
       message.error('签到失败')
     } finally {
@@ -385,7 +384,7 @@ export default function SchedulingClient({
           </div>
           <Space>
             <Button
-              onClick={() => startRefresh(() => router.refresh())}
+              onClick={() => handleRefresh()}
               loading={isRefreshing}
               disabled={isSubmitting}
             >

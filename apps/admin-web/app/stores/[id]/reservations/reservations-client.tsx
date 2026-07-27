@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -30,8 +30,7 @@ export default function ReservationsClient({
 }: {
   snapshot: ReservationsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | 'all'>('all')
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
@@ -106,9 +105,7 @@ export default function ReservationsClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockCreate() {
     message.success('预约已创建（mock）')

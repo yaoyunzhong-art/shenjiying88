@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState } from 'react'
 import { TRANSFER_TYPES, TYPE_LABEL, URGENCY_LEVELS, URGENCY_LABEL } from '../stock-transfer-data'
 import type { StockTransferFormSnapshot } from './stock-transfer-form-data'
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 interface TransferFormValues {
   sourceStore: string
@@ -16,7 +17,6 @@ interface TransferFormValues {
   urgency: string
   remark: string
 }
-import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 const DEFAULT_VALUES: TransferFormValues = {
   sourceStore: '',
@@ -60,8 +60,7 @@ function validate(values: TransferFormValues): string[] {
 }
 
 export default function StockTransferFormClient({ snapshot }: { snapshot: StockTransferFormSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [values, setValues] = useState<TransferFormValues>(DEFAULT_VALUES)
   const [submitMessage, setSubmitMessage] = useState<string | null>(null)
   const [errors, setErrors] = useState<string[]>([])
@@ -70,10 +69,6 @@ export default function StockTransferFormClient({ snapshot }: { snapshot: StockT
     () => TRANSFER_TYPES.map((type) => TYPE_LABEL[type]).join(' / '),
     []
   )
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   function updateField(field: keyof TransferFormValues, value: string) {
     setValues((current) => ({ ...current, [field]: value }))

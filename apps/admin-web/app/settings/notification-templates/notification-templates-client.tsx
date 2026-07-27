@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react'
 import { useMemo, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { NotificationTemplatesSnapshotDelivery } from './notification-templates-data'
 
 const styles: Record<string, CSSProperties> = {
@@ -57,9 +57,7 @@ export default function NotificationTemplatesClient({
 }: {
   snapshot: NotificationTemplatesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const summary = useMemo(() => {
     const enabledTemplates = snapshot.templates.filter((template) => template.enabled).length
     const totalVariables = snapshot.templates.reduce(
@@ -85,7 +83,7 @@ export default function NotificationTemplatesClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

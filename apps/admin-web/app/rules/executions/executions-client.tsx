@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { RuleExecutionStatus, RuleExecutionsSnapshotDelivery } from './executions-data'
 import { RULE_EXECUTION_STATUS_LABELS } from './executions-data'
 
@@ -29,8 +29,7 @@ export default function RuleExecutionsClient({
 }: {
   snapshot: RuleExecutionsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | RuleExecutionStatus>('all')
   const [timeRange, setTimeRange] = useState<(typeof TIME_FILTERS)[number]>('24h')
@@ -64,7 +63,7 @@ export default function RuleExecutionsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

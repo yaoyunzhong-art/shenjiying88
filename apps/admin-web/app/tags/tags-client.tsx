@@ -1,9 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState } from 'react'
 import type { TagsPageSnapshot } from './tags-page-data'
 import SnapshotRefreshCard from '../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 const cardStyle = {
   borderRadius: 16,
@@ -23,8 +23,7 @@ const buttonStyle = {
 } as const
 
 export default function TagsClient({ snapshot }: { snapshot: TagsPageSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activeTab, setActiveTab] = useState<'all' | '消费行为' | '兴趣偏好' | '会员等级'>('all')
 
   const filteredTags = useMemo(() => {
@@ -35,10 +34,6 @@ export default function TagsClient({ snapshot }: { snapshot: TagsPageSnapshot })
   const topTag = useMemo(() => {
     return [...snapshot.tags].sort((left, right) => right.memberCount - left.memberCount)[0]
   }, [snapshot.tags])
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

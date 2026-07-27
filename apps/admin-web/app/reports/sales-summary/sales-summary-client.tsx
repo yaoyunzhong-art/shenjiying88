@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { SalesSummaryPeriod, SalesSummarySnapshot } from './sales-summary-data'
 
@@ -23,8 +23,7 @@ const periodLabel: Record<SalesSummaryPeriod, string> = {
 }
 
 export default function SalesSummaryClient({ snapshot }: { snapshot: SalesSummarySnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [keyword, setKeyword] = useState('')
   const [period, setPeriod] = useState<SalesSummaryPeriod>('week')
   const [channel, setChannel] = useState<'all' | SalesSummarySnapshot['records'][number]['channel']>('all')
@@ -55,9 +54,7 @@ export default function SalesSummaryClient({ snapshot }: { snapshot: SalesSummar
     }
   }, [visibleRecords])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16, color: '#e2e8f0' }}>

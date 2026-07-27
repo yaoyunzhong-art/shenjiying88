@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type {
   ActivityLog,
   ServiceStatus,
@@ -172,8 +172,7 @@ export default function SystemMonitorClient({
 }: {
   snapshot: SystemMonitorSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const { metrics, services, logs } = snapshot
 
   const systemHealth = useMemo(() => {
@@ -200,7 +199,7 @@ export default function SystemMonitorClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

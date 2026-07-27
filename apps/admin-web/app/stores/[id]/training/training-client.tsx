@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -29,8 +29,7 @@ export default function TrainingClient({
 }: {
   snapshot: TrainingSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<TrainingCourse['status'] | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [tabKey, setTabKey] = useState('courses')
@@ -52,7 +51,7 @@ export default function TrainingClient({
   function handleMockCreate() {
     message.info('当前为 mock 快照，创建培训仅做结构演示。')
     setShowCreate(false)
-    startRefresh(() => router.refresh())
+    handleRefresh()
   }
 
   const columns: Parameters<typeof Table>[0]['columns'] = [
@@ -127,7 +126,7 @@ export default function TrainingClient({
             </span>
           </div>
           <Space>
-            <Button onClick={() => startRefresh(() => router.refresh())} loading={isRefreshing}>
+            <Button onClick={() => handleRefresh()} loading={isRefreshing}>
               {isRefreshing ? '刷新中...' : '刷新'}
             </Button>
             <Button type="primary" onClick={() => setShowCreate(true)}>

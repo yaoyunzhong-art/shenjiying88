@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { SettlementReconciliationSnapshot } from './settlement-reconciliation-data'
 
@@ -23,8 +23,7 @@ const statusText: Record<SettlementReconciliationSnapshot['records'][number]['st
 }
 
 export default function SettlementReconciliationClient({ snapshot }: { snapshot: SettlementReconciliationSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [keyword, setKeyword] = useState('')
   const [status, setStatus] = useState<'all' | SettlementReconciliationSnapshot['records'][number]['status']>('all')
   const [actionMessage, setActionMessage] = useState('')
@@ -57,9 +56,7 @@ export default function SettlementReconciliationClient({ snapshot }: { snapshot:
     }
   }, [visibleRecords])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16, color: '#e2e8f0' }}>

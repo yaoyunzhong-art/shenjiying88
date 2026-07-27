@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import { Button, Card, Empty, Input, Modal, PageShell, Progress, Select, Space, Statistic, Table, Tabs, Tag } from '@m5/ui'
 import { DEVICE_STATUS_META, type DeviceStatus, type DevicesSnapshot, type StoreDevice } from './devices-data'
@@ -13,8 +13,7 @@ const DIAGNOSTIC_COLORS = {
 } as const
 
 export default function DevicesClient({ snapshot }: { snapshot: DevicesSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabKey, setTabKey] = useState('list')
   const [statusFilter, setStatusFilter] = useState<DeviceStatus | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -72,9 +71,7 @@ export default function DevicesClient({ snapshot }: { snapshot: DevicesSnapshot 
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="设备管理" subtitle="server wrapper + snapshot loader + client renderer">

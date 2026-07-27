@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -31,7 +32,7 @@ export default function ReportsClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReportCatalogStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');

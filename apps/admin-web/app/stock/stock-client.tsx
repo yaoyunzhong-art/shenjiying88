@@ -1,6 +1,6 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useRouter } from 'next/navigation'
 import { useMemo, useTransition } from 'react'
 import type { StockPageSnapshot } from './stock-data'
 
@@ -30,8 +30,7 @@ const cardStyle = {
 } as const
 
 export default function StockClient({ snapshot }: { snapshot: StockPageSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const summary = useMemo(() => {
     const totalQty = STOCK_ROWS.reduce((sum, item) => sum + item.totalQty, 0)
     const warningCount = STOCK_ROWS.filter((item) => item.availableQty > 0 && item.availableQty <= 20).length
@@ -39,9 +38,7 @@ export default function StockClient({ snapshot }: { snapshot: StockPageSnapshot 
     return { totalQty, warningCount, outOfStockCount }
   }, [])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

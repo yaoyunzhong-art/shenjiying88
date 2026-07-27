@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DEFAULT_MEMBER_CONFIG,
   type MemberConfig,
@@ -18,13 +18,11 @@ export default function MemberConfigClient({
 }: {
   snapshot: MemberConfigSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [config, setConfig] = useState<MemberConfig>(snapshot.config)
+    const [config, setConfig] = useState<MemberConfig>(snapshot.config)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
   const [changeReason, setChangeReason] = useState('')
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   useEffect(() => {
     setConfig(snapshot.config)
   }, [snapshot.config])
@@ -65,7 +63,7 @@ export default function MemberConfigClient({
       })
       showToast('success', '已提交配置更新请求')
       setChangeReason('')
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch (error) {
       showToast('error', `保存失败: ${(error as Error).message}`)
     } finally {
@@ -94,7 +92,7 @@ export default function MemberConfigClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ padding: '10px 24px', borderRadius: 4, border: '1px solid #ddd', background: '#fff' }}
         >

@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -92,7 +93,7 @@ export default function InventoryClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tenantId, setTenantId] = useState(snapshot.tenantId);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('all');

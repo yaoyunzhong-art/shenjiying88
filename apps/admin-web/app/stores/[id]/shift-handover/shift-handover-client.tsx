@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -28,8 +28,7 @@ export default function ShiftHandoverClient({
 }: {
   snapshot: ShiftHandoverSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<HandoverStatus | 'all'>('all')
   const [activeTab, setActiveTab] = useState('list')
   const [showStart, setShowStart] = useState(false)
@@ -72,9 +71,7 @@ export default function ShiftHandoverClient({
     { title: '时间', dataIndex: 'time' },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell>

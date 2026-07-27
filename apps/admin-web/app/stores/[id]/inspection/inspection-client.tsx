@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button, Card, Empty, Input, Modal, PageShell, Select, Space, Statistic, Table, Tabs, Tag, ToastContainer, useToast } from '@m5/ui';
 import type { TableColumn } from '@m5/ui';
 import { buildActorHeaders } from '@m5/sdk';
@@ -35,8 +35,7 @@ export default function InspectionClient({
 }: {
   snapshot: InspectionSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const { toasts, success, error, dismiss } = useToast();
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -57,7 +56,7 @@ export default function InspectionClient({
   );
 
   const refreshSnapshot = useCallback(() => {
-    startRefresh(() => router.refresh());
+    handleRefresh();
   }, [router, startRefresh]);
 
   const handleCreate = useCallback(async () => {

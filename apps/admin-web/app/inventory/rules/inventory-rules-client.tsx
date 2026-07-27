@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
@@ -41,7 +42,7 @@ export default function InventoryRulesClient({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tenantId, setTenantId] = useState(snapshot.tenantId)
   const [rules, setRules] = useState<InventoryRule[]>(snapshot.rules)
   const [filterType, setFilterType] = useState<RuleType | 'all'>('all')
@@ -73,12 +74,10 @@ export default function InventoryRulesClient({
   const refreshSnapshot = useCallback(
     (nextTenantId = tenantId) => {
       const nextPath = buildRefreshPath(nextTenantId)
-      startRefresh(() => {
-        router.replace(nextPath)
-        router.refresh()
-      })
+      router.replace(nextPath)
+      handleRefresh()
     },
-    [buildRefreshPath, router, startRefresh, tenantId]
+    [buildRefreshPath, router, handleRefresh, tenantId]
   )
 
   const readResponseMessage = useCallback(async (response: Response) => {

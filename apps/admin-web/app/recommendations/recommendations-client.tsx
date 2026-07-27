@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { RecommendationSnapshotDelivery } from './recommendations-data'
 
 type RecTab = 'overview' | 'funnel' | 'reasons' | 'coldstart' | 'coverage'
@@ -26,8 +26,7 @@ export default function RecommendationsClient({
 }: {
   snapshot: RecommendationSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tab, setTab] = useState<RecTab>('overview')
   const summary = snapshot.summary
 
@@ -51,7 +50,7 @@ export default function RecommendationsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff' }}
         >

@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState, useTransition } from 'react';
@@ -32,7 +33,7 @@ function validateForm(values: MemberTierFormValues): FieldError[] {
 
 export default function MemberTierFormClient({ snapshot }: { snapshot: MemberTierFormPageSnapshot }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [values, setValues] = useState<MemberTierFormValues>(snapshot.formDefaults);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
   const [submitState, setSubmitState] = useState<ActionFeedback>({ isSubmitting: false });
@@ -43,11 +44,7 @@ export default function MemberTierFormClient({ snapshot }: { snapshot: MemberTie
     setSubmitState({ isSubmitting: false });
   }, [snapshot]);
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   const getFieldError = useCallback((field: keyof MemberTierFormValues) => fieldErrors.find((item) => item.field === field)?.message, [fieldErrors]);
 

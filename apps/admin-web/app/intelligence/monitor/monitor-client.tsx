@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { Alert, MonitorSnapshotDelivery, TrendPoint } from './monitor-data'
 
 const TYPE_LABELS: Record<Alert['type'], string> = {
@@ -55,16 +55,15 @@ export default function MonitorClient({
 }: {
   snapshot: MonitorSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [typeFilter, setTypeFilter] = useState<'ALL' | Alert['type']>('ALL')
   const [sevFilter, setSevFilter] = useState<'ALL' | Alert['severity']>('ALL')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
 
   const triggerRefresh = useCallback(() => {
-    startRefresh(() => router.refresh())
-  }, [router, startRefresh])
+    handleRefresh()
+  }, [handleRefresh])
 
   useEffect(() => {
     if (!autoRefresh) return undefined

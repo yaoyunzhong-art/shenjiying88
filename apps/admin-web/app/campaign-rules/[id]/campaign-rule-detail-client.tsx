@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import type { CampaignRuleDetailSnapshotDelivery } from './campaign-rule-detail-data'
 import { formatBudget } from './campaign-rule-detail-data'
 
@@ -11,8 +11,7 @@ export default function CampaignRuleDetailClient({
 }: {
   snapshot: CampaignRuleDetailSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [status, setStatus] = useState(snapshot.rule.status)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -38,7 +37,7 @@ export default function CampaignRuleDetailClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

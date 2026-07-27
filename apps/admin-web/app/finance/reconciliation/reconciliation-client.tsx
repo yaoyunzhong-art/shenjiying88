@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type {
   DiffDetailRecord,
   DiffRecord,
@@ -29,8 +29,7 @@ export default function ReconciliationClient({
 }: {
   snapshot: ReconciliationSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabView, setTabView] = useState<TabView>('overview')
   const [details, setDetails] = useState(snapshot.details)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
@@ -42,7 +41,7 @@ export default function ReconciliationClient({
   useEffect(() => {
     if (!autoRefresh) return
     const timer = setInterval(() => {
-      startRefresh(() => router.refresh())
+      handleRefresh()
     }, 30000)
     return () => clearInterval(timer)
   }, [autoRefresh, router, startRefresh])
@@ -66,7 +65,7 @@ export default function ReconciliationClient({
         body: JSON.stringify({ date: snapshot.status.lastRunDate ?? new Date().toISOString().slice(0, 10) }),
       })
       setLocalMessage('已触发一次客户端对账演示请求，并回刷服务端快照。')
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch {
       setLocalMessage('对账演示请求失败，当前仍展示已有快照结果。')
     }
@@ -122,7 +121,7 @@ export default function ReconciliationClient({
           </button>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >

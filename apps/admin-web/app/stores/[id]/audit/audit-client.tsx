@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Col, Row, message } from 'antd';
 import {
   Button,
@@ -33,8 +33,7 @@ export default function AuditClient({
 }: {
   snapshot: AuditSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('list');
@@ -55,7 +54,7 @@ export default function AuditClient({
   }, [levelFilter, search, snapshot.records]);
 
   const refreshSnapshot = () => {
-    startRefresh(() => router.refresh());
+    handleRefresh();
   };
 
   const columns = [

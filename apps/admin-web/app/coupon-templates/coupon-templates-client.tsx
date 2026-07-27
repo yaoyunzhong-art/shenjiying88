@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
@@ -144,7 +145,7 @@ export default function CouponTemplatesClient({
   snapshot: CouponTemplatesSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [searchTerm, setSearchTerm] = useState('')
   const [tabFilter, setTabFilter] = useState<CouponStatus | 'ALL'>('active')
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null)
@@ -211,7 +212,7 @@ export default function CouponTemplatesClient({
           </div>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.38)', color: '#94a3b8', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
           >

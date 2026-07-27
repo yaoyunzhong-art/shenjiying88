@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { useMemo, useState } from 'react'
 import {
   DetailClosureBar,
   DetailShell,
@@ -19,6 +18,7 @@ import {
   type TimelineItem,
 } from '@m5/ui'
 import { useDetailActions } from '../../components/use-detail-actions'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 import {
   buildStandardBreadcrumb,
   buildStandardClosureLinks,
@@ -142,14 +142,9 @@ export default function StockTransferDetailClient({
 }: {
   snapshot: StockTransferDetailSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const transfer = snapshot.transfer
   const [remark, setRemark] = useState(transfer?.remark ?? '')
-
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => router.refresh())
-  }, [router])
 
   const formSubmit = useFormSubmit({
     onSubmit: async () => {

@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
 import { Row, Col, message } from 'antd'
@@ -15,7 +16,6 @@ import {
   Tag,
   Tooltip,
 } from '@m5/ui'
-import { useRouter } from 'next/navigation'
 import type { StoreOrdersSnapshotDelivery, StoreOrder } from './orders-data'
 
 const STATUS_CONFIG: Record<StoreOrder['status'], { color: string; label: string }> = {
@@ -38,8 +38,7 @@ export default function StoreOrdersClient({
 }: {
   snapshot: StoreOrdersSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [methodFilter, setMethodFilter] = useState<string>('all')
@@ -141,7 +140,7 @@ export default function StoreOrdersClient({
           </div>
           <Button
             type="default"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
           >
             {isRefreshing ? '刷新中...' : '刷新'}

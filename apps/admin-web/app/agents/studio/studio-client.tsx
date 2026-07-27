@@ -1,8 +1,9 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import { useTransition } from 'react';
+import Link from 'next/link';
 import {
   FormField,
   FormSubmitFeedback,
@@ -738,7 +739,7 @@ function DeleteConfigForm({ configs }: { configs: AgentConfig[] }) {
 
 export default function AgentStudioClient({ snapshot }: AgentStudioClientProps) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeTab, setActiveTab] = useState<StudioTab>('create-config');
   const [sessionMode, setSessionMode] = useState<SessionMode>('single');
   const { configs, deliveryMode } = snapshot;
@@ -760,7 +761,7 @@ export default function AgentStudioClient({ snapshot }: AgentStudioClientProps) 
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{
             padding: '8px 14px',

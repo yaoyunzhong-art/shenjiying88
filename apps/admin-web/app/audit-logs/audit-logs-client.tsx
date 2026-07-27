@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition, type CSSProperties, type KeyboardEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react'
 
 import {
   ACTION_TYPE_LABEL,
@@ -102,8 +102,7 @@ export default function AuditLogsClient({
 }: {
   snapshot: AuditLogsPageSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [tab, setTab] = useState<'all' | 'failure'>('all')
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -114,7 +113,7 @@ export default function AuditLogsClient({
   )
 
   const triggerRefresh = () => {
-    startRefresh(() => router.refresh())
+    handleRefresh()
   }
 
   const submitSearch = () => {

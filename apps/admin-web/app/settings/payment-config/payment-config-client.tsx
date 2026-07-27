@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react'
 import { useMemo, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { PaymentConfigSnapshotDelivery } from './payment-config-data'
 
 function statusLabel(status: 'normal' | 'degraded' | 'offline'): string {
@@ -57,9 +57,7 @@ export default function PaymentConfigClient({
 }: {
   snapshot: PaymentConfigSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const summary = useMemo(() => {
     const enabledChannels = snapshot.channels.filter((channel) => channel.enabled).length
     const degradedChannels = snapshot.channels.filter((channel) => channel.status !== 'normal').length
@@ -82,7 +80,7 @@ export default function PaymentConfigClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

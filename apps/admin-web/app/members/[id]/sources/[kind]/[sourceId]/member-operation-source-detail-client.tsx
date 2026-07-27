@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../../../components/use-snapshot-refresh'
 
 import { type ReactNode, useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -34,8 +34,7 @@ export default function MemberOperationSourceDetailClient({
   kind: MemberOperationsSourceKind
   sourceId: string
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [snapshot, setSnapshot] = useState(initialSnapshot)
   const [message, setMessage] = useState<string | null>(null)
   const [timelineCategory, setTimelineCategory] = useState<TimelineCategory>('all')
@@ -79,9 +78,7 @@ export default function MemberOperationSourceDetailClient({
     [attentionExecutionIds, attentionOnly, snapshot.timelineItems, timelineCategory]
   )
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   async function handleBatchReplay() {
     const replayableExecutionIds = snapshot.receipts
@@ -100,7 +97,7 @@ export default function MemberOperationSourceDetailClient({
       const success = results.filter((item) => item.receipt).length
       const failed = results.length - success
       setMessage(`批量 replay 已处理 ${results.length} 条回执，成功 ${success} 条，失败 ${failed} 条。`)
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } finally {
       setBatchReplaying(false)
     }
@@ -135,7 +132,7 @@ export default function MemberOperationSourceDetailClient({
       setMessage(
         `${decision === 'APPROVED' ? '批量审批通过' : '批量审批驳回'} ${results.length} 条，成功 ${success} 条，失败 ${failed} 条。`
       )
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } finally {
       if (decision === 'APPROVED') {
         setBatchApproving(false)

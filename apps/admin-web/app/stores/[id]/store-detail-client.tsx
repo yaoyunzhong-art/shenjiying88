@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 
 import {
   CopyToClipboard,
@@ -102,8 +102,7 @@ export default function StoreDetailClient({
 }: {
   snapshot: StoreDetailPageSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [editOpen, setEditOpen] = useState(false);
   const [errors, setErrors] = useState<EditFormErrors>({});
   const [formData, setFormData] = useState<EditFormData>(() =>
@@ -142,16 +141,14 @@ export default function StoreDetailClient({
     successMessage: '门店信息已更新成功。',
   });
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => router.refresh());
-  }, [router, startRefresh]);
+  
 
   const handleSave = useCallback(async () => {
     const result = await submit();
     if (result) {
       setEditOpen(false);
       resetSubmit();
-      startRefresh(() => router.refresh());
+      handleRefresh();
     }
   }, [resetSubmit, router, startRefresh, submit]);
 

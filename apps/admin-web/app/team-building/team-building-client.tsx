@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Badge,
   Button,
@@ -40,9 +40,8 @@ export default function TeamBuildingClient({
 }: {
   snapshot: TeamBuildingSnapshotDelivery
 }) {
-  const router = useRouter()
-  const toast = useToast()
-  const [isRefreshing, startRefresh] = useTransition()
+    const toast = useToast()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activities, setActivities] = useState(snapshot.activities)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<ActivityStatus | 'all'>('all')
@@ -159,7 +158,7 @@ export default function TeamBuildingClient({
           </Button>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >

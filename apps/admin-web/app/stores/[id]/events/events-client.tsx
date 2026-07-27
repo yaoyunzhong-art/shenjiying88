@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import { Button, Card, Empty, Input, Modal, PageShell, Select, Space, Statistic, Table, Tabs, Tag } from '@m5/ui'
 import { EVENT_STATUS_META, type EventsSnapshot, type EventStatus, type StoreEvent } from './events-data'
@@ -13,8 +13,7 @@ const DIAGNOSTIC_COLORS = {
 } as const
 
 export default function EventsClient({ snapshot }: { snapshot: EventsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [activeKey, setActiveKey] = useState('list')
@@ -71,9 +70,7 @@ export default function EventsClient({ snapshot }: { snapshot: EventsSnapshot })
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="活动管理" subtitle="server wrapper + snapshot loader + client renderer">

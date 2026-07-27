@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import {
   CopyToClipboard,
@@ -71,8 +71,7 @@ export default function MemberDetailClient({
 }: {
   snapshot: MemberDetailPageSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tab, setTab] = useState<'overview' | 'points' | 'recharge' | 'visits'>(
     'overview'
   )
@@ -102,7 +101,7 @@ export default function MemberDetailClient({
           </div>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             style={{
               padding: '10px 14px',
               borderRadius: 10,

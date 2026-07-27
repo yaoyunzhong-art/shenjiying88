@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -18,7 +19,7 @@ export default function FinanceDashboardClient({
   snapshot: FinanceDashboardSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [mutationNote, setMutationNote] = useState<string | null>(null)
   const dashboard = snapshot.dashboard
 
@@ -40,7 +41,7 @@ export default function FinanceDashboardClient({
         body: JSON.stringify({ date: dashboard.revenue.date }),
       })
       setMutationNote('已触发一次客户端对账演示请求，并回刷服务端快照。')
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch {
       setMutationNote('对账演示请求失败，当前仍展示已缓存的快照结果。')
     }
@@ -72,7 +73,7 @@ export default function FinanceDashboardClient({
           </button>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >

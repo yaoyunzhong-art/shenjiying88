@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -31,8 +31,7 @@ export default function MembersClient({
 }: {
   snapshot: MembersSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [tierFilter, setTierFilter] = useState<MemberTier | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<MemberStatus | 'all'>('all')
@@ -106,9 +105,7 @@ export default function MembersClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockCreate() {
     message.success('会员创建成功（mock）')

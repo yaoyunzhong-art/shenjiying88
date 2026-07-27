@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { RevenueSnapshot } from './revenue-data'
 
@@ -26,8 +26,7 @@ function formatDelta(current: number, previous: number) {
 }
 
 export default function RevenueClient({ snapshot }: { snapshot: RevenueSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [windowSize, setWindowSize] = useState<3 | 7>(7)
   const [focusSource, setFocusSource] = useState<'all' | RevenueSnapshot['sourceBreakdown'][number]['id']>('all')
@@ -58,9 +57,7 @@ export default function RevenueClient({ snapshot }: { snapshot: RevenueSnapshot 
 
   const maxRevenue = Math.max(...visibleTrend.map((item) => item.revenue))
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16, color: '#e2e8f0' }}>

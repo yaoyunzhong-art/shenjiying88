@@ -1,7 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import Link from 'next/link'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CategoryDetailSnapshot } from './category-detail-data'
 
@@ -10,9 +11,9 @@ export default function CategoryDetailClient({
 }: {
   snapshot: CategoryDetailSnapshot
 }) {
-  type CategoryStatus = 'active' | 'inactive' | 'pending'
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  type CategoryStatus = 'active' | 'inactive' | 'pending'
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [message, setMessage] = useState('')
   const [name, setName] = useState(snapshot.item?.name ?? '')
   const [sortOrder, setSortOrder] = useState(snapshot.item?.sortOrder ?? 0)
@@ -46,7 +47,7 @@ export default function CategoryDetailClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

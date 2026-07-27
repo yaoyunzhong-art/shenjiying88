@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { ApprovalRequest, BudgetItem, BudgetSnapshotDelivery, BudgetStatus } from './budget-data'
 
 function formatMoney(cents: number, currency = 'CNY'): string {
@@ -19,8 +19,7 @@ export default function BudgetClient({
 }: {
   snapshot: BudgetSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tab, setTab] = useState<'budgets' | 'approvals'>('budgets')
   const [budgets, setBudgets] = useState(snapshot.budgets)
   const [approvals, setApprovals] = useState(snapshot.approvals)
@@ -67,7 +66,7 @@ export default function BudgetClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >

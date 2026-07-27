@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import React, { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DataTable,
   FormField,
@@ -43,8 +43,7 @@ const cardDark: React.CSSProperties = {
 }
 
 export default function LoginClient({ snapshot }: { snapshot: LoginPageSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -151,7 +150,7 @@ export default function LoginClient({ snapshot }: { snapshot: LoginPageSnapshot 
                 <div style={{ fontSize: 13, color: '#94a3b8' }}>重拉时机：{snapshot.bootstrap.revalidateOn.join(' / ')}</div>
               </div>
             </div>
-            <button type="button" onClick={() => startRefresh(() => router.refresh())} style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(96, 165, 250, 0.35)', background: 'rgba(59, 130, 246, 0.14)', color: '#dbeafe', cursor: 'pointer' }}>
+            <button type="button" onClick={() => handleRefresh()} style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(96, 165, 250, 0.35)', background: 'rgba(59, 130, 246, 0.14)', color: '#dbeafe', cursor: 'pointer' }}>
               {isRefreshing ? '刷新中...' : '刷新快照'}
             </button>
           </div>

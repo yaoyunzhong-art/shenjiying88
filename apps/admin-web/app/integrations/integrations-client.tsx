@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { Integration, IntegrationsSnapshotDelivery } from './integrations-data'
 
 type IntTab = 'active' | 'inactive' | 'all'
@@ -72,9 +72,8 @@ export default function IntegrationsClient({
 }: {
   snapshot: IntegrationsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [tabView, setTabView] = useState<IntTab>('active')
-  const [isRefreshing, startRefresh] = useTransition()
+    const [tabView, setTabView] = useState<IntTab>('active')
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const integrations = snapshot.integrations
 
   const filtered = useMemo(
@@ -108,7 +107,7 @@ export default function IntegrationsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

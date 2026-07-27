@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { ShopAnalyticsSnapshot } from './analytics-data'
 
 function formatMoney(cents: number): string {
@@ -13,8 +13,7 @@ export default function AnalyticsClient({
 }: {
   snapshot: ShopAnalyticsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [range, setRange] = useState<'7d' | '14d'>('7d')
 
   const visibleTrends = useMemo(() => {
@@ -36,7 +35,7 @@ export default function AnalyticsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

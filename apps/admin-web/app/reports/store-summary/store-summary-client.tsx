@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { StoreSummarySnapshot } from './store-summary-data'
 
@@ -17,8 +17,7 @@ function formatCurrency(value: number) {
 }
 
 export default function StoreSummaryClient({ snapshot }: { snapshot: StoreSummarySnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [keyword, setKeyword] = useState('')
   const [status, setStatus] = useState<'all' | StoreSummarySnapshot['stores'][number]['status']>('all')
   const [actionMessage, setActionMessage] = useState('')
@@ -47,9 +46,7 @@ export default function StoreSummaryClient({ snapshot }: { snapshot: StoreSummar
     }
   }, [visibleStores])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16, color: '#e2e8f0' }}>

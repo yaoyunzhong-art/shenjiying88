@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
 import type { CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DataTable,
   FilterChips,
@@ -82,8 +82,7 @@ export default function TenantsClient({
 }: {
   snapshot: TenantsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const tenants = snapshot.tenants
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
     tenants,
@@ -167,7 +166,7 @@ export default function TenantsClient({
           <div style={{ fontSize: 12, color: '#94a3b8' }}>最新快照时间 {snapshot.generatedAt}</div>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={{
               padding: '8px 14px',

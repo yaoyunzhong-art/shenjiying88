@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useCallback, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Empty as AntEmpty, List, Spin, Typography, message } from 'antd'
 import { DollarOutlined, ReloadOutlined, SearchOutlined, UserOutlined } from '@ant-design/icons'
 import { Button, Card, CashierPanel, Input, PageShell, Space, Statistic, Tag } from '@m5/ui'
@@ -102,8 +102,7 @@ function ConsumptionHistory({ records }: { records: ConsumptionRecord[] }) {
 }
 
 export default function CashierClient({ snapshot }: { snapshot: CashierSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [searchQuery, setSearchQuery] = useState('')
   const [searchedMember, setSearchedMember] = useState<MemberProfile | null>(null)
   const [consumptionRecords, setConsumptionRecords] = useState<ConsumptionRecord[]>([])
@@ -112,9 +111,7 @@ export default function CashierClient({ snapshot }: { snapshot: CashierSnapshot 
   const [loadingRecords, setLoadingRecords] = useState(false)
   const [recordsError, setRecordsError] = useState<string | null>(null)
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {

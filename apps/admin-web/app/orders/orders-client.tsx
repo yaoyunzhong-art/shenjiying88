@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import type { CSSProperties } from 'react'
@@ -234,7 +235,7 @@ export default function OrdersClient({
   snapshot: OrdersSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const orders = snapshot.orders
   const searchFields = useMemo<(keyof OrderItem)[]>(
     () => ['orderNo', 'customerName', 'customerPhone', 'storeName', 'salesClerk'],
@@ -391,7 +392,7 @@ export default function OrdersClient({
           <div style={{ fontSize: 12, color: '#94a3b8' }}>最新快照时间 {snapshot.generatedAt}</div>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={{
               padding: '8px 14px',

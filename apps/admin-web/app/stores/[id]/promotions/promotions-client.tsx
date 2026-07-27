@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -38,8 +38,7 @@ export default function PromotionsClient({
 }: {
   snapshot: PromotionsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<PromotionStatus | 'all'>('all')
   const [search, setSearch] = useState('')
   const [tabKey, setTabKey] = useState('list')
@@ -129,9 +128,7 @@ export default function PromotionsClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockCreate() {
     message.success('促销活动已创建（mock）')

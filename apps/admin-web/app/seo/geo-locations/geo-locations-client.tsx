@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { GeoLocationsSnapshotDelivery } from './geo-locations-data'
 
@@ -10,8 +10,7 @@ export default function GeoLocationsClient({
 }: {
   snapshot: GeoLocationsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState<string>('ALL')
 
@@ -38,7 +37,7 @@ export default function GeoLocationsClient({
   }, [cityFilter, search, snapshot.rows])
 
   const refreshSnapshot = useCallback(() => {
-    startRefresh(() => router.refresh())
+    handleRefresh()
   }, [router, startRefresh])
 
   return (

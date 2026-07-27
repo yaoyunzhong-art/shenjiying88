@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -40,8 +40,7 @@ export default function ReconciliationClient({
 }: {
   snapshot: ReconciliationSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<ReconciliationStatus | 'all'>('all')
   const [methodFilter, setMethodFilter] = useState('all')
   const [showPerform, setShowPerform] = useState(false)
@@ -137,9 +136,7 @@ export default function ReconciliationClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handlePerform() {
     message.success(`对账完成（mock），发现 ${snapshot.summary.diffCount} 条差异记录`)

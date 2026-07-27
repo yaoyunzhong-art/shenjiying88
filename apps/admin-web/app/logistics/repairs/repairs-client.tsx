@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { RepairStatus, RepairsSnapshot } from './repairs-data'
 import { REPAIR_STATUS_LABEL, filterRepairRecords, summarizeRepairRecords } from './repairs-data'
 
@@ -42,8 +42,7 @@ const styles = {
 } as const
 
 export default function RepairsClient({ snapshot }: { snapshot: RepairsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeStatus, setActiveStatus] = useState<RepairStatus | 'all'>('all')
 
   const summary = useMemo(() => summarizeRepairRecords(snapshot.records), [snapshot.records])
@@ -64,7 +63,7 @@ export default function RepairsClient({ snapshot }: { snapshot: RepairsSnapshot 
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

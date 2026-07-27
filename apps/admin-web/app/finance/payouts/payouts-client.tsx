@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type {
   FinancePayoutsSnapshotDelivery,
   PayoutMethod,
@@ -34,8 +34,7 @@ export default function FinancePayoutsClient({
 }: {
   snapshot: FinancePayoutsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [payouts, setPayouts] = useState(snapshot.payouts)
   const [statusFilter, setStatusFilter] = useState<'all' | PayoutStatus>('all')
   const [methodFilter, setMethodFilter] = useState<'all' | PayoutMethod>('all')
@@ -71,7 +70,7 @@ export default function FinancePayoutsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >

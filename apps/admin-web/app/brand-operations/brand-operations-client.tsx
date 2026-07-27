@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import type {
   BrandAssetItem,
   BrandCampaignItem,
@@ -59,11 +59,9 @@ export default function BrandOperationsClient({
 }: {
   snapshot: BrandOperationsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [tab, setTab] = useState<BrandTab>('campaigns')
+    const [tab, setTab] = useState<BrandTab>('campaigns')
   const [keyword, setKeyword] = useState('')
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const summary = useMemo(
     () => ({
       assets: snapshot.assets.length,
@@ -119,7 +117,7 @@ export default function BrandOperationsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

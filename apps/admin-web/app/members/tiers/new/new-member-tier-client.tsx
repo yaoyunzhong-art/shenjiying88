@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState, useTransition } from 'react';
@@ -16,7 +17,7 @@ interface ActionFeedback {
 
 export default function NewMemberTierClient({ snapshot }: { snapshot: NewMemberTierPageSnapshot }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [formData, setFormData] = useState<NewMemberTierFormData>(snapshot.formDefaults);
   const [submitState, setSubmitState] = useState<ActionFeedback>({ isSubmitting: false });
 
@@ -25,11 +26,7 @@ export default function NewMemberTierClient({ snapshot }: { snapshot: NewMemberT
     setSubmitState({ isSubmitting: false });
   }, [snapshot]);
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   return (
     <div style={{ maxWidth: 840, margin: '0 auto', padding: 32 }}>

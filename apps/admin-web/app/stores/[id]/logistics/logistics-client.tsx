@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -42,8 +42,7 @@ export default function LogisticsClient({
 }: {
   snapshot: LogisticsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [shipmentFilter, setShipmentFilter] = useState<ShipmentStatus | 'all'>('all')
   const [reservationSearch, setReservationSearch] = useState('')
   const [tabKey, setTabKey] = useState('shipments')
@@ -130,9 +129,7 @@ export default function LogisticsClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockCreate() {
     message.success('预约已创建（mock）')

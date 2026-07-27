@@ -1,14 +1,13 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button, Card, Input, Modal, PageShell, Select, Space, Statistic, Table, Tag } from '@m5/ui'
 import type { BrandCampaignsSnapshot, CampaignRecord } from './brand-campaigns-data'
 import SnapshotRefreshCard from '../../../components/snapshot-refresh-card'
 
 export default function BrandCampaignsClient({ snapshot }: { snapshot: BrandCampaignsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [channelFilter, setChannelFilter] = useState('all')
   const [showCreate, setShowCreate] = useState(false)
 
@@ -40,9 +39,7 @@ export default function BrandCampaignsClient({ snapshot }: { snapshot: BrandCamp
     [snapshot.campaigns],
   )
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="营销活动">

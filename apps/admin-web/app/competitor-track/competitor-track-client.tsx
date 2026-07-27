@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition, type CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, type CSSProperties } from 'react'
 import type { CompetitorTrackSnapshot, CompetitorRecord, ScoreLevel } from './competitor-track-data'
 import {
   SCORE_LABELS,
@@ -305,8 +305,7 @@ function CompetitorDetailModal({ competitor, onClose }: { competitor: Competitor
 }
 
 export default function CompetitorTrackClient({ snapshot }: { snapshot: CompetitorTrackSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState('all')
   const [scoreFilter, setScoreFilter] = useState<ScoreLevel | 'all'>('all')
@@ -347,9 +346,7 @@ export default function CompetitorTrackClient({ snapshot }: { snapshot: Competit
     safeSetPage(1)
   }
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={S.page}>

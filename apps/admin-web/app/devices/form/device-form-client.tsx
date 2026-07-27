@@ -1,6 +1,6 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import DeviceFormLegacy from './device-form-legacy'
 import type { DeviceFormSnapshot } from './device-form-data'
@@ -10,12 +10,8 @@ export default function DeviceFormShellClient({
 }: {
   snapshot: DeviceFormSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
+  
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

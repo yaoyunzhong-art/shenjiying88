@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { LogisticsOrderStatus, LogisticsSnapshot } from './logistics-data'
 import {
   LOGISTICS_STATUS_LABEL,
@@ -72,8 +72,7 @@ function buildBadge(label: string, color: string) {
 }
 
 export default function LogisticsClient({ snapshot }: { snapshot: LogisticsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeStatus, setActiveStatus] = useState<LogisticsOrderStatus | 'all'>('all')
   const [searchText, setSearchText] = useState('')
   const [activeOrderId, setActiveOrderId] = useState<string | null>(snapshot.orders[0]?.id ?? null)
@@ -100,7 +99,7 @@ export default function LogisticsClient({ snapshot }: { snapshot: LogisticsSnaps
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { ContractsSnapshotDelivery, ContractTabKey } from './contracts-data'
 import {
   CONTRACT_STATUS_LABEL,
@@ -20,8 +20,7 @@ export default function ContractsClient({
 }: {
   snapshot: ContractsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabKey, setTabKey] = useState<ContractTabKey>('all')
   const [contracts, setContracts] = useState(snapshot.contracts)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -46,7 +45,7 @@ export default function ContractsClient({
             : contract,
         ),
       )
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch (error) {
       setActionError(error instanceof Error ? error.message : '合同签署失败')
     } finally {
@@ -70,7 +69,7 @@ export default function ContractsClient({
         ),
       )
       setDrafts((current) => ({ ...current, [id]: '' }))
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch (error) {
       setActionError(error instanceof Error ? error.message : '合同备注提交失败')
     } finally {
@@ -89,7 +88,7 @@ export default function ContractsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
         >

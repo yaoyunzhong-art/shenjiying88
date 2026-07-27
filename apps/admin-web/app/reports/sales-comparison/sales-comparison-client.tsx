@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { SalesComparisonPeriod, SalesComparisonSnapshot } from './sales-comparison-data'
 
@@ -34,8 +34,7 @@ function formatGrowth(current: number, previous: number) {
 }
 
 export default function SalesComparisonClient({ snapshot }: { snapshot: SalesComparisonSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [period, setPeriod] = useState<'all' | SalesComparisonPeriod>('all')
   const [keyword, setKeyword] = useState('')
   const [actionMessage, setActionMessage] = useState('')
@@ -60,9 +59,7 @@ export default function SalesComparisonClient({ snapshot }: { snapshot: SalesCom
     }
   }, [visibleRecords])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16, color: '#e2e8f0' }}>

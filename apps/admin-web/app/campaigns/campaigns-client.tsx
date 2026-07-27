@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, useCallback } from 'react'
 import { Modal, Form, Input, Select, DatePicker, InputNumber, message } from 'antd'
 import dayjs from 'dayjs'
 import type { Campaign, CampaignsSnapshotDelivery } from './campaigns-data'
@@ -96,11 +96,10 @@ export default function CampaignsClient({
 }: {
   snapshot: CampaignsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [tabView, setTabView] = useState<CampaignTab>('active')
+    const [tabView, setTabView] = useState<CampaignTab>('active')
   const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [form] = Form.useForm<CampaignFormValues>()
   const campaigns = snapshot.campaigns
 
@@ -148,7 +147,7 @@ export default function CampaignsClient({
       message.success('活动创建成功')
       setModalOpen(false)
       form.resetFields()
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch (error: unknown) {
       if (typeof error === 'object' && error !== null && 'errorFields' in error) return
       const messageText = error instanceof Error ? error.message : '创建失败'
@@ -156,7 +155,7 @@ export default function CampaignsClient({
     } finally {
       setSubmitting(false)
     }
-  }, [form, router, startRefresh])
+  }, [form, handleRefresh])
 
   return (
     <div className="space-y-6">
@@ -168,7 +167,7 @@ export default function CampaignsClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

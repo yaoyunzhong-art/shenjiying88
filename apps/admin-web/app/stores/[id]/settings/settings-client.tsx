@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -28,8 +28,7 @@ export default function SettingsClient({
 }: {
   snapshot: SettingsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [saved, setSaved] = useState(false)
   const [configValues, setConfigValues] = useState<Record<string, ConfigValue>>({})
   const [showImportModal, setShowImportModal] = useState(false)
@@ -56,9 +55,7 @@ export default function SettingsClient({
     setSaved(false)
   }
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleSave() {
     setSaved(true)

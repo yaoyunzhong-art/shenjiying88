@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { PaymentChannel, PaymentChannelsSnapshotDelivery } from './payment-channels-data'
 
 type ChanTab = 'online' | 'offline' | 'all'
@@ -35,9 +35,8 @@ export default function PaymentChannelsClient({
 }: {
   snapshot: PaymentChannelsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [tabView, setTabView] = useState<ChanTab>('all')
-  const [isRefreshing, startRefresh] = useTransition()
+    const [tabView, setTabView] = useState<ChanTab>('all')
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const channels = snapshot.channels
 
   const filtered = useMemo(
@@ -65,7 +64,7 @@ export default function PaymentChannelsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

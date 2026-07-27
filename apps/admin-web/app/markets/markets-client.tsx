@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -132,7 +133,7 @@ export default function MarketsClient({
   snapshot: MarketsSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<MarketStatus | 'ALL'>('ALL')
   const [regionFilter, setRegionFilter] = useState<MarketRegion | 'ALL'>('ALL')
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null)
@@ -243,7 +244,7 @@ export default function MarketsClient({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
           >
             {isRefreshing ? '刷新中...' : '刷新'}
           </Button>

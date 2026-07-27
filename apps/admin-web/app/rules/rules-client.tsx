@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useEffect, useMemo, useState, useTransition, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
@@ -48,7 +49,7 @@ export default function RulesClient({
   snapshot: RulesSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<RuleStatus | 'ALL'>('ALL')
   const [categoryFilter, setCategoryFilter] = useState<RuleCategory | 'ALL'>('ALL')

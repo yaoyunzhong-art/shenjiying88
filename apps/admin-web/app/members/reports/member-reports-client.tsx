@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import { InfoRow, PageShell, Tabs } from '@m5/ui'
 
@@ -48,8 +48,7 @@ export default function MemberReportsClient({
 }: {
   snapshot: MemberReportsPageSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tab, setTab] = useState<'overview' | 'rfm' | 'trend'>('overview')
   const latest = snapshot.metrics[0]
 
@@ -74,7 +73,7 @@ export default function MemberReportsClient({
           </div>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             style={btnStyle}
             disabled={isRefreshing}
           >

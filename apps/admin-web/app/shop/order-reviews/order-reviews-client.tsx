@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { OrderReviewsSnapshot, ReviewStatus } from './order-reviews-data'
 
 const STATUS_LABELS: Record<ReviewStatus, string> = {
@@ -15,8 +15,7 @@ export default function OrderReviewsClient({
 }: {
   snapshot: OrderReviewsSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | 'all'>('all')
   const [reviews, setReviews] = useState(snapshot.reviews)
 
@@ -48,7 +47,7 @@ export default function OrderReviewsClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

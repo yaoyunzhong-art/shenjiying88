@@ -1,6 +1,6 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 
 import type { ApprovalDetailSnapshot } from './approval-detail-data'
@@ -13,12 +13,8 @@ const shellStyle = {
 } as const
 
 export default function ApprovalDetailClient({ snapshot }: { snapshot: ApprovalDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
+  
 
   return (
     <div style={shellStyle}>

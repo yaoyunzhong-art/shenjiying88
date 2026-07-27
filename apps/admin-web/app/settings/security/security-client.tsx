@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react'
 import { useMemo, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { SecuritySnapshotDelivery } from './security-data'
 
 const styles: Record<string, any> = {
@@ -48,9 +48,7 @@ export default function SecurityClient({
 }: {
   snapshot: SecuritySnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const summary = useMemo(() => {
     const enabledCount = snapshot.complianceItems.filter((item) => item.enabled).length
     return {
@@ -71,7 +69,7 @@ export default function SecurityClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

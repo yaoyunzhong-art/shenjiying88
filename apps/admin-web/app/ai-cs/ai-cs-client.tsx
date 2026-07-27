@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   buildAiReply,
@@ -167,8 +167,7 @@ function ConversationRow({ conversation, isActive, onClick }: { conversation: Co
 }
 
 export default function AiCsClient({ snapshot }: { snapshot: AiCsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [conversations, setConversations] = useState(snapshot.conversations)
   const [activeConversationId, setActiveConversationId] = useState<string | null>(snapshot.conversations[0]?.id ?? null)
   const [input, setInput] = useState('')
@@ -262,7 +261,7 @@ export default function AiCsClient({ snapshot }: { snapshot: AiCsSnapshot }) {
             <span>知识库: {knowledge.length} 条</span>
           </div>
         </div>
-        <button type="button" onClick={() => startRefresh(() => router.refresh())} style={{ ...BTN_PRIMARY, opacity: isRefreshing ? 0.7 : 1 }} disabled={isRefreshing}>
+        <button type="button" onClick={() => handleRefresh()} style={{ ...BTN_PRIMARY, opacity: isRefreshing ? 0.7 : 1 }} disabled={isRefreshing}>
           {isRefreshing ? '刷新中...' : '刷新快照'}
         </button>
       </header>

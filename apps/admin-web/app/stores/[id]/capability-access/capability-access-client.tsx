@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Col, Row, message } from 'antd';
 import {
   Button,
@@ -41,8 +41,7 @@ export default function CapabilityAccessClient({
 }: {
   snapshot: CapabilityAccessSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [roles, setRoles] = useState(snapshot.roles);
   const [scopeFilter, setScopeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -65,7 +64,7 @@ export default function CapabilityAccessClient({
   }, [roles, scopeFilter, statusFilter]);
 
   const refreshSnapshot = () => {
-    startRefresh(() => router.refresh());
+    handleRefresh();
   };
 
   const createRole = () => {

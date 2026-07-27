@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { CustomField, CustomFieldsSnapshot, FieldType } from './custom-fields-data'
 import { buildCustomFieldId, filterFields, validateField } from './custom-fields-data'
 
@@ -45,8 +45,7 @@ const styles = {
 }
 
 export default function CustomFieldsClient({ snapshot }: { snapshot: CustomFieldsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [searchText, setSearchText] = useState('')
   const [fields, setFields] = useState<CustomField[]>(snapshot.fields)
@@ -92,7 +91,7 @@ export default function CustomFieldsClient({ snapshot }: { snapshot: CustomField
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

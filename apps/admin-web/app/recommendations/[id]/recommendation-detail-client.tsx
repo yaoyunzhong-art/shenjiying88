@@ -1,6 +1,6 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import type { RecommendationDetailSnapshot, RecommendationStatus } from './recommendation-detail-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
@@ -30,8 +30,7 @@ const buttonStyle = {
 } as const
 
 export default function RecommendationDetailClient({ snapshot }: { snapshot: RecommendationDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [status, setStatus] = useState(snapshot.strategy.status)
 
   const metrics = useMemo(() => {
@@ -43,9 +42,7 @@ export default function RecommendationDetailClient({ snapshot }: { snapshot: Rec
     ]
   }, [snapshot.strategy])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

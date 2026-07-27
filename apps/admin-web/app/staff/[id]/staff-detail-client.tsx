@@ -1,11 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 
 import type { StaffDetailSnapshot } from './staff-detail-data'
 import StaffDetailLegacy from './staff-detail-legacy'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -13,12 +12,7 @@ const shellStyle = {
 } as const
 
 export default function StaffDetailClient({ snapshot }: { snapshot: StaffDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={shellStyle}>

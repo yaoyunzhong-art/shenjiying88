@@ -1,14 +1,13 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import { Card, PageShell, Select, Space, Statistic, Table, Tag } from '@m5/ui'
 import type { BrandDashboardSnapshot, BrandMetric, RevenueRow } from './brand-dashboard-data'
 import SnapshotRefreshCard from '../../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 export default function BrandDashboardClient({ snapshot }: { snapshot: BrandDashboardSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [period, setPeriod] = useState('halfyear')
 
   const totalRevenue = useMemo(
@@ -31,10 +30,6 @@ export default function BrandDashboardClient({ snapshot }: { snapshot: BrandDash
       ),
     [snapshot.revenue],
   )
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   return (
     <PageShell title="品牌运营看板">

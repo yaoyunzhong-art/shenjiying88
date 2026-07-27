@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useState, useMemo, useEffect, useTransition, type CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DataTable,
   DetailActionBar,
@@ -124,8 +124,7 @@ export default function MemberActivitiesClient({
 }: {
   snapshot: MemberActivitiesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const searchFields = useMemo<(keyof ActivityItem)[]>(
     () => ['id', 'memberName', 'memberPhone', 'description'],
     [],
@@ -186,9 +185,7 @@ export default function MemberActivitiesClient({
     shareText: '查看会员积分/等级/优惠券/资料变更活动记录',
   })
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>

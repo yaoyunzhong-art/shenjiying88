@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh'
 
 import { type ReactNode, useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -31,8 +31,7 @@ export default function MemberOperationReceiptDetailClient({
   memberId: string
   executionId: string
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [snapshot, setSnapshot] = useState(initialSnapshot)
   const [message, setMessage] = useState<string | null>(null)
   const [replaying, setReplaying] = useState(false)
@@ -49,9 +48,7 @@ export default function MemberOperationReceiptDetailClient({
     shareText: `查看会员 ${memberId} 的运营回执 ${executionId} 详情`,
   })
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   async function handleReplay() {
     setReplaying(true)

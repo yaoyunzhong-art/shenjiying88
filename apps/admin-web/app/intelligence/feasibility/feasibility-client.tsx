@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -82,7 +83,7 @@ export default function FeasibilityClient({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [city, setCity] = useState(snapshot.request.city)
   const [district, setDistrict] = useState(snapshot.request.district)
   const [budget, setBudget] = useState(snapshot.request.budget)
@@ -130,9 +131,10 @@ export default function FeasibilityClient({
       }
 
       setError(null)
-      startRefresh(() => router.replace(`${pathname}?${params.toString()}`))
+      router.replace(`${pathname}?${params.toString()}`)
+      handleRefresh()
     },
-    [area, budget, city, district, pathname, router, tier, startRefresh]
+    [area, budget, city, district, pathname, router, tier, handleRefresh]
   )
 
   return (
@@ -144,7 +146,7 @@ export default function FeasibilityClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-60"
         >

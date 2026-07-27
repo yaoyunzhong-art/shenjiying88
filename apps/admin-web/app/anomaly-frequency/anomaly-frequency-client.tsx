@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import React, { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
@@ -147,7 +148,7 @@ function getFilterBtnStyle(active: boolean): React.CSSProperties {
 
 export function AnomalyFrequencyClient({ snapshot }: AnomalyFrequencyClientProps) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [severityFilter, setSeverityFilter] = useState<AnomalySeverityFilter>('all');
   const [timeRange, setTimeRange] = useState<AnomalyTimeRange>('24h');
 
@@ -168,10 +169,6 @@ export function AnomalyFrequencyClient({ snapshot }: AnomalyFrequencyClientProps
 
   const isFallback = snapshot.deliveryMode === 'fallback';
   const hasVisibleData = visibleTotal > 0;
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh());
-  }
 
   return (
     <div style={STYLES.container}>

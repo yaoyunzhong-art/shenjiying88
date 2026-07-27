@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Tabs } from '@m5/ui'
 import { getCachedAdminUser, hasAdminPermission } from '../lib/admin-session'
 import type { ConfigModule, SettingCategory, SettingsSnapshot } from './settings-page-data'
@@ -57,8 +57,7 @@ function buildTabItems(modules: ConfigModule[]) {
 }
 
 export default function SettingsClient({ snapshot }: { snapshot: SettingsSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeCategory, setActiveCategory] = useState<SettingCategory>('basic')
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCachedAdminUser>>(null)
 
@@ -89,7 +88,7 @@ export default function SettingsClient({ snapshot }: { snapshot: SettingsSnapsho
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

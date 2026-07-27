@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Button,
   Card,
@@ -35,8 +35,7 @@ export default function UsersClient({
 }: {
   snapshot: UsersSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState<User['role'] | 'ALL'>('ALL')
   const [showNewUserModal, setShowNewUserModal] = useState(false)
@@ -110,7 +109,7 @@ export default function UsersClient({
               用户列表 · 角色管理 · 权限配置
             </h2>
             <Space>
-              <Button variant="secondary" onClick={() => startRefresh(() => router.refresh())}>
+              <Button variant="secondary" onClick={() => handleRefresh()}>
                 {isRefreshing ? '刷新中...' : '刷新'}
               </Button>
               <Button variant="primary" onClick={() => setShowNewUserModal(true)}>

@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -100,18 +101,16 @@ export default function ProfitLossClient({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const report = snapshot.report
 
   const handlePeriodChange = useCallback(
     (period: PeriodKey) => {
-      startRefresh(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('period', period)
-        router.replace(`${pathname}?${params.toString()}`)
-      })
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('period', period)
+      router.replace(`${pathname}?${params.toString()}`)
     },
-    [pathname, router, searchParams, startRefresh]
+    [pathname, router, searchParams]
   )
 
   const sortedItems = useMemo(() => {
@@ -148,7 +147,7 @@ export default function ProfitLossClient({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => startRefresh(() => router.refresh())}
+              onClick={() => handleRefresh()}
               disabled={isRefreshing}
               className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
             >

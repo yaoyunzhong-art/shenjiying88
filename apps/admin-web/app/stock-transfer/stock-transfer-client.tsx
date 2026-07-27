@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState } from 'react'
 import {
   MOCK_TRANSFERS,
   STATUS_LABEL,
@@ -12,6 +11,7 @@ import {
 } from './stock-transfer-data'
 import type { StockTransferPageSnapshot } from './stock-transfer-page-data'
 import SnapshotRefreshCard from '../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 const cardStyle = {
   borderRadius: 16,
@@ -33,8 +33,7 @@ const buttonStyle = {
 const STATUS_FILTERS: Array<TransferStatus | 'ALL'> = ['ALL', 'pending', 'approved', 'shipped', 'received', 'rejected', 'cancelled']
 
 export default function StockTransferClient({ snapshot }: { snapshot: StockTransferPageSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<TransferStatus | 'ALL'>('ALL')
 
@@ -61,10 +60,6 @@ export default function StockTransferClient({ snapshot }: { snapshot: StockTrans
       shipped: MOCK_TRANSFERS.filter((item) => item.status === 'shipped').length,
     }
   }, [])
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

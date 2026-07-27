@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Button,
   DataTable,
@@ -72,8 +72,7 @@ export default function NotificationsClient({
 }: {
   snapshot: NotificationsSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabKey, setTabKey] = useState<'ALL' | 'sent' | 'pending'>('ALL')
   const notifications = snapshot.notifications
   const columns = useMemo(() => buildColumns(), [])
@@ -128,7 +127,7 @@ export default function NotificationsClient({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
           >
             {isRefreshing ? '刷新中...' : '刷新'}
           </Button>

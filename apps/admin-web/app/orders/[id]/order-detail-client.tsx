@@ -1,8 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 import { message } from 'antd'
 import {
   DetailActionBar,
@@ -13,17 +11,13 @@ import {
   type DescriptionItem,
 } from '@m5/ui'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 import { ORDER_CHANNEL_MAP } from '../../orders-data'
 import { formatAmount, type OrderDetailSnapshot } from './order-detail-data'
 
 export default function OrderDetailClient({ snapshot }: { snapshot: OrderDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const vm = snapshot.viewModel
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
 
   if (!vm) {
     return (

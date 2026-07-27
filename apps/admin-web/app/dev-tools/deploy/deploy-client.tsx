@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button, Card, Input, Modal, PageShell, Select, Space, Statistic, Table, Tag } from '@m5/ui'
 import type { DeploymentRecord, DeploySnapshot } from './deploy-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
@@ -23,8 +23,7 @@ function renderStatusTag(status: DeploymentRecord['status']) {
 }
 
 export default function DeployClient({ snapshot }: { snapshot: DeploySnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [envFilter, setEnvFilter] = useState('all')
   const [showDeploy, setShowDeploy] = useState(false)
 
@@ -45,9 +44,7 @@ export default function DeployClient({ snapshot }: { snapshot: DeploySnapshot })
     )
   }, [productionDeployments])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="部署管理 (P-53)">

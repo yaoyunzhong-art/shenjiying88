@@ -1,19 +1,16 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button, Card, PageShell, Space, Statistic, Tabs, Tag } from '@m5/ui'
 import type { PlatformSnapshot } from './platform-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
 
 export default function PlatformClient({ snapshot }: { snapshot: PlatformSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabKey, setTabKey] = useState('api')
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="开放平台">

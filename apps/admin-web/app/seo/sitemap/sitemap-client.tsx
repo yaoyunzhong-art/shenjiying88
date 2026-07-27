@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { SitemapSnapshotDelivery } from './sitemap-data'
 
@@ -16,8 +16,7 @@ export default function SitemapClient({
 }: {
   snapshot: SitemapSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [freqFilter, setFreqFilter] = useState<'ALL' | 'daily' | 'weekly' | 'monthly'>('ALL')
 
   const filtered = useMemo(() => {
@@ -26,7 +25,7 @@ export default function SitemapClient({
   }, [freqFilter, snapshot.rows])
 
   const refreshSnapshot = useCallback(() => {
-    startRefresh(() => router.refresh())
+    handleRefresh()
   }, [router, startRefresh])
 
   return (

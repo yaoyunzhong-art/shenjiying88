@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
@@ -70,7 +71,7 @@ export default function InventoryDetailClient({
   snapshot: InventoryDetailSnapshot
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [item, setItem] = useState<InventoryItem | null>(snapshot.item)
   const [movements, setMovements] = useState<StockMovement[]>(snapshot.movements)
   const [activeTab, setActiveTab] = useState<TabType>('overview')
@@ -100,10 +101,8 @@ export default function InventoryDetailClient({
   }, [])
 
   const refreshSnapshot = useCallback(() => {
-    startRefresh(() => {
-      router.refresh()
-    })
-  }, [router, startRefresh])
+    handleRefresh()
+  }, [handleRefresh])
 
   const readResponseMessage = useCallback(async (response: Response) => {
     const contentType = response.headers.get('content-type') ?? ''

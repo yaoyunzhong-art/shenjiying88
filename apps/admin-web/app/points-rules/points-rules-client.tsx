@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { PointsRule, PointsRulesSnapshotDelivery } from './points-rules-data'
 
 type RuleTab = 'earn' | 'redeem' | 'bonus' | 'all'
@@ -38,8 +38,7 @@ export default function PointsRulesClient({
 }: {
   snapshot: PointsRulesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabView, setTabView] = useState<RuleTab>('earn')
   const rules = snapshot.rules
   const summary = snapshot.summary
@@ -77,7 +76,7 @@ export default function PointsRulesClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

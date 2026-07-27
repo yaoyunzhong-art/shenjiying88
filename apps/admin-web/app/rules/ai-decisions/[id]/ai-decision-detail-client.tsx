@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { StatusBadge, useToast } from '@m5/ui'
 import type { AiDecisionDetailSnapshotDelivery, AiDecisionStatus } from './ai-decision-detail-data'
 
@@ -26,13 +26,12 @@ const statusVariant: Record<AiDecisionStatus, 'success' | 'danger' | 'warning' |
 }
 
 export default function AiDecisionDetailClient({ snapshot }: AiDecisionDetailClientProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { toast } = useToast()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [detail, setDetail] = useState(snapshot.detail)
 
   function handleRefresh() {
-    startRefresh(() => router.refresh())
+    handleRefresh()
     toast('AI 决策详情快照已请求刷新')
   }
 

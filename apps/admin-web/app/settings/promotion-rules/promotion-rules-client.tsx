@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { PromotionRuleStatus, PromotionRulesSnapshot } from './promotion-rules-data'
 import { filterPromotionRules } from './promotion-rules-data'
 
@@ -55,8 +55,7 @@ function getStatusLabel(status: PromotionRuleStatus) {
 }
 
 export default function PromotionRulesClient({ snapshot }: { snapshot: PromotionRulesSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeStatus, setActiveStatus] = useState<PromotionRuleStatus | 'all'>('all')
   const [searchText, setSearchText] = useState('')
 
@@ -82,7 +81,7 @@ export default function PromotionRulesClient({ snapshot }: { snapshot: Promotion
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >

@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import Link from 'next/link'
 import { useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type {
   IntelligenceNavigationCard,
   IntelligenceQuickAction,
@@ -86,9 +86,7 @@ export default function IntelligenceClient({
 }: {
   snapshot: IntelligenceSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -98,7 +96,7 @@ export default function IntelligenceClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 disabled:opacity-50"
         >

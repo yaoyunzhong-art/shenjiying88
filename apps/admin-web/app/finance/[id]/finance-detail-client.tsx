@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -100,7 +101,7 @@ export default function FinanceDetailClient({
   snapshot: FinanceDetailSnapshotDelivery
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [payment, setPayment] = useState<PaymentDetail>(snapshot.payment)
   const [refunds, setRefunds] = useState<RefundRecord[]>(snapshot.refunds)
   const [toasts, setToasts] = useState<ToastItem[]>([])
@@ -212,7 +213,7 @@ export default function FinanceDetailClient({
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => startRefresh(() => router.refresh())}
+              onClick={() => handleRefresh()}
               disabled={isRefreshing}
               style={{
                 padding: '8px 20px',

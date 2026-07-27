@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -30,8 +30,7 @@ export default function PurchasingClient({
 }: {
   snapshot: PurchasingSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<PurchaseStatus | 'all'>('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [tabKey, setTabKey] = useState('list')
@@ -88,9 +87,7 @@ export default function PurchasingClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockCreate() {
     message.success('采购单已创建（mock）')

@@ -1,5 +1,6 @@
 // @ts-nocheck
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -42,7 +43,7 @@ export default function MemberLevelDetailClient({
 }) {
   const router = useRouter()
   const toast = useToast()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const levelId = snapshot.levelId
 
   const [level, setLevel] = useState<MemberLevelConfig | null>(snapshot.level)
@@ -172,9 +173,7 @@ export default function MemberLevelDetailClient({
     }
   }, [level, router, toast])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   // 操作栏
   const actions: DetailShellAction[] = useMemo(

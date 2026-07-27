@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import {
   TAX_RECORD_STATUSES,
@@ -34,8 +34,7 @@ export default function TaxReportClient({
 }: {
   snapshot: TaxReportSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TaxRecordStatus | 'all'>('all')
   const [page, setPage] = useState(0)
@@ -64,7 +63,7 @@ export default function TaxReportClient({
           <button
             type="button"
             style={{ ...styles.btn, background: 'rgba(67, 97, 238, 0.7)' }}
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
           >
             {isRefreshing ? '刷新中...' : '刷新'}

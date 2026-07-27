@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Breadcrumb,
@@ -14,6 +14,7 @@ import {
   useToast,
 } from '@m5/ui'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 import {
   REFUND_CHANNEL_LABEL,
   REFUND_STATUS_LABEL,
@@ -32,7 +33,7 @@ import {
 
 export default function RefundDetailClient({ snapshot }: { snapshot: RefundDetailSnapshot }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const { toasts, success, info, dismiss } = useToast()
   const [refund, setRefund] = useState<RefundItem | null>(snapshot.refund)
   const [confirmAction, setConfirmAction] = useState<{ from: RefundStatus; to: RefundStatus } | null>(null)
@@ -73,10 +74,6 @@ export default function RefundDetailClient({ snapshot }: { snapshot: RefundDetai
 
   const handleBack = useCallback(() => {
     router.push('/refunds')
-  }, [router])
-
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => router.refresh())
   }, [router])
 
   const handleTransition = useCallback(

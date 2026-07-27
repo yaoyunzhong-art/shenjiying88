@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   MAINTENANCE_PRIORITY_MAP,
   MAINTENANCE_STATUS_MAP,
@@ -25,8 +25,7 @@ export default function MaintenanceClient({
 }: {
   snapshot: MaintenanceSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabView, setTabView] = useState<MaintenanceTab>('pending')
 
   const filteredTasks = useMemo(() => {
@@ -49,7 +48,7 @@ export default function MaintenanceClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

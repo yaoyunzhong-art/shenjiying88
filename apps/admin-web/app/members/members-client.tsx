@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 
 import {
   DataTable,
@@ -217,8 +217,7 @@ export default function MembersClient({
 }: {
   snapshot: MembersPageSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [members, setMembers] = useState(snapshot.members);
   const [deliveryMode, setDeliveryMode] = useState(snapshot.deliveryMode);
 
@@ -409,11 +408,9 @@ export default function MembersClient({
           </div>
           <button
             type="button"
-            onClick={() =>
-              startRefresh(() => {
-                router.refresh();
-              })
-            }
+            onClick={() => {
+              handleRefresh();
+            }}
             style={{
               borderRadius: 10,
               padding: '10px 14px',

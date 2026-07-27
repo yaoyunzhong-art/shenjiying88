@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -36,7 +37,7 @@ export default function MemberCardDetailClient({
 }) {
   const router = useRouter()
   const toast = useToast()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [card, setCard] = useState(snapshot.card)
   const [isEditing, setIsEditing] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
@@ -58,9 +59,7 @@ export default function MemberCardDetailClient({
     setCard(snapshot.card)
   }, [snapshot.card])
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleStartEdit() {
     if (!card) {

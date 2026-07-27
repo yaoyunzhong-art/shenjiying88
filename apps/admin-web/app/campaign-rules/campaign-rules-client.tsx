@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import type {
   CampaignRule,
   CampaignRuleStatus,
@@ -37,8 +37,7 @@ export default function CampaignRulesClient({
 }: {
   snapshot: CampaignRulesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [rules, setRules] = useState<CampaignRule[]>(snapshot.rules)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | CampaignRuleType>('all')
@@ -144,7 +143,7 @@ export default function CampaignRulesClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

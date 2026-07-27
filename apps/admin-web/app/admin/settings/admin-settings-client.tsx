@@ -1,8 +1,8 @@
 "use client"
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type * as React from 'react'
-import { useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 import { PageShell } from '@m5/ui'
 import type {
   AdminSettingsSnapshot,
@@ -39,8 +39,7 @@ const ENV_LABELS: Record<SystemInfoSnapshot['environment'], string> = {
 }
 
 export default function AdminSettingsClient({ snapshot }: { snapshot: AdminSettingsSnapshot }) {
-  const router = useRouter()
-  const [systemInfo, setSystemInfo] = useState<SystemInfoSnapshot>(snapshot.systemInfo)
+    const [systemInfo, setSystemInfo] = useState<SystemInfoSnapshot>(snapshot.systemInfo)
   const [smsProviders, setSmsProviders] = useState<SmsProviderSnapshot[]>(snapshot.smsProviders)
   const [mailProviders, setMailProviders] = useState<MailProviderSnapshot[]>(snapshot.mailProviders)
   const [paymentChannels, setPaymentChannels] = useState<PaymentChannelSnapshot[]>(
@@ -50,8 +49,7 @@ export default function AdminSettingsClient({ snapshot }: { snapshot: AdminSetti
     snapshot.securityPolicies,
   )
   const [saved, setSaved] = useState(false)
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   useEffect(() => {
     setSystemInfo(snapshot.systemInfo)
     setSmsProviders(snapshot.smsProviders)
@@ -130,7 +128,7 @@ export default function AdminSettingsClient({ snapshot }: { snapshot: AdminSetti
           <div style={heroActionsStyle}>
             <button
               type="button"
-              onClick={() => startRefresh(() => router.refresh())}
+              onClick={() => handleRefresh()}
               disabled={isRefreshing}
               style={secondaryButtonStyle}
             >

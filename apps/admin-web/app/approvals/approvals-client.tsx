@@ -1,8 +1,8 @@
 "use client"
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react'
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   approveApproval,
   type ApprovalRecord,
@@ -57,15 +57,13 @@ function isThisMonth(dateStr: string): boolean {
 }
 
 export default function ApprovalsClient({ snapshot }: { snapshot: ApprovalsSnapshotDelivery }) {
-  const router = useRouter()
-  const [tabKey, setTabKey] = useState<TabKey>('pending')
+    const [tabKey, setTabKey] = useState<TabKey>('pending')
   const [approvals, setApprovals] = useState<ApprovalRecord[]>(snapshot.approvals)
   const [reviewOpen, setReviewOpen] = useState<Record<string, boolean>>({})
   const [reviewTexts, setReviewTexts] = useState<Record<string, string>>({})
   const [reviewSubmitting, setReviewSubmitting] = useState<Record<string, boolean>>({})
   const [feedback, setFeedback] = useState('')
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const filtered = useMemo(() => {
     if (tabKey === 'pending') return approvals.filter((item) => item.status === 'pending')
     if (tabKey === 'done') return approvals.filter((item) => item.status !== 'pending')
@@ -179,7 +177,7 @@ export default function ApprovalsClient({ snapshot }: { snapshot: ApprovalsSnaps
         <div style={{ display: 'grid', gap: 6, justifyItems: 'end' }}>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={{
               borderRadius: 10,

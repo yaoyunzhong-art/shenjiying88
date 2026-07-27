@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState, useTransition } from 'react';
@@ -107,7 +108,7 @@ export default function MemberEditClient({
   snapshot: MemberEditPageSnapshot;
 }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [member, setMember] = useState<MemberDetail | null>(snapshot.member);
   const [formData, setFormData] = useState<EditFormData>(buildInitialFormData(snapshot.member));
   const [errors, setErrors] = useState<EditFormErrors>({});
@@ -131,11 +132,7 @@ export default function MemberEditClient({
     });
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   const handleSave = useCallback(async () => {
     const validationErrors = validateForm(formData);

@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   FEEDBACK_STATUS_MAP,
   FEEDBACK_TABS,
@@ -103,8 +103,7 @@ export default function FeedbackClient({
 }: {
   snapshot: FeedbackSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [replyTab, setReplyTab] = useState<ReplyTab>('all')
   const [statusTab, setStatusTab] = useState<FeedbackTab>('all')
   const [keyword, setKeyword] = useState('')
@@ -134,10 +133,10 @@ export default function FeedbackClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => {
+          onClick={() => {
             handleReset()
-            router.refresh()
-          })}
+            handleRefresh()
+          }}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14, color: '#374151' }}
         >
           {isRefreshing ? '刷新中...' : '刷新'}

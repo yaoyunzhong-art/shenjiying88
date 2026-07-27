@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import { Button, Card, Empty, PageShell, Progress, Space, Statistic, Table, Tabs, Tag } from '@m5/ui'
 import {
@@ -25,8 +25,7 @@ function scoreColor(score: number) {
 }
 
 export default function HealthScoreClient({ snapshot }: { snapshot: HealthScoreSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [activeKey, setActiveKey] = useState('dashboard')
 
   const attentionItems = useMemo(
@@ -58,9 +57,7 @@ export default function HealthScoreClient({ snapshot }: { snapshot: HealthScoreS
     { title: '改进建议', dataIndex: 'suggestion' },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="健康评分" subtitle="server wrapper + snapshot loader + client renderer">

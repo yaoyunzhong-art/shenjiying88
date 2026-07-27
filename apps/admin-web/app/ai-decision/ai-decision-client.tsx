@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useMemo, useState } from 'react'
 import {
   AIDecisionPanel,
   Button,
@@ -31,6 +30,7 @@ import {
   type DecisionRecord,
 } from './ai-decision-data'
 import SnapshotRefreshCard from '../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 function buildColumns(): DataTableColumn<DecisionRecord>[] {
   return [
@@ -81,8 +81,7 @@ function buildColumns(): DataTableColumn<DecisionRecord>[] {
 }
 
 export default function AiDecisionClient({ snapshot }: { snapshot: AiDecisionSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh: triggerRefresh } = useSnapshotRefresh()
   const [decisions, setDecisions] = useState<DecisionRecord[]>(snapshot.decisions)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -201,7 +200,7 @@ export default function AiDecisionClient({ snapshot }: { snapshot: AiDecisionSna
   }, [decisions, selectedIds])
 
   function handleRefresh() {
-    startRefresh(() => router.refresh())
+    triggerRefresh()
     setFeedback({ type: 'success', message: '已请求刷新服务端快照' })
   }
 

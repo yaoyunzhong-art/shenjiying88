@@ -1,10 +1,11 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import { computeCategoryStats, type CategoryItem } from '../categories-data'
 import type { CategoriesListSnapshot } from './categories-list-data'
+import { useRouter } from 'next/navigation'
 
 export default function CategoriesListClient({
   snapshot,
@@ -12,7 +13,7 @@ export default function CategoriesListClient({
   snapshot: CategoriesListSnapshot
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<'all' | 'root' | 'leaf'>('all')
 
@@ -42,7 +43,7 @@ export default function CategoriesListClient({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

@@ -1,6 +1,6 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import CustomerNewLegacy from './customer-new-legacy'
 import type { CustomerNewSnapshot } from './customer-new-data'
@@ -10,13 +10,10 @@ export default function CustomerNewShellClient({
 }: {
   snapshot: CustomerNewSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   void snapshot
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

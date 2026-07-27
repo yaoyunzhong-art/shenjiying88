@@ -1,7 +1,7 @@
 "use client"
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import {
   Badge,
@@ -32,8 +32,7 @@ export default function CustomersClient({
 }: {
   snapshot: CustomersPageSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'all'>('all')
   const [levelFilter, setLevelFilter] = useState<MemberLevel | 'all'>('all')
@@ -117,7 +116,7 @@ export default function CustomersClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           style={{
             padding: '10px 14px',
             borderRadius: 10,

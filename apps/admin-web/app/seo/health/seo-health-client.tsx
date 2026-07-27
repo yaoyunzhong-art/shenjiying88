@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -21,7 +22,7 @@ export default function SeoHealthClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [severityFilter, setSeverityFilter] = useState<SeoHealthIssueSeverity | 'all'>('all');
   const [expandedIssue, setExpandedIssue] = useState(snapshot.issues[0]?.id ?? '');
 

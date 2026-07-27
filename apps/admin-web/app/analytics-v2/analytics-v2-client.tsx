@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import type { AnalyticsV2SnapshotDelivery, CohortMatrix, MetricCard } from './analytics-v2-data'
 
 function computePeriodComparison(cohorts: CohortMatrix[]) {
@@ -28,8 +28,7 @@ export default function AnalyticsV2Client({
 }: {
   snapshot: AnalyticsV2SnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [selectedPeriod, setSelectedPeriod] = useState('7d')
 
   const periodComparison = useMemo(() => computePeriodComparison(snapshot.cohorts), [snapshot.cohorts])
@@ -62,7 +61,7 @@ export default function AnalyticsV2Client({
           ))}
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff' }}
           >

@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Col, Row, message } from 'antd';
 import {
   Button,
@@ -47,8 +47,7 @@ export default function OperationsClient({
 }: {
   snapshot: OperationsSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [settings, setSettings] = useState(snapshot.settings);
   const [activeTab, setActiveTab] = useState(snapshot.categories[0] ?? '营业时间');
   const [editingSetting, setEditingSetting] = useState<OperationSetting | null>(null);
@@ -73,7 +72,7 @@ export default function OperationsClient({
   );
 
   const refreshSnapshot = () => {
-    startRefresh(() => router.refresh());
+    handleRefresh();
   };
 
   const openEditor = (setting: OperationSetting) => {

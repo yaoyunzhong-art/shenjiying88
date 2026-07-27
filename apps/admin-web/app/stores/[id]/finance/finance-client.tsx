@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Col, Row, message } from 'antd'
 import {
   Button,
@@ -29,8 +29,7 @@ export default function FinanceClient({
 }: {
   snapshot: FinanceSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [tabKey, setTabKey] = useState('overview')
   const [typeFilter, setTypeFilter] = useState<FinanceTransactionType | 'all'>('all')
   const [showSettle, setShowSettle] = useState(false)
@@ -76,9 +75,7 @@ export default function FinanceClient({
     },
   ]
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   function handleMockSettlement() {
     message.success('日结完成（mock）')

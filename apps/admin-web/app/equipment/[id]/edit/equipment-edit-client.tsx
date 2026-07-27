@@ -1,11 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 
 import type { EquipmentEditSnapshot } from './equipment-edit-data'
 import EquipmentEditLegacy from './equipment-edit-legacy'
 import SnapshotRefreshCard from '../../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -13,12 +12,7 @@ const shellStyle = {
 } as const
 
 export default function EquipmentEditClient({ snapshot }: { snapshot: EquipmentEditSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={shellStyle}>

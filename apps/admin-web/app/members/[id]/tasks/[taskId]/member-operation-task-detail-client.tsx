@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh'
 
 import { useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -27,8 +27,7 @@ export default function MemberOperationTaskDetailClient({
   memberId: string
   taskId: string
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [snapshot, setSnapshot] = useState<MemberOperationTaskDetailSnapshot>(initialSnapshot)
 
   useEffect(() => {
@@ -43,9 +42,7 @@ export default function MemberOperationTaskDetailClient({
     shareText: `查看会员 ${memberId} 的运营任务 ${taskId} 详情`,
   })
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   if (!snapshot.task) {
     return (

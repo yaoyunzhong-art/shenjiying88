@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState, useTransition } from 'react';
@@ -58,7 +59,7 @@ async function submitCreateMember(
 
 export default function CreateMemberClient({ snapshot }: { snapshot: CreateMemberPageSnapshot }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [formData, setFormData] = useState<CreateMemberFormData>(snapshot.formDefaults);
   const [errors, setErrors] = useState<CreateFormErrors>({});
   const [submitState, setSubmitState] = useState<ActionFeedback>({ isSubmitting: false });
@@ -71,11 +72,7 @@ export default function CreateMemberClient({ snapshot }: { snapshot: CreateMembe
     setCreatedMemberCode(null);
   }, [snapshot]);
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => {
-      router.refresh();
-    });
-  }, [router, startRefresh]);
+  
 
   const handleFieldChange = useCallback((field: keyof CreateMemberFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

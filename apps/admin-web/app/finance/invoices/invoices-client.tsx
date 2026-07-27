@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type {
   FinanceInvoicesSnapshotDelivery,
   Invoice,
@@ -43,8 +43,7 @@ export default function FinanceInvoicesClient({
 }: {
   snapshot: FinanceInvoicesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [invoices, setInvoices] = useState<Invoice[]>(snapshot.invoices)
   const [statusFilter, setStatusFilter] = useState<'ALL' | InvoiceStatus>('ALL')
   const [showCreate, setShowCreate] = useState(false)
@@ -155,7 +154,7 @@ export default function FinanceInvoicesClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

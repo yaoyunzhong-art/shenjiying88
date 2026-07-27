@@ -1,7 +1,7 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   DataTable,
   PageShell,
@@ -118,8 +118,7 @@ export default function StoreReportsClient({
 }: {
   snapshot: StoreReportsSnapshot;
 }) {
-  const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const columns = useMemo(() => buildColumns(), []);
   const [profitFilter, setProfitFilter] = useState<ProfitFilter>('ALL');
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>(null);
@@ -160,9 +159,7 @@ export default function StoreReportsClient({
 
   const isEmpty = snapshot.rows.length === 0;
   const showFilteredEmpty = !isEmpty && sortedRows.length === 0;
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => router.refresh());
-  }, [router, startRefresh]);
+  
 
   return (
     <PageShell

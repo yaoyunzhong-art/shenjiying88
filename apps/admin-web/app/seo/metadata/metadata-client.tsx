@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 
 import type { MetadataRow, MetadataSnapshotDelivery } from './metadata-data'
 
@@ -10,8 +10,7 @@ export default function MetadataClient({
 }: {
   snapshot: MetadataSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [rows, setRows] = useState(snapshot.rows)
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<'path' | 'title'>('path')
@@ -63,7 +62,7 @@ export default function MetadataClient({
   }, [closeEdit, editForm, editingId])
 
   const refreshSnapshot = useCallback(() => {
-    startRefresh(() => router.refresh())
+    handleRefresh()
   }, [router, startRefresh])
 
   return (

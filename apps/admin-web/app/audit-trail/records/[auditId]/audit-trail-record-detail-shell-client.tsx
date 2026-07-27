@@ -1,11 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 
 import AuditTrailRecordDetailClient from './audit-trail-record-detail-client'
 import type { AuditTrailRecordDetailSnapshot } from './audit-trail-record-detail-data'
 import SnapshotRefreshCard from '../../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -17,12 +16,7 @@ export default function AuditTrailRecordDetailShellClient({
 }: {
   snapshot: AuditTrailRecordDetailSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={shellStyle}>

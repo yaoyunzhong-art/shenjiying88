@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   MEMBER_STATUS_MAP,
   MEMBER_TIER_MAP,
@@ -22,12 +22,10 @@ export default function MemberClient({
 }: {
   snapshot: MemberSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [keyword, setKeyword] = useState('')
+    const [keyword, setKeyword] = useState('')
   const [tier, setTier] = useState<MemberTier | 'all'>('all')
   const [status, setStatus] = useState<MemberStatus | 'all'>('all')
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const loweredKeyword = keyword.trim().toLowerCase()
 
   const filteredMembers = useMemo(
@@ -58,7 +56,7 @@ export default function MemberClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

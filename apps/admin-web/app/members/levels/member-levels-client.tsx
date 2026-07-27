@@ -1,5 +1,6 @@
 // @ts-nocheck
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation';
@@ -43,8 +44,7 @@ export default function MemberLevelsClient({
 }) {
   const router = useRouter()
   const toast = useToast()
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   // 状态
   const [levels, setLevels] = useState<MemberLevelConfig[]>(snapshot.levels)
   const [sortConfig, setSortConfig] = useState<DataTableSortConfig | null>({
@@ -272,9 +272,7 @@ export default function MemberLevelsClient({
     [levels]
   );
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   // 创建等级提交
   const handleCreateLevel = async () => {

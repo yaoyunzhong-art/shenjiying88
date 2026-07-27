@@ -1,16 +1,18 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import type { NewCategorySnapshot } from './new-category-data'
 
+import { useRouter } from 'next/navigation'
+
 export default function NewCategoryClient({
-  snapshot,
+  snapshot
 }: {
   snapshot: NewCategorySnapshot
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [parentName, setParentName] = useState('')
@@ -34,7 +36,7 @@ export default function NewCategoryClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

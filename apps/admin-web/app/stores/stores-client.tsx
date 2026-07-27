@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
@@ -168,7 +169,7 @@ export default function StoresClient({
   snapshot: StoresPageSnapshot;
 }) {
   const router = useRouter();
-  const [isRefreshing, startRefresh] = useTransition();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [storesState, setStoresState] = useState<{
     deliveryMode: 'api' | 'fallback';
     stores: StoreItem[];
@@ -296,9 +297,7 @@ export default function StoresClient({
     shareText: '查看门店 / 市场 / 风险等级筛选结果',
   });
 
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => router.refresh());
-  }, [router, startRefresh]);
+  
 
   if (stores.length === 0) {
     return (

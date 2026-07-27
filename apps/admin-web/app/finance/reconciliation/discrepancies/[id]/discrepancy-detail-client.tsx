@@ -1,4 +1,5 @@
 'use client'
+import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh'
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
@@ -26,8 +27,7 @@ export default function DiscrepancyDetailClient({
   const [adjustmentAmount, setAdjustmentAmount] = useState<number | ''>('')
   const [adjustmentNote, setAdjustmentNote] = useState('')
   const [adjusting, setAdjusting] = useState(false)
-  const [isRefreshing, startRefresh] = useTransition()
-
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const dataSourceLabel = snapshot.deliveryMode === 'api' ? '真实 API' : 'fallback'
   const isReviewable = snapshot.deliveryMode === 'api'
 
@@ -101,7 +101,7 @@ export default function DiscrepancyDetailClient({
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >

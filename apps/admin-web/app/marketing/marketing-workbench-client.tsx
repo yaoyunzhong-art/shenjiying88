@@ -1,10 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
 import LegacyView from './marketing-workbench-legacy'
 import type { MarketingWorkbenchSnapshot } from './marketing-workbench-data'
 import SnapshotRefreshCard from '../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 const shellStyle = {
   display: 'grid',
@@ -12,12 +11,7 @@ const shellStyle = {
 } as const
 
 export default function MarketingWorkbenchClient({ snapshot }: { snapshot: MarketingWorkbenchSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   return (
     <div style={shellStyle}>

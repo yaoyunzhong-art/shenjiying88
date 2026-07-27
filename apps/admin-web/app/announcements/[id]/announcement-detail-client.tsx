@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -28,13 +28,15 @@ import {
 } from './announcement-detail-data'
 import type { AnnouncementDetailSnapshot } from './announcement-detail-data'
 
+import { useRouter } from 'next/navigation'
+
 export default function AnnouncementDetailClient({
   snapshot,
 }: {
   snapshot: AnnouncementDetailSnapshot
 }) {
   const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [announcement, setAnnouncement] = useState(snapshot.announcement)
   const [submitState, setSubmitState] = useState<'idle' | 'success'>('idle')
   const [feedbackMessage, setFeedbackMessage] = useState('')
@@ -159,7 +161,7 @@ export default function AnnouncementDetailClient({
             <SubmitButton
               label={isRefreshing ? '刷新中...' : '刷新快照'}
               variant="secondary"
-              onClick={() => startRefresh(() => router.refresh())}
+              onClick={() => handleRefresh()}
             />
             <SubmitButton
               label="返回公告列表"
@@ -204,7 +206,7 @@ export default function AnnouncementDetailClient({
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             style={secondaryButtonStyle}
           >

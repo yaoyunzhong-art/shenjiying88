@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { FinanceRule, FinanceRulesSnapshotDelivery } from './rules-data'
 
 type ViewMode = 'active' | 'inactive' | 'all'
@@ -66,8 +66,7 @@ export default function FinanceRulesClient({
 }: {
   snapshot: FinanceRulesSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [rules, setRules] = useState<FinanceRule[]>(snapshot.rules)
   const [viewMode, setViewMode] = useState<ViewMode>('active')
   const [moduleFilter, setModuleFilter] = useState<ModuleFilter>('ALL')
@@ -118,14 +117,14 @@ export default function FinanceRulesClient({
         )
         setEditingId(null)
         setEditForm({})
-        startRefresh(() => router.refresh())
+        handleRefresh()
       } catch (error) {
         setMutationError(error instanceof Error ? error.message : '保存失败')
       } finally {
         setSaving(false)
       }
     },
-    [editForm, router, startRefresh]
+    [editForm, handleRefresh]
   )
 
   const handleToggle = useCallback(
@@ -147,12 +146,12 @@ export default function FinanceRulesClient({
               : item
           )
         )
-        startRefresh(() => router.refresh())
+        handleRefresh()
       } catch (error) {
         setMutationError(error instanceof Error ? error.message : '切换状态失败')
       }
     },
-    [router, rules, startRefresh]
+    [handleRefresh, rules]
   )
 
   const handleCreate = useCallback(async () => {
@@ -171,13 +170,13 @@ export default function FinanceRulesClient({
       setRules((current) => [...current, data.rule])
       setShowCreateModal(false)
       setCreateForm(initialCreateForm)
-      startRefresh(() => router.refresh())
+      handleRefresh()
     } catch (error) {
       setMutationError(error instanceof Error ? error.message : '创建失败')
     } finally {
       setSaving(false)
     }
-  }, [createForm, router, startRefresh])
+  }, [createForm, handleRefresh])
 
   const startEdit = useCallback((rule: FinanceRule) => {
     setEditingId(rule.id)
@@ -201,7 +200,7 @@ export default function FinanceRulesClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => startRefresh(() => router.refresh())}
+            onClick={() => handleRefresh()}
             disabled={isRefreshing}
             className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button, Card, Input, PageShell, Space, Statistic, Table, Tag } from '@m5/ui'
 import type { BrandRecord, BrandSnapshot } from './brand-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
@@ -13,8 +13,7 @@ function renderStatus(status: BrandRecord['status']) {
 }
 
 export default function BrandClient({ snapshot }: { snapshot: BrandSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(
@@ -22,9 +21,7 @@ export default function BrandClient({ snapshot }: { snapshot: BrandSnapshot }) {
     [snapshot.brands, search],
   )
 
-  function handleRefresh() {
-    startRefresh(() => router.refresh())
-  }
+  
 
   return (
     <PageShell title="品牌运营">

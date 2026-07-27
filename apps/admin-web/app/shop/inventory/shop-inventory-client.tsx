@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { ShopInventorySnapshot, ShopInventoryStatus } from './shop-inventory-data'
 
 const STATUS_LABELS: Record<ShopInventoryStatus, string> = {
@@ -15,8 +15,7 @@ export default function ShopInventoryClient({
 }: {
   snapshot: ShopInventorySnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<ShopInventoryStatus | 'all'>('all')
   const [items, setItems] = useState(snapshot.items)
@@ -53,7 +52,7 @@ export default function ShopInventoryClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

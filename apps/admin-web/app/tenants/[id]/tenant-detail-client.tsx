@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useState, useTransition, type CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useState, type CSSProperties } from 'react'
 import {
   CopyToClipboard,
   DetailActionBar,
@@ -30,6 +29,7 @@ import {
   type TenantDetailSnapshot,
 } from './tenant-detail-data'
 import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 const inputStyle: CSSProperties = {
   width: '100%',
@@ -44,8 +44,7 @@ const inputStyle: CSSProperties = {
 }
 
 export default function TenantDetailClient({ snapshot }: { snapshot: TenantDetailSnapshot }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const tenant = snapshot.tenant
   const [editOpen, setEditOpen] = useState(false)
   const [formData, setFormData] = useState<EditFormData>({
@@ -108,10 +107,6 @@ export default function TenantDetailClient({ snapshot }: { snapshot: TenantDetai
       description: tenant.description,
     })
   }, [resetSubmit, tenant])
-
-  const handleRefresh = useCallback(() => {
-    startRefresh(() => router.refresh())
-  }, [router])
 
   const statusInfo = STATUS_MAP[tenant.status]
   const planInfo = PLAN_MAP[tenant.plan]

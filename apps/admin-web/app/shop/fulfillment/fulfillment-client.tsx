@@ -1,7 +1,7 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import { useMemo, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { FulfillmentSnapshot, FulfillmentStatus } from './fulfillment-data'
 
 const STATUS_ORDER: FulfillmentStatus[] = ['pending', 'picking', 'packed', 'shipped', 'delivered', 'issue']
@@ -23,8 +23,7 @@ export default function FulfillmentClient({
 }: {
   snapshot: FulfillmentSnapshot
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const [statusFilter, setStatusFilter] = useState<FulfillmentStatus | 'all'>('all')
   const [orders, setOrders] = useState(snapshot.orders)
 
@@ -52,7 +51,7 @@ export default function FulfillmentClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >

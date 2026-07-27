@@ -1,8 +1,8 @@
 'use client'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 import type { CSSProperties } from 'react'
 import { useMemo, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import type { SystemConfigSnapshotDelivery } from './system-config-data'
 
 const styles: Record<string, CSSProperties> = {
@@ -99,9 +99,7 @@ export default function SystemConfigClient({
 }: {
   snapshot: SystemConfigSnapshotDelivery
 }) {
-  const router = useRouter()
-  const [isRefreshing, startRefresh] = useTransition()
-
+    const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const summary = useMemo(() => {
     const totalItems = snapshot.groups.reduce((sum, group) => sum + group.items.length, 0)
     const booleanItems = snapshot.groups.reduce(
@@ -126,7 +124,7 @@ export default function SystemConfigClient({
         </div>
         <button
           type="button"
-          onClick={() => startRefresh(() => router.refresh())}
+          onClick={() => handleRefresh()}
           disabled={isRefreshing}
           style={{ ...styles.refreshButton, opacity: isRefreshing ? 0.7 : 1 }}
         >
