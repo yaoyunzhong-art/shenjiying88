@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 import { StatusBadge, DetailActionBar, DetailClosureBar, WorkspaceBreadcrumb, type DetailClosureLink } from '@m5/ui';
 import { buildStandardBreadcrumb } from '../../../components/detail-workspace-registry';
 import type { FoundationModuleDetail } from '../../../foundation-detail-view-model';
@@ -45,6 +47,8 @@ function getModuleWorkspaceHref(moduleKey: string): string | null {
 }
 
 function ModuleBoard({ snapshot }: { snapshot: FoundationModuleDetail }) {
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
   const moduleInfo = snapshot.module!;
   const indicators = formatFoundationIndicator(snapshot.detail);
   const workspaceHref = getModuleWorkspaceHref(moduleInfo.key);
@@ -73,6 +77,27 @@ function ModuleBoard({ snapshot }: { snapshot: FoundationModuleDetail }) {
 
       <div style={panelStyle}>
         <h2 style={sectionTitleStyle}>模块说明</h2>
+        <div
+          style={{
+            marginBottom: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+            当前详情页已切到 E54 三层壳，刷新按钮仅通过 router.refresh() 触发服务端快照重拉。
+          </p>
+          <button
+            type="button"
+            onClick={() => startRefresh(() => router.refresh())}
+            disabled={isRefreshing}
+            style={refreshButtonStyle}
+          >
+            {isRefreshing ? '刷新中...' : '刷新快照'}
+          </button>
+        </div>
         <p style={{ color: '#cbd5f5', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{moduleInfo.purpose}</p>
         <p style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>{summarizeFoundationModuleDetail(snapshot)}</p>
         <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -227,6 +252,8 @@ function ModuleBoard({ snapshot }: { snapshot: FoundationModuleDetail }) {
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: FoundationModuleDetail }) {
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <WorkspaceBreadcrumb
@@ -234,6 +261,16 @@ function NotFoundPanel({ snapshot }: { snapshot: FoundationModuleDetail }) {
       />
       <div style={panelStyle}>
         <h2 style={sectionTitleStyle}>未找到 Foundation 模块</h2>
+        <div style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => startRefresh(() => router.refresh())}
+            disabled={isRefreshing}
+            style={refreshButtonStyle}
+          >
+            {isRefreshing ? '刷新中...' : '刷新快照'}
+          </button>
+        </div>
         <p style={{ color: '#cbd5f5', fontSize: 14, lineHeight: 1.6 }}>
           模块 Key <code style={{ color: '#f87171' }}>{snapshot.moduleKey || '（空）'}</code> 不在当前 blueprint 范围内。
         </p>
@@ -310,4 +347,15 @@ const sectionTitleStyle: React.CSSProperties = {
   fontWeight: 600,
   textTransform: 'uppercase',
   letterSpacing: 0.4
+};
+
+const refreshButtonStyle: React.CSSProperties = {
+  padding: '8px 14px',
+  borderRadius: 8,
+  border: '1px solid rgba(96,165,250,0.3)',
+  background: 'rgba(96,165,250,0.12)',
+  color: '#93c5fd',
+  cursor: 'pointer',
+  fontSize: 12,
+  whiteSpace: 'nowrap'
 };

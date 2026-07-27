@@ -20,13 +20,13 @@ import {
   RESULT_COLOR,
   RESULT_BG,
   DEFAULT_LOGS,
-} from './page'
+} from './audit-logs-data'
 
 import type {
   AuditLogEntry,
   AuditActionType,
   AuditResult,
-} from './page'
+} from './audit-logs-data'
 
 // ──────────────────────────────────────────────
 //  工厂函数 — 快速构建测试数据

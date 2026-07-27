@@ -21,13 +21,13 @@ import {
   RESULT_COLOR,
   RESULT_BG,
   DEFAULT_LOGS,
-} from './page';
+} from './audit-logs-data';
 
 import type {
   AuditLogEntry,
   AuditActionType,
   AuditResult,
-} from './page';
+} from './audit-logs-data';
 
 // ── 工厂函数 ────────────────────────────────────────────
 
@@ -87,15 +87,10 @@ test.describe('AuditLogs Service — 日志查询', () => {
     assert.equal(result.length, 0);
   });
 
-  test('filterLogs with whitespace in query (note: does not trim internally)', () => {
-    // The implementation uses searchQuery.trim() for empty check
-    // but passes the raw query to .includes(), so spaces around won't match
+  test('filterLogs with whitespace in query trims before matching', () => {
     const result = filterLogs(sampleLogs, 'all', '  system  ');
-    assert.equal(result.length, 0);
-    // Exact match without spaces works
-    const exact = filterLogs(sampleLogs, 'all', 'system');
-    assert.equal(exact.length, 1);
-    assert.equal(exact[0].operator, 'system');
+    assert.equal(result.length, 1);
+    assert.equal(result[0].operator, 'system');
   });
 
   test('filterLogs returns empty for empty log array', () => {

@@ -27,9 +27,9 @@ describe('AnomalyFrequencyClient — 正例', () => {
   test('渲染统计卡片字段', () => {
     const src = readSource();
     assert.ok(src.includes('总异常数'), '应展示总异常数统计');
-    assert.ok(src.includes('严重异常'), '应展示严重异常统计');
-    assert.ok(src.includes('高优先级'), '应展示高优先级统计');
-    assert.ok(src.includes('时段均值'), '应展示时段均值统计');
+    assert.ok(src.includes('关键异常'), '应展示关键异常统计');
+    assert.ok(src.includes('已处理'), '应展示已处理统计');
+    assert.ok(src.includes('处理率'), '应展示处理率统计');
   });
 
   test('渲染时间范围按钮', () => {
@@ -43,7 +43,7 @@ describe('AnomalyFrequencyClient — 正例', () => {
   test('渲染严重程度过滤按钮', () => {
     const src = readSource();
     assert.ok(src.includes('全部'), '应展示全部按钮');
-    assert.ok(src.includes('严重'), '应展示严重按钮');
+    assert.ok(src.includes('关键'), '应展示关键按钮');
     assert.ok(src.includes('高'), '应展示高按钮');
     assert.ok(src.includes('中'), '应展示中按钮');
     assert.ok(src.includes('低'), '应展示低按钮');
@@ -51,7 +51,8 @@ describe('AnomalyFrequencyClient — 正例', () => {
 
   test('渲染刷新按钮', () => {
     const src = readSource();
-    assert.ok(src.includes('刷新'), '应展示刷新按钮');
+    assert.ok(src.includes('刷新快照'), '应展示刷新按钮');
+    assert.ok(src.includes('router.refresh()'), '刷新按钮应走 router.refresh');
   });
 
   test('渲染异常时序图组件', () => {
@@ -64,60 +65,65 @@ describe('AnomalyFrequencyClient — 正例', () => {
   test('渲染底部说明', () => {
     const src = readSource();
     assert.ok(src.includes('说明'), '应展示说明区域');
-    assert.ok(src.includes('时序频率图'), '应展示说明内容');
+    assert.ok(src.includes('异常时序图展示各时段内不同严重级别异常的分布'), '应展示说明内容');
   });
 
   test('离线模式标识与来源态文案共存', () => {
     const src = readSource();
     assert.ok(src.includes('离线模式'), 'fallback 模式应展示离线标识');
-    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'), '应展示 deliveryMode');
-    assert.ok(src.includes('控制面来源'), '应展示控制面来源');
-    assert.ok(src.includes('业务数据: {sourceEvidence.businessDataSource}'), '应展示业务数据来源');
+    assert.ok(src.includes('客户端快照上下文: {snapshot.sourceLabel}'), '应展示 sourceLabel');
+    assert.ok(src.includes('Delivery {snapshot.deliveryMode}'), '应展示 deliveryMode');
+    assert.ok(src.includes('业务数据: {snapshot.businessDataSource}'), '应展示业务数据来源');
   });
 
-  test('显式展示 API/fallback 双路径说明', () => {
+  test('显式展示快照说明与时间证据', () => {
     const src = readSource();
-    assert.ok(src.includes('loadAdminGovernanceReadModel / snapshot.governance'));
-    assert.ok(src.includes('fallback governance snapshot'));
-    assert.ok(src.includes('generateMockBuckets(timeRange, severityFilter)'));
+    assert.ok(src.includes('generatedAt: {snapshot.generatedAt}'));
+    assert.ok(src.includes('{snapshot.note}'));
+    assert.ok(src.includes('{snapshot.refreshPath}'));
   });
 
   test('初始时间范围为近24小时（默认选中）', () => {
     const src = readSource();
-    assert.ok(src.includes("useState<TimeRange>('24h')"));
+    assert.ok(src.includes("useState<AnomalyTimeRange>('24h')"));
   });
 });
 
 // ---- 边界 ----
 
 describe('AnomalyFrequencyClient — 边界', () => {
-  test('governance 为 undefined 时回退到 fallback', () => {
+  test('severityFilter 不是 all 时应仅保留对应严重级别', () => {
     const src = readSource();
-    assert.ok(src.includes("initialGovernance ?? { deliveryMode: 'fallback' }"));
+    assert.ok(src.includes('projectBucketsBySeverity'));
+    assert.ok(src.includes("severityFilter === 'all'"));
+    assert.ok(src.includes('bucket.bySeverity[severityFilter]'));
   });
 
   test('超长时间范围（30天）不崩溃', () => {
     const src = readSource();
-    assert.ok(src.includes("maxBuckets={timeRange === '6h' ? 12 : timeRange === '24h' ? 24 : timeRange === '7d' ? 14 : 30}"));
+    assert.ok(src.includes('maxBuckets={'));
+    assert.ok(src.includes("timeRange === '7d' ? 14 : 30"));
+    assert.ok(src.includes('? 14 : 30'));
   });
 
-  test('generatedAt 缺失时应回退到 unknown', () => {
+  test('无可见数据时显示空态提示', () => {
     const src = readSource();
-    assert.ok(src.includes("String(safeGovernance.generatedAt ?? 'unknown')"));
+    assert.ok(src.includes('hasVisibleData ? ('));
+    assert.ok(src.includes('暂无可展示的异常频率数据'));
   });
 });
 
 // ---- 反例 ----
 
 describe('AnomalyFrequencyClient — 反例', () => {
-  test('缺失 deliveryMode 时仍保留 fallback 判断路径', () => {
+  test('组件不再直接加载治理读模型', () => {
     const src = readSource();
-    assert.ok(src.includes("safeGovernance.deliveryMode === 'fallback'"));
+    assert.ok(!src.includes('loadAdminGovernanceReadModel'));
   });
 
-  test('极端 deliveryMode 值不会影响来源态文案结构', () => {
+  test('组件以 snapshot 为唯一输入合同', () => {
     const src = readSource();
-    assert.ok(src.includes('sourceEvidence'));
-    assert.ok(src.includes('generatedAt'));
+    assert.ok(src.includes('snapshot: AnomalyFrequencySnapshot'));
+    assert.ok(src.includes('snapshot.bucketsByRange'));
   });
 });

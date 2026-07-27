@@ -1,6 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useTransition } from 'react';
 import {
   FormField,
   FormSubmitFeedback,
@@ -30,10 +32,10 @@ import {
   runAgentSessionStream,
   submitAgentConfig
 } from '../agent-view-model';
+import type { AgentStudioSnapshot } from './studio-data';
 
 interface AgentStudioClientProps {
-  configs: AgentConfig[];
-  deliveryMode: 'api' | 'fallback';
+  snapshot: AgentStudioSnapshot;
 }
 
 type StudioTab = 'create-config' | 'run-session' | 'batch-run' | 'delete-config';
@@ -734,12 +736,46 @@ function DeleteConfigForm({ configs }: { configs: AgentConfig[] }) {
   );
 }
 
-export default function AgentStudioClient({ configs, deliveryMode }: AgentStudioClientProps) {
+export default function AgentStudioClient({ snapshot }: AgentStudioClientProps) {
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
   const [activeTab, setActiveTab] = useState<StudioTab>('create-config');
   const [sessionMode, setSessionMode] = useState<SessionMode>('single');
+  const { configs, deliveryMode } = snapshot;
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ color: '#94a3b8', fontSize: 12 }}>
+          Agent Studio 已切换为 `server wrapper + snapshot loader + client renderer`，
+          刷新按钮仅通过 `router.refresh()` 触发服务端首屏快照重拉。
+        </div>
+        <button
+          type="button"
+          onClick={() => startRefresh(() => router.refresh())}
+          disabled={isRefreshing}
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(96, 165, 250, 0.3)',
+            background: 'rgba(96, 165, 250, 0.12)',
+            color: '#93c5fd',
+            cursor: 'pointer',
+            fontSize: 12
+          }}
+        >
+          {isRefreshing ? '刷新中...' : '刷新快照'}
+        </button>
+      </div>
+
       {deliveryMode === 'fallback' ? (
         <div
           style={{
