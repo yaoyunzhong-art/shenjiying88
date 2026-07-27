@@ -1,56 +1,58 @@
-/**
- * settings/venue-config/page.test.tsx — 场馆配置 L1 测试
- *
- * 覆盖: 页面结构、设施数据完整性、营业时间验证
- * 圈梁: TSC通过 → 测试存在 → 圈梁表更新 → PRD标记
- */
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { resolve } from 'node:path'
-import fs from 'fs'
+import { readFileSync } from 'node:fs'
+import { describe, it } from 'node:test'
 
-const PAGE = resolve(import.meta.dirname, 'page.tsx')
-const content = fs.readFileSync(PAGE, 'utf-8')
+const PAGE_SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf8')
+const DATA_SRC = readFileSync(new URL('./venue-config-data.ts', import.meta.url), 'utf8')
+const CLIENT_SRC = readFileSync(new URL('./venue-config-client.tsx', import.meta.url), 'utf8')
 
-describe('settings/venue-config', () => {
-  // ── 页面存在与导出 ──
-  it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
-  it('包含 default export 函数', () => {
-    assert.ok(content.includes('export default function '))
-  })
-  it('仅一个 export default', () => {
-    const matches = content.match(/export default/g)
-    assert.equal(matches?.length, 1)
-  })
-  it('TSC兼容: 无 as any', () => { assert.ok(!content.includes('as any')) })
-
-  // ── 数据完整性 ──
-  it('包含 FACILITIES 数组', () => { assert.ok(content.includes('FACILITIES')) })
-  it('包含 4 个设施', () => {
-    const facilities = Array.from(content.matchAll(/name:\s*['"][^'"]+['"]/g))
-    assert.equal(facilities.length, 4, `got ${facilities.length} facilities`)
-  })
-  it('包含羽毛球场地', () => { assert.ok(content.includes('羽毛球')) })
-  it('包含篮球场地', () => { assert.ok(content.includes('篮球')) })
-  it('包含乒乓球台', () => { assert.ok(content.includes('乒乓球')) })
-  it('包含游泳馆', () => { assert.ok(content.includes('游泳') || content.includes('游泳馆')) })
-  it('每个设施有 name/count/status 字段', () => {
-    assert.ok(content.includes('name:'))
-    assert.ok(content.includes('count:'))
-    assert.ok(content.includes('status:'))
-  })
-  it('游泳馆状态为维护中', () => {
-    assert.ok(content.includes('维护中'))
+describe('settings/venue-config 页面结构固证', () => {
+  it('page 为 server wrapper 并加载快照', () => {
+    assert.ok(PAGE_SRC.includes('export default async function VenueConfigPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadVenueConfigSnapshot()'))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  // ── 页面结构 ──
-  it('包含表格渲染', () => { assert.ok(content.includes('map(') || content.includes('table')) })
-  it('包含标题 "场馆配置"', () => { assert.ok(content.includes('场馆配置')) })
-  it('包含营业时间 section', () => { assert.ok(content.includes('营业时间') || content.includes('09:00')) })
-  it('包含设施列表 section', () => { assert.ok(content.includes('设施列表')) })
-  it('工作日营业时间包含 09:00', () => { assert.ok(content.includes('09:00')) })
-  it('接入管理员权限边界', () => {
-    assert.ok(content.includes('AdminPermissionGate'))
-    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+  it('page 显式展示来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})
+
+describe('settings/venue-config snapshot loader 固证', () => {
+  it('data 文件定义 fallback 快照合同', () => {
+    assert.ok(DATA_SRC.includes('export interface VenueConfigSnapshot'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'local-venue-config-snapshot'"))
+    assert.ok(DATA_SRC.includes('export async function loadVenueConfigSnapshot()'))
+  })
+
+  it('data 文件保留营业时间和设施样本', () => {
+    assert.ok(DATA_SRC.includes('VENUE_FACILITIES'))
+    assert.ok(DATA_SRC.includes('VENUE_OPERATION_WINDOWS'))
+    assert.ok(DATA_SRC.includes('羽毛球场地'))
+    assert.ok(DATA_SRC.includes('游泳馆'))
+    assert.ok(DATA_SRC.includes('09:00 - 22:00'))
+    assert.ok(DATA_SRC.includes('summarizeVenueConfig'))
+  })
+})
+
+describe('settings/venue-config client 固证', () => {
+  it('client 文件为 client component 并使用 router.refresh()', () => {
+    assert.ok(CLIENT_SRC.startsWith("'use client'"))
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+  })
+
+  it('client 文件保留营业规则卡片与设施列表渲染', () => {
+    assert.ok(CLIENT_SRC.includes('场馆配置'))
+    assert.ok(CLIENT_SRC.includes('营业时间与预约规则'))
+    assert.ok(CLIENT_SRC.includes('设施列表'))
+    assert.ok(CLIENT_SRC.includes('snapshot.facilities.map'))
+    assert.ok(CLIENT_SRC.includes('snapshot.operationWindows.map'))
   })
 })

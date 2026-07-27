@@ -28,9 +28,14 @@ export type SupplierCredit = 'AAA' | 'AA' | 'A' | 'B' | 'C'
 
 export interface SuppliersSnapshotDelivery {
   deliveryMode: 'api' | 'fallback'
+  sourceLabel: 'suppliers-api' | 'suppliers-fallback'
   suppliers: SupplierItem[]
   stats: SupplierStats
   generatedAt: string
+  controlPlaneSource: string
+  businessDataSource: string
+  refreshPath: string
+  note: string
   error?: string
 }
 
@@ -299,16 +304,26 @@ export async function loadSuppliersSnapshot(): Promise<SuppliersSnapshotDelivery
     const suppliers = await fetchSuppliersFromApi()
     return {
       deliveryMode: 'api',
+      sourceLabel: 'suppliers-api',
       suppliers,
       stats: computeSupplierStats(suppliers),
       generatedAt: new Date().toISOString(),
+      controlPlaneSource: 'loadSuppliersSnapshot -> suppliers',
+      businessDataSource: 'suppliers upstream API responses',
+      refreshPath: `loadSuppliersSnapshot(${'root'})`,
+      note: '当前页面直接消费供应商服务端快照。',
     }
   } catch {
     return {
       deliveryMode: 'fallback',
+      sourceLabel: 'suppliers-fallback',
       suppliers: MOCK_SUPPLIERS,
       stats: computeSupplierStats(MOCK_SUPPLIERS),
       generatedAt: getLatestSupplierTimestamp(MOCK_SUPPLIERS),
+      controlPlaneSource: 'loadSuppliersSnapshot -> MOCK_SUPPLIERS fallback',
+      businessDataSource: 'local supplier samples',
+      refreshPath: `loadSuppliersSnapshot(${'root'})`,
+      note: '当前页面已回退到本地供应商样本，不可作为闭环复签证据。',
       error: '供应商实时接口不可达，已切换到 fallback 样本数据。',
     }
   }

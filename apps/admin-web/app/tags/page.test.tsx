@@ -1,27 +1,45 @@
-/**
- * tags/page.test.tsx — 客户标签管理页面源码分析测试
- */
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import fs from 'fs'
-import path from 'node:path'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const PAGE = path.resolve(__dirname, 'page.tsx')
-const content = fs.readFileSync(PAGE, 'utf-8')
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'tags-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'tags-page-data.ts'), 'utf-8')
 
-describe('tags 客户标签管理页面', () => {
-  it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
-  it('应接入管理员权限边界', () => {
-    assert.ok(content.includes('AdminPermissionGate'))
-    assert.ok(content.includes("requiredPermission: 'member:read'"))
+describe('tags 结构固证', () => {
+  it('page 应切为 server wrapper 并加载快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(PAGE_SRC.includes('export default async function TagsPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadTagsPageSnapshot()'))
+    assert.ok(PAGE_SRC.includes('<TagsClient snapshot={snapshot} />'))
   })
-  it('包含default export', () => { assert.ok(content.includes('export default')) })
-  it('包含useState', () => { assert.ok(content.includes('useState')) })
-  it('包含PageShell', () => { assert.ok(content.includes('PageShell')) })
-  it('包含列表渲染', () => { assert.ok(content.includes('.map(')) })
-  it('包含标签数据', () => { assert.ok(content.includes('标签') || content.includes('tag')) })
-  it('TSC兼容: 无as any', () => { assert.ok(!content.includes('as any')) })
-  it('圈梁四道箍注释存在', () => { assert.ok(content.includes('圈梁四道箍')) })
+
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'member:read'"))
+  })
+
+  it('client 应保留 router.refresh 和标签分类交互', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('setActiveTab'))
+    assert.ok(CLIENT_SRC.includes('刷新快照'))
+    assert.ok(CLIENT_SRC.includes('最高关联标签'))
+  })
+
+  it('data 应定义 mock 快照合同和标签样本', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'tags-page-mock'"))
+    assert.ok(DATA_SRC.includes('TAG_SAMPLE_DATA'))
+    assert.ok(DATA_SRC.includes('tags: TAG_SAMPLE_DATA'))
+    assert.ok(DATA_SRC.includes('loadTagsPageSnapshot'))
+  })
 })

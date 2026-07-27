@@ -1,59 +1,57 @@
-/**
- * settings/promotion-rules/page.test.tsx — 促销规则设置 L1 测试
- *
- * 覆盖: 页面结构、规则数据完整性、促销类型验证
- * 圈梁: TSC通过 → 测试存在 → 圈梁表更新 → PRD标记
- */
-import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { resolve } from 'node:path'
-import fs from 'fs'
+import { readFileSync } from 'node:fs'
+import { describe, it } from 'node:test'
 
-const PAGE = resolve(import.meta.dirname, 'page.tsx')
-const content = fs.readFileSync(PAGE, 'utf-8')
+const PAGE_SRC = readFileSync(new URL('./page.tsx', import.meta.url), 'utf8')
+const DATA_SRC = readFileSync(new URL('./promotion-rules-data.ts', import.meta.url), 'utf8')
+const CLIENT_SRC = readFileSync(new URL('./promotion-rules-client.tsx', import.meta.url), 'utf8')
 
-describe('settings/promotion-rules', () => {
-  // ── 页面存在与导出 ──
-  it('页面文件存在', () => { assert.ok(fs.existsSync(PAGE)) })
-  it('包含 default export 函数', () => {
-    assert.ok(content.includes('export default function '))
-  })
-  it('仅一个 export default', () => {
-    const matches = content.match(/export default/g)
-    assert.equal(matches?.length, 1)
-  })
-  it('TSC兼容: 无 as any', () => { assert.ok(!content.includes('as any')) })
-
-  // ── 数据完整性 ──
-  it('包含 RULES 数组', () => { assert.ok(content.includes('RULES')) })
-  it('包含 9 个 name 字段 (3条规则 + 6种类型)', () => {
-    const names = Array.from(content.matchAll(/name:\s*['"][^'"]+['"]/g))
-    assert.equal(names.length, 9, `got ${names.length} name fields`)
-  })
-  it('包含满减规则', () => { assert.ok(content.includes('满减') || content.includes('618满200减50')) })
-  it('包含折扣规则', () => { assert.ok(content.includes('折扣') || content.includes('全场9折')) })
-  it('包含包邮规则', () => { assert.ok(content.includes('包邮') || content.includes('满99包邮')) })
-  it('每条规则有 name/type/status/period/condition 字段', () => {
-    assert.ok(content.includes('name:'))
-    assert.ok(content.includes('type:'))
-    assert.ok(content.includes('status:'))
-    assert.ok(content.includes('period:'))
-    assert.ok(content.includes('condition:'))
+describe('settings/promotion-rules 页面结构固证', () => {
+  it('page 为 server wrapper 并加载快照', () => {
+    assert.ok(PAGE_SRC.includes('export default async function PromotionRulesPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadPromotionRulesSnapshot()'))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  // ── 页面结构 ──
-  it('包含表格渲染', () => { assert.ok(content.includes('map(') || content.includes('table')) })
-  it('包含标题 "促销规则设置"', () => { assert.ok(content.includes('促销规则设置')) })
-  it('包含当前活动规则 section', () => { assert.ok(content.includes('当前活动规则')) })
-  it('包含促销类型说明 section', () => { assert.ok(content.includes('促销类型说明')) })
-  it('支持 6 种促销类型', () => {
-    const types = ['满减', '折扣', '赠品', '包邮', '加价购', '秒杀']
-    for (const t of types) {
-      assert.ok(content.includes(t), `missing promotion type: ${t}`)
-    }
+  it('page 显式展示来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
-  it('接入管理员权限边界', () => {
-    assert.ok(content.includes('AdminPermissionGate'))
-    assert.ok(content.includes("requiredPermission: 'foundation.governance.read'"))
+})
+
+describe('settings/promotion-rules snapshot loader 固证', () => {
+  it('data 文件定义 fallback 快照合同', () => {
+    assert.ok(DATA_SRC.includes('export interface PromotionRulesSnapshot'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'local-promotion-rules-snapshot'"))
+    assert.ok(DATA_SRC.includes('export async function loadPromotionRulesSnapshot()'))
+  })
+
+  it('data 文件保留规则样本、促销类型和过滤逻辑', () => {
+    assert.ok(DATA_SRC.includes('PROMOTION_RULES'))
+    assert.ok(DATA_SRC.includes('PROMOTION_TYPES'))
+    assert.ok(DATA_SRC.includes('618 满 200 减 50'))
+    assert.ok(DATA_SRC.includes('秒杀'))
+    assert.ok(DATA_SRC.includes('filterPromotionRules'))
+  })
+})
+
+describe('settings/promotion-rules client 固证', () => {
+  it('client 文件为 client component 并使用 router.refresh()', () => {
+    assert.ok(CLIENT_SRC.startsWith("'use client'"))
+    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+  })
+
+  it('client 文件保留状态筛选、规则表格和类型说明', () => {
+    assert.ok(CLIENT_SRC.includes('activeStatus'))
+    assert.ok(CLIENT_SRC.includes('当前活动规则'))
+    assert.ok(CLIENT_SRC.includes('促销类型说明'))
+    assert.ok(CLIENT_SRC.includes('snapshot.promotionTypes.map'))
+    assert.ok(CLIENT_SRC.includes('filteredRules.map'))
   })
 })

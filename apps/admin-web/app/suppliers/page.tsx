@@ -15,18 +15,12 @@ export default async function StoreSuppliersPage() {
   const snapshot = await loadSuppliersSnapshot()
   const sourceEvidence = {
     deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource:
-      snapshot.deliveryMode === 'api'
-        ? 'loadSuppliersSnapshot -> suppliers'
-        : 'loadSuppliersSnapshot -> MOCK_SUPPLIERS fallback',
-    businessDataSource:
-      snapshot.deliveryMode === 'api' ? 'suppliers upstream API responses' : 'local supplier samples',
-    refreshPath: 'StoreSuppliersPage -> loadSuppliersSnapshot',
+    sourceLabel: snapshot.sourceLabel,
+    controlPlaneSource: snapshot.controlPlaneSource,
+    businessDataSource: snapshot.businessDataSource,
+    refreshPath: snapshot.refreshPath,
     generatedAt: snapshot.generatedAt,
-    note:
-      snapshot.deliveryMode === 'api'
-        ? '当前页面直接消费供应商服务端快照。'
-        : '当前页面已回退到本地供应商样本，不可作为闭环复签证据。',
+    note: snapshot.note,
   } as const
 
   return (
@@ -34,7 +28,8 @@ export default async function StoreSuppliersPage() {
       <div className="mx-auto max-w-7xl space-y-6 p-6">
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700">
           <div>
-            Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+            Delivery {sourceEvidence.deliveryMode} · 来源标签: {sourceEvidence.sourceLabel} · 控制面来源:{' '}
+            {sourceEvidence.controlPlaneSource}
           </div>
           <div>
             业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
