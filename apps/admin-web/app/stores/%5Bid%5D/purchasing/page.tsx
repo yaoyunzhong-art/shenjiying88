@@ -1,69 +1,55 @@
-// 📦 P-37 库存采购 · 供应商/采购单/到货
-'use client';
-import { useState } from 'react';
-import { PageShell, Card, Statistic, Table, Tag, Button, Space, Input, Modal } from '@m5/ui';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
+import { AdminPermissionGate } from '../../../components/admin-permission-gate'
+import PurchasingClient from './purchasing-client'
+import { loadPurchasingSnapshot } from './purchasing-data'
 
-interface Supplier { id:string; name:string; contact:string; phone:string; category:string; status:string; totalOrders:number; lastOrder:string; [key:string]:unknown; }
-
-const SUPPLIERS: Supplier[] = [
-  { id:'S-01',name:'世嘉',contact:'张经理',phone:'138****1100',category:'游戏设备',status:'active',totalOrders:12,lastOrder:'2026-07-10' },
-  { id:'S-02',name:'义乌礼品',contact:'李经理',phone:'138****2200',category:'礼品/周边',status:'active',totalOrders:8,lastOrder:'2026-07-08' },
-  { id:'S-03',name:'农夫山泉',contact:'王经理',phone:'138****3300',category:'饮品',status:'active',totalOrders:24,lastOrder:'2026-07-12' },
-  { id:'S-04',name:'任天堂',contact:'赵经理',phone:'138****4400',category:'游戏卡带',status:'pending',totalOrders:3,lastOrder:'2026-06-20' },
-];
 const permissionGate = {
   requiredPermission: 'store:read',
   title: '门店采购访问受限',
-  description:
-    '门店采购页已接入管理员本地 session，只有具备 store:read 的账号才能查看供应商、采购统计与到货状态。',
-} as const;
+  description: '门店采购页已接入管理员本地 session，只有具备 store:read 的账号才能查看采购统计、供应商与补货计划。',
+} as const
 
-export default function InventoryPage() {
-  const [loading, _setLoading] = useState(false);
-  const [error, _setError] = useState<string | null>(null);
-  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
-  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
-  if (SUPPLIERS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无供应商数据</div></AdminPermissionGate>;
-  const [showAdd, setShowAdd] = useState(false);
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export default async function PurchasingPage() {
+  const snapshot = await loadPurchasingSnapshot()
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    sourceLabel: snapshot.sourceLabel,
+    controlPlaneSource: snapshot.controlPlaneSource,
+    businessDataSource: snapshot.businessDataSource,
+    refreshPath: snapshot.refreshPath,
+    generatedAt: snapshot.generatedAt,
+    note: snapshot.note,
+  } as const
+
   return (
     <AdminPermissionGate {...permissionGate}>
-      <PageShell title="库存采购">
-        <Space style={{width:'100%',flexDirection:'column',gap:16}}>
-        <div style={{display:'flex',justifyContent:'space-between'}}>
-          <h2 style={{color:'#f8fafc',margin:0}}>📦 库存采购</h2>
-          <Space><Button>采购单</Button><Button variant="primary" onClick={()=>setShowAdd(true)}>+ 添加供应商</Button></Space>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+        <div
+          style={{
+            marginBottom: 24,
+            borderRadius: 16,
+            border: '1px solid rgba(148, 163, 184, 0.18)',
+            background: 'rgba(248, 250, 252, 0.92)',
+            padding: 16,
+            color: '#334155',
+            fontSize: 12,
+            lineHeight: 1.8,
+          }}
+        >
+          <div>
+            Delivery {sourceEvidence.deliveryMode} · 来源标签: {sourceEvidence.sourceLabel} · 控制面来源:{' '}
+            {sourceEvidence.controlPlaneSource}
+          </div>
+          <div>
+            业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+          </div>
+          <div>
+            generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+          </div>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:16}}>
-          <Card><Statistic label="供应商" value={SUPPLIERS.length} /></Card>
-          <Card><Statistic label="活跃" value={SUPPLIERS.filter(s=>s.status==='active').length} variant="success" /></Card>
-          <Card><Statistic label="总订单" value={SUPPLIERS.reduce((s,i)=>s+i.totalOrders,0)} /></Card>
-          <Card><Statistic label="待审核" value={SUPPLIERS.filter(s=>s.status==='pending').length} variant="warning" /></Card>
-          <Card><Statistic label="品类数" value={new Set(SUPPLIERS.map(s=>s.category)).size} /></Card>
-        </div>
-        <Card>
-          <Table
-            rows={SUPPLIERS}
-            rowKey={(r: Supplier) => r.id}
-            columns={[
-              {key:'name', header:'名称', render:(r: Supplier)=>r.name},
-              {key:'contact', header:'联系人', render:(r: Supplier)=>r.contact},
-              {key:'phone', header:'电话', render:(r: Supplier)=>r.phone},
-              {key:'category', header:'分类', render:(r: Supplier)=><Tag>{r.category}</Tag>},
-              {key:'status', header:'状态', render:(r: Supplier)=><Tag variant={r.status==='active'?'success':'warning'}>{r.status==='active'?'活跃':'待审'}</Tag>},
-              {key:'totalOrders', header:'订单数', render:(r: Supplier)=>String(r.totalOrders)},
-              {key:'lastOrder', header:'上次采购', render:(r: Supplier)=>r.lastOrder},
-              {key:'a', header:'操作', render:()=><Space><Button size="sm">采购</Button><Button size="sm">详情</Button></Space>},
-            ]}
-          />
-        </Card>
-        <Modal title="添加供应商" open={showAdd} onClose={()=>setShowAdd(false)}>
-          <Space style={{width:'100%',flexDirection:'column'}}>
-            <Input placeholder="供应商名称" /><Input placeholder="联系人" /><Input placeholder="联系电话" />
-          </Space>
-        </Modal>
-        </Space>
-      </PageShell>
+        <PurchasingClient snapshot={snapshot} />
+      </div>
     </AdminPermissionGate>
-  );
+  )
 }

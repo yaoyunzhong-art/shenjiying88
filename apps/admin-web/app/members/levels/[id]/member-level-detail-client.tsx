@@ -1,8 +1,8 @@
 // @ts-nocheck
-'use client';
+'use client'
 
-import { useState, useCallback, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 
 import {
   DetailShell,
@@ -16,98 +16,47 @@ import {
   WorkspaceBreadcrumb,
   useToast,
   type DetailShellAction,
-} from '@m5/ui';
+} from '@m5/ui'
 
 import {
-  MOCK_MEMBER_LEVEL_CONFIGS,
+  LEVEL_STATUS_MAP as STATUS_MAP,
+  STATUS_OPTIONS,
+  formatLevelCurrency as formatCurrency,
+  formatLevelDate as formatDate,
+  levelColor,
+  validateEditLevelForm as validateEditForm,
+  type EditLevelErrors as EditFormErrors,
+  type EditLevelFormData as EditFormData,
   type MemberLevelConfig,
-} from '../../../members-data';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
-
-const permissionGate = {
-  requiredPermission: 'member:read',
-  title: '会员等级详情访问受限',
-  description:
-    '会员等级详情页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级规则、积分区间、权益配置与状态变更记录。',
-} as const;
+  type MemberLevelDetailSnapshot,
+} from './member-level-detail-data'
 
 // ---- 状态映射 ----
 
-const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'warning' | 'neutral' }> = {
-  active: { label: '启用', variant: 'success' },
-  inactive: { label: '停用', variant: 'warning' },
-  hidden: { label: '仅内部可见', variant: 'neutral' },
-};
-
-const STATUS_OPTIONS = [
-  { label: '启用', value: 'active' },
-  { label: '停用', value: 'inactive' },
-  { label: '仅内部可见', value: 'hidden' },
-];
-
-// ---- 辅助函数 ----
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function formatCurrency(amount: number): string {
-  if (amount >= 10000) return `¥${(amount / 10000).toFixed(1)}万`;
-  return `¥${amount.toLocaleString()}`;
-}
-
-function levelColor(level: number): string {
-  const colors = ['#f0abfc', '#fbbf24', '#94a3b8', '#d97706', '#64748b'];
-  return colors[Math.min(level - 1, colors.length - 1)];
-}
-
-// ---- 编辑表单类型 ----
-
-interface EditFormData {
-  name: string;
-  minPoints: number;
-  maxPoints: number;
-  discountRate: number;
-  annualFee: number;
-  benefits: string;
-  renewalCondition: string;
-  upgradeCondition: string;
-  downgradeCondition: string;
-  notes: string;
-}
-
-interface EditFormErrors {
-  name?: string;
-  minPoints?: string;
-  maxPoints?: string;
-  discountRate?: string;
-  annualFee?: string;
-}
-
 // ---- 等级详情页 ----
 
-export default function MemberLevelDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const toast = useToast();
-  const levelId = params.id as string;
+export default function MemberLevelDetailClient({
+  snapshot,
+}: {
+  snapshot: MemberLevelDetailSnapshot
+}) {
+  const router = useRouter()
+  const toast = useToast()
+  const [isRefreshing, startRefresh] = useTransition()
+  const levelId = snapshot.levelId
 
-  // 状态
-  const [levels, setLevels] = useState<MemberLevelConfig[]>(MOCK_MEMBER_LEVEL_CONFIGS);
-  const level = useMemo(() => levels.find((l) => l.id === levelId), [levels, levelId]);
+  const [level, setLevel] = useState<MemberLevelConfig | null>(snapshot.level)
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [targetStatus, setTargetStatus] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isEditing, setIsEditing] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [targetStatus, setTargetStatus] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    setLevel(snapshot.level)
+  }, [snapshot.level])
 
   // 编辑表单
   const [editForm, setEditForm] = useState<EditFormData>({
@@ -122,7 +71,7 @@ export default function MemberLevelDetailPage() {
     downgradeCondition: '',
     notes: '',
   });
-  const [editErrors, setEditErrors] = useState<EditFormErrors>({});
+  const [editErrors, setEditErrors] = useState<EditFormErrors>({})
 
   // 进入编辑模式
   const handleStartEdit = useCallback(() => {
@@ -139,21 +88,10 @@ export default function MemberLevelDetailPage() {
       downgradeCondition: `连续 6 个月消费不足 ¥${Math.max(level.minPoints, 1000).toLocaleString()}`,
       notes: '',
     });
-    setEditErrors({});
-    setSubmitResult(null);
-    setIsEditing(true);
-  }, [level]);
-
-  // 验证编辑表单
-  const validateEditForm = useCallback((data: EditFormData): EditFormErrors => {
-    const errs: EditFormErrors = {};
-    if (!data.name.trim()) errs.name = '等级名称不能为空';
-    if (data.minPoints < 0) errs.minPoints = '最低积分不能为负';
-    if (data.maxPoints < data.minPoints) errs.maxPoints = '上限必须大于下限';
-    if (data.discountRate < 0 || data.discountRate > 100) errs.discountRate = '折扣率范围为0-100';
-    if (data.annualFee < 0) errs.annualFee = '年费不能为负';
-    return errs;
-  }, []);
+    setEditErrors({})
+    setSubmitResult(null)
+    setIsEditing(true)
+  }, [level])
 
   // 保存编辑
   const handleSave = useCallback(async () => {
@@ -181,17 +119,17 @@ export default function MemberLevelDetailPage() {
         updatedAt: new Date().toISOString(),
       };
 
-      setLevels((prev) => prev.map((l) => (l.id === level.id ? updatedLevel : l)));
-      toast.success(`等级「${editForm.name}」信息已更新`);
-      setSubmitResult({ success: true, message: '编辑保存成功' });
-      setIsEditing(false);
+      setLevel(updatedLevel)
+      toast.success(`等级「${editForm.name}」信息已更新`)
+      setSubmitResult({ success: true, message: '编辑保存成功' })
+      setIsEditing(false)
     } catch {
-      toast.error('保存失败，请稍后重试');
-      setSubmitResult({ success: false, message: '保存失败' });
+      toast.error('保存失败，请稍后重试')
+      setSubmitResult({ success: false, message: '保存失败' })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, [level, editForm, toast, validateEditForm]);
+  }, [editForm, level, toast])
 
   // 状态变更
   const handleStatusChange = useCallback(async (newStatus: string) => {
@@ -199,24 +137,22 @@ export default function MemberLevelDetailPage() {
     setIsSubmitting(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      setLevels((prev) =>
-        prev.map((l) =>
-          l.id === level.id
-            ? { ...l, status: newStatus as MemberLevelConfig['status'], updatedAt: new Date().toISOString() }
-            : l
-        )
-      );
-      toast.success(`等级状态已变更为「${STATUS_OPTIONS.find((o) => o.value === newStatus)?.label}」`);
-      setSubmitResult({ success: true, message: '状态更新成功' });
-      setStatusDialogOpen(false);
-      setTargetStatus(null);
+      setLevel({
+        ...level,
+        status: newStatus as MemberLevelConfig['status'],
+        updatedAt: new Date().toISOString(),
+      })
+      toast.success(`等级状态已变更为「${STATUS_OPTIONS.find((o) => o.value === newStatus)?.label}」`)
+      setSubmitResult({ success: true, message: '状态更新成功' })
+      setStatusDialogOpen(false)
+      setTargetStatus(null)
     } catch {
-      toast.error('状态更新失败');
-      setSubmitResult({ success: false, message: '状态更新失败' });
+      toast.error('状态更新失败')
+      setSubmitResult({ success: false, message: '状态更新失败' })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, [level, toast]);
+  }, [level, toast])
 
   // 删除等级
   const handleDelete = useCallback(async () => {
@@ -224,17 +160,21 @@ export default function MemberLevelDetailPage() {
     setIsSubmitting(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 400));
-      setLevels((prev) => prev.filter((l) => l.id !== level.id));
-      toast.success(`等级「${level.name}」已删除`);
-      setDeleteDialogOpen(false);
-      router.push('/members/levels');
+      setLevel(null)
+      toast.success(`等级「${level.name}」已删除`)
+      setDeleteDialogOpen(false)
+      router.push('/members/levels')
     } catch {
-      toast.error('删除失败');
-      setSubmitResult({ success: false, message: '删除失败' });
+      toast.error('删除失败')
+      setSubmitResult({ success: false, message: '删除失败' })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, [level, router, toast]);
+  }, [level, router, toast])
+
+  function handleRefresh() {
+    startRefresh(() => router.refresh())
+  }
 
   // 操作栏
   const actions: DetailShellAction[] = useMemo(
@@ -259,54 +199,72 @@ export default function MemberLevelDetailPage() {
         onClick: () => setDeleteDialogOpen(true),
       },
       {
+        key: 'refresh',
+        label: isRefreshing ? '刷新中...' : '刷新快照',
+        variant: 'secondary',
+        onClick: handleRefresh,
+      },
+      {
         key: 'view-members',
         label: '查看会员',
         variant: 'secondary',
         href: `/members?focus=tier:${level?.key ?? ''}`,
       },
     ],
-    [isEditing, handleStartEdit, level]
-  );
+    [handleStartEdit, isEditing, isRefreshing, level]
+  )
 
   // 未找到
   if (!level) {
     return (
-      <AdminPermissionGate {...permissionGate}>
-        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
-          <h2 style={{ color: '#ef4444' }}>等级不存在</h2>
-          <p>未找到 ID 为「{levelId}」的会员等级</p>
-          <button
-            onClick={() => router.push('/members/levels')}
-            style={{
-              marginTop: 16,
-              padding: '8px 20px',
-              background: '#3b82f6',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            返回等级列表
-          </button>
-        </div>
-      </AdminPermissionGate>
-    );
+      <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
+        <h2 style={{ color: '#ef4444' }}>等级不存在</h2>
+        <p>未找到 ID 为「{levelId}」的会员等级</p>
+        <button
+          onClick={() => router.push('/members/levels')}
+          style={{
+            marginTop: 16,
+            padding: '8px 20px',
+            background: '#3b82f6',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            cursor: 'pointer',
+          }}
+        >
+          返回等级列表
+        </button>
+      </div>
+    )
   }
 
-  const statusInfo = STATUS_MAP[level.status] ?? { label: level.status, variant: 'neutral' as const };
+  const statusInfo = STATUS_MAP[level.status] ?? { label: level.status, variant: 'neutral' as const }
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
-        <WorkspaceBreadcrumb
-          workspaceLabel="会员管理"
-          workspaceHref="/members"
-          extraSegments={[
-            { label: '等级列表', href: '/members/levels' },
-            { label: level.name },
-          ]}
-        />
+    <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
+      <WorkspaceBreadcrumb
+        workspaceLabel="会员管理"
+        workspaceHref="/members"
+        extraSegments={[
+          { label: '等级列表', href: '/members/levels' },
+          { label: level.name },
+        ]}
+      />
+      <div
+        style={{
+          marginBottom: 16,
+          borderRadius: 16,
+          padding: 16,
+          background: 'rgba(15, 23, 42, 0.35)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          color: '#94a3b8',
+          fontSize: 13,
+          lineHeight: 1.7,
+        }}
+      >
+        当前快照：{snapshot.sourceLabel} · Delivery {snapshot.deliveryMode} · 刷新统一通过{' '}
+        router.refresh() 回源。
+      </div>
 
       <DetailShell
         title={level.name}
@@ -736,9 +694,8 @@ export default function MemberLevelDetailPage() {
           </div>
           </Dialog>
         )}
-      </div>
-    </AdminPermissionGate>
-  );
+    </div>
+  )
 }
 
 // ---- 样式 ----

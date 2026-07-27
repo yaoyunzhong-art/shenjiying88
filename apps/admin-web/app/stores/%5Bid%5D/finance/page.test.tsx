@@ -1,38 +1,44 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'finance-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'finance-data.ts'), 'utf-8')
 
-describe('财务 — 正例', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
-  });
-  it('应导出默认组件', () => assert.ok(SRC.includes('export default function')));
-  it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
-  it('应包含hook', () => assert.ok(SRC.includes('useState') || SRC.includes('useEffect') || SRC.includes('useCallback')));
-});
+describe('stores/%5Bid%5D/finance 结构固证', () => {
+  it('page 应切为 server wrapper 并加载快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export const dynamic = \'force-dynamic\''))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(PAGE_SRC.includes('export default async function FinancePage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadFinanceSnapshot()'))
+    assert.ok(PAGE_SRC.includes('<FinanceClient snapshot={snapshot} />'))
+  })
 
-describe('财务 — 防御', () => {
-  it('无dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-  it('无any类型', () => assert.ok(!/:\s*any\b/.test(SRC)));
-});
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  })
 
-describe('财务 — 业务', () => {
-  it('包含业务数据引用', () => assert.ok(SRC.includes('MOCK_') || SRC.includes('const ') || SRC.includes('useState')));
-});
+  it('client 应保留 router.refresh 刷新链路', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('刷新快照'))
+    assert.ok(CLIENT_SRC.includes('snapshot.sourceLabel'))
+  })
 
-describe('Stores / Finance — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));
-  it('包含列表过滤', () => assert.ok(SRC.includes('.filter(')));
-  it('包含三元表达式', () => assert.ok(SRC.includes('?') && SRC.includes(':')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+  it('data 应定义 mock 快照合同', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes('generatedAt'))
+    assert.ok(DATA_SRC.includes('refreshPath'))
+    assert.ok(DATA_SRC.includes('loadFinanceSnapshot'))
+  })
+})
