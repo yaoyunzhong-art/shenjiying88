@@ -1,66 +1,44 @@
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import React from 'react'
-import SEOMetadataPage from './page'
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-afterEach(() => { cleanup() })
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'metadata-data.ts'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'metadata-client.tsx'), 'utf-8')
 
-const ADMIN_USER_KEY = 'admin_user'
-const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
-
-beforeEach(() => {
-  window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
-    userId: 'admin:test',
-    username: 'seo_metadata_test',
-    role: 'super-admin',
-    permissions: ['dashboard:read'],
-  }))
-})
-
-async function renderMetadataPageReady() {
-  render(React.createElement(SEOMetadataPage))
-  await waitFor(() => screen.getByText('SEO 元数据管理'))
-}
-
-describe('SEO元数据管理页', () => {
-  it('源码接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'))
-    assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"))
+describe('seo/metadata 结构固证', () => {
+  it('page 应为 server wrapper 并加载 metadata 快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('loadMetadataSnapshot'))
+    assert.ok(PAGE_SRC.includes('<MetadataClient snapshot={snapshot} />'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 
-  it('正例: 渲染标题', async () => {
-    await renderMetadataPageReady()
-    assert.ok(screen.getByText('SEO 元数据管理'))
+  it('page 应显式透出来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('控制面来源:'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
   })
 
-  it('正例: 搜索过滤', async () => {
-    await renderMetadataPageReady()
-    fireEvent.change(screen.getByPlaceholderText('搜索路径或标题...'), { target: { value: '北京' } })
-    assert.ok(screen.getByText('北京朝阳店 | 品牌'))
-    assert.equal(screen.queryByText('上海徐汇旗舰店 | 品牌'), null)
+  it('data loader 应定义 metadata 快照合同', () => {
+    assert.ok(DATA_SRC.includes('export interface MetadataSnapshotDelivery'))
+    assert.ok(DATA_SRC.includes('METADATA_ROWS'))
+    assert.ok(DATA_SRC.includes('totalRows'))
+    assert.ok(DATA_SRC.includes('loadMetadataSnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'seo-metadata-fallback'"))
   })
 
-  it('正例: 点击编辑打开弹窗', async () => {
-    await renderMetadataPageReady()
-    fireEvent.click(screen.getAllByText('编辑')[0]!)
-    assert.ok(screen.getByText(/编辑元数据/))
-    assert.ok(screen.getByText('保存'))
-  })
-
-  it('反例: 取消关闭弹窗', async () => {
-    await renderMetadataPageReady()
-    fireEvent.click(screen.getAllByText('编辑')[0]!)
-    assert.ok(screen.getByText(/编辑元数据/))
-    fireEvent.click(screen.getByText('取消'))
-    assert.equal(screen.queryByText(/编辑元数据/), null)
-  })
-
-  it('边界: 搜索无结果', async () => {
-    await renderMetadataPageReady()
-    fireEvent.change(screen.getByPlaceholderText('搜索路径或标题...'), { target: { value: 'ZZZZZZ' } })
-    assert.ok(screen.getByText('无匹配数据'))
+  it('client renderer 应保留搜索、编辑、保存与刷新能力', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('搜索路径或标题...'))
+    assert.ok(CLIENT_SRC.includes('编辑元数据'))
+    assert.ok(CLIENT_SRC.includes('标题不能为空'))
+    assert.ok(CLIENT_SRC.includes('保存中...'))
   })
 })

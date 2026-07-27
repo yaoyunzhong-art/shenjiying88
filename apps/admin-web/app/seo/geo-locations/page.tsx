@@ -1,18 +1,6 @@
-'use client'
-
-import { useState, useMemo } from 'react'
 import { AdminPermissionGate } from '../../components/admin-permission-gate'
-
-interface GeoRow {
-  id: string; city: string; district: string; landmark: string; lat: number; lng: number; radiusKm: number
-}
-const MOCK_ROWS: GeoRow[] = [
-  { id: 'G1', city: '上海', district: '徐汇', landmark: '徐家汇', lat: 31.19, lng: 121.44, radiusKm: 3 },
-  { id: 'G2', city: '上海', district: '浦东', landmark: '陆家嘴', lat: 31.24, lng: 121.51, radiusKm: 3 },
-  { id: 'G3', city: '北京', district: '朝阳', landmark: '三里屯', lat: 39.93, lng: 116.45, radiusKm: 2 },
-  { id: 'G4', city: '深圳', district: '南山', landmark: '海岸城', lat: 22.52, lng: 113.94, radiusKm: 2 },
-  { id: 'G5', city: '成都', district: '锦江', landmark: '春熙路', lat: 30.66, lng: 104.08, radiusKm: 2 },
-]
+import GeoLocationsClient from './geo-locations-client'
+import { loadGeoLocationsSnapshot } from './geo-locations-data'
 
 const permissionGate = {
   requiredPermission: 'dashboard:read',
@@ -21,65 +9,48 @@ const permissionGate = {
     'SEO GEO 地域标签页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看城市、商圈与地理营销数据。',
 } as const
 
-export default function GeoLocationsPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [rows] = useState(MOCK_ROWS)
-  const [search, setSearch] = useState('')
-  const [cityFilter, setCityFilter] = useState<string>('ALL')
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>
-  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>
-  if (!rows || rows.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>
-
-  const cities = useMemo(() => [...new Set(rows.map(r => r.city))].sort(), [rows])
-
-  const filtered = useMemo(() => {
-    let items = [...rows]
-    if (cityFilter !== 'ALL') items = items.filter(r => r.city === cityFilter)
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      items = items.filter(r =>
-        r.landmark.toLowerCase().includes(q) || r.district.toLowerCase().includes(q) || r.city.toLowerCase().includes(q))
-    }
-    return items
-  }, [rows, search, cityFilter])
+export default async function GeoLocationsPage() {
+  const snapshot = await loadGeoLocationsSnapshot()
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    sourceLabel: snapshot.sourceLabel,
+    controlPlaneSource: snapshot.controlPlaneSource,
+    businessDataSource: snapshot.businessDataSource,
+    refreshPath: snapshot.refreshPath,
+    generatedAt: snapshot.generatedAt,
+    note: snapshot.note,
+  } as const
 
   return (
     <AdminPermissionGate {...permissionGate}>
-      <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">GEO 地域标签</h1>
-      <p className="text-sm text-gray-500 mb-4">城市 / 商圈 / 地标地理营销数据 ({rows.length} 条)</p>
-
-      <div className="flex gap-2 mb-4 flex-wrap items-center">
-        <input placeholder="搜索城市/商圈/地标..." value={search} onChange={e => setSearch(e.target.value)}
-          className="flex-1 min-w-[200px] border rounded px-3 py-1.5 text-sm" />
-        <select value={cityFilter} onChange={e => setCityFilter(e.target.value)}
-          className="border rounded px-2 py-1.5 text-sm">
-          <option value="ALL">全部城市</option>
-          {cities.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </div>
-
-      <div className="overflow-x-auto border rounded">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr><th>城市</th><th>区域</th><th>地标</th><th>纬度</th><th>经度</th><th>半径(km)</th></tr>
-          </thead>
-          <tbody>
-            {filtered.map(r => (
-              <tr key={r.id} className="border-t hover:bg-gray-50">
-                <td className="px-3 py-2 font-medium">{r.city}</td>
-                <td className="px-3 py-2">{r.district}</td>
-                <td className="px-3 py-2">{r.landmark}</td>
-                <td className="px-3 py-2 font-mono text-xs">{r.lat.toFixed(4)}</td>
-                <td className="px-3 py-2 font-mono text-xs">{r.lng.toFixed(4)}</td>
-                <td className="px-3 py-2">{r.radiusKm}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+        <div
+          style={{
+            marginBottom: 24,
+            borderRadius: 16,
+            border: '1px solid rgba(148, 163, 184, 0.18)',
+            background: 'rgba(248, 250, 252, 0.92)',
+            padding: 16,
+            color: '#334155',
+            fontSize: 12,
+            lineHeight: 1.8,
+          }}
+        >
+          <div>
+            Delivery {sourceEvidence.deliveryMode} · 来源标签: {sourceEvidence.sourceLabel} · 控制面来源:{' '}
+            {sourceEvidence.controlPlaneSource}
+          </div>
+          <div>
+            业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+          </div>
+          <div>
+            generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
+          </div>
+        </div>
+        <GeoLocationsClient snapshot={snapshot} />
       </div>
     </AdminPermissionGate>
   )

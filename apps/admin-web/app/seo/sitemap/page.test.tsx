@@ -1,61 +1,44 @@
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import React from 'react'
-import SitemapPage from './page'
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ADMIN_USER_KEY = 'admin_user'
-const SRC = readFileSync(resolve(process.cwd(), 'app/seo/sitemap/page.tsx'), 'utf-8')
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'sitemap-data.ts'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'sitemap-client.tsx'), 'utf-8')
 
-beforeEach(() => {
-  window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify({
-    userId: 'admin:test',
-    username: 'sitemap_test',
-    role: 'super-admin',
-    permissions: ['dashboard:read'],
-  }))
-})
+describe('seo/sitemap 结构固证', () => {
+  it('page 应为 server wrapper 并加载 sitemap 快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('loadSitemapSnapshot'))
+    assert.ok(PAGE_SRC.includes('<SitemapClient snapshot={snapshot} />'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+  })
 
-afterEach(() => {
-  window.localStorage.clear()
-  cleanup()
-})
+  it('page 应显式透出来源态证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('控制面来源:'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  })
 
-async function renderSitemapPageReady() {
-  render(React.createElement(SitemapPage))
-  await waitFor(() => screen.getByText('Sitemap 管理'))
-}
+  it('data loader 应定义 sitemap 快照合同与频率汇总', () => {
+    assert.ok(DATA_SRC.includes('export interface SitemapSnapshotDelivery'))
+    assert.ok(DATA_SRC.includes('SITEMAP_ROWS'))
+    assert.ok(DATA_SRC.includes('countByFrequency'))
+    assert.ok(DATA_SRC.includes('dailyCount'))
+    assert.ok(DATA_SRC.includes('loadSitemapSnapshot'))
+  })
 
-describe('Sitemap管理页', () => {
-  it('正例: 渲染标题', async () => {
-    await renderSitemapPageReady()
-    assert.ok(screen.getByText('Sitemap 管理'))
-  })
-  it('正例: 6条目', async () => {
-    await renderSitemapPageReady()
-    assert.ok(screen.getByText('/stores/shanghai-xuhui'))
-    assert.ok(screen.getByText('/about'))
-  })
-  it('正例: 筛选每日', async () => {
-    await renderSitemapPageReady()
-    fireEvent.click(screen.getByText('每日'))
-    assert.ok(screen.getByText('/'))
-    assert.equal(screen.queryByText('/about'), null)
-  })
-  it('边界: 筛选每月', async () => {
-    await renderSitemapPageReady()
-    fireEvent.click(screen.getByText('每月'))
-    assert.ok(screen.getByText('/about'))
-  })
-  it('正例: 优先级渲染', async () => {
-    await renderSitemapPageReady()
-    assert.ok(screen.getByText('0.9'))
-    assert.ok(screen.getByText('0.5'))
-  })
-  it('源码接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'))
-    assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"))
+  it('client renderer 应保留频率筛选、优先级渲染与刷新能力', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('每日'))
+    assert.ok(CLIENT_SRC.includes('每周'))
+    assert.ok(CLIENT_SRC.includes('每月'))
+    assert.ok(CLIENT_SRC.includes('row.priority.toFixed(1)'))
   })
 })

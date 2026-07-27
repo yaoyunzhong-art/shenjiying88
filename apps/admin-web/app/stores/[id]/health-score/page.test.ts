@@ -1,34 +1,29 @@
-/**
- * health-score/page.test.ts — 健康评分页面测试
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
-const SRC = readFileSync(SOURCE, 'utf-8');
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-describe('health-score — 正例', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
-  });
-  it('应导出 HealthScorePage', () => assert.ok(SRC.includes('export default function HealthScorePage')));
-  it('应包含健康评分标题', () => assert.ok(SRC.includes('健康评分')));
-  it('应包含维度数据', () => assert.ok(SRC.includes('DIMENSIONS') || SRC.includes('dimension')));
-  it('应包含仪表盘进度', () => assert.ok(SRC.includes('Progress')));
-  it('应包含综合分计算', () => assert.ok(SRC.includes('overall')));
-  it('应包含统计指标', () => assert.ok(SRC.includes('Statistic')));
-  it('应包含表格', () => assert.ok(SRC.includes('Table')));
-  it('应包含趋势图标', () => assert.ok(SRC.includes('trend') || SRC.includes('📈')));
-});
-describe('health-score — 反例', () => {
-  it('不应包含 dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-});
-describe('health-score — 边界', () => {
-  it('应包含 use client', () => assert.ok(SRC.includes("'use client'")));
-  it('应包含评分颜色逻辑', () => assert.ok(SRC.includes('color') || SRC.includes('strokeColor')));
-  it('源码长度应大于500', () => assert.ok(SRC.length > 500));
-});
+const DIR = dirname(fileURLToPath(import.meta.url))
+const DATA_SRC = readFileSync(resolve(DIR, 'health-score-data.ts'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'health-score-client.tsx'), 'utf-8')
+
+describe('stores/[id]/health-score data/client 结构固证', () => {
+  it('snapshot loader 应固化健康评分合同、趋势样本与统计函数', () => {
+    assert.ok(DATA_SRC.includes('export interface HealthScoreSnapshot'))
+    assert.ok(DATA_SRC.includes('HEALTH_DIMENSIONS'))
+    assert.ok(DATA_SRC.includes('HEALTH_HISTORY'))
+    assert.ok(DATA_SRC.includes('buildHealthScoreSummary'))
+    assert.ok(DATA_SRC.includes('loadHealthScoreSnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'store-health-score-fallback'"))
+  })
+
+  it('client renderer 应承载仪表盘、趋势与 router.refresh 刷新', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('snapshot.dimensions'))
+    assert.ok(CLIENT_SRC.includes('snapshot.history'))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('优先改进项'))
+    assert.ok(CLIENT_SRC.includes('综合分'))
+  })
+})

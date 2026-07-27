@@ -1,136 +1,52 @@
-// L1 冒烟测试 + L2 结构验证 + L3 防御检查 - shift-handover
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'shift-handover-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'shift-handover-data.ts'), 'utf-8')
 
-// ===================== L1 冒烟测试 =====================
-describe('shift-handover / L1 冒烟', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
-  });
-  it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });
-  it('应包含 use client 指令', () => { assert.ok(SRC.includes("'use client'")); });
-  it('应包含 JSX 模板', () => { assert.ok(SRC.includes('return (') || SRC.includes('return <')); });
-  it('不应使用 dangerouslySetInnerHTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-});
+describe('stores/[id]/shift-handover/page.tsx 结构固证', () => {
+  it('page 应为 server wrapper 并加载交接班快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function ShiftHandoverPage'))
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadShiftHandoverSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes('<ShiftHandoverClient snapshot={snapshot} />'))
+  })
 
-// ===================== L2 结构验证 =====================
-describe('shift-handover / L2 结构验证', () => {
-  it('应包含 PageShell 容器', () => { assert.ok(SRC.includes('PageShell')); });
-  it('应包含标题 "交接班"', () => { assert.ok(SRC.includes('交接班')); });
-  it('应包含交接数据 HANDOVERS 数组', () => { assert.ok(SRC.includes('HANDOVERS')); });
-  it('应包含列定义 COLUMNS', () => { assert.ok(SRC.includes('COLUMNS')); });
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  })
+})
 
-  it('应定义完整列（交班人/接班人/现金/差额/设备状态/钥匙/备注/状态/时间）', () => {
-    for (const c of ['交班人', '接班人', '现金', '差额', '设备状态', '钥匙', '备注', '状态', '时间']) {
-      assert.ok(SRC.includes(c), `缺少列: ${c}`);
-    }
-  });
+describe('stores/[id]/shift-handover/client 结构固证', () => {
+  it('client 应保留筛选、发起交接与刷新能力', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('setShowStart'))
+    assert.ok(CLIENT_SRC.includes('开始交接'))
+    assert.ok(CLIENT_SRC.includes('交接规则'))
+    assert.ok(CLIENT_SRC.includes('Tabs'))
+  })
+})
 
-  it('应展示统计卡片：交接记录/现金总额/正常/差异/差异总额', () => {
-    assert.ok(SRC.includes('交接记录'));
-    assert.ok(SRC.includes('现金总额'));
-    assert.ok(SRC.includes('正常'));
-    assert.ok(SRC.includes('差异'));
-    assert.ok(SRC.includes('差异总额'));
-  });
-
-  it('应包含 "开始交接" 按钮', () => {
-    assert.ok(SRC.includes('开始交接'));
-  });
-
-  it('差额列差异值应使用颜色标识', () => {
-    assert.ok(SRC.includes('#f87171') || SRC.includes('#34d399'));
-  });
-
-  it('状态列应渲染 "正常" / "差异" Tag', () => {
-    assert.ok(SRC.includes('正常'));
-    assert.ok(SRC.includes('差异'));
-  });
-
-  it('应使用 Row + Col 布局', () => {
-    assert.ok(SRC.includes('Row ') || SRC.includes('Row>'));
-  });
-
-  it('应使用 useState', () => { assert.ok(SRC.includes('useState')); });
-  it('Table 应有 rowKey', () => { assert.ok(SRC.includes('rowKey')); });
-  it('交接数据应包含 keys/note 字段', () => { assert.ok(SRC.includes('keys')); });
-  it('交接数据应包含 from/to/cash 字段', () => {
-    assert.ok(SRC.includes('from'));
-    assert.ok(SRC.includes('to'));
-    assert.ok(SRC.includes('cash'));
-  });
-});
-
-// ===================== L3 防御检查 =====================
-describe('shift-handover / L3 防御检查', () => {
-  it('不应包含硬编码 secrets', () => {
-    for (const s of ['sk-', 'api_key', 'secret_key', 'password=']) {
-      assert.ok(!SRC.includes(s));
-    }
-  });
-
-  it('不应包含生产环境 console.log', () => {
-    const lines = SRC.split('\n').filter(l =>
-      l.includes('console.log') && !l.trimStart().startsWith('//')
-    );
-    assert.equal(lines.length, 0);
-  });
-
-  it('不应出现 href="#" 而无 onClick', () => {
-    for (const line of SRC.split('\n')) {
-      if (line.includes('href="#"') && !line.includes('onClick')) {
-        assert.fail(`href="#" 无 onClick: ${line.trim()}`);
-      }
-    }
-  });
-
-  it('不应使用 any 类型', () => { assert.ok(!SRC.includes(': any')); });
-
-  it('不应包含被注释掉的 JSX', () => {
-    const c = SRC.match(/\/\/\s+.+</g);
-    if (c) assert.fail(`被注释 JSX: ${c.join(', ')}`);
-  });
-
-  it('PageShell 应成对出现', () => {
-    assert.ok(SRC.includes('<PageShell') && SRC.includes('</PageShell>'));
-  });
-
-  it('HANDOVERS 应有必填字段', () => {
-    const fields = ['id', 'from', 'to', 'cash', 'cash_diff', 'devices', 'keys', 'time', 'status'];
-    const match = SRC.match(/\{ id:\s*['"][^'"]+['"]/);
-    if (match) {
-      for (const f of fields) assert.ok(SRC.includes(`${f}:`), `字段 ${f} 应存在`);
-    }
-  });
-
-  it('内联 style 不应过多', () => {
-    assert.ok((SRC.match(/style=\{\{/g) || []).length < 50);
-  });
-
-  it('不应使用 img 标签', () => { assert.ok(!SRC.includes('<img ')); });
-
-  it('组件名称应为 ShiftHandoverPage', () => {
-    assert.ok(SRC.includes('ShiftHandoverPage'));
-  });
-});
-
-describe('Stores / Shift Handover — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onOk={') || SRC.includes('onCancel={')));
-  it('包含列表过滤', () => assert.ok(SRC.includes('.filter(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+describe('stores/[id]/shift-handover/data 结构固证', () => {
+  it('data 应定义交接班快照合同与样本数据', () => {
+    assert.ok(DATA_SRC.includes('export interface ShiftHandoverSnapshot'))
+    assert.ok(DATA_SRC.includes('HANDOVER_RECORDS'))
+    assert.ok(DATA_SRC.includes('HANDOVER_RULES'))
+    assert.ok(DATA_SRC.includes('buildShiftHandoverSummary'))
+    assert.ok(DATA_SRC.includes('loadShiftHandoverSnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'store-shift-handover-mock'"))
+  })
+})

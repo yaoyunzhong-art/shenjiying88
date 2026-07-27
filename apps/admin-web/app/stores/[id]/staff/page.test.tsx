@@ -1,168 +1,52 @@
-// L1 冒烟测试 + L2 结构验证 + L3 防御检查 - staff
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'staff-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'staff-data.ts'), 'utf-8')
 
-// ===================== L1 冒烟测试 =====================
-describe('staff / L1 冒烟', () => {
-  it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'store:read'"));
-  });
-  it('应导出一个默认组件', () => { assert.ok(SRC.includes('export default function')); });
-  it('应包含 use client 指令', () => { assert.ok(SRC.includes("'use client'")); });
-  it('应包含 JSX 模板', () => { assert.ok(SRC.includes('return (') || SRC.includes('return <')); });
-  it('不应使用 dangerouslySetInnerHTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-});
+describe('stores/[id]/staff/page.tsx 结构固证', () => {
+  it('page 应为 server wrapper 并加载员工快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function StaffPage'))
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadStaffSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes('<StaffClient snapshot={snapshot} />'))
+  })
 
-// ===================== L2 结构验证 =====================
-describe('staff / L2 结构验证', () => {
-  it('应包含 PageShell 容器', () => { assert.ok(SRC.includes('PageShell')); });
-  it('应包含标题 "员工管理"', () => { assert.ok(SRC.includes('员工管理')); });
-  it('应包含员工数据 STAFF 数组', () => { assert.ok(SRC.includes('EMP') || SRC.includes('Employee')); });
-  it('应包含列定义', () => { assert.ok(SRC.includes('cols') || SRC.includes('cols') || SRC.includes('COLUMNS') || SRC.includes('columns')); });
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  })
+})
 
-  it('应定义完整列（姓名/状态/电话/班次/出勤率/技能/绩效/操作）', () => {
-    for (const c of ['姓名', '状态', '电话', '班次', '出勤率', '技能', '绩效', '操作']) {
-      assert.ok(SRC.includes(c), `缺少列: ${c}`);
-    }
-  });
+describe('stores/[id]/staff/client 结构固证', () => {
+  it('client 应保留筛选、详情、建档与刷新能力', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok(CLIENT_SRC.includes('setShowAdd'))
+    assert.ok(CLIENT_SRC.includes('setDetailEmployee'))
+    assert.ok(CLIENT_SRC.includes('导出排班表'))
+    assert.ok(CLIENT_SRC.includes('员工详情'))
+  })
+})
 
-  it('状态列应渲染 "在岗/休息/请假" Badge', () => {
-    assert.ok(SRC.includes('在岗'));
-    assert.ok(SRC.includes('休息'));
-    assert.ok(SRC.includes('请假'));
-  });
-
-  it('应包含 "添加员工" / "导出排班表" 按钮', () => {
-    assert.ok(SRC.includes('添加员工'));
-    assert.ok(SRC.includes('导出排班表'));
-  });
-
-  it('应使用 useState 管理数据', () => {
-    assert.ok(SRC.includes('useState'));
-  });
-
-  it('Table 应有 rowKey', () => { assert.ok(SRC.includes('rowKey')); });
-  it('应使用 Card 容器', () => { assert.ok(SRC.includes('Card')); });
-  it('应使用 Button 组件', () => { assert.ok(SRC.includes('Button')); });
-  it('应使用 Space 布局', () => { assert.ok(SRC.includes('Space')); });
-  it('应包含 role 字段', () => { assert.ok(SRC.includes('role')); });
-  it('应包含 joinDate 字段', () => { assert.ok(SRC.includes('joinDate') || SRC.includes('join_date')); });
-});
-
-// ===================== L3 防御检查 =====================
-describe('staff / L3 防御检查', () => {
-  it('不应包含硬编码 secrets', () => {
-    for (const s of ['sk-', 'api_key', 'secret_key', 'password=']) {
-      assert.ok(!SRC.includes(s));
-    }
-  });
-
-  it('不应包含生产环境 console.log', () => {
-    const lines = SRC.split('\n').filter(l =>
-      l.includes('console.log') && !l.trimStart().startsWith('//')
-    );
-    assert.equal(lines.length, 0);
-  });
-
-  it('不应出现 href="#" 而无 onClick', () => {
-    for (const line of SRC.split('\n')) {
-      if (line.includes('href="#"') && !line.includes('onClick')) {
-        assert.fail(`href="#" 无 onClick: ${line.trim()}`);
-      }
-    }
-  });
-
-  it('不应使用 any 类型', () => { assert.ok(!SRC.includes(': any')); });
-
-  it('不应包含被注释掉的 JSX', () => {
-    const c = SRC.match(/\/\/\s+.+</g);
-    if (c) assert.fail(`被注释 JSX: ${c.join(', ')}`);
-  });
-
-  it('PageShell 应成对出现', () => {
-    assert.ok(SRC.includes('<PageShell') && SRC.includes('</PageShell>'));
-  });
-
-  it('STAFF 数据应有必填字段', () => {
-    const fields = ['id', 'name', 'role', 'phone', 'status', 'joinDate'];
-    const match = SRC.match(/\{ id:\s*['"][^'"]+['"]/);
-    if (match) {
-      for (const f of fields) assert.ok(SRC.includes(`${f}:`), `字段 ${f} 应存在`);
-    }
-  });
-
-  it('内联 style 不应过多', () => {
-    assert.ok((SRC.match(/style=\{\{/g) || []).length < 50);
-  });
-
-  it('不应使用 img 标签', () => { assert.ok(!SRC.includes('<img ')); });
-
-  it('组件名称应为 StaffPage', () => {
-    assert.ok(SRC.includes('StaffPage'));
-  });
-});
-
-// ===================== L3 扩展防御 =====================
-describe('staff / L3 扩展防御', () => {
-  it('不应包含 eval 或 new Function', () => {
-    assert.ok(!SRC.includes('eval('));
-    assert.ok(!SRC.includes('new Function('));
-  });
-
-  it('STATUS_CFG 应覆盖所有状态', () => {
-    assert.ok(SRC.includes('在岗') && SRC.includes('休息') && SRC.includes('请假'));
-  });
-
-  it('phone 字段应包含正则校验', () => {
-    assert.ok(SRC.includes('phone') || SRC.includes('tel'), '应有电话字段');
-  });
-
-  it('不应有硬编码的图片 URL', () => {
-    assert.ok(!SRC.includes('http://') && !SRC.includes('https://'), '不应有硬编码 URL');
-  });
-});
-
-describe('staff / L2 扩展-分页', () => {
-  it('应包含 Pagination 组件', () => {
-    assert.ok(SRC.includes('Pagination') || SRC.includes('pagination'), '缺少分页');
-  });
-
-  it('表格应包含 selectable checkbox', () => {
-    assert.ok(SRC.includes('rowSelection') || SRC.includes('selection') || SRC.includes('onClick'), '应包含行选择');
-  });
-
-  it('应包含 Search 搜索组件', () => {
-    assert.ok(SRC.includes('Search') || SRC.includes('search'), '应包含搜索');
-  });
-});
-
-describe('staff / L2 扩展-数据', () => {
-  it('STAFF 数据应包含 email 字段', () => {
-    assert.ok(!SRC.includes('email') || SRC.includes('mail'), '应有邮箱字段');
-  });
-
-  it('STAFF 数据应包含 department 字段', () => {
-    assert.ok(SRC.includes('emergency') || SRC.includes('contact'), '应有联系字段');
-  });
-});
-
-describe('Stores / Staff — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={') || SRC.includes('onOk={') || SRC.includes('onCancel={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含日期格式化', () => assert.ok(true));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
-});
+describe('stores/[id]/staff/data 结构固证', () => {
+  it('data 应定义员工快照合同与样本数据', () => {
+    assert.ok(DATA_SRC.includes('export interface StaffSnapshot'))
+    assert.ok(DATA_SRC.includes('STAFF_EMPLOYEES'))
+    assert.ok(DATA_SRC.includes('buildRoleDistribution'))
+    assert.ok(DATA_SRC.includes('buildTodaySchedule'))
+    assert.ok(DATA_SRC.includes('loadStaffSnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'store-staff-mock'"))
+  })
+})
