@@ -1,190 +1,38 @@
-'use client';
-
-import React, { useState, useMemo, useEffect } from 'react';
-import { MemberTierDistribution } from '@m5/ui';
-import type { MemberTier } from '@m5/ui';
 import { AdminPermissionGate } from '../../components/admin-permission-gate';
-
-// ─── 模拟数据 ──────────────────────────────────────────
-
-const MOCK_TIERS: MemberTier[] = [
-  { tier: '钻石会员', key: 'diamond', count: 128, growth: 0.12 },
-  { tier: '黄金会员', key: 'gold', count: 450, growth: 0.05 },
-  { tier: '白银会员', key: 'silver', count: 620, growth: -0.03 },
-  { tier: '青铜会员', key: 'bronze', count: 890, growth: 0.01 },
-  { tier: '铂金会员', key: 'platinum', count: 76, growth: 0.18 },
-  { tier: '普通会员', key: 'regular', count: 2340, growth: -0.08 },
-];
+import MemberTiersClient from './member-tiers-client';
+import { loadMemberTiersPageSnapshot } from './member-tiers-data';
 
 const permissionGate = {
   requiredPermission: 'member:read',
   title: '会员等级访问受限',
-  description:
-    '会员等级页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级分布、趋势和筛选结果。',
+  description: '会员等级页已接入管理员本地 session，只有具备 member:read 的账号才能查看等级分布、趋势和筛选结果。',
 } as const;
 
-const deliveryMode = 'mock' as const;
-const dataSourceLabel = 'mock' as const;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-// ─── 页面组件 ─────────────────────────────────────────
-
-export default function MemberTiersPage() {
-  // 三态条件渲染
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => { setLoading(false) }, []);
-  if (loading) return <AdminPermissionGate {...permissionGate}><div>加载中...</div></AdminPermissionGate>;
-  if (error) return <AdminPermissionGate {...permissionGate}><div>数据获取失败: {error}</div></AdminPermissionGate>;
-  if (!MOCK_TIERS || MOCK_TIERS.length === 0) return <AdminPermissionGate {...permissionGate}><div>暂无数据</div></AdminPermissionGate>;
-
-  const [showTrends, setShowTrends] = useState(true);
-  const [selectedTier, setSelectedTier] = useState<MemberTier | null>(null);
-
-  // 筛选逻辑
-  const filteredTiers = useMemo(() => {
-    if (!selectedTier) return MOCK_TIERS;
-    return MOCK_TIERS.filter((t) => t.key === selectedTier.key);
-  }, [selectedTier]);
-
-  const handleTierClick = (tier: MemberTier) => {
-    setSelectedTier((prev) =>
-      prev?.key === tier.key ? null : tier,
-    );
-  };
+export default async function MemberTiersPage() {
+  const snapshot = await loadMemberTiersPageSnapshot();
+  const sourceEvidence = {
+    deliveryMode: snapshot.deliveryMode,
+    sourceLabel: snapshot.sourceLabel,
+    controlPlaneSource: snapshot.controlPlaneSource,
+    businessDataSource: snapshot.businessDataSource,
+    refreshPath: snapshot.refreshPath,
+    generatedAt: snapshot.generatedAt,
+    note: snapshot.note,
+  } as const;
 
   return (
     <AdminPermissionGate {...permissionGate}>
-      <div style={{ padding: 24, background: '#0f172a', minHeight: '100vh' }}>
-      {/* 页面标题 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              color: '#e2e8f0',
-              margin: 0,
-            }}
-          >
-            会员等级分布
-          </h1>
-          <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0 0' }}>
-            {`查看各等级会员的人数、占比和环比趋势。当前数据源：${dataSourceLabel}。`}
-          </p>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
+        <div style={{ marginBottom: 24, borderRadius: 16, border: '1px solid rgba(148, 163, 184, 0.18)', background: 'rgba(248, 250, 252, 0.92)', padding: 16, color: '#334155', fontSize: 12, lineHeight: 1.8 }}>
+          <div>Delivery {sourceEvidence.deliveryMode} · 来源标签: {sourceEvidence.sourceLabel}</div>
+          <div>控制面来源: {sourceEvidence.controlPlaneSource} · 业务数据: {sourceEvidence.businessDataSource}</div>
+          <div>refreshPath: {sourceEvidence.refreshPath} · generatedAt: {sourceEvidence.generatedAt}</div>
+          <div>{sourceEvidence.note}</div>
         </div>
-
-        {/* 趋势切换 */}
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 13,
-            color: '#94a3b8',
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={showTrends}
-            onChange={(e) => setShowTrends(e.target.checked)}
-            style={{ accentColor: '#3b82f6' }}
-          />
-          显示趋势
-        </label>
-      </div>
-
-      <div
-        style={{
-          marginBottom: 16,
-          borderRadius: 12,
-          padding: '12px 14px',
-          border: '1px solid rgba(248, 113, 113, 0.24)',
-          background: 'rgba(127, 29, 29, 0.22)',
-          color: '#fecaca',
-          fontSize: 13,
-        }}
-      >
-        {`deliveryMode: ${deliveryMode} · dataSourceLabel: ${dataSourceLabel} · 该页面当前不可作为闭环复签证据`}
-      </div>
-
-      {/* 等级分布组件 */}
-      <MemberTierDistribution
-        tiers={filteredTiers}
-        showTrends={showTrends}
-        showTotal
-        onTierClick={handleTierClick}
-        width={520}
-      />
-
-      {/* 已选等级详情 */}
-      {selectedTier && (
-        <div
-          style={{
-            marginTop: 16,
-            padding: 16,
-            borderRadius: 12,
-            background: 'rgba(59, 130, 246, 0.08)',
-            border: '1px solid rgba(59, 130, 246, 0.2)',
-          }}
-        >
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#93c5fd' }}>
-            📊 {selectedTier.tier} 等级详情
-          </span>
-          <div
-            style={{
-              display: 'flex',
-              gap: 24,
-              marginTop: 12,
-              fontSize: 13,
-              color: '#cbd5e1',
-            }}
-          >
-            <div>
-              人数：<strong>{selectedTier.count.toLocaleString()}</strong>
-            </div>
-            <div>
-              占比：
-              <strong>
-                {(
-                  (selectedTier.count /
-                    MOCK_TIERS.reduce((s, t) => s + t.count, 0)) *
-                  100
-                ).toFixed(1)}
-                %
-              </strong>
-            </div>
-            {selectedTier.growth != null && (
-              <div>
-                环比：
-                <strong style={{ color: selectedTier.growth >= 0 ? '#22c55e' : '#ef4444' }}>
-                  {selectedTier.growth >= 0 ? '+' : ''}
-                  {(selectedTier.growth * 100).toFixed(1)}%
-                </strong>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 操作提示 */}
-      <p
-        style={{
-          marginTop: 16,
-          fontSize: 12,
-          color: '#475569',
-          textAlign: 'center',
-        }}
-      >
-        点击等级卡片可查看详情，再次点击取消筛选
-      </p>
+        <MemberTiersClient snapshot={snapshot} />
       </div>
     </AdminPermissionGate>
   );
