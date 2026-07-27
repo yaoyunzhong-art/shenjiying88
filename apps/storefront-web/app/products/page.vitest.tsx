@@ -345,10 +345,11 @@ describe('ProductsPage — 商品管理', () => {
     render(<ProductsPage />);
     await waitForLoaded();
     expect(screen.getByText('总商品')).toBeInTheDocument();
-    // Use getAllByText for '在售' since it appears also in status tab
+    // 在售 and 缺货 appear both in stat cards AND status filter tabs
     const onSaleElements = screen.getAllByText('在售');
-    expect(onSaleElements.length).toBeGreaterThanOrEqual(2); // stat card + status tab
-    expect(screen.getByText('缺货')).toBeInTheDocument();
+    expect(onSaleElements.length).toBeGreaterThanOrEqual(2);
+    const outOfStockElements = screen.getAllByText('缺货');
+    expect(outOfStockElements.length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('总库存')).toBeInTheDocument();
     expect(screen.getByText('平均评分')).toBeInTheDocument();
   });
