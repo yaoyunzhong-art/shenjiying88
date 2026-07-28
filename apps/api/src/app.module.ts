@@ -165,6 +165,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { TeamBuildingModule } from './modules/team-building/team-building.module';
 import { HrModule } from './modules/hr/hr.module';
 import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
+import { BrandAnalyticsModule } from './modules/brand-analytics/brand-analytics.module';
 import { MinorProtectionModule } from './modules/minor-protection/minor-protection.module';
 import { StoreModule } from './modules/store/store.module';
 import { StoreFrontModule } from './modules/storefront/storefront.module';
@@ -360,6 +361,7 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     CategoriesModule,
     TeamBuildingModule,
     HrModule,
+    BrandAnalyticsModule,
     BrandOperationsModule,
     MinorProtectionModule,
     StoreModule,
