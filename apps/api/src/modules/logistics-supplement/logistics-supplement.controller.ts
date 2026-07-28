@@ -2,7 +2,7 @@ import {
   Controller, Get, Post, Patch, Delete,
   Param, Query, Body, UseGuards, UsePipes, ValidationPipe,
 } from '@nestjs/common'
-import { IdentityAccessGuard } from '../../common/guards/identity-access.guard'
+import { TrafficGovernanceGuard } from '../../common/guards/traffic-governance.guard'
 import { LogisticsSupplementService } from './logistics-supplement.service'
 import {
   CreateTransportOrderDto, UpdateTransportOrderStatusDto, UpdateTransportOrderDto,
@@ -22,7 +22,7 @@ import type {
 } from './logistics-supplement.entity'
 
 @Controller('logistics-supplement')
-@UseGuards(IdentityAccessGuard)
+@UseGuards(TrafficGovernanceGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class LogisticsSupplementController {
   constructor(private readonly service: LogisticsSupplementService) {}

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Query, Body, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsNumber, Min } from 'class-validator'
-import { IdentityAccessGuard } from '../../common/guards/identity-access.guard'
+import { TrafficGovernanceGuard } from '../../common/guards/traffic-governance.guard'
 import { MinorProtectionService, type VerificationMethod } from './minor-protection.service'
 import type { MinorProtectionProfile, ParentalConsent, TimeUsageRecord, SpendRecord } from './minor-protection.service'
 
@@ -8,7 +8,7 @@ import type { MinorProtectionProfile, ParentalConsent, TimeUsageRecord, SpendRec
 
 class RegisterProfileDto { @IsString() userId!: string; @IsString() tenantId!: string; @IsString() @IsDateString() birthDate!: string; @IsOptional() @IsString() verificationMethod?: string }
 class VerifyAgeDto { @IsString() @IsEnum(['id_card','face','parental_consent','none']) method!: VerificationMethod }
-class CreateConsentDto { @IsString() minorUserId!: string; @IsString() parentUserId!: string; @IsString() parentName!: string; @IsString() parentIdCard!: string; @IsString() relationship!: string; @IsString() @IsEnum(['full','partial']) consentType!: 'full' | 'partial'; @IsOptional() @IsDateString() effectiveTo?: string }
+class CreateConsentDto { @IsString() minorUserId!: string; @IsString() parentUserId!: string; @IsString() parentName!: string; @IsString() parentIdCard!: string; @IsString() relationship!: string; @IsString() @IsEnum(['full','partial']) consentType!: 'full' | 'partial'; @IsDateString() effectiveFrom!: string; @IsOptional() @IsDateString() effectiveTo?: string }
 class CheckTimeDto { @IsNumber() @Min(1) sessionDurationMin!: number }
 class CheckSpendDto { @IsNumber() @Min(0.01) amount!: number }
 class CheckContentDto { @IsString() rating!: string }
@@ -17,7 +17,7 @@ class RecordSpendDto { @IsNumber() @Min(0.01) amount!: number; @IsString() categ
 class ReportQueryDto { @IsString() @IsDateString() startDate!: string; @IsString() @IsDateString() endDate!: string }
 
 @Controller('minor-protection')
-@UseGuards(IdentityAccessGuard)
+@UseGuards(TrafficGovernanceGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class MinorProtectionController {
   constructor(private readonly service: MinorProtectionService) {}

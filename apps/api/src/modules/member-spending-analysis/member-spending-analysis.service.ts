@@ -193,7 +193,7 @@ export class MemberSpendingAnalysisService {
   /**
    * 创建分析记录
    */
-  async create(analysis: SpendingAnalysis): Promise<SpendingAnalysis> {
+  async create(analysis: Omit<SpendingAnalysis, 'createdAt'>): Promise<SpendingAnalysis> {
     const entry: SpendingAnalysis = {
       ...analysis,
       createdAt: new Date().toISOString()

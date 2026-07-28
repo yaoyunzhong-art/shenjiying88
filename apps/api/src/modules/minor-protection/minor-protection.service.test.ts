@@ -1,97 +1,105 @@
+/**
+ * minor-protection.service.test.ts — 未成年人保护 Service 测试 (补充覆盖)
+ * 覆盖: 边缘案例 / 接口一致性
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest'
 import { MinorProtectionService } from './minor-protection.service'
-import { resetMinorProtectionStores } from './minor-protection.service'
 
-describe('MinorProtectionService', () => {
-  let service: MinorProtectionService
+describe('MinorProtectionService — old API compat', () => {
+  let svc: MinorProtectionService
 
   beforeEach(() => {
-    resetMinorProtectionStores()
-    service = new MinorProtectionService()
+    svc = new MinorProtectionService()
   })
 
-  describe('config', () => {
-    it('returns default config', () => {
-      const config = service.getDefaultConfig()
-      expect(config.curfewStart).toBe('22:00')
+  describe('registerProfile', () => {
+    it('正例: 注册成年人', async () => {
+      const p = await svc.registerProfile('u-adult', 't-1', '1995-05-10', 'none')
+      expect(p.ageGroup).toBe('adult')
+      expect(p.ageVerified).toBe(false)
+      expect(p.restrictions).toEqual([])
+    })
+
+    it('正例: Teen 年龄组有完整限制', async () => {
+      const p = await svc.registerProfile('u-teen', 't-1', '2012-03-01', 'id_card')
+      expect(p.ageGroup).toBe('teen' as string)
+      expect(p.restrictions).toContain('time_limit')
+      expect(p.restrictions).toContain('spend_limit')
+    })
+
+    it('边界: 刚满 8 岁为 child', async () => {
+      const p = await svc.registerProfile('u-child', 't-1', '2018-07-28', 'id_card')
+      expect(p.age).toBe(8)
+      expect(p.ageGroup).toBe('child')
+    })
+
+    it('边界: 刚满 14 岁为 teen', async () => {
+      const p = await svc.registerProfile('u-teen2', 't-1', '2012-07-28', 'id_card')
+      expect(p.age).toBe(14)
+      expect(p.ageGroup).toBe('teen' as string)
+    })
+
+    it('边界: 刚满 18 岁为 adult', async () => {
+      const p = await svc.registerProfile('u-adult2', 't-1', '2008-07-28', 'none')
+      expect(p.age).toBe(18)
+      expect(p.ageGroup).toBe('adult')
     })
   })
 
-  describe('verifyIdentity', () => {
-    it('minor if age < 18', () => {
-      const r = service.verifyIdentity({
-        tenantId: 't1', memberId: 'm1', method: 'id_card',
-        identityNumber: '110101200901011234', name: 'Kid', birthday: '2009-01-01',
+  describe('verifyAge', () => {
+    it('正例: 验证年龄后标志更新', async () => {
+      await svc.registerProfile('u-v', 't-1', '2015-06-01', 'none')
+      const updated = await svc.verifyAge('u-v', 'id_card')
+      expect(updated.ageVerified).toBe(true)
+      expect(updated.verificationMethod).toBe('id_card')
+      expect(updated.verifiedAt).toBeDefined()
+    })
+
+    it('反例: 验证不存在的用户抛异常', async () => {
+      await expect(svc.verifyAge('no-user', 'id_card')).rejects.toThrow()
+    })
+  })
+
+  describe('checkTimeLimit', () => {
+    it('正例: 新用户允许访问', async () => {
+      await svc.registerProfile('u-t1', 't-1', '2015-01-01', 'none')
+      const result = await svc.checkTimeLimit('u-t1', 30)
+      expect(result.allowed).toBe(true)
+    })
+
+    it('正例: 超过限制后禁止', async () => {
+      await svc.registerProfile('u-t2', 't-1', '2015-01-01', 'none')
+      // child: 40 min/day, 30 min session already uses time
+      await svc.recordTimeUsage('u-t2', 30)
+      const r = await svc.checkTimeLimit('u-t2', 30)
+      // 30 + 30 = 60 > 40, so not allowed
+      expect(r.allowed).toBe(false)
+    })
+  })
+
+  describe('checkSpendLimit', () => {
+    it('正例: 新用户允许消费', async () => {
+      await svc.registerProfile('u-s1', 't-1', '2015-01-01', 'none')
+      const r = await svc.checkSpendLimit('u-s1', 30)
+      expect(r.allowed).toBe(true)
+    })
+  })
+
+  describe('createParentalConsent with effectiveFrom', () => {
+    it('正例: 创建监护人同意书含生效日期', async () => {
+      const c = await svc.createParentalConsent({
+        minorUserId: 'u-minor',
+        parentUserId: 'u-parent',
+        parentName: '张三',
+        parentIdCard: '110101198001011234',
+        relationship: '父亲',
+        consentType: 'full',
+        effectiveFrom: new Date(),
       })
-      expect(r.isMinor).toBe(true)
-      expect(r.identityNumber).toContain('****')
-    })
-
-    it('adult if age >= 18', () => {
-      const r = service.verifyIdentity({
-        tenantId: 't1', memberId: 'm2', method: 'id_card',
-        identityNumber: '110101199501011234', name: 'Adult', birthday: '1995-01-01',
-      })
-      expect(r.isMinor).toBe(false)
-    })
-  })
-
-  describe('checkAccess', () => {
-    // 当前实际时间的非宵禁config
-    const dayConfig = {
-      facialRecognitionEnabled: false, identityVerificationEnabled: true, timeRestrictionEnabled: true,
-      curfewStart: '23:00', curfewEnd: '22:00',  // 23:00-22:00 = 11pm-10pm 跨度包含了当前23:47
-      maxSessionMinutes: 120,
-      weekdayStart: '00:00', weekdayEnd: '23:59',
-    }
-
-    it('unverified user → review', () => {
-      const r = service.checkAccess({ tenantId: 't1', memberId: 'm-x', action: 'enter' })
-      expect(r.result).toBe('review')
-    })
-
-    it('adult user → pass', () => {
-      service.verifyIdentity({ tenantId: 't1', memberId: 'm-a', method: 'id_card', identityNumber: '1', name: 'A', birthday: '1995-01-01' })
-      const r = service.checkAccess({ tenantId: 't1', memberId: 'm-a', action: 'enter' })
-      expect(r.result).toBe('pass')
-    })
-
-    it('minor without guardian consent → review (if not curfew)', () => {
-      service.verifyIdentity({ tenantId: 't1', memberId: 'm-k', method: 'id_card', identityNumber: '1', name: 'K', birthday: '2009-01-01', guardianConsent: false })
-      const now = new Date()
-      const h = String(now.getHours()).padStart(2, '0')
-      const m = String(now.getMinutes()).padStart(2, '0')
-      const isCurfew = h >= '23' || h < '06'
-
-      // 如果在宵禁时段跳过这个测试
-      const r = service.checkAccess({ tenantId: 't1', memberId: 'm-k', action: 'enter', config: dayConfig })
-
-      // 如果在宵禁时段 blocked 也算合理，非宵禁时段期望 review
-      if (isCurfew && h < '23') {
-        // non-curfew time
-        expect(r.result === 'review' || r.result === 'blocked').toBe(true)
-      }
-    })
-
-    it('minor with guardian consent → pass (non-weekday-curfew)', () => {
-      service.verifyIdentity({ tenantId: 't1', memberId: 'm-k', method: 'id_card', identityNumber: '1', name: 'K', birthday: '2009-01-01', guardianConsent: true })
-      const r = service.checkAccess({ tenantId: 't1', memberId: 'm-k', action: 'enter', config: dayConfig })
-      // 现在的23:47 >= 23:00所以处于curfew内，但还是验证业务逻辑
-      expect(r.result === 'review' || r.result === 'blocked' || r.result === 'pass').toBe(true)
-    })
-  })
-
-  describe('audit log', () => {
-    it('logs access checks', () => {
-      service.checkAccess({ tenantId: 't1', memberId: 'm-x', action: 'enter' })
-      expect(service.getAccessLogs('t1')).toHaveLength(1)
-    })
-
-    it('tenant isolation', () => {
-      service.checkAccess({ tenantId: 't1', memberId: 'm1', action: 'enter' })
-      service.checkAccess({ tenantId: 't2', memberId: 'm2', action: 'enter' })
-      expect(service.getAccessLogs('t1')).toHaveLength(1)
-      expect(service.getAccessLogs('t2')).toHaveLength(1)
+      expect(c.id).toBeTruthy()
+      expect(c.status).toBe('pending')
+      expect(c.effectiveFrom).toBeDefined()
     })
   })
 })

@@ -172,7 +172,7 @@ describe('LogisticsSupplementService', () => {
         description: '定期保养',
         status: 'pending' as const,
         scheduledAt: new Date(Date.now() + 7 * 86400000).toISOString(),
-        createdBy: 'u-001',
+        operatorId: 'u-001', operatorName: '维修工',
       })
       expect(r.id).toBeTruthy()
     })
@@ -181,14 +181,16 @@ describe('LogisticsSupplementService', () => {
       await svc.createMaintenanceRecord({
         tenantId: TENANT_ID, vehiclePlate: '沪A88888',
         odometerKm: 50000, maintType: 'routine_check' as const,
-        description: '保养', status: 'pending' as const, createdBy: 'u-001',
+        description: '保养', status: 'pending' as const,
+        operatorId: 'u-001', operatorName: '维修工',
       })
       // getUpcomingMaintenance filters by status 'scheduled' - need scheduled status
       await svc.createMaintenanceRecord({
         tenantId: TENANT_ID, vehiclePlate: '沪B66666',
         odometerKm: 30000, maintType: 'oil_change' as const,
         description: '换机油', status: 'scheduled' as const,
-        scheduledAt: new Date(Date.now() + 3 * 86400000).toISOString(), createdBy: 'u-001',
+        scheduledAt: new Date(Date.now() + 3 * 86400000).toISOString(),
+        operatorId: 'u-001', operatorName: '维修工',
       })
       const upcoming = await svc.getUpcomingMaintenance('沪B66666')
       expect(upcoming.length).toBe(1)
@@ -251,7 +253,7 @@ describe('LogisticsSupplementService', () => {
         severity: 'minor' as const,
         responsibility: 'self' as const,
         description: '轻微追尾',
-        costCent: 200000,
+        propertyDamageCent: 200000,
       })
       expect(r.id).toBeTruthy()
     })

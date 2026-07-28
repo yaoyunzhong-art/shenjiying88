@@ -181,7 +181,7 @@ describe('StoreFrontService — 取消/改期/核销', () => {
       serviceId: 'svc-001', date: '2026-08-20', timeSlot: '10:00',
       customerName: '张三', customerPhone: '13800138001', amount: 6900, tenantId: 't',
     })
-    await expect(svc.cancelBooking('BK-001', { customerPhone: '13800138001' }))
+    await expect(svc.cancelBooking('BK-001', { bookingId: 'BK-001', storeSlug: 'beijing-chaoyang', customerPhone: '13800138001' }))
       .rejects.toThrow(/无法取消/)
   })
 

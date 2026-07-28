@@ -10,7 +10,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common'
-import { IdentityAccessGuard } from '../../common/guards/identity-access.guard'
+import { TrafficGovernanceGuard } from '../../common/guards/traffic-governance.guard'
 import { BrandAnalyticsService } from './brand-analytics.service'
 import {
   GetKPIDto,
@@ -41,7 +41,7 @@ import type {
 } from './brand-analytics.entity'
 
 @Controller('brand-analytics')
-@UseGuards(IdentityAccessGuard)
+@UseGuards(TrafficGovernanceGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class BrandAnalyticsController {
   constructor(private readonly service: BrandAnalyticsService) {}

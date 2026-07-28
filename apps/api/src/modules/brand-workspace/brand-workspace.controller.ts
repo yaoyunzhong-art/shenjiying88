@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Query, Body, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { IsString, IsOptional, IsNotEmpty } from 'class-validator'
-import { IdentityAccessGuard } from '../../common/guards/identity-access.guard'
+import { TrafficGovernanceGuard } from '../../common/guards/traffic-governance.guard'
 import { BrandWorkspaceService } from './brand-workspace.service'
 import type { WorkspaceLayout, WorkspaceTask, ApprovalFlow, BrandCalendarEvent, QuickAction, WorkspaceSummary } from './brand-workspace.entity'
 
@@ -12,7 +12,7 @@ class CreateEventDto { @IsString() tenantId!: string; @IsString() title!: string
 class RegisterActionDto { @IsString() tenantId!: string; @IsString() label!: string; @IsString() icon!: string; @IsString() action!: string; @IsOptional() @IsString() color?: string }
 
 @Controller('brand-workspace')
-@UseGuards(IdentityAccessGuard)
+@UseGuards(TrafficGovernanceGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class BrandWorkspaceController {
   constructor(private readonly service: BrandWorkspaceService) {}

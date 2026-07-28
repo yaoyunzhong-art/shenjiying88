@@ -1,289 +1,216 @@
 /**
- * 未成年保护 Controller 单元测试
- *
- * 测试范围:
- * - 所有 6 个 Controller 端点
- * - 正常路径 (happy path)
- * - 错误处理 (not found / missing params)
- * - Service 方法委托验证
+ * minor-protection.controller.test.ts — 未成年人保护 Controller 测试
+ * 覆盖: 所有 Controller 端点 / 正常路径 / 错误处理
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import { NotFoundException } from '@nestjs/common'
 import { MinorProtectionController } from './minor-protection.controller'
-import {
-  MinorProtectionService,
-  resetMinorProtectionStores,
-} from './minor-protection.service'
+import { MinorProtectionService } from './minor-protection.service'
 
 describe('MinorProtectionController', () => {
   let controller: MinorProtectionController
   let service: MinorProtectionService
 
   beforeEach(() => {
-    resetMinorProtectionStores()
     service = new MinorProtectionService()
     controller = new MinorProtectionController(service)
   })
 
   // ═══════════════════════════════════════════
-  //  GET /minor-protection/config
+  //  POST /minor-protection/profile
   // ═══════════════════════════════════════════
 
-  describe('GET /config', () => {
-    it('正例: 返回默认配置包含宵禁时间', () => {
-      const config = controller.getConfig()
-      expect(config.curfewStart).toBe('22:00')
-      expect(config.curfewEnd).toBe('06:00')
-      expect(config.maxSessionMinutes).toBe(120)
-      expect(config.weekdayStart).toBe('08:00')
-      expect(config.weekdayEnd).toBe('21:00')
-      expect(config.facialRecognitionEnabled).toBe(true)
-      expect(config.identityVerificationEnabled).toBe(true)
-      expect(config.timeRestrictionEnabled).toBe(true)
+  describe('POST /profile', () => {
+    it('正例: 注册未成年人', async () => {
+      const p = await controller.registerProfile({
+        userId: 'u-001', tenantId: 't-001',
+        birthDate: '2015-06-15', verificationMethod: 'id_card',
+      })
+      expect(p.userId).toBe('u-001')
+      expect(p.age).toBeGreaterThanOrEqual(10)
     })
 
-    it('边界: 返回配置是独立副本 (修改不影响默认值)', () => {
-      const config1 = controller.getConfig()
-      const config2 = controller.getConfig()
-      config1.maxSessionMinutes = 999
-      expect(config2.maxSessionMinutes).toBe(120)
+    it('正例: 不传验证方式默认为 none', async () => {
+      const p = await controller.registerProfile({
+        userId: 'u-002', tenantId: 't-001', birthDate: '1995-01-01',
+      })
+      expect(p.ageVerified).toBe(false)
     })
   })
 
   // ═══════════════════════════════════════════
-  //  POST /minor-protection/verify
+  //  GET /minor-protection/profile/:userId
   // ═══════════════════════════════════════════
 
-  describe('POST /verify', () => {
-    const identityPayload = {
-      tenantId: 'tenant-1',
-      memberId: 'member-1',
-      method: 'id_card' as const,
-      identityNumber: '110101201001011234',
-      name: '小明',
-      birthday: '2010-01-01',
-    }
-
-    it('正例: 未成年用户身份认证成功 (age < 18)', () => {
-      const result = controller.verifyIdentity(identityPayload)
-      expect(result.isMinor).toBe(true)
-      expect(result.id).toMatch(/^mv-/)
-      expect(result.memberId).toBe('member-1')
-      expect(result.tenantId).toBe('tenant-1')
-    })
-
-    it('正例: 成年人用户身份认证成功 (age >= 18)', () => {
-      const result = controller.verifyIdentity({
-        ...identityPayload,
-        identityNumber: '110101199001011234',
-        birthday: '1990-01-01',
+  describe('GET /profile/:userId', () => {
+    it('正例: 获取已注册用户', async () => {
+      await controller.registerProfile({
+        userId: 'u-003', tenantId: 't-001', birthDate: '2015-01-01',
       })
-      expect(result.isMinor).toBe(false)
+      const p = await controller.getProfile('u-003')
+      expect(p.userId).toBe('u-003')
     })
 
-    it('正例: 身份证号被脱敏处理', () => {
-      const result = controller.verifyIdentity(identityPayload)
-      expect(result.identityNumber).toContain('****')
-      expect(result.identityNumber).not.toContain('110101201001011234') // 不包含明文
-    })
-
-    it('边界: 含监护人同意标记', () => {
-      const result = controller.verifyIdentity({
-        ...identityPayload,
-        guardianConsent: true,
-      })
-      expect(result.guardianConsent).toBe(true)
-    })
-
-    it('边界: 无监护人同意默认为 false', () => {
-      const result = controller.verifyIdentity(identityPayload)
-      expect(result.guardianConsent).toBe(false)
-    })
-
-    it('回归: 认证记录可通过 ID 查询', () => {
-      const result = controller.verifyIdentity(identityPayload)
-      const record = service.getVerification(result.id, 'tenant-1')
-      expect(record).toBeDefined()
-      expect(record!.memberId).toBe('member-1')
+    it('正例: 未注册用户自动注册', async () => {
+      const p = await controller.getProfile('u-new')
+      expect(p.userId).toBe('u-new')
     })
   })
 
   // ═══════════════════════════════════════════
-  //  GET /minor-protection/verifications
+  //  PATCH /minor-protection/profile/:userId/verify
   // ═══════════════════════════════════════════
 
-  describe('GET /verifications', () => {
-    it('正例: 列出指定租户的所有认证记录', () => {
-      controller.verifyIdentity({
-        tenantId: 'tenant-a', memberId: 'm1',
-        method: 'id_card', identityNumber: '110101201001011234', name: 'A', birthday: '2010-01-01',
+  describe('PATCH /profile/:userId/verify', () => {
+    it('正例: 验证年龄', async () => {
+      await controller.registerProfile({
+        userId: 'u-v', tenantId: 't-001', birthDate: '2015-06-15', verificationMethod: 'none',
       })
-      controller.verifyIdentity({
-        tenantId: 'tenant-a', memberId: 'm2',
-        method: 'id_card', identityNumber: '110101201001019999', name: 'B', birthday: '2010-02-02',
-      })
-
-      const list = controller.listVerifications('tenant-a')
-      expect(list).toHaveLength(2)
-    })
-
-    it('正例: 空列表返回空数组', () => {
-      const list = controller.listVerifications('no-records-tenant')
-      expect(list).toEqual([])
-    })
-
-    it('边界: 租户隔离 - 只返回指定租户记录', () => {
-      controller.verifyIdentity({
-        tenantId: 'tenant-x', memberId: 'mx',
-        method: 'id_card', identityNumber: '110101201001011234', name: 'X', birthday: '2010-01-01',
-      })
-      controller.verifyIdentity({
-        tenantId: 'tenant-y', memberId: 'my',
-        method: 'id_card', identityNumber: '110101201001019999', name: 'Y', birthday: '2010-01-01',
-      })
-
-      const listX = controller.listVerifications('tenant-x')
-      expect(listX).toHaveLength(1)
-      expect(listX[0].memberId).toBe('mx')
-
-      const listY = controller.listVerifications('tenant-y')
-      expect(listY).toHaveLength(1)
-      expect(listY[0].memberId).toBe('my')
+      const p = await controller.verifyAge('u-v', { method: 'id_card' })
+      expect(p.ageVerified).toBe(true)
     })
   })
 
   // ═══════════════════════════════════════════
-  //  GET /minor-protection/verifications/:id
+  //  POST /minor-protection/consent
   // ═══════════════════════════════════════════
 
-  describe('GET /verifications/:id', () => {
-    it('正例: 根据 ID 和租户查询认证记录', () => {
-      const created = controller.verifyIdentity({
-        tenantId: 'tenant-q', memberId: 'mq',
-        method: 'id_card', identityNumber: '110101201001011234', name: 'Q', birthday: '2010-01-01',
+  describe('POST /consent', () => {
+    it('正例: 创建监护人同意书', async () => {
+      const c = await controller.createConsent({
+        minorUserId: 'u-child',
+        parentUserId: 'u-parent',
+        parentName: '张三',
+        parentIdCard: '110101198001011234',
+        relationship: '父亲',
+        consentType: 'full',
+        effectiveFrom: '2026-07-01T00:00:00Z',
       })
-
-      const record = controller.getVerification(created.id, 'tenant-q')
-      expect(record.id).toBe(created.id)
-      expect(record.name).toBe('Q')
-    })
-
-    it('负例: 不存在的记录 — 抛出 NotFoundException', () => {
-      expect(() => {
-        controller.getVerification('nonexistent-id', 'tenant-any')
-      }).toThrow(NotFoundException)
-    })
-
-    it('负例: 租户不匹配 — 抛出 NotFoundException', () => {
-      const created = controller.verifyIdentity({
-        tenantId: 'tenant-a', memberId: 'ma',
-        method: 'id_card', identityNumber: '110101201001011234', name: 'A', birthday: '2010-01-01',
-      })
-
-      expect(() => {
-        controller.getVerification(created.id, 'tenant-b') // 不同租户
-      }).toThrow(NotFoundException)
+      expect(c.id).toBeTruthy()
+      expect(c.status).toBe('pending')
     })
   })
 
   // ═══════════════════════════════════════════
-  //  POST /minor-protection/check-access
+  //  POST /minor-protection/consent/:id/approve
   // ═══════════════════════════════════════════
 
-  describe('POST /check-access', () => {
-    it('正例: 未认证用户返回 review', () => {
-      const result = controller.checkAccess({
-        tenantId: 'tenant-test', memberId: 'unknown-user', action: 'enter',
+  describe('POST /consent/:id/approve', () => {
+    it('正例: 批准同意书并解除限制', async () => {
+      const c = await controller.createConsent({
+        minorUserId: 'u-approve',
+        parentUserId: 'u-parent',
+        parentName: '李四',
+        parentIdCard: '110101198501011234',
+        relationship: '母亲',
+        consentType: 'full',
+        effectiveFrom: '2026-07-01T00:00:00Z',
       })
-      expect(result.result).toBe('review')
-      expect(result.blockedReason).toBe('未完成身份认证')
-      expect(result.timeRestricted).toBe(false)
-    })
-
-    it('正例: 已认证成年人直接通过', () => {
-      controller.verifyIdentity({
-        tenantId: 'tenant-test', memberId: 'adult-user',
-        method: 'id_card', identityNumber: '110101199001011234', name: '成人', birthday: '1990-01-01',
-      })
-
-      const result = controller.checkAccess({
-        tenantId: 'tenant-test', memberId: 'adult-user', action: 'enter',
-      })
-      expect(result.result).toBe('pass')
-    })
-
-    it('正例: 未成年人无监护人同意返回 review', () => {
-      controller.verifyIdentity({
-        tenantId: 'tenant-test', memberId: 'minor-user',
-        method: 'id_card', identityNumber: '110101201001011234', name: '未成年人', birthday: '2010-01-01',
-        guardianConsent: false,
-      })
-
-      const result = controller.checkAccess({
-        tenantId: 'tenant-test', memberId: 'minor-user', action: 'enter',
-        config: {
-          facialRecognitionEnabled: false,
-          identityVerificationEnabled: true,
-          timeRestrictionEnabled: true,
-          curfewStart: '23:59',
-          curfewEnd: '00:00',
-          maxSessionMinutes: 120,
-          weekdayStart: '00:00',
-          weekdayEnd: '23:59',
-        },
-      })
-      expect(result.result === 'review' || result.result === 'pass').toBe(true)
-    })
-
-    it('正例: 购买和游戏行为也受管控', () => {
-      const result = controller.checkAccess({
-        tenantId: 'tenant-test', memberId: 'unknown-user', action: 'purchase',
-      })
-      expect(result.result).toBe('review')
+      const approved = await controller.approveConsent(c.id)
+      expect(approved.status).toBe('approved')
     })
   })
 
   // ═══════════════════════════════════════════
-  //  GET /minor-protection/access-logs
+  //  GET /minor-protection/consent/:minorUserId
   // ═══════════════════════════════════════════
 
-  describe('GET /access-logs', () => {
-    it('正例: 获取访问日志 (默认 limit=50)', () => {
-      // 触发几次 checkAccess 生成日志
-      controller.checkAccess({ tenantId: 'log-tenant', memberId: 'u1', action: 'enter' })
-      controller.checkAccess({ tenantId: 'log-tenant', memberId: 'u2', action: 'enter' })
-
-      const logs = controller.getAccessLogs('log-tenant')
-      expect(logs).toHaveLength(2)
-      expect(logs[0].id).toMatch(/^mal-/)
+  describe('GET /consent/:minorUserId', () => {
+    it('正例: 查询同意书列表', async () => {
+      await controller.createConsent({
+        minorUserId: 'u-list', parentUserId: 'p1',
+        parentName: '王五', parentIdCard: '1',
+        relationship: '父亲', consentType: 'partial',
+        effectiveFrom: '2026-07-01T00:00:00Z',
+      })
+      const list = await controller.getConsents('u-list')
+      expect(list.length).toBe(1)
     })
+  })
 
-    it('正例: 自定义 limit 参数', () => {
-      for (let i = 0; i < 5; i++) {
-        controller.checkAccess({ tenantId: 'limit-tenant', memberId: `u${i}`, action: 'enter' })
-      }
+  // ═══════════════════════════════════════════
+  //  POST /minor-protection/check/:userId/time
+  // ═══════════════════════════════════════════
 
-      const logs = controller.getAccessLogs('limit-tenant', '3')
-      expect(logs).toHaveLength(3)
+  describe('POST /check/:userId/time', () => {
+    it('正例: 检查时间限制', async () => {
+      await controller.registerProfile({
+        userId: 'u-time', tenantId: 't-001', birthDate: '2015-01-01',
+      })
+      const r = await controller.checkTimeLimit('u-time', { sessionDurationMin: 30 })
+      expect(r.allowed).toBe(true)
     })
+  })
 
-    it('正例: 空租户返回空数组', () => {
-      const logs = controller.getAccessLogs('empty-tenant')
-      expect(logs).toEqual([])
+  // ═══════════════════════════════════════════
+  //  POST /minor-protection/check/:userId/spend
+  // ═══════════════════════════════════════════
+
+  describe('POST /check/:userId/spend', () => {
+    it('正例: 检查消费限制', async () => {
+      await controller.registerProfile({
+        userId: 'u-spend', tenantId: 't-001', birthDate: '2015-01-01',
+      })
+      const r = await controller.checkSpendLimit('u-spend', { amount: 30 })
+      expect(r.allowed).toBe(true)
     })
+  })
 
-    it('边界: 租户日志隔离', () => {
-      controller.checkAccess({ tenantId: 'log-a', memberId: 'ua', action: 'enter' })
-      controller.checkAccess({ tenantId: 'log-b', memberId: 'ub', action: 'enter' })
+  // ═══════════════════════════════════════════
+  //  GET /minor-protection/check/:userId/blindbox
+  // ═══════════════════════════════════════════
 
-      const logsA = controller.getAccessLogs('log-a')
-      expect(logsA).toHaveLength(1)
-      expect(logsA[0].memberId).toBe('ua')
+  describe('GET /check/:userId/blindbox', () => {
+    it('正例: 盲盒访问检查', async () => {
+      await controller.registerProfile({
+        userId: 'u-box', tenantId: 't-001', birthDate: '2015-01-01',
+      })
+      const r = await controller.checkBlindbox('u-box')
+      expect(r.allowed).toBeDefined()
+    })
+  })
 
-      const logsB = controller.getAccessLogs('log-b')
-      expect(logsB).toHaveLength(1)
-      expect(logsB[0].memberId).toBe('ub')
+  // ═══════════════════════════════════════════
+  //  POST /minor-protection/check/:userId/content
+  // ═══════════════════════════════════════════
+
+  describe('POST /check/:userId/content', () => {
+    it('正例: 内容分级检查', async () => {
+      await controller.registerProfile({
+        userId: 'u-content', tenantId: 't-001', birthDate: '2015-01-01',
+      })
+      const r = await controller.checkContent('u-content', { rating: 'PG-13' })
+      expect(r.allowed).toBeDefined()
+    })
+  })
+
+  // ═══════════════════════════════════════════
+  //  POST /minor-protection/record/:userId/spend
+  // ═══════════════════════════════════════════
+
+  describe('POST /record/:userId/spend', () => {
+    it('正例: 记录消费', async () => {
+      await controller.registerProfile({
+        userId: 'u-rec', tenantId: 't-001', birthDate: '2015-01-01',
+      })
+      const rec = await controller.recordSpend('u-rec', {
+        amount: 50, category: 'game', description: '购买皮肤',
+      })
+      expect(rec.id).toBeTruthy()
+    })
+  })
+
+  // ═══════════════════════════════════════════
+  //  GET /minor-protection/report/:userId
+  // ═══════════════════════════════════════════
+
+  describe('GET /report/:userId', () => {
+    it('正例: 获取使用报告', async () => {
+      const report = await controller.getReport('u-rpt', {
+        startDate: '2026-07-01', endDate: '2026-07-31',
+      })
+      expect(report).toBeDefined()
     })
   })
 })

@@ -101,7 +101,7 @@ export class LogisticsSupplementService {
 
   // ── 货物装载 ─────────────────────────────────────────────────────────────
 
-  async addCargoLoad(data: Omit<CargoLoad, 'id'>): Promise<CargoLoad> {
+  async addCargoLoad(data: Omit<CargoLoad, 'id' | 'createdAt' | 'updatedAt'>): Promise<CargoLoad> {
     const load: CargoLoad = { id: createCargoLoadId(), ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     this.cargoLoads.set(load.id, load)
     return load
@@ -135,7 +135,7 @@ export class LogisticsSupplementService {
 
   // ── 路线规划 ─────────────────────────────────────────────────────────────
 
-  async createRoutePlan(data: Omit<RoutePlan, 'id'>): Promise<RoutePlan> {
+  async createRoutePlan(data: Omit<RoutePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<RoutePlan> {
     const plan: RoutePlan = { id: createRoutePlanId(), ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     this.routePlans.set(plan.id, plan)
     return plan
@@ -180,7 +180,7 @@ export class LogisticsSupplementService {
 
   // ── 司机排班 ─────────────────────────────────────────────────────────────
 
-  async createDriverSchedule(data: Omit<DriverSchedule, 'id'>): Promise<DriverSchedule> {
+  async createDriverSchedule(data: Omit<DriverSchedule, 'id' | 'createdAt' | 'updatedAt'>): Promise<DriverSchedule> {
     const schedule: DriverSchedule = {
       id: createDriverScheduleId(),
       ...data,
@@ -230,7 +230,7 @@ export class LogisticsSupplementService {
 
   // ── 车辆维保 ─────────────────────────────────────────────────────────────
 
-  async createMaintenanceRecord(data: Omit<VehicleMaintenanceRecord, 'id'>): Promise<VehicleMaintenanceRecord> {
+  async createMaintenanceRecord(data: Omit<VehicleMaintenanceRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<VehicleMaintenanceRecord> {
     const record: VehicleMaintenanceRecord = {
       id: createVehicleMaintId(),
       ...data,
@@ -277,7 +277,7 @@ export class LogisticsSupplementService {
 
   // ── 油耗记录 ─────────────────────────────────────────────────────────────
 
-  async recordFuel(data: Omit<FuelRecord, 'id'>): Promise<FuelRecord> {
+  async recordFuel(data: Omit<FuelRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<FuelRecord> {
     const record: FuelRecord = {
       id: createFuelRecordId(),
       ...data,
@@ -328,7 +328,7 @@ export class LogisticsSupplementService {
 
   // ── 事故记录 ─────────────────────────────────────────────────────────────
 
-  async recordAccident(data: Omit<AccidentRecord, 'id'>): Promise<AccidentRecord> {
+  async recordAccident(data: Omit<AccidentRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<AccidentRecord> {
     const record: AccidentRecord = {
       id: createAccidentRecordId(),
       ...data,
@@ -369,7 +369,7 @@ export class LogisticsSupplementService {
 
   // ── 物流成本核算 ─────────────────────────────────────────────────────────
 
-  async recordCost(data: Omit<LogisticsCost, 'id'>): Promise<LogisticsCost> {
+  async recordCost(data: Omit<LogisticsCost, 'id' | 'createdAt' | 'updatedAt'>): Promise<LogisticsCost> {
     const cost: LogisticsCost = {
       id: createLogisticsCostId(),
       ...data,

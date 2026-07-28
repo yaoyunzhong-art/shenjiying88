@@ -232,12 +232,12 @@ describe('LogisticsSupplementService — Supplement', () => {
       await svc.createMaintenanceRecord({
         tenantId: TENANT, vehiclePlate: '沪A99999', odometerKm: 10000,
         maintType: 'oil_change' as const, description: '换机油',
-        status: 'completed' as const, createdBy: 'u-sup',
+        status: 'completed' as const, operatorId: 'u-sup', operatorName: '维修工',
       })
       await svc.createMaintenanceRecord({
         tenantId: TENANT, vehiclePlate: '沪A99999', odometerKm: 20000,
         maintType: 'routine_check' as const, description: '定期检查',
-        status: 'completed' as const, createdBy: 'u-sup',
+        status: 'completed' as const, operatorId: 'u-sup', operatorName: '维修工',
       })
       const history = await svc.getVehicleMaintenanceHistory('沪A99999')
       expect(history.length).toBe(2)
@@ -259,13 +259,13 @@ describe('LogisticsSupplementService — Supplement', () => {
         tenantId: TENANT, vehiclePlate: '沪AACC01', driverId: 'D-A1', driverName: '甲',
         accidentAt: new Date().toISOString(), location: 'G50高速',
         severity: 'minor' as const, responsibility: 'self' as const,
-        description: '轻微刮擦', costCent: 50000,
+        description: '轻微刮擦', propertyDamageCent: 50000,
       })
       await svc.recordAccident({
         tenantId: TENANT, vehiclePlate: '沪AACC01', driverId: 'D-A1', driverName: '甲',
         accidentAt: new Date().toISOString(), location: '市区',
         severity: 'moderate' as const, responsibility: 'counterparty' as const,
-        description: '追尾', costCent: 200000,
+        description: '追尾', propertyDamageCent: 200000,
       })
       const records = await svc.getAccidentRecords('沪AACC01')
       expect(records.length).toBe(2)
@@ -287,7 +287,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         tenantId: TENANT, vehiclePlate: '沪ARES01', driverId: 'D-R1', driverName: '乙',
         accidentAt: new Date().toISOString(), location: 'G15',
         severity: 'minor' as const, responsibility: 'self' as const,
-        description: '小事故', costCent: 10000,
+        description: '小事故', propertyDamageCent: 10000,
       })
       const resolved = await svc.resolveAccident(r.id, '保险理赔完成')
       expect(resolved.resolved).toBe(true)
@@ -299,7 +299,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         tenantId: TENANT, vehiclePlate: '沪ARES02', driverId: 'D-R2', driverName: '丙',
         accidentAt: new Date().toISOString(), location: 'G2',
         severity: 'minor' as const, responsibility: 'self' as const,
-        description: '刮擦', costCent: 5000,
+        description: '刮擦', propertyDamageCent: 5000,
       })
       await svc.resolveAccident(r.id, '已处理')
       await expect(svc.resolveAccident(r.id, '重复'))
@@ -418,7 +418,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         tenantId: TENANT, vehiclePlate: '沪A88888', driverId: 'D-001', driverName: '张',
         accidentAt: now.toISOString(), location: '高速',
         severity: 'minor' as const, responsibility: 'self' as const,
-        description: '小事故', costCent: 10000,
+        description: '小事故', propertyDamageCent: 10000,
       })
 
       const metrics = await svc.getMetrics()

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Query, Body, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ArrayMinSize, ValidateNested, MinLength } from 'class-validator'
 import { Type } from 'class-transformer'
-import { IdentityAccessGuard } from '../../common/guards/identity-access.guard'
+import { TrafficGovernanceGuard } from '../../common/guards/traffic-governance.guard'
 import { StockTransferService, type TransferStatus, type TransferType } from './stock-transfer.service'
 import type { StockTransfer, StockTransferItem } from './stock-transfer.service'
 
@@ -11,10 +11,10 @@ class StockTransferItemDto { @IsString() @IsNotEmpty() productId!: string; @IsSt
 class CreateTransferDto { @IsString() tenantId!: string; @IsEnum(['store_to_store','warehouse_to_store','store_to_warehouse','warehouse_to_warehouse']) transferType!: TransferType; @IsString() fromLocationId!: string; @IsString() fromLocationName!: string; @IsString() toLocationId!: string; @IsString() toLocationName!: string; @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => StockTransferItemDto) items!: StockTransferItemDto[]; @IsString() requestedById!: string; @IsOptional() @IsString() notes?: string }
 class ApproveDto { @IsString() approvedById!: string }
 class ReceiveDto { @IsString() receivedById!: string }
-class ListQuery { @IsOptional() @IsString() status?: string; @IsOptional() @IsString() tenantId?: string; @IsOptional() @IsString() fromLocationId?: string; @IsOptional() @IsString() toLocationId?: string }
+class ListQuery { @IsOptional() @IsString() status?: TransferStatus; @IsOptional() @IsString() tenantId?: string; @IsOptional() @IsString() fromLocationId?: string; @IsOptional() @IsString() toLocationId?: string }
 
 @Controller('stock-transfer')
-@UseGuards(IdentityAccessGuard)
+@UseGuards(TrafficGovernanceGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
 export class StockTransferController {
   constructor(private readonly service: StockTransferService) {}
