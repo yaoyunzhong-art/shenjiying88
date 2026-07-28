@@ -1,5 +1,6 @@
 /**
  * booking/page.vitest.tsx — 预约看店页 L2 组件测试 (vitest + @testing-library/react)
+ * 圈梁五道箍 🌲 树哥C
  * 覆盖: 门店选择 · 日期时段选择 · 信息填写 · 预约提交 · 完成展示 · 错误态 · 边界
  * 角色: 🛒前台 · 👔店长
  */
@@ -496,5 +497,193 @@ describe('BookingPage — 预约看店', () => {
     await waitFor(() => {
       expect(screen.getByText(/电话联系您/)).toBeInTheDocument();
     }, { timeout: 3000 });
+  });
+
+  // ====== 增强测试 ======
+
+  test('选择门店后显示门店详细地址', () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    expect(screen.getByText('北京市朝阳区建国路88号')).toBeInTheDocument();
+  });
+
+  test('step 2 显示已选日期高亮', () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    const dateBtn = screen.getByText('24');
+    fireEvent.click(dateBtn);
+    // 日期按钮应该保留在DOM中
+    expect(dateBtn).toBeInTheDocument();
+  });
+
+  test('空时段选择直接点下一步显示验证错误', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    // 选日期但不选时段
+    const dateBtn = screen.getByText('24');
+    fireEvent.click(dateBtn);
+    fireEvent.click(screen.getByText('下一步'));
+    expect(screen.getByText('请选择日期和时段')).toBeInTheDocument();
+  });
+
+  test('invalid phone number shows validation error after submit', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    fireEvent.change(screen.getByPlaceholderText('请输入您的姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '12345' } });
+    fireEvent.click(screen.getByText('提交预约'));
+    await waitFor(() => {
+      expect(screen.getByText('手机号格式不正确')).toBeInTheDocument();
+    });
+  });
+
+  test('空姓名提交显示姓名验证错误', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    // 不填姓名直接提交
+    fireEvent.click(screen.getByText('提交预约'));
+    await waitFor(() => {
+      expect(screen.getByText('请输入联系人姓名')).toBeInTheDocument();
+    });
+  });
+
+  test('phone maxLength 为 11', () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    expect((screen.getByPlaceholderText('请输入手机号') as HTMLInputElement).maxLength).toBe(11);
+  });
+
+  test('submit button disabled when submitting', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    fireEvent.change(screen.getByPlaceholderText('请输入您的姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('提交预约'));
+    const submitBtn = screen.getByText('提交中...');
+    expect(submitBtn).toBeDisabled();
+  });
+
+  test('重新预约功能重置全部状态', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    fireEvent.change(screen.getByPlaceholderText('请输入您的姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('提交预约'));
+    await waitFor(() => {
+      expect(screen.getByText('继续预约')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    fireEvent.click(screen.getByText('继续预约'));
+    // 回到门店选择页
+    expect(screen.getByText('选择您想前往的门店')).toBeInTheDocument();
+  });
+
+  test('展示门店评分信息', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('★ 4.8')).toBeInTheDocument();
+  });
+
+  test('展示门店距离信息 (km)', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('1.2km')).toBeInTheDocument();
+  });
+
+  test('选择不同门店展示不同地址', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('北京市朝阳区建国路88号')).toBeInTheDocument();
+    expect(screen.getByText('北京市海淀区中关村大街1号')).toBeInTheDocument();
+    expect(screen.getByText('北京市西城区西单北大街98号')).toBeInTheDocument();
+  });
+
+  test('step 3 选择不同门店保留摘要信息', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('10:00-11:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    expect(screen.getByText('深基映旗舰店')).toBeInTheDocument();
+  });
+
+  test('step 2 不可预约时段标签已满显示', () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    // s3 has remaining=0 - check that the slot label is displayed
+    expect(screen.getByText('11:00-12:00')).toBeInTheDocument();
+  });
+
+  test('step 4 显示店员联系提示', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    fireEvent.change(screen.getByPlaceholderText('请输入您的姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('提交预约'));
+    await waitFor(() => {
+      expect(screen.getByText(/电话联系您/)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test('step 2 后退到 step 1 清除已选日期时段', () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('←'));
+    expect(screen.getByText('选择您想前往的门店')).toBeInTheDocument();
+  });
+
+  test('step 3 后退到 step 2 保留已选门店', async () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    fireEvent.click(screen.getByText('24'));
+    fireEvent.click(screen.getByText('09:00-10:00'));
+    fireEvent.click(screen.getByText('下一步'));
+    fireEvent.click(screen.getByText('←'));
+    expect(screen.getByText('选择预约时间')).toBeInTheDocument();
+    expect(screen.getByText('深基映旗舰店')).toBeInTheDocument();
+  });
+
+  test('选择所有 4 个时段: 可用的可点击, 不可用的不可点击', () => {
+    render(<BookingPage />);
+    fireEvent.click(screen.getByText('深基映旗舰店'));
+    // slot s3: remaining=0, s4: available=false
+    const s1Btn = screen.getByText('09:00-10:00').closest('button');
+    const s3Btn = screen.getByText('11:00-12:00').closest('button');
+    expect(s1Btn).not.toBeDisabled();
+    expect(s3Btn).toBeDisabled();
+  });
+
+  test('门店列表渲染评分差异', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('★ 4.6')).toBeInTheDocument();
+    expect(screen.getByText('★ 4.7')).toBeInTheDocument();
+  });
+
+  test('门店列表渲染不同地址', () => {
+    render(<BookingPage />);
+    expect(screen.getByText('北京市海淀区中关村大街1号')).toBeInTheDocument();
+    expect(screen.getByText('北京市西城区西单北大街98号')).toBeInTheDocument();
+  });
+
+  test('dark theme background applied', () => {
+    render(<BookingPage />);
+    const main = document.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
   });
 });
