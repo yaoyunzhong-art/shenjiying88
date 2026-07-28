@@ -50,9 +50,9 @@
 - ❌ 不处理用户画像/CRM（见 member/user）
 - ❌ 不依赖外部 AI API
 
-## 六、测试计划（待补充）
+## 六、测试覆盖
 
+- [x] 服务层单元测试 — `brand-analytics.service.spec.ts`（17 tests, all ✅）
 - [ ] 控制器单元测试
-- [ ] 服务层单元测试
 - [ ] DTO 校验测试
 - [ ] E2E 集成测试
