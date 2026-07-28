@@ -20,7 +20,7 @@
 | ✅ 货物装载 | 创建/状态更新 (7种状态) /单笔查询 |
 | ✅ 路线规划 | 创建/优化(-15%距离/-10%时间)/更新/列表/删除 |
 | ✅ 司机排班 | 创建/状态流转 (6种状态)/自动打卡/删除 |
-| ✅ 车辆维保 | 创建/状态流转 (4种状态)/历史/待维保查询 |
+| ✅ 车辆维保 | 创建/状态流转 (5种状态)/历史/待维保查询 |
 | ✅ 油耗记录 | 创建/效率统计 (百公里油耗)/日期筛选/删除 |
 | ✅ 事故记录 | 创建/查询/解决闭环 (防重复) |
 | ✅ 物流成本 | 记录/按类型和车辆汇总/删除 |
@@ -54,7 +54,7 @@ LogisticsSupplementModule
 排班: scheduled → checked_in → dispatched → on_break → completed
           ↘ absent
 
-维保: pending → in_progress → completed
+维保: pending → scheduled → in_progress → completed
           ↘ cancelled
 ```
 
@@ -83,22 +83,22 @@ LogisticsSupplementModule
 | GET    | /logistics-supplement/driver-schedules/:id | 详情 |
 | PATCH  | /logistics-supplement/driver-schedules/:id/status | 更新排班状态 |
 | DELETE | /logistics-supplement/driver-schedules/:id | 删除排班 |
-| POST   | /logistics-supplement/maintenance | 创建维保 |
+| POST   | /logistics-supplement/maintenance | 创建维保记录 |
 | GET    | /logistics-supplement/maintenance/:id | 详情 |
-| GET    | /logistics-supplement/maintenance/vehicle/:vehicleId/history | 历史维保 |
-| GET    | /logistics-supplement/maintenance/upcoming | 待维保列表 |
+| GET    | /logistics-supplement/maintenance/vehicle/:vehicleId/history | 车辆维保历史 |
+| GET    | /logistics-supplement/maintenance/upcoming | 即将到来维保列表 |
 | PATCH  | /logistics-supplement/maintenance/:id/status | 更新维保状态 |
-| POST   | /logistics-supplement/fuel | 记录油耗 |
-| GET    | /logistics-supplement/fuel/:id | 详情 |
-| GET    | /logistics-supplement/fuel/:vehicleId | 按车查询(支持日期) |
-| GET    | /logistics-supplement/fuel/:vehicleId/efficiency | 油耗效率 |
-| DELETE | /logistics-supplement/fuel/:id | 删除记录 |
+| POST   | /logistics-supplement/fuel-records | 记录油耗 |
+| GET    | /logistics-supplement/fuel-records/:id | 单条油耗记录 |
+| GET    | /logistics-supplement/fuel-records?vehicleId=&startDate=&endDate= | 按车查询 |
+| GET    | /logistics-supplement/fuel-records/efficiency/:vehicleId | 油耗效率统计 |
+| DELETE | /logistics-supplement/fuel-records/:id | 删除油耗记录 |
 | POST   | /logistics-supplement/accidents | 记录事故 |
-| GET    | /logistics-supplement/accidents | 列表(支持车牌筛选) |
+| GET    | /logistics-supplement/accidents?vehicleId= | 列表(支持车牌筛选) |
 | GET    | /logistics-supplement/accidents/:id | 详情 |
 | POST   | /logistics-supplement/accidents/:id/resolve | 解决事故 |
 | POST   | /logistics-supplement/costs | 记录成本 |
 | GET    | /logistics-supplement/costs/:id | 详情 |
-| GET    | /logistics-supplement/costs/summary | 成本汇总(起止日期) |
+| GET    | /logistics-supplement/costs/summary?startDate=&endDate= | 成本汇总 |
 | DELETE | /logistics-supplement/costs/:id | 删除成本 |
 | GET    | /logistics-supplement/metrics | 统计指标 |

@@ -160,7 +160,7 @@ export interface DriverSchedule {
 
 // ── 车辆维保记录 ───────────────────────────────────────────────────────────
 
-export type VehicleMaintStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+export type VehicleMaintStatus = 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 export type VehicleMaintType = 'routine_check' | 'oil_change' | 'tire_replacement' | 'brake_service'
   | 'engine_repair' | 'transmission_service' | 'ac_service' | 'annual_inspection' | 'other'
 

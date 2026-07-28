@@ -31,7 +31,7 @@ export class LogisticsSupplementService {
   static VALID_DRIVER_SCHEDULE_STATUSES = [
     'scheduled','checked_in','dispatched','on_break','completed','absent',
   ] as const
-  static VALID_MAINT_STATUSES = ['pending','in_progress','completed','cancelled'] as const
+  static VALID_MAINT_STATUSES = ['pending','scheduled','in_progress','completed','cancelled'] as const
   static VALID_ACCIDENT_SEVERITIES = ['minor','moderate','serious','fatal'] as const
   static VALID_COST_TYPES = [
     'transport','fuel','maintenance','toll','parking',

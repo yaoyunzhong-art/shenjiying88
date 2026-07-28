@@ -176,7 +176,7 @@ export class CreateVehicleMaintenanceRecordDto {
 }
 
 export class UpdateVehicleMaintenanceDto {
-  @IsOptional() @IsEnum(['pending','in_progress','completed','cancelled'] as const) status?: VehicleMaintStatus
+  @IsOptional() @IsEnum(['pending','scheduled','in_progress','completed','cancelled'] as const) status?: VehicleMaintStatus
   @IsOptional() @IsDateString() startedAt?: string
   @IsOptional() @IsDateString() completedAt?: string
   @IsOptional() @IsNumber() @Min(0) costCent?: number
