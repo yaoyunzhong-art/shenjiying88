@@ -91,9 +91,9 @@ export class CompareBrandsDto {
   endDate!: string
 }
 
-// ── 生成报告 DTO ─────────────────────────────────────────────────────────────
+// ── 生成报告 DTO（完整版：含时间范围） ─────────────────────────────────────
 
-export class GenerateReportDto {
+export class GenerateReportFullDto {
   @IsString()
   @IsNotEmpty()
   brandId!: string

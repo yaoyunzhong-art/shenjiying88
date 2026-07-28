@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { BrandAnalyticsService } from './brand-analytics.service'
-import type { BrandMention, ContentPerformance, BrandHealthScore } from './brand-analytics.entity'
 
 describe('BrandAnalyticsService', () => {
   let service: BrandAnalyticsService
@@ -17,7 +16,7 @@ describe('BrandAnalyticsService', () => {
         brandId: 'brand-1',
         tenantId: 'tenant-1',
         date: '2026-07-29',
-        metrics: { impressions: 1000, clicks: 200, conversions: 30, revenue: 5000 },
+        metrics: { impressions: 1000, clicks: 200, clickRate: 20, conversions: 30, conversionRate: 3, engagementRate: 5, shareCount: 10, commentCount: 5, likeCount: 50, avgEngagementTime: 45, bounceRate: 35, costPerClick: 2.5, costPerMille: 15, returnOnAdSpend: 3.8 },
       })
       expect(kpi.brandId).toBe('brand-1')
       const results = await service.getKPI('brand-1', '2026-07-01', '2026-07-31')
@@ -33,7 +32,7 @@ describe('BrandAnalyticsService', () => {
       const kpi = await service.trackKPI({
         brandId: 'brand-2',
         tenantId: 't1',
-        metrics: { impressions: 500, clicks: 50, conversions: 5, revenue: 1000 },
+        metrics: { impressions: 500, clicks: 50, clickRate: 10, conversions: 5, conversionRate: 1, engagementRate: 2, shareCount: 3, commentCount: 1, likeCount: 20, avgEngagementTime: 30, bounceRate: 40, costPerClick: 3, costPerMille: 20, returnOnAdSpend: 2.5 },
       })
       expect(kpi.date).toBeDefined()
       expect(kpi.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
@@ -67,10 +66,16 @@ describe('BrandAnalyticsService', () => {
   describe('trackMention / getBrandMentions', () => {
     it('tracks a mention and retrieves by brand', async () => {
       const mention = await service.trackMention({
-        brandId: 'brand-1', platform: 'weibo', content: '测试提及',
-        authorName: '用户A', sentiment: 'positive', reach: 1000,
-        engagement: { likes: 50, comments: 10, shares: 5 },
-        mentionedAt: new Date(),
+        brandId: 'brand-1',
+        date: '2026-07-29',
+        platform: 'weibo',
+        mentionCount: 100,
+        positiveCount: 60,
+        negativeCount: 10,
+        neutralCount: 30,
+        sentimentScore: 0.5,
+        topKeywords: [{ keyword: '品牌', count: 50 }],
+        topMentions: [{ title: '测试微博', url: 'https://weibo.com/xxx', sentiment: 'positive' }],
       })
       expect(mention.id).toBeDefined()
       const mentions = await service.getBrandMentions('brand-1')
@@ -79,10 +84,14 @@ describe('BrandAnalyticsService', () => {
 
     it('filters mentions by platform', async () => {
       await service.trackMention({
-        brandId: 'brand-1', platform: 'weibo', content: '微博', authorName: 'A', sentiment: 'positive', reach: 100, engagement: { likes: 0, comments: 0, shares: 0 }, mentionedAt: new Date(),
+        brandId: 'brand-1', date: '2026-07-29', platform: 'weibo',
+        mentionCount: 100, positiveCount: 60, negativeCount: 10, neutralCount: 30, sentimentScore: 0.5,
+        topKeywords: [], topMentions: [],
       })
       await service.trackMention({
-        brandId: 'brand-1', platform: 'douyin', content: '抖音', authorName: 'B', sentiment: 'neutral', reach: 500, engagement: { likes: 0, comments: 0, shares: 0 }, mentionedAt: new Date(),
+        brandId: 'brand-1', date: '2026-07-29', platform: 'douyin',
+        mentionCount: 200, positiveCount: 100, negativeCount: 20, neutralCount: 80, sentimentScore: 0.4,
+        topKeywords: [], topMentions: [],
       })
       const weiboMentions = await service.getBrandMentions('brand-1', 'weibo')
       expect(weiboMentions).toHaveLength(1)
@@ -108,7 +117,7 @@ describe('BrandAnalyticsService', () => {
     it('updateHealthScore merges partial updates', async () => {
       const updated = await service.updateHealthScore('brand-1', { overallScore: 85 })
       expect(updated.overallScore).toBe(85)
-      expect(updated.dimensions).toBeDefined() // merged from existing
+      expect(updated.dimensions).toBeDefined()
     })
   })
 
@@ -117,9 +126,13 @@ describe('BrandAnalyticsService', () => {
   describe('trackContent / getContentPerformance', () => {
     it('tracks content and returns it', async () => {
       const content = await service.trackContent({
-        brandId: 'brand-1', type: 'article', title: '测试文章',
-        metrics: { impressions: 5000, clicks: 300, shares: 50, avgTimeOnPage: 120, bounceRate: 0.4, conversionRate: 0.05 },
-        createdAt: new Date(),
+        contentType: 'article',
+        title: '测试文章',
+        platform: 'wechat',
+        publishDate: '2026-07-29',
+        metrics: { views: 5000, likes: 300, shares: 50, comments: 20, saves: 100, avgWatchTime: 120, completionRate: 0.7 },
+        qualityScore: 85,
+        suggestedImprovements: ['优化标题', '增加配图'],
       })
       expect(content.contentId).toBeDefined()
       const all = await service.getContentPerformance('brand-1')
@@ -158,7 +171,7 @@ describe('BrandAnalyticsService', () => {
   // ── ROI ──
 
   describe('calculateROI', () => {
-it('calculates ROI with valid structure', async () => {
+    it('calculates ROI with valid structure', async () => {
       const roi = await service.calculateROI('brand-1', '2026-01-01', '2026-12-31')
       expect(roi.brandId).toBe('brand-1')
       expect(roi.totalCost).toBeGreaterThan(0)
