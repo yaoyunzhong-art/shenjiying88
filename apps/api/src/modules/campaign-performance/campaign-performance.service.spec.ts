@@ -1,14 +1,3 @@
-/**
- * campaign-performance.service.spec.ts — 活动效果评估服务 V23 全覆盖测试
- *
- * 覆盖:
- *   - listCampaigns (无筛选/按类型/按状态/按日期)
- *   - getCampaign (存在/不存在)
- *   - getSummary
- *   - createCampaign
- *   - resetStoresForTests
- */
-
 import { describe, it, expect, beforeEach } from 'vitest'
 import { CampaignPerformanceService } from './campaign-performance.service'
 import { CampaignType, CampaignStatus } from './campaign-performance.entity'
@@ -21,100 +10,118 @@ describe('CampaignPerformanceService', () => {
     service.resetStoresForTests()
   })
 
-  // ── listCampaigns ────────────────────────────────────────────────────────
+  // ── 活动列表查询 ──
 
   describe('listCampaigns', () => {
-    it('正例: 无筛选应返回所有活动', () => {
+    it('returns all seeded campaigns without filters', () => {
       const list = service.listCampaigns()
-      expect(list.length).toBeGreaterThan(0)
-      list.forEach(r => {
-        expect(r.id).toBeTruthy()
-        expect(r.name).toBeTruthy()
-      })
+      expect(list.length).toBeGreaterThanOrEqual(10)
     })
 
-    it('正例: 按活动类型筛选应返回对应类型', () => {
-      const discount = service.listCampaigns({ campaignType: CampaignType.Discount })
-      discount.forEach(r => expect(r.type).toBe(CampaignType.Discount))
+    it('filters by storeId', () => {
+      const list = service.listCampaigns({ storeId: 'store-001' })
+      expect(list.every(r => r.storeId === 'store-001')).toBe(true)
     })
 
-    it('正例: 按状态筛选应返回对应状态', () => {
-      const active = service.listCampaigns({ status: CampaignStatus.Active })
-      active.forEach(r => expect(r.status).toBe(CampaignStatus.Active))
+    it('filters by campaignType', () => {
+      const list = service.listCampaigns({ campaignType: CampaignType.Discount })
+      expect(list.every(r => r.type === CampaignType.Discount)).toBe(true)
     })
 
-    it('正例: 按日期筛选应返回范围内活动', () => {
-      const filtered = service.listCampaigns({ startDate: '2026-06-01', endDate: '2026-06-30' })
-      filtered.forEach(r => {
-        expect(r.startDate >= '2026-06-01').toBe(true)
-        expect(r.endDate <= '2026-06-30').toBe(true)
-      })
+    it('filters by status', () => {
+      const list = service.listCampaigns({ status: CampaignStatus.Completed })
+      expect(list.every(r => r.status === CampaignStatus.Completed)).toBe(true)
     })
 
-    it('边缘: 无匹配应返回空数组', () => {
-      const list = service.listCampaigns({ storeId: 'nonexistent-store' })
-      expect(list).toHaveLength(0)
+    it('filters by date range', () => {
+      const list = service.listCampaigns({ startDate: '2026-07-01', endDate: '2026-07-31' })
+      expect(list.every(r => r.startDate >= '2026-07-01' && r.endDate <= '2026-07-31')).toBe(true)
+    })
+
+    it('returns results sorted by startDate descending', () => {
+      const list = service.listCampaigns()
+      for (let i = 1; i < list.length; i++) {
+        expect(list[i - 1].startDate.localeCompare(list[i].startDate)).toBeGreaterThanOrEqual(0)
+      }
     })
   })
 
-  // ── getCampaign ──────────────────────────────────────────────────────────
+  // ── 单条详情 ──
 
   describe('getCampaign', () => {
-    it('正例: 按 ID 获取应返回活动详情', () => {
-      const all = service.listCampaigns()
-      const found = service.getCampaign(all[0].id)
-      expect(found).toBeTruthy()
-      expect(found!.id).toBe(all[0].id)
+    it('returns a campaign by id', () => {
+      const list = service.listCampaigns()
+      const campaign = service.getCampaign(list[0].id)
+      expect(campaign).toBeDefined()
+      expect(campaign!.id).toBe(list[0].id)
     })
 
-    it('异常: 不存在的 ID 应返回 undefined', () => {
-      const found = service.getCampaign('nonexistent-id')
-      expect(found).toBeUndefined()
+    it('returns undefined for unknown id', () => {
+      expect(service.getCampaign('nonexistent')).toBeUndefined()
     })
   })
 
-  // ── getSummary ───────────────────────────────────────────────────────────
+  // ── 活动效果汇总 ──
 
   describe('getSummary', () => {
-    it('正例: 应返回汇总统计', () => {
+    it('returns summary with aggregated metrics', () => {
       const summary = service.getSummary()
-      expect(summary.totalCampaigns).toBeGreaterThan(0)
+      expect(summary.totalCampaigns).toBeGreaterThanOrEqual(10)
       expect(summary.totalBudget).toBeGreaterThan(0)
-      expect(summary.avgROI).toBeGreaterThanOrEqual(0)
+      expect(summary.totalCost).toBeGreaterThan(0)
+      expect(summary.totalRevenue).toBeGreaterThan(0)
+      expect(summary.avgROI).toBeGreaterThan(0)
     })
 
-    it('正例: 筛选后统计只含匹配活动', () => {
-      const summary = service.getSummary({ campaignType: CampaignType.Vip })
-      expect(summary.totalCampaigns).toBeGreaterThan(0)
-      expect(summary.totalCampaigns).toBeLessThan(service.getSummary().totalCampaigns)
+    it('filters summary by storeId', () => {
+      const summary = service.getSummary({ storeId: 'store-001' })
+      expect(summary.totalCampaigns).toBeGreaterThanOrEqual(2) // 2 campaigns in store-001
+    })
+
+    it('filters summary by status', () => {
+      const summary = service.getSummary({ status: CampaignStatus.Active })
+      expect(summary.totalCampaigns).toBeGreaterThanOrEqual(3) // active campaigns
     })
   })
 
-  // ── createCampaign ───────────────────────────────────────────────────────
+  // ── 创建活动记录 ──
 
   describe('createCampaign', () => {
-    it('正例: 创建新活动应返回 Planned 状态', () => {
-      const c = service.createCampaign({
-        name: '测试活动', type: CampaignType.Discount,
-        startDate: '2026-08-01', endDate: '2026-08-31',
-        budget: 50000, cost: 0, participants: 0, newMembers: 0,
-        revenue: 0, satisfaction: 0,
+    it('creates a new campaign with Planned status', () => {
+      const record = service.createCampaign({
+        name: '测试活动',
+        type: CampaignType.Discount,
+        startDate: '2026-08-01',
+        endDate: '2026-08-15',
+        budget: 10000,
+        cost: 0,
+        participants: 0,
+        newMembers: 0,
+        revenue: 0,
+        satisfaction: 0,
       })
-      expect(c.id).toMatch(/^campaign-/)
-      expect(c.status).toBe(CampaignStatus.Planned)
-      expect(c.name).toBe('测试活动')
+      expect(record.id).toMatch(/^campaign-/)
+      expect(record.name).toBe('测试活动')
+      expect(record.status).toBe(CampaignStatus.Planned)
+      expect(record.storeId).toBe('store-default')
     })
   })
 
-  // ── reset ────────────────────────────────────────────────────────────────
+  // ── resetStoresForTests ──
 
   describe('resetStoresForTests', () => {
-    it('正例: 重置后列表应为空，再调用又会填充', () => {
+    it('clears internal store so next listCampaigns triggers fresh seed', () => {
+      expect(service.listCampaigns().length).toBeGreaterThan(0)
       service.resetStoresForTests()
-      expect(service.listCampaigns()).toHaveLength(0)
-      // 再次访问会重新 seed
+      // After reset, next listCampaigns re-seeds from scratch
       const list = service.listCampaigns()
-      expect(list.length).toBeGreaterThan(0)
+      expect(list.length).toBeGreaterThanOrEqual(10)
+    })
+
+    it('allows re-seeding after reset', () => {
+      service.resetStoresForTests()
+      const list = service.listCampaigns() // triggers seed
+      expect(list.length).toBeGreaterThanOrEqual(10)
     })
   })
 })

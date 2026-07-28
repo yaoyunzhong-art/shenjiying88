@@ -1,18 +1,6 @@
-/**
- * brand-analytics.service.spec.ts — 品牌分析服务 V23 全覆盖测试
- *
- * 覆盖:
- *   - getKPI / trackKPI
- *   - getChannelAttribution / compareAttributionModels
- *   - getBrandMentions / trackMention
- *   - getBrandHealth / updateHealthScore
- *   - getContentPerformance / trackContent
- *   - generateReport / getReports / getReport
- *   - calculateROI / getMarketShare
- */
-
 import { describe, it, expect, beforeEach } from 'vitest'
 import { BrandAnalyticsService } from './brand-analytics.service'
+import type { BrandMention, ContentPerformance, BrandHealthScore } from './brand-analytics.entity'
 
 describe('BrandAnalyticsService', () => {
   let service: BrandAnalyticsService
@@ -21,145 +9,174 @@ describe('BrandAnalyticsService', () => {
     service = new BrandAnalyticsService()
   })
 
-  // ── KPI ──────────────────────────────────────────────────────────────────
+  // ── KPI ──
 
-  describe('KPI', () => {
-    it('正例: trackKPI 应创建并返回 KPI', async () => {
+  describe('trackKPI / getKPI', () => {
+    it('tracks a KPI and retrieves it by date range', async () => {
       const kpi = await service.trackKPI({
-        brandId: 'b1', tenantId: 't1', metrics: { impressions: 1000, clicks: 50 },
+        brandId: 'brand-1',
+        tenantId: 'tenant-1',
+        date: '2026-07-29',
+        metrics: { impressions: 1000, clicks: 200, conversions: 30, revenue: 5000 },
       })
-      expect(kpi.brandId).toBe('b1')
-      expect(kpi.date).toBeTruthy()
+      expect(kpi.brandId).toBe('brand-1')
+      const results = await service.getKPI('brand-1', '2026-07-01', '2026-07-31')
+      expect(results).toHaveLength(1)
     })
 
-    it('正例: getKPI 应按日期范围返回已有 KPI', async () => {
-      await service.trackKPI({ brandId: 'b1', tenantId: 't1', metrics: { v: 1 }, date: '2026-07-20' })
-      await service.trackKPI({ brandId: 'b1', tenantId: 't1', metrics: { v: 2 }, date: '2026-07-22' })
-      const result = await service.getKPI('b1', '2026-07-20', '2026-07-21')
-      expect(result).toHaveLength(1)
+    it('returns empty array when no KPI in date range', async () => {
+      const results = await service.getKPI('brand-1', '2025-01-01', '2025-12-31')
+      expect(results).toHaveLength(0)
     })
 
-    it('边缘: 无匹配 KPI 应返回空数组', async () => {
-      const result = await service.getKPI('nonexistent', '2026-01-01', '2026-12-31')
-      expect(result).toEqual([])
+    it('auto-assigns date when not provided', async () => {
+      const kpi = await service.trackKPI({
+        brandId: 'brand-2',
+        tenantId: 't1',
+        metrics: { impressions: 500, clicks: 50, conversions: 5, revenue: 1000 },
+      })
+      expect(kpi.date).toBeDefined()
+      expect(kpi.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     })
   })
 
-  // ── 渠道归因 ──────────────────────────────────────────────────────────────
+  // ── 渠道归因 ──
 
-  describe('ChannelAttribution', () => {
-    it('正例: getChannelAttribution 应返回 7 个渠道数据', async () => {
-      const result = await service.getChannelAttribution('b1')
-      expect(result).toHaveLength(7)
-      expect(result[0].channel).toBeTruthy()
-      expect(result[0].touchpoints).toBeGreaterThan(0)
-    })
-
-    it('正例: compareAttributionModels 应返回 5 种模型', async () => {
-      const result = await service.compareAttributionModels('b1')
-      expect(result).toHaveLength(5)
-      expect(result[0].model).toBeTruthy()
-      expect(result[0].channels.length).toBeGreaterThan(0)
+  describe('getChannelAttribution', () => {
+    it('returns 7 channel entries', async () => {
+      const channels = await service.getChannelAttribution('brand-1')
+      expect(channels).toHaveLength(7)
+      expect(channels[0].channel).toBe('social')
+      expect(channels[0].touchpoints).toBeGreaterThanOrEqual(1000)
     })
   })
 
-  // ── 品牌声量 ──────────────────────────────────────────────────────────────
+  describe('compareAttributionModels', () => {
+    it('returns 5 model comparisons', async () => {
+      const models = await service.compareAttributionModels('brand-1')
+      expect(models).toHaveLength(5)
+      const modelNames = models.map(m => m.model)
+      expect(modelNames).toContain('first_touch')
+      expect(modelNames).toContain('last_touch')
+      expect(modelNames).toContain('linear')
+    })
+  })
 
-  describe('BrandMentions', () => {
-    it('正例: trackMention 应创建提及记录', async () => {
-      const m = await service.trackMention({
-        brandId: 'b1', platform: 'weibo', content: 'mention text',
-        mentionType: 'positive', authorName: 'user1', mentionCount: 1,
-        reach: 100, sentimentScore: 0.8, url: 'https://example.com',
-        mentionedAt: new Date(), tenantId: 't1',
+  // ── 品牌声量 ──
+
+  describe('trackMention / getBrandMentions', () => {
+    it('tracks a mention and retrieves by brand', async () => {
+      const mention = await service.trackMention({
+        brandId: 'brand-1', platform: 'weibo', content: '测试提及',
+        authorName: '用户A', sentiment: 'positive', reach: 1000,
+        engagement: { likes: 50, comments: 10, shares: 5 },
+        mentionedAt: new Date(),
       })
-      expect(m.id).toBeTruthy()
-      expect(m.platform).toBe('weibo')
+      expect(mention.id).toBeDefined()
+      const mentions = await service.getBrandMentions('brand-1')
+      expect(mentions).toHaveLength(1)
     })
 
-    it('正例: getBrandMentions 应支持按平台过滤', async () => {
+    it('filters mentions by platform', async () => {
       await service.trackMention({
-        brandId: 'b1', platform: 'weibo', content: 'c1',
-        mentionType: 'positive', authorName: 'u1', mentionCount: 1,
-        reach: 50, sentimentScore: 0.5, url: 'https://a.com',
-        mentionedAt: new Date(), tenantId: 't1',
+        brandId: 'brand-1', platform: 'weibo', content: '微博', authorName: 'A', sentiment: 'positive', reach: 100, engagement: { likes: 0, comments: 0, shares: 0 }, mentionedAt: new Date(),
       })
       await service.trackMention({
-        brandId: 'b1', platform: 'redbook', content: 'c2',
-        mentionType: 'neutral', authorName: 'u2', mentionCount: 2,
-        reach: 80, sentimentScore: 0, url: 'https://b.com',
-        mentionedAt: new Date(), tenantId: 't1',
+        brandId: 'brand-1', platform: 'douyin', content: '抖音', authorName: 'B', sentiment: 'neutral', reach: 500, engagement: { likes: 0, comments: 0, shares: 0 }, mentionedAt: new Date(),
       })
-      const weiboOnly = await service.getBrandMentions('b1', 'weibo')
-      expect(weiboOnly).toHaveLength(1)
-      expect(weiboOnly[0].platform).toBe('weibo')
+      const weiboMentions = await service.getBrandMentions('brand-1', 'weibo')
+      expect(weiboMentions).toHaveLength(1)
     })
   })
 
-  // ── 健康度 ────────────────────────────────────────────────────────────────
+  // ── 健康度 ──
 
-  describe('BrandHealth', () => {
-    it('正例: getBrandHealth 应返回默认健康评分', async () => {
-      const h = await service.getBrandHealth('b1')
-      expect(h.overallScore).toBe(78)
-      expect(h.dimensions.awareness).toBeTruthy()
+  describe('getBrandHealth / updateHealthScore', () => {
+    it('returns default health score for brand', async () => {
+      const health = await service.getBrandHealth('brand-1')
+      expect(health.overallScore).toBe(78)
+      expect(health.dimensions).toBeDefined()
+      expect(health.dimensions.awareness.trend).toBe('up')
     })
 
-    it('正例: updateHealthScore 应合并更新', async () => {
-      const updated = await service.updateHealthScore('b1', { overallScore: 90 })
-      expect(updated.overallScore).toBe(90)
+    it('caches health score after first retrieval', async () => {
+      const first = await service.getBrandHealth('brand-1')
+      const second = await service.getBrandHealth('brand-1')
+      expect(second.overallScore).toBe(first.overallScore)
+    })
+
+    it('updateHealthScore merges partial updates', async () => {
+      const updated = await service.updateHealthScore('brand-1', { overallScore: 85 })
+      expect(updated.overallScore).toBe(85)
+      expect(updated.dimensions).toBeDefined() // merged from existing
     })
   })
 
-  // ── 内容表现 ──────────────────────────────────────────────────────────────
+  // ── 内容表现 ──
 
-  describe('ContentPerformance', () => {
-    it('正例: trackContent 应创建内容记录', async () => {
-      const c = await service.trackContent({
-        brandId: 'b1', type: 'article', title: 'Test', url: 'https://x.com',
-        views: 100, clicks: 10, shares: 5, engagement: 0.1,
-        date: '2026-07-20', tenantId: 't1',
+  describe('trackContent / getContentPerformance', () => {
+    it('tracks content and returns it', async () => {
+      const content = await service.trackContent({
+        brandId: 'brand-1', type: 'article', title: '测试文章',
+        metrics: { impressions: 5000, clicks: 300, shares: 50, avgTimeOnPage: 120, bounceRate: 0.4, conversionRate: 0.05 },
+        createdAt: new Date(),
       })
-      expect(c.contentId).toBeTruthy()
+      expect(content.contentId).toBeDefined()
+      const all = await service.getContentPerformance('brand-1')
+      expect(all.length).toBeGreaterThanOrEqual(1)
     })
   })
 
-  // ── 报告 ──────────────────────────────────────────────────────────────────
+  // ── 报告 ──
 
-  describe('Reports', () => {
-    it('正例: generateReport 应生成报告', async () => {
-      const report = await service.generateReport('b1', 'weekly')
-      expect(report.id).toBeTruthy()
+  describe('generateReport / getReports / getReport', () => {
+    it('generates a report of given type', async () => {
+      const report = await service.generateReport('brand-1', 'weekly')
       expect(report.reportType).toBe('weekly')
-      expect(report.recommendations.length).toBeGreaterThan(0)
+      expect(report.summary).toContain('品牌分析报告')
+      expect(report.recommendations).toHaveLength(3)
     })
 
-    it('正例: getReports 应返回品牌报告列表', async () => {
-      await service.generateReport('b1', 'weekly')
-      await service.generateReport('b1', 'monthly')
-      const reports = await service.getReports('b1')
-      expect(reports.length).toBeGreaterThanOrEqual(2)
+    it('getReports returns reports for brand', async () => {
+      await service.generateReport('brand-1', 'daily')
+      await service.generateReport('brand-1', 'monthly')
+      const reports = await service.getReports('brand-1')
+      expect(reports).toHaveLength(2)
     })
 
-    it('异常: getReport 不存时应抛 NotFoundException', async () => {
-      await expect(service.getReport('nonexistent')).rejects.toThrow()
+    it('getReport throws when not found', async () => {
+      await expect(service.getReport('nonexistent')).rejects.toThrow('Report')
+    })
+
+    it('getReport returns report by id', async () => {
+      const report = await service.generateReport('brand-1', 'weekly')
+      const found = await service.getReport(report.id)
+      expect(found.id).toBe(report.id)
     })
   })
 
-  // ── ROI & 市场占比 ────────────────────────────────────────────────────────
+  // ── ROI ──
 
-  describe('ROI & MarketShare', () => {
-    it('正例: calculateROI 应返回计算值', async () => {
-      const roi = await service.calculateROI('b1', '2026-01-01', '2026-12-31')
-      expect(roi.brandId).toBe('b1')
-      expect(roi.roi).toBeGreaterThan(0)
-      expect(roi.roas).toBeGreaterThan(0)
+  describe('calculateROI', () => {
+it('calculates ROI with valid structure', async () => {
+      const roi = await service.calculateROI('brand-1', '2026-01-01', '2026-12-31')
+      expect(roi.brandId).toBe('brand-1')
+      expect(roi.totalCost).toBeGreaterThan(0)
+      expect(roi.totalRevenue).toBeGreaterThan(0)
+      expect(roi.netProfit).toBe(roi.totalRevenue - roi.totalCost)
+      expect(roi.roas).toBe(roi.totalRevenue / roi.totalCost)
+      expect(roi.roi).toBe(((roi.totalRevenue - roi.totalCost) / roi.totalCost) * 100)
     })
+  })
 
-    it('正例: getMarketShare 应返回品牌份额列表', async () => {
+  // ── 市场占比 ──
+
+  describe('getMarketShare', () => {
+    it('returns market share data', async () => {
       const shares = await service.getMarketShare()
-      expect(shares.length).toBeGreaterThan(0)
-      expect(shares[0].brandName).toBeTruthy()
+      expect(shares).toHaveLength(3)
+      expect(shares[0].brandName).toBe('主品牌')
+      expect(shares[0].rank).toBe(1)
     })
   })
 })

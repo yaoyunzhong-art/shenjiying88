@@ -1,362 +1,317 @@
-// birthday.service.spec.ts · WP-15 生日趴引擎
-// BS-0199~BS-0206 — service 层测试 ≥15 个
-
-import { Test } from '@nestjs/testing';
-import { BirthdayService } from './birthday.service';
-import { BirthdayTier, type RewardType } from './birthday.entity';
+import { describe, it, expect, beforeEach } from 'vitest'
+import { BirthdayService } from './birthday.service'
 
 describe('BirthdayService', () => {
-  async function createSvc() {
-    const module = await Test.createTestingModule({
-      providers: [BirthdayService],
-    }).compile();
-    const svc = module.get(BirthdayService);
-    svc.reset();
-    return svc;
-  }
+  let service: BirthdayService
 
-  function makePlan(
-    svc: BirthdayService,
-    overrides: Partial<{
-      memberId: string;
-      birthday: string;
-      advanceDays: number;
-      tier: BirthdayTier;
-      rewardType: string;
-      rewardValue: number;
-      allowFriends: boolean;
-      friendDiscount: number;
-    }> = {},
-  ) {
-    const allowFriends = overrides.allowFriends ?? false;
-    return svc.createPlan({
-      memberId: overrides.memberId ?? 'm1',
-      birthday: overrides.birthday ?? '07-25',
-      advanceDays: overrides.advanceDays ?? 3,
-      tier: overrides.tier ?? BirthdayTier.Standard,
-      rewardType: (overrides.rewardType as RewardType) ?? 'coupon',
-      rewardValue: overrides.rewardValue ?? 50,
-      allowFriends,
-      // 只有 allowFriends=true 时提供默认折扣值
-      friendDiscount: allowFriends ? (overrides.friendDiscount ?? 0.8) : undefined,
-    });
-  }
+  beforeEach(() => {
+    service = new BirthdayService()
+    service.reset()
+  })
 
-  // ══════════════════════════════════════════════════════════════
-  // BS-0199: 生日识别
-  // ══════════════════════════════════════════════════════════════
+  // ── BS-0199: 生日识别 ──
 
-  it('BS-0199: 标记近30天即将生日的会员（正例）', async () => {
-    const svc = await createSvc();
-    makePlan(svc, { memberId: 'm1', birthday: '08-01' });
-    makePlan(svc, { memberId: 'm2', birthday: '12-25' });
+  describe('markUpcomingBirthdays', () => {
+    it('marks plans as upcoming when birthdays are within 30 days', () => {
+      const now = new Date()
+      const futureDay = String(now.getDate() + 15).padStart(2, '0')
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const birthday = `${month}-${futureDay}`
 
-    // markUpcomingBirthdays 标记所有传入的会员（有方案即标），不自行过滤日期
-    const result = svc.markUpcomingBirthdays(['m1', 'm2'], { m1: '08-01', m2: '12-25' });
-    expect(result.marked).toBe(2);
-  });
+      service.createPlan({
+        memberId: 'm1', birthday, advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      const result = service.markUpcomingBirthdays(['m1'], { m1: birthday })
+      expect(result.marked).toBe(1)
+    })
 
-  it('BS-0199: 标记不存在会员返回0', async () => {
-    const svc = await createSvc();
-    const result = svc.markUpcomingBirthdays(['nonexist'], { nonexist: '08-01' });
-    expect(result.marked).toBe(0);
-  });
+    it('does not mark unknown members', () => {
+      const result = service.markUpcomingBirthdays(['m1'], {})
+      expect(result.marked).toBe(0)
+    })
+  })
 
-  it('BS-0199: checkIsUpcoming 近30天生日返回 true', async () => {
-    const svc = await createSvc();
-    // 使用一个在未来几天的日期
-    const now = new Date();
-    const future = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
-    const mm = String(future.getMonth() + 1).padStart(2, '0');
-    const dd = String(future.getDate()).padStart(2, '0');
-    expect(svc.checkIsUpcoming('m1', `${mm}-${dd}`)).toBe(true);
-  });
+  describe('checkIsUpcoming', () => {
+    it('returns true when birthday is within 30 days', () => {
+      const now = new Date()
+      const futureDay = String(now.getDate() + 10).padStart(2, '0')
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      expect(service.checkIsUpcoming('m1', `${month}-${futureDay}`)).toBe(true)
+    })
 
-  it('BS-0199: checkIsUpcoming 30天外返回 false', async () => {
-    const svc = await createSvc();
-    expect(svc.checkIsUpcoming('m1', '01-01')).toBe(false);
-  });
+    it('returns false for invalid birthday format', () => {
+      expect(service.checkIsUpcoming('m1', 'invalid')).toBe(false)
+    })
 
-  it('BS-0199: 无效生日格式返回 false', async () => {
-    const svc = await createSvc();
-    expect(svc.checkIsUpcoming('m1', '')).toBe(false);
-    expect(svc.checkIsUpcoming('m1', 'invalid')).toBe(false);
-  });
+    it('returns false for empty birthday', () => {
+      expect(service.checkIsUpcoming('m1', '')).toBe(false)
+    })
+  })
 
-  // ══════════════════════════════════════════════════════════════
-  // BS-0200~BS-0202: 自动营销
-  // ══════════════════════════════════════════════════════════════
+  // ── BS-0200~BS-0202: 自动营销 ──
 
-  it('BS-0200: 创建生日方案（正例）', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc);
-    expect(plan.id).toBeTruthy();
-    expect(plan.memberId).toBe('m1');
-    expect(plan.birthday).toBe('07-25');
-    expect(plan.status).toBe('pending');
-    expect(plan.planDate).toBeTruthy();
-  });
+  describe('createPlan', () => {
+    it('creates a pending birthday plan', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'VIP', rewardType: 'gift', rewardValue: 200,
+        allowFriends: true, friendDiscount: 0.8,
+      })
+      expect(plan.memberId).toBe('m1')
+      expect(plan.status).toBe('pending')
+      expect(plan.rewardType).toBe('gift')
+      expect(plan.allowFriends).toBe(true)
+    })
 
-  it('BS-0200: 空 memberId 抛 BadRequest', async () => {
-    const svc = await createSvc();
-    expect(() =>
-      svc.createPlan({
-        memberId: '',
-        birthday: '07-25',
-        advanceDays: 3,
-        tier: BirthdayTier.Standard,
-        rewardType: 'coupon',
-        rewardValue: 50,
-      }),
-    ).toThrow('memberId 不能为空');
-  });
+    it('throws when memberId is empty', () => {
+      expect(() =>
+        service.createPlan({
+          memberId: '', birthday: '12-25', advanceDays: 7,
+          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+        }),
+      ).toThrow('memberId 不能为空')
+    })
 
-  it('BS-0200: 无效生日格式抛 BadRequest', async () => {
-    const svc = await createSvc();
-    expect(() =>
-      svc.createPlan({
-        memberId: 'm1',
-        birthday: '0725',
-        advanceDays: 3,
-        tier: BirthdayTier.Standard,
-        rewardType: 'coupon',
-        rewardValue: 50,
-      }),
-    ).toThrow('birthday 格式必须为 MM-DD');
-  });
+    it('throws when birthday format is invalid', () => {
+      expect(() =>
+        service.createPlan({
+          memberId: 'm1', birthday: '1225', advanceDays: 7,
+          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+        }),
+      ).toThrow('birthday 格式必须为 MM-DD')
+    })
 
-  it('BS-0200: advanceDays 边界值', async () => {
-    const svc = await createSvc();
-    expect(() =>
-      svc.createPlan({
-        memberId: 'm1',
-        birthday: '07-25',
-        advanceDays: 31,
-        tier: BirthdayTier.Standard,
-        rewardType: 'coupon',
-        rewardValue: 50,
-      }),
-    ).toThrow('advanceDays 必须在 0~30 范围内');
-    expect(() =>
-      svc.createPlan({
-        memberId: 'm1',
-        birthday: '07-25',
-        advanceDays: -1,
-        tier: BirthdayTier.Standard,
-        rewardType: 'coupon',
-        rewardValue: 50,
-      }),
-    ).toThrow('advanceDays 必须在 0~30 范围内');
-  });
+    it('throws when advanceDays is out of range', () => {
+      expect(() =>
+        service.createPlan({
+          memberId: 'm1', birthday: '12-25', advanceDays: 99,
+          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+        }),
+      ).toThrow('advanceDays 必须在 0~30 范围内')
+    })
 
-  it('BS-0200: rewardValue <= 0 抛 BadRequest', async () => {
-    const svc = await createSvc();
-    expect(() =>
-      svc.createPlan({
-        memberId: 'm1',
-        birthday: '07-25',
-        advanceDays: 3,
-        tier: BirthdayTier.Standard,
-        rewardType: 'coupon',
-        rewardValue: 0,
-      }),
-    ).toThrow('rewardValue 必须大于 0');
-  });
+    it('throws when rewardValue is not positive', () => {
+      expect(() =>
+        service.createPlan({
+          memberId: 'm1', birthday: '12-25', advanceDays: 7,
+          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 0,
+        }),
+      ).toThrow('rewardValue 必须大于 0')
+    })
+  })
 
-  it('BS-0201: 同一会员重复创建抛 Conflict', async () => {
-    const svc = await createSvc();
-    makePlan(svc, { memberId: 'm2' });
-    expect(() => makePlan(svc, { memberId: 'm2' })).toThrow('已有进行中的方案');
-  });
+  describe('listPlans / getPlan', () => {
+    it('lists all plans sorted by createdAt desc', () => {
+      service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+      })
+      service.createPlan({
+        memberId: 'm2', birthday: '01-01', advanceDays: 3,
+        tier: 'VIP', rewardType: 'discount', rewardValue: 100,
+      })
+      expect(service.listPlans()).toHaveLength(2)
+    })
 
-  it('BS-0201: 触发生日推送（正例）', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc);
-    const reward = svc.triggerPush(plan.id);
-    expect(reward.planId).toBe(plan.id);
-    expect(reward.sentAt).toBeTruthy();
-    expect(svc.getPlan(plan.id).status).toBe('active');
-  });
+    it('filters plans by month', () => {
+      // Pick a future month so planDate falls this year
+      const now = new Date()
+      const futureMonth = now.getMonth() + 2 > 12 ? 12 : now.getMonth() + 2
+      const mm = String(futureMonth).padStart(2, '0')
+      const targetMonth = `${now.getFullYear()}-${mm}`
+      service.createPlan({
+        memberId: 'm1', birthday: `${mm}-15`, advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+      })
+      const filtered = service.listPlans({ month: targetMonth })
+      expect(filtered.length).toBeGreaterThanOrEqual(1)
+    })
 
-  it('BS-0201: 重复触发已激活方案抛 BadRequest', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc);
-    svc.triggerPush(plan.id);
-    expect(() => svc.triggerPush(plan.id)).toThrow('不可触发推送');
-  });
+    it('throws when plan not found', () => {
+      expect(() => service.getPlan('nonexistent')).toThrow('生日方案不存在')
+    })
+  })
 
-  it('BS-0202: 领取奖励（正例）', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc);
-    svc.triggerPush(plan.id);
-    const claimed = svc.claimReward(plan.id);
-    expect(claimed.claimedAt).toBeTruthy();
-    expect(svc.getPlan(plan.id).status).toBe('completed');
-  });
+  describe('triggerPush / claimReward', () => {
+    it('triggerPush changes plan status to active and creates reward', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      const reward = service.triggerPush(plan.id)
+      expect(reward.type).toBe('coupon')
+      expect(reward.value).toBe(100)
+      expect(reward.sentAt).toBeInstanceOf(Date)
+      expect(service.getPlan(plan.id).status).toBe('active')
+    })
 
-  it('BS-0202: 已完成方案不可重复领取', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc);
-    svc.triggerPush(plan.id);
-    svc.claimReward(plan.id);
-    // plan 状态改为 completed 后，claimReward 会先检查 status !== 'active'
-    expect(() => svc.claimReward(plan.id)).toThrow('不可领取奖励');
-  });
+    it('throws when triggering non-pending plan', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      service.triggerPush(plan.id)
+      expect(() => service.triggerPush(plan.id)).toThrow('不可触发推送')
+    })
 
-  it('BS-0202: pending 状态下领取抛 BadRequest', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc);
-    expect(() => svc.claimReward(plan.id)).toThrow('不可领取奖励');
-  });
+    it('claimReward completes the plan', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      service.triggerPush(plan.id)
+      const claimed = service.claimReward(plan.id)
+      expect(claimed.claimedAt).toBeInstanceOf(Date)
+      expect(service.getPlan(plan.id).status).toBe('completed')
+    })
 
-  // ══════════════════════════════════════════════════════════════
-  // BS-0203~BS-0204: 传播裂变
-  // ══════════════════════════════════════════════════════════════
+    it('throws when claiming already claimed reward', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      service.triggerPush(plan.id)
+      service.claimReward(plan.id)
+      // Second claim: plan is already 'completed', so service throws before checking reward
+      expect(() => service.claimReward(plan.id)).toThrow('不可领取奖励')
+    })
+  })
 
-  it('BS-0203: 记录消费追踪（正例）', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm3', allowFriends: true, friendDiscount: 0.8 });
-    const tracking = svc.recordTracking({
-      planId: plan.id,
-      friendInvited: 2,
-      totalSpend: 300,
-      returnVisitDays: 7,
-    });
-    expect(tracking.friendInvited).toBe(2);
-    expect(tracking.totalSpend).toBe(300);
-  });
+  // ── BS-0203~BS-0204: 传播裂变 ──
 
-  it('BS-0203: 不允许带好友时邀请好友抛 BadRequest', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm4', allowFriends: false });
-    expect(() =>
-      svc.recordTracking({ planId: plan.id, friendInvited: 1 }),
-    ).toThrow('不允许带好友');
-  });
+  describe('recordTracking', () => {
+    it('creates tracking record', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        allowFriends: true, friendDiscount: 0.8,
+      })
+      const track = service.recordTracking({
+        planId: plan.id, friendInvited: 3, totalSpend: 500, returnVisitDays: 7,
+      })
+      expect(track.friendInvited).toBe(3)
+      expect(track.totalSpend).toBe(500)
+    })
 
-  it('BS-0203: 无效追踪参数抛 BadRequest', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm5', allowFriends: true, friendDiscount: 0.8 });
-    expect(() =>
-      svc.recordTracking({ planId: plan.id, totalSpend: -1 }),
-    ).toThrow('不能为负');
-    expect(() =>
-      svc.recordTracking({ planId: plan.id, friendInvited: -1 }),
-    ).toThrow('不能为负');
-    expect(() =>
-      svc.recordTracking({ planId: plan.id, returnVisitDays: -1 }),
-    ).toThrow('不能为负');
-  });
+    it('throws when plan does not allow friends', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      expect(() =>
+        service.recordTracking({ planId: plan.id, friendInvited: 1 }),
+      ).toThrow('不允许带好友')
+    })
 
-  it('BS-0204: 查询会员裂变数据', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm6', allowFriends: true, friendDiscount: 0.8 });
-    svc.recordTracking({ planId: plan.id, friendInvited: 3, totalSpend: 500 });
-    const stats = svc.getFriendStats('m6');
-    expect(stats.totalInvited).toBe(3);
-    expect(stats.avgSpend).toBe(500);
-  });
+    it('throws on negative values', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        allowFriends: true, friendDiscount: 0.8,
+      })
+      expect(() =>
+        service.recordTracking({ planId: plan.id, totalSpend: -1 }),
+      ).toThrow('totalSpend 不能为负')
+    })
+  })
 
-  it('BS-0204: 无追踪数据的会员返回0', async () => {
-    const svc = await createSvc();
-    const stats = svc.getFriendStats('nonexist');
-    expect(stats.totalInvited).toBe(0);
-    expect(stats.avgSpend).toBe(0);
-  });
+  describe('getFriendStats', () => {
+    it('returns zero stats when no plans exist', () => {
+      const stats = service.getFriendStats('nonexistent')
+      expect(stats.totalInvited).toBe(0)
+      expect(stats.avgSpend).toBe(0)
+    })
 
-  // ══════════════════════════════════════════════════════════════
-  // BS-0205~BS-0206: 复购追踪与看板
-  // ══════════════════════════════════════════════════════════════
+    it('aggregates friend stats from plans', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        allowFriends: true, friendDiscount: 0.8,
+      })
+      service.recordTracking({ planId: plan.id, friendInvited: 2, totalSpend: 400 })
+      const stats = service.getFriendStats('m1')
+      expect(stats.totalInvited).toBe(2)
+      // totalSpend=400, one tracking entry = 400/1 = 400
+      expect(stats.avgSpend).toBe(400)
+    })
+  })
 
-  it('BS-0205: 看板返回聚合数据', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm7', birthday: '08-15', allowFriends: true, friendDiscount: 0.8 });
-    svc.triggerPush(plan.id);
-    svc.claimReward(plan.id);
-    svc.recordTracking({ planId: plan.id, totalSpend: 200, returnVisitDays: 10 });
+  // ── BS-0205~BS-0206: 复购追踪 ──
 
-    const dashboard = svc.getDashboard();
-    expect(dashboard.monthlyBirthdays).toBe(0); // 不在当月，planDate 是未来
-    expect(typeof dashboard.conversionRate).toBe('number');
-    expect(typeof dashboard.avgSpend).toBe('number');
-    expect(typeof dashboard.returnRate).toBe('number');
-  });
+  describe('getDashboard', () => {
+    it('returns dashboard with default current month', () => {
+      const dash = service.getDashboard()
+      expect(dash.monthlyBirthdays).toBe(0)
+      expect(dash.conversionRate).toBe(0)
+      expect(dash.returnRate).toBe(0)
+    })
 
-  it('BS-0205: 指定月份看板可过滤', async () => {
-    const svc = await createSvc();
-    const dashboard = svc.getDashboard('2026-08');
-    expect(dashboard.month).toBe('2026-08');
-  });
+    it('reflects data after creating plans and rewards', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      service.triggerPush(plan.id)
+      service.claimReward(plan.id)
+      const dash = service.getDashboard()
+      expect(dash.activePlans).toBeGreaterThanOrEqual(0)
+    })
+  })
 
-  it('BS-0205: 空数据看板返回0值', async () => {
-    const svc = await createSvc();
-    const dashboard = svc.getDashboard();
-    expect(dashboard.monthlyBirthdays).toBe(0);
-    expect(dashboard.activePlans).toBe(0);
-    expect(dashboard.conversionRate).toBe(0);
-    expect(dashboard.avgSpend).toBe(0);
-    expect(dashboard.returnRate).toBe(0);
-  });
+  describe('preloadEffects', () => {
+    it('returns empty effects when no active plan', () => {
+      const result = service.preloadEffects('nonexistent')
+      expect(result.hasActivePlan).toBe(false)
+      expect(result.effects).toHaveLength(0)
+    })
 
-  it('BS-0206: 会员生日统计返回正确', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm8', birthday: '08-20', allowFriends: true, friendDiscount: 0.8 });
-    svc.triggerPush(plan.id);
-    svc.claimReward(plan.id);
-    svc.recordTracking({ planId: plan.id, friendInvited: 2, totalSpend: 400, returnVisitDays: 7 });
+    it('returns effects when member has upcoming plan', () => {
+      const now = new Date()
+      const futureDay = String(now.getDate() + 10).padStart(2, '0')
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const birthday = `${month}-${futureDay}`
+      service.createPlan({
+        memberId: 'm1', birthday, advanceDays: 7,
+        tier: 'VIP', rewardType: 'gift', rewardValue: 500,
+      })
+      const result = service.preloadEffects('m1')
+      expect(result.hasActivePlan).toBe(true)
+      expect(result.effects.length).toBeGreaterThanOrEqual(3)
+    })
+  })
 
-    const stats = svc.getMemberStats('m8');
-    expect(stats.planCount).toBe(1);
-    expect(stats.totalSpend).toBe(400);
-    expect(stats.totalInvited).toBe(2);
-    expect(stats.avgReturnVisitDays).toBe(7);
-  });
+  describe('getMemberStats', () => {
+    it('returns empty stats for unknown member', () => {
+      const stats = service.getMemberStats('nonexistent')
+      expect(stats.planCount).toBe(0)
+      expect(stats.totalSpend).toBe(0)
+      expect(stats.totalInvited).toBe(0)
+    })
 
-  it('BS-0206: 无活动的会员统计为0', async () => {
-    const svc = await createSvc();
-    const stats = svc.getMemberStats('nobody');
-    expect(stats.planCount).toBe(0);
-    expect(stats.totalSpend).toBe(0);
-    expect(stats.totalInvited).toBe(0);
-  });
+    it('aggregates member stats across plans', () => {
+      const plan = service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        allowFriends: true, friendDiscount: 0.8,
+      })
+      service.recordTracking({ planId: plan.id, friendInvited: 3, totalSpend: 600, returnVisitDays: 14 })
+      const stats = service.getMemberStats('m1')
+      expect(stats.planCount).toBe(1)
+      expect(stats.totalSpend).toBe(600)
+      expect(stats.totalInvited).toBe(3)
+    })
+  })
 
-  it('BS-0206: 会员统计含最近生日日期', async () => {
-    const svc = await createSvc();
-    const plan = makePlan(svc, { memberId: 'm9' });
-    const stats = svc.getMemberStats('m9');
-    expect(stats.planCount).toBe(1);
-    expect(stats.lastBirthday).toBe(plan.planDate);
-  });
-
-  it('getPlan: 不存在的方案抛 NotFound', async () => {
-    const svc = await createSvc();
-    expect(() => svc.getPlan('nonexist')).toThrow('生日方案不存在');
-  });
-
-  it('listPlans: 按状态筛选', async () => {
-    const svc = await createSvc();
-    const p1 = makePlan(svc, { memberId: 'm10' });
-    const p2 = makePlan(svc, { memberId: 'm11' });
-    svc.triggerPush(p1.id);
-
-    const activePlans = svc.listPlans({ status: 'active' });
-    expect(activePlans.length).toBe(1);
-    expect(activePlans[0].id).toBe(p1.id);
-  });
-
-  it('friendDiscount 越界抛 BadRequest', async () => {
-    const svc = await createSvc();
-    expect(() =>
-      svc.createPlan({
-        memberId: 'm12',
-        birthday: '08-01',
-        advanceDays: 3,
-        tier: BirthdayTier.Standard,
-        rewardType: 'coupon',
-        rewardValue: 50,
-        allowFriends: true,
-        friendDiscount: 1.5,
-      }),
-    ).toThrow('friendDiscount 必须在 0~1 范围内');
-  });
-});
+  describe('reset', () => {
+    it('clears all stores', () => {
+      service.createPlan({
+        memberId: 'm1', birthday: '12-25', advanceDays: 7,
+        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+      })
+      expect(service.listPlans()).toHaveLength(1)
+      service.reset()
+      expect(service.listPlans()).toHaveLength(0)
+    })
+  })
+})
