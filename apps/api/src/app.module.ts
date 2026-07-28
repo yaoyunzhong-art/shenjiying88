@@ -173,6 +173,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
 import { NoticeModule } from './modules/notice/notice.module';
 import { TerminalModule } from './modules/terminal/terminal.module';
+import { LogisticsSupplementModule } from './modules/logistics-supplement';
 import { OpenPlatformModule } from './modules/open-platform/open-platform.module';
 
 @Module({
@@ -370,6 +371,7 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     ProbationTransferModule,
     NoticeModule,
     TerminalModule,
+    LogisticsSupplementModule,
     OpenPlatformModule,
   ],
   providers: [

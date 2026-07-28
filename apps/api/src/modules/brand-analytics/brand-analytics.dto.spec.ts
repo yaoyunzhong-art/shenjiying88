@@ -89,12 +89,19 @@ describe('ROIDto', () => {
 describe('AnalyticsQueryDto', () => {
   it('passes with valid granularity', async () => {
     const dto = new AnalyticsQueryDto()
-    dto.brandId = 'b1'
     dto.startDate = '2026-01-01'
     dto.endDate = '2026-06-30'
     dto.granularity = 'month' as any
     const errors = await validate(dto)
     expect(errors).toHaveLength(0)
+  })
+
+  it('fails without granularity', async () => {
+    const dto = new AnalyticsQueryDto()
+    dto.startDate = '2026-01-01'
+    dto.endDate = '2026-06-30'
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
   })
 })
 

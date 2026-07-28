@@ -118,17 +118,18 @@ export class BrandAnalyticsService {
   }
 
   // ── 内容表现 ─────────────────────────────────────────────────────────────
+  private contentBrandMap = new Map<string, string>() // contentId → brandId
 
   async getContentPerformance(brandId: string): Promise<ContentPerformance[]> {
-    return Array.from(this.content.values()).filter(c => {
-      // 简化：按 brandId 过滤（实际应有关联字段）
-      return true
+    return Array.from(this.content.values()).filter((c) => {
+      return this.contentBrandMap.get(c.contentId) === brandId
     })
   }
 
-  async trackContent(data: Omit<ContentPerformance, 'contentId'>): Promise<ContentPerformance> {
+  async trackContent(data: Omit<ContentPerformance, 'contentId'> & { brandId?: string }): Promise<ContentPerformance> {
     const item: ContentPerformance = { contentId: randomUUID(), ...data }
     this.content.set(item.contentId, item)
+    this.contentBrandMap.set(item.contentId, data.brandId ?? 'default')
     return item
   }
 

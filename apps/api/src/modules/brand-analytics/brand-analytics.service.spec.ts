@@ -126,6 +126,7 @@ describe('BrandAnalyticsService', () => {
   describe('trackContent / getContentPerformance', () => {
     it('tracks content and returns it', async () => {
       const content = await service.trackContent({
+        brandId: 'brand-1',
         contentType: 'article',
         title: '测试文章',
         platform: 'wechat',

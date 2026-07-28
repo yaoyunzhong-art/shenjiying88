@@ -45,12 +45,9 @@ export enum ContentTypeEnum {
 }
 
 // ── 分析查询 DTO ─────────────────────────────────────────────────────────────
+// brandId 来自 @Param，不在 Query 中重复
 
 export class AnalyticsQueryDto {
-  @IsString()
-  @IsNotEmpty()
-  brandId!: string
-
   @IsDateString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'startDate must be YYYY-MM-DD format' })
   startDate!: string
@@ -200,11 +197,10 @@ export class CompetitorQueryDto {
 
 // ── 标签查询 DTO ─────────────────────────────────────────────────────────────
 
-export class TopContentQueryDto {
-  @IsString()
-  @IsNotEmpty()
-  brandId!: string
+// ── 标签查询 DTO ─────────────────────────────────────────────────────────────
+// brandId 来自 @Param
 
+export class TopContentQueryDto {
   @IsOptional()
   @IsEnum(ContentTypeEnum)
   contentType?: ContentTypeEnum
@@ -238,11 +234,10 @@ export class HealthQueryDto {
 
 // ── 健康度趋势查询 DTO ───────────────────────────────────────────────────────
 
-export class HealthTrendQueryDto {
-  @IsString()
-  @IsNotEmpty()
-  brandId!: string
+// ── 健康度趋势查询 DTO ───────────────────────────────────────────────────────
+// brandId 来自 @Param
 
+export class HealthTrendQueryDto {
   @IsOptional()
   @IsString()
   @Matches(/^\d+$/, { message: 'months must be a number' })
@@ -267,11 +262,10 @@ export class MarketShareQueryDto {
 
 // ── 内容建议查询 DTO ─────────────────────────────────────────────────────────
 
-export class ContentSuggestionsDto {
-  @IsString()
-  @IsNotEmpty()
-  contentId!: string
+// ── 内容建议查询 DTO ─────────────────────────────────────────────────────────
+// contentId 来自 @Param，不在 Query 中重复
 
+export class ContentSuggestionsDto {
   @IsOptional()
   @IsString()
   contentType?: string
