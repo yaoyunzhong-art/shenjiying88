@@ -264,14 +264,23 @@ export default function ReturnDetailClient({ snapshot }: { snapshot: ReturnDetai
 
   if (!detail) {
     return (
-      <AdminPermissionGate {...permissionGate}>
-        <DetailShell title="退换货详情" subtitle="记录不存在或已被删除">
-          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>
-            <p>该退换货申请记录不存在或已被删除</p>
-            <SubmitButton onClick={() => window.history.back()}>返回列表</SubmitButton>
-          </div>
-        </DetailShell>
-      </AdminPermissionGate>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          extra={<>退换单: {snapshot.id}</>}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
+        <AdminPermissionGate {...permissionGate}>
+          <DetailShell title="退换货详情" subtitle="记录不存在或已被删除">
+            <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+              <p>该退换货申请记录不存在或已被删除</p>
+              <SubmitButton onClick={() => window.history.back()}>返回列表</SubmitButton>
+            </div>
+          </DetailShell>
+        </AdminPermissionGate>
+      </div>
     );
   }
 
