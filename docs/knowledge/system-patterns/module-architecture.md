@@ -1,109 +1,119 @@
-# 🧩 shenjiying88 模块架构模式
+# 🧩 shenjiying88 模块架构模式 (V24)
 
-> 最后更新: 2026-07-14 11:12
+> 最后更新: 2026-07-29 01:26 CST
 > 维护: 🦞 龙虾哥
 
 ---
 
-## 一、Module 分层设计
-
-每个API模块遵循标准的四层架构：
+## 一、191模块分类
 
 ```
-Module (模块注册)
-  │
-  ├── Entity (数据模型 + Prisma schema)
-  ├── DTO (数据传输对象 + 校验)
-  │
-  ├── Service (业务逻辑层)
-  │     ├── 核心业务方法
-  │     ├── 数据存取 (Prisma Client)
-  │     └── 外部服务调用
-  │
-  ├── Controller (API 路由层)
-  │     ├── RESTful 端点
-  │     ├── 参数校验
-  │     └── 响应格式统一
-  │
-  └── Module (NestJS @Module 注册)
+shenjiying88 模块架构
+├── 核心业务 (Phase 31-38)    — 收银/会员/库存/财务
+├── 品牌运营 (Phase 47)       — brand-custom/analytics/workspace
+├── 后勤管理 (Phase 30)       — logistics/supplement/stock-transfer
+├── AI 智能                    — ai-{diagnosis,forecast,insight,marketing,model-config,push,rag,recommend,review,reviewer,rule-engine,sales}
+├── 安全合规                   — auth/rbac/rls/minor-protection/permission
+├── 租户管理                   — tenant/tenant-config/tenant-llm/multi-region
+├── 交易支付                   — cashier/payment-gateway/checkout/transactions/currency
+├── 门店管理                   — storefront/stores/scout/locale
+├── 营销运营                   — campaign/coupon/loyalty/marketing/marketing-metrics
+├── 基础设施                   — deploy/devops/monitoring/observability/chaos/canary
+├── 数据平台                   — analytics/analytics-v2/reports/report/insight
+└── 领域模型                   — packages/domain/{member,inventory,finance,order,...}
 ```
 
-## 二、圈梁对齐机制
+## 二、三层架构标准
+
+每个模块遵循统一的分层结构：
 
 ```
-第一道箍：PRD 定义         what
-第二道箍：代码实现         how
-第三道箍：测试覆盖         prove
-第四道箍：审计检查         audit
+modules/<name>/
+├── <name>.entity.ts        # 实体/类型定义 (接口+类型)
+├── <name>.dto.ts           # DTO (class-validator)
+├── <name>.module.ts        # NestJS Module 注册
+├── <name>.service.ts       # 业务逻辑层
+├── <name>.controller.ts    # API 端点 (含 @UseGuards)
+├── README.md               # 模块说明
+├── ACCEPTANCE.md           # 验收标准
+├── <name>.service.test.ts  # Service 单元测试 (15+)
+├── <name>.controller.test.ts # Controller 测试
+├── <name>.e2e.test.ts      # 模块 E2E 测试
+└── __tests__/              # 额外测试
 ```
 
-**对齐状态标记**:
-- 🟢 完整: 四道箍齐全
-- 🟡 中等: 缺一道 (通常缺审计)
-- 🔴 断裂: 缺两道以上 (无PRD+无测试)
-
-## 三、验收脉冲流水线
+## 三、圈梁五道箍派单模式
 
 ```
-30min周期:
-  git pull → TSC类型检查 → 全量测试 → 缓存状态标注 → 报告输出
-  ├── TSC零错误 = Base ✅
-  ├── Service测试全绿
-  ├── Controller测试全绿
-  └── 角色测试全绿
+每天 06:00-08:00 龙虾哥派单
+├── 树哥A: 文档线 → README/ACCEPTANCE/PRD 产出
+├── 树哥B: 测试线 → Service 测试 15+ (边界+异常+并发)
+└── 树哥C: E2E线  → 端到端 25+ (跨模块链路)
+
+完成后 → 提交 + 下一轮
 ```
 
-**P0-FIRE机制**: fail→派树哥→下轮验收→闭环/重派/升级
+### 保底续产
+- 30分钟一次检查工作区
+- 有修改即提交（不空跑）
+- 带 `[保底续产]` / `🔄` 标签
 
-## 四、三级开发体系
+## 四、E2E 测试体系
 
-```
-👑 大飞哥 — 需求/决策
-    │
-    ▼
-🦞 龙虾哥 — 规划/评审/验收/调度 (不写业务代码)
-    │
-    ▼
-🐜 树哥集群 — 写代码/测试/修bug (单模块·≤3路并行)
-```
+### 41条端到端链
 
-**例外**: admin-web前端新页面由🦞龙虾哥亲自写（树哥100%丢失率）
+| 链 | 覆盖领域 |
+|:---:|:-----|
+| 01-06 | admin→SDK→API→storefront 基础链路 |
+| 07-12 | storefront→mobile→tob 跨端 |
+| 13-18 | miniapp→SDK→domain→admin 异步管道 |
+| 19-24 | 低代码→i18n→监控→租户 |
+| 25-30 | 会员积分→点餐→规则引擎→采购 |
+| 31 | P-31 RLS 多租户验收 |
+| 32 | P-37 库存采购验收 |
+| 33 | P-38 财务对账验收 |
+| 34 | P-47 品牌运营验收 (V24 新增) |
+| 35 | P-30 后勤管理验收 (V24 新增) |
+| 36 | 未成年保护验收 (V24 新增) |
+| 37 | storefront checkout API |
+| 38 | API checkout payment refund |
+| 34-38 | cross-module-journey (非Phase专用) |
 
-## 五、专家审查 6 道 Gate
-
-| Gate | 职责 | 负责人 |
-|:----:|:-----|:------:|
-| G1 | 架构+安全 | E1陈架构 + E44周技术 |
-| G2 | 对口业务 | B-x对口专家 |
-| G3 | 数据+AI | E5赵数据 + E9吴AI |
-| G4 | 体验+租户 | E7孙体验 + E40杨客户 |
-| G5 | 合规+财务 | E36卫审计 + E2李安全 |
-| G6 | 审计+监管 | E38沈监管 + E6刘合规 |
-
-## 六、角色模拟测试
-
-**8使用者角色**，每模块≥12个角色视角测试：
-
-| 角色 | 视角 |
-|:----|:-----|
-| 👔 店长 | 整体运营/决策分析 |
-| 🛒 前台 | 日常收银/接待 |
-| 👥 HR | 员工管理/排班 |
-| 🔧 安监 | 安全监控/巡检 |
-| 🎮 导玩员 | 设备引导/活动执行 |
-| 🎯 运行专员 | 运营配置/数据分析 |
-| 🤝 团建 | 团预约/结算 |
-| 📢 营销 | 活动/推广/会员营销 |
-
-## 七、数据资产分层
+### 三端测试模式
 
 ```
-archive/    宪法级·仅追加·完整历史
-(root)      活跃层·当月摘要·日常读取
+apps/admin-web/app/__e2e__/    → 43个测试文件 (41链 + pos-checkout)
+apps/api/test/                    → API模块测试
+e2e/tests/                        → Playwright浏览器测试
 ```
 
-**核心数据文件**: 场馆库/竞品库/侦察库 (分层管理)
+## 五、安全架构
+
+```
+请求 → IdentityAccessGuard (全局) → 224/224 Controller
+     → RLS (54/65表 tenant_id 隔离)
+     → RateLimit (按模块)
+     → 未成年保护 (6种限制: 时长/消费/盲盒/内容/游戏/聊天)
+```
+
+## 六、部署架构
+
+```
+代码仓库 → kaniko build → k8s deploy → 阿里云 ACK
+         → Prisma migrate → ACK RDS PostgreSQL
+         → 四端: admin-web / storefront-web / tob-web / api
+```
+
+## 七、V24 模式演进
+
+| 维度 | V23 旧模式 | V24 新模式 |
+|:-----|:-----|:-----|
+| 保底续产 | 30分钟全模块轮查 | 30分钟仅提交变更 |
+| 树哥派单 | 三线全开轮查 | 按需分派指定模块 |
+| 测试深度 | 15+/25+ 数量驱动 | 边界/异常/并发覆盖 |
+| 文档 | 模板填充 | ACCEPTANCE 验收标准 |
+| 知识管理 | 15天滞后 | 每日刷新 |
 
 ---
 
-*🦞 龙虾哥 · 架构模式文档 · 2026-07-14*
+*🦞 龙虾哥 · V24 · 2026-07-29 01:26 CST*
