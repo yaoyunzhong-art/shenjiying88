@@ -55,4 +55,4 @@
 - [x] 服务层单元测试 — `brand-analytics.service.spec.ts`（17 tests, all ✅）
 - [x] 控制器单元测试 — `brand-analytics.controller.spec.ts` 覆盖 15 端点路由绑定
 - [x] DTO 校验测试 — `brand-analytics.dto.spec.ts` 覆盖枚举、日期格式、必填字段
-- [ ] E2E 集成测试 — 待 CI 流程集成
+- [x] E2E 集成测试 — `__tests__/brand-analytics.e2e-spec.ts` (14 组, 覆盖全部 8 个业务域)

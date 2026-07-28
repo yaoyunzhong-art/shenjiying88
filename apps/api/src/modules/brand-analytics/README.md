@@ -55,7 +55,9 @@ apps/api/src/modules/brand-analytics/
 ├── brand-analytics.dto.ts          — class-validator DTO
 ├── brand-analytics.entity.ts       — 实体类型定义
 ├── ACCEPTANCE.md                   — 验收标准
-└── README.md                       — 本文件
+├── README.md                       — 本文件
+└── __tests__/
+    └── brand-analytics.e2e-spec.ts  — E2E 集成测试 (8 业务域, 14 组)
 ```
 
 ═══════════════════════════════════════
