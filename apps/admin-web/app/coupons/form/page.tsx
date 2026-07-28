@@ -2,7 +2,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import CouponFormClient from './coupon-form-client'
 import { loadCouponFormSnapshot } from './coupon-form-data'
 
-export * from './coupon-form-legacy'
 
 const permissionGate = {
   requiredPermission: 'coupons:form:read',

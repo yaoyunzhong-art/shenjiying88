@@ -2,7 +2,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import StoreFormClient from './store-form-client'
 import { loadStoreFormSnapshot } from './store-form-data'
 
-export * from './store-form-legacy'
 
 const permissionGate = {
   requiredPermission: 'store:read',

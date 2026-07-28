@@ -2,7 +2,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import SupplierFormClient from './supplier-form-client'
 import { loadSupplierFormSnapshot } from './supplier-form-data'
 
-export * from './supplier-form-legacy'
 
 const permissionGate = {
   requiredPermission: 'suppliers:form:read',

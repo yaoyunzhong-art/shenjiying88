@@ -6,7 +6,7 @@
  */
 
 import { use, useState, useCallback } from 'react';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
+
 import {
   DetailActionBar,
   DetailClosureBar,
@@ -187,14 +187,13 @@ function getReturnDetail(id: string): ReturnDetail | undefined {
 // ---- 组件 ----
 
 
-const permissionGate = {
-  requiredPermission: 'returns:id:read',
-  title: 'returns 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 returns:id:read 权限的账号可访问。',
-} as const
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
+import type { ReturnDetailSnapshot } from './return-detail-data'
 
-export default function ReturnDetailPage({ params }: { params: Promise<{ id: string }> }): React.ReactElement {
-  const { id } = use(params);
+export default function ReturnDetailClient({ snapshot }: { snapshot: ReturnDetailSnapshot }): React.ReactElement {
+  const id = snapshot.id;
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [detail, setDetail] = useState<ReturnDetail | undefined>(() => getReturnDetail(id));
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<{ remark: string; handler: string }>({ remark: '', handler: '' });

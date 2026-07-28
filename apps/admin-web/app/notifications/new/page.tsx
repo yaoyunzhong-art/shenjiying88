@@ -2,7 +2,6 @@ import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import NotificationFormClient from './notification-form-client'
 import { loadNotificationFormSnapshot } from './notification-form-data'
 
-export * from './notification-form-legacy'
 
 const permissionGate = {
   requiredPermission: 'notifications:read',
