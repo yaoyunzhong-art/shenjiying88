@@ -185,6 +185,7 @@ export default function CashierWorkbenchClient({ snapshot }: { snapshot: Cashier
         </div>
       </div>
     </PageShell>
+    </div>
   )
 }
 
@@ -281,6 +282,4 @@ function footerActionStyle(background: string, color: string): CSSProperties {
     fontSize: 14,
     fontWeight: 600,
   }
-    </div>
-  )
 }
