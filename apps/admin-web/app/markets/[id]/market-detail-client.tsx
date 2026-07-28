@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { MarketDetailSnapshot } from './market-detail-data'
 
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback } from 'react'
 
 import {
   DetailActionBar,
@@ -124,12 +124,9 @@ async function submitMarketEdit(form: EditFormData): Promise<{ success: boolean 
 
 
 export default function MarketDetailPage({ snapshot }: { snapshot: MarketDetailSnapshot }) {
-  const id = snapshot.id;
-
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
-
-  const { id } = use(params);
-  const market = getMarketById(id);
+  const id = snapshot.id
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
+  const market = getMarketById(id)
   const [editOpen, setEditOpen] = useState(false);
   const [formData, setFormData] = useState<EditFormData>({
     name: market.name,

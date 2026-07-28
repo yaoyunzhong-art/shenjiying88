@@ -1,7 +1,7 @@
 'use client';
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { StaffDetailSnapshot } from './staff-detail-data'
 
 
@@ -213,27 +213,34 @@ export default function StaffDetailPage({ snapshot }: { snapshot: StaffDetailSna
   if (!id) {
     return (
       <div style={{ display: 'grid', gap: 16 }}>
-
-      <SnapshotRefreshCard
-        sourceLabel={snapshot.sourceLabel}
-        refreshPath={snapshot.refreshPath}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        contextLabel="客户端快照上下文"
-        loadingLabel="刷新中..."
-        idleLabel="刷新快照"
-      />
-
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          contextLabel="客户端快照上下文"
+          loadingLabel="刷新中..."
+          idleLabel="刷新快照"
+        />
         <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
           <p>未指定员工 ID。</p>
         </main>
-      </AdminPermissionGate>
-    );
+      </div>
+    )
   }
 
   if (!detail) {
     return (
-      <AdminPermissionGate {...permissionGate}>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          contextLabel="客户端快照上下文"
+          loadingLabel="刷新中..."
+          idleLabel="刷新快照"
+        />
         <main style={{ maxWidth: 900, margin: '0 auto', padding: 32, color: '#cbd5e1' }}>
           <div style={{ textAlign: 'center', marginTop: 80 }}>
             <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>员工不存在</p>
@@ -248,12 +255,21 @@ export default function StaffDetailPage({ snapshot }: { snapshot: StaffDetailSna
             </button>
           </div>
         </main>
-      </AdminPermissionGate>
-    );
+      </div>
+    )
   }
 
   return (
-    <AdminPermissionGate {...permissionGate}>
+    <div style={{ display: 'grid', gap: 16 }}>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
       <main style={{ maxWidth: 900, margin: '0 auto', padding: 32 }}>
         <WorkspaceBreadcrumb
           {...buildStandardBreadcrumb({ workspace: 'staff', detailLabel: detail.name })}

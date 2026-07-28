@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { ApprovalDetailSnapshot } from './approval-detail-data'
 
 
-import { use, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react'
 import { DetailActionBar, DetailClosureBar, WorkspaceBreadcrumb } from '@m5/ui';
 import {
   adminGovernanceApprovalsRoute,
@@ -50,12 +50,9 @@ function requestPayloadRecord(approval: GovernanceApprovalSnapshot | null): Reco
   return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
 }
 
-export default function ApprovalDetailPage({ snapshot }: { snapshot: ApprovalDetailSnapshot }) {
-  const ticket = snapshot.ticket || snapshot.id;
-
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
-
-  const { ticket } = use(params);
+export default function ApprovalDetailPage({ snapshot: shellSnapshot }: { snapshot: ApprovalDetailSnapshot }) {
+  const ticket = shellSnapshot.ticket
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [snapshot, setSnapshot] = useState<Awaited<ReturnType<typeof loadGovernanceApprovalDetail>>>({
     deliveryMode: 'fallback',
     generatedAt: new Date().toISOString(),
@@ -95,21 +92,9 @@ export default function ApprovalDetailPage({ snapshot }: { snapshot: ApprovalDet
     }
 
     void hydrate();
-    return (
-    <div style={{ display: 'grid', gap: 16 }}>
-
-      <SnapshotRefreshCard
-        sourceLabel={snapshot.sourceLabel}
-        refreshPath={snapshot.refreshPath}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        contextLabel="客户端快照上下文"
-        loadingLabel="刷新中..."
-        idleLabel="刷新快照"
-      />
-) => {
+    return () => {
       disposed = true;
-    };
+    }
   }, [ticket]);
 
   const approval = snapshot.approval;
@@ -245,7 +230,16 @@ export default function ApprovalDetailPage({ snapshot }: { snapshot: ApprovalDet
   }
 
   return (
-    <AdminPermissionGate {...permissionGate}>
+    <div style={{ display: 'grid', gap: 16 }}>
+      <SnapshotRefreshCard
+        sourceLabel={shellSnapshot.sourceLabel}
+        refreshPath={shellSnapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
       <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
         <WorkspaceBreadcrumb
           {...buildStandardBreadcrumb({ workspace: 'approvals', detailLabel: approval?.ticket ?? ticket })}
@@ -512,8 +506,8 @@ export default function ApprovalDetailPage({ snapshot }: { snapshot: ApprovalDet
           links={buildStandardClosureLinks({ workspace: 'approvals', detailId: ticket })}
         />
       </main>
-    </AdminPermissionGate>
-  );
+    </div>
+  )
 }
 
 function StatCard({
@@ -732,8 +726,6 @@ function InfoRow({ label, value, href }: { label: string; value: string; href?: 
           value
         )}
       </div>
-    </div>
-  );
     </div>
   )
 }

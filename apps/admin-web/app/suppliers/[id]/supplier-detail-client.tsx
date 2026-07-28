@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { SupplierDetailSnapshot } from './supplier-detail-data'
 
 /**
@@ -10,7 +10,7 @@ import type { SupplierDetailSnapshot } from './supplier-detail-data'
  * 功能: 查看详情、编辑信息、状态流转、删除确认
  */
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback } from 'react'
 
 
 import {
@@ -171,12 +171,9 @@ function formatAmount(amount: number): string {
 
 
 export default function SupplierDetailPage({ snapshot }: { snapshot: SupplierDetailSnapshot }) {
-  const id = snapshot.id;
-
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
-
-  const { id } = use(params);
-  const [supplier, setSupplier] = useState<SupplierDetail>(getSupplierById(id));
+  const id = snapshot.id
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
+  const [supplier, setSupplier] = useState<SupplierDetail>(getSupplierById(id))
   const [editOpen, setEditOpen] = useState(false);
   const [transitionLoading, setTransitionLoading] = useState<string | null>(null);
   const [formData, setFormData] = useState<EditFormData>({

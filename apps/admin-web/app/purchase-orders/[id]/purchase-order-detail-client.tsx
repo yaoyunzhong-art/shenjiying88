@@ -1,7 +1,7 @@
 'use client';
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { PurchaseOrderDetailSnapshot } from './purchase-order-detail-data'
 
 /**
@@ -129,17 +129,15 @@ export default function PurchaseOrderDetailClient({ snapshot }: { snapshot: Purc
   if (!item) {
     return (
       <div style={{ display: 'grid', gap: 16 }}>
-
-      <SnapshotRefreshCard
-        sourceLabel={snapshot.sourceLabel}
-        refreshPath={snapshot.refreshPath}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        contextLabel="客户端快照上下文"
-        loadingLabel="刷新中..."
-        idleLabel="刷新快照"
-      />
-
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          contextLabel="客户端快照上下文"
+          loadingLabel="刷新中..."
+          idleLabel="刷新快照"
+        />
         <DetailShell
           title="采购单未找到"
           breadcrumbs={[
@@ -161,8 +159,8 @@ export default function PurchaseOrderDetailClient({ snapshot }: { snapshot: Purc
             ]}
           />
         </DetailShell>
-      </AdminPermissionGate>
-    );
+      </div>
+    )
   }
 
   const transitions = STATUS_TRANSITIONS[status] ?? [];
@@ -170,26 +168,31 @@ export default function PurchaseOrderDetailClient({ snapshot }: { snapshot: Purc
   const statusInfo = PURCHASE_ORDER_STATUS_MAP[status];
 
   return (
-    <AdminPermissionGate
-      requiredPermission={permissionGate.requiredPermission}
-      title={permissionGate.title}
-      description={permissionGate.description}
-    >
-    <DetailShell
-      title={item.orderNo}
-      subtitle={`供应商: ${item.supplierName} | 门店: ${item.storeCode} | 部门: ${item.department}`}
-      breadcrumbs={[
-        { label: '采购管理', href: '/purchase-orders' },
-        { label: item.orderNo },
-      ]}
-      actions={[
-        {
-          key: 'status',
-          label: statusInfo.label as DetailShellAction['label'],
-          variant: statusInfo.variant as DetailShellAction['variant'],
-        },
-      ]}
-    >
+    <div style={{ display: 'grid', gap: 16 }}>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
+      <DetailShell
+        title={item.orderNo}
+        subtitle={`供应商: ${item.supplierName} | 门店: ${item.storeCode} | 部门: ${item.department}`}
+        breadcrumbs={[
+          { label: '采购管理', href: '/purchase-orders' },
+          { label: item.orderNo },
+        ]}
+        actions={[
+          {
+            key: 'status',
+            label: statusInfo.label as DetailShellAction['label'],
+            variant: statusInfo.variant as DetailShellAction['variant'],
+          },
+        ]}
+      >
       {/* Tab 导航 */}
       <div
         style={{
@@ -493,9 +496,9 @@ export default function PurchaseOrderDetailClient({ snapshot }: { snapshot: Purc
           },
         ]}
       />
-    </DetailShell>
+      </DetailShell>
     </div>
-  );
+  )
 }
 
 // ---- DetailShellAction label 类型引用 -----------------

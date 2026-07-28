@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { EquipmentDetailSnapshot } from './equipment-detail-data'
 
 /**
@@ -10,7 +10,7 @@ import type { EquipmentDetailSnapshot } from './equipment-detail-data'
  * 功能: 查看详情、编辑信息、状态流转、删除确认
  */
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback } from 'react'
 import Link from 'next/link';
 
 import {
@@ -609,17 +609,29 @@ function EquipmentDetailContent({ equipment }: { equipment: EquipmentItem }) {
 
 
 export default function EquipmentDetailPage({ snapshot }: { snapshot: EquipmentDetailSnapshot }) {
-  const id = snapshot.id;
-
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
-
-  const { id } = use(params);
-  const equipment = getEquipmentById(id);
+  const id = snapshot.id
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
+  const equipment = getEquipmentById(id)
 
   if (!equipment) {
     return (
       <div style={{ display: 'grid', gap: 16 }}>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          contextLabel="客户端快照上下文"
+          loadingLabel="刷新中..."
+          idleLabel="刷新快照"
+        />
+        <EquipmentNotFound id={id} />
+      </div>
+    )
+  }
 
+  return (
+    <div style={{ display: 'grid', gap: 16 }}>
       <SnapshotRefreshCard
         sourceLabel={snapshot.sourceLabel}
         refreshPath={snapshot.refreshPath}
@@ -629,17 +641,9 @@ export default function EquipmentDetailPage({ snapshot }: { snapshot: EquipmentD
         loadingLabel="刷新中..."
         idleLabel="刷新快照"
       />
-
-        <EquipmentNotFound id={id} />
-      </AdminPermissionGate>
-    );
-  }
-
-  return (
-    <AdminPermissionGate {...permissionGate}>
       <EquipmentDetailContent equipment={equipment} />
     </div>
-  );
+  )
 }
 
 // ---- 样式 ----

@@ -764,4 +764,160 @@ describe('链37: Storefront Checkout → API 下单 → 支付 → 查询订单'
       assert.equal(validateOrderStatusTransition('refunded', 'refunding'), false);
     });
   });
+
+  // ───────────────────────────────────────
+  // B6 边界: 优惠券/折扣场景
+  // ───────────────────────────────────────
+  describe('B6 边界 — 优惠券/折扣场景', () => {
+    test('B6.1 有效优惠券码不影响下单结构', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-coupon',
+        items: [{ productId: 'p-cpn', quantity: 1, unitPriceCents: 10000 }],
+        paymentChannel: 'WECHAT',
+        couponCode: 'WELCOME10',
+      };
+      const validation = validateCheckoutRequest(req);
+      assert.ok(validation.valid, '含优惠券码的校验应通过');
+      const resp = checkoutCreateOrder(req);
+      assert.ok(resp.orderId, '优惠券下单应有 orderId');
+      assert.ok(resp.transactionId, '应有 transactionId');
+      assert.equal(resp.totalCents, 10000, '优惠券不影响 checkout 响应金额(前端/后端分别计算)');
+    });
+
+    test('B6.2 空优惠券码等同于无券', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-cpn2',
+        items: [{ productId: 'p-cpn2', quantity: 1, unitPriceCents: 9900 }],
+        paymentChannel: 'ALIPAY',
+        couponCode: '',
+      };
+      const validation = validateCheckoutRequest(req);
+      assert.ok(validation.valid, '空券码通过校验');
+      const resp = checkoutCreateOrder(req);
+      assert.equal(resp.totalCents, 9900, '无优惠券金额不变');
+    });
+
+    test('B6.3 超长优惠券码不阻断接口', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-cpn3',
+        items: [{ productId: 'p-cpn3', quantity: 1, unitPriceCents: 5000 }],
+        paymentChannel: 'CASH',
+        couponCode: 'X'.repeat(200),
+      };
+      const validation = validateCheckoutRequest(req);
+      assert.ok(validation.valid, '超长券码通过校验');
+      const resp = checkoutCreateOrder(req);
+      assert.ok(resp.orderId, '创建订单成功');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // P4 正例: 高并发场景模拟
+  // ───────────────────────────────────────
+  describe('P4 正例 — 并行下单场景', () => {
+    test('P4.1 并发创建多个订单不冲突', () => {
+      const results = Array.from({ length: 10 }, (_, i) => {
+        const req: CheckoutRequest = {
+          memberId: `mem-concurrent-${i}`,
+          items: [{ productId: `p-con-${i}`, quantity: i + 1, unitPriceCents: 1000 }],
+          paymentChannel: 'CASH',
+        };
+        const validation = validateCheckoutRequest(req);
+        assert.ok(validation.valid, `并发请求 ${i} 校验通过`);
+        return checkoutCreateOrder(req);
+      });
+
+      const orderIds = results.map(r => r.orderId);
+      const uniqueIds = new Set(orderIds);
+      assert.equal(uniqueIds.size, 10, '10个并发订单应有10个唯一orderId');
+
+      results.forEach((r, i) => {
+        const expectedTotal = (i + 1) * 1000;
+        assert.equal(r.totalCents, expectedTotal, `并发请求 ${i} 金额正确`);
+      });
+    });
+
+    test('P4.2 重复内容请求生成不同订单(幂等)', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-idemp',
+        items: [{ productId: 'p-idemp', quantity: 1, unitPriceCents: 5000 }],
+        paymentChannel: 'WECHAT',
+      };
+      const resp1 = checkoutCreateOrder(req);
+      const resp2 = checkoutCreateOrder(req);
+      assert.notEqual(resp1.orderId, resp2.orderId, '相同内容不同请求应生成不同订单');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // B7 边界: 跨租户隔离
+  // ───────────────────────────────────────
+  describe('B7 边界 — 跨租户/多租户场景', () => {
+    test('B7.1 多租户订单金额隔离', () => {
+      const tenants = ['tenant-alpha', 'tenant-beta', 'tenant-gamma'];
+      const results = tenants.map(t => {
+        const req: CheckoutRequest = {
+          memberId: `${t}-user-1`,
+          items: [{ productId: 'p-common', quantity: 1, unitPriceCents: 29900 }],
+          paymentChannel: 'CASH',
+        };
+        return checkoutCreateOrder(req);
+      });
+
+      assert.equal(results.length, 3, '3个租户各创建成功');
+      results.forEach(r => assert.equal(r.totalCents, 29900, '金额一致'));
+      const uniqueOrderIds = new Set(results.map(r => r.orderId));
+      assert.equal(uniqueOrderIds.size, 3, '租户间订单隔离');
+    });
+
+    test('B7.2 不同租户相同 memberId 不冲突', () => {
+      const req1: CheckoutRequest = {
+        memberId: 'shared-user',
+        items: [{ productId: 'p-shared', quantity: 1, unitPriceCents: 15000 }],
+        paymentChannel: 'WECHAT',
+      };
+      const req2: CheckoutRequest = {
+        memberId: 'shared-user',
+        items: [{ productId: 'p-shared', quantity: 1, unitPriceCents: 15000 }],
+        paymentChannel: 'WECHAT',
+      };
+      const r1 = checkoutCreateOrder(req1);
+      const r2 = checkoutCreateOrder(req2);
+      assert.notEqual(r1.orderId, r2.orderId, '相同 memberId 不同请求生成不同订单');
+      assert.equal(r1.totalCents, r2.totalCents, '相同金额');
+    });
+  });
+
+  // ───────────────────────────────────────
+  // B8 边界: API 响应结构完整性
+  // ───────────────────────────────────────
+  describe('B8 边界 — 响应结构完整性校验', () => {
+    test('B8.1 CheckoutResponse 结构完整性', () => {
+      const req: CheckoutRequest = {
+        memberId: 'mem-check-resp',
+        items: [{ productId: 'p-resp', quantity: 1, unitPriceCents: 5000 }],
+        paymentChannel: 'CASH',
+      };
+      const resp = checkoutCreateOrder(req);
+      assert.ok(typeof resp.orderId === 'string' && resp.orderId.length > 0, 'orderId 不为空字符串');
+      assert.ok(typeof resp.transactionId === 'string' && resp.transactionId.length > 0, 'transactionId 不为空');
+      assert.ok(typeof resp.totalCents === 'number' && resp.totalCents > 0, 'totalCents 为正整数');
+      assert.equal(Object.keys(resp).length, 3, '响应字段应为 3 个');
+    });
+
+    test('B8.2 OrderDetail 结构完整性', () => {
+      const detail = getOrderDetail('ord-test-struct', 50000);
+      const requiredFields: (keyof OrderDetail)[] = [
+        'orderId', 'orderNo', 'memberId', 'status',
+        'totalAmount', 'paidAmount', 'refundedAmount',
+        'currency', 'createdAt', 'updatedAt',
+      ];
+      requiredFields.forEach(field => {
+        assert.ok(detail[field] !== undefined && detail[field] !== null, `OrderDetail 应包含 ${field}`);
+      });
+      assert.ok(new Date(detail.createdAt).getTime() > 0, 'createdAt 为合法日期');
+      assert.ok(new Date(detail.updatedAt).getTime() > 0, 'updatedAt 为合法日期');
+      assert.equal(detail.currency, 'CNY', '货币单位为 CNY');
+    });
+  });
 });

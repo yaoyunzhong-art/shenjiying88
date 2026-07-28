@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
 import type { EquipmentEditSnapshot } from './equipment-edit-data'
 
 /**
@@ -10,7 +10,7 @@ import type { EquipmentEditSnapshot } from './equipment-edit-data'
  * 功能: 编辑设备信息（名称、型号、门店、供应商、备注）
  */
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback } from 'react'
 import Link from 'next/link';
 
 import {
@@ -111,12 +111,9 @@ function EditNotFound({ id }: { id: string }) {
 
 
 export default function EquipmentEditPage({ snapshot }: { snapshot: EquipmentEditSnapshot }) {
-  const id = snapshot.id;
-
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
-
-  const { id } = use(params);
-  const equipment = getEquipmentById(id);
+  const id = snapshot.id
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
+  const equipment = getEquipmentById(id)
 
   const [formData, setFormData] = useState<EditFormData>({
     name: equipment?.name ?? '',
@@ -165,7 +162,24 @@ export default function EquipmentEditPage({ snapshot }: { snapshot: EquipmentEdi
   if (!equipment) {
     return (
       <div style={{ display: 'grid', gap: 16 }}>
+        <SnapshotRefreshCard
+          sourceLabel={snapshot.sourceLabel}
+          refreshPath={snapshot.refreshPath}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          contextLabel="客户端快照上下文"
+          loadingLabel="刷新中..."
+          idleLabel="刷新快照"
+        />
+        <EditNotFound id={id} />
+      </div>
+    )
+  }
 
+  const typeLabel = ET[equipment.type];
+
+  return (
+    <div style={{ display: 'grid', gap: 16 }}>
       <SnapshotRefreshCard
         sourceLabel={snapshot.sourceLabel}
         refreshPath={snapshot.refreshPath}
@@ -175,16 +189,6 @@ export default function EquipmentEditPage({ snapshot }: { snapshot: EquipmentEdi
         loadingLabel="刷新中..."
         idleLabel="刷新快照"
       />
-
-        <EditNotFound id={id} />
-      </AdminPermissionGate>
-    );
-  }
-
-  const typeLabel = ET[equipment.type];
-
-  return (
-    <AdminPermissionGate {...permissionGate}>
       <main style={{ maxWidth: 720, margin: '0 auto', padding: 32 }}>
         <WorkspaceBreadcrumb
           workspaceLabel="设备管理"
@@ -392,7 +396,7 @@ export default function EquipmentEditPage({ snapshot }: { snapshot: EquipmentEdi
         </div>
       </main>
     </div>
-  );
+  )
 }
 
 // ---- 样式 ----

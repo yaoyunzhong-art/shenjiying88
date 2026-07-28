@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { PurchaseOrderFormSnapshot } from './purchase-order-form-data'
 
 
@@ -186,7 +186,7 @@ function FormFieldWithData(props: {
 
 
 export default function PurchaseOrderFormPage({ snapshot }: { snapshot: PurchaseOrderFormSnapshot }) {
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
 
   const [values, setValues] = useState<PurchaseOrderFormValues>(DEFAULT_VALUES);
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
@@ -240,19 +240,7 @@ export default function PurchaseOrderFormPage({ snapshot }: { snapshot: Purchase
         }
       }, 1200);
 
-      return (
-    <div style={{ display: 'grid', gap: 16 }}>
-
-      <SnapshotRefreshCard
-        sourceLabel={snapshot.sourceLabel}
-        refreshPath={snapshot.refreshPath}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        contextLabel="客户端快照上下文"
-        loadingLabel="刷新中..."
-        idleLabel="刷新快照"
-      />
-) => clearTimeout(timer);
+      return () => clearTimeout(timer);
     },
     [values],
   );
@@ -269,11 +257,16 @@ export default function PurchaseOrderFormPage({ snapshot }: { snapshot: Purchase
   }));
 
   return (
-    <AdminPermissionGate
-      requiredPermission={permissionGate.requiredPermission}
-      title={permissionGate.title}
-      description={permissionGate.description}
-    >
+    <div style={{ display: 'grid', gap: 16 }}>
+      <SnapshotRefreshCard
+        sourceLabel={snapshot.sourceLabel}
+        refreshPath={snapshot.refreshPath}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        contextLabel="客户端快照上下文"
+        loadingLabel="刷新中..."
+        idleLabel="刷新快照"
+      />
       <PageShell
       title="创建采购单"
       description="填写采购信息并提交审批"
@@ -494,7 +487,7 @@ export default function PurchaseOrderFormPage({ snapshot }: { snapshot: Purchase
       </form>
       </div>
       </PageShell>
-    </AdminPermissionGate>
+    </div>
   )
 }
 
@@ -522,6 +515,4 @@ const cancelBtnStyle: React.CSSProperties = {
   background: '#fff',
   fontSize: 14,
   cursor: 'pointer',
-    </div>
-  )
 };

@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { NotificationDetailSnapshot } from './notification-detail-data'
 
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback } from 'react'
 
 import {
   DetailActionBar,
@@ -147,12 +147,9 @@ async function submitEdit(form: EditFormData): Promise<{ success: boolean }> {
 
 
 export default function NotificationDetailPage({ snapshot }: { snapshot: NotificationDetailSnapshot }) {
-  const id = snapshot.id;
-
-  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
-
-  const { id } = use(params);
-  const notice = getNotificationById(id);
+  const id = snapshot.id
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
+  const notice = getNotificationById(id)
   const [editOpen, setEditOpen] = useState(false);
   const [formData, setFormData] = useState<EditFormData>({ content: notice.content });
   const [errors, setErrors] = useState<EditFormErrors>({});
