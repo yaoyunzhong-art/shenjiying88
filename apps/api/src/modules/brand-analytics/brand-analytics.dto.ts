@@ -196,8 +196,6 @@ export class CompetitorQueryDto {
 }
 
 // ── 标签查询 DTO ─────────────────────────────────────────────────────────────
-
-// ── 标签查询 DTO ─────────────────────────────────────────────────────────────
 // brandId 来自 @Param
 
 export class TopContentQueryDto {
@@ -233,8 +231,6 @@ export class HealthQueryDto {
 }
 
 // ── 健康度趋势查询 DTO ───────────────────────────────────────────────────────
-
-// ── 健康度趋势查询 DTO ───────────────────────────────────────────────────────
 // brandId 来自 @Param
 
 export class HealthTrendQueryDto {
@@ -259,8 +255,6 @@ export class MarketShareQueryDto {
   @IsString()
   category?: string
 }
-
-// ── 内容建议查询 DTO ─────────────────────────────────────────────────────────
 
 // ── 内容建议查询 DTO ─────────────────────────────────────────────────────────
 // contentId 来自 @Param，不在 Query 中重复
