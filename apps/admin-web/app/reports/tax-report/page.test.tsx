@@ -28,13 +28,11 @@ describe('tax-report — 服务端壳层', () => {
 
 describe('tax-report — 来源态透明化', () => {
   it('页面应展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode} / {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource} / 业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath} / generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('页面应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 })

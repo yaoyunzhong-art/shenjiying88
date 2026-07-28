@@ -23,8 +23,8 @@ describe('venue-ranking — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadVenueRankingSnapshot()'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode} / {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource} / 业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 })
 

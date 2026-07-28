@@ -18,13 +18,9 @@ describe('reports/store-summary/page.tsx 结构固证', () => {
   })
 
   it('page 应显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 })

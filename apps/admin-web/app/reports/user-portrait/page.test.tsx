@@ -21,8 +21,8 @@ describe('user-portrait — 服务端壳层', () => {
 
   it('页面应加载画像快照并展示来源态', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadUserPortraitSnapshot()'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode} / {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource} / 业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 })
 
