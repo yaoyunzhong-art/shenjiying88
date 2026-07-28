@@ -9,7 +9,7 @@
  *   5. 多规则优先级排序
  *   6. 任务列表排序与数量控制
  *
- * 测试充分性: 16 tests
+ * 测试充分性: 26+ tests
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -266,4 +266,191 @@ describe('[🔟 任务列表排序与数量控制] AutomationService', () => {
     expect(svc.listJobs({ limit: 2 }).length).toBe(2)
     expect(svc.listJobs({ limit: 10 }).length).toBe(5)
   })
+
+// ════════════════════════════════════════════════════════════════
+// 🔟+1 条件操作符 in/not_in 特殊场景
+// ════════════════════════════════════════════════════════════════
+
+describe('[🔟+1 条件操作符 in/not_in 特殊场景] AutomationService', () => {
+  let svc: AutomationService
+
+  beforeEach(() => {
+    svc = makeService()
+  })
+
+  it('in 操作符: 值在数组中匹配', () => {
+    const rule = svc.addRule({
+      name: 'in测试',
+      description: '',
+      conditions: [{ field: 'x', op: 'in', value: ['a', 'b', 'c'] }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 1,
+    })
+    const r1 = svc.evaluateRule(rule.id, { data: { x: 'a' }, timestamp: '' })
+    expect(r1.matched).toBe(true)
+    const r2 = svc.evaluateRule(rule.id, { data: { x: 'z' }, timestamp: '' })
+    expect(r2.matched).toBe(false)
+  })
+
+  it('not_in 操作符: 值不在数组中匹配', () => {
+    const rule = svc.addRule({
+      name: 'not_in测试',
+      description: '',
+      conditions: [{ field: 'x', op: 'not_in', value: [1, 2, 3] }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 1,
+    })
+    const r1 = svc.evaluateRule(rule.id, { data: { x: 5 }, timestamp: '' })
+    expect(r1.matched).toBe(true)
+    const r2 = svc.evaluateRule(rule.id, { data: { x: 2 }, timestamp: '' })
+    expect(r2.matched).toBe(false)
+  })
+
+  it('in 操作符空数组永不匹配', () => {
+    const rule = svc.addRule({
+      name: '空in',
+      description: '',
+      conditions: [{ field: 'x', op: 'in', value: [] }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 1,
+    })
+    expect(svc.evaluateRule(rule.id, { data: { x: 'anything' }, timestamp: '' }).matched).toBe(false)
+  })
 })
+
+// ════════════════════════════════════════════════════════════════
+// 🔟+2 非数值类型操作符行为
+// ════════════════════════════════════════════════════════════════
+
+describe('[🔟+2 非数值类型操作符行为] AutomationService', () => {
+  let svc: AutomationService
+
+  beforeEach(() => {
+    svc = makeService()
+  })
+
+  it('gt 比较非数字值返回 false', () => {
+    const rule = svc.addRule({
+      name: '非数字gt',
+      description: '',
+      conditions: [{ field: 'x', op: 'gt', value: 5 }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 1,
+    })
+    expect(svc.evaluateRule(rule.id, { data: { x: 'abc' }, timestamp: '' }).matched).toBe(false)
+    expect(svc.evaluateRule(rule.id, { data: { x: null }, timestamp: '' }).matched).toBe(false)
+  })
+
+  it('contains 比较非字符串值返回 false', () => {
+    const rule = svc.addRule({
+      name: '非字符串contains',
+      description: '',
+      conditions: [{ field: 'x', op: 'contains', value: 'test' }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 1,
+    })
+    expect(svc.evaluateRule(rule.id, { data: { x: 12345 }, timestamp: '' }).matched).toBe(false)
+    expect(svc.evaluateRule(rule.id, { data: { x: [] }, timestamp: '' }).matched).toBe(false)
+  })
+})
+
+// ════════════════════════════════════════════════════════════════
+// 🔟+3 任务按 status 过滤
+// ════════════════════════════════════════════════════════════════
+
+describe('[🔟+3 任务按 status 过滤] AutomationService', () => {
+  let svc: AutomationService
+
+  beforeEach(() => {
+    svc = makeService()
+  })
+
+  it('listJobs 按 status 过滤', () => {
+    const wf = svc.createWorkflow('状态过滤', 'rule_001')
+    svc.createJob(wf.id, 'rule_001', 'manual', { data: {}, timestamp: '' })
+    svc.createJob(wf.id, 'rule_001', 'scheduled', { data: {}, timestamp: '' })
+    svc.createJob(wf.id, 'rule_001', 'triggered', { data: {}, timestamp: '' })
+
+    const pending = svc.listJobs({ status: 'pending' })
+    expect(pending.length).toBe(3)
+    const failed = svc.listJobs({ status: 'failed' })
+    expect(failed.length).toBe(0)
+  })
+
+  it('listJobs 组合过滤: type+status', () => {
+    const wf = svc.createWorkflow('组合过滤', 'rule_001')
+    svc.createJob(wf.id, 'rule_001', 'manual', { data: {}, timestamp: '' })
+    svc.createJob(wf.id, 'rule_001', 'scheduled', { data: {}, timestamp: '' })
+
+    const filtered = svc.listJobs({ type: 'manual', status: 'pending' })
+    expect(filtered.length).toBe(1)
+    expect(filtered[0].type).toBe('manual')
+  })
+})
+
+// ════════════════════════════════════════════════════════════════
+// 🔟+4 工作流空值边界
+// ════════════════════════════════════════════════════════════════
+
+describe('[🔟+4 工作流空值边界] AutomationService', () => {
+  let svc: AutomationService
+
+  beforeEach(() => {
+    svc = makeService()
+  })
+
+  it('获取多条不存在的工作流均返回 null', () => {
+    expect(svc.getWorkflowStatus('wf_9999')).toBeNull()
+    expect(svc.getWorkflowStatus('wf_0000')).toBeNull()
+    expect(svc.getWorkflowStatus('wf_')).toBeNull()
+  })
+
+  it('updateWorkflowStatus 对不存在的 id 返回 null', () => {
+    expect(svc.updateWorkflowStatus('wf_9999', 'completed')).toBeNull()
+  })
+
+  it('触发空动作列表返回空数组', () => {
+    const results = svc.triggerAction([], { data: {}, timestamp: '' })
+    expect(results).toEqual([])
+  })
+})
+
+// ════════════════════════════════════════════════════════════════
+// 🔟+5 规则添加与副本验证
+// ════════════════════════════════════════════════════════════════
+
+describe('[🔟+5 规则添加与副本验证] AutomationService', () => {
+  let svc: AutomationService
+
+  beforeEach(() => {
+    svc = makeService()
+  })
+
+  it('addRule 生成唯一递增 ID', () => {
+    const ids = new Set<string>()
+    for (let i = 0; i < 5; i++) {
+      const r = svc.addRule({
+        name: `R${i}`, description: '',
+        conditions: [{ field: 'x', op: 'eq', value: i }],
+        actions: [{ type: 'log_event', params: {} }],
+        enabled: true, priority: i,
+      })
+      expect(ids.has(r.id)).toBe(false)
+      ids.add(r.id)
+    }
+    expect(ids.size).toBe(5)
+  })
+
+  it('listAllRules 返回完整副本（外部修改不影响内部）', () => {
+    const rules = svc.listAllRules()
+    const before = rules.length
+    rules.push({} as any)
+    expect(svc.listAllRules().length).toBe(before)
+  })
+})
+
