@@ -206,4 +206,42 @@ describe('NoticeService', () => {
       expect(result.items.every(i => i.status === NoticeStatus.Published)).toBe(true)
     })
   })
+
+  // ════════════════════════════════════════════
+  // getById / getByCode
+  // ════════════════════════════════════════════
+
+  describe('getById', () => {
+    it('正例: 通过 ID 获取公告', () => {
+      const n = service.create({
+        title: '查询测试', content: '内容',
+        scope: NoticeScope.Global, authorId: 'a', authorName: 'admin',
+      })
+      const found = service.getById(n.id)
+      expect(found).toBeDefined()
+      expect(found!.title).toBe('查询测试')
+    })
+
+    it('边界: 不存在的 ID 返回 undefined', () => {
+      const result = service.getById('nonexistent')
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('getByCode', () => {
+    it('正例: 通过编码获取公告', () => {
+      const n = service.create({
+        title: '编码查询', content: '内容',
+        scope: NoticeScope.Global, authorId: 'a', authorName: 'admin',
+      })
+      const found = service.getByCode(n.code)
+      expect(found).toBeDefined()
+      expect(found!.title).toBe('编码查询')
+    })
+
+    it('边界: 不存在的编码返回 undefined', () => {
+      const result = service.getByCode('NOT-NONEXIST')
+      expect(result).toBeUndefined()
+    })
+  })
 })

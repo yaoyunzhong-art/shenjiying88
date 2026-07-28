@@ -142,4 +142,27 @@ describe('ModulesService', () => {
       expect(svc.toggleStatus('nonexist')).toBeNull()
     })
   })
+
+  // ════════════════════════════════════════════
+  // checkDependencies (nonexistent module)
+  // ════════════════════════════════════════════
+
+  describe('checkDependencies (non-existent)', () => {
+    it('边界: 不存在的模块返回空数组', () => {
+      const result = svc.checkDependencies('ghost')
+      expect(result.resolved).toEqual([])
+      expect(result.missing).toEqual([])
+    })
+  })
+
+  // ════════════════════════════════════════════
+  // register (empty dependencies)
+  // ════════════════════════════════════════════
+
+  describe('register (empty dependencies)', () => {
+    it('正例: 空依赖数组的模块注册', () => {
+      const mod = svc.register('standalone', '独立模块', '2.0.0', [])
+      expect(mod.dependencies).toEqual([])
+    })
+  })
 })

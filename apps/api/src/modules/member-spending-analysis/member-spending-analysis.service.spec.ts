@@ -46,6 +46,14 @@ describe('MemberSpendingAnalysisService', () => {
       const result = await service.query({ page: 999, pageSize: 20 })
       expect(result.items.length).toBe(0)
     })
+
+    it('正例: 按频次排序', async () => {
+      const result = await service.query({ page: 1, pageSize: 20, sortBy: 'frequency' })
+      for (let i = 1; i < result.items.length; i++) {
+        expect(result.items[i - 1].spendingFrequency)
+          .toBeLessThanOrEqual(result.items[i].spendingFrequency)
+      }
+    })
   })
 
   // ════════════════════════════════════════════
@@ -97,6 +105,20 @@ describe('MemberSpendingAnalysisService', () => {
         favoriteDays: ['星期五', '星期六'],
       })
       expect(result.createdAt).toBeTruthy()
+    })
+
+    it('正例: 创建月度分析记录', async () => {
+      const result = await service.create({
+        memberId: 'm007',
+        period: SpendingPeriod.MONTHLY,
+        totalSpent: 15000,
+        orderCount: 30,
+        categoryBreakdown: { '酒水': 12000, '餐饮': 3000 },
+        peakHours: [21, 22, 23],
+        favoriteDays: ['星期六'],
+      })
+      expect(result.memberId).toBe('m007')
+      expect(result.period).toBe(SpendingPeriod.MONTHLY)
     })
   })
 
