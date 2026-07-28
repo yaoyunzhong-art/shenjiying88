@@ -15,7 +15,6 @@ import {
   type TenantConfigEffective,
   type TenantConfigWorkbenchCode,
 } from '@m5/sdk';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
 import ThreeLevelConfigClient from './three-level-config-client';
 
 const FALLBACK_TENANT_ID = 'tenant-demo';
@@ -81,11 +80,7 @@ export default async function ThreeLevelConfigPage() {
   const snapshot = { ws, wt, wb };
 
   return (
-    <AdminPermissionGate
-      requiredPermission="foundation.governance.read"
-      title="三级独立配置访问受限"
-      description="三级独立配置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看继承链、字段级脱敏结果并执行批量编辑与版本回滚。"
-    >
+
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <PageShell
           title="三级独立配置"
@@ -96,6 +91,6 @@ export default async function ThreeLevelConfigPage() {
           </Suspense>
         </PageShell>
       </main>
-    </AdminPermissionGate>
+
   );
 }

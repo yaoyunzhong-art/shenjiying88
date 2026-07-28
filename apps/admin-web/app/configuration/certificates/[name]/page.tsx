@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell } from '@m5/ui';
 import { readConfigurationCertificateDetailParam } from '@m5/types';
 import { loadConfigurationCertificateDetail } from '../../../configuration-certificate-view-model';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 import ConfigurationCertificateDetailClient from './configuration-certificate-detail-client';
 
 interface ConfigurationCertificateDetailPageProps {
@@ -43,11 +42,7 @@ export default async function ConfigurationCertificateDetailPage({
     : await loadConfigurationCertificateDetail('', query, { cache: 'no-store' });
 
   return (
-    <AdminPermissionGate
-      requiredPermission="foundation.governance.read"
-      title="证书详情访问受限"
-      description="证书详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看 issuer、自动续签状态、关联证书与跨工作台深链。"
-    >
+
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
         <PageShell
           title={snapshot.notFound ? '证书不存在' : `证书详情：${snapshot.name}`}
@@ -62,6 +57,6 @@ export default async function ConfigurationCertificateDetailPage({
           </Suspense>
         </PageShell>
       </main>
-    </AdminPermissionGate>
+
   );
 }

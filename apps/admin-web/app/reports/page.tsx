@@ -1,13 +1,5 @@
-import { AdminPermissionGate } from '../components/admin-permission-gate';
 import ReportsClient from './reports-client';
 import { loadReportsSnapshot } from './reports-data';
-
-const permissionGate = {
-  requiredPermission: 'dashboard:read',
-  title: '报表中心访问受限',
-  description:
-    '报表中心已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看报表目录、导出格式与缓存命中情况。',
-} as const;
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,18 +16,9 @@ function resolveTenantId(value: string | string[] | undefined): string {
 export default async function ReportsPage({ searchParams }: PageProps) {
   const query = await searchParams;
   const snapshot = await loadReportsSnapshot(resolveTenantId(query.tenantId));
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    sourceLabel: snapshot.sourceLabel,
-    controlPlaneSource: snapshot.controlPlaneSource,
-    businessDataSource: snapshot.businessDataSource,
-    refreshPath: snapshot.refreshPath,
-    generatedAt: snapshot.generatedAt,
-    note: snapshot.note,
-  } as const;
 
   return (
-    <AdminPermissionGate {...permissionGate}>
+
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24 }}>
         <div
           style={{
@@ -62,6 +45,6 @@ export default async function ReportsPage({ searchParams }: PageProps) {
         </div>
         <ReportsClient snapshot={snapshot} />
       </div>
-    </AdminPermissionGate>
+
   );
 }

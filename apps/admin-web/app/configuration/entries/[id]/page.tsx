@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { LoadingSkeleton, PageShell } from '@m5/ui';
 import { readConfigurationConfigEntryDetailParam } from '@m5/types';
 import { loadConfigurationConfigEntryDetail } from '../../../configuration-config-entry-view-model';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 import ConfigurationConfigEntryDetailClient from './configuration-config-entry-detail-client';
 
 interface ConfigurationConfigEntryDetailPageProps {
@@ -43,11 +42,7 @@ export default async function ConfigurationConfigEntryDetailPage({
     : await loadConfigurationConfigEntryDetail('', query, { cache: 'no-store' });
 
   return (
-    <AdminPermissionGate
-      requiredPermission="foundation.governance.read"
-      title="配置项详情访问受限"
-      description="配置项详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看当前值、作用域、修订记录与相关配置项。"
-    >
+
       <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
         <PageShell
           title={snapshot.notFound ? '配置项不存在' : `配置项：${snapshot.id}`}
@@ -62,6 +57,6 @@ export default async function ConfigurationConfigEntryDetailPage({
           </Suspense>
         </PageShell>
       </main>
-    </AdminPermissionGate>
+
   );
 }
