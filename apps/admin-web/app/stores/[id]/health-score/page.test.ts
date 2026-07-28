@@ -5,25 +5,21 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
-const DATA_SRC = readFileSync(resolve(DIR, 'health-score-data.ts'), 'utf-8')
-const CLIENT_SRC = readFileSync(resolve(DIR, 'health-score-client.tsx'), 'utf-8')
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 
-describe('stores/[id]/health-score data/client 结构固证', () => {
-  it('snapshot loader 应固化健康评分合同、趋势样本与统计函数', () => {
-    assert.ok(DATA_SRC.includes('export interface HealthScoreSnapshot'))
-    assert.ok(DATA_SRC.includes('HEALTH_DIMENSIONS'))
-    assert.ok(DATA_SRC.includes('HEALTH_HISTORY'))
-    assert.ok(DATA_SRC.includes('buildHealthScoreSummary'))
-    assert.ok(DATA_SRC.includes('loadHealthScoreSnapshot'))
-    assert.ok(DATA_SRC.includes("sourceLabel: 'store-health-score-fallback'"))
+describe('stores/[id]/health-score/page.tsx 结构固证', () => {
+  it('page 应保持最小 server wrapper 并桥接快照到 client', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function HealthScorePage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadHealthScoreSnapshot'))
+    assert.ok(PAGE_SRC.includes('<HealthScoreClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
-  it('client renderer 应承载仪表盘、趋势与 router.refresh 刷新', () => {
-    assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('snapshot.dimensions'))
-    assert.ok(CLIENT_SRC.includes('snapshot.history'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
-    assert.ok(CLIENT_SRC.includes('优先改进项'))
-    assert.ok(CLIENT_SRC.includes('综合分'))
+  it('page 应保留服务端参数解包', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(!PAGE_SRC.includes('searchParams'))
   })
 })

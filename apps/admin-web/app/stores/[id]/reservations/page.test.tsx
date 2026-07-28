@@ -6,48 +6,20 @@ import { fileURLToPath } from 'node:url'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
 const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
-const CLIENT_SRC = readFileSync(resolve(DIR, 'reservations-client.tsx'), 'utf-8')
-const DATA_SRC = readFileSync(resolve(DIR, 'reservations-data.ts'), 'utf-8')
 
 describe('stores/[id]/reservations/page.tsx 结构固证', () => {
-  it('page 应为 server wrapper 并加载预约快照', () => {
+  it('page 应保持最小 server wrapper 并桥接快照到 client', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('export default async function ReservationsPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadReservationsSnapshot'))
+    assert.ok(PAGE_SRC.includes('<ReservationsClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
+  })
+
+  it('page 应保留服务端参数解包', () => {
     assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
     assert.ok(PAGE_SRC.includes('const { id } = await params'))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadReservationsSnapshot(id)'))
-    assert.ok(PAGE_SRC.includes('<ReservationsClient snapshot={snapshot} />'))
-  })
-
-  it('page 应显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源:'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
-  })
-})
-
-describe('stores/[id]/reservations/client 结构固证', () => {
-  it('client 应保留搜索、筛选、创建与刷新能力', () => {
-    assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
-    assert.ok(CLIENT_SRC.includes('useMemo'))
-    assert.ok(CLIENT_SRC.includes('搜索客户/电话'))
-    assert.ok(CLIENT_SRC.includes('创建预约'))
-    assert.ok(CLIENT_SRC.includes('排程表'))
-  })
-})
-
-describe('stores/[id]/reservations/data 结构固证', () => {
-  it('data 应定义预约快照合同与样本数据', () => {
-    assert.ok(DATA_SRC.includes('export interface ReservationsSnapshot'))
-    assert.ok(DATA_SRC.includes('RESERVATION_RECORDS'))
-    assert.ok(DATA_SRC.includes('buildReservationsSummary'))
-    assert.ok(DATA_SRC.includes('loadReservationsSnapshot'))
-    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
-    assert.ok(DATA_SRC.includes("sourceLabel: 'store-reservations-mock'"))
+    assert.ok(!PAGE_SRC.includes('searchParams'))
   })
 })

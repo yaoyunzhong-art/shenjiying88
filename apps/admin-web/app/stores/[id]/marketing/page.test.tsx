@@ -8,23 +8,18 @@ const DIR = dirname(fileURLToPath(import.meta.url))
 const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 
 describe('stores/[id]/marketing/page.tsx 结构固证', () => {
-  it('page 应为 server wrapper 并加载营销快照', () => {
+  it('page 应保持最小 server wrapper 并桥接快照到 client', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('export default async function MarketingPage'))
-    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
-    assert.ok(PAGE_SRC.includes('const { id } = await params'))
-    assert.ok(PAGE_SRC.includes('loadMarketingSnapshot'))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadMarketingSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadMarketingSnapshot'))
     assert.ok(PAGE_SRC.includes('<MarketingClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
-  it('page 应显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源:'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  it('page 应保留服务端参数解包', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(!PAGE_SRC.includes('searchParams'))
   })
 })

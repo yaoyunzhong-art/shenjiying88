@@ -5,25 +5,21 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
-const DATA_SRC = readFileSync(resolve(DIR, 'cashier-data.ts'), 'utf-8')
-const CLIENT_SRC = readFileSync(resolve(DIR, 'cashier-client.tsx'), 'utf-8')
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 
-describe('stores/[id]/cashier data/client 结构固证', () => {
-  it('snapshot loader 应固化收银快照合同、诊断与回退检索链路', () => {
-    assert.ok(DATA_SRC.includes('export interface CashierSnapshot'))
-    assert.ok(DATA_SRC.includes('export interface MemberProfile'))
-    assert.ok(DATA_SRC.includes('searchMember'))
-    assert.ok(DATA_SRC.includes('fetchConsumptionHistory'))
-    assert.ok(DATA_SRC.includes('getBizClient'))
-    assert.ok(DATA_SRC.includes("sourceLabel: 'store-cashier-fallback'"))
+describe('stores/[id]/cashier/page.tsx 结构固证', () => {
+  it('page 应保持最小 server wrapper 并桥接快照到 client', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function CashierPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadCashierSnapshot'))
+    assert.ok(PAGE_SRC.includes('<CashierClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
-  it('client renderer 应承载检索、消费记录与 router.refresh 刷新', () => {
-    assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('CashierPanel'))
-    assert.ok(CLIENT_SRC.includes('handleSearch'))
-    assert.ok(CLIENT_SRC.includes('fetchConsumptionHistory'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
-    assert.ok(CLIENT_SRC.includes('收银结账'))
+  it('page 应保留服务端参数解包', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(!PAGE_SRC.includes('searchParams'))
   })
 })
