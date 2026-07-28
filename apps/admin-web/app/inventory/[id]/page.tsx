@@ -1,12 +1,5 @@
-import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import InventoryDetailClient from './inventory-detail-client'
 import { loadInventoryDetailSnapshot } from './inventory-detail-data'
-
-const permissionGate = {
-  requiredPermission: 'inventory:id:read',
-  title: 'inventory 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 inventory:id:read 权限的账号可访问。',
-} as const
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -24,32 +17,6 @@ function resolveTenantId(value: string | string[] | undefined): string {
 export default async function InventoryDetailPage({ params, searchParams }: PageProps) {
   const [{ id }, query] = await Promise.all([params, searchParams])
   const snapshot = await loadInventoryDetailSnapshot(id, resolveTenantId(query.tenantId))
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource: snapshot.controlPlaneSource,
-    businessDataSource: snapshot.businessDataSource,
-    refreshPath: snapshot.refreshPath,
-    generatedAt: snapshot.generatedAt,
-    note: snapshot.note,
-  } as const
 
-  return (
-    <AdminPermissionGate {...permissionGate}>
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700">
-          <div>
-            Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
-          </div>
-          <div>
-            业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
-          </div>
-          <div>
-            generatedAt: {sourceEvidence.generatedAt} · 来源标签: {snapshot.sourceLabel}
-          </div>
-          <div>{sourceEvidence.note}</div>
-        </div>
-        <InventoryDetailClient snapshot={snapshot} />
-      </div>
-    </AdminPermissionGate>
-  )
+  return <InventoryDetailClient snapshot={snapshot} />
 }
