@@ -266,6 +266,7 @@ describe('[🔟 任务列表排序与数量控制] AutomationService', () => {
     expect(svc.listJobs({ limit: 2 }).length).toBe(2)
     expect(svc.listJobs({ limit: 10 }).length).toBe(5)
   })
+})
 
 // ════════════════════════════════════════════════════════════════
 // 🔟+1 条件操作符 in/not_in 特殊场景
