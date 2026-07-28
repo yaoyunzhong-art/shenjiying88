@@ -23,7 +23,7 @@ export default function ReturnDetailClient({ snapshot }: { snapshot: ReturnDetai
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       />
-      <ReturnDetailLegacy params={Promise.resolve({ id: snapshot.id })} />
+      <ReturnDetailLegacy snapshot={snapshot} />
     </div>
   )
 }

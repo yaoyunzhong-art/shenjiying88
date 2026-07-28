@@ -1,7 +1,7 @@
 'use client';
 
-import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh';
 import type { ProductsPageSnapshot } from './products-page-data'
 
 

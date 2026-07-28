@@ -1,15 +1,13 @@
 'use client';
 
-import SnapshotRefreshCard from '../../../components/snapshot-refresh-card';
-import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh';
+import SnapshotRefreshCard from '../../components/snapshot-refresh-card';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh';
 import type { CashierWorkbenchSnapshot } from './cashier-workbench-data'
 
 
 import { useState, type CSSProperties } from 'react'
 
 import { PageShell, StatusBadge } from '@m5/ui'
-
-import type { CashierWorkbenchSnapshot } from './cashier-workbench-data'
 
 const SHIFT_STATUS: Record<
   CashierWorkbenchSnapshot['session']['status'],
