@@ -25,8 +25,6 @@ import type {
 import type {
   SupplierStatus,
   CreditLevel,
-  ReservationStatus,
-  SchedulePlanStatus,
 } from './logistics.supplier.entity'
 
 vi.setConfig({ testTimeout: 10000 })
