@@ -171,7 +171,7 @@ describe('ProbationTransferService — 统计', () => {
   it('getStats 返回统计信息', () => {
     const stats = svc.getStats(tenantId)
     expect(stats.total).toBeGreaterThan(0)
-    expect(stats.byStatus.Ongoing + stats.byStatus.Completed + stats.byStatus.Extended + stats.byStatus.Terminated).toBe(stats.total)
+    expect(stats.byStatus[ProbationStatus.Ongoing] + stats.byStatus[ProbationStatus.Completed] + stats.byStatus[ProbationStatus.Extended] + stats.byStatus[ProbationStatus.Terminated]).toBe(stats.total)
     expect(stats.completedRate).toBeGreaterThanOrEqual(0)
     expect(stats.completedRate).toBeLessThanOrEqual(1)
     expect(stats.byDepartment.length).toBeGreaterThan(0)

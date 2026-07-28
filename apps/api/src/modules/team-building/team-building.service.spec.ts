@@ -130,6 +130,7 @@ describe('TeamBuildingService — 方案推荐', () => {
 
   it('recommendPlans 返回推荐结果', () => {
     const results = svc.recommendPlans(tenantId, {
+      tenantId,
       participants: 20,
       budget: 500000,
       ageGroup: 'adult',
@@ -146,6 +147,7 @@ describe('TeamBuildingService — 方案推荐', () => {
 
   it('recommendPlans 带类型偏好', () => {
     const results = svc.recommendPlans(tenantId, {
+      tenantId,
       participants: 30,
       budget: 2000000,
       preferredType: 'outdoor',
@@ -158,6 +160,7 @@ describe('TeamBuildingService — 方案推荐', () => {
   it('recommendPlans 空方案返回空', () => {
     const svc2 = new TeamBuildingService()
     const results = svc2.recommendPlans('nonexistent-tenant', {
+      tenantId: 'nonexistent-tenant',
       participants: 10, budget: 100000,
       ageGroup: 'youth',
     })
