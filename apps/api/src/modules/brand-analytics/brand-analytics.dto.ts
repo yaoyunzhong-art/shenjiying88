@@ -276,3 +276,115 @@ export class ContentSuggestionsDto {
   @IsString()
   contentType?: string
 }
+
+// ── 控制器使用 DTO ───────────────────────────────────────────────────────────
+
+export class GetKPIDto {
+  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'startDate must be YYYY-MM-DD' })
+  startDate!: string
+
+  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'endDate must be YYYY-MM-DD' })
+  endDate!: string
+}
+
+export class TrackKPIDto {
+  @IsString()
+  @IsNotEmpty()
+  brandId!: string
+
+  @IsString()
+  @IsNotEmpty()
+  tenantId!: string
+
+  @IsOptional()
+  @IsDateString()
+  date?: string
+
+  @IsNotEmpty({ message: 'metrics is required' })
+  metrics!: Record<string, number>
+}
+
+export class TrackMentionDto {
+  @IsString()
+  @IsNotEmpty()
+  brandId!: string
+
+  @IsDateString()
+  date!: string
+
+  @IsString()
+  @IsNotEmpty()
+  platform!: string
+
+  @IsNotEmpty()
+  mentionCount!: number
+
+  @IsNotEmpty()
+  positiveCount!: number
+
+  @IsNotEmpty()
+  negativeCount!: number
+
+  @IsNotEmpty()
+  neutralCount!: number
+
+  sentimentScore!: number
+
+  @IsOptional()
+  topKeywords?: { keyword: string; count: number }[]
+
+  @IsOptional()
+  topMentions?: { title: string; url: string; sentiment: string }[]
+}
+
+export class UpdateHealthDto {
+  @IsOptional()
+  overallScore?: number
+
+  @IsOptional()
+  dimensions?: Record<string, { score?: number; trend?: 'up' | 'down' | 'stable'; description?: string }>
+}
+
+export class TrackContentDto {
+  @IsString()
+  @IsNotEmpty()
+  contentType!: string
+
+  @IsString()
+  @IsNotEmpty()
+  title!: string
+
+  @IsString()
+  @IsNotEmpty()
+  platform!: string
+
+  @IsDateString()
+  publishDate!: string
+
+  @IsNotEmpty()
+  metrics!: Record<string, number>
+
+  @IsOptional()
+  qualityScore?: number
+
+  @IsOptional()
+  suggestedImprovements?: string[]
+}
+
+export class GenerateReportDto {
+  @IsString()
+  @IsNotEmpty()
+  reportType!: string
+}
+
+export class ROIDto {
+  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'startDate must be YYYY-MM-DD' })
+  startDate!: string
+
+  @IsDateString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'endDate must be YYYY-MM-DD' })
+  endDate!: string
+}

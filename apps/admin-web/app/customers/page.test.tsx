@@ -10,22 +10,15 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'customers-client.tsx'), 'utf-8')
 const DATA_SRC = readFileSync(resolve(DIR, 'customers-data.ts'), 'utf-8')
 
 describe('Customers page structure', () => {
-  it('page 应为 server wrapper 并接入权限边界', () => {
+  it('page 应为最小 server wrapper 并加载快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export const dynamic = \'force-dynamic\''))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
     assert.ok(PAGE_SRC.includes('export default async function CustomersPage'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadCustomersSnapshot()'))
-    assert.ok(PAGE_SRC.includes('const sourceEvidence = {'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(PAGE_SRC.includes('<CustomersClient snapshot={snapshot} />'))
-  })
-
-  it('page 应显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> crm/customers + crm/stats'))
-    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> MOCK_CUSTOMERS fallback'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('client 应保留筛选、分页与 router.refresh', () => {

@@ -16,15 +16,8 @@ describe('audit-logs E54 结构固证', () => {
     assert.ok(PAGE_SRC.includes('loadAuditLogsPageSnapshot'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadAuditLogsPageSnapshot()'))
     assert.ok(PAGE_SRC.includes('<AuditLogsClient snapshot={snapshot} />'))
-  })
-
-  it('page 显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源:'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('client 承担交互并通过 router.refresh 刷新', () => {

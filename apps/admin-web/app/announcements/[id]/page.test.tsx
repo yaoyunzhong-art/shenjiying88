@@ -65,15 +65,13 @@ test('loadAnnouncementDetailSnapshot 未命中样本时保留 requestedId', asyn
   assert.ok(snapshot.generatedAt.length > 0)
 })
 
-test('announcements/[id]/page.tsx 固证 server wrapper 与来源态证据', () => {
+test('announcements/[id]/page.tsx 固证最小 server wrapper', () => {
   assert.match(PAGE_SRC, /export const dynamic = 'force-dynamic'/)
   assert.match(PAGE_SRC, /loadAnnouncementDetailSnapshot/)
   assert.match(PAGE_SRC, /AnnouncementDetailClient/)
-  assert.match(PAGE_SRC, /const sourceEvidence = \{/)
-  assert.match(
-    PAGE_SRC,
-    /refreshPath: 'AnnouncementDetailPage -> loadAnnouncementDetailSnapshot'/,
-  )
+  assert.doesNotMatch(PAGE_SRC, /const sourceEvidence = \{/)
+  assert.doesNotMatch(PAGE_SRC, /AdminPermissionGate/)
+  assert.doesNotMatch(PAGE_SRC, /requiredPermission/)
 })
 
 test('announcement-detail-client.tsx 固证 client renderer 与刷新动作', () => {

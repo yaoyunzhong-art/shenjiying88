@@ -10,22 +10,15 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'coupon-form-client.tsx'), 'utf-8')
 const DATA_SRC = readFileSync(resolve(DIR, 'coupon-form-data.ts'), 'utf-8')
 
 describe('coupons/form 结构固证', () => {
-  it('page 应切为 server wrapper 并加载快照', () => {
+  it('page 应切为最小 server wrapper 并加载快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('export const dynamic = \'force-dynamic\''))
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
     assert.ok(PAGE_SRC.includes('export default async function CouponFormPage'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadCouponFormSnapshot()'))
     assert.ok(PAGE_SRC.includes('<CouponFormClient snapshot={snapshot} />'))
-  })
-
-  it('page 应显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'coupons:form:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('client 应保留 router.refresh 刷新链路', () => {

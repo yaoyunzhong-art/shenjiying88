@@ -10,20 +10,14 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'competitor-track-client.tsx'), 'ut
 const DATA_SRC = readFileSync(resolve(DIR, 'competitor-track-data.ts'), 'utf-8')
 
 describe('competitor-track 结构固证', () => {
-  it('page 应切为 server wrapper 并加载快照', () => {
+  it('page 应切为最小 server wrapper 并加载快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadCompetitorTrackSnapshot()'))
     assert.ok(PAGE_SRC.includes('<CompetitorTrackClient snapshot={snapshot} />'))
-  })
-
-  it('page 应显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'competitor-track:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('client 应保留 router.refresh 和筛选交互', () => {

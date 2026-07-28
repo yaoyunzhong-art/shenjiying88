@@ -19,11 +19,12 @@ describe('notifications/[id] 结构固证', () => {
   })
 
   it('page 应展示完整来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'notifications:read'"))
+    assert.ok(PAGE_SRC.includes('export const dynamic = \'force-dynamic\''))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('data 应定义 fallback 详情快照合同', () => {

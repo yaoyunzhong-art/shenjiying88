@@ -18,16 +18,9 @@ describe('announcements 页面结构固证', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
-  test('page 显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-  })
-
   test('page 挂载权限门禁与客户端渲染器', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
     assert.ok(PAGE_SRC.includes('<AnnouncementsClient snapshot={snapshot} />'))
   })
 })

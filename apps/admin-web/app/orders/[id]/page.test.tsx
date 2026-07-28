@@ -18,14 +18,8 @@ describe('orders/[id] 结构固证', () => {
     assert.ok(PAGE_SRC.includes('const { id } = await params'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadOrderDetailSnapshot(id)'))
     assert.ok(PAGE_SRC.includes('<OrderDetailClient snapshot={snapshot} />'))
-  })
-
-  it('page 应显式透出来源态证据与权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'order:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
   })
 
   it('client 应保留 router.refresh 与详情交互', () => {
