@@ -146,7 +146,7 @@ function setup() {
 
 /* ============================================================ */
 
-describe.skip('workbench-[role]: 页面渲染 (async 组件, 缺 React 19)', () => {
+describe('workbench-[role]: 页面渲染 (async 组件, 缺 React 19)', () => {
   it('renders without error', () => {
     assert.doesNotThrow(() => setup());
   });

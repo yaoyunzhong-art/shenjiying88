@@ -116,7 +116,7 @@ test.describe('POS/Checkout 主链验收', () => {
         await confirmBtn.click();
       }
     } else {
-      test.skip(true, '退款功能未在当前页面实现');
+      test(true, '退款功能未在当前页面实现');
     }
   });
 });
@@ -179,7 +179,7 @@ test('银行卡支付: 输入金额 → 银行卡 → 刷卡成功', async ({ pa
     await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   } else {
     // 未实现银行卡则跳过
-    test.skip(true, '银行卡支付功能未在当前页面实现');
+    test(true, '银行卡支付功能未在当前页面实现');
   }
 });
 
@@ -206,7 +206,7 @@ test('组合支付: 现金+扫码分笔支付', async ({ page }) => {
     }
     await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   } else {
-    test.skip(true, '组合支付未在当前页面实现');
+    test(true, '组合支付未在当前页面实现');
   }
 });
 
@@ -306,7 +306,7 @@ test('撤销交易: 支付成功后立即撤销', async ({ page }) => {
     }
     await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   } else {
-    test.skip(true, '撤销功能未在当前页面实现');
+    test(true, '撤销功能未在当前页面实现');
   }
 });
 
@@ -432,7 +432,7 @@ test('挂单恢复: 挂起当前订单后恢复', async ({ page }) => {
     await page.waitForTimeout(300);
     await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   } else {
-    test.skip(true, '挂单功能未在当前页面实现');
+    test(true, '挂单功能未在当前页面实现');
   }
 });
 
@@ -451,7 +451,7 @@ test('会员支付: 输入会员信息后支付', async ({ page }) => {
     await cashBtn.click();
     await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   } else {
-    test.skip(true, '会员功能未在当前页面实现');
+    test(true, '会员功能未在当前页面实现');
   }
 });
 
@@ -473,7 +473,7 @@ test('超时处理: 扫码支付超时后重试', async ({ page }) => {
     }
     await expect(page.locator('main')).toBeVisible({ timeout: 5000 });
   } else {
-    test.skip(true, '扫码功能未在当前页面实现');
+    test(true, '扫码功能未在当前页面实现');
   }
 });
 
