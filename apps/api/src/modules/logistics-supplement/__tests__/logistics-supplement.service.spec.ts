@@ -13,7 +13,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common'
 import type {
   TransportOrder, CargoLoad, RoutePlan, DriverSchedule,
   VehicleMaintenanceRecord, FuelRecord, AccidentRecord, LogisticsCost,
-} from './logistics-supplement.entity'
+} from '../logistics-supplement.entity'
 
 const makeOrder = (overrides?: Partial<Omit<TransportOrder, 'id' | 'createdAt' | 'updatedAt'>>) => ({
   tenantId: 't001',
