@@ -184,6 +184,7 @@ describe('ProcurementOrderService', () => {
         orderedAt: new Date().toISOString(),
         expectedAt: new Date().toISOString(),
       })
+      svc.updateOrderStatus(order.id, ProcurementStatus.PendingApproval, TENANT_ID)
       svc.updateOrderStatus(order.id, ProcurementStatus.Approved, TENANT_ID)
       svc.updateOrderStatus(order.id, ProcurementStatus.Shipped, TENANT_ID)
       const received = svc.receiveItems(order.id, [{ itemId: order.items[0].id, receivedQuantity: 50 }], TENANT_ID)
@@ -198,6 +199,7 @@ describe('ProcurementOrderService', () => {
         orderedAt: new Date().toISOString(),
         expectedAt: new Date().toISOString(),
       })
+      svc.updateOrderStatus(order.id, ProcurementStatus.PendingApproval, TENANT_ID)
       svc.updateOrderStatus(order.id, ProcurementStatus.Approved, TENANT_ID)
       svc.updateOrderStatus(order.id, ProcurementStatus.Shipped, TENANT_ID)
       const received = svc.receiveItems(order.id, [{ itemId: order.items[0].id, receivedQuantity: 100 }], TENANT_ID)

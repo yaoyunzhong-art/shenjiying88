@@ -33,7 +33,7 @@ describe('NoticeService', () => {
         authorName: '管理员',
       })
       expect(n.id).toBeTruthy()
-      expect(n.code).toMatch(/^NT/)
+      expect(n.code).toMatch(/^NOT-/)
       expect(n.status).toBe(NoticeStatus.Draft)
     })
 

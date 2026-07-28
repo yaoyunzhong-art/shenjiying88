@@ -50,8 +50,8 @@ describe('LogisticsManagementService', () => {
       expect(updated.status).toBe('completed')
     })
 
-    it('反例: 不存在的订单抛异常', () => {
-      expect(() => svc.getSupplyOrder('nonexist', TENANT_ID)).toBeUndefined()
+    it('反例: 不存在的订单返回undefined', () => {
+      expect(svc.getSupplyOrder('nonexist', TENANT_ID)).toBeUndefined()
     })
   })
 

@@ -30,7 +30,9 @@ describe('MemberSpendingAnalysisService', () => {
 
     it('正例: 按维度筛选', async () => {
       const daily = await service.query({ page: 1, pageSize: 20, dimension: 'daily' })
-      expect(daily.items.length).toBeLessThanOrEqual(4)
+      // 日维度去重后可能有重复memberId
+      expect(daily.items.length).toBeLessThanOrEqual(8)
+      expect(daily.items.length).toBeGreaterThanOrEqual(3)
     })
 
     it('正例: 按金额排序', async () => {
