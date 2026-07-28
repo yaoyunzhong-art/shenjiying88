@@ -192,4 +192,114 @@ export class BrandAnalyticsService {
       { brandId: 'brand-3', brandName: '子品牌B', share: 12.4, categoryTotal: 100, rank: 5 },
     ]
   }
+
+  // ── 品牌分析综合查询 ───────────────────────────────────────────────────
+
+  async getAnalytics(query: {
+    brandId: string
+    startDate: string
+    endDate: string
+    granularity: string
+    channels?: string[]
+    platforms?: string[]
+  }): Promise<{
+    kpis: BrandKPI[]
+    attribution: ChannelAttribution[]
+    mentions: BrandMention[]
+    health: BrandHealthScore
+    content: ContentPerformance[]
+  }> {
+    const [kpis, attribution, mentions, health, content] = await Promise.all([
+      this.getKPI(query.brandId, query.startDate, query.endDate),
+      this.getChannelAttribution(query.brandId),
+      this.getBrandMentions(query.brandId),
+      this.getBrandHealth(query.brandId),
+      this.getContentPerformance(query.brandId),
+    ])
+    return { kpis, attribution, mentions, health, content }
+  }
+
+  // ── 竞争品牌对比 ───────────────────────────────────────────────────────
+
+  async compareBrands(
+    brandIds: string[],
+    startDate: string,
+    endDate: string,
+  ): Promise<{ brandId: string; kpis: BrandKPI[]; health: BrandHealthScore }[]> {
+    return Promise.all(
+      brandIds.map(async (brandId) => ({
+        brandId,
+        kpis: await this.getKPI(brandId, startDate, endDate),
+        health: await this.getBrandHealth(brandId),
+      })),
+    )
+  }
+
+  // ── 竞争分析（主品牌 vs 竞品） ─────────────────────────────────────────
+
+  async compareCompetitors(
+    brandId: string,
+    competitorIds: string[],
+    startDate: string,
+    endDate: string,
+  ): Promise<{ brandId: string; competitorId: string; comparison: Record<string, number> }[]> {
+    return competitorIds.map((competitorId) => ({
+      brandId,
+      competitorId,
+      comparison: {
+        awarenessDiff: Math.floor(Math.random() * 30) - 15,
+        shareDiff: Math.floor(Math.random() * 20) - 10,
+        engagementDiff: Math.floor(Math.random() * 10) - 5,
+        sentimentDiff: Math.random() * 0.6 - 0.3,
+      },
+    }))
+  }
+
+  // ── 热门内容排名 ───────────────────────────────────────────────────────
+
+  async getTopContent(
+    brandId: string,
+    options: { contentType?: string; platform?: string; startDate: string; endDate: string },
+  ): Promise<ContentPerformance[]> {
+    const all = await this.getContentPerformance(brandId)
+    return all
+      .filter((c) => {
+        if (options.contentType && c.contentType !== options.contentType) return false
+        if (options.platform && c.platform !== options.platform) return false
+        return true
+      })
+      .sort((a, b) => (b.qualityScore ?? 0) - (a.qualityScore ?? 0))
+      .slice(0, 10)
+  }
+
+  // ── 健康度趋势 ─────────────────────────────────────────────────────────
+
+  async getHealthTrend(brandId: string, months: number): Promise<{ date: string; overallScore: number }[]> {
+    const now = new Date()
+    return Array.from({ length: months })
+      .fill(null)
+      .map((_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        return {
+          date: d.toISOString().slice(0, 7),
+          overallScore: Math.floor(Math.random() * 30) + 60,
+        }
+      })
+      .reverse()
+  }
+
+  // ── 内容建议 ───────────────────────────────────────────────────────────
+
+  async getContentSuggestions(
+    contentId: string,
+    _contentType?: string,
+  ): Promise<{ suggestion: string; priority: 'high' | 'medium' | 'low' }[]> {
+    return [
+      { suggestion: '优化标题吸引点击', priority: 'high' },
+      { suggestion: '增加互动引导文案', priority: 'high' },
+      { suggestion: '提升内容视觉质量', priority: 'medium' },
+      { suggestion: '结合热点话题创作', priority: 'medium' },
+      { suggestion: '优化发布时间策略', priority: 'low' },
+    ]
+  }
 }

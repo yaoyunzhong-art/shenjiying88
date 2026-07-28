@@ -20,6 +20,12 @@ import {
   TrackContentDto,
   GenerateReportDto,
   ROIDto,
+  AnalyticsQueryDto,
+  CompareBrandsDto,
+  CompetitorQueryDto,
+  TopContentQueryDto,
+  HealthTrendQueryDto,
+  ContentSuggestionsDto,
 } from './brand-analytics.dto'
 import type {
   BrandKPI,
@@ -31,6 +37,7 @@ import type {
   ROICalculation,
   AttributionModelComparison,
   MarketShareData,
+  CompetitorComparison,
 } from './brand-analytics.entity'
 
 @Controller('brand-analytics')
@@ -143,5 +150,77 @@ export class BrandAnalyticsController {
   @Get('market-share')
   async getMarketShare(): Promise<MarketShareData[]> {
     return this.service.getMarketShare()
+  }
+
+  // ── 品牌分析综合查询 ───────────────────────────────────────────────────
+
+  @Get('analytics/:brandId')
+  async getAnalytics(
+    @Param('brandId') brandId: string,
+    @Query() query: AnalyticsQueryDto,
+  ) {
+    return this.service.getAnalytics({
+      brandId,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      granularity: query.granularity,
+      channels: query.channels,
+      platforms: query.platforms,
+    })
+  }
+
+  // ── 品牌对比 ─────────────────────────────────────────────────────────────
+
+  @Post('compare')
+  async compareBrands(@Body() dto: CompareBrandsDto) {
+    return this.service.compareBrands(dto.brandIds, dto.startDate, dto.endDate)
+  }
+
+  // ── 竞争品牌对比 ─────────────────────────────────────────────────────────
+
+  @Post('competitors')
+  async compareCompetitors(@Body() dto: CompetitorQueryDto) {
+    return this.service.compareCompetitors(
+      dto.brandId,
+      dto.competitorIds,
+      dto.startDate,
+      dto.endDate,
+    )
+  }
+
+  // ── 热门内容排名 ─────────────────────────────────────────────────────────
+
+  @Get('top-content/:brandId')
+  async getTopContent(
+    @Param('brandId') brandId: string,
+    @Query() query: TopContentQueryDto,
+  ) {
+    return this.service.getTopContent(brandId, {
+      contentType: query.contentType,
+      platform: query.platform,
+      startDate: query.startDate,
+      endDate: query.endDate,
+    })
+  }
+
+  // ── 健康度趋势 ───────────────────────────────────────────────────────────
+
+  @Get('health/:brandId/trend')
+  async getHealthTrend(
+    @Param('brandId') brandId: string,
+    @Query() query: HealthTrendQueryDto,
+  ) {
+    const months = query.months ? parseInt(query.months, 10) : 6
+    return this.service.getHealthTrend(brandId, months)
+  }
+
+  // ── 内容建议 ─────────────────────────────────────────────────────────────
+
+  @Get('content-suggestions/:contentId')
+  async getContentSuggestions(
+    @Param('contentId') contentId: string,
+    @Query() query: ContentSuggestionsDto,
+  ) {
+    return this.service.getContentSuggestions(contentId, query.contentType)
   }
 }

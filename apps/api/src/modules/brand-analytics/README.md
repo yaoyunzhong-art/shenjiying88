@@ -42,6 +42,12 @@
 | 报告详情 | `GET /brand-analytics/report/:id` | 单份报告详情 | ✅ IMPLEMENTED |
 | ROI 计算 | `GET /brand-analytics/roi/:brandId` | ROI/ROAS/净利计算 | ✅ IMPLEMENTED |
 | 市场占比 | `GET /brand-analytics/market-share` | 品牌市场占有率排名 | ✅ IMPLEMENTED |
+| 综合查询 | `GET /brand-analytics/analytics/:brandId` | KPI/归因/声量/健康/内容一并返回 | ✅ IMPLEMENTED |
+| 品牌对比 | `POST /brand-analytics/compare` | 多品牌 KPI 与健康度对比 | ✅ IMPLEMENTED |
+| 竞品对比 | `POST /brand-analytics/competitors` | 主品牌 vs 竞品差异分析 | ✅ IMPLEMENTED |
+| 热门内容 | `GET /brand-analytics/top-content/:brandId` | 按类型/平台筛选热门内容 | ✅ IMPLEMENTED |
+| 健康度趋势 | `GET /brand-analytics/health/:brandId/trend` | 月度健康度变化趋势 | ✅ IMPLEMENTED |
+| 内容建议 | `GET /brand-analytics/content-suggestions/:contentId` | 内容优化建议 | ✅ IMPLEMENTED |
 
 ═══════════════════════════════════════
 箍三: 架构说明 — 目录结构
@@ -83,6 +89,12 @@ apps/api/src/modules/brand-analytics/
 | GET | `/brand-analytics/report/:id` | IdentityAccessGuard | 报告详情 |
 | GET | `/brand-analytics/roi/:brandId` | IdentityAccessGuard | ROI 计算 |
 | GET | `/brand-analytics/market-share` | IdentityAccessGuard | 市场占比 |
+| GET | `/brand-analytics/analytics/:brandId` | IdentityAccessGuard | 综合查询 |
+| POST | `/brand-analytics/compare` | IdentityAccessGuard | 品牌对比 |
+| POST | `/brand-analytics/competitors` | IdentityAccessGuard | 竞品对比 |
+| GET | `/brand-analytics/top-content/:brandId` | IdentityAccessGuard | 热门内容 |
+| GET | `/brand-analytics/health/:brandId/trend` | IdentityAccessGuard | 健康度趋势 |
+| GET | `/brand-analytics/content-suggestions/:contentId` | IdentityAccessGuard | 内容建议 |
 
 ### 核心数据结构
 

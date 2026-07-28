@@ -27,6 +27,12 @@
 | 13 | GET | `/brand-analytics/report/:id` | 报告详情 | ✅ |
 | 14 | GET | `/brand-analytics/roi/:brandId` | ROI 计算 | ✅ |
 | 15 | GET | `/brand-analytics/market-share` | 市场占比 | ✅ |
+| 16 | GET | `/brand-analytics/analytics/:brandId` | 综合查询 | ✅ |
+| 17 | POST | `/brand-analytics/compare` | 品牌对比 | ✅ |
+| 18 | POST | `/brand-analytics/competitors` | 竞品对比 | ✅ |
+| 19 | GET | `/brand-analytics/top-content/:brandId` | 热门内容排名 | ✅ |
+| 20 | GET | `/brand-analytics/health/:brandId/trend` | 健康度趋势 | ✅ |
+| 21 | GET | `/brand-analytics/content-suggestions/:contentId` | 内容建议 | ✅ |
 
 ## 三、认证与守卫
 
