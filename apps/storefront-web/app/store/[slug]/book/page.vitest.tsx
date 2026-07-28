@@ -398,7 +398,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     // Wait for slots and select one
     await waitFor(async () => {
       const slotBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtns.length > 0 && !slotBtns[0].disabled) {
+      if (slotBtns.length > 0 && !(slotBtns[0] as HTMLButtonElement).disabled) {
         fireEvent.click(slotBtns[0]);
       }
     });
@@ -422,7 +422,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     });
     await waitFor(async () => {
       const slotBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtns.length > 0 && !slotBtns[0].disabled) fireEvent.click(slotBtns[0]);
+      if (slotBtns.length > 0 && !(slotBtns[0] as HTMLButtonElement).disabled) fireEvent.click(slotBtns[0]);
     });
     fireEvent.click(screen.getByText('下一步：确认预约 →'));
     await waitFor(() => {
@@ -447,7 +447,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     });
     await waitFor(async () => {
       const slotBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtns.length > 0 && !slotBtns[0].disabled) fireEvent.click(slotBtns[0]);
+      if (slotBtns.length > 0 && !(slotBtns[0] as HTMLButtonElement).disabled) fireEvent.click(slotBtns[0]);
     });
     fireEvent.click(screen.getByText('下一步：确认预约 →'));
     await waitFor(() => {
@@ -475,7 +475,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     });
     await waitFor(async () => {
       const slotBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtns.length > 0 && !slotBtns[0].disabled) fireEvent.click(slotBtns[0]);
+      if (slotBtns.length > 0 && !(slotBtns[0] as HTMLButtonElement).disabled) fireEvent.click(slotBtns[0]);
     });
     fireEvent.click(screen.getByText('下一步：确认预约 →'));
     await waitFor(() => {
@@ -520,7 +520,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     });
     await waitFor(async () => {
       const slotBtn = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtn.length > 0 && !slotBtn[0].disabled) fireEvent.click(slotBtn[0]);
+      if (slotBtn.length > 0 && !(slotBtn[0] as HTMLButtonElement).disabled) fireEvent.click(slotBtn[0]);
     });
     fireEvent.click(screen.getByText('下一步：确认预约 →'));
     await waitFor(() => {
@@ -551,7 +551,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     });
     await waitFor(async () => {
       const slotBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtns.length > 0 && !slotBtns[0].disabled) fireEvent.click(slotBtns[0]);
+      if (slotBtns.length > 0 && !(slotBtns[0] as HTMLButtonElement).disabled) fireEvent.click(slotBtns[0]);
     });
     fireEvent.click(screen.getByText('下一步：确认预约 →'));
     await waitFor(() => {
@@ -581,7 +581,7 @@ describe('BookPage — 预约页面 (多步骤 Stepper)', () => {
     });
     await waitFor(async () => {
       const slotBtns = screen.getAllByRole('button').filter(b => b.textContent?.includes('10:00'));
-      if (slotBtns.length > 0 && !slotBtns[0].disabled) fireEvent.click(slotBtns[0]);
+      if (slotBtns.length > 0 && !(slotBtns[0] as HTMLButtonElement).disabled) fireEvent.click(slotBtns[0]);
     });
     fireEvent.click(screen.getByText('下一步：确认预约 →'));
     await waitFor(() => {

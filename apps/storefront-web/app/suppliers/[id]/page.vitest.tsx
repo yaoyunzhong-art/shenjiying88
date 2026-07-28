@@ -12,7 +12,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 // ── Mock next/navigation ──
 
 const mockPush = vi.fn();
-const mockParams = Promise.resolve({ id: '1' });
+const mockRouterParams = Promise.resolve({ id: '1' });
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -126,21 +126,18 @@ vi.mock('@m5/ui', () => {
   };
 });
 
-// ── Mock next/params — use(params) pattern ──
-
-// The component uses `const { id } = use(params)` so we need to mock `use`.
-// 'use' is a React 19 function. We mock it at the global level.
-vi.mock('react', async () => {
-  const actual = await vi.importActual<typeof React>('react');
-  return {
-    ...actual,
-    use: vi.fn(() => ({ id: '1' })),
-  };
-});
-
 // ── Test Subject ──
 
 import SupplierDetailPage from './page';
+
+/** Create a params promise for the component */
+function mockParams(id: string = '1'): Promise<{ id: string }> {
+  return Promise.resolve({ id });
+}
+
+function renderSupplierPage() {
+  return render(<SupplierDetailPage params={mockParams()} />);
+}
 
 describe('SupplierDetailPage — 供应商详情页', () => {
   beforeEach(() => {
@@ -150,28 +147,28 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 正例: 渲染 ======
 
   test('renders DetailShell with supplier name', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByTestId('detail-shell')).toHaveAttribute('data-title', '广州美妆供应链有限公司');
     });
   });
 
   test('renders subtitle with short name and cooperation date', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByTestId('detail-shell')).toHaveAttribute('data-subtitle', expect.stringContaining('简称：广州美妆'));
     });
   });
 
   test('renders backHref to /suppliers', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByTestId('detail-shell')).toHaveAttribute('data-back-href', '/suppliers');
     });
   });
 
   test('renders DescriptionList with basic info', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByTestId('description-list')).toBeInTheDocument();
     });
@@ -181,7 +178,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('renders supplier name in description list', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       const values = screen.getAllByTestId('desc-value');
       expect(values.some(v => v.textContent === '广州美妆供应链有限公司')).toBe(true);
@@ -189,14 +186,14 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('renders status badge with 合作中', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('合作中')).toBeInTheDocument();
     });
   });
 
   test('renders credit level A级（优秀）', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('A级（优秀）')).toBeInTheDocument();
     });
@@ -205,21 +202,21 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 合作数据 ======
 
   test('renders cooperation data section', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('合作数据')).toBeInTheDocument();
     });
   });
 
   test('renders total orders count', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('86 单')).toBeInTheDocument();
     });
   });
 
   test('renders total amount', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('¥1,285,000')).toBeInTheDocument();
     });
@@ -228,14 +225,14 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 产品列表 ======
 
   test('renders product list section', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('供应产品（6 项）')).toBeInTheDocument();
     });
   });
 
   test('renders product names in DataTable', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('保湿精华液（100ml）')).toBeInTheDocument();
       expect(screen.getByText('洁面乳（150g）')).toBeInTheDocument();
@@ -244,7 +241,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('renders product prices with ¥ prefix', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('¥68')).toBeInTheDocument();
       expect(screen.getByText('¥72')).toBeInTheDocument();
@@ -254,7 +251,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 合作历史 ======
 
   test('renders cooperation history timeline', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('合作历史')).toBeInTheDocument();
       expect(screen.getByTestId('timeline')).toBeInTheDocument();
@@ -262,7 +259,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('renders timeline events', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText(/供应商注册申请/)).toBeInTheDocument();
       expect(screen.getByText(/资质审核通过/)).toBeInTheDocument();
@@ -273,7 +270,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 动作栏 ======
 
   test('renders action bar with transition actions', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByTestId('detail-action-bar')).toBeInTheDocument();
     });
@@ -282,7 +279,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('renders closure bar with links', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByTestId('detail-closure-bar')).toBeInTheDocument();
     });
@@ -291,7 +288,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('back to list link has correct href', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       const link = screen.getByText('返回供应商列表');
       expect(link.closest('a')).toHaveAttribute('href', '/suppliers');
@@ -301,7 +298,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 状态流转 ======
 
   test('clicking suspend opens confirm dialog', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('暂停合作')).toBeInTheDocument();
     });
@@ -313,7 +310,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('confirming suspend updates status', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('暂停合作')).toBeInTheDocument();
     });
@@ -329,7 +326,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('cancelling suspend dialog closes it', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('暂停合作')).toBeInTheDocument();
     });
@@ -346,7 +343,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 编辑/删除 ======
 
   test('clicking edit shows info toast', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('编辑')).toBeInTheDocument();
     });
@@ -358,7 +355,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('delete button not available for active supplier', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       // For active supplier, only suspend + edit are available
       expect(screen.getByText('暂停合作')).toBeInTheDocument();
@@ -369,7 +366,7 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   // ====== 边界/空态 ======
 
   test('closing link redirects supplier new page', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       const link = screen.getByText('新增供应商');
       expect(link.closest('a')).toHaveAttribute('href', '/suppliers/new');
@@ -377,28 +374,28 @@ describe('SupplierDetailPage — 供应商详情页', () => {
   });
 
   test('renders supply categories', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText(/护肤品、彩妆、个人护理/)).toBeInTheDocument();
     });
   });
 
   test('renders payment terms', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('月结30天')).toBeInTheDocument();
     });
   });
 
   test('renders on-time rate', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('97.5%')).toBeInTheDocument();
     });
   });
 
   test('renders quality rate', async () => {
-    render(<SupplierDetailPage />);
+    renderSupplierPage();
     await waitFor(() => {
       expect(screen.getByText('99.2%')).toBeInTheDocument();
     });

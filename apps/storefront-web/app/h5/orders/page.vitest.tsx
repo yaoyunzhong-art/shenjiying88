@@ -37,8 +37,6 @@ vi.mock('../../../lib/storefront-orders', () => ({
     return map[status] ?? 'default';
   },
   loadStorefrontOrders: (...args: any[]) => mockLoadOrders(...args),
-  type StorefrontOrderViewStatus: {} as any,
-  type StorefrontOrderListViewItem: {} as any,
 }));
 
 vi.mock('../../../lib/storefront-transactions', () => ({

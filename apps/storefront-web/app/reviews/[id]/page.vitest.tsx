@@ -60,9 +60,7 @@ vi.mock('../reviews-data', () => ({
       repliedAt: null,
     },
   ],
-  type Rating: {},
-  type ReviewStatus: {},
-  type ReviewTag: {},
+  // types are defined in reviews-data, not needed as values in mock
 }));
 
 // ---- Mock @m5/ui ----
