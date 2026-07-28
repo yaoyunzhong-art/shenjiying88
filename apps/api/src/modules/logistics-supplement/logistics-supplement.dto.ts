@@ -81,29 +81,6 @@ export class QueryTransportOrderDto {
   @IsOptional() @IsString() vehiclePlate?: string
 }
 
-// ── Controller 别名字段 ─────────────────────────────────────────────────────
-
-/** @deprecated 使用 CreateCargoLoadDto */
-export class AddCargoLoadDto extends CreateCargoLoadDto {}
-
-/** @deprecated 使用 CreateVehicleMaintenanceRecordDto */
-export class CreateMaintenanceDto extends CreateVehicleMaintenanceRecordDto {}
-
-/** @deprecated 使用 CreateFuelRecordDto */
-export class RecordFuelDto extends CreateFuelRecordDto {}
-
-/** @deprecated 使用 CreateAccidentRecordDto */
-export class RecordAccidentDto extends CreateAccidentRecordDto {}
-
-/** @deprecated 使用 CreateLogisticsCostDto */
-export class RecordCostDto extends CreateLogisticsCostDto {}
-
-// ── 控制器查询 ───────────────────────────────────────────────────────────────
-
-export class ListTransportOrdersQuery extends QueryTransportOrderDto {
-  @IsOptional() @IsString() tenantId?: string
-}
-
 // ── 货物记录 DTO ───────────────────────────────────────────────────────────
 
 export class CreateCargoLoadDto {
@@ -265,3 +242,24 @@ export class CreateLogisticsCostDto {
   @IsOptional() @IsString() @MaxLength(500) notes?: string
   @IsString() @IsNotEmpty() createdBy!: string
 }
+
+// ── Controller 别名 / 查询 (依赖定义在后的基类，所以放在文件末尾) ──────────────
+
+export class ListTransportOrdersQuery extends QueryTransportOrderDto {
+  @IsOptional() @IsString() tenantId?: string
+}
+
+/** @deprecated 使用 CreateCargoLoadDto */
+export class AddCargoLoadDto extends CreateCargoLoadDto {}
+
+/** @deprecated 使用 CreateVehicleMaintenanceRecordDto */
+export class CreateMaintenanceDto extends CreateVehicleMaintenanceRecordDto {}
+
+/** @deprecated 使用 CreateFuelRecordDto */
+export class RecordFuelDto extends CreateFuelRecordDto {}
+
+/** @deprecated 使用 CreateAccidentRecordDto */
+export class RecordAccidentDto extends CreateAccidentRecordDto {}
+
+/** @deprecated 使用 CreateLogisticsCostDto */
+export class RecordCostDto extends CreateLogisticsCostDto {}

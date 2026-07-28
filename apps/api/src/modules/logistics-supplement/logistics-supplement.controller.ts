@@ -6,13 +6,13 @@ import { IdentityAccessGuard } from '../../common/guards/identity-access.guard'
 import { LogisticsSupplementService } from './logistics-supplement.service'
 import {
   CreateTransportOrderDto, UpdateTransportOrderStatusDto, UpdateTransportOrderDto,
-  AddCargoLoadDto, UpdateCargoStatusDto,
+  CreateCargoLoadDto, UpdateCargoStatusDto,
   CreateRoutePlanDto, UpdateRoutePlanDto,
   CreateDriverScheduleDto, UpdateDriverScheduleStatusDto,
-  CreateMaintenanceDto, UpdateVehicleMaintenanceDto,
-  RecordFuelDto,
-  RecordAccidentDto, ResolveAccidentDto,
-  RecordCostDto,
+  CreateVehicleMaintenanceRecordDto, UpdateVehicleMaintenanceDto,
+  CreateFuelRecordDto,
+  CreateAccidentRecordDto, ResolveAccidentDto,
+  CreateLogisticsCostDto,
   ListTransportOrdersQuery,
 } from './logistics-supplement.dto'
 import type {
@@ -68,7 +68,7 @@ export class LogisticsSupplementController {
   // ── 货物装载 ─────────────────────────────────────────────────────────────
 
   @Post('cargo-loads')
-  addCargoLoad(@Body() dto: AddCargoLoadDto): Promise<CargoLoad> {
+  addCargoLoad(@Body() dto: CreateCargoLoadDto): Promise<CargoLoad> {
     return this.service.addCargoLoad(dto)
   }
 
@@ -161,7 +161,7 @@ export class LogisticsSupplementController {
   // ── 车辆维保 ─────────────────────────────────────────────────────────────
 
   @Post('maintenance')
-  createMaintenance(@Body() dto: CreateMaintenanceDto): Promise<VehicleMaintenanceRecord> {
+  createMaintenance(@Body() dto: CreateVehicleMaintenanceRecordDto): Promise<VehicleMaintenanceRecord> {
     return this.service.createMaintenanceRecord(dto)
   }
 
@@ -190,31 +190,32 @@ export class LogisticsSupplementController {
 
   // ── 油耗记录 ─────────────────────────────────────────────────────────────
 
-  @Post('fuel')
-  recordFuel(@Body() dto: RecordFuelDto): Promise<FuelRecord> {
+  @Post('fuel-records')
+  recordFuel(@Body() dto: CreateFuelRecordDto): Promise<FuelRecord> {
     return this.service.recordFuel(dto)
   }
 
-  @Get('fuel/:id')
+  // 静态路由优先于 :id 参数路由
+  @Get('fuel-records/efficiency/:vehicleId')
+  getFuelEfficiency(@Param('vehicleId') vid: string) {
+    return this.service.getFuelEfficiency(vid)
+  }
+
+  @Get('fuel-records/:id')
   getFuelRecord(@Param('id') id: string): Promise<FuelRecord> {
     return this.service.getFuelRecord(id)
   }
 
-  @Get('fuel/:vehicleId')
+  @Get('fuel-records')
   getFuelRecords(
-    @Param('vehicleId') vid: string,
+    @Query('vehicleId') vid: string,
     @Query('startDate') sd?: string,
     @Query('endDate') ed?: string,
   ): Promise<FuelRecord[]> {
     return this.service.getFuelRecords(vid, sd, ed)
   }
 
-  @Get('fuel/:vehicleId/efficiency')
-  getFuelEfficiency(@Param('vehicleId') vid: string) {
-    return this.service.getFuelEfficiency(vid)
-  }
-
-  @Delete('fuel/:id')
+  @Delete('fuel-records/:id')
   deleteFuelRecord(@Param('id') id: string): Promise<void> {
     return this.service.deleteFuelRecord(id)
   }
@@ -222,7 +223,7 @@ export class LogisticsSupplementController {
   // ── 事故记录 ─────────────────────────────────────────────────────────────
 
   @Post('accidents')
-  recordAccident(@Body() dto: RecordAccidentDto): Promise<AccidentRecord> {
+  recordAccident(@Body() dto: CreateAccidentRecordDto): Promise<AccidentRecord> {
     return this.service.recordAccident(dto)
   }
 
@@ -247,13 +248,8 @@ export class LogisticsSupplementController {
   // ── 物流成本核算 ─────────────────────────────────────────────────────────
 
   @Post('costs')
-  recordCost(@Body() dto: RecordCostDto): Promise<LogisticsCost> {
+  recordCost(@Body() dto: CreateLogisticsCostDto): Promise<LogisticsCost> {
     return this.service.recordCost(dto)
-  }
-
-  @Get('costs/:id')
-  getCost(@Param('id') id: string): Promise<LogisticsCost> {
-    return this.service.getCost(id)
   }
 
   @Get('costs/summary')
@@ -262,6 +258,11 @@ export class LogisticsSupplementController {
     @Query('endDate') ed: string,
   ) {
     return this.service.getCostSummary(sd, ed)
+  }
+
+  @Get('costs/:id')
+  getCost(@Param('id') id: string): Promise<LogisticsCost> {
+    return this.service.getCost(id)
   }
 
   @Delete('costs/:id')
