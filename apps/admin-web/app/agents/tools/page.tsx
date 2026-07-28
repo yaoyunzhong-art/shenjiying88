@@ -1,17 +1,10 @@
 import { Suspense } from 'react'
 import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui'
-import { AdminPermissionGate } from '../../components/admin-permission-gate'
 import { loadAgentTools } from '../agent-view-model'
 import AgentToolsClient from './agent-tools-client'
 
-const permissionGate = {
-  requiredPermission: 'foundation.governance.read',
-  title: 'Agent 工具注册中心访问受限',
-  description:
-    'Agent 工具注册中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看工具定义、风险等级与参数治理信息。',
-} as const
-
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AgentToolsPage() {
   const snapshot = await loadAgentTools({ cache: 'no-store' })
@@ -23,8 +16,7 @@ export default async function AgentToolsPage() {
   }
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <PageShell
           title="Agent 工具注册中心"
           subtitle="查看 Agent 可调用的工具定义、参数 schema 与风险等级，作为 runtime governance 与 tool risk gating 的依据。"
@@ -50,7 +42,6 @@ export default async function AgentToolsPage() {
             />
           </Suspense>
         </PageShell>
-      </main>
-    </AdminPermissionGate>
+    </main>
   )
 }

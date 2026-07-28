@@ -1,55 +1,47 @@
-import Link from 'next/link';
-import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
-import AgentSessionDetailClient from './session-detail-client';
-import { loadAgentSessionDetail } from '../../agent-view-model';
+import Link from 'next/link'
+import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui'
+import AgentSessionDetailClient from './session-detail-client'
+import { loadAgentSessionDetail } from '../../agent-view-model'
 
-export const dynamic = 'force-dynamic';
-
-const permissionGate = {
-  requiredPermission: 'foundation.governance.read',
-  title: 'Agent 会话详情访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 foundation.governance.read 权限的账号可查看 Agent 会话链路与执行详情。',
-} as const;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface AgentSessionDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }
 
 interface AgentSessionSourceEvidence {
-  deliveryMode: 'api' | 'fallback';
-  detailSource: string;
-  executionSource: string;
-  evaluationSource: string;
-  configSource: string;
-  refreshPath: string;
-  streamSource: string;
-  referenceTime: string;
+  deliveryMode: 'api' | 'fallback'
+  detailSource: string
+  executionSource: string
+  evaluationSource: string
+  configSource: string
+  refreshPath: string
+  streamSource: string
+  referenceTime: string
 }
 
 export default async function AgentSessionDetailPage({ params }: AgentSessionDetailPageProps) {
-  const { id } = await params;
-  const snapshot = await loadAgentSessionDetail(id, { cache: 'no-store' });
+  const { id } = await params
+  const snapshot = await loadAgentSessionDetail(id, { cache: 'no-store' })
 
   if (!snapshot) {
     return (
-      <AdminPermissionGate {...permissionGate}>
-        <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
-          <PageShell title="Agent 会话未找到" subtitle="会话不存在或已被清理">
-            <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
-              当前会话不存在，请返回会话列表重新选择。
-            </div>
-          </PageShell>
-        </main>
-      </AdminPermissionGate>
-    );
+      <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
+        <PageShell title="Agent 会话未找到" subtitle="会话不存在或已被清理">
+          <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
+            当前会话不存在，请返回会话列表重新选择。
+          </div>
+        </PageShell>
+      </main>
+    )
   }
 
-  const { session, execution, evaluation, config, deliveryMode, error } = snapshot;
-  const totalSteps = execution?.steps ?? session.currentStep;
-  const totalDurationMs = execution?.totalDurationMs ?? 0;
-  const llmCalls = execution?.llmCalls ?? 0;
-  const toolCalls = execution?.toolCalls ?? 0;
+  const { session, execution, evaluation, config, deliveryMode, error } = snapshot
+  const totalSteps = execution?.steps ?? session.currentStep
+  const totalDurationMs = execution?.totalDurationMs ?? 0
+  const llmCalls = execution?.llmCalls ?? 0
+  const toolCalls = execution?.toolCalls ?? 0
   const sourceEvidence: AgentSessionSourceEvidence = {
     deliveryMode,
     detailSource:
@@ -77,11 +69,10 @@ export default async function AgentSessionDetailPage({ params }: AgentSessionDet
         ? 'runAgentSessionStream (RUNNING only)'
         : 'stream disabled in fallback',
     referenceTime: evaluation?.evaluatedAt ?? execution?.completedAt ?? session.completedAt ?? session.createdAt,
-  };
+  }
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
+    <main style={{ maxWidth: 1280, margin: '0 auto', padding: 32 }}>
         <PageShell
           title={`Session · ${session.id}`}
           subtitle={`查看 Agent 会话完整链路:${session.userInput.slice(0, 80)}${session.userInput.length > 80 ? '...' : ''}`}
@@ -142,7 +133,6 @@ export default async function AgentSessionDetailPage({ params }: AgentSessionDet
             />
           </div>
         </PageShell>
-      </main>
-    </AdminPermissionGate>
-  );
+    </main>
+  )
 }

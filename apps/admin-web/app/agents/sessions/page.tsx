@@ -1,33 +1,25 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
-import { loadAgentSessions } from '../agent-view-model';
-import AgentSessionsClient from './agent-sessions-client';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui'
+import { loadAgentSessions } from '../agent-view-model'
+import AgentSessionsClient from './agent-sessions-client'
 
-export const dynamic = 'force-dynamic';
-
-const permissionGate = {
-  requiredPermission: 'foundation.governance.read',
-  title: 'Agent 会话追踪访问受限',
-  description:
-    'Agent 会话追踪页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看实时会话、状态分布与会话详情。'
-} as const;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 function formatAverageDuration(ms: number): string {
-  return `${(ms / 1000).toFixed(2)}s`;
+  return `${(ms / 1000).toFixed(2)}s`
 }
 
 function formatAverageSteps(steps: number): string {
-  return steps.toFixed(1);
+  return steps.toFixed(1)
 }
 
 export default async function AgentSessionsPage() {
-  const snapshot = await loadAgentSessions({ cache: 'no-store' });
-  const stats = snapshot.stats;
+  const snapshot = await loadAgentSessions({ cache: 'no-store' })
+  const stats = snapshot.stats
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <PageShell
           title="Agent 会话追踪"
           subtitle="查看 ReAct Agent 会话的实时状态、用户输入、当前步数与最终输出，作为会话级可观测面板。"
@@ -68,7 +60,6 @@ export default async function AgentSessionsPage() {
             />
           </Suspense>
         </PageShell>
-      </main>
-    </AdminPermissionGate>
-  );
+    </main>
+  )
 }

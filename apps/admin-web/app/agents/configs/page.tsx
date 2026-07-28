@@ -1,32 +1,24 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
-import { loadAgentConfigs } from '../agent-view-model';
-import AgentConfigsClient from './agent-configs-client';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui'
+import { loadAgentConfigs } from '../agent-view-model'
+import AgentConfigsClient from './agent-configs-client'
 
-export const dynamic = 'force-dynamic';
-
-const permissionGate = {
-  requiredPermission: 'foundation.governance.read',
-  title: 'Agent 配置中心访问受限',
-  description:
-    'Agent 配置中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模型配置、启停状态与批量治理能力。',
-} as const;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AgentConfigsPage() {
-  const snapshot = await loadAgentConfigs({ cache: 'no-store' });
-  const configs = snapshot.configs;
-  const enabledCount = configs.filter((c) => c.enabled).length;
-  const disabledCount = configs.length - enabledCount;
-  const reflectionCount = configs.filter((c) => c.enableReflection).length;
+  const snapshot = await loadAgentConfigs({ cache: 'no-store' })
+  const configs = snapshot.configs
+  const enabledCount = configs.filter((c) => c.enabled).length
+  const disabledCount = configs.length - enabledCount
+  const reflectionCount = configs.filter((c) => c.enableReflection).length
   const avgTimeoutSeconds =
     configs.length > 0
       ? Math.round(configs.reduce((sum, item) => sum + item.timeoutMs, 0) / configs.length / 1000)
-      : 0;
+      : 0
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <PageShell
           title="Agent 配置中心"
           subtitle="管理 ReAct Agent 的 system prompt、模型选择、最大步数、允许工具与超时,作为 Agent 运行时的基础配置。"
@@ -57,9 +49,8 @@ export default async function AgentConfigsPage() {
             />
           </Suspense>
         </PageShell>
-      </main>
-    </AdminPermissionGate>
-  );
+    </main>
+  )
 }
 
 // ---- 数据导出与统计辅助 ----

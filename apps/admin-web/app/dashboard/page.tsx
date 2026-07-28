@@ -5,36 +5,20 @@
  * 视图: 总览/运营/财务/增长 四视角切换
  */
 
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell, ErrorBoundary, Card, StatCard } from '@m5/ui';
-import DashboardClient from './dashboard-client';
-import { AdminPermissionGate } from '../components/admin-permission-gate';
-import { loadDashboardSnapshot } from './dashboard-data';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell, ErrorBoundary, Card, StatCard } from '@m5/ui'
+import DashboardClient from './dashboard-client'
+import { loadDashboardSnapshot } from './dashboard-data'
 
-export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth';
+export type DashboardView = 'overview' | 'operations' | 'financial' | 'growth'
 
 export function isDashboardView(v: string): v is DashboardView {
-  return ['overview', 'operations', 'financial', 'growth'].includes(v);
+  return ['overview', 'operations', 'financial', 'growth'].includes(v)
 }
 
-const permissionGate = {
-  requiredPermission: 'dashboard:read',
-  title: '概览仪表盘访问受限',
-  description:
-    '概览仪表盘已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看门店运营指标、趋势分析与快捷入口。',
-} as const;
-
 export default async function DashboardPage() {
-  const snapshot = await loadDashboardSnapshot();
-  const stats = snapshot.stats;
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource: 'loadDashboardSnapshot -> loadDashboardStats',
-    businessDataSource: 'local dashboard stats snapshot',
-    refreshPath: 'DashboardPage -> loadDashboardSnapshot',
-    generatedAt: snapshot.generatedAt,
-    note: '当前概览仪表盘使用本地统计样本，不代表真实经营主链，也不可作为闭环复签证据。',
-  } as const;
+  const snapshot = await loadDashboardSnapshot()
+  const stats = snapshot.stats
 
   const summaryCards = [
     { label: '今日营收', value: `¥${stats.todayRevenue.toLocaleString()}`, variant: 'success' as const, detail: '较昨日 +12%' },
@@ -43,27 +27,15 @@ export default async function DashboardPage() {
     { label: '客流', value: stats.currentCustomers.toString(), variant: 'info' as const, detail: `人均停留 ${stats.avgVisitDuration}min` },
     { label: '待处理告警', value: stats.pendingAlerts.toString(), variant: stats.pendingAlerts > 0 ? 'danger' as const : 'success' as const, detail: stats.pendingAlerts > 0 ? '需及时处理' : '无待处理' },
     { label: '今日完成率', value: `${stats.completionRate}%`, variant: stats.completionRate >= 80 ? 'success' as const : 'warning' as const, detail: '目标 85%' },
-  ];
+  ]
 
   return (
     <ErrorBoundary>
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-        <AdminPermissionGate {...permissionGate}>
-          <PageShell
-            title="📊 概览仪表盘"
-            subtitle="门店运营核心指标一览 · 实时数据 · 快速入口"
-          >
-            <div style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(148,163,184,0.08)', fontSize: 12, color: '#cbd5e1', lineHeight: 1.7, marginBottom: 16 }}>
-              <div>
-                Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
-              </div>
-              <div>
-                业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
-              </div>
-              <div>
-                generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
-              </div>
-            </div>
+        <PageShell
+          title="📊 概览仪表盘"
+          subtitle="门店运营核心指标一览 · 实时数据 · 快速入口"
+        >
             {/* 视图切换Tab: 总览/运营/财务/增长 */}
             <DashboardViewTabs />
 
@@ -83,10 +55,9 @@ export default async function DashboardPage() {
               <DashboardClient stats={stats} />
             </Suspense>
           </PageShell>
-        </AdminPermissionGate>
       </main>
     </ErrorBoundary>
-  );
+  )
 }
 
 /** 仪表盘视图Tab组件 — 总览/运营/财务/增长 */

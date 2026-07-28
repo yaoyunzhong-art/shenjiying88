@@ -1,28 +1,29 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
-import AgentEvaluationsClient from './agent-evaluations-client';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
-import { loadAgentEvaluations } from '../agent-view-model';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui'
+import AgentEvaluationsClient from './agent-evaluations-client'
+import { loadAgentEvaluations } from '../agent-view-model'
 
-export const dynamic = 'force-dynamic';
-
-const permissionGate = {
-  requiredPermission: 'foundation.governance.read',
-  title: 'Agent 质量评估访问受限',
-  description:
-    'Agent 质量评估中心已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看评分结果、通过率与回归评估数据。',
-} as const;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AgentEvaluationsPage() {
-  const snapshot = await loadAgentEvaluations({ cache: 'no-store' });
-  const passed = snapshot.evaluations.filter((e) => e.overallScore >= 0.6).length;
-  const passRate = snapshot.evaluations.length > 0
-    ? ((passed / snapshot.evaluations.length) * 100).toFixed(1)
-    : '—';
+  const snapshot = await loadAgentEvaluations({ cache: 'no-store' })
+  const passed = snapshot.evaluations.filter((e) => e.overallScore >= 0.6).length
+  const passRate =
+    snapshot.evaluations.length > 0
+      ? ((passed / snapshot.evaluations.length) * 100).toFixed(1)
+      : '—'
+  const averageScore =
+    snapshot.evaluations.length > 0
+      ? (
+          snapshot.evaluations.reduce((s, e) => s + e.overallScore, 0) /
+          snapshot.evaluations.length
+        ).toFixed(3)
+      : '—'
+  const failed = snapshot.evaluations.length - passed
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
         <PageShell
           title="Agent 质量评估中心"
           subtitle="6 维度(相关性/准确性/完整性/安全性/有用性/简洁性)质量评分与综合得分,作为 Agent 选型与回归追踪的关键参考。"
@@ -59,7 +60,6 @@ export default async function AgentEvaluationsPage() {
             />
           </Suspense>
         </PageShell>
-      </main>
-    </AdminPermissionGate>
-  );
+    </main>
+  )
 }
