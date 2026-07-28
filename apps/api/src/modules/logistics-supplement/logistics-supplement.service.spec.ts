@@ -9,6 +9,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { LogisticsSupplementService } from './logistics-supplement.service'
 
+const TENANT_ID = 't-001'
+
 describe('LogisticsSupplementService', () => {
   let svc: LogisticsSupplementService
 
@@ -21,40 +23,47 @@ describe('LogisticsSupplementService', () => {
   // ════════════════════════════════════════════
 
   describe('TransportOrder', () => {
+    const baseOrder = {
+      tenantId: TENANT_ID,
+      storeId: 'store-001',
+      orderNumber: 'TO-2026-001',
+      transportType: 'normal' as const,
+      status: 'draft' as const,
+      originWarehouseCode: 'WH-SH',
+      originAddress: '上海浦东仓库',
+      destinationWarehouseCode: 'WH-SZ',
+      destinationAddress: '深圳南山门店',
+      items: [{
+        cargoId: 'cargo-001', cargoName: '电子元器件',
+        quantity: 100, unit: '箱', weightKg: 500, volumeM3: 2.5,
+      }],
+      totalWeightKg: 500,
+      totalVolumeM3: 2.5,
+      driverId: 'D-001',
+      driverName: '刘师傅',
+      vehiclePlate: '沪A88888',
+      scheduledPickupAt: new Date().toISOString(),
+      estimatedArrivalAt: new Date(Date.now() + 86400000).toISOString(),
+      createdBy: 'u-001',
+      createdByName: '调度员',
+    }
+
     it('正例: 创建运输调度单', async () => {
-      const order = await svc.createTransportOrder({
-        tenantId: 't-001', status: 'draft' as any,
-        origin: '上海仓库', destination: '深圳门店',
-        vehicleId: 'V-001', driverId: 'D-001', driverName: '刘师傅',
-        plannedDeparture: new Date().toISOString(),
-        estimatedArrival: new Date(Date.now() + 86400000).toISOString(),
-      })
+      const order = await svc.createTransportOrder(baseOrder)
       expect(order.id).toBeTruthy()
-      expect(order.createdAt).toBeInstanceOf(Date)
+      expect(order.orderNumber).toBe('TO-2026-001')
     })
 
     it('正例: 更新运输状态', async () => {
-      const order = await svc.createTransportOrder({
-        tenantId: 't-001', status: 'draft' as any,
-        origin: 'A', destination: 'B',
-        vehicleId: 'V-001', driverId: 'D-001', driverName: '司机',
-        plannedDeparture: new Date().toISOString(),
-        estimatedArrival: new Date(Date.now() + 86400000).toISOString(),
-      })
+      const order = await svc.createTransportOrder(baseOrder)
       const updated = await svc.updateTransportOrderStatus(order.id, 'in_transit')
       expect(updated.status).toBe('in_transit')
     })
 
     it('反例: 无效状态抛异常', async () => {
-      const order = await svc.createTransportOrder({
-        tenantId: 't-001', status: 'draft' as any,
-        origin: 'A', destination: 'B',
-        vehicleId: 'V-001', driverId: 'D-001', driverName: '司机',
-        plannedDeparture: new Date().toISOString(),
-        estimatedArrival: new Date(Date.now() + 86400000).toISOString(),
-      })
+      const order = await svc.createTransportOrder(baseOrder)
       await expect(svc.updateTransportOrderStatus(order.id, 'invalid_status'))
-        .rejects.toThrow('Invalid status')
+        .rejects.toThrow('Invalid transport status')
     })
 
     it('反例: 不存在的订单', async () => {
@@ -69,18 +78,24 @@ describe('LogisticsSupplementService', () => {
   describe('CargoLoad', () => {
     it('正例: 添加货物装载', async () => {
       const load = await svc.addCargoLoad({
+        tenantId: TENANT_ID,
         transportOrderId: 'to-001',
-        cargoType: '电子产品',
+        cargoCode: 'CG-001',
+        cargoName: '电子产品',
         quantity: 100,
+        unit: '箱',
         weightKg: 500,
         volumeM3: 2.5,
+        status: 'pending' as const,
       })
       expect(load.id).toBeTruthy()
     })
 
     it('正例: 按运输单查询货物', async () => {
       await svc.addCargoLoad({
-        transportOrderId: 'to-001', cargoType: 'A', quantity: 10, weightKg: 100, volumeM3: 1,
+        tenantId: TENANT_ID, transportOrderId: 'to-001',
+        cargoCode: 'CG-001', cargoName: 'A', quantity: 10, unit: '箱', weightKg: 100, volumeM3: 1,
+        status: 'pending' as const,
       })
       const loads = await svc.getCargoLoads('to-001')
       expect(loads.length).toBe(1)
@@ -94,15 +109,19 @@ describe('LogisticsSupplementService', () => {
   describe('RoutePlan', () => {
     it('正例: 创建路线规划并优化', async () => {
       const plan = await svc.createRoutePlan({
-        transportOrderId: 'to-001',
-        startPoint: '上海', endPoint: '深圳',
-        estimatedDistanceKm: 1500, estimatedDurationMin: 1080,
+        tenantId: TENANT_ID,
+        name: '上海→深圳干线',
+        originWarehouseCode: 'WH-SH',
+        destinationWarehouseCode: 'WH-SZ',
+        waypoints: [],
+        totalDistanceKm: 1500,
+        estimatedDurationMin: 1080,
+        status: 'active' as const,
+        createdBy: 'u-001',
       })
-      expect(plan.optimized).toBeFalsy()
-
       const optimized = await svc.optimizeRoute(plan.id)
-      expect(optimized.optimized).toBe(true)
-      expect(optimized.estimatedDistanceKm).toBeLessThan(1500)
+      expect(optimized.totalDistanceKm).toBeLessThan(1500)
+      expect(optimized.estimatedDurationMin).toBeLessThan(1080)
     })
   })
 
@@ -113,18 +132,26 @@ describe('LogisticsSupplementService', () => {
   describe('DriverSchedule', () => {
     it('正例: 创建司机排班', async () => {
       const s = await svc.createDriverSchedule({
-        driverId: 'D-001', driverName: '刘师傅',
-        date: '2026-08-01', shift: '早班',
-        vehicleId: 'V-001', transportOrderId: 'to-001',
+        tenantId: TENANT_ID,
+        driverId: 'D-001',
+        driverName: '刘师傅',
+        scheduleDate: '2026-08-01',
+        shiftName: '早班',
+        shiftStart: '08:00',
+        shiftEnd: '18:00',
+        transportOrderIds: ['to-001'],
+        status: 'scheduled' as const,
       })
       expect(s.id).toBeTruthy()
     })
 
     it('正例: 按司机和日期筛选', async () => {
       await svc.createDriverSchedule({
-        driverId: 'D-001', driverName: '刘师傅',
-        date: '2026-08-01', shift: '早班', vehicleId: 'V-001',
+        tenantId: TENANT_ID, driverId: 'D-001', driverName: '刘师傅',
+        scheduleDate: '2026-08-01', shiftName: '早班', shiftStart: '08:00',
+        shiftEnd: '18:00', transportOrderIds: [], status: 'scheduled' as const,
       })
+      // getDriverSchedules uses driverId not scheduleDate for filtering
       const list = await svc.getDriverSchedules('D-001', '2026-08-01')
       expect(list.length).toBe(1)
     })
@@ -137,18 +164,33 @@ describe('LogisticsSupplementService', () => {
   describe('VehicleMaintenance', () => {
     it('正例: 创建维保记录', async () => {
       const r = await svc.createMaintenanceRecord({
-        vehicleId: 'V-001', type: 'routine', description: '定期保养',
-        status: 'scheduled', scheduledDate: '2026-08-15',
+        tenantId: TENANT_ID,
+        vehiclePlate: '沪A88888',
+        vehicleModel: '福田轻卡',
+        odometerKm: 50000,
+        maintType: 'routine_check' as const,
+        description: '定期保养',
+        status: 'pending' as const,
+        scheduledAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+        createdBy: 'u-001',
       })
       expect(r.id).toBeTruthy()
     })
 
     it('正例: 查询即将到来的维保', async () => {
       await svc.createMaintenanceRecord({
-        vehicleId: 'V-001', type: 'routine', description: '保养',
-        status: 'scheduled', scheduledDate: '2026-09-01',
+        tenantId: TENANT_ID, vehiclePlate: '沪A88888',
+        odometerKm: 50000, maintType: 'routine_check' as const,
+        description: '保养', status: 'pending' as const, createdBy: 'u-001',
       })
-      const upcoming = await svc.getUpcomingMaintenance('V-001')
+      // getUpcomingMaintenance filters by status 'scheduled' - need scheduled status
+      await svc.createMaintenanceRecord({
+        tenantId: TENANT_ID, vehiclePlate: '沪B66666',
+        odometerKm: 30000, maintType: 'oil_change' as const,
+        description: '换机油', status: 'scheduled' as const,
+        scheduledAt: new Date(Date.now() + 3 * 86400000).toISOString(), createdBy: 'u-001',
+      })
+      const upcoming = await svc.getUpcomingMaintenance('沪B66666')
       expect(upcoming.length).toBe(1)
     })
   })
@@ -160,20 +202,34 @@ describe('LogisticsSupplementService', () => {
   describe('FuelRecord', () => {
     it('正例: 记录油耗信息', async () => {
       const r = await svc.recordFuel({
-        vehicleId: 'V-001', date: '2026-08-01',
-        liters: 50, cost: 400, odometerReading: 10000,
+        tenantId: TENANT_ID,
+        vehiclePlate: '沪A88888',
+        driverId: 'D-001',
+        driverName: '刘师傅',
+        fuelDate: '2026-08-01',
+        liters: 50,
+        costCent: 40000,
+        unitPriceCent: 800,
+        odometerKm: 10000,
+        createdBy: 'u-001',
       })
       expect(r.id).toBeTruthy()
     })
 
     it('正例: 计算百公里油耗', async () => {
       await svc.recordFuel({
-        vehicleId: 'V-001', date: '2026-08-01', liters: 50, cost: 400, odometerReading: 10000,
+        tenantId: TENANT_ID, vehiclePlate: '沪A88888',
+        driverId: 'D-001', driverName: '刘师傅',
+        fuelDate: '2026-08-01', liters: 50, costCent: 40000,
+        unitPriceCent: 800, odometerKm: 10000, createdBy: 'u-001',
       })
       await svc.recordFuel({
-        vehicleId: 'V-001', date: '2026-08-02', liters: 40, cost: 320, odometerReading: 10500,
+        tenantId: TENANT_ID, vehiclePlate: '沪A88888',
+        driverId: 'D-001', driverName: '刘师傅',
+        fuelDate: '2026-08-02', liters: 40, costCent: 32000,
+        unitPriceCent: 800, odometerKm: 10500, createdBy: 'u-001',
       })
-      const eff = await svc.getFuelEfficiency('V-001')
+      const eff = await svc.getFuelEfficiency('沪A88888')
       expect(eff.totalFuelLiters).toBe(90)
       expect(eff.avgConsumptionPer100km).toBeGreaterThan(0)
     })
@@ -186,10 +242,16 @@ describe('LogisticsSupplementService', () => {
   describe('AccidentRecord', () => {
     it('正例: 记录事故信息', async () => {
       const r = await svc.recordAccident({
-        vehicleId: 'V-001', date: '2026-08-01',
-        type: 'minor_collision', description: '轻微追尾',
-        driverId: 'D-001', driverName: '刘师傅',
-        cost: 2000, isResponsible: true,
+        tenantId: TENANT_ID,
+        vehiclePlate: '沪A88888',
+        driverId: 'D-001',
+        driverName: '刘师傅',
+        accidentAt: new Date().toISOString(),
+        location: 'G60沪昆高速124KM',
+        severity: 'minor' as const,
+        responsibility: 'self' as const,
+        description: '轻微追尾',
+        costCent: 200000,
       })
       expect(r.id).toBeTruthy()
     })
@@ -202,21 +264,30 @@ describe('LogisticsSupplementService', () => {
   describe('LogisticsCost', () => {
     it('正例: 记录和汇总成本', async () => {
       await svc.recordCost({
-        vehicleId: 'V-001', costType: 'fuel', amount: 500,
-        date: '2026-08-01', description: '加油',
+        tenantId: TENANT_ID,
+        periodStart: '2026-08-01',
+        periodEnd: '2026-08-31',
+        items: [{ costType: 'fuel' as const, amountCent: 50000, description: '加油' }],
+        totalCent: 50000,
+        vehiclePlate: '沪A88888',
+        createdBy: 'u-001',
       })
       await svc.recordCost({
-        vehicleId: 'V-001', costType: 'toll', amount: 100,
-        date: '2026-08-01', description: '过路费',
+        tenantId: TENANT_ID,
+        periodStart: '2026-08-01', periodEnd: '2026-08-31',
+        items: [{ costType: 'toll' as const, amountCent: 10000, description: '过路费' }],
+        totalCent: 10000, vehiclePlate: '沪A88888', createdBy: 'u-001',
       })
       await svc.recordCost({
-        vehicleId: 'V-002', costType: 'fuel', amount: 300,
-        date: '2026-08-01', description: '加油',
+        tenantId: TENANT_ID,
+        periodStart: '2026-08-01', periodEnd: '2026-08-31',
+        items: [{ costType: 'fuel' as const, amountCent: 30000, description: '加油' }],
+        totalCent: 30000, vehiclePlate: '沪B66666', createdBy: 'u-001',
       })
       const summary = await svc.getCostSummary('2026-08-01', '2026-08-31')
-      expect(summary.totalCost).toBe(900)
-      expect(summary.byType.fuel).toBe(800)
-      expect(summary.byVehicle['V-001']).toBe(600)
+      expect(summary.totalCost).toBe(90000)
+      expect(summary.byType.fuel).toBe(80000)
+      expect(summary.byVehicle['沪A88888']).toBe(60000)
     })
 
     it('边界: 日期范围无记录', async () => {

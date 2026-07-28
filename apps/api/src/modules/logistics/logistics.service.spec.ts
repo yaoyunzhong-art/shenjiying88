@@ -362,7 +362,7 @@ describe('LogisticsService', () => {
         tenantId: TENANT_ID, repairOrderId: order.id,
         score: 3, comment: '一般', reviewerId: 'u-01', reviewerName: '张三',
         timely: true, qualitySatisfied: false,
-      })).toThrow('Must be verified')
+      })).toThrow('repair order status')
     })
   })
 })

@@ -82,7 +82,7 @@ describe('InventoryAlertService', () => {
       expect(summary.lowCount).toBe(4)
       expect(summary.criticalCount).toBe(3)
       expect(summary.overstockCount).toBe(3)
-      expect(summary.pending + summary.resolved + summary.ignored).toBe(summary.total)
+      expect(summary.pending + summary.resolvedCount + summary.ignoredCount).toBe(summary.total)
     })
   })
 

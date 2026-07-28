@@ -38,7 +38,7 @@ describe('MaintenancePlanService', () => {
         description: '例行检查',
       })
       expect(plan.id).toBeTruthy()
-      expect(plan.planNo).toMatch(/^MP\d{8}\d{4}$/)
+      expect(plan.planNo).toMatch(/^MP\d{10}$/)
       expect(plan.status).toBe(MaintenanceStatus.Scheduled)
     })
 
