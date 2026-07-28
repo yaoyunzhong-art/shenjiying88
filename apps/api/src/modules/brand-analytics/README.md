@@ -14,6 +14,12 @@
 - **报告生成** — 周期性品牌分析报告自动生成
 - **ROI 计算** — 成本/营收/ROI/ROAS/净利
 - **市场占比** — 品牌市场占有率排名
+- **综合查询** — 单接口聚合 KPI/归因/声量/健康/内容
+- **品牌对比** — 多品牌 KPI 与健康度横向对比
+- **竞品对比** — 主品牌 vs 竞品差异分析
+- **热门内容** — 按类型/平台筛选品牌热门内容
+- **健康度趋势** — 月度健康度变化趋势可视化
+- **内容建议** — 内容优化建议
 
 边界约束:
 - ❌ 不处理广告投放或渠道对接（仅在内部模拟计算）
@@ -56,12 +62,16 @@
 ```
 apps/api/src/modules/brand-analytics/
 ├── brand-analytics.module.ts       — NestJS 模块定义
-├── brand-analytics.controller.ts   — REST 控制器 (15 端点)
+├── brand-analytics.controller.ts   — REST 控制器 (21 端点)
 ├── brand-analytics.service.ts      — 业务逻辑 (内置 Mock Map)
 ├── brand-analytics.dto.ts          — class-validator DTO
 ├── brand-analytics.entity.ts       — 实体类型定义
 ├── ACCEPTANCE.md                   — 验收标准
 ├── README.md                       — 本文件
+├── index.ts                        — 模块导出入口
+├── brand-analytics.controller.spec.ts — 控制器单元测试
+├── brand-analytics.service.spec.ts    — 服务层单元测试
+├── brand-analytics.dto.spec.ts        — DTO 校验测试
 └── __tests__/
     └── brand-analytics.e2e-spec.ts  — E2E 集成测试 (8 业务域, 14 组)
 ```
@@ -74,27 +84,27 @@ apps/api/src/modules/brand-analytics/
 
 | 方法 | 路由 | 认证 | 描述 |
 |------|------|------|------|
-| GET | `/brand-analytics/kpi/:brandId` | IdentityAccessGuard | KPI 查询 |
-| POST | `/brand-analytics/kpi` | IdentityAccessGuard | KPI 记录 |
-| GET | `/brand-analytics/attribution/:brandId` | IdentityAccessGuard | 渠道归因 |
-| GET | `/brand-analytics/attribution/:brandId/compare` | IdentityAccessGuard | 归因模型对比 |
-| GET | `/brand-analytics/mentions/:brandId` | IdentityAccessGuard | 品牌声量 |
-| POST | `/brand-analytics/mentions` | IdentityAccessGuard | 声量记录 |
-| GET | `/brand-analytics/health/:brandId` | IdentityAccessGuard | 健康度 |
-| PATCH | `/brand-analytics/health/:brandId` | IdentityAccessGuard | 更新健康度 |
-| GET | `/brand-analytics/content/:brandId` | IdentityAccessGuard | 内容表现 |
-| POST | `/brand-analytics/content` | IdentityAccessGuard | 内容记录 |
-| POST | `/brand-analytics/report/:brandId` | IdentityAccessGuard | 生成报告 |
-| GET | `/brand-analytics/reports/:brandId` | IdentityAccessGuard | 报告列表 |
-| GET | `/brand-analytics/report/:id` | IdentityAccessGuard | 报告详情 |
-| GET | `/brand-analytics/roi/:brandId` | IdentityAccessGuard | ROI 计算 |
-| GET | `/brand-analytics/market-share` | IdentityAccessGuard | 市场占比 |
-| GET | `/brand-analytics/analytics/:brandId` | IdentityAccessGuard | 综合查询 |
-| POST | `/brand-analytics/compare` | IdentityAccessGuard | 品牌对比 |
-| POST | `/brand-analytics/competitors` | IdentityAccessGuard | 竞品对比 |
-| GET | `/brand-analytics/top-content/:brandId` | IdentityAccessGuard | 热门内容 |
-| GET | `/brand-analytics/health/:brandId/trend` | IdentityAccessGuard | 健康度趋势 |
-| GET | `/brand-analytics/content-suggestions/:contentId` | IdentityAccessGuard | 内容建议 |
+| GET | `/brand-analytics/kpi/:brandId` | TrafficGovernanceGuard | KPI 查询 |
+| POST | `/brand-analytics/kpi` | TrafficGovernanceGuard | KPI 记录 |
+| GET | `/brand-analytics/attribution/:brandId` | TrafficGovernanceGuard | 渠道归因 |
+| GET | `/brand-analytics/attribution/:brandId/compare` | TrafficGovernanceGuard | 归因模型对比 |
+| GET | `/brand-analytics/mentions/:brandId` | TrafficGovernanceGuard | 品牌声量 |
+| POST | `/brand-analytics/mentions` | TrafficGovernanceGuard | 声量记录 |
+| GET | `/brand-analytics/health/:brandId` | TrafficGovernanceGuard | 健康度 |
+| PATCH | `/brand-analytics/health/:brandId` | TrafficGovernanceGuard | 更新健康度 |
+| GET | `/brand-analytics/content/:brandId` | TrafficGovernanceGuard | 内容表现 |
+| POST | `/brand-analytics/content` | TrafficGovernanceGuard | 内容记录 |
+| POST | `/brand-analytics/report/:brandId` | TrafficGovernanceGuard | 生成报告 |
+| GET | `/brand-analytics/reports/:brandId` | TrafficGovernanceGuard | 报告列表 |
+| GET | `/brand-analytics/report/:id` | TrafficGovernanceGuard | 报告详情 |
+| GET | `/brand-analytics/roi/:brandId` | TrafficGovernanceGuard | ROI 计算 |
+| GET | `/brand-analytics/market-share` | TrafficGovernanceGuard | 市场占比 |
+| GET | `/brand-analytics/analytics/:brandId` | TrafficGovernanceGuard | 综合查询 |
+| POST | `/brand-analytics/compare` | TrafficGovernanceGuard | 品牌对比 |
+| POST | `/brand-analytics/competitors` | TrafficGovernanceGuard | 竞品对比 |
+| GET | `/brand-analytics/top-content/:brandId` | TrafficGovernanceGuard | 热门内容 |
+| GET | `/brand-analytics/health/:brandId/trend` | TrafficGovernanceGuard | 健康度趋势 |
+| GET | `/brand-analytics/content-suggestions/:contentId` | TrafficGovernanceGuard | 内容建议 |
 
 ### 核心数据结构
 
@@ -148,6 +158,41 @@ interface ROICalculation {
 }
 ```
 
+### 新增端点请求/响应
+
+#### 综合查询
+```bash
+GET /brand-analytics/analytics/:brandId?startDate=2026-01-01&endDate=2026-12-31&granularity=month
+```
+返回 `{ kpis, attribution, mentions, health, content }` 全部维度。
+
+#### 品牌对比
+```bash
+POST /brand-analytics/compare
+{ "brandIds": ["brand-1","brand-2"], "startDate": "2026-01-01", "endDate": "2026-12-31" }
+```
+
+#### 竞品对比
+```bash
+POST /brand-analytics/competitors
+{ "brandId": "brand-1", "competitorIds": ["comp-1","comp-2"], "startDate": "2026-01-01", "endDate": "2026-12-31" }
+```
+
+#### 热门内容
+```bash
+GET /brand-analytics/top-content/:brandId?contentType=video&platform=douyin&startDate=2026-01-01&endDate=2026-12-31
+```
+
+#### 健康度趋势
+```bash
+GET /brand-analytics/health/:brandId/trend?months=6
+```
+
+#### 内容建议
+```bash
+GET /brand-analytics/content-suggestions/:contentId
+```
+
 ═══════════════════════════════════════
 箍五: 配置项
 ═══════════════════════════════════════
@@ -160,6 +205,9 @@ interface ROICalculation {
 | 支持平台 | 6 个 | weibo/douyin/xiaohongshu/bilibili/wechat/zhihu |
 | 报告类型 | 4 种 | daily/weekly/monthly/quarterly |
 | 默认健康度 | 78 分 | 初始化 default 数据 |
+| 内容类型 | 5 种 | image/video/article/live/audio |
+| 粒度选项 | 3 种 | day/week/month |
+| 守卫类型 | TrafficGovernanceGuard | 流量治理守卫 |
 
 > 当前使用内存 Map 存储模拟数据，生产环境应接入数据库/数据仓库。
 
@@ -169,7 +217,7 @@ interface ROICalculation {
 
 | 依赖方向 | 模块/组件 | 说明 |
 |----------|-----------|------|
-| 上游依赖 | `IdentityAccessGuard` | 身份访问守卫 |
+| 上游依赖 | `TrafficGovernanceGuard` | 流量治理守卫 |
 | 上游依赖 | `class-validator` / `class-transformer` | DTO 校验 |
 | 内部依赖 | `BrandAnalyticsService` | 所有业务逻辑 |
 | 下游消费 | 无（独立模块） | 暂不对外暴露 |
@@ -242,3 +290,59 @@ curl -X POST http://localhost:3000/api/brand-analytics/report/brand-1 \
 curl http://localhost:3000/api/brand-analytics/market-share \
   -H "x-identity-id: user-demo"
 ```
+
+### 综合查询
+
+```bash
+curl "http://localhost:3000/api/brand-analytics/analytics/brand-1?startDate=2026-01-01&endDate=2026-12-31&granularity=month" \
+  -H "x-identity-id: user-demo"
+```
+
+### 品牌对比
+
+```bash
+curl -X POST http://localhost:3000/api/brand-analytics/compare \
+  -H "Content-Type: application/json" \
+  -H "x-identity-id: user-demo" \
+  -d '{"brandIds": ["brand-1","brand-2"], "startDate": "2026-01-01", "endDate": "2026-12-31"}'
+```
+
+### 竞品对比
+
+```bash
+curl -X POST http://localhost:3000/api/brand-analytics/competitors \
+  -H "Content-Type: application/json" \
+  -H "x-identity-id: user-demo" \
+  -d '{"brandId": "brand-1", "competitorIds": ["comp-1","comp-2"], "startDate": "2026-01-01", "endDate": "2026-12-31"}'
+```
+
+### 热门内容
+
+```bash
+curl "http://localhost:3000/api/brand-analytics/top-content/brand-1?contentType=video&platform=douyin&startDate=2026-01-01&endDate=2026-12-31" \
+  -H "x-identity-id: user-demo"
+```
+
+### 健康度趋势
+
+```bash
+curl "http://localhost:3000/api/brand-analytics/health/brand-1/trend?months=6" \
+  -H "x-identity-id: user-demo"
+```
+
+### 内容建议
+
+```bash
+curl "http://localhost:3000/api/brand-analytics/content-suggestions/content-1" \
+  -H "x-identity-id: user-demo"
+```
+
+═══════════════════════════════════════
+箍八: 测试状态
+═══════════════════════════════════════
+
+- 4 test files, 64 tests, all ✅
+- DTO 校验: 13 个 DTO 类全部验证通过
+- 控制器: 15 端点路由绑定确认
+- 服务: 17 个单测覆盖 KPI/归因/声量/健康/内容/报告/ROI/市场
+- E2E: 14 组集成测试覆盖 8 个业务域完整链路

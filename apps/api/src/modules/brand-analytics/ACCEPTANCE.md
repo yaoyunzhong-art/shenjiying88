@@ -3,7 +3,7 @@
 ## 一、模块完整性
 
 - [x] `brand-analytics.module.ts` — NestJS 模块定义、导入/导出依赖
-- [x] `brand-analytics.controller.ts` — REST 控制器（13+ 端点）
+- [x] `brand-analytics.controller.ts` — REST 控制器（21 端点）
 - [x] `brand-analytics.service.ts` — 业务逻辑层（内置 Mock 数据）
 - [x] `brand-analytics.dto.ts` — 请求 DTO 定义（class-validator）
 - [x] `brand-analytics.entity.ts` — 实体/类型定义
@@ -36,7 +36,7 @@
 
 ## 三、认证与守卫
 
-- [x] 控制器级别 `IdentityAccessGuard` 保护
+- [x] 控制器级别 `TrafficGovernanceGuard` 保护
 - [x] 全局 `ValidationPipe` 请求校验
 
 ## 四、DTO 校验
@@ -46,8 +46,14 @@
 - [x] `TrackMentionDto` — 品牌声量录入
 - [x] `UpdateHealthDto` — 健康度部分更新
 - [x] `TrackContentDto` — 内容表现录入
-- [x] `GenerateReportDto` — 报告类型枚举
+- [x] `GenerateReportDto` — 报告类型
 - [x] `ROIDto` — ROI 时间范围参数
+- [x] `AnalyticsQueryDto` — 综合查询参数（不包含 brandId，分离自 @Param）
+- [x] `CompareBrandsDto` — 品牌对比（2~10 brandIds）
+- [x] `CompetitorQueryDto` — 竞品对比
+- [x] `TopContentQueryDto` — 热门内容筛选
+- [x] `HealthTrendQueryDto` — 健康度趋势月数
+- [x] `ContentSuggestionsDto` — 内容建议筛选
 
 ## 五、模块边界
 
@@ -61,4 +67,6 @@
 - [x] 服务层单元测试 — `brand-analytics.service.spec.ts`（17 tests, all ✅）
 - [x] 控制器单元测试 — `brand-analytics.controller.spec.ts` 覆盖 15 端点路由绑定
 - [x] DTO 校验测试 — `brand-analytics.dto.spec.ts` 覆盖枚举、日期格式、必填字段
-- [x] E2E 集成测试 — `__tests__/brand-analytics.e2e-spec.ts` (14 组, 覆盖全部 8 个业务域)
+- [x] E2E 集成测试 — `__tests__/brand-analytics.e2e-spec.ts`（14 组, 覆盖全部 8 个业务域）
+
+**总量: 64 tests, all ✅**
