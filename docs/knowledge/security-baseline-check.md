@@ -1,34 +1,34 @@
 # 🔐 安全基线检查报告
 
-> 扫描时间: 2026-07-28 07:30 CST
+> 扫描时间: 2026-07-29 07:30 CST
 > 项目: shenjiying88 (V23+)
-> 基线版本: v2.4
+> 基线版本: v2.5
 > 检查模式: 每日自动化
 
 ---
 
 ## 1️⃣ AuthGuard 覆盖率
 
-**状态: 🟢 全覆盖 (224/224, 100%) ↑**
+**状态: 🟢 全覆盖 (228/228, 100%) → 稳定**
 
 | 维度 | 结果 |
 |------|:----:|
 | 全局 Guard | ✅ `IdentityAccessGuard` (APP_GUARD) + `TrafficGovernanceGuard` |
 | 默认策略 | ✅ **默认拒绝** — 无 `@Public()`/`@Roles`/`@Permissions` 时抛出 `UnauthorizedException` |
-| Controller 总数 | **224 个** |
-| 实际有 Guard 标注 | **224 个** ✅ (含 9 个 V17 规范重导出文件, 其目标 controller 均已标注) |
+| Controller 总数 | **228 个** |
+| 实际有 Guard 标注 | **228 个** ✅ (含 10 个 V17 规范重导出文件, 其目标 controller 均已标注) |
 | 未标注 | **0 个** ✅ |
 
-> 💡 **补充说明**: 07-27 报告中统计的 9 个"未标注控制器"均为 V17 模块补齐的 `export { ... } from` 重导出文件（如 `chaos.controller.ts → chaos-engineering.controller.ts`、`cdn-cache.controller.ts → cdn.controller.ts`），其实际目标 controller 均已正确标注 `@UseGuards`。现修正统计方法: 按实际 NestJS 注册的 Controller 计算，覆盖率为 100%。
+> 💡 **补充说明**: 10 个"未标注控制器"均为 V17 模块补齐的 `export { ... } from` 重导出文件（如 `chaos.controller.ts → chaos-engineering.controller.ts`、`cdn-cache.controller.ts → cdn.controller.ts`），其实际目标 controller 均已正确标注 `@UseGuards`。按实际 NestJS 注册的 Controller 计算，覆盖率为 100%。
 
 ```json
 {
   "status": "deny_by_default",
-  "controllers_total": 224,
-  "controllers_labeled": 224,
+  "controllers_total": 228,
+  "controllers_labeled": 228,
   "controllers_unlabeled": 0,
   "coverage_pct": 100.00,
-  "trend": "improved",
+  "trend": "stable",
   "risk": "low"
 }
 ```
@@ -290,25 +290,25 @@
 
 | # | 基线项目 | 状态 | 风险 | 趋势 |
 |---|---------|:----:|:----:|:----:|
-| 1 | AuthGuard 覆盖率 | 🟢 100% (224/224) | **极低** | 📈 **大幅改善** (修正统计: 按实际 NestJS Controller, 实际全覆盖) |
+| 1 | AuthGuard 覆盖率 | 🟢 100% (228/228) | **极低** | → 稳定 (已全覆盖) |
 | 2 | RateLimit 实现 | 🟢 双层限流 + 持久化 | **低** | → 稳定 |
 | 3 | RLS 多租户隔离 | 🟡 中间件就绪, 策略仅 9 表 | **中** | → 稳定 |
-| 4 | tenant_id 完整性 | 🟡 83/116 (71.6%) | **中** | → 稳定 (统计口径稳定) |
+| 4 | tenant_id 完整性 | 🟡 83/116 (71.6%) | **中** | → 稳定 |
 | 5 | deviceToken 安全 | 🟡 ai-push-task 仍全内存 | **中** | → 稳定 |
 | 6 | Lua 沙箱 | 🟢 无运行时 | **低** | → 稳定 |
 | 7 | 合规检查 | 🟢 六维全栈完整, E2E 全绿 | **低** | → 稳定 |
-| 8 | 未成年保护 | 🟡 后端已交付, 待 DB 迁移+接入 | **中** | → 稳定 (自 07-25 新增以来) |
+| 8 | 未成年保护 | 🟡 后端已交付, 待 DB 迁移+接入 | **中** | → 稳定 |
 
 | 指标 | 值 | 趋势 |
 |------|:---:|:----:|
 | 高风险项目 | **0 项** | → |
-| 中等风险 | **4 项** | → |
-| 新改善 | **1 项** (AuthGuard 100% ✅) | 📈 |
+| 中等风险 | **4 项** (RLS, tenant_id, deviceToken, 未成年保护) | → |
+| 新改善 | **0 项** | → |
 | 新退化 | **0 项** | → |
 
 ---
 
-## ⚠️ 今日建议 (2026-07-28)
+## ⚠️ 今日建议 (2026-07-29)
 
 ### P0 — 本周处理
 
@@ -337,6 +337,7 @@
 
 | 版本 | 日期 | 变更 |
 |:----:|:----:|------|
+| v2.5 | 2026-07-29 | **每日更新**: 状态确认无变化 — 8 项基线均维持昨日状态; 无新增退化; AuthGuard 228/228 (100%) 稳定; 4 项中风险 (RLS/tenant_id/deviceToken/未成年保护) 保持待修复状态 |
 | v2.4 | 2026-07-28 | **AuthGuard 统计修正**: 224/224 = 100% (原 9 个"未标注"均为 V17 重导出, 目标 controller 已标注 ✅); tenantId 83/116 (71.6%) — 统计口径对齐 prisma schema; 新增合规 E2E 执行结果确认 (8 tests passed); 未成年保护待 DB migration/注册对接状态维持 |
 | v2.3 | 2026-07-27 | Controller 224 (+7); AuthGuard 95.98% ↑ (birthday/open-platform 已补 Guard); Prisma model 117; tenantId 83/117 (70.9%) ↑; **新增 MinorProtectionModule**; Birthday 模块已补 tenantId ✅ |
 | v2.2 | 2026-07-24 | Controller 217; Prisma model 91; tenantId 42/91 (46.2%); 11 个未标注 controller |
@@ -345,4 +346,4 @@
 
 ---
 
-*下次检查: 2026-07-29 (每日自动化)*
+*下次检查: 2026-07-30 (每日自动化)*
