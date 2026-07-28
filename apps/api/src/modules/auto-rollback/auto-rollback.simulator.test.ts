@@ -259,23 +259,23 @@ describe('🔄 AutoRollback Simulator', () => {
       assert.equal(snapshot, undefined);
     });
 
-    it('should create snapshot with correct kind', async () => {
+    it('should create snapshot with correct kind during sync execution', async () => {
+      // 使用 executeRollbackSync 设置特定 kind
+      service.configure({ criticalRequiresConfirm: false });
       const record = service.trigger({
         reason: 'DB snapshot test',
-        severity: 'WARNING',
+        severity: 'CRITICAL',
         metricKey: 'test.db',
         anomalyValue: 110,
         baselineValue: 100,
-        snapshotKind: 'DB',
       });
 
-      await new Promise((r) => setTimeout(r, 100));
-      const completed = service.getRecord(record.id);
-      assert.ok(completed);
-      assert.ok(completed.snapshotId);
-      const snapshot = service.getSnapshot(completed.snapshotId);
+      const result = await service.executeRollbackSync(record.id, 'DB');
+      assert.ok(result);
+      assert.ok(result.snapshotId);
+      const snapshot = service.getSnapshot(result.snapshotId);
       assert.ok(snapshot);
-      assert.equal(snapshot.kind, 'FULL'); // executeRollback defaults to FULL
+      assert.equal(snapshot.kind, 'DB');
     });
   });
 
