@@ -57,6 +57,11 @@ export class CreateTransportOrderDto {
   @IsOptional() @IsString() @MaxLength(100) createdByName?: string
 }
 
+export class UpdateTransportOrderStatusDto {
+  @IsEnum(['draft','pending_approval','approved','dispatched','loading','in_transit','arrived','unloading','completed','cancelled'] as const)
+  status!: TransportOrderStatus
+}
+
 export class UpdateTransportOrderDto {
   @IsOptional() @IsEnum(['draft','pending_approval','approved','dispatched','loading','in_transit','arrived','unloading','completed','cancelled'] as const) status?: TransportOrderStatus
   @IsOptional() @IsString() @MaxLength(50) driverId?: string

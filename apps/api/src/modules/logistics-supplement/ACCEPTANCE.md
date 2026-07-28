@@ -52,7 +52,8 @@ logistics-supplement/
 ├── logistics-supplement.service.ts       # 业务逻辑 (内存 Map 存储)
 ├── logistics-supplement.entity.ts        # 实体/接口/类型定义
 ├── logistics-supplement.dto.ts           # DTO 验证 (class-validator)
-├── logistics-supplement.service.spec.ts  # Service 测试 (16 tests)
+├── logistics-supplement.service.spec.ts  # Service 基础测试 (16 tests)
+├── logistics-supplement.service.supplement.spec.ts  # Service 补充测试 (32 tests)
 ├── ACCEPTANCE.md                         # 本文件
 ├── README.md                             # 模块文档
 └── __tests__/
@@ -62,6 +63,6 @@ logistics-supplement/
 ## 测试通过率
 
 ```
-✓ 2 test files passed
-✓ 45 tests passed
+✓ 3 test files passed
+✓ 77 tests passed
 ```
