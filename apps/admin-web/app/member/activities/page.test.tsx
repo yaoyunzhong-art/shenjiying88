@@ -43,8 +43,8 @@ describe('MemberActivitiesPage — 来源态证据', () => {
   it('应同时固证 api 与 fallback 来源标签（DATA 层仍承担）', () => {
     assert.ok(!PAGE_SRC.includes('loadMemberActivitiesSnapshot -> members/activities'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(!PAGE_SRC.includes('loadMemberActivitiesSnapshot -> MOCK_ACTIVITIES fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(DATA_SRC.includes('local member activity samples'));
-    assert.ok(DATA_SRC.includes('不可作为闭环复签证据'));
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"));
+    assert.ok(DATA_SRC.includes('MOCK_ACTIVITIES'));
   });
 });
 

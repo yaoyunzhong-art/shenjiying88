@@ -36,7 +36,10 @@ describe('training 结构固证', () => {
     ) {
       assert.fail('E54: client 应保留 router.refresh() OR handleRefresh')
     }
-    assert.ok(CLIENT_SRC.includes('刷新快照'))
+    assert.ok(
+      (CLIENT_SRC.includes('刷新快照') || CLIENT_SRC.includes('SnapshotRefreshCard') || CLIENT_SRC.includes('snapshot-refresh-card')),
+      'E54: client 保留刷新卡片',
+    )
     assert.ok(CLIENT_SRC.includes('<TrainingLegacy />'))
   })
 

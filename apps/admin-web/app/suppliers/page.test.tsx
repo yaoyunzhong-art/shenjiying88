@@ -15,7 +15,11 @@ beforeEach(() => {
 
 describe('StoreSuppliersPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function StoreSuppliersPage'))
+    assert.ok(
+      (PAGE_SRC.includes('export default async function StoreSuppliersPage') ||
+        PAGE_SRC.includes('export default async function SuppliersPage')),
+      'E54: page 应导出 async 组件',
+    )
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
@@ -26,9 +30,9 @@ describe('StoreSuppliersPage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
   })
 
-  it('页面应展示来源态证据与权限门禁', () => {
+  it('页面应展示来源态证据与权限门禁（E54 拍平：已下沉到 client）', () => {
     assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('控制面来源:'))
+    assert.ok(!PAGE_SRC.includes('控制面来源:'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('{sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')

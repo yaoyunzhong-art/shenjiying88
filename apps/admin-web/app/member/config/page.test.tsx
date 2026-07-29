@@ -30,14 +30,16 @@ describe('MemberConfigPage — 服务端壳层', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
-  it('页面应区分 api 与 fallback 来源说明', () => {
+  it('页面应区分 api 与 fallback 来源说明（E54 拍平：已下沉到 client）', () => {
     assert.ok(
-      PAGE_SRC.includes('loadMemberConfigSnapshot -> api/member/config + api/member/config/history')
+      !PAGE_SRC.includes('loadMemberConfigSnapshot -> api/member/config + api/member/config/history'),
+      'E54 拍平：sourceEvidence 应已下沉到 client'
     )
     assert.ok(
-      PAGE_SRC.includes(
+      !PAGE_SRC.includes(
         'loadMemberConfigSnapshot -> DEFAULT_MEMBER_CONFIG + DEFAULT_MEMBER_CONFIG_HISTORY'
-      )
+      ),
+      'E54 拍平：sourceEvidence 应已下沉到 client'
     )
   })
 })

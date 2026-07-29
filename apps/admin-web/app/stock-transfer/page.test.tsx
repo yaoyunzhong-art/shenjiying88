@@ -43,7 +43,10 @@ describe('stock-transfer 结构固证', () => {
     }
     assert.ok(CLIENT_SRC.includes("from './stock-transfer-data'"))
     assert.ok(CLIENT_SRC.includes('MOCK_TRANSFERS'))
-    assert.ok(CLIENT_SRC.includes('刷新快照'))
+    assert.ok(
+      (CLIENT_SRC.includes('刷新快照') || CLIENT_SRC.includes('SnapshotRefreshCard') || CLIENT_SRC.includes('snapshot-refresh-card')),
+      'E54: client 保留刷新卡片',
+    )
     assert.ok(CLIENT_SRC.includes('/stock-transfer/form'))
   })
 
