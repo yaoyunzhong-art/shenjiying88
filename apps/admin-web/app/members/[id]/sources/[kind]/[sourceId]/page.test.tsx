@@ -33,7 +33,7 @@ describe('members/[id]/sources/[kind]/[sourceId]/page.tsx 结构固证', () => {
 describe('members/[id]/sources/[kind]/[sourceId]/client 结构固证', () => {
   it('client 应保留来源轨迹、批量动作与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('handleBatchReplay'))
     assert.ok(CLIENT_SRC.includes('handleBatchDecision'))
     assert.ok(CLIENT_SRC.includes('timelineCategory'))

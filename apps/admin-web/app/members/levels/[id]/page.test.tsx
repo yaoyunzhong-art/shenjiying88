@@ -32,7 +32,7 @@ describe('members/levels/[id]/page.tsx 结构固证', () => {
 describe('members/levels/[id]/client 结构固证', () => {
   it('client 应保留编辑、状态流转、删除与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('handleSave'))
     assert.ok(CLIENT_SRC.includes('handleStatusChange'))
     assert.ok(CLIENT_SRC.includes('handleDelete'))

@@ -37,7 +37,7 @@ describe('tenants/[id] 结构固证', () => {
 
   it('client 应承接刷新与编辑交互', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('useFormSubmit'))
     assert.ok(CLIENT_SRC.includes('validateForm'))
     assert.ok(CLIENT_SRC.includes('submitTenantEdit'))

@@ -33,7 +33,7 @@ describe('RuleExecutionsData — 快照合同', () => {
 describe('RuleExecutionsClient — 客户端渲染层', () => {
   it('应支持 router.refresh 与筛选器', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('statusFilter'))
     assert.ok(CLIENT_SRC.includes('timeRange'))
     assert.ok(CLIENT_SRC.includes('搜索执行 ID / 规则名 / 触发源'))

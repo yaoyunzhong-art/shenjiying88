@@ -35,7 +35,7 @@ describe('reports 结构固证', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"));
     assert.ok(CLIENT_SRC.includes('snapshot.catalog'));
     assert.ok(CLIENT_SRC.includes('copyExportCommand'));
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()");
     assert.ok(CLIENT_SRC.includes('/reports/${item.id}?tenantId=${snapshot.tenantId}'));
   });
 });

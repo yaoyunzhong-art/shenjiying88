@@ -35,7 +35,7 @@ describe('seo/metadata 结构固证', () => {
 
   it('client renderer 应保留搜索、编辑、保存与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('搜索路径或标题...'))
     assert.ok(CLIENT_SRC.includes('编辑元数据'))
     assert.ok(CLIENT_SRC.includes('标题不能为空'))

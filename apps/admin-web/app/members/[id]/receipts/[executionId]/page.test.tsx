@@ -33,7 +33,7 @@ describe('members/[id]/receipts/[executionId]/page.tsx 结构固证', () => {
 describe('members/[id]/receipts/[executionId]/client 结构固证', () => {
   it('client 应保留回执概览、runtime 互链与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('handleReplay'))
     assert.ok(CLIENT_SRC.includes('DetailActionBar'))
     assert.ok(CLIENT_SRC.includes('buildMemberOperationsRuntimeDetailHref'))

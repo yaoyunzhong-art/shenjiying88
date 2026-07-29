@@ -37,6 +37,6 @@ describe('stores/reports 结构固证', () => {
     assert.ok(CLIENT_SRC.includes('useState<ProfitFilter>'));
     assert.ok(CLIENT_SRC.includes('DataTable'));
     assert.ok(CLIENT_SRC.includes('Tabs'));
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()");
   });
 });

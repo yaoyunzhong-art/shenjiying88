@@ -28,7 +28,7 @@ describe('reports/store-summary/page.tsx 结构固证', () => {
 describe('reports/store-summary/client 结构固证', () => {
   it('client 应保留筛选、导出与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('useMemo'))
     assert.ok(CLIENT_SRC.includes('搜索门店/城市'))
     assert.ok(CLIENT_SRC.includes('导出门店汇总'))

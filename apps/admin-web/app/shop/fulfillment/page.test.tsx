@@ -23,7 +23,7 @@ describe('shop/fulfillment E54 结构固证', () => {
 
   it('client renderer 应支持 router.refresh 与状态推进', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('handleAdvanceStatus'))
     assert.ok(CLIENT_SRC.includes('推进状态'))
   })

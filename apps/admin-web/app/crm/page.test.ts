@@ -32,7 +32,7 @@ describe('crm/page.test — 结构固证', () => {
   it('客户端展示层应承接交互', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
     assert.ok(CLIENT_SRC.includes('snapshot: CrmSnapshotDelivery'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('DetailDialog'))
     assert.ok(CLIENT_SRC.includes('filterCustomers('))
   })

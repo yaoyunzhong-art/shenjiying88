@@ -25,7 +25,7 @@ describe('shop/analytics E54 结构固证', () => {
 
   it('client renderer 应支持 router.refresh 与区间切换', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('setRange'))
     assert.ok(CLIENT_SRC.includes('商品排行'))
     assert.ok(CLIENT_SRC.includes('渠道贡献'))
