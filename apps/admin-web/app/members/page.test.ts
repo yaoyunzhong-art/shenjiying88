@@ -36,7 +36,7 @@ describe('members 来源态固证', () => {
     assert.ok(CLIENT_SRC.includes('useSortedItems'));
     assert.ok(CLIENT_SRC.includes('useSearchFilter'));
     assert.ok(CLIENT_SRC.includes('Pagination'));
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()");
   });
 
   it('client 应保留 capability gating 与详情跳转链路', () => {

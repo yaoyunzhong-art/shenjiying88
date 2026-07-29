@@ -37,7 +37,7 @@ describe('inventory/rules 来源态固证', () => {
     assert.ok(CLIENT_SRC.includes('buildRefreshPath'));
     assert.ok(CLIENT_SRC.includes('setTenantId'));
     assert.ok(CLIENT_SRC.includes('router.replace(nextPath)'));
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()");
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新快照'"));
   });
 

@@ -17,18 +17,18 @@ describe('AiCs page structure', () => {
     assert.ok(PAGE_SRC.includes('<AiCsClient snapshot={snapshot} />'))
   })
 
-  it('page 应展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {snapshot.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {snapshot.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {snapshot.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {snapshot.sourceLabel}'))
+  it('page 应展示来源态证据（E54 拍平：已下沉到 client）', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {snapshot.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('控制面来源: {snapshot.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('刷新路径: {snapshot.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {snapshot.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('client 应保留交互并通过 router.refresh 刷新', () => {
     assert.ok(CLIENT_SRC.includes('"use client"'))
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes("'刷新中...' : '刷新快照'"))
   })
 

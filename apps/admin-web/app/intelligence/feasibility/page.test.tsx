@@ -101,7 +101,7 @@ describe('FeasibilityClient — 客户端展示层', () => {
     assert.ok(CLIENT_SRC.includes('usePathname'))
     assert.ok(CLIENT_SRC.includes('URLSearchParams'))
     assert.ok(CLIENT_SRC.includes('router.replace(`${pathname}?${params.toString()}`)'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
   })
 
   it('客户端组件应保留报告、设备、风险、预算对比和财务全景渲染', () => {

@@ -37,7 +37,7 @@ describe('stock-transfer/[id] 结构固证', () => {
 
   it('client 应承接刷新、详情渲染与状态交互', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('useFormSubmit'))
     assert.ok(CLIENT_SRC.includes('Timeline'))
     assert.ok(CLIENT_SRC.includes('STATUS_FLOW'))

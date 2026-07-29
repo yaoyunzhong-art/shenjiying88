@@ -40,11 +40,11 @@ describe('MemberActivitiesPage — 来源态证据', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
-  it('应同时固证 api 与 fallback 来源标签', () => {
+  it('应同时固证 api 与 fallback 来源标签（DATA 层仍承担）', () => {
     assert.ok(!PAGE_SRC.includes('loadMemberActivitiesSnapshot -> members/activities'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(!PAGE_SRC.includes('loadMemberActivitiesSnapshot -> MOCK_ACTIVITIES fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(PAGE_SRC.includes('local member activity samples'));
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'));
+    assert.ok(DATA_SRC.includes('local member activity samples'));
+    assert.ok(DATA_SRC.includes('不可作为闭环复签证据'));
   });
 });
 
@@ -76,7 +76,7 @@ describe('MemberActivitiesClient — 客户端展示层', () => {
 
   it('客户端组件应支持刷新并透出 fallback 错误', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh");
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()");
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"));
     assert.ok(CLIENT_SRC.includes('snapshot.error'));
   });

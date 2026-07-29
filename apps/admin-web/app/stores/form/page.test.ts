@@ -12,7 +12,7 @@ describe('stores/form/page.test.ts 辅助结构固证', () => {
   it('页面源码已迁移为 E54 三层壳', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
   })
 })

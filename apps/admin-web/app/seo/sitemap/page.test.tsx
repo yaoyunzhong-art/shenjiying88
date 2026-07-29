@@ -35,7 +35,7 @@ describe('seo/sitemap 结构固证', () => {
 
   it('client renderer 应保留频率筛选、优先级渲染与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('每日'))
     assert.ok(CLIENT_SRC.includes('每周'))
     assert.ok(CLIENT_SRC.includes('每月'))

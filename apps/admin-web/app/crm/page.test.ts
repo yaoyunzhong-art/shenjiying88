@@ -22,17 +22,17 @@ describe('crm/page.test — 结构固证', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
   })
 
-  it('来源态证据应完整透出', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('loadCrmSnapshot -> crm/customers + crm/stats'))
-    assert.ok(PAGE_SRC.includes('loadCrmSnapshot -> MOCK_CRM_CUSTOMERS / MOCK_CRM_STATS fallback'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+  it('来源态证据应完整透出（E54 拍平：已下沉到 client）', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadCrmSnapshot -> crm/customers + crm/stats'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadCrmSnapshot -> MOCK_CRM_CUSTOMERS / MOCK_CRM_STATS fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('客户端展示层应承接交互', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
     assert.ok(CLIENT_SRC.includes('snapshot: CrmSnapshotDelivery'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('DetailDialog'))
     assert.ok(CLIENT_SRC.includes('filterCustomers('))
   })

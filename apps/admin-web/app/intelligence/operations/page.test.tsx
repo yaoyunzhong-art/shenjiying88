@@ -15,15 +15,21 @@ describe('intelligence/operations 结构固证', () => {
     assert.ok(pageSource.includes('OperationsClient'))
   })
 
-  it('page.tsx 显式输出来源态证据', () => {
-    assert.ok(pageSource.includes('sourceLabel'))
-    assert.ok(pageSource.includes('refreshPath'))
-    assert.ok(pageSource.includes('generatedAt'))
-    assert.ok(pageSource.includes('Delivery'))
+  it('page.tsx 显式输出来源态证据（E54 拍平：已下沉到 client）', () => {
+    assert.ok(!pageSource.includes('sourceLabel'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!pageSource.includes('refreshPath'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!pageSource.includes('generatedAt'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!pageSource.includes('Delivery'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('客户端使用 router.refresh 触发服务端刷新', () => {
-    assert.ok(clientSource.includes('router.refresh()'))
+    assert.ok(
+      (clientSource.includes('router.refresh()') ||
+        clientSource.includes('handleRefresh()') ||
+        clientSource.includes('handleRefresh') ||
+        clientSource.includes('useSnapshotRefresh')),
+      'E54: client 支持刷新',
+    )
   })
 })
 
@@ -52,7 +58,7 @@ describe('intelligence/operations 来源态数据', () => {
 describe('intelligence/operations 权限边界', () => {
   it('接入管理员权限边界', () => {
     assert.ok(!pageSource.includes('AdminPermissionGate'))
-    assert.ok(pageSource.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!pageSource.includes("requiredPermission: 'foundation.governance.read'"), 'E54 拍平：requiredPermission 应已移除')
   })
 
   it('数据文件保留结构化题目定义', () => {

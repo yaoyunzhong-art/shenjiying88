@@ -20,7 +20,7 @@ test('logistics page.test.ts 补充固证: data 保留快照合同和样本', ()
 })
 
 test('logistics page.test.ts 补充固证: client 保留刷新、筛选和详情', () => {
-  assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+  assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
   assert.ok(CLIENT_SRC.includes('activeStatus'))
   assert.ok(CLIENT_SRC.includes('配送订单列表'))
   assert.ok(CLIENT_SRC.includes('配送详情'))

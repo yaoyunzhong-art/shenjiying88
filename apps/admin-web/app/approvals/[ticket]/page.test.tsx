@@ -29,7 +29,7 @@ describe('approvals/[ticket] 结构固证', () => {
 
   it('client 应保留 router.refresh 并桥接 legacy 详情页', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('刷新快照'))
     assert.ok(CLIENT_SRC.includes('Promise.resolve({ ticket: snapshot.ticket })'))
     assert.ok(CLIENT_SRC.includes('<ApprovalDetailLegacy params={Promise.resolve({ ticket: snapshot.ticket })} />'))

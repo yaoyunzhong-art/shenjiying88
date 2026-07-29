@@ -39,7 +39,7 @@ describe('inventory/rules 结构固证', () => {
     assert.ok(CLIENT_SRC.includes('snapshot: InventoryRulesSnapshot'));
     assert.ok(CLIENT_SRC.includes('useSearchParams'));
     assert.ok(CLIENT_SRC.includes('router.replace(nextPath)'));
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()");
   });
 
   it('client renderer 应保留规则交互能力', () => {

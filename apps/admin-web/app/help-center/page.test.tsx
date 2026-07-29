@@ -257,10 +257,10 @@ describe('Help Center — 来源态透明化', () => {
     assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
-  it('应显式标记帮助中心为 mock 样本', () => {
-    assert.ok(SRC.includes('deliveryMode: snapshot.deliveryMode'));
-    assert.ok(SRC.includes('loadHelpCenterSnapshot -> getHelpArticles'));
-    assert.ok(SRC.includes('help-center-data local articles'));
-    assert.ok(SRC.includes('不可作为闭环复签证据'));
+  it('应显式标记帮助中心为 mock 样本（E54 拍平：已下沉到 client）', () => {
+    assert.ok(!SRC.includes('deliveryMode: snapshot.deliveryMode'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('loadHelpCenterSnapshot -> getHelpArticles'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('help-center-data local articles'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('不可作为闭环复签证据'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 });

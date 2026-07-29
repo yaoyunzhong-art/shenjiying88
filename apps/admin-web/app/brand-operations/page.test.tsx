@@ -44,15 +44,18 @@ describe('BrandOperationsPage — 来源态透明化', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
-  it('应同时固证 api 与 fallback 来源标签', () => {
+  it('应同时固证 api 与 fallback 来源标签（DATA 层仍承担）', () => {
     assert.ok(
-      PAGE_SRC.includes(
+      DATA_SRC.includes(
         'loadBrandOperationsSnapshot -> brand-operations/assets + brand-operations/campaigns + brand-operations/collaborations'
       )
     )
-    assert.ok(!PAGE_SRC.includes('loadBrandOperationsSnapshot -> defaultAssets/defaultCampaigns/defaultCollaborations'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local brand operations samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(
+      !DATA_SRC.includes('loadBrandOperationsSnapshot -> defaultAssets/defaultCampaigns/defaultCollaborations'),
+      'E54 拍平：sourceEvidence 应已下沉到 client',
+    )
+    assert.ok(DATA_SRC.includes('local brand operations samples'))
+    assert.ok(DATA_SRC.includes('不可作为闭环复签证据'))
   })
 })
 
@@ -102,7 +105,7 @@ describe('BrandOperationsClient — 客户端展示层', () => {
   it('客户端组件应支持刷新按钮并触发 router.refresh', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
   })
 

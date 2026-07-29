@@ -15,7 +15,7 @@ test('ai-decisions detail page 使用 E54 server wrapper', () => {
 })
 
 test('ai-decisions detail client 保留刷新与关键区块', () => {
-  assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+  assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
   assert.ok(CLIENT_SRC.includes('重试执行'))
   assert.ok(CLIENT_SRC.includes('回退操作'))
   assert.ok(CLIENT_SRC.includes('输入上下文'))

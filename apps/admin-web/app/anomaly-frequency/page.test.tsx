@@ -48,7 +48,7 @@ describe('anomaly-frequency E54 结构固证', () => {
   it('client 层保留筛选、渲染与刷新交互', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('projectBucketsBySeverity'))
     assert.ok(CLIENT_SRC.includes('AnomalyFrequencyTimeline'))
     assert.ok(CLIENT_SRC.includes('刷新快照'))

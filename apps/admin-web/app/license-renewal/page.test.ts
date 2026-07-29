@@ -24,7 +24,7 @@ describe('LicenseRenewalPage structure', () => {
 
   it('客户端层应保留刷新、tab 与本地交互', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('handleSaveStrategy'))
     assert.ok(CLIENT_SRC.includes('handleToggleStrategy'))
     assert.ok(CLIENT_SRC.includes('handleToggleAutoRenewal'))

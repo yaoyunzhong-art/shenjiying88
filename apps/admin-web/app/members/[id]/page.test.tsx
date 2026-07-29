@@ -27,7 +27,7 @@ describe('Member detail page structure', () => {
   it('client 应保留 tabs、详情展示与 router.refresh', () => {
     assert.ok(CLIENT_SRC.includes('"use client"'))
     assert.ok(CLIENT_SRC.includes('Tabs'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('WorkspaceBreadcrumb'))
     assert.ok(CLIENT_SRC.includes('DetailClosureBar'))
   })

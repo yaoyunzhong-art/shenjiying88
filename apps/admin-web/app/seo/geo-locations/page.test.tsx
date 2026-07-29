@@ -35,7 +35,7 @@ describe('seo/geo-locations 结构固证', () => {
 
   it('client renderer 应保留搜索、城市筛选、经纬度格式化与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh"))), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('搜索城市/商圈/地标...'))
     assert.ok(CLIENT_SRC.includes('全部城市'))
     assert.ok(CLIENT_SRC.includes('row.lat.toFixed(4)'))
