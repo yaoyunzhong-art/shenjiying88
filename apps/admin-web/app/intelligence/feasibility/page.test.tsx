@@ -47,11 +47,11 @@ describe('FeasibilityPage — 来源态透明化', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
-  it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadFeasibilitySnapshot -> intelligence/feasibility + intelligence/finance-panorama'))
-    assert.ok(PAGE_SRC.includes('loadFeasibilitySnapshot -> buildFallbackFeasibilityReport + buildFallbackFinancePanorama'))
-    assert.ok(PAGE_SRC.includes('local feasibility samples + local budget comparison derivation'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  it('应同时固证 api 与 fallback 来源标签（page 端不再展示 sourceEvidence）', () => {
+    assert.ok(!PAGE_SRC.includes('loadFeasibilitySnapshot -> intelligence/feasibility + intelligence/finance-panorama'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadFeasibilitySnapshot -> buildFallbackFeasibilityReport + buildFallbackFinancePanorama'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('local feasibility samples + local budget comparison derivation'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('不可作为闭环复签证据'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 })
 

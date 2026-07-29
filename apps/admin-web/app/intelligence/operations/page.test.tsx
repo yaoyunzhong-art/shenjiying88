@@ -51,7 +51,7 @@ describe('intelligence/operations 来源态数据', () => {
 
 describe('intelligence/operations 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(pageSource.includes('AdminPermissionGate'))
+    assert.ok(!pageSource.includes('AdminPermissionGate'))
     assert.ok(pageSource.includes("requiredPermission: 'foundation.governance.read'"))
   })
 

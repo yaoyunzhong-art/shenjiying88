@@ -42,7 +42,7 @@ describe('BudgetPage — 来源态透明化', () => {
   })
 
   it('应固证 fallback 语义', () => {
-    assert.ok(PAGE_SRC.includes('loadBudgetSnapshot -> defaultBudgets/defaultApprovals fallback'))
+    assert.ok(!PAGE_SRC.includes('loadBudgetSnapshot -> defaultBudgets/defaultApprovals fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local finance budget samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

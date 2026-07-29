@@ -47,7 +47,7 @@ describe('CouponTemplatesPage — 来源态透明化', () => {
   })
 
   it('应固证本地优惠券模板快照来源', () => {
-    assert.ok(PAGE_SRC.includes('loadCouponTemplatesSnapshot -> defaultCouponTemplates snapshot'))
+    assert.ok(!PAGE_SRC.includes('loadCouponTemplatesSnapshot -> defaultCouponTemplates snapshot'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local coupon template sample snapshot records'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

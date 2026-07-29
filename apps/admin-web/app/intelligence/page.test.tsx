@@ -44,11 +44,11 @@ describe('IntelligencePage — 来源态透明化', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
-  it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadIntelligenceSnapshot -> loadMonitorSnapshot -> intelligence/monitor/summary'))
-    assert.ok(PAGE_SRC.includes('loadIntelligenceSnapshot -> loadMonitorSnapshot -> defaultMonitorSummary fallback'))
-    assert.ok(PAGE_SRC.includes('fallback monitor samples + local decision inventory'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  it('应同时固证 api 与 fallback 来源标签（page 端不再展示 sourceEvidence）', () => {
+    assert.ok(!PAGE_SRC.includes('loadIntelligenceSnapshot -> loadMonitorSnapshot -> intelligence/monitor/summary'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadIntelligenceSnapshot -> loadMonitorSnapshot -> defaultMonitorSummary fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('fallback monitor samples + local decision inventory'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('不可作为闭环复签证据'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 })
 

@@ -49,8 +49,8 @@ describe('FinanceRulesPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadFinanceRulesSnapshot -> finance/rules'))
-    assert.ok(PAGE_SRC.includes('loadFinanceRulesSnapshot -> defaultFinanceRules fallback'))
+    assert.ok(!PAGE_SRC.includes('loadFinanceRulesSnapshot -> finance/rules'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadFinanceRulesSnapshot -> defaultFinanceRules fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local finance rule samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

@@ -46,11 +46,11 @@ describe('BrandsPage — 来源态透明化', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
-  it('应固证本地品牌快照来源', () => {
-    assert.ok(PAGE_SRC.includes("sourceLabel: snapshot.sourceLabel"))
-    assert.ok(PAGE_SRC.includes('loadBrandsSnapshot -> defaultBrands snapshot'))
-    assert.ok(PAGE_SRC.includes('local brand sample snapshot records'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  it('应固证本地品牌快照来源（page 端不再展示 sourceEvidence）', () => {
+    assert.ok(!PAGE_SRC.includes('sourceLabel: snapshot.sourceLabel'), 'E54 拍平：page 端 sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadBrandsSnapshot -> defaultBrands snapshot'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('local brand sample snapshot records'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('不可作为闭环复签证据'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 })
 

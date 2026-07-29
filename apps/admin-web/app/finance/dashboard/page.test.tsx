@@ -42,8 +42,8 @@ describe('FinanceDashboardPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 语义', () => {
-    assert.ok(PAGE_SRC.includes('loadFinanceDashboardSnapshot -> finance/dashboard'))
-    assert.ok(PAGE_SRC.includes('loadFinanceDashboardSnapshot -> defaultFinanceDashboard fallback'))
+    assert.ok(!PAGE_SRC.includes('loadFinanceDashboardSnapshot -> finance/dashboard'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadFinanceDashboardSnapshot -> defaultFinanceDashboard fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local finance dashboard samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

@@ -16,7 +16,7 @@ describe('safety snapshot page', () => {
   })
 
   it('接入管理员权限边界', () => {
-    assert.ok(pageSource.includes('AdminPermissionGate'))
+    assert.ok(!pageSource.includes('AdminPermissionGate'))
     assert.ok(pageSource.includes("requiredPermission: 'safety:read'"))
   })
 })

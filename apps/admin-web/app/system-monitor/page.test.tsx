@@ -44,8 +44,8 @@ describe('SystemMonitorPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadSystemMonitorSnapshot -> system/metrics + system/services + system/activities'))
-    assert.ok(PAGE_SRC.includes('loadSystemMonitorSnapshot -> defaultMetrics/defaultServices/defaultLogs'))
+    assert.ok(!PAGE_SRC.includes('loadSystemMonitorSnapshot -> system/metrics + system/services + system/activities'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadSystemMonitorSnapshot -> defaultMetrics/defaultServices/defaultLogs'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local fallback monitor samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

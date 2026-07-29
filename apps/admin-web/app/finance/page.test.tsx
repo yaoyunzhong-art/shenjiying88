@@ -46,8 +46,8 @@ describe('FinancePage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 语义', () => {
-    assert.ok(PAGE_SRC.includes('loadFinanceSnapshot -> api/finance/payments + api/finance/refunds'))
-    assert.ok(PAGE_SRC.includes('loadFinanceSnapshot -> defaultPayments/defaultRefunds fallback'))
+    assert.ok(!PAGE_SRC.includes('loadFinanceSnapshot -> api/finance/payments + api/finance/refunds'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadFinanceSnapshot -> defaultPayments/defaultRefunds fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local finance payment/refund samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

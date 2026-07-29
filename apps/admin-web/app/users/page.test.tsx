@@ -45,8 +45,8 @@ describe('UsersPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadUsersSnapshot -> identity-access/users'))
-    assert.ok(PAGE_SRC.includes('loadUsersSnapshot -> MOCK_USERS fallback'))
+    assert.ok(!PAGE_SRC.includes('loadUsersSnapshot -> identity-access/users'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadUsersSnapshot -> MOCK_USERS fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local governance user samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

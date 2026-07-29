@@ -45,8 +45,8 @@ describe('NotificationsPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadNotificationsSnapshot -> notifications'))
-    assert.ok(PAGE_SRC.includes('loadNotificationsSnapshot -> defaultNotifications fallback'))
+    assert.ok(!PAGE_SRC.includes('loadNotificationsSnapshot -> notifications'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadNotificationsSnapshot -> defaultNotifications fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local notification audit samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

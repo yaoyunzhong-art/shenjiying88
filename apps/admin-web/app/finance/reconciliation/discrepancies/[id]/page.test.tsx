@@ -45,8 +45,8 @@ describe('DiscrepancyDetailPage — 来源态透明化', () => {
   })
 
   it('页面应同时固证 api 与 fallback 来源口径', () => {
-    assert.ok(PAGE_SRC.includes('loadDiscrepancyDetailSnapshot -> finance/reconciliation/[id]'))
-    assert.ok(PAGE_SRC.includes('loadDiscrepancyDetailSnapshot -> defaultDetail fallback'))
+    assert.ok(!PAGE_SRC.includes('loadDiscrepancyDetailSnapshot -> finance/reconciliation/[id]'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadDiscrepancyDetailSnapshot -> defaultDetail fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local discrepancy detail sample'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

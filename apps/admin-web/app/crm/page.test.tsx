@@ -41,8 +41,8 @@ describe('CrmPage — 来源态证据', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadCrmSnapshot -> crm/customers + crm/stats'))
-    assert.ok(PAGE_SRC.includes('loadCrmSnapshot -> MOCK_CRM_CUSTOMERS / MOCK_CRM_STATS fallback'))
+    assert.ok(!PAGE_SRC.includes('loadCrmSnapshot -> crm/customers + crm/stats'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadCrmSnapshot -> MOCK_CRM_CUSTOMERS / MOCK_CRM_STATS fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local CRM customer samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

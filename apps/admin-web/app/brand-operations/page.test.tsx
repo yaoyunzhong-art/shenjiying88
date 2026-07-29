@@ -50,7 +50,7 @@ describe('BrandOperationsPage — 来源态透明化', () => {
         'loadBrandOperationsSnapshot -> brand-operations/assets + brand-operations/campaigns + brand-operations/collaborations'
       )
     )
-    assert.ok(PAGE_SRC.includes('loadBrandOperationsSnapshot -> defaultAssets/defaultCampaigns/defaultCollaborations'))
+    assert.ok(!PAGE_SRC.includes('loadBrandOperationsSnapshot -> defaultAssets/defaultCampaigns/defaultCollaborations'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local brand operations samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

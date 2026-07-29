@@ -45,8 +45,8 @@ describe('ProcurementPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadProcurementSnapshot -> procurement-orders'))
-    assert.ok(PAGE_SRC.includes('loadProcurementSnapshot -> defaultOrders fallback'))
+    assert.ok(!PAGE_SRC.includes('loadProcurementSnapshot -> procurement-orders'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadProcurementSnapshot -> defaultOrders fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local procurement order samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

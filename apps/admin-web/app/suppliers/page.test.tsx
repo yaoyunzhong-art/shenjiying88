@@ -44,7 +44,7 @@ describe('SuppliersData — 快照合同', () => {
     assert.ok(DATA_SRC.includes('generatedAt: string'))
   })
 
-  it('应固证上游 suppliers 接口与 fallback 样本', () => {
+  it('应固证上游 suppliers 接口与 fallback 样本（DATA 层仍承担）', () => {
     assert.ok(DATA_SRC.includes("new URL('suppliers', resolveSuppliersApiBaseUrl())"))
     assert.ok(DATA_SRC.includes('export const MOCK_SUPPLIERS'))
     assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))

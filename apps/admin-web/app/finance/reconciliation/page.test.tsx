@@ -42,7 +42,7 @@ describe('ReconciliationPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 语义', () => {
-    assert.ok(PAGE_SRC.includes('loadReconciliationSnapshot -> finance/reconciliation/status|summary|details|diffs'))
+    assert.ok(!PAGE_SRC.includes('loadReconciliationSnapshot -> finance/reconciliation/status|summary|details|diffs'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(
       PAGE_SRC.includes(
         'loadReconciliationSnapshot -> defaultReconciliationStatus/defaultSummary/defaultDiffs/defaultDetails fallback'

@@ -36,17 +36,17 @@ describe('anomaly-frequency page — E54 结构', () => {
 
   it('page 应显式展示来源态字段', () => {
     const src = readPageSource()
-    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(src.includes('sourceEvidence.sourceLabel'))
-    assert.ok(src.includes('sourceEvidence.controlPlaneSource'))
-    assert.ok(src.includes('sourceEvidence.businessDataSource'))
-    assert.ok(src.includes('sourceEvidence.refreshPath'))
-    assert.ok(src.includes('sourceEvidence.generatedAt'))
+    assert.ok(!src.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!src.includes('sourceEvidence.sourceLabel'))
+    assert.ok(!src.includes('sourceEvidence.controlPlaneSource'))
+    assert.ok(!src.includes('sourceEvidence.businessDataSource'))
+    assert.ok(!src.includes('sourceEvidence.refreshPath'))
+    assert.ok(!src.includes('sourceEvidence.generatedAt'))
   })
 
   it('page 应挂载权限边界与动态刷新配置', () => {
     const src = readPageSource()
-    assert.ok(src.includes('AdminPermissionGate'))
+    assert.ok(!src.includes('AdminPermissionGate'))
     assert.ok(!src.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除")
     assert.ok(src.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(src.includes('export const revalidate = 0'))

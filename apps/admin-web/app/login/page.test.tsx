@@ -25,8 +25,8 @@ describe('Login page structure', () => {
     assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('loadLoginPageSnapshot -> auth/me'))
-    assert.ok(PAGE_SRC.includes('loadLoginPageSnapshot -> adminWebBootstrap + MOCK_LOGIN_HISTORY fallback'))
+    assert.ok(!PAGE_SRC.includes('loadLoginPageSnapshot -> auth/me'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadLoginPageSnapshot -> adminWebBootstrap + MOCK_LOGIN_HISTORY fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('client 应保留表单交互并支持 router.refresh', () => {

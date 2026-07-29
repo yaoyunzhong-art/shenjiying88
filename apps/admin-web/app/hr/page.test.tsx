@@ -36,8 +36,8 @@ describe('HrPage — 服务端壳层', () => {
   })
 
   it('页面应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadHrSnapshot -> hr/employees + hr/stats + hr/departments'))
-    assert.ok(PAGE_SRC.includes('loadHrSnapshot -> defaultEmployees/defaultStats/defaultDepartments'))
+    assert.ok(!PAGE_SRC.includes('loadHrSnapshot -> hr/employees + hr/stats + hr/departments'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadHrSnapshot -> defaultEmployees/defaultStats/defaultDepartments'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local hr samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

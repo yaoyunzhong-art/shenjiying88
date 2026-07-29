@@ -48,7 +48,7 @@ describe('EquipmentPage — 来源态透明化', () => {
 
   it('应固证本地设备快照来源', () => {
     assert.ok(PAGE_SRC.includes("sourceLabel: snapshot.sourceLabel"))
-    assert.ok(PAGE_SRC.includes('loadEquipmentSnapshot -> defaultEquipment snapshot'))
+    assert.ok(!PAGE_SRC.includes('loadEquipmentSnapshot -> defaultEquipment snapshot'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local equipment sample snapshot records'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

@@ -43,7 +43,7 @@ describe('FinanceInvoicesPage — 来源态透明化', () => {
   })
 
   it('应固证 mock 来源标签与假写链路', () => {
-    assert.ok(PAGE_SRC.includes('loadFinanceInvoicesSnapshot -> defaultInvoices'))
+    assert.ok(!PAGE_SRC.includes('loadFinanceInvoicesSnapshot -> defaultInvoices'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local finance invoice samples'))
     assert.ok(PAGE_SRC.includes('FinanceInvoicesClient:create/issue/cancel -> local state mutation only'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))

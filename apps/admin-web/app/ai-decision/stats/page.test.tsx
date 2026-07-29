@@ -43,7 +43,7 @@ describe('AiDecisionStatsPage — 来源态透明化', () => {
   })
 
   it('页面应显式标记 mock 快照不可复签', () => {
-    assert.ok(PAGE_SRC.includes('loadAiDecisionStatsSnapshot -> MOCK_RULES'))
+    assert.ok(!PAGE_SRC.includes('loadAiDecisionStatsSnapshot -> MOCK_RULES'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local AI decision sample stats'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })

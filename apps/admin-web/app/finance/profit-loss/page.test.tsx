@@ -50,8 +50,8 @@ describe('ProfitLossPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadProfitLossSnapshot -> finance/pnl'))
-    assert.ok(PAGE_SRC.includes('loadProfitLossSnapshot -> defaultProfitLossReport fallback'))
+    assert.ok(!PAGE_SRC.includes('loadProfitLossSnapshot -> finance/pnl'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('loadProfitLossSnapshot -> defaultProfitLossReport fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('local profit-loss samples'))
     assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
   })
