@@ -43,10 +43,10 @@ describe('IntegrationOrchestrationPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 语义（DATA 层仍承担）', () => {
-    assert.ok(DATA_SRC.includes('loadIntegrationOrchestrationWorkspace(api) + getAdminWorkbenchConsumerSnapshot(api)'))
-    assert.ok(DATA_SRC.includes('loadIntegrationOrchestrationWorkspace/getAdminWorkbenchConsumerSnapshot fallback'))
-    assert.ok(DATA_SRC.includes('local integration orchestration samples'))
-    assert.ok(DATA_SRC.includes('治理证据需结合上游可达性复核'))
+    assert.ok(DATA_SRC.includes("loadIntegrationOrchestrationWorkspace(query, { cache: 'no-store' })"))
+    assert.ok(DATA_SRC.includes('getAdminWorkbenchConsumerSnapshot()'))
+    assert.ok(DATA_SRC.includes("workspaceSnapshot.deliveryMode === 'api'"))
+    assert.ok(DATA_SRC.includes("workbenchSnapshot.deliveryMode === 'api'"))
   })
 })
 
