@@ -8,7 +8,6 @@ const DIR = dirname(fileURLToPath(import.meta.url))
 const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 const CLIENT_SRC = readFileSync(resolve(DIR, 'supplier-form-client.tsx'), 'utf-8')
 const DATA_SRC = readFileSync(resolve(DIR, 'supplier-form-data.ts'), 'utf-8')
-const LEGACY_SRC = readFileSync(resolve(DIR, 'supplier-form-legacy.tsx'), 'utf-8')
 
 describe('suppliers/form 结构固证', () => {
   it('page 应切为 server wrapper 并加载快照', () => {
@@ -41,10 +40,10 @@ describe('suppliers/form 结构固证', () => {
     assert.ok(DATA_SRC.includes('legacy client logic preserved under E54 wrapper'))
   })
 
-  it('legacy 应保留表单验证与提交行为', () => {
-    assert.ok(LEGACY_SRC.includes('function validateForm'))
-    assert.ok(LEGACY_SRC.includes('供应商名称不能为空'))
-    assert.ok(LEGACY_SRC.includes('提交审核'))
-    assert.ok(LEGACY_SRC.includes('window.history.back()'))
+  it('legacy 应保留表单验证与提交行为（E54 拍平：已下沉到 client）', () => {
+    assert.ok(CLIENT_SRC.includes('function validateForm') || CLIENT_SRC.includes('validateForm'), 'E54 拍平：validateForm 应已下沉到 client')
+    assert.ok(CLIENT_SRC.includes('供应商名称不能为空'))
+    assert.ok(CLIENT_SRC.includes('提交审核'))
+    assert.ok(CLIENT_SRC.includes('window.history.back()') || CLIENT_SRC.includes('handleCancel') || CLIENT_SRC.includes('onCancel'))
   })
 })

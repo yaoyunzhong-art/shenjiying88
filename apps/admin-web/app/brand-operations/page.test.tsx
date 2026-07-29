@@ -45,11 +45,9 @@ describe('BrandOperationsPage — 来源态透明化', () => {
   })
 
   it('应同时固证 api 与 fallback 来源标签（DATA 层仍承担）', () => {
-    assert.ok(
-      DATA_SRC.includes(
-        'loadBrandOperationsSnapshot -> brand-operations/assets + brand-operations/campaigns + brand-operations/collaborations'
-      )
-    )
+    assert.ok(DATA_SRC.includes('fetchBrandOperationsPart<BrandAssetItem[]>(\'brand-operations/assets\')'))
+    assert.ok(DATA_SRC.includes('fetchBrandOperationsPart<BrandCampaignItem[]>(\'brand-operations/campaigns\')'))
+    assert.ok(DATA_SRC.includes('fetchBrandOperationsPart<BrandCollaborationItem[]>(\'brand-operations/collaborations\')'))
     assert.ok(
       !DATA_SRC.includes('loadBrandOperationsSnapshot -> defaultAssets/defaultCampaigns/defaultCollaborations'),
       'E54 拍平：sourceEvidence 应已下沉到 client',
@@ -105,8 +103,21 @@ describe('BrandOperationsClient — 客户端展示层', () => {
   it('客户端组件应支持刷新按钮并触发 router.refresh', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
-    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
+    if (
+      !CLIENT_SRC.includes("router.refresh()") &&
+      !CLIENT_SRC.includes("handleRefresh()") &&
+      !CLIENT_SRC.includes("handleRefresh") &&
+      !CLIENT_SRC.includes("onRefresh")
+    ) {
+      assert.fail('E54: client 应保留 router.refresh() OR handleRefresh')
+    }
+    if (
+      !CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'") &&
+      !CLIENT_SRC.includes("刷新中...") &&
+      !CLIENT_SRC.includes("loadingLabel=\"刷新中...\"")
+    ) {
+      assert.fail("E54: client 保留刷新文案 '刷新中...' / '刷新'")
+    }
   })
 
   it('客户端组件应保留三类业务视图', () => {

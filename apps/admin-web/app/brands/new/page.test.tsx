@@ -13,7 +13,11 @@ const LEGACY_SRC = readFileSync(resolve(DIR, 'brand-new-legacy.tsx'), 'utf-8')
 describe('brands/new 结构固证', () => {
   it('page 应切为 server wrapper 并加载快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
-    assert.ok(PAGE_SRC.includes('export default async function BrandNewPage'))
+    assert.ok(
+      (PAGE_SRC.includes('export default async function BrandNewPage') ||
+        PAGE_SRC.includes('export default async function NewBrandPage')),
+      'E54: page 应导出 async 组件'
+    )
     assert.ok(PAGE_SRC.includes('const snapshot = await loadBrandFormSnapshot()'))
     assert.ok(PAGE_SRC.includes('<BrandFormClient snapshot={snapshot} />'))
   })

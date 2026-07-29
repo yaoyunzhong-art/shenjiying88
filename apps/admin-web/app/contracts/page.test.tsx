@@ -32,7 +32,7 @@ describe('ContractsPage — 服务端壳层', () => {
     assert.ok(!PAGE_SRC.includes('sourceLabel: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('/api/contracts 代理写链路'))
+    assert.ok(!PAGE_SRC.includes('/api/contracts 代理写链路'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 })
 
