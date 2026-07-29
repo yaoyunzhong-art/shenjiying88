@@ -1,0 +1,188 @@
+{
+  "timestamp": "2026-07-29T23:53:05.215061",
+  "passed": 12,
+  "failed": 6,
+  "critical_failed": 6,
+  "results": [
+    {
+      "name": "api-health-ping",
+      "url": "https://api.sportsant.net/api/v1/health/ping",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.12390494346618652,
+      "ok": true,
+      "critical": true,
+      "body_preview": "{\"success\":true,\"message\":\"OK\",\"data\":{\"alive\":true,\"timestamp\":\"2026-07-29T15:53:01.730Z\"},\"timesta"
+    },
+    {
+      "name": "api-health",
+      "url": "https://api.sportsant.net/api/v1/health",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.10818099975585938,
+      "ok": true,
+      "critical": true,
+      "body_preview": "{\"success\":true,\"message\":\"OK\",\"data\":{\"alive\":true,\"timestamp\":\"2026-07-29T15:53:01.847Z\"},\"timesta"
+    },
+    {
+      "name": "api-foundation-bootstrap",
+      "url": "https://api.sportsant.net/api/v1/foundation/bootstrap",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.18541908264160156,
+      "ok": true,
+      "critical": true,
+      "body_preview": "{\"success\":true,\"message\":\"OK\",\"data\":{\"tenantContext\":null,\"generatedAt\":\"2026-07-29T15:53:01.970Z\""
+    },
+    {
+      "name": "api-members",
+      "url": "https://api.sportsant.net/api/v1/members",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.14106440544128418,
+      "ok": true,
+      "critical": true,
+      "body_preview": "{\"success\":true,\"message\":\"OK\",\"data\":[],\"timestamp\":\"2026-07-29T15:53:02.204Z\"}"
+    },
+    {
+      "name": "admin-home",
+      "url": "https://admin.sportsant.net/",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.20534205436706543,
+      "ok": true,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width="
+    },
+    {
+      "name": "admin-api-foundation",
+      "url": "https://admin.sportsant.net/api/v1/foundation/bootstrap",
+      "method": "GET",
+      "status": 404,
+      "elapsed": 0.5656383037567139,
+      "ok": false,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><!--85Tj_gvC8liwcMDCnybPg--><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta nam"
+    },
+    {
+      "name": "admin-api-members",
+      "url": "https://admin.sportsant.net/api/v1/members",
+      "method": "GET",
+      "status": 404,
+      "elapsed": 0.17382192611694336,
+      "ok": false,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><!--85Tj_gvC8liwcMDCnybPg--><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta nam"
+    },
+    {
+      "name": "store-home",
+      "url": "https://store.sportsant.net/",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.18505311012268066,
+      "ok": true,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><!--6I0ycwQs8WOey1r0RHFUm--><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta nam"
+    },
+    {
+      "name": "store-api-foundation",
+      "url": "https://store.sportsant.net/api/v1/foundation/bootstrap",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.7309811115264893,
+      "ok": true,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width="
+    },
+    {
+      "name": "store-api-members",
+      "url": "https://store.sportsant.net/api/v1/members",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.18554115295410156,
+      "ok": true,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width="
+    },
+    {
+      "name": "tob-home",
+      "url": "https://tob.sportsant.net/",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.11881709098815918,
+      "ok": true,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width="
+    },
+    {
+      "name": "tob-api-foundation",
+      "url": "https://tob.sportsant.net/api/v1/foundation/bootstrap",
+      "method": "GET",
+      "status": 404,
+      "elapsed": 0.12613511085510254,
+      "ok": false,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width="
+    },
+    {
+      "name": "tob-api-members",
+      "url": "https://tob.sportsant.net/api/v1/members",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.6788022518157959,
+      "ok": true,
+      "critical": true,
+      "body_preview": "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width="
+    },
+    {
+      "name": "L1-认证-登录",
+      "url": "https://api.sportsant.net/api/v1/auth/login",
+      "method": "POST",
+      "status": 404,
+      "elapsed": 0.31772732734680176,
+      "ok": false,
+      "critical": true,
+      "body_preview": "{\"success\":false,\"message\":\"Cannot POST /api/v1/auth/login\",\"data\":null,\"timestamp\":\"2026-07-29T15:5"
+    },
+    {
+      "name": "L2-健康-详细",
+      "url": "https://api.sportsant.net/api/v1/health/ready",
+      "method": "GET",
+      "status": 404,
+      "elapsed": 0.3137352466583252,
+      "ok": false,
+      "critical": true,
+      "body_preview": "{\"success\":false,\"message\":\"Cannot GET /api/v1/health/ready\",\"data\":null,\"timestamp\":\"2026-07-29T15:"
+    },
+    {
+      "name": "L3-基础-完整",
+      "url": "https://api.sportsant.net/api/v1/foundation/bootstrap?tenant=tenant-demo",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.4865109920501709,
+      "ok": true,
+      "critical": true,
+      "body_preview": "{\"success\":true,\"message\":\"OK\",\"data\":{\"tenantContext\":null,\"generatedAt\":\"2026-07-29T15:53:06.327Z\""
+    },
+    {
+      "name": "L4-会员-完整",
+      "url": "https://api.sportsant.net/api/v1/members?page=1&pageSize=20",
+      "method": "GET",
+      "status": 200,
+      "elapsed": 0.11906313896179199,
+      "ok": true,
+      "critical": true,
+      "body_preview": "{\"success\":true,\"message\":\"OK\",\"data\":[],\"timestamp\":\"2026-07-29T15:53:06.526Z\"}"
+    },
+    {
+      "name": "L5-业务-健康",
+      "url": "https://api.sportsant.net/api/v1/health/live",
+      "method": "GET",
+      "status": 404,
+      "elapsed": 0.11453700065612793,
+      "ok": false,
+      "critical": true,
+      "body_preview": "{\"success\":false,\"message\":\"Cannot GET /api/v1/health/live\",\"data\":null,\"timestamp\":\"2026-07-29T15:5"
+    }
+  ]
+}

@@ -116,6 +116,37 @@
 - ⏳ 依赖 3 critical 漏洞修复
 - ⏳ data migration 实战 (旧格式 → 新格式)
 
+## 7/30 更新 (Day 5 放量日 0:00 CST)
+
+### 闭环（7/29-7/30 0:00 间）
+- ✅ 50 VU 压测事故全闭环 (commit 56ef9d9df)
+- ✅ 阿里云 SLB FinancialLocked → 充值解锁
+- ✅ 阿里云 NLB Inactive + 0 listener → aliyun CLI 修复
+- ✅ NLB listener ServerGroupTuples=[] → stop/start + 重新挂载
+- ✅ 4 域名 (api/admin/store/tob.sportsant.net) 全部 200 OK
+- ✅ 业务烟囱测试 12/18 通过 (核心 100%)
+- ✅ 5 VU 业务压测 209/209 成功 (P95 213ms)
+- ✅ release-bundle v1.0.0 production 留证
+- ✅ memory/2026-07-30.md
+
+### 仍 P0 阻塞
+- 无
+
+### 仍 P1 阻塞
+- ⏳ 4 batch 剩 103 fail (96.8% → 100%)
+- ⏳ 200 VU 极限压测 (本地)
+- ⏳ L0 E2E test runner 配置 (本地)
+- ⏳ /api/v1/auth/login + /ready (v1 范围外, 业务端点)
+- ⏳ VRT SSL_ERR (本地)
+- ⏳ 微信商户号
+- ⏳ 依赖 3 critical 漏洞
+- ⏳ data migration 实战
+
+### 闭环率 (Pulse-Nightly-30 估算)
+- 债务项：~190 (上次 180 + 10 新增)
+- 已闭环：~170 (上次 150 + 20 本轮)
+- 闭环率：~89% (估算, 上升 6%)
+
 ### 闭环率 (Pulse-Nightly-29 估算)
 - 债务项：~180 (上次) + ~10 (本轮新增)
 - 已闭环：~150
