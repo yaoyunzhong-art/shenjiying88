@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import type {
   BrandKPI,
+  BrandKPIMetrics,
   ChannelAttribution,
   BrandMention,
   BrandHealthScore,
