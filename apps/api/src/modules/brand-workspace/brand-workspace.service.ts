@@ -58,7 +58,7 @@ export class BrandWorkspaceService {
   async updateTaskStatus(id: string, status: string): Promise<WorkspaceTask> {
     const task = this.tasks.get(id)
     if (!task) throw new NotFoundException(`Task ${id} not found`)
-    const updated = { ...task, status: status as any, updatedAt: new Date() }
+    const updated = { ...task, status: status as TaskStatus, updatedAt: new Date() }
     this.tasks.set(id, updated)
     return updated
   }

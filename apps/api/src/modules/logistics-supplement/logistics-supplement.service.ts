@@ -69,7 +69,7 @@ export class LogisticsSupplementService {
 
   async updateTransportOrderStatus(id: string, status: string): Promise<TransportOrder> {
     const order = await this.getTransportOrder(id)
-    if (!LogisticsSupplementService.VALID_TRANSPORT_STATUSES.includes(status as any)) {
+    if (!(LogisticsSupplementService.VALID_TRANSPORT_STATUSES as readonly string[]).includes(status)) {
       throw new BadRequestException(`Invalid transport status: ${status}`)
     }
     const updated = { ...order, status: status as TransportOrder['status'], updatedAt: new Date().toISOString() }
@@ -119,7 +119,7 @@ export class LogisticsSupplementService {
 
   async updateCargoStatus(id: string, status: string, extra?: Partial<CargoLoad>): Promise<CargoLoad> {
     const load = await this.getCargoLoad(id)
-    if (!LogisticsSupplementService.VALID_CARGO_STATUSES.includes(status as any)) {
+    if (!(LogisticsSupplementService.VALID_CARGO_STATUSES as readonly string[]).includes(status)) {
       throw new BadRequestException(`Invalid cargo status: ${status}`)
     }
     const updated: CargoLoad = {
@@ -208,7 +208,7 @@ export class LogisticsSupplementService {
 
   async updateDriverScheduleStatus(id: string, status: string, extra?: Partial<DriverSchedule>): Promise<DriverSchedule> {
     const s = await this.getDriverSchedule(id)
-    if (!LogisticsSupplementService.VALID_DRIVER_SCHEDULE_STATUSES.includes(status as any)) {
+    if (!(LogisticsSupplementService.VALID_DRIVER_SCHEDULE_STATUSES as readonly string[]).includes(status)) {
       throw new BadRequestException(`Invalid driver schedule status: ${status}`)
     }
     const updated: DriverSchedule = {
@@ -260,7 +260,7 @@ export class LogisticsSupplementService {
 
   async updateMaintenanceStatus(id: string, status: string, extra?: Partial<VehicleMaintenanceRecord>): Promise<VehicleMaintenanceRecord> {
     const r = await this.getMaintenanceRecord(id)
-    if (!LogisticsSupplementService.VALID_MAINT_STATUSES.includes(status as any)) {
+    if (!(LogisticsSupplementService.VALID_MAINT_STATUSES as readonly string[]).includes(status)) {
       throw new BadRequestException(`Invalid maintenance status: ${status}`)
     }
     const updated: VehicleMaintenanceRecord = {

@@ -26,6 +26,7 @@ export class MinorProtectionPrismaStore implements OnApplicationBootstrap {
     }
     try {
       // NOTE: minorProtectionProfile table not yet in Prisma schema — load from MinorIdentityVerification
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const profiles = await (this.prisma as any).minorProtectionProfile?.findMany()
       if (profiles) {
         this.logger.log(`Loaded ${profiles.length} minor protection profiles`)

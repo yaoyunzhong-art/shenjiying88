@@ -1,3 +1,4 @@
+import { isRecordError } from '../../common/error-handler.utils'
 import {
   Controller,
   Post,
@@ -283,7 +284,7 @@ export class AllianceController {
       )
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -296,7 +297,7 @@ export class AllianceController {
       const settlement = this.settlementService.approveSettlement(settlementId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -309,7 +310,7 @@ export class AllianceController {
       const settlement = this.settlementService.executeSettlement(settlementId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -322,7 +323,7 @@ export class AllianceController {
       const settlement = this.settlementService.rejectSettlement(settlementId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -335,7 +336,7 @@ export class AllianceController {
       const settlement = this.settlementService.cancelSettlement(settlementId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -398,7 +399,7 @@ export class AllianceController {
       const result = this.orderDetector.manualLink(orderId, body.partnerId)
       return { success: true, data: result }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -506,7 +507,7 @@ export class AllianceController {
       const coupon = this.couponService.issueCoupon(body)
       return { success: true, data: coupon }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -522,7 +523,7 @@ export class AllianceController {
       )
       return { success: true, data: redemption }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -535,7 +536,7 @@ export class AllianceController {
       const coupon = this.couponService.cancelCoupon(couponId)
       return { success: true, data: coupon }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -569,7 +570,7 @@ export class AllianceController {
       const settlement = this.couponService.settleCoupon(couponId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -607,7 +608,7 @@ export class AllianceController {
       const record = this.dataService.receiveCallback(partnerId, body.dataType as CallbackDataType, body.payload)
       return { success: true, data: record }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -662,7 +663,7 @@ export class AllianceController {
       )
       return { success: true, data: anomaly }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 
@@ -687,7 +688,7 @@ export class AllianceController {
       )
       return { success: true, data: review }
     } catch (err: unknown) {
-      return { success: false, message: (err as any).message, code: (err as any).code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
     }
   }
 

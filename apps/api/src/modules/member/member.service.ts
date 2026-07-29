@@ -2653,7 +2653,7 @@ export class MemberService {
     const userIds = [...new Set(profiles.map(p => p.userId).filter(Boolean) as string[])]
     const userMap = new Map<string, { id: string; mobile: string }>()
     if (userIds.length > 0) {
-      const users = await (this.prisma.user as any).findMany({
+      const users = await this.prisma.user.findMany({
         where: { id: { in: userIds } },
         select: { id: true, mobile: true }
       })

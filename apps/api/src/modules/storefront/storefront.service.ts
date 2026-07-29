@@ -272,7 +272,7 @@ export class StoreFrontService {
       customerName: record.customerName, customerPhone: record.customerPhone,
       amount: record.amount, createdAt: record.createdAt.toISOString(),
       cancelledAt: record.cancelledAt?.toISOString(),
-      rescheduledTo: record.rescheduledTo as any,
+      rescheduledTo: record.rescheduledTo,
     }
   }
 
@@ -328,7 +328,7 @@ export class StoreFrontService {
         data: {
           date: dto.newDate, timeSlot: dto.newTimeSlot,
           status: 'rescheduled',
-          rescheduledTo: { date: dto.newDate, timeSlot: dto.newTimeSlot } as any,
+          rescheduledTo: { date: dto.newDate, timeSlot: dto.newTimeSlot },
         },
       })
 
@@ -339,7 +339,7 @@ export class StoreFrontService {
         date: updated.date, timeSlot: updated.timeSlot,
         customerName: record.customerPhone, customerPhone: record.customerPhone,
         amount: record.amount, createdAt: record.createdAt.toISOString(),
-        rescheduledTo: updated.rescheduledTo as any,
+        rescheduledTo: updated.rescheduledTo as Record<string, unknown>,
       }
     } catch (err: any) {
       if (err?.code === 'P2002') {

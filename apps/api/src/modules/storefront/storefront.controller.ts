@@ -185,7 +185,7 @@ export class StoreFrontController {
   @Public() @Post('payments/create')
   async createPayment(@Body() body: { bookingId: string; orderId: string; amountCents: number; method: 'WECHAT' | 'ALIPAY' }) {
     try {
-      const prepay = await (this.paymentSvc as any).createPrepay(
+      const prepay = await this.paymentSvc.createPrepay(
         { id: body.orderId, totalCents: body.amountCents },
         body.method,
       )
@@ -204,7 +204,7 @@ export class StoreFrontController {
   joinQueue(@Body() body: { storeSlug: string; memberId: string; memberName?: string; resourceId?: string; resourceName?: string; remark?: string }) {
     const entry = this.queueSvc.joinQueue({
       tenantId: 'tenant-default',
-      queueType: 'Booking' as any,
+      queueType: 'Booking' as const,
       memberId: body.memberId,
       memberName: body.memberName,
       resourceId: body.resourceId ?? body.storeSlug,
@@ -240,7 +240,7 @@ export class StoreFrontController {
 
   @Public() @Get('referral/leaderboard/:storeSlug')
   getReferralLeaderboard(@Param('storeSlug') storeSlug: string, @Query('period') period?: string) {
-    return { success: true, data: this.referral.getLeaderboard(storeSlug, (period as any) ?? 'monthly') }
+    return { success: true, data: this.referral.getLeaderboard(storeSlug, (period as 'daily' | 'weekly' | 'monthly' | 'quarterly') ?? 'monthly') }
   }
 
   @Public() @Get('referral/dashboard/:referrerId')

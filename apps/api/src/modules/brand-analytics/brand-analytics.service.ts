@@ -145,7 +145,7 @@ export class BrandAnalyticsService {
       reportType,
       dateRange: { start: new Date().toISOString().slice(0, 10), end: new Date().toISOString().slice(0, 10) },
       summary: `品牌分析报告 - ${reportType}`,
-      kpiSummary: kpis[kpis.length - 1] ?? { brandId, tenantId: '', date: '', metrics: {} as any },
+      kpiSummary: kpis[kpis.length - 1] ?? { brandId, tenantId: '', date: '', metrics: {} as BrandKPIMetrics },
       channelAttribution: await this.getChannelAttribution(brandId),
       brandMentions: await this.getBrandMentions(brandId),
       healthScore: health,

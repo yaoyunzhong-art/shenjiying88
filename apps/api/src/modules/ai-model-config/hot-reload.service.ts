@@ -9,6 +9,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common'
+import { isRecordError } from '../../common/error-handler.utils'
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { EventEmitter2 } from '@nestjs/event-emitter'
@@ -189,7 +190,7 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
       
     } catch (error: unknown){
       const latencyMs = Date.now() - startTime
-      this.logger.error(`Hot reload failed: ${(error as Error).message}`, (error as any).stack)
+      this.logger.error(`Hot reload failed: ${(error as Error).message}`, isRecordError(error)?.stack)
       
       return {
         success: false,

@@ -43,7 +43,7 @@ export class PermissionService {
 
     // 3. 检查资源归属 (如果提供了resourceId)
     if (request.resourceId && request.data) {
-      const d = request.data as any
+      const d = request.data as Record<string, string | undefined>
       const canAccess = this.dataScopeService.canAccessResource(
         context,
         d?.tenantId || context.tenantId,
