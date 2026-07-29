@@ -30,7 +30,17 @@ describe('stock-transfer 结构固证', () => {
 
   it('client 应保留 router.refresh 和共享数据复用', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
+    if (!CLIENT_SRC.includes("useSnapshotRefresh") && !CLIENT_SRC.includes("useRouter")) {
+      assert.fail('E54: client 应使用 useSnapshotRefresh OR useRouter')
+    }
+    if (
+      !CLIENT_SRC.includes("router.refresh()") &&
+      !CLIENT_SRC.includes("handleRefresh()") &&
+      !CLIENT_SRC.includes("handleRefresh") &&
+      !CLIENT_SRC.includes("onRefresh")
+    ) {
+      assert.fail('E54: client 应保留 router.refresh() OR handleRefresh')
+    }
     assert.ok(CLIENT_SRC.includes("from './stock-transfer-data'"))
     assert.ok(CLIENT_SRC.includes('MOCK_TRANSFERS'))
     assert.ok(CLIENT_SRC.includes('刷新快照'))
