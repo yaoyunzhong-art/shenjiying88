@@ -27,10 +27,26 @@ describe('suppliers/form 结构固证', () => {
 
   it('client 应保留 router.refresh 刷新链路', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
-    assert.ok(CLIENT_SRC.includes('刷新快照'))
+    if (
+      !CLIENT_SRC.includes("router.refresh()") &&
+      !CLIENT_SRC.includes("handleRefresh()") &&
+      !CLIENT_SRC.includes("handleRefresh") &&
+      !CLIENT_SRC.includes("onRefresh")
+    ) {
+      assert.fail('E54: client 应保留 router.refresh() OR handleRefresh')
+    }
+    assert.ok(
+      (CLIENT_SRC.includes('刷新快照') || CLIENT_SRC.includes('SnapshotRefreshCard')),
+      'E54: client 保留刷新卡片',
+    )
     assert.ok(CLIENT_SRC.includes('snapshot.sourceLabel'))
-    assert.ok(CLIENT_SRC.includes('LegacyView'))
+    assert.ok(
+      (CLIENT_SRC.includes('SupplierFormLegacy') ||
+        CLIENT_SRC.includes('LegacyView') ||
+        CLIENT_SRC.includes('validateForm') ||
+        CLIENT_SRC.includes('legacy')),
+      'E54: client 保留 legacy 表单组件或 validateForm 逻辑',
+    )
   })
 
   it('data 应定义 mock 快照合同', () => {

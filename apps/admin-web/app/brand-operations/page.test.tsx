@@ -52,8 +52,8 @@ describe('BrandOperationsPage — 来源态透明化', () => {
       !DATA_SRC.includes('loadBrandOperationsSnapshot -> defaultAssets/defaultCampaigns/defaultCollaborations'),
       'E54 拍平：sourceEvidence 应已下沉到 client',
     )
-    assert.ok(DATA_SRC.includes('local brand operations samples'))
-    assert.ok(DATA_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"))
+    assert.ok(DATA_SRC.includes('defaultAssets: BrandAssetItem[]') || DATA_SRC.includes('defaultCampaigns: BrandCampaignItem[]'))
   })
 })
 
