@@ -112,7 +112,7 @@ describe('LogisticsSupplementController', () => {
     it('addCargoLoad → 创建货物记录', async () => {
       const result = await controller.addCargoLoad({
         transportOrderId: 'to-1', cargoCode: 'CC-001', cargoName: '主板',
-        quantity: 50, unit: '箱', weightKg: 200, status: 'pending',
+        quantity: 50, unit: '箱', weightKg: 200,
       })
       expect(result.id).toMatch(/^cl-/)
     })
@@ -120,7 +120,7 @@ describe('LogisticsSupplementController', () => {
     it('getCargoLoad → 单笔查询', async () => {
       const load = await controller.addCargoLoad({
         transportOrderId: 'to-2', cargoCode: 'CC-002', cargoName: '显示器',
-        quantity: 10, unit: '台', weightKg: 150, status: 'loaded',
+        quantity: 10, unit: '台', weightKg: 150,
       })
       const found = await controller.getCargoLoad(load.id)
       expect(found.cargoName).toBe('显示器')
@@ -129,7 +129,7 @@ describe('LogisticsSupplementController', () => {
     it('getCargoLoads → 按运输单查询', async () => {
       await controller.addCargoLoad({
         transportOrderId: 'to-3', cargoCode: 'CC-003', cargoName: '物料A',
-        quantity: 20, unit: '箱', weightKg: 100, status: 'pending',
+        quantity: 20, unit: '箱', weightKg: 100,
       })
       const loads = await controller.getCargoLoads('to-3')
       expect(loads.length).toBe(1)
@@ -138,7 +138,7 @@ describe('LogisticsSupplementController', () => {
     it('updateCargoStatus → 状态更新', async () => {
       const load = await controller.addCargoLoad({
         transportOrderId: 'to-4', cargoCode: 'CC-004', cargoName: '物料B',
-        quantity: 30, unit: '箱', weightKg: 150, status: 'loaded',
+        quantity: 30, unit: '箱', weightKg: 150,
       })
       const updated = await controller.updateCargoStatus(load.id, { status: 'delivered' })
       expect(updated.status).toBe('delivered')

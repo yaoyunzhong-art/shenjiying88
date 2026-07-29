@@ -82,7 +82,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
       const s = await svc.createDriverSchedule({
         tenantId: 't', driverId: 'd', driverName: '张三',
         scheduleDate: '2026-08-01', shiftName: '早班', shiftStart: '08:00',
-        shiftEnd: '18:00', transportOrderIds: ['to-1'], status: 'scheduled',
+        shiftEnd: '18:00', transportOrderIds: ['to-1'],
         createdBy: 'admin',
       })
       const checked = await svc.updateDriverScheduleStatus(s.id, 'checked_in')
@@ -95,7 +95,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
       const s = await svc.createDriverSchedule({
         tenantId: 't', driverId: 'd', driverName: '李四',
         scheduleDate: '2026-08-01', shiftName: '白班', shiftStart: '08:00',
-        shiftEnd: '18:00', status: 'scheduled', createdBy: 'admin',
+        shiftEnd: '18:00', createdBy: 'admin',
       })
       await svc.updateDriverScheduleStatus(s.id, 'checked_in')
       const done = await svc.updateDriverScheduleStatus(s.id, 'completed', { overtimeMinutes: 60 })
@@ -107,7 +107,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
       const s = await svc.createDriverSchedule({
         tenantId: 't', driverId: 'd', driverName: '王五',
         scheduleDate: '2026-08-01', shiftName: '早班', shiftStart: '08:00',
-        shiftEnd: '18:00', status: 'scheduled', createdBy: 'admin',
+        shiftEnd: '18:00', createdBy: 'admin',
       })
       const absent = await svc.updateDriverScheduleStatus(s.id, 'absent')
       expect(absent.status).toBe('absent')
@@ -124,7 +124,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
     it('completed 自动设置 completedAt', async () => {
       const r = await svc.createMaintenanceRecord({
         tenantId: 't', vehiclePlate: '沪A001', odometerKm: 50000,
-        maintType: 'oil_change', description: '换机油', status: 'pending',
+        maintType: 'oil_change', description: '换机油',
         operatorId: 'op1', operatorName: '小王',
       })
       await svc.updateMaintenanceStatus(r.id, 'in_progress')
@@ -135,7 +135,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
     it('更新维保时保留 extra 字段 (partsUsed)', async () => {
       const r = await svc.createMaintenanceRecord({
         tenantId: 't', vehiclePlate: '沪A002', odometerKm: 60000,
-        maintType: 'brake_service', description: '换刹车', status: 'pending',
+        maintType: 'brake_service', description: '换刹车',
         operatorId: 'op1', operatorName: '小王',
       })
       const updated = await svc.updateMaintenanceStatus(r.id, 'completed', {
@@ -175,7 +175,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
     it('空里程 (liters=0) 时 unitPriceCent=0', async () => {
       const r = await svc.recordFuel({
         tenantId: 't', vehiclePlate: '沪F001', driverId: 'd', driverName: '甲',
-        fuelDate: '2026-08-01', liters: 0, costCent: 0, unitPriceCent: 0,
+        fuelDate: '2026-08-01', liters: 0, costCent: 0,
         odometerKm: 10000, createdBy: 'u',
       })
       expect(r.unitPriceCent).toBe(0)
@@ -184,12 +184,12 @@ describe('LogisticsSupplementService — Edge Cases', () => {
     it('油耗记录时间范围筛选正确', async () => {
       await svc.recordFuel({
         tenantId: 't', vehiclePlate: '沪F002', driverId: 'd', driverName: '乙',
-        fuelDate: '2026-08-01', liters: 50, costCent: 40000, unitPriceCent: 800,
+        fuelDate: '2026-08-01', liters: 50, costCent: 40000,
         odometerKm: 10000, createdBy: 'u',
       })
       await svc.recordFuel({
         tenantId: 't', vehiclePlate: '沪F002', driverId: 'd', driverName: '乙',
-        fuelDate: '2026-08-15', liters: 60, costCent: 48000, unitPriceCent: 800,
+        fuelDate: '2026-08-15', liters: 60, costCent: 48000,
         odometerKm: 10500, createdBy: 'u',
       })
       const records = await svc.getFuelRecords('沪F002', '2026-08-10', '2026-08-20')
@@ -200,7 +200,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
     it('单条油耗记录效率返回零', async () => {
       await svc.recordFuel({
         tenantId: 't', vehiclePlate: '沪F003', driverId: 'd', driverName: '丙',
-        fuelDate: '2026-08-01', liters: 50, costCent: 40000, unitPriceCent: 800,
+        fuelDate: '2026-08-01', liters: 50, costCent: 40000,
         odometerKm: 10000, createdBy: 'u',
       })
       // 只有 1 条，无法计算效率
@@ -221,6 +221,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
         accidentAt: '2026-08-01T10:00:00Z', location: 'G50',
         severity: 'minor', responsibility: 'self',
         description: '轻微刮擦', propertyDamageCent: 50000,
+        createdBy: 'u',
       })
       expect(a.resolved).toBe(false)
       expect(a.resolvedAt).toBeUndefined()
@@ -232,12 +233,14 @@ describe('LogisticsSupplementService — Edge Cases', () => {
         accidentAt: '2026-08-01T10:00:00Z', location: 'G50',
         severity: 'minor', responsibility: 'self',
         description: '事故1', propertyDamageCent: 10000,
+        createdBy: 'u',
       })
       await svc.recordAccident({
         tenantId: 't', vehiclePlate: '沪B002', driverId: 'd', driverName: '戊',
         accidentAt: '2026-08-02T10:00:00Z', location: 'G60',
         severity: 'moderate', responsibility: 'counterparty',
         description: '事故2', propertyDamageCent: 200000,
+        createdBy: 'u',
       })
       const all = await svc.getAccidentRecords()
       expect(all).toHaveLength(2)
@@ -253,7 +256,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
       const plan = await svc.createRoutePlan({
         tenantId: 't', name: '直连线', originWarehouseCode: 'WH-A',
         destinationWarehouseCode: 'WH-B', waypoints: [],
-        totalDistanceKm: 800, estimatedDurationMin: 480, status: 'active',
+        totalDistanceKm: 800, estimatedDurationMin: 480,
         createdBy: 'u',
       })
       expect(plan.waypoints).toEqual([])
@@ -263,7 +266,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
       const plan = await svc.createRoutePlan({
         tenantId: 't', name: '测试线', originWarehouseCode: 'WH-A',
         destinationWarehouseCode: 'WH-B', waypoints: [],
-        totalDistanceKm: 1000, estimatedDurationMin: 600, status: 'active',
+        totalDistanceKm: 1000, estimatedDurationMin: 600,
         createdBy: 'u',
       })
       const first = await svc.optimizeRoute(plan.id)
@@ -303,7 +306,7 @@ describe('LogisticsSupplementService — Edge Cases', () => {
     it('updateCargoStatus 支持传入 extra 字段', async () => {
       const load = await svc.addCargoLoad({
         tenantId: 't', transportOrderId: 'to-1', cargoCode: 'CC-002',
-        cargoName: '货物', quantity: 5, unit: '箱', weightKg: 50, status: 'loaded',
+        cargoName: '货物', quantity: 5, unit: '箱', weightKg: 50,
       })
       const updated = await svc.updateCargoStatus(load.id, 'delivered', {
         unloadedBy: 'op1',

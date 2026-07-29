@@ -124,9 +124,6 @@ describe('LogisticsSupplementService — 货物装载', () => {
       quantity: 50,
       unit: '箱',
       weightKg: 200,
-      status: 'loaded',
-      createdAt: '',
-      updatedAt: '',
     })
     expect(load.id).toMatch(/^cl-/)
     expect(load.cargoName).toBe('主板')
@@ -141,9 +138,6 @@ describe('LogisticsSupplementService — 货物装载', () => {
       quantity: 10,
       unit: '台',
       weightKg: 150,
-      status: 'loaded',
-      createdAt: '',
-      updatedAt: '',
     })
     const updated = await svc.updateCargoStatus(load.id, 'delivered')
     expect(updated.status).toBe('delivered')
@@ -159,9 +153,6 @@ describe('LogisticsSupplementService — 货物装载', () => {
       quantity: 200,
       unit: '个',
       weightKg: 60,
-      status: 'pending',
-      createdAt: '',
-      updatedAt: '',
     })
     await expect(svc.updateCargoStatus(load.id, 'flying')).rejects.toThrow(BadRequestException)
   })
@@ -187,10 +178,7 @@ describe('LogisticsSupplementService — 路线规划', () => {
       waypoints: [{ sequence: 1, warehouseCode: 'WH-A', address: '上海' }],
       totalDistanceKm: 1200,
       estimatedDurationMin: 600,
-      status: 'active',
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     expect(plan.id).toMatch(/^rp-/)
     expect(plan.totalDistanceKm).toBe(1200)
@@ -205,10 +193,7 @@ describe('LogisticsSupplementService — 路线规划', () => {
       waypoints: [{ sequence: 1, warehouseCode: 'WH-A', address: '上海' }],
       totalDistanceKm: 1200,
       estimatedDurationMin: 600,
-      status: 'active',
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     const optimized = await svc.optimizeRoute(plan.id)
     expect(optimized.totalDistanceKm).toBe(1020)        // 1200 * 0.85
@@ -240,10 +225,7 @@ describe('LogisticsSupplementService — 司机排班', () => {
       shiftName: '白班',
       shiftStart: '08:00',
       shiftEnd: '18:00',
-      status: 'scheduled',
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     const checkedIn = await svc.updateDriverScheduleStatus(s.id, 'checked_in')
     expect(checkedIn.status).toBe('checked_in')
@@ -259,10 +241,7 @@ describe('LogisticsSupplementService — 司机排班', () => {
       shiftName: '夜班',
       shiftStart: '20:00',
       shiftEnd: '06:00',
-      status: 'scheduled',
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     await expect(svc.updateDriverScheduleStatus(s.id, 'sleeping')).rejects.toThrow(BadRequestException)
   })
@@ -286,11 +265,8 @@ describe('LogisticsSupplementService — 车辆维保', () => {
       odometerKm: 50000,
       maintType: 'oil_change',
       description: '常规换油',
-      status: 'pending',
       operatorId: 'op001',
       operatorName: '维修工小王',
-      createdAt: '',
-      updatedAt: '',
     })
     expect(r.id).toMatch(/^vm-/)
 
@@ -305,11 +281,8 @@ describe('LogisticsSupplementService — 车辆维保', () => {
       odometerKm: 100000,
       maintType: 'brake_service',
       description: '刹车片更换',
-      status: 'pending',
       operatorId: 'op001',
       operatorName: '维修工小王',
-      createdAt: '',
-      updatedAt: '',
     })
     const started = await svc.updateMaintenanceStatus(r.id, 'in_progress')
     expect(started.startedAt).toBeDefined()
@@ -322,11 +295,8 @@ describe('LogisticsSupplementService — 车辆维保', () => {
       odometerKm: 20000,
       maintType: 'routine_check',
       description: '例行检查',
-      status: 'pending',
       operatorId: 'op002',
       operatorName: '维修工老刘',
-      createdAt: '',
-      updatedAt: '',
     })
     await expect(svc.updateMaintenanceStatus(r.id, 'exploded')).rejects.toThrow(BadRequestException)
   })
@@ -354,8 +324,6 @@ describe('LogisticsSupplementService — 油耗记录', () => {
       costCent: 80000,
       odometerKm: 50000,
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     expect(r.unitPriceCent).toBe(800)       // 80000 / 100
     expect(r.id).toMatch(/^fr-/)
@@ -365,17 +333,17 @@ describe('LogisticsSupplementService — 油耗记录', () => {
     await svc.recordFuel({
       tenantId: 't001', vehiclePlate: '沪A88888', driverId: 'd001', driverName: '张三',
       fuelDate: '2026-07-01', liters: 100, costCent: 80000, odometerKm: 50000,
-      createdBy: 'admin', createdAt: '', updatedAt: '',
+      createdBy: 'admin',
     })
     await svc.recordFuel({
       tenantId: 't001', vehiclePlate: '沪A88888', driverId: 'd001', driverName: '张三',
       fuelDate: '2026-07-15', liters: 90, costCent: 72000, odometerKm: 50200,   // 只跑200km
-      createdBy: 'admin', createdAt: '', updatedAt: '',
+      createdBy: 'admin',
     })
     await svc.recordFuel({
       tenantId: 't001', vehiclePlate: '沪A88888', driverId: 'd001', driverName: '张三',
       fuelDate: '2026-07-29', liters: 85, costCent: 68000, odometerKm: 50500,   // 又跑300km
-      createdBy: 'admin', createdAt: '', updatedAt: '',
+      createdBy: 'admin',
     })
     const eff = await svc.getFuelEfficiency('沪A88888')
     expect(eff.totalFuelLiters).toBe(275)         // 100 + 90 + 85
@@ -387,7 +355,7 @@ describe('LogisticsSupplementService — 油耗记录', () => {
     const r = await svc.recordFuel({
       tenantId: 't001', vehiclePlate: '沪C99999', driverId: 'd003', driverName: '王五',
       fuelDate: '2026-07-01', liters: 50, costCent: 40000, odometerKm: 10000,
-      createdBy: 'admin', createdAt: '', updatedAt: '',
+      createdBy: 'admin',
     })
     await expect(svc.deleteFuelRecord(r.id)).resolves.toBeUndefined()
     await expect(svc.getFuelRecord(r.id)).rejects.toThrow(NotFoundException)
@@ -419,8 +387,6 @@ describe('LogisticsSupplementService — 事故记录', () => {
       casualties: 0,
       propertyDamageCent: 500000,
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     expect(a.resolved).toBe(false)
     expect(a.id).toMatch(/^ac-/)
@@ -431,7 +397,6 @@ describe('LogisticsSupplementService — 事故记录', () => {
       tenantId: 't001', vehiclePlate: '沪A88888', driverId: 'd001', driverName: '张三',
       accidentAt: '2026-07-28T14:30:00Z', location: 'G50 高速', severity: 'moderate',
       responsibility: 'shared', description: '追尾', createdBy: 'admin',
-      createdAt: '', updatedAt: '',
     })
     const resolved = await svc.resolveAccident(a.id, '保险理赔完成，双方和解')
     expect(resolved.resolved).toBe(true)
@@ -444,7 +409,6 @@ describe('LogisticsSupplementService — 事故记录', () => {
       tenantId: 't001', vehiclePlate: '沪A88888', driverId: 'd001', driverName: '张三',
       accidentAt: '2026-07-28T14:30:00Z', location: 'G50', severity: 'minor',
       responsibility: 'self', description: '刮擦', createdBy: 'admin',
-      createdAt: '', updatedAt: '',
     })
     await svc.resolveAccident(a.id, '已处理')
     await expect(svc.resolveAccident(a.id, '再次处理')).rejects.toThrow(BadRequestException)
@@ -474,8 +438,6 @@ describe('LogisticsSupplementService — 物流成本', () => {
       ],
       vehiclePlate: '沪A88888',
       createdBy: 'admin',
-      createdAt: '',
-      updatedAt: '',
     })
     expect(c.totalCent).toBe(100000)   // 80000 + 20000
     expect(c.id).toMatch(/^lc-/)
@@ -490,7 +452,6 @@ describe('LogisticsSupplementService — 物流成本', () => {
         { costType: 'fuel', amountCent: 30000 },
       ],
       vehiclePlate: '沪A88888', createdBy: 'admin',
-      createdAt: '', updatedAt: '',
     })
     await svc.recordCost({
       tenantId: 't001', transportOrderId: 'to-2',
@@ -499,7 +460,6 @@ describe('LogisticsSupplementService — 物流成本', () => {
         { costType: 'toll', amountCent: 10000 },
       ],
       vehiclePlate: '沪B66666', createdBy: 'admin',
-      createdAt: '', updatedAt: '',
     })
     const summary = await svc.getCostSummary('2026-07-01', '2026-07-31')
     expect(summary.totalCost).toBe(90000)
