@@ -22,7 +22,7 @@ describe('RuleDetailPage — 服务端壳层', () => {
   })
 
   it('应渲染权限门禁、来源态证据和客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'rules:id:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:id:read'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))

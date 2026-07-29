@@ -13,8 +13,8 @@ describe('members 来源态固证', () => {
   it('page 应导出动态壳层配置并接入管理员权限门禁', () => {
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"));
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'));
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'));
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'member:read'"));
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'member:read'"));
   });
 
   it('data loader 应复用会员 view model 并输出来源文案', () => {

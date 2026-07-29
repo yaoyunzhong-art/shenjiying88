@@ -19,7 +19,7 @@ describe('logistics 页面结构固证', () => {
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'logistics:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'logistics:read'"))
   })
 })
 

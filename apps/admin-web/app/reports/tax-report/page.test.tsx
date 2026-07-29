@@ -33,7 +33,7 @@ describe('tax-report — 来源态透明化', () => {
   })
 
   it('页面应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 })
 

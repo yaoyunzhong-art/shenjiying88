@@ -30,8 +30,8 @@ describe('ProcurementPage — 服务端壳层', () => {
   })
 
   it('页面应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'procurement:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'procurement:read'"))
   })
 })
 

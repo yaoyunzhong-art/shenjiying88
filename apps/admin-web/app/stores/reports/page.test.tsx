@@ -21,7 +21,7 @@ describe('stores/reports 结构固证', () => {
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
     assert.ok(PAGE_SRC.includes('控制面来源'));
     assert.ok(PAGE_SRC.includes('业务数据'));
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'));
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
   });
 
   it('data loader 应固化报表默认样本与 fallback 合同', () => {

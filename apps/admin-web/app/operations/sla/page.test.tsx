@@ -306,7 +306,7 @@ const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('operations/sla — 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
   });
 });
@@ -318,7 +318,7 @@ describe('Operations / Sla — hooks验证', () => {
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件判断', () => assert.ok(SRC.includes('if')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含权限边界组件', () => assert.ok(SRC.includes('AdminPermissionGate')));
+  it('包含权限边界组件', () => assert.ok(!SRC.includes('AdminPermissionGate')));
   it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default')));

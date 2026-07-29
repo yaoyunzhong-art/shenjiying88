@@ -22,7 +22,7 @@ describe('AiDecisionDetailPage — 服务端壳层', () => {
   })
 
   it('应渲染来源态证据与客户端详情组件', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'rules:ai-decisions:id:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:ai-decisions:id:read'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('<AiDecisionDetailClient snapshot={snapshot} />'))

@@ -19,7 +19,7 @@ describe('crm/page.test — 结构固证', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadCrmSnapshot()'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
   })
 
   it('来源态证据应完整透出', () => {

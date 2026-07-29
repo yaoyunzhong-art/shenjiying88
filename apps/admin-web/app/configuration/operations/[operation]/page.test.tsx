@@ -17,7 +17,7 @@ describe('ConfigurationOperationDetailPage — 服务端壳层', () => {
   it('应解析 operation 并加载 no-store 快照', () => {
     assert.ok(PAGE_SRC.includes('readConfigurationOperationDetailParam'))
     assert.ok(PAGE_SRC.includes("const snapshot = await loadConfigurationOperationDetailPageSnapshot(operation ?? '')"))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 
   it('应渲染来源态证据和客户端详情组件', () => {

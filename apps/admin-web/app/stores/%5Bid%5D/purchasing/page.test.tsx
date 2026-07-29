@@ -24,8 +24,8 @@ describe('stores/%5Bid%5D/purchasing 结构固证', () => {
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'store:read'"))
   })
 
   it('client 应保留 router.refresh 刷新链路', () => {

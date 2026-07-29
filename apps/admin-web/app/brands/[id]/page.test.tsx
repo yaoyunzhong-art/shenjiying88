@@ -23,7 +23,7 @@ describe('brands/[id] 结构固证', () => {
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'brands:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'brands:read'"))
   })
 
   it('data 应定义 fallback 详情快照合同', () => {

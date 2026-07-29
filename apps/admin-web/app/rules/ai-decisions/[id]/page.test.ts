@@ -10,7 +10,7 @@ const DATA_SRC = readFileSync(resolve(import.meta.dirname, 'ai-decision-detail-d
 test('ai-decisions detail page 使用 E54 server wrapper', () => {
   assert.ok(PAGE_SRC.includes('export default async function AiDecisionDetailPage'))
   assert.ok(PAGE_SRC.includes('loadAiDecisionDetailSnapshot'))
-  assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+  assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
   assert.ok(!PAGE_SRC.includes("'use client'"))
 })
 

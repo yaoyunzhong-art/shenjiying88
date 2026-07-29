@@ -14,7 +14,7 @@ describe('seo/geo-locations 结构固证', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('loadGeoLocationsSnapshot'))
     assert.ok(PAGE_SRC.includes('<GeoLocationsClient snapshot={snapshot} />'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 
   it('page 应显式透出来源态证据', () => {

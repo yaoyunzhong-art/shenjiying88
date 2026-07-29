@@ -13,8 +13,8 @@ describe('inventory/rules 来源态固证', () => {
   it('page 应导出动态壳层配置并接入权限门禁', () => {
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"));
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'));
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'));
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'inventory:rules:read'"));
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'inventory:rules:read'"));
   });
 
   it('data loader 应固化控制面与 fallback 文案', () => {

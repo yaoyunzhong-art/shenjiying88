@@ -32,7 +32,7 @@ describe('MaintenancePage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'maintenance:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'maintenance:read'"))
   })
 })
 

@@ -14,7 +14,7 @@ describe('seo/metadata 结构固证', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('loadMetadataSnapshot'))
     assert.ok(PAGE_SRC.includes('<MetadataClient snapshot={snapshot} />'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 
   it('page 应显式透出来源态证据', () => {

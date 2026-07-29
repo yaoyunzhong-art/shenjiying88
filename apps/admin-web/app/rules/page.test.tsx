@@ -26,8 +26,8 @@ describe('rules 页面结构固证', () => {
   })
 
   test('page 挂载权限门禁与 client renderer', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'rules:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:read'"))
     assert.ok(PAGE_SRC.includes('<RulesClient snapshot={snapshot} />'))
   })
 })

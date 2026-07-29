@@ -13,7 +13,7 @@ describe('license-renewal page', () => {
     assert.ok(PAGE_SRC.includes("import { loadLicenseRenewalSnapshot } from './license-renewal-data'"))
     assert.ok(PAGE_SRC.includes('<LicenseRenewalClient snapshot={snapshot} />'))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'license-renewal:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'license-renewal:read'"))
   })
 
   it('data 固证 mock 来源与快照合同', () => {

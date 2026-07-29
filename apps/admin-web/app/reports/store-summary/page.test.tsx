@@ -21,7 +21,7 @@ describe('reports/store-summary/page.tsx 结构固证', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(!PAGE_SRC.includes('sourceEvidence'))
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 })
 

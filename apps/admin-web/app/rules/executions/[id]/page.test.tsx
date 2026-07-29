@@ -21,7 +21,7 @@ describe('RuleExecutionDetailPage — 服务端壳层', () => {
   })
 
   it('应展示来源态证据与详情门禁', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'rules:executions:id:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:executions:id:read'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))

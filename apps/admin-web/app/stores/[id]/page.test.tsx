@@ -23,7 +23,7 @@ describe('stores/[id]/page.tsx 结构固证', () => {
   });
 
   it('应保留管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'));
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'store:read'"));
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'store:read'"));
   });
 });

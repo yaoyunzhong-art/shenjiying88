@@ -37,7 +37,7 @@ describe('FoundationPage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('scope: {sourceEvidence.scope}'))
     assert.ok(PAGE_SRC.includes('forwardedHeaders: {sourceEvidence.requestHeaders}'))
     assert.ok(PAGE_SRC.includes('actorHeadersMode:'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })
 

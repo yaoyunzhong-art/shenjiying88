@@ -33,7 +33,7 @@ describe('WorkflowPage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
     assert.ok(PAGE_SRC.includes('refreshPath: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
   })
 })
 

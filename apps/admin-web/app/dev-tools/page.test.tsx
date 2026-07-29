@@ -27,8 +27,8 @@ describe('DevToolsPage — 服务端壳层', () => {
   })
 
   it('页面应接入权限门禁与来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dev-tools:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'dev-tools:read'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))

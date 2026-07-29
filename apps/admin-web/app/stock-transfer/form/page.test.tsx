@@ -23,8 +23,8 @@ describe('stock-transfer/form 结构固证', () => {
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'stock-transfer:form:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'stock-transfer:form:read'"))
   })
 
   it('client 应保留 router.refresh 和表单交互', () => {

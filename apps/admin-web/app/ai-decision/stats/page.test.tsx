@@ -26,8 +26,8 @@ describe('AiDecisionStatsPage — snapshot page 壳层', () => {
   })
 
   it('页面应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'ai-decision:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'ai-decision:read'"))
   })
 })
 

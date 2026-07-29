@@ -18,8 +18,8 @@ describe('Member detail page structure', () => {
   })
 
   it('page 应展示详情来源态证据并保留权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'member:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'member:read'"))
     assert.ok(PAGE_SRC.includes('Delivery {snapshot.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('控制面来源: {snapshot.controlPlaneSource}'))
   })

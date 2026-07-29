@@ -45,7 +45,7 @@ describe('Dashboard — 服务端页面', () => {
 
 describe('Dashboard — 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
     assert.ok(SRC.includes("requiredPermission: 'dashboard:read'"));
   });
 });

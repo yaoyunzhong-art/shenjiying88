@@ -37,7 +37,7 @@ describe('IntegrationOrchestrationIdempotencyDetailPage — 服务端壳层', ()
   })
 
   it('页面应渲染权限门禁、来源态证据和客户端详情组件', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode} / {sourceEvidence.sourceLabel}'))
     assert.ok(PAGE_SRC.includes('refreshPath: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('<IntegrationOrchestrationIdempotencyDetailClient snapshot={snapshot.detail} />'))

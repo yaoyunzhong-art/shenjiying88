@@ -28,8 +28,8 @@ describe('members/[id]/tasks/[taskId]/page.tsx 结构固证', () => {
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
     assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'member:read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'member:read'"))
   })
 })
 

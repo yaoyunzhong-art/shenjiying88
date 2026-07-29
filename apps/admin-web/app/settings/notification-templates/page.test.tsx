@@ -31,8 +31,8 @@ describe('settings/notification-templates 页面结构固证', () => {
   })
 
   it('page 保留权限门禁并挂载 client renderer', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
     assert.ok(PAGE_SRC.includes('<NotificationTemplatesClient snapshot={snapshot} />'))
   })
 })

@@ -14,7 +14,7 @@ describe('seo/sitemap 结构固证', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('loadSitemapSnapshot'))
     assert.ok(PAGE_SRC.includes('<SitemapClient snapshot={snapshot} />'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 
   it('page 应显式透出来源态证据', () => {

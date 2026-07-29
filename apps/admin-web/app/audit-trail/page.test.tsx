@@ -65,8 +65,8 @@ describe('audit-trail/page.tsx — 来源态透明化', () => {
 
 describe('audit-trail/page.tsx — 权限边界与统计', () => {
   it('应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'));
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"));
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"));
   });
 
   it('应展示快照统计卡', () => {

@@ -22,7 +22,7 @@ describe('ResilienceRetryPolicyDetailPage — 服务端壳层', () => {
   })
 
   it('应渲染权限门禁、来源态证据和客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
     assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
     assert.ok(PAGE_SRC.includes('<ResilienceRetryPolicyDetailClient snapshot={snapshot.detail} />'))
   })

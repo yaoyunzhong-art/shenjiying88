@@ -26,7 +26,7 @@ describe('ReconciliationPage — 服务端壳层', () => {
   })
 
   it('页面应接入管理员权限边界与动态渲染', () => {
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'finance:reconciliation:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'finance:reconciliation:read'"))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
   })

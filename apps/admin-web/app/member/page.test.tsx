@@ -31,7 +31,7 @@ describe('MemberPage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
     assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
     assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'member:read'"))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'member:read'"))
   })
 })
 

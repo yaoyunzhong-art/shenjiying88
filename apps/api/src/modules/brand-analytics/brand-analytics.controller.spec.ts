@@ -133,4 +133,84 @@ describe('BrandAnalyticsController', () => {
       expect(data).toHaveLength(3)
     })
   })
+
+  // ── 新增端点 V24 Phase1 ──────────────────────────────────────────────────
+
+  describe('getAnalytics', () => {
+    it('returns aggregated analytics', async () => {
+      const result = await controller.getAnalytics('brand-1', {
+        startDate: '2026-01-01', endDate: '2026-06-30', granularity: 'month' as any,
+      })
+      expect(result).toHaveProperty('kpis')
+      expect(result).toHaveProperty('attribution')
+      expect(result).toHaveProperty('mentions')
+      expect(result).toHaveProperty('health')
+      expect(result).toHaveProperty('content')
+      expect(Array.isArray(result.kpis)).toBe(true)
+      expect(Array.isArray(result.attribution)).toBe(true)
+      expect(Array.isArray(result.mentions)).toBe(true)
+      expect(result.health.overallScore).toBeGreaterThan(0)
+      expect(Array.isArray(result.content)).toBe(true)
+    })
+  })
+
+  describe('compareBrands', () => {
+    it('compares multiple brands', async () => {
+      const results = await controller.compareBrands({
+        brandIds: ['brand-1', 'brand-2'],
+        startDate: '2026-01-01', endDate: '2026-06-30',
+      })
+      expect(results).toHaveLength(2)
+      expect(results[0]).toHaveProperty('kpis')
+      expect(results[0]).toHaveProperty('health')
+    })
+  })
+
+  describe('compareCompetitors', () => {
+    it('compares brand vs competitors', async () => {
+      const results = await controller.compareCompetitors({
+        brandId: 'brand-1',
+        competitorIds: ['comp-1', 'comp-2'],
+        startDate: '2026-01-01', endDate: '2026-06-30',
+      })
+      expect(results).toHaveLength(2)
+      expect(results[0]).toHaveProperty('competitorId')
+      expect(results[0]).toHaveProperty('comparison')
+    })
+  })
+
+  describe('getTopContent', () => {
+    it('returns ranked content', async () => {
+      const results = await controller.getTopContent('brand-1', {
+        startDate: '2026-01-01', endDate: '2026-06-30',
+      })
+      expect(Array.isArray(results)).toBe(true)
+    })
+  })
+
+  describe('getHealthTrend', () => {
+    it('returns health trend data', async () => {
+      const trends = await controller.getHealthTrend('brand-1', { months: '3' })
+      expect(Array.isArray(trends)).toBe(true)
+      if (trends.length > 0) {
+        expect(trends[0]).toHaveProperty('date')
+        expect(trends[0]).toHaveProperty('overallScore')
+      }
+    })
+
+    it('defaults to 6 months when months param missing', async () => {
+      const trends = await controller.getHealthTrend('brand-1', {})
+      expect(trends).toHaveLength(6)
+    })
+  })
+
+  describe('getContentSuggestions', () => {
+    it('returns suggestions for content', async () => {
+      const suggestions = await controller.getContentSuggestions('content-1', {})
+      expect(Array.isArray(suggestions)).toBe(true)
+      expect(suggestions.length).toBeGreaterThan(0)
+      expect(suggestions[0]).toHaveProperty('suggestion')
+      expect(suggestions[0]).toHaveProperty('priority')
+    })
+  })
 })

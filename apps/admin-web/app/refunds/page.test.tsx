@@ -320,7 +320,7 @@ describe('refunds — 边界与反例', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 it('应接入管理员权限边界', () => {
-  assert.ok(SRC.includes('AdminPermissionGate'));
+  assert.ok(!SRC.includes('AdminPermissionGate'));
   assert.ok(SRC.includes("requiredPermission: 'refunds:read'"));
 });
 

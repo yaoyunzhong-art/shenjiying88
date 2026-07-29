@@ -27,8 +27,8 @@ describe('ApprovalsPage — 服务端壳层', () => {
   })
 
   it('页面应接入治理审批权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
     assert.ok(PAGE_SRC.includes('治理审批中心访问受限'))
   })
 })

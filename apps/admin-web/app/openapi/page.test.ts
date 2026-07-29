@@ -27,8 +27,8 @@ describe('OpenApiWorkbenchPage — 服务端壳层冒烟', () => {
   })
 
   it('应挂载权限门禁与客户端渲染器', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
     assert.ok(PAGE_SRC.includes("import OpenApiWorkbenchClient from './openapi-client'"))
     assert.ok(PAGE_SRC.includes('<OpenApiWorkbenchClient snapshot={snapshot} />'))
   })
