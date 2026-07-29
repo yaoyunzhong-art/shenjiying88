@@ -1,16 +1,101 @@
 // ═══════════════════════════════════════════════════════════════
 // 神机营 SaaS — 压力测试脚本 (k6)
 // 用法: k6 run scripts/load-test.js
+//
+// ⚠️ 安全门控（2026-07-29 事故后强制）
+//   - 默认 BASE_URL = http://localhost:3145 (本地 API)
+//   - 生产 URL (sportsant.net) 必须显式 ALLOW_PROD=1
+//   - VU > 100 必须显式 ALLOW_HV=1
+//   - DURATION > 5m 必须显式 ALLOW_LT=1
 // ═══════════════════════════════════════════════════════════════
 import http from 'k6/http'
 import { check, sleep, group } from 'k6'
 import { Trend, Rate, Counter } from 'k6/metrics'
 
 // ── 可配置参数 ──────────────────────────────────────────────
-const BASE_URL = __ENV.BASE_URL || 'https://api.sportsant.net'
+const RAW_BASE_URL = __ENV.BASE_URL || 'http://localhost:3145'
 const VUS = parseInt(__ENV.VUS || '10')        // 并发用户
 const DURATION = __ENV.DURATION || '30s'       // 持续时间
 const RAMP_UP = __ENV.RAMP_UP || '5s'          // 爬坡时间
+const ALLOW_PROD = __ENV.ALLOW_PROD === '1'    // 生产白名单开关
+const ALLOW_HV = __ENV.ALLOW_HV === '1'        // 高 VU 白名单开关
+const ALLOW_LT = __ENV.ALLOW_LT === '1'        // 长时间白名单开关
+
+// ── 安全门控 ────────────────────────────────────────────────
+// 用字符串匹配代替 new URL()，避免 k6/Go runtime 解析差异
+const PROD_HOSTS = ['api.sportsant.net', 'admin.sportsant.net', 'store.sportsant.net', 'tob.sportsant.net', 'sportsant.net']
+const PRIVATE_PREFIXES = ['localhost', '127.0.0.1', 'k3d', '0.0.0.0', '10.', '192.168.', 'staging.']
+
+function extractHost(url) {
+  if (!url) return ''
+  // 去掉 protocol
+  const noProto = url.replace(/^https?:\/\//, '')
+  // 去掉 path
+  const slashIdx = noProto.indexOf('/')
+  return slashIdx >= 0 ? noProto.substring(0, slashIdx) : noProto
+}
+
+function isProdHost(url) {
+  const host = extractHost(url).toLowerCase()
+  if (!host) return false
+  for (const p of PROD_HOSTS) {
+    if (host === p || host.endsWith('.' + p)) return true
+  }
+  return host.includes('sportsant.net')
+}
+
+function isPrivateHost(url) {
+  const host = extractHost(url).toLowerCase()
+  if (!host) return false
+  for (const p of PRIVATE_PREFIXES) {
+    if (host === p || host.startsWith(p)) return true
+  }
+  return false
+}
+
+// ── 门控顺序: prod (ALLOW_PROD) / private / 拒绝 ──
+if (isProdHost(RAW_BASE_URL) && !ALLOW_PROD) {
+  throw new Error(
+    `\n🚨 安全门控: BASE_URL=${RAW_BASE_URL} 是生产域名!\n` +
+    `   必须显式传 ALLOW_PROD=1 才能跑生产压测。\n` +
+    `   推荐: k6 run -e BASE_URL=http://localhost:3145 ...  (本地优先)\n` +
+    `   例外: k6 run -e BASE_URL=${RAW_BASE_URL} -e ALLOW_PROD=1 ...  (报备后)\n`
+  )
+}
+
+if (!isProdHost(RAW_BASE_URL) && !isPrivateHost(RAW_BASE_URL)) {
+  throw new Error(
+    `\n🚨 安全门控: BASE_URL=${RAW_BASE_URL} 不是内网地址!\n` +
+    `   仅允许 localhost / 127.0.0.1 / k3d / 10.0.0.* / 192.168.* 段。\n` +
+    `   生产请用 ALLOW_PROD=1 显式打开。\n`
+  )
+}
+
+if (VUS > 100 && !ALLOW_HV) {
+  throw new Error(
+    `\n🚨 安全门控: VUS=${VUS} > 100!\n` +
+    `   高并发压测必须显式传 ALLOW_HV=1。\n`
+  )
+}
+
+const durSec = String(DURATION).match(/^(\d+)([smh])/) ? parseInt(String(DURATION).match(/^(\d+)/)[1]) * ({s: 1, m: 60, h: 3600}[String(DURATION).match(/^(\d+)([smh])/)[2]] || 1) : 0
+if (durSec > 300 && !ALLOW_LT) {
+  throw new Error(
+    `\n🚨 安全门控: DURATION=${DURATION} > 5min!\n` +
+    `   长时间压测必须显式传 ALLOW_LT=1。\n`
+  )
+}
+
+const BASE_URL = RAW_BASE_URL
+const SAFE_MODE = isProdHost(BASE_URL) ? '🚨 PRODUCTION' : '🟢 LOCAL'
+
+console.log(`\n🔒 压测模式: ${SAFE_MODE}`)
+console.log(`   BASE_URL: ${BASE_URL}`)
+console.log(`   VUS: ${VUS}`)
+console.log(`   DURATION: ${DURATION}`)
+if (isProdHost(BASE_URL)) {
+  console.log(`   ⚠️  ALLOW_PROD=1 已开启 — 这是生产压测，请确认已报备`)
+}
 
 // ── 自定义指标 ──────────────────────────────────────────────
 const healthLatency = new Trend('health_latency_ms')
