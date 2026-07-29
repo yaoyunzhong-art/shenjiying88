@@ -26,17 +26,17 @@ describe('AdminAlertsPage (alerts/page.tsx)', () => {
     assert.match(pageSource, /AdminAlertsClient/);
   });
 
-  test('页面固证告警中心来源态区块', () => {
-    assert.match(pageSource, /Delivery \{sourceEvidence\.deliveryMode\}/);
-    assert.match(pageSource, /控制面来源: \{sourceEvidence\.controlPlaneSource\}/);
-    assert.match(pageSource, /刷新路径: \{sourceEvidence\.refreshPath\}/);
-    assert.match(pageSource, /generatedAt: \{sourceEvidence\.generatedAt \?\? '—'\}/);
+  test('页面固证告警中心来源态区块（E54 拍平：已下沉到 client）', () => {
+    assert.doesNotMatch(pageSource, /Delivery \{sourceEvidence\.deliveryMode\}/);
+    assert.doesNotMatch(pageSource, /控制面来源: \{sourceEvidence\.controlPlaneSource\}/);
+    assert.doesNotMatch(pageSource, /刷新路径: \{sourceEvidence\.refreshPath\}/);
+    assert.doesNotMatch(pageSource, /generatedAt: \{sourceEvidence\.generatedAt \?\? '—'\}/);
   });
 
-  test('页面固证治理来源与刷新路径', () => {
-    assert.match(pageSource, /loadAdminGovernanceReadModel \/ snapshot\.governance/);
-    assert.match(pageSource, /fallback governance snapshot/);
-    assert.match(pageSource, /AdminAlertsClient -> loadAdminGovernanceReadModel/);
+  test('页面固证治理来源与刷新路径（E54 拍平：已下沉到 client）', () => {
+    assert.doesNotMatch(pageSource, /loadAdminGovernanceReadModel \/ snapshot\.governance/);
+    assert.doesNotMatch(pageSource, /fallback governance snapshot/);
+    assert.doesNotMatch(pageSource, /AdminAlertsClient -> loadAdminGovernanceReadModel/);
   });
 
   test('AdminAlertsClient 导出命名函数', () => {
@@ -78,7 +78,7 @@ describe('AdminAlertsPage — 正例·Client 组件', () => {
     assert.match(clientSource, /useMemo/);
   });
   test('AdminAlertsClient 处理加载状态', () => {
-    assert.ok(!/loading|Loading/.test(clientSource));
+    assert.ok(/loading|Loading/.test(clientSource));
   });
   test('AdminAlertsClient 处理空状态 (通过governance model)', () => {
     // 空状态由 FoundationAlertListPageSection 管理，组件通过 governance 数据驱动
@@ -118,7 +118,7 @@ describe('AdminAlertsPage — 边界·防御', () => {
 
 describe('AdminAlertsPage — 反例', () => {
   test('页面不应直接导出常量', () => {
-    assert.ok(!!/export\s+(const|let|var)\s+AdminAlertsPage/.test(pageSource));
+    assert.ok(!/export\s+(const|let|var)\s+AdminAlertsPage/.test(pageSource));
   });
   test('client 组件不应包含服务器端特性', () => {
     // 空检查(//)
