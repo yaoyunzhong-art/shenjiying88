@@ -8,9 +8,9 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-// Mock the IdentityAccessGuard before importing controller
-vi.mock('../../common/guards/identity-access.guard', () => ({
-  IdentityAccessGuard: class {},
+// Mock the TrafficGovernanceGuard before importing controller
+vi.mock('../../common/guards/traffic-governance.guard', () => ({
+  TrafficGovernanceGuard: class {},
 }))
 
 import { LogisticsSupplementController } from '../logistics-supplement.controller'
