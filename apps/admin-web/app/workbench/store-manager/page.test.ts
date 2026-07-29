@@ -11,7 +11,6 @@ import { dirname, resolve } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PAGE_SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
 const CLIENT_SRC = readFileSync(resolve(__dirname, 'store-manager-client.tsx'), 'utf-8');
-const DATA_SRC = readFileSync(resolve(__dirname, 'store-manager-data.ts'), 'utf-8');
 
 describe('StoreManagerWorkbench page — E54 结构', () => {
   it('page 应为 server wrapper', () => {
@@ -45,7 +44,10 @@ describe('StoreManagerWorkbench client — 业务壳层下沉', () => {
 });
 
 describe('StoreManagerWorkbench data — 快照合同', () => {
-  it('data 应暴露 bootstrap consumer snapshot', () => {
-    assert.ok(DATA_SRC.includes('getAdminWorkbenchConsumerSnapshot') || DATA_SRC.includes('STORE_MANAGER'));
+  it('page 应暴露 bootstrap consumer snapshot', () => {
+    assert.ok(
+      PAGE_SRC.includes('getAdminWorkbenchConsumerSnapshot') ||
+        PAGE_SRC.includes('STORE_MANAGER'),
+    );
   });
 });

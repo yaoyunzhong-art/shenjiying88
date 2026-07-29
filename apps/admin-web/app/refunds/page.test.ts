@@ -20,7 +20,11 @@ const SOURCE = resolve(__dirname, 'page.tsx');
 
 test('[正例] 应导出默认退款页面组件', () => {
   const src = readFileSync(SOURCE, 'utf-8');
-  assert.ok(src.includes('export default function RefundsPage'), '缺少 RefundsPage 默认导出');
+  assert.ok(
+    src.includes('export default function RefundsPage') ||
+      src.includes('export default async function RefundsPage'),
+    '缺少 RefundsPage 默认导出',
+  );
 });
 
 test('[正例] 页面应包含 Metadata 导出', () => {
@@ -107,14 +111,14 @@ test('[反例] 不应包含硬编码 API Token', () => {
   const src = readFileSync(SOURCE, 'utf-8');
   const secrets = [/api[_-]?key\s*[:=]\s*['"][^'"]{16,}['"]/i, /secret\s*[:=]\s*['"][^'"]{8,}['"]/i];
   for (const pat of secrets) {
-    assert.ok(!!pat.test(src), `不应包含硬编码秘钥: ${pat}`);
+    assert.ok(!pat.test(src), `不应包含硬编码秘钥: ${pat}`);
   }
 });
 
 test('[反例] 不应使用 == 宽松比较', () => {
   const src = readFileSync(SOURCE, 'utf-8');
   const loose = /(?:status|type|amount)\s*==\s*['"]?\w+/;
-  assert.ok(!!loose.test(src), '应使用 ===');
+  assert.ok(!loose.test(src), '应使用 ===');
 });
 
 test('[反例] 不应有直接全局 DOM 操作', () => {

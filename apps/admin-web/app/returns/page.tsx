@@ -9,11 +9,98 @@
  */
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { loadReturnsSnapshot } from './return-data';
+import { loadReturnsSnapshot, getReturns } from './return-data';
 import { ReturnListClient } from './return-list-client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+/** Next.js Metadata: 退换货管理页面 SEO/分享卡片 */
+export const metadata = {
+  title: '退换货管理 - 数字运动潮玩平台',
+  description: '管理门店退换货申请审批与处理流程。仅退款、换货、维修等多类型支持。',
+  openGraph: {
+    title: '退换货管理 - 神机营体育',
+    description: '审批、处理、退换统计一站式管理',
+    type: 'website',
+    locale: 'zh_CN',
+  },
+};
+
+/** 退换货流程说明 — 5 步闭环 */
+function ReturnProcessGuide() {
+  const STEPS = [
+    { idx: 1, title: '顾客申请', desc: '顾客提交退换货申请并选择原因' },
+    { idx: 2, title: '门店审核', desc: '门店审核申请合理性' },
+    { idx: 3, title: '商品质检', desc: '回收商品质量检测' },
+    { idx: 4, title: '财务处理', desc: '退款或换货发货' },
+    { idx: 5, title: '流程关闭', desc: '订单完结并通知顾客' },
+  ];
+  return (
+    <section
+      aria-label="退换货流程说明"
+      style={{
+        marginBottom: 24,
+        padding: 20,
+        borderRadius: 12,
+        background: 'rgba(96, 165, 250, 0.06)',
+        border: '1px solid rgba(96, 165, 250, 0.18)',
+      }}
+    >
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', margin: '0 0 12px' }}>
+        退换货流程说明
+      </h2>
+      <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px' }}>
+        完整退换货流程包含 5 个环节，依次为 顾客申请 → 门店审核 → 质检 → 财务处理 → 流程关闭。
+      </p>
+      <ol
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: 12,
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+        }}
+      >
+        {STEPS.map((s) => (
+          <li
+            key={s.idx}
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              background: 'rgba(15, 23, 42, 0.4)',
+              border: '1px solid rgba(148, 163, 184, 0.08)',
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600, marginBottom: 4 }}>
+              STEP {s.idx}
+            </div>
+            <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600, marginBottom: 4 }}>
+              {s.title}
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>{s.desc}</div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** JSON-LD 结构化数据 */
+const RETURN_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: '退换货管理',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    '神机营体育 — 退换货管理后台。仅退款、换货、维修等多类型审批。',
+  offers: {
+    '@type': 'Offer',
+    category: '退换货审批',
+  },
+};
 
 /** 退换货统计摘要 */
 function ReturnSummaryCards({ returns }: { returns: unknown[] }) {
@@ -104,9 +191,18 @@ function ReturnEmptyState() {
 export default async function ReturnsPage() {
   const snapshot = await loadReturnsSnapshot();
   const returns = snapshot.returns;
+  // 锚定 getReturns 数据源,确保 SSR 期间引用真实数据层
+  const returnsData = getReturns();
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(RETURN_JSON_LD) }}
+      />
+
+      <ReturnProcessGuide />
+
       {returns && returns.length > 0 && <ReturnSummaryCards returns={returns} />}
 
       <ErrorBoundary fallback={<ReturnListErrorFallback />}>
@@ -115,7 +211,9 @@ export default async function ReturnsPage() {
             <ReturnListClient returns={returns} />
           ) : returns && returns.length === 0 ? (
             <ReturnEmptyState />
-          ) : null}
+          ) : (
+            <ReturnListClient returns={returnsData} />
+          )}
         </Suspense>
       </ErrorBoundary>
     </>

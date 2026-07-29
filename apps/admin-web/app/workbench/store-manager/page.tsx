@@ -7,6 +7,9 @@
 import { getAdminWorkbenchConsumerSnapshot, getRoleWorkbench } from '../../bootstrap';
 import StoreManagerWorkbenchClient from './store-manager-client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function StoreManagerWorkbenchPage() {
   const [snapshot, roleWorkbench] = await Promise.all([
     getAdminWorkbenchConsumerSnapshot(),
