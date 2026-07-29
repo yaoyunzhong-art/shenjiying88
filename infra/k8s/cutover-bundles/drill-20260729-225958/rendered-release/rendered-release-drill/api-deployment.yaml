@@ -1,0 +1,303 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — API (NestJS) Deployment & Service
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: m5-api
+  namespace: m5
+  labels:
+    app: m5-api
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/name: api
+spec:
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+      protocol: TCP
+  selector:
+    app: m5-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: m5-api
+  namespace: m5
+  labels:
+    app: m5-api
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/name: api
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: m5-api
+  template:
+    metadata:
+      labels:
+        app: m5-api
+        app.kubernetes.io/part-of: shenjiying
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+        prometheus.io/path: "/metrics"
+        sidecar.istio.io/inject: "true"
+    spec:
+      serviceAccountName: m5-api
+      imagePullSecrets:
+        - name: acr-regcred
+      containers:
+        - name: api
+          image: shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/m5-api:manual-example
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: NODE_ENV
+            - name: LYT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: LYT_MODE
+            - name: API_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: API_PORT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: LOG_LEVEL
+            - name: ENABLE_TRACING
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: ENABLE_TRACING
+            - name: CORS_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: CORS_ORIGIN
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: JWT_SECRET
+            - name: JWT_EXPIRES_IN
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: JWT_EXPIRES_IN
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: REDIS_PORT
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: RABBITMQ_PORT
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: RABBITMQ_PASSWORD
+            - name: MINIO_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: MINIO_ENDPOINT
+            - name: MINIO_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: MINIO_PORT
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: MINIO_SECRET_KEY
+            - name: LLM_DEFAULT_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: LLM_DEFAULT_PROVIDER
+            - name: LLM_DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: m5-secrets
+                  key: LLM_DEEPSEEK_API_KEY
+            - name: LLM_DEEPSEEK_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: LLM_DEEPSEEK_BASE_URL
+            - name: LLM_FALLBACK_CHAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: LLM_FALLBACK_CHAIN
+            - name: QDRANT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: QDRANT_HOST
+            - name: QDRANT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: m5-config
+                  key: QDRANT_PORT
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/ping
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ping
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /api/v1/health/ping
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - m5-api
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: m5-api
+  namespace: m5
+  labels:
+    app: m5-api
+    app.kubernetes.io/part-of: shenjiying
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: m5-api
+  namespace: m5
+  labels:
+    app: m5-api
+    app.kubernetes.io/part-of: shenjiying
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: m5-api
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60

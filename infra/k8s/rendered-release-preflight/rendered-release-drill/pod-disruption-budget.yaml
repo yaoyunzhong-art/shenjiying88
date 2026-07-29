@@ -1,0 +1,44 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — PodDisruptionBudget (确保 HA 的最低可用副本数)
+# ═══════════════════════════════════════════════════════════════
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: m5-api-pdb
+  namespace: m5
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: backend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: m5-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: m5-admin-web-pdb
+  namespace: m5
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: m5-admin-web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: m5-storefront-web-pdb
+  namespace: m5
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: m5-storefront-web

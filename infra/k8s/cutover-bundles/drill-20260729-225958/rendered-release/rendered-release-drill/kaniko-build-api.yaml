@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build-api
+  namespace: m5
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: fetch-source
+          image: registry-cn-hangzhou-vpc.ack.aliyuncs.com/acs/aliyun-ingress-controller:v1.14.5-release.1
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          env:
+            - name: CODEUP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: codeup-git-auth-build
+                  key: token
+          command:
+            - /bin/sh
+            - -c
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+          args:
+            - |
+              set -eu
+              rm -rf /workspace/src
+              apk add --no-cache git
+              export GIT_TERMINAL_PROMPT=0
+              git clone --depth 1 --branch tree/codeup-acr-ci-20260717 \
+                "https://oauth2:${CODEUP_TOKEN}@codeup.aliyun.com/634e7722327f73640e96c1b1/shenjiying88.git" \
+                /workspace/src
+      containers:
+        - name: kaniko
+          image: registry.cn-hangzhou.aliyuncs.com/acs-demo-ns/kaniko-executor:v1.8.1
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+          args:
+            - --context=dir:///workspace/src
+            - --dockerfile=/workspace/src/Dockerfile
+            - --target=api-prod
+            - --destination=shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88/m5-api:latest
+            - --cache=false
+            - --verbosity=info
+          volumeMounts:
+            - name: docker-config
+              mountPath: /kaniko/.docker
+            - name: workspace
+              mountPath: /workspace
+      volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: docker-config
+          secret:
+            secretName: acr-regcred
+            items:
+              - key: .dockerconfigjson
+                path: config.json
