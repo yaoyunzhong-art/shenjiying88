@@ -262,7 +262,7 @@ export class StoreFrontService {
   // ── 6. 查询预约 ────────────────────────────────────────────
 
   async getBooking(bookingId: string): Promise<BookingStatus> {
-    const record = await this.prisma.storefrontBooking.findUnique({ where: { bookingId } })
+    const record = (await this.prisma.storefrontBooking.findUnique({ where: { bookingId } })) as any
     if (!record) throw new NotFoundException(`预约 ${bookingId} 不存在`)
     const store = this.getStore(record.storeSlug)
     return {
@@ -272,7 +272,7 @@ export class StoreFrontService {
       customerName: record.customerName, customerPhone: record.customerPhone,
       amount: record.amount, createdAt: record.createdAt.toISOString(),
       cancelledAt: record.cancelledAt?.toISOString(),
-      rescheduledTo: record.rescheduledTo,
+      rescheduledTo: (record.rescheduledTo ?? undefined) as { date: string; timeSlot: string } | null | undefined,
     }
   }
 
@@ -323,14 +323,14 @@ export class StoreFrontService {
     }
 
     try {
-      const updated = await this.prisma.storefrontBooking.update({
+      const updated = (await this.prisma.storefrontBooking.update({
         where: { bookingId },
         data: {
           date: dto.newDate, timeSlot: dto.newTimeSlot,
           status: 'rescheduled',
           rescheduledTo: { date: dto.newDate, timeSlot: dto.newTimeSlot },
         },
-      })
+      })) as any
 
       const store = this.getStore(record.storeSlug)
       return {
@@ -339,7 +339,7 @@ export class StoreFrontService {
         date: updated.date, timeSlot: updated.timeSlot,
         customerName: record.customerPhone, customerPhone: record.customerPhone,
         amount: record.amount, createdAt: record.createdAt.toISOString(),
-        rescheduledTo: updated.rescheduledTo as Record<string, unknown>,
+        rescheduledTo: (updated.rescheduledTo ?? undefined) as { date: string; timeSlot: string } | null | undefined,
       }
     } catch (err: any) {
       if (err?.code === 'P2002') {

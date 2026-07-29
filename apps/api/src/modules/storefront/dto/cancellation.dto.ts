@@ -48,5 +48,5 @@ export interface BookingStatus {
   amount: number
   createdAt: string
   cancelledAt?: string
-  rescheduledTo?: { date: string; timeSlot: string }
+  rescheduledTo?: { date: string; timeSlot: string } | null
 }

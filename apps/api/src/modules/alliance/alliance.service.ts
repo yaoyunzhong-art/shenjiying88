@@ -352,7 +352,7 @@ export class AllianceService {
       return { success: true, data: settlement }
     } catch (err: unknown) {
       this.logger.error(`createSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -375,7 +375,7 @@ export class AllianceService {
       return { success: true, data: settlement }
     } catch (err: unknown) {
       this.logger.error(`approveSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -396,7 +396,7 @@ export class AllianceService {
       return { success: true, data: settlement }
     } catch (err: unknown) {
       this.logger.error(`rejectSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -417,7 +417,7 @@ export class AllianceService {
       return { success: true, data: settlement }
     } catch (err: unknown) {
       this.logger.error(`cancelSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -440,7 +440,7 @@ export class AllianceService {
       return { success: true, data: settlement }
     } catch (err: unknown) {
       this.logger.error(`executeSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -492,7 +492,7 @@ export class AllianceService {
       return { success: true, data: result }
     } catch (err: unknown) {
       this.logger.error(`linkOrder failed: ${(err as Error).message}`, isRecordError(err)?.stack)
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -568,7 +568,7 @@ export class AllianceService {
       const coupon = this.couponService.issueCoupon(req)
       return { success: true, data: coupon }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -578,7 +578,7 @@ export class AllianceService {
       const redemption = this.couponService.redeemCoupon(couponId, partnerId, partnerName, orderId, memberId, orderAmount)
       return { success: true, data: redemption }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -588,7 +588,7 @@ export class AllianceService {
       const coupon = this.couponService.cancelCoupon(couponId)
       return { success: true, data: coupon }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -611,7 +611,7 @@ export class AllianceService {
       const settlement = this.couponService.settleCoupon(couponId)
       return { success: true, data: settlement }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -637,7 +637,7 @@ export class AllianceService {
       const record = this.dataService.receiveCallback(partnerId, dataType, payload)
       return { success: true, data: record }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -669,7 +669,7 @@ export class AllianceService {
       const anomaly = this.reviewService.reportAnomaly(partnerId, partnerName, type as AnomalyType, severity as AnomalySeverity, amount, description, relatedId)
       return { success: true, data: anomaly }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
@@ -685,7 +685,7 @@ export class AllianceService {
       const review = this.reviewService.submitReview(anomalyId, decision, reviewer, note)
       return { success: true, data: review }
     } catch (err: unknown) {
-      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code }
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 

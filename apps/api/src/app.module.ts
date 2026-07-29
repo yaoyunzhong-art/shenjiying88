@@ -4,7 +4,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TrafficGovernanceGuard } from './common/guards/traffic-governance.guard';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
-import { RequestGovernanceService } from './common/governance/request-governance.service';
+import { RequestGovernanceModule } from './common/governance/request-governance.service';
 import { RequestAuditInterceptor } from './common/interceptors/request-audit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import configuration from './config/configuration';
@@ -373,9 +373,9 @@ import { OpenPlatformModule } from './modules/open-platform/open-platform.module
     TerminalModule,
     LogisticsSupplementModule,
     OpenPlatformModule,
+    RequestGovernanceModule,
   ],
   providers: [
-    RequestGovernanceService,
     {
       provide: APP_GUARD,
       useClass: RateLimitGuard,

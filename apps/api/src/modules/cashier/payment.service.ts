@@ -127,6 +127,14 @@ export class PaymentService {
     @Optional() private readonly billingWall?: BillingWall
   ) {}
 
+  /**
+   * 公开预下单: storefront 公开支付端点调用, 仅生成预下单ID, 不入支付表
+   * 不需要 tenantId / opts, 走 mock gateway 直接生成 prepayId
+   */
+  async createPrepayPublic(order: { id: string; totalCents: number }, method: PaymentMethod) {
+    return this.gateway.createPrepay(order, method)
+  }
+
   private shouldAllowMockFallback(): boolean {
     return process.env.ENABLE_MOCK_PAYMENT_GATEWAY === 'true' || process.env.NODE_ENV !== 'production'
   }

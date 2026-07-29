@@ -28,6 +28,7 @@ import { StoreFrontService } from './storefront.service'
 import { ReferralTrackingService } from './referral-tracking.service'
 import { CouponService } from '../coupon/coupon.service'
 import { QueueService } from '../queue/queue.service'
+import { QueueType } from '../queue/queue.entity'
 import { StorefrontReminderService } from './storefront-reminder.service'
 import { PaymentService } from '../cashier/payment.service'
 import { CreateBookingDto } from './dto/create-booking.dto'
@@ -185,7 +186,7 @@ export class StoreFrontController {
   @Public() @Post('payments/create')
   async createPayment(@Body() body: { bookingId: string; orderId: string; amountCents: number; method: 'WECHAT' | 'ALIPAY' }) {
     try {
-      const prepay = await this.paymentSvc.createPrepay(
+      const prepay = await this.paymentSvc.createPrepayPublic(
         { id: body.orderId, totalCents: body.amountCents },
         body.method,
       )
@@ -204,7 +205,7 @@ export class StoreFrontController {
   joinQueue(@Body() body: { storeSlug: string; memberId: string; memberName?: string; resourceId?: string; resourceName?: string; remark?: string }) {
     const entry = this.queueSvc.joinQueue({
       tenantId: 'tenant-default',
-      queueType: 'Booking' as const,
+      queueType: QueueType.Booking,
       memberId: body.memberId,
       memberName: body.memberName,
       resourceId: body.resourceId ?? body.storeSlug,

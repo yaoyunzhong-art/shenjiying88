@@ -1,30 +1,30 @@
 {
-  "timestamp": "2026-07-29T16:24:18.126Z",
+  "timestamp": "2026-07-29T17:10:23.906Z",
   "config": {
-    "baseUrl": "http://localhost:3145",
-    "vus": 50,
-    "duration": "30s"
+    "baseUrl": "http://localhost:3000",
+    "vus": 200,
+    "duration": "5m"
   },
   "metrics": {
     "health": {
-      "avg_ms": 4.379856115107914,
-      "p95_ms": 11.299999999999969,
-      "p99_ms": 45.059999999999995
+      "avg_ms": 17.97062864994847,
+      "p95_ms": 78,
+      "p99_ms": 292.12999999999977
     },
     "order": {
-      "avg_ms": 3.8633093525179856,
-      "p95_ms": 10,
-      "p99_ms": 44.11999999999999
+      "avg_ms": 11.461911714187565,
+      "p95_ms": 54,
+      "p99_ms": 178
     },
     "verify": {
-      "avg_ms": 4.6719424460431656,
-      "p95_ms": 10
+      "avg_ms": 15.96221229817932,
+      "p95_ms": 99
     },
     "http": {
-      "total_requests": 2085,
+      "total_requests": 69864,
       "failed_rate": 0.6666666666666666,
-      "avg_duration_ms": 4.172967386091128,
-      "p95_duration_ms": 10.127399999999987
+      "avg_duration_ms": 14.87326694721183,
+      "p95_duration_ms": 76.77199999999995
     }
   },
   "verdict": "FAIL"
