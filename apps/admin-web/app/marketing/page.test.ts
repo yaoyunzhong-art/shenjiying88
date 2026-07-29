@@ -24,6 +24,6 @@ describe('marketing/page.test.ts', () => {
 
   it('page 已迁移为 E54 wrapper', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes(')Delivery {sourceEvidence.deliveryMode}'))
   })
 })

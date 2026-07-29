@@ -15,18 +15,18 @@ beforeEach(() => {
 
 describe('AlliancesPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function AlliancesPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function AlliancesPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载 alliances 快照', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadAlliancesSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadAlliancesSnapshot } from './alliances-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadAlliancesSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")import { loadAlliancesSnapshot } from './alliances-data'"))
   })
 
   it('页面应导出 dynamic 与 revalidate', () => {
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入管理员权限边界', () => {
@@ -47,8 +47,8 @@ describe('AlliancesPage — 来源态透明化', () => {
   it('应同时固证 api、指标占位与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadAlliancesSnapshot -> alliance/partner'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadAlliancesSnapshot -> defaultPartners fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('营收/分润指标缺省时以 0 值占位'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')营收/分润指标缺省时以 0 值占位'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

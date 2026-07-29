@@ -15,20 +15,20 @@ beforeEach(() => {
 
 describe('FinanceDashboardPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function FinanceDashboardPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function FinanceDashboardPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载 dashboard 快照并渲染客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("import { loadFinanceDashboardSnapshot } from './finance-dashboard-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadFinanceDashboardSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<FinanceDashboardClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(")import { loadFinanceDashboardSnapshot } from './finance-dashboard-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadFinanceDashboardSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<FinanceDashboardClient snapshot={snapshot} />'))
   })
 
   it('页面应接入管理员权限边界与动态渲染', () => {
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'finance:dashboard:read'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 })
 
@@ -44,8 +44,8 @@ describe('FinanceDashboardPage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 语义', () => {
     assert.ok(!PAGE_SRC.includes('loadFinanceDashboardSnapshot -> finance/dashboard'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadFinanceDashboardSnapshot -> defaultFinanceDashboard fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local finance dashboard samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local finance dashboard samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

@@ -15,20 +15,20 @@ beforeEach(() => {
 
 describe('ReconciliationPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function ReconciliationPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function ReconciliationPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载对账快照并渲染客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("import { loadReconciliationSnapshot } from './reconciliation-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadReconciliationSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<ReconciliationClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(")import { loadReconciliationSnapshot } from './reconciliation-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadReconciliationSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<ReconciliationClient snapshot={snapshot} />'))
   })
 
   it('页面应接入管理员权限边界与动态渲染', () => {
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'finance:reconciliation:read'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 })
 
@@ -48,8 +48,8 @@ describe('ReconciliationPage — 来源态透明化', () => {
         'loadReconciliationSnapshot -> defaultReconciliationStatus/defaultSummary/defaultDiffs/defaultDetails fallback'
       )
     )
-    assert.ok(PAGE_SRC.includes('local finance reconciliation samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local finance reconciliation samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

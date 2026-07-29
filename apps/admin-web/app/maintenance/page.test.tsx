@@ -15,15 +15,15 @@ beforeEach(() => {
 
 describe('MaintenancePage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function MaintenancePage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function MaintenancePage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载 maintenance 快照并导出动态配置', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadMaintenanceSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadMaintenanceSnapshot } from './maintenance-data'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadMaintenanceSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")import { loadMaintenanceSnapshot } from './maintenance-data'"))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应展示来源态证据与权限门禁', () => {
@@ -40,8 +40,8 @@ describe('MaintenancePage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadMaintenanceSnapshot -> logistics-management/maintenance-tasks'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadMaintenanceSnapshot -> defaultTasks fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local maintenance task samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local maintenance task samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

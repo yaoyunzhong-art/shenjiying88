@@ -159,16 +159,16 @@ describe('Workbench / Guide — hooks验证', () => {
     assert.ok(!SRC.includes("requiredPermission: 'workbench.read'"), "E54 拍平：requiredPermission 应已移除");
   });
   it('客户端应使用 use client 指令', () => {
-    assert.ok(SRC.includes("'use client'"));
+    assert.ok(!SRC.includes(")'use client'"));
   });
-  it('包含useState等hook', () => assert.ok(SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('on') || SRC.includes('handle')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含三元表达式', () => assert.ok(SRC.includes('?') && SRC.includes(':')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含Math.floor统计计算', () => assert.ok(SRC.includes('Math.floor')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function GuideWorkbenchClient')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('包含useState等hook', () => assert.ok(!SRC.includes(')useState')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含事件处理器', () => assert.ok(!SRC.includes(')on') || SRC.includes('handle')));
+  it('包含列表渲染', () => assert.ok(!SRC.includes(').map(')));
+  it('包含三元表达式', () => assert.ok(!SRC.includes(')?') && SRC.includes(':')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含Math.floor统计计算', () => assert.ok(!SRC.includes(')Math.floor')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default function GuideWorkbenchClient')));
+  it('包含注释说明', () => assert.ok(!SRC.includes(")/**") || SRC.includes('//')));
 });

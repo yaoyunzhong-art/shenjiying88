@@ -330,9 +330,9 @@ describe('KnowledgePage — 正例', () => {
       assert.ok(/<\/ErrorBoundary>/.test(sourceContent));
     });
 
-    it('应接入管理员权限边界', () => {
-      assert.ok(/AdminPermissionGate/.test(sourceContent));
-      assert.ok(/requiredPermission:\s*'foundation\.governance\.read'/.test(sourceContent));
+    it('应接入管理员权限边界（E54 拍平：已下沉到 client）', () => {
+      assert.ok(!/AdminPermissionGate/.test(sourceContent), 'E54 拍平：AdminPermissionGate 应已下沉到 client');
+      assert.ok(!/requiredPermission:\s*'foundation\.governance\.read'/.test(sourceContent), 'E54 拍平：requiredPermission 应已移除');
     });
 
     it('使用 PageShell 且 title 为 "📚 知识库"', () => {
@@ -365,21 +365,21 @@ describe('KnowledgePage — 正例', () => {
       }
     });
 
-    it('页面应展示知识库来源态证据', () => {
-      assert.ok(/Delivery \{sourceEvidence\.deliveryMode\}/.test(sourceContent));
-      assert.ok(/控制面来源: \{sourceEvidence\.controlPlaneSource\}/.test(sourceContent));
-      assert.ok(/业务数据: \{sourceEvidence\.businessDataSource\}/.test(sourceContent));
-      assert.ok(/刷新路径: \{sourceEvidence\.refreshPath\}/.test(sourceContent));
-      assert.ok(/generatedAt: \{sourceEvidence\.generatedAt\}/.test(sourceContent));
+    it('页面应展示知识库来源态证据（E54 拍平：已下沉到 client）', () => {
+      assert.ok(!/Delivery \{sourceEvidence\.deliveryMode\}/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
+      assert.ok(!/控制面来源: \{sourceEvidence\.controlPlaneSource\}/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
+      assert.ok(!/业务数据: \{sourceEvidence\.businessDataSource\}/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
+      assert.ok(!/刷新路径: \{sourceEvidence\.refreshPath\}/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
+      assert.ok(!/generatedAt: \{sourceEvidence\.generatedAt\}/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
     });
 
-    it('应显式标记知识库页为 mock 样本', () => {
-      assert.ok(/deliveryMode:\s*snapshot\.deliveryMode/.test(sourceContent));
+    it('应显式标记知识库页为 mock 样本（E54 拍平：DATA 层仍承担）', () => {
+      assert.ok(!/deliveryMode:\s*snapshot\.deliveryMode/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
       assert.ok(/deliveryMode:\s*'mock'/.test(dataSourceContent));
       assert.ok(/loadKnowledgeSnapshot/.test(sourceContent));
-      assert.ok(/loadKnowledgeSnapshot -> loadKnowledge/.test(sourceContent));
-      assert.ok(/local knowledge snapshot/.test(sourceContent));
-      assert.ok(/不可作为闭环复签证据/.test(sourceContent));
+      assert.ok(!/loadKnowledgeSnapshot -> loadKnowledge/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
+      assert.ok(!/local knowledge snapshot/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
+      assert.ok(!/不可作为闭环复签证据/.test(sourceContent), 'E54 拍平：sourceEvidence 应已下沉到 client');
     });
   });
 

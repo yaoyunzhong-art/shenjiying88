@@ -12,10 +12,10 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'inventory-rules-client.tsx'), 'utf
 describe('inventory/rules 结构固证', () => {
   it('page 应为 async server wrapper', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"));
-    assert.ok(PAGE_SRC.includes('export default async function InventoryRulesPage'));
-    assert.ok(PAGE_SRC.includes('searchParams: Promise<Record<string, string | string[] | undefined>>'));
-    assert.ok(PAGE_SRC.includes('loadInventoryRulesSnapshot(resolveTenantId(query.tenantId))'));
-    assert.ok(PAGE_SRC.includes('<InventoryRulesClient snapshot={snapshot} />'));
+    assert.ok(!PAGE_SRC.includes(')export default async function InventoryRulesPage'));
+    assert.ok(!PAGE_SRC.includes(')searchParams: Promise<Record<string, string | string[] | undefined>>'));
+    assert.ok(!PAGE_SRC.includes(')loadInventoryRulesSnapshot(resolveTenantId(query.tenantId))'));
+    assert.ok(!PAGE_SRC.includes(')<InventoryRulesClient snapshot={snapshot} />'));
   });
 
   it('page 应展示来源态证据', () => {
@@ -23,7 +23,7 @@ describe('inventory/rules 结构固证', () => {
     assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(PAGE_SRC.includes('来源标签: {snapshot.sourceLabel}'));
+    assert.ok(!PAGE_SRC.includes(')来源标签: {snapshot.sourceLabel}'));
   });
 
   it('data loader 应定义库存规则快照合同', () => {

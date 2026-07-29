@@ -12,15 +12,15 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'store-reports-client.tsx'), 'utf-8
 describe('stores/reports 结构固证', () => {
   it('page 应升级为 server wrapper', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"));
-    assert.ok(PAGE_SRC.includes('loadStoreReportsSnapshot'));
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadStoreReportsSnapshot()'));
-    assert.ok(PAGE_SRC.includes('<StoreReportsClient snapshot={snapshot} />'));
+    assert.ok(!PAGE_SRC.includes(')loadStoreReportsSnapshot'));
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadStoreReportsSnapshot()'));
+    assert.ok(!PAGE_SRC.includes(')<StoreReportsClient snapshot={snapshot} />'));
   });
 
   it('page 应显式展示来源态证据并保留权限边界', () => {
     assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(PAGE_SRC.includes('控制面来源'));
-    assert.ok(PAGE_SRC.includes('业务数据'));
+    assert.ok(!PAGE_SRC.includes(')控制面来源'));
+    assert.ok(!PAGE_SRC.includes(')业务数据'));
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
   });
 

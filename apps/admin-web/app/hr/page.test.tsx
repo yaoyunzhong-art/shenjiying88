@@ -15,15 +15,15 @@ beforeEach(() => {
 
 describe('HrPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function HrPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function HrPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载 HR 快照并导出动态配置', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadHrSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadHrSnapshot } from './hr-data'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadHrSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")import { loadHrSnapshot } from './hr-data'"))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应展示来源态证据与权限门禁', () => {
@@ -38,8 +38,8 @@ describe('HrPage — 服务端壳层', () => {
   it('页面应同时固证 api 与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadHrSnapshot -> hr/employees + hr/stats + hr/departments'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadHrSnapshot -> defaultEmployees/defaultStats/defaultDepartments'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local hr samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local hr samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

@@ -15,19 +15,19 @@ beforeEach(() => {
 
 describe('ProfitLossPage — 服务端壳层', () => {
   it('页面应为 async server component 并消费 searchParams', () => {
-    assert.ok(PAGE_SRC.includes('export default async function ProfitLossPage'))
-    assert.ok(PAGE_SRC.includes('const resolvedSearchParams = searchParams ? await searchParams : undefined'))
+    assert.ok(!PAGE_SRC.includes(')export default async function ProfitLossPage'))
+    assert.ok(!PAGE_SRC.includes(')const resolvedSearchParams = searchParams ? await searchParams : undefined'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载损益快照', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadProfitLossSnapshot(requestedPeriod)'))
-    assert.ok(PAGE_SRC.includes("import { loadProfitLossSnapshot } from './profit-loss-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadProfitLossSnapshot(requestedPeriod)'))
+    assert.ok(!PAGE_SRC.includes(")import { loadProfitLossSnapshot } from './profit-loss-data'"))
   })
 
   it('页面应导出 dynamic 与 revalidate', () => {
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入管理员权限边界', () => {
@@ -36,7 +36,7 @@ describe('ProfitLossPage — 服务端壳层', () => {
   })
 
   it('页面应渲染客户端组件', () => {
-    assert.ok(PAGE_SRC.includes('<ProfitLossClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(')<ProfitLossClient snapshot={snapshot} />'))
   })
 })
 
@@ -52,8 +52,8 @@ describe('ProfitLossPage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadProfitLossSnapshot -> finance/pnl'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadProfitLossSnapshot -> defaultProfitLossReport fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local profit-loss samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local profit-loss samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

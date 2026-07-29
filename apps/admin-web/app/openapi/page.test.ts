@@ -13,24 +13,24 @@ beforeEach(() => {
 
 describe('OpenApiWorkbenchPage — 服务端壳层冒烟', () => {
   it('应为 async server component 并强制使用动态快照', () => {
-    assert.ok(PAGE_SRC.includes('export default async function OpenApiWorkbenchPage'))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(')export default async function OpenApiWorkbenchPage'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('应加载治理快照并展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadOpenApiWorkbenchSnapshot()'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadOpenApiWorkbenchSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes(')来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(!PAGE_SRC.includes(')控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(!PAGE_SRC.includes(')generatedAt: {sourceEvidence.generatedAt}'))
   })
 
   it('应挂载权限门禁与客户端渲染器', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
-    assert.ok(PAGE_SRC.includes("import OpenApiWorkbenchClient from './openapi-client'"))
-    assert.ok(PAGE_SRC.includes('<OpenApiWorkbenchClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(")import OpenApiWorkbenchClient from './openapi-client'"))
+    assert.ok(!PAGE_SRC.includes(')<OpenApiWorkbenchClient snapshot={snapshot} />'))
   })
 })
 

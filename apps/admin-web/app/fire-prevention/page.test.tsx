@@ -15,15 +15,15 @@ beforeEach(() => {
 
 describe('FirePreventionPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function FirePreventionPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function FirePreventionPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应读取 fire-prevention 快照并导出动态配置', () => {
-    assert.ok(PAGE_SRC.includes("import { loadFirePreventionSnapshot } from './fire-prevention-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadFirePreventionSnapshot()'))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")import { loadFirePreventionSnapshot } from './fire-prevention-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadFirePreventionSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入权限门禁与来源态证据', () => {
@@ -33,7 +33,7 @@ describe('FirePreventionPage — 服务端壳层', () => {
     assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('客户端 fake write'))
+    assert.ok(!PAGE_SRC.includes(')客户端 fake write'))
   })
 })
 

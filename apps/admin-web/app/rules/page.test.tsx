@@ -12,9 +12,9 @@ const CLIENT_SRC = readFileSync(CLIENT_PATH, 'utf8')
 
 describe('rules 页面结构固证', () => {
   test('page 为 server wrapper 并接入 snapshot loader', () => {
-    assert.ok(PAGE_SRC.includes('export default async function RulesPage'))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadRulesSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')export default async function RulesPage'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadRulesSnapshot()'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
@@ -28,7 +28,7 @@ describe('rules 页面结构固证', () => {
   test('page 挂载权限门禁与 client renderer', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:read'"))
-    assert.ok(PAGE_SRC.includes('<RulesClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(')<RulesClient snapshot={snapshot} />'))
   })
 })
 

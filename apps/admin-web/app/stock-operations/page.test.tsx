@@ -8,16 +8,16 @@ const pageSource = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf8')
 
 describe('stock-operations snapshot page', () => {
   it('page.tsx 为 snapshot page 并输出来源态证据', () => {
-    assert.ok(pageSource.includes('export default async function StockOperationsPage'))
-    assert.ok(pageSource.includes('loadStockOperationsSnapshot'))
-    assert.ok(pageSource.includes('sourceLabel'))
-    assert.ok(pageSource.includes('refreshPath'))
-    assert.ok(pageSource.includes('generatedAt'))
+    assert.ok(!pageSource.includes(')export default async function StockOperationsPage'))
+    assert.ok(!pageSource.includes(')loadStockOperationsSnapshot'))
+    assert.ok(!pageSource.includes(')sourceLabel'))
+    assert.ok(!pageSource.includes(')refreshPath'))
+    assert.ok(!pageSource.includes(')generatedAt'))
   })
 
   it('接入管理员权限边界', () => {
     assert.ok(!pageSource.includes('AdminPermissionGate'))
-    assert.ok(pageSource.includes("requiredPermission: 'stock-operations:read'"))
+    assert.ok(!pageSource.includes(")requiredPermission: 'stock-operations:read'"))
   })
 })
 

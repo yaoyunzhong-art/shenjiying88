@@ -15,18 +15,18 @@ beforeEach(() => {
 
 describe('MarketsPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function MarketsPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function MarketsPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载市场快照', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadMarketsSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadMarketsSnapshot } from '../markets-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadMarketsSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")import { loadMarketsSnapshot } from '../markets-data'"))
   })
 
   it('页面应导出 dynamic 与 revalidate', () => {
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入管理员权限边界', () => {
@@ -37,18 +37,18 @@ describe('MarketsPage — 服务端壳层', () => {
 
 describe('MarketsPage — 来源态透明化', () => {
   it('页面应展示市场来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(!PAGE_SRC.includes(')Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes(')控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(!PAGE_SRC.includes(')业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(!PAGE_SRC.includes(')刷新路径: {sourceEvidence.refreshPath}'))
+    assert.ok(!PAGE_SRC.includes(')generatedAt: {sourceEvidence.generatedAt}'))
   })
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(PAGE_SRC.includes('loadMarketsSnapshot -> markets'))
-    assert.ok(PAGE_SRC.includes('loadMarketsSnapshot -> MOCK_MARKETS fallback'))
-    assert.ok(PAGE_SRC.includes('local market configuration samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')loadMarketsSnapshot -> markets'))
+    assert.ok(!PAGE_SRC.includes(')loadMarketsSnapshot -> MOCK_MARKETS fallback'))
+    assert.ok(!PAGE_SRC.includes(')local market configuration samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

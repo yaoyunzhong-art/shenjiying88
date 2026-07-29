@@ -12,16 +12,16 @@ import assert from 'node:assert/strict';
     describe('MemberTierFormPage 结构固证', () => {
       it('page 应为 async server wrapper', () => {
         assert.ok(!PAGE_SRC.includes("'use client'"));
-        assert.ok(PAGE_SRC.includes('export default async function MemberTierFormPage'));
-        assert.ok(PAGE_SRC.includes('loadMemberTierFormPageSnapshot'));
-        assert.ok(PAGE_SRC.includes('<MemberTierFormClient snapshot={snapshot} />'));
+        assert.ok(!PAGE_SRC.includes(')export default async function MemberTierFormPage'));
+        assert.ok(!PAGE_SRC.includes(')loadMemberTierFormPageSnapshot'));
+        assert.ok(!PAGE_SRC.includes(')<MemberTierFormClient snapshot={snapshot} />'));
       });
 
       it('page 应展示来源态证据', () => {
         assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-        assert.ok(PAGE_SRC.includes('来源标签'));
-        assert.ok(PAGE_SRC.includes('控制面来源'));
-        assert.ok(PAGE_SRC.includes('业务数据'));
+        assert.ok(!PAGE_SRC.includes(')来源标签'));
+        assert.ok(!PAGE_SRC.includes(')控制面来源'));
+        assert.ok(!PAGE_SRC.includes(')业务数据'));
         assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
       });
 

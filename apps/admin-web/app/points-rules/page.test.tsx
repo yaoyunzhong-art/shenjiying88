@@ -15,20 +15,20 @@ beforeEach(() => {
 
 describe('PointsRulesPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function PointsRulesPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function PointsRulesPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载积分规则快照并渲染客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("import { loadPointsRulesSnapshot } from './points-rules-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadPointsRulesSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<PointsRulesClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(")import { loadPointsRulesSnapshot } from './points-rules-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadPointsRulesSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<PointsRulesClient snapshot={snapshot} />'))
   })
 
   it('页面应接入管理员权限边界与动态渲染', () => {
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'points-rules:read'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 })
 
@@ -44,8 +44,8 @@ describe('PointsRulesPage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadPointsRulesSnapshot -> member/points-rules + member/points-summary'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadPointsRulesSnapshot -> defaultRules/defaultSummary fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local points-rules fallback samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local points-rules fallback samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

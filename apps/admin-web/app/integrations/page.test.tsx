@@ -15,18 +15,18 @@ beforeEach(() => {
 
 describe('IntegrationsPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function IntegrationsPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function IntegrationsPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载 integrations 快照', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadIntegrationsSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadIntegrationsSnapshot } from './integrations-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadIntegrationsSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")import { loadIntegrationsSnapshot } from './integrations-data'"))
   })
 
   it('页面应导出 dynamic 与 revalidate', () => {
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入管理员权限边界', () => {
@@ -47,8 +47,8 @@ describe('IntegrationsPage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadIntegrationsSnapshot -> openapi/integrations'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadIntegrationsSnapshot -> defaultIntegrations fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local integrations samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local integrations samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

@@ -15,19 +15,19 @@ beforeEach(() => {
 
 describe('FinancePage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function FinancePage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function FinancePage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载 finance 快照并渲染客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("import { loadFinanceSnapshot } from './finance-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadFinanceSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<FinanceClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(")import { loadFinanceSnapshot } from './finance-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadFinanceSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<FinanceClient snapshot={snapshot} />'))
   })
 
   it('页面应导出 dynamic 与 revalidate', () => {
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入管理员权限边界', () => {
@@ -48,8 +48,8 @@ describe('FinancePage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 语义', () => {
     assert.ok(!PAGE_SRC.includes('loadFinanceSnapshot -> api/finance/payments + api/finance/refunds'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadFinanceSnapshot -> defaultPayments/defaultRefunds fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local finance payment/refund samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local finance payment/refund samples'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

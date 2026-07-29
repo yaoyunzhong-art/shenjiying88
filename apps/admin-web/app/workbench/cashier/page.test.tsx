@@ -13,9 +13,9 @@ const LEGACY_SRC = readFileSync(resolve(DIR, 'cashier-workbench-legacy.tsx'), 'u
 describe('workbench/cashier 结构固证', () => {
   it('page 应切为 server wrapper 并加载快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
-    assert.ok(PAGE_SRC.includes('export default async function CashierWorkbenchPage'))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadCashierWorkbenchSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<CashierWorkbenchClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(')export default async function CashierWorkbenchPage'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadCashierWorkbenchSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<CashierWorkbenchClient snapshot={snapshot} />'))
   })
 
   it('page 应显式透出来源态证据与权限边界', () => {

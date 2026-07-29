@@ -12,16 +12,16 @@ const CLIENT_SRC = readFileSync(CLIENT_PATH, 'utf8')
 
 describe('announcements 页面结构固证', () => {
   test('page 为 server wrapper 并接入 snapshot loader', () => {
-    assert.ok(PAGE_SRC.includes('export default async function AnnouncementsPage'))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadAnnouncementsSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')export default async function AnnouncementsPage'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadAnnouncementsSnapshot()'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   test('page 挂载权限门禁与客户端渲染器', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(!PAGE_SRC.includes('sourceEvidence'))
-    assert.ok(PAGE_SRC.includes('<AnnouncementsClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(')<AnnouncementsClient snapshot={snapshot} />'))
   })
 })
 

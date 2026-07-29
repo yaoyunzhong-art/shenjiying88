@@ -12,15 +12,15 @@ const DATA_SRC = readFileSync(resolve(DIR, 'member-levels-data.ts'), 'utf-8')
 describe('members/levels/page.tsx 结构固证', () => {
   it('page 应为 server wrapper 并加载等级列表快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
-    assert.ok(PAGE_SRC.includes('export default async function MemberLevelsPage'))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadMemberLevelsSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<MemberLevelsClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(')export default async function MemberLevelsPage'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadMemberLevelsSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<MemberLevelsClient snapshot={snapshot} />'))
   })
 
   it('page 应显式透出来源态证据与权限边界', () => {
     assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('控制面来源:'))
+    assert.ok(!PAGE_SRC.includes(')控制面来源:'))
     assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')

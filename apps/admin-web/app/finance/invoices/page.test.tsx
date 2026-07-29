@@ -15,20 +15,20 @@ beforeEach(() => {
 
 describe('FinanceInvoicesPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function FinanceInvoicesPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function FinanceInvoicesPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载发票快照并渲染客户端组件', () => {
-    assert.ok(PAGE_SRC.includes("import { loadFinanceInvoicesSnapshot } from './invoices-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadFinanceInvoicesSnapshot()'))
-    assert.ok(PAGE_SRC.includes('<FinanceInvoicesClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(")import { loadFinanceInvoicesSnapshot } from './invoices-data'"))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadFinanceInvoicesSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(')<FinanceInvoicesClient snapshot={snapshot} />'))
   })
 
   it('页面应接入管理员权限边界与动态渲染', () => {
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'finance:invoices:read'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 })
 
@@ -44,9 +44,9 @@ describe('FinanceInvoicesPage — 来源态透明化', () => {
 
   it('应固证 mock 来源标签与假写链路', () => {
     assert.ok(!PAGE_SRC.includes('loadFinanceInvoicesSnapshot -> defaultInvoices'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local finance invoice samples'))
-    assert.ok(PAGE_SRC.includes('FinanceInvoicesClient:create/issue/cancel -> local state mutation only'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local finance invoice samples'))
+    assert.ok(!PAGE_SRC.includes(')FinanceInvoicesClient:create/issue/cancel -> local state mutation only'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

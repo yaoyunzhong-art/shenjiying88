@@ -8,10 +8,10 @@ const CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'dashboard-client.t
 const DATA_SRC = readFileSync(resolve(import.meta.dirname, 'dashboard-data.ts'), 'utf-8')
 
 describe('admin/dashboard — 来源态固证', () => {
-  it('page 应展示 mock 来源链路', () => {
-    assert.ok(PAGE_SRC.includes('loadAdminDashboardSnapshot -> defaultOverview/defaultRevenueTrend/defaultRegionStats/defaultNewTenantTrend/defaultAlerts'))
-    assert.ok(PAGE_SRC.includes('local admin dashboard HQ samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+  it('page 应展示 mock 来源链路（E54 拍平：已下沉到 client）', () => {
+    assert.ok(!PAGE_SRC.includes('loadAdminDashboardSnapshot -> defaultOverview/defaultRevenueTrend/defaultRegionStats/defaultNewTenantTrend/defaultAlerts'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('local admin dashboard HQ samples'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('不可作为闭环复签证据'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('data 应固化总部样本字段', () => {
