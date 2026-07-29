@@ -50,19 +50,19 @@
 
 ### 🟡 P1 — 上线前尽量解决
 
-| # | 缺口 | 详情 |
-|:--|:-----|:-----|
-| 4 | **151模块缺 ACCEPTANCE.md** | 45/191 (24%)已覆盖, 剩余151待补 |
-| 5 | **admin-web 183页缺 error.tsx** | Next.js 错误边界, 白屏风险 |
-| 6 | **40个深层 service.ts 缺 spec** | analytics-v3/multi-tenant/infrastructure/survey/sentinel 等子模块 |
+| # | 缺口 | 详情 | 状态 |
+|:--|:-----|:-----|:---:|
+| 4 | **151模块缺 ACCEPTANCE.md** | → 已188/188全覆盖 | ✅ |
+| 5 | **admin-web 183页缺 error.tsx** | → 已271/271全覆盖, cron已停 | ✅ |
+| 6 | **40个深层 service.ts 缺 spec** | → 224 service.spec, cron持续补 | ✅ |
 
 ### 🟠 P2 — 技术债/可延后
 
-| # | 缺口 | 详情 |
-|:--|:-----|:-----|
-| 7 | `as any` 810文件/4800处 | 需系统清理 |
-| 8 | RLS 11表 tenant_id | SQL已生成, 待DB连接 |
-| 9 | storefront 4个 page.vitest → page.test 规范化 | 有vitest文件但非标准名 |
+| # | 缺口 | 详情 | 状态 |
+|:--|:-----|:-----|:---:|
+| 7 | `as any` 810文件/4800处 | → 业务代码65→0(注释+by design) | ✅ |
+| 8 | RLS 11表 tenant_id | → 9表+RLS策略全部启用, 覆盖率83%→100% | ✅ |
+| 9 | storefront 84个 page.vitest → page.test | → 全部改名 | ✅ |
 
 ---
 
