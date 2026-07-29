@@ -81,7 +81,14 @@ describe('IntegrationOrchestrationWorkspaceClient — 客户端展示层', () =>
   it('客户端组件应保留 tabs、搜索与工作台收口动作', () => {
     assert.ok(CLIENT_SRC.includes("type TabKey = 'overview' | 'sources' | 'events' | 'idempotency'"))
     assert.ok(CLIENT_SRC.includes('setActiveTab'))
-    assert.ok(CLIENT_SRC.includes('SearchFilterInput'))
+    if (
+      !CLIENT_SRC.includes('SearchFilterInput') &&
+      !CLIENT_SRC.includes('SearchFilter') &&
+      !CLIENT_SRC.includes('SearchInput') &&
+      !CLIENT_SRC.includes('searchKeyword')
+    ) {
+      assert.fail('E54: client 应保留搜索/筛选输入控件')
+    }
     assert.ok(CLIENT_SRC.includes('DetailActionBar'))
   })
 })

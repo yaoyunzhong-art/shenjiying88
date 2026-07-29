@@ -12,10 +12,11 @@ test('integration-orchestration page: 使用服务端 page + data + client 三�
   assert.ok(DATA_SRC.includes('export async function loadIntegrationOrchestrationPageSnapshot'))
 })
 
-test('integration-orchestration page: 展示 delivery mode 与 sourceLabel 证据', () => {
-  assert.ok(PAGE_SRC.includes('sourceEvidence.deliveryMode'))
-  assert.ok(PAGE_SRC.includes('sourceEvidence.sourceLabel'))
-  assert.ok(PAGE_SRC.includes('sourceEvidence.refreshPath'))
+test('integration-orchestration page: 展示 delivery mode 与 sourceLabel 证据（E54 拍平：已下沉到 client）', () => {
+  assert.ok(!PAGE_SRC.includes('sourceEvidence.deliveryMode'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+  assert.ok(!PAGE_SRC.includes('sourceEvidence.sourceLabel'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+  assert.ok(!PAGE_SRC.includes('sourceEvidence.refreshPath'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+  assert.ok(PAGE_SRC.includes('IntegrationOrchestrationWorkspaceClient'))
 })
 
 test('integration-orchestration page: data 层应合并 workspace 和 bootstrap 的 delivery mode', () => {
