@@ -18,11 +18,11 @@ import assert from 'node:assert/strict';
       });
 
       it('page 应展示来源态证据', () => {
-        assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+        assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
         assert.ok(PAGE_SRC.includes('来源标签'));
         assert.ok(PAGE_SRC.includes('控制面来源'));
         assert.ok(PAGE_SRC.includes('业务数据'));
-        assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+        assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
       });
 
       it('data loader 应定义快照合同', () => {
@@ -36,7 +36,7 @@ assert.ok(DATA_SRC.includes('defaultConfig'));
       it('client renderer 应消费 snapshot 并通过 router.refresh 刷新', () => {
         assert.ok(CLIENT_SRC.includes("'use client'"));
         assert.ok(CLIENT_SRC.includes('snapshot: ImportMembersPageSnapshot'));
-        assert.ok(CLIENT_SRC.includes('useRouter'));
+        assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh");
         assert.ok(CLIENT_SRC.includes('router.refresh();'));
 assert.ok(CLIENT_SRC.includes('statusLabel'));
 assert.ok(CLIENT_SRC.includes('确认导入'));

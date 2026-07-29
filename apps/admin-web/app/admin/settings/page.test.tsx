@@ -38,9 +38,9 @@ describe('AdminSettingsData — 快照合同', () => {
 describe('AdminSettingsClient — 客户端渲染层', () => {
   it('客户端应声明 use client 并支持 router.refresh', () => {
     assert.ok(CLIENT_SRC.includes('"use client"'))
-    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
   })
 
   it('客户端应保留系统信息、服务通道与安全策略视图', () => {

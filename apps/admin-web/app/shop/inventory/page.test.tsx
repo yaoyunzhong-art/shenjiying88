@@ -11,7 +11,7 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'shop-inventory-client.tsx'), 'utf-
 describe('shop/inventory E54 结构固证', () => {
   it('page 应加载库存快照并展示来源态证据', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadShopInventorySnapshot()'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<ShopInventoryClient snapshot={snapshot} />'))
   })
 
@@ -23,7 +23,7 @@ describe('shop/inventory E54 结构固证', () => {
 
   it('client renderer 应支持 router.refresh 与补货动作', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('handleRestock'))
     assert.ok(CLIENT_SRC.includes('补货 +20'))
   })

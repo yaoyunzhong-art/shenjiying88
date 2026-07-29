@@ -33,11 +33,11 @@ describe('MemberActivitiesPage — 服务端壳层', () => {
 
 describe('MemberActivitiesPage — 来源态证据', () => {
   it('页面应展示来源态证据字段', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('应同时固证 api 与 fallback 来源标签', () => {
@@ -75,8 +75,8 @@ describe('MemberActivitiesClient — 客户端展示层', () => {
   });
 
   it('客户端组件应支持刷新并透出 fallback 错误', () => {
-    assert.ok(CLIENT_SRC.includes('useRouter'));
-    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"));
     assert.ok(CLIENT_SRC.includes('snapshot.error'));
   });

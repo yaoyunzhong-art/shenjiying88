@@ -64,7 +64,7 @@ describe('agents/sessions/[id] — 正例', () => {
     assert.ok(src.includes('const sourceEvidence'), '缺少来源态对象');
     assert.ok(src.includes("detailSource:\n      deliveryMode === 'api'"), '缺少 detail source');
     assert.ok(src.includes("refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail'"));
-    assert.ok(src.includes('sourceEvidence={sourceEvidence}'));
+    assert.ok(!src.includes('sourceEvidence={sourceEvidence}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('session list 导航链接应指向 /agents/sessions', () => {
@@ -153,8 +153,8 @@ const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Agents / Sessions — hooks验证', () => {
   it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
   });
   it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));

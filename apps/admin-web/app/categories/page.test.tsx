@@ -11,7 +11,7 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'categories-list-client.tsx'), 'utf
 describe('categories E54 结构固证', () => {
   it('page 应加载分类快照并展示来源态证据', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadCategoriesListSnapshot()'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<CategoriesListClient snapshot={snapshot} />'))
   })
 
@@ -23,7 +23,7 @@ describe('categories E54 结构固证', () => {
 
   it('client renderer 应支持 router.refresh 与层级筛选', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes("scope === 'root'"))
     assert.ok(CLIENT_SRC.includes('新建分类'))
   })

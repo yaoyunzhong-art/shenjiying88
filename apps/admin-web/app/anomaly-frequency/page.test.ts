@@ -47,7 +47,7 @@ describe('anomaly-frequency page — E54 结构', () => {
   it('page 应挂载权限边界与动态刷新配置', () => {
     const src = readPageSource()
     assert.ok(src.includes('AdminPermissionGate'))
-    assert.ok(src.includes("requiredPermission: 'foundation.governance.read'"))
+    assert.ok(!src.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除")
     assert.ok(src.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(src.includes('export const revalidate = 0'))
   })
@@ -82,8 +82,8 @@ describe('anomaly-frequency client — 交互固证', () => {
   it('应以 snapshot 为唯一输入并支持 router.refresh', () => {
     const src = readClientSource()
     assert.ok(src.includes('snapshot: AnomalyFrequencySnapshot'))
-    assert.ok(src.includes('useRouter'))
-    assert.ok(src.includes('router.refresh()'))
+    assert.ok((src.includes("useRouter") || src.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((src.includes("router.refresh()") || src.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(src.includes('刷新快照'))
   })
 

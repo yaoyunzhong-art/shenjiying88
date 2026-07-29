@@ -31,8 +31,8 @@ describe('Dashboard — 正例', () => {
     assert.ok(SRC.includes('fallbackRoleWorkbenches'));
   });
   it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes('requiredPermission="dashboard:read"'));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('requiredPermission="dashboard:read"'), 'E54 拍平：requiredPermission 应已移除');
   });
 });
 

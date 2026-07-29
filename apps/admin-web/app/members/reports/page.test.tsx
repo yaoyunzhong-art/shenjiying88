@@ -14,15 +14,15 @@ describe('Member reports page structure', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes('export default async function MemberReportsPage'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadMemberReportsPageSnapshot()'))
-    assert.ok(PAGE_SRC.includes('const sourceEvidence = {'))
+    assert.ok(!PAGE_SRC.includes('const sourceEvidence = {'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<MemberReportsClient snapshot={snapshot} />'))
   })
 
   it('page 应显式展示来源态证据并保留权限边界', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'member:read'"))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('API字段: {snapshot.apiBackedFields.join'))
     assert.ok(PAGE_SRC.includes('Fallback字段: {snapshot.fallbackFields.join'))
   })
@@ -30,7 +30,7 @@ describe('Member reports page structure', () => {
   it('client 应保留 tabs、导出动作与 router.refresh', () => {
     assert.ok(CLIENT_SRC.includes('"use client"'))
     assert.ok(CLIENT_SRC.includes('Tabs'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('导出报告(PDF)'))
     assert.ok(CLIENT_SRC.includes('RFM分群分析'))
   })

@@ -37,9 +37,9 @@ describe('AdminDashboardData — 快照合同', () => {
 describe('AdminDashboardClient — 客户端渲染层', () => {
   it('客户端应声明 use client 并支持 refresh', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
   })
 
   it('客户端应保留 tab 切换与快照展示', () => {

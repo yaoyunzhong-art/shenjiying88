@@ -192,8 +192,8 @@ describe('AgentSessions — 边界', () => {
 
 describe('agents/sessions — 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
   });
 });
 
@@ -213,11 +213,11 @@ describe('agents/sessions — 首屏壳层与来源态', () => {
   });
 
   it('client 展示会话来源态证据', () => {
-    assert.ok(CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(CLIENT_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
-    assert.ok(CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(CLIENT_SRC.includes('latestCreatedAt: {sourceEvidence.latestCreatedAt}'));
+    assert.ok(!CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('latestCreatedAt: {sourceEvidence.latestCreatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(CLIENT_SRC.includes('loadAgentSessions (listAgentSessions + getAgentStats)'));
     assert.ok(CLIENT_SRC.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS'));
   });

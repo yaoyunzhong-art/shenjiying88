@@ -35,12 +35,12 @@ describe('ApprovalsPage — 服务端壳层', () => {
 
 describe('ApprovalsPage — 来源态透明化', () => {
   it('页面应展示审批列表来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes('写入路径: {sourceEvidence.writePath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes('latestUpdatedAt: {sourceEvidence.latestUpdatedAt}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('写入路径: {sourceEvidence.writePath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('latestUpdatedAt: {sourceEvidence.latestUpdatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('页面应显式标记 mock 样本与假写链路', () => {
@@ -91,9 +91,9 @@ describe('ApprovalsClient — 客户端展示层', () => {
   })
 
   it('客户端组件应支持 router.refresh 刷新服务端快照', () => {
-    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
   })
 

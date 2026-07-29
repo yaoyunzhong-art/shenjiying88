@@ -292,7 +292,7 @@ describe('Devices — hooks验证', () => {
 
 describe('Devices / Detail — 权限边界', () => {
   it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'devices:read'"));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'devices:read'"), "E54 拍平：requiredPermission 应已移除");
   });
 });

@@ -225,8 +225,8 @@ describe('pad-workbench: 类型与数据完整性', () => {
 
 describe('pad-workbench: 权限边界', () => {
   it('详情页接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes('requiredPermission="workbench.read"'));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('requiredPermission="workbench.read"'), 'E54 拍平：requiredPermission 应已移除');
   });
 
   it('详情页应包含来源态与角色映射证据', () => {

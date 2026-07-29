@@ -39,12 +39,12 @@ describe('audit-trail/page.tsx — 结构', () => {
 
 describe('audit-trail/page.tsx — 来源态透明化', () => {
   it('应展示审计列表来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
-    assert.ok(PAGE_SRC.includes('查询条件: {sourceEvidence.query}'));
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('查询条件: {sourceEvidence.query}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('应同时固证 api 与 fallback 标签', () => {

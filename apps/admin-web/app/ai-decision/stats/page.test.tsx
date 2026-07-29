@@ -33,13 +33,13 @@ describe('AiDecisionStatsPage — snapshot page 壳层', () => {
 
 describe('AiDecisionStatsPage — 来源态透明化', () => {
   it('页面应展示 AI 决策统计来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('控制面来源:'))
-    assert.ok(PAGE_SRC.includes('{sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(!PAGE_SRC.includes('{sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('刷新路径:'))
-    assert.ok(PAGE_SRC.includes('{sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
+    assert.ok(!PAGE_SRC.includes('{sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('页面应显式标记 mock 快照不可复签', () => {

@@ -12,7 +12,7 @@ describe('license-renewal page', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes("import { loadLicenseRenewalSnapshot } from './license-renewal-data'"))
     assert.ok(PAGE_SRC.includes('<LicenseRenewalClient snapshot={snapshot} />'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'license-renewal:read'"))
   })
 
@@ -25,7 +25,7 @@ describe('license-renewal page', () => {
 
   it('client 保留交互与刷新', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('Tabs'))
     assert.ok(CLIENT_SRC.includes('创建套餐'))
     assert.ok(CLIENT_SRC.includes('handleToggleAutoRenewal'))

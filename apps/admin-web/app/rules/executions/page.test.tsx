@@ -16,8 +16,8 @@ beforeEach(() => {
 describe('RuleExecutionsPage — 服务端壳层', () => {
   it('应加载执行快照并展示来源态', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadRuleExecutionsSnapshot()'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 })
 
@@ -33,7 +33,7 @@ describe('RuleExecutionsData — 快照合同', () => {
 describe('RuleExecutionsClient — 客户端渲染层', () => {
   it('应支持 router.refresh 与筛选器', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('statusFilter'))
     assert.ok(CLIENT_SRC.includes('timeRange'))
     assert.ok(CLIENT_SRC.includes('搜索执行 ID / 规则名 / 触发源'))

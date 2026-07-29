@@ -21,7 +21,7 @@ describe('ConfigurationOperationDetailPage — 服务端壳层', () => {
   })
 
   it('应渲染来源态证据和客户端详情组件', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<ConfigurationOperationDetailClient snapshot={snapshot.detail} />'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
   })

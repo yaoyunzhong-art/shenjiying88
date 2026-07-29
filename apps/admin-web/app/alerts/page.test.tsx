@@ -185,13 +185,13 @@ describe('Alerts — hooks验证', () => {
   it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
   it('接入管理员权限边界', () => {
     assert.ok(!SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
   });
   it('页面展示告警中心来源态证据', () => {
-    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(SRC.includes("generatedAt: {sourceEvidence.generatedAt ?? '—'}"));
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes("generatedAt: {sourceEvidence.generatedAt ?? '—'}"), "E54 拍平：sourceEvidence 应已下沉到 client");
   });
   it('页面固证 governance source 与 refresh path', () => {
     assert.ok(SRC.includes('loadAdminGovernanceReadModel / snapshot.governance'));

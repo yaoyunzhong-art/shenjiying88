@@ -18,7 +18,7 @@ describe('stores/reports 结构固证', () => {
   });
 
   it('page 应显式展示来源态证据并保留权限边界', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(PAGE_SRC.includes('控制面来源'));
     assert.ok(PAGE_SRC.includes('业务数据'));
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
@@ -37,6 +37,6 @@ describe('stores/reports 结构固证', () => {
     assert.ok(CLIENT_SRC.includes('useState<ProfitFilter>'));
     assert.ok(CLIENT_SRC.includes('DataTable'));
     assert.ok(CLIENT_SRC.includes('Tabs'));
-    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
   });
 });

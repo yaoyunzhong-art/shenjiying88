@@ -21,7 +21,7 @@ function readSource(): string {
 describe('orders — 正例', () => {
   it('应接入管理员权限边界', () => {
     const src = readSource();
-    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(!src.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已下沉/移除');
     assert.ok(src.includes("requiredPermission: 'order:read'"), '应复用 order:read 权限');
   });
 

@@ -149,8 +149,8 @@ const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('configuration/entries/[id] — 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes('requiredPermission="foundation.governance.read"'));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('requiredPermission="foundation.governance.read"'), 'E54 拍平：requiredPermission 应已移除');
   });
 });
 

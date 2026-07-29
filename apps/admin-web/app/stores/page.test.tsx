@@ -21,7 +21,7 @@ describe('stores/page.tsx 结构固证', () => {
   });
 
   it('应显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(PAGE_SRC.includes('控制面来源'));
     assert.ok(PAGE_SRC.includes('业务数据'));
     assert.ok(PAGE_SRC.includes('刷新路径'));

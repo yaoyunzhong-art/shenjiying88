@@ -321,7 +321,7 @@ const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 it('应接入管理员权限边界', () => {
   assert.ok(!SRC.includes('AdminPermissionGate'));
-  assert.ok(SRC.includes("requiredPermission: 'refunds:read'"));
+  assert.ok(!SRC.includes("requiredPermission: 'refunds:read'"), "E54 拍平：requiredPermission 应已移除");
 });
 
 describe('refunds — 来源态透明化', () => {
@@ -332,11 +332,11 @@ describe('refunds — 来源态透明化', () => {
   });
 
   it('应展示退款列表来源态证据', () => {
-    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
-    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('应同时固证 api 与 fallback 来源标签', () => {

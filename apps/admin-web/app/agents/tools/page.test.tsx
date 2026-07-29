@@ -207,17 +207,17 @@ describe('agents/tools — 页面壳层', () => {
 
   it('client 应展示工具来源态证据', () => {
     const src = readClientSource();
-    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(src.includes('schemaCoverage: {sourceEvidence.schemaCoverage}'));
-    assert.ok(src.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    assert.ok(!src.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!src.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!src.includes('schemaCoverage: {sourceEvidence.schemaCoverage}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!src.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 });
 
 describe('agents/tools — 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
   });
 });

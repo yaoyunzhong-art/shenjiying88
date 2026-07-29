@@ -29,8 +29,8 @@ describe('RateLimitsPolicyDetailPage — 服务端壳层', () => {
 
   it('页面应渲染权限门禁、来源态证据和客户端详情组件', () => {
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode} / {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('refreshPath: {sourceEvidence.refreshPath}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode} / {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('refreshPath: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<RateLimitsPolicyDetailClient snapshot={snapshot.detail} />'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
@@ -50,9 +50,9 @@ describe('RateLimitsPolicyDetailData — 快照合同', () => {
 describe('RateLimitsPolicyDetailClient — 客户端展示层', () => {
   it('客户端组件应声明 use client 并支持 refresh', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
   })
 
   it('客户端组件应保留详情收口与关联账本展示', () => {

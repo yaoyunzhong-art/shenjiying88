@@ -27,6 +27,6 @@ describe('ai-decision/page.ts', () => {
     assert.ok(CLIENT_SRC.includes('Pagination'))
     assert.ok(CLIENT_SRC.includes('handleCreate'))
     assert.ok(CLIENT_SRC.includes('handleExport'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
   })
 })

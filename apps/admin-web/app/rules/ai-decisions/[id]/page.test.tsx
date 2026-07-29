@@ -23,8 +23,8 @@ describe('AiDecisionDetailPage — 服务端壳层', () => {
 
   it('应渲染来源态证据与客户端详情组件', () => {
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:ai-decisions:id:read'"))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<AiDecisionDetailClient snapshot={snapshot} />'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
   })
@@ -49,9 +49,9 @@ describe('AiDecisionDetailData — 快照合同', () => {
 describe('AiDecisionDetailClient — 客户端渲染层', () => {
   it('应声明 use client 并支持 refresh', () => {
     assert.ok(CLIENT_SRC.includes('"use client"'))
-    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
   })
 
   it('应保留输入上下文、推理过程和决策结果区块', () => {

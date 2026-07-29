@@ -20,7 +20,7 @@ describe('reports/revenue/page.tsx 结构固证', () => {
   it('page 应显式透出来源态证据与权限边界', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(!PAGE_SRC.includes('sourceEvidence'))
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
   })
 })
@@ -28,7 +28,7 @@ describe('reports/revenue/page.tsx 结构固证', () => {
 describe('reports/revenue/client 结构固证', () => {
   it('client 应保留筛选、导出与刷新能力', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('useMemo'))
     assert.ok(CLIENT_SRC.includes('搜索日期，例如 07-27'))
     assert.ok(CLIENT_SRC.includes('导出营收快照'))

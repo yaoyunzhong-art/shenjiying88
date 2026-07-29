@@ -12,7 +12,7 @@ describe('dev-tools/deploy page', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes("import { loadDeploySnapshot } from './deploy-data'"))
     assert.ok(PAGE_SRC.includes('<DeployClient snapshot={snapshot} />'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('data 固证 mock 来源', () => {
@@ -23,8 +23,8 @@ describe('dev-tools/deploy page', () => {
   })
 
   it('client 保留筛选、弹窗与刷新交互', () => {
-    assert.ok(CLIENT_SRC.includes('useRouter'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('envFilter'))
     assert.ok(CLIENT_SRC.includes('Modal'))
     assert.ok(CLIENT_SRC.includes('成功率'))

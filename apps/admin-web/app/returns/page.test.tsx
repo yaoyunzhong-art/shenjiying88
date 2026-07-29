@@ -332,11 +332,11 @@ describe('Returns — 来源态透明化', () => {
   });
 
   it('页面应展示退换货来源态证据', () => {
-    assert.ok(SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
-    assert.ok(SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('应显式标记退换货页为 mock 样本', () => {

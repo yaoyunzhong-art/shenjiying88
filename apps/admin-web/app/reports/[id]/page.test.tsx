@@ -19,10 +19,10 @@ describe('reports/[id] 结构固证', () => {
   });
 
   it('page 应显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('sourceEvidence.sourceLabel'));
-    assert.ok(PAGE_SRC.includes('sourceEvidence.controlPlaneSource'));
-    assert.ok(PAGE_SRC.includes('sourceEvidence.businessDataSource'));
-    assert.ok(PAGE_SRC.includes('sourceEvidence.refreshPath'));
+    assert.ok(!PAGE_SRC.includes('sourceEvidence.sourceLabel'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('sourceEvidence.controlPlaneSource'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('sourceEvidence.businessDataSource'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('sourceEvidence.refreshPath'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('data loader 应定义报表详情快照合同', () => {
@@ -36,6 +36,6 @@ describe('reports/[id] 结构固证', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"));
     assert.ok(CLIENT_SRC.includes('snapshot.report'));
     assert.ok(CLIENT_SRC.includes('exportCsv'));
-    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
   });
 });

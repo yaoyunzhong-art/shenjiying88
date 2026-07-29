@@ -223,16 +223,16 @@ describe('AgentDashboard — 降级/错误', () => {
 
 describe('agents/dashboard — 权限边界', () => {
   it('接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'foundation.governance.read'"));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
   });
 
   it('应向 dashboard client 透传时间戳并固证来源态区块', () => {
     assert.ok(SRC.includes('timestamp={snapshot.timestamp}'));
-    assert.ok(CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
-    assert.ok(CLIENT_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    assert.ok(!CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!CLIENT_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
   it('应固证 dashboard snapshot 与 stream 来源', () => {

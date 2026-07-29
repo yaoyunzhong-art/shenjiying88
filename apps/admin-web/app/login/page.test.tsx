@@ -16,25 +16,25 @@ describe('Login page structure', () => {
     assert.ok(PAGE_SRC.includes('export default async function LoginPage'))
     assert.ok(PAGE_SRC.includes('const requestHeaders = await headers()'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadLoginPageSnapshot({ requestHeaders })'))
-    assert.ok(PAGE_SRC.includes('const sourceEvidence = {'))
+    assert.ok(!PAGE_SRC.includes('const sourceEvidence = {'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('<LoginClient snapshot={snapshot} />'))
   })
 
   it('page 应显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(PAGE_SRC.includes('loadLoginPageSnapshot -> auth/me'))
     assert.ok(PAGE_SRC.includes('loadLoginPageSnapshot -> adminWebBootstrap + MOCK_LOGIN_HISTORY fallback'))
   })
 
   it('client 应保留表单交互并支持 router.refresh', () => {
     assert.ok(CLIENT_SRC.includes('"use client"'))
-    assert.ok(CLIENT_SRC.includes('useRouter'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok(CLIENT_SRC.includes('loginAdmin'))
     assert.ok(CLIENT_SRC.includes('storeAdminSession'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
   })
 
   it('data 应固化 login snapshot 合同', () => {

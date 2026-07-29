@@ -19,10 +19,10 @@ describe('inventory 结构固证', () => {
   });
 
   it('page 应展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(PAGE_SRC.includes('来源标签: {snapshot.sourceLabel}'));
   });
 
@@ -38,7 +38,7 @@ describe('inventory 结构固证', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"));
     assert.ok(CLIENT_SRC.includes('snapshot: InventoryPageSnapshot'));
     assert.ok(CLIENT_SRC.includes('useSearchParams'));
-    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新快照'"));
   });
 

@@ -12,8 +12,8 @@ describe('dev-tools/brand page', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
     assert.ok(PAGE_SRC.includes("import { loadBrandSnapshot } from './brand-data'"))
     assert.ok(PAGE_SRC.includes('<BrandClient snapshot={snapshot} />'))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('data 固证 mock 来源', () => {
@@ -23,8 +23,8 @@ describe('dev-tools/brand page', () => {
   })
 
   it('client 保留交互与刷新', () => {
-    assert.ok(CLIENT_SRC.includes('useRouter'))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('搜索品牌'))
     assert.ok(CLIENT_SRC.includes('Table'))
     assert.ok(CLIENT_SRC.includes('Statistic'))

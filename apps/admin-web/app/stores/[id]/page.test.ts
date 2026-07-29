@@ -22,7 +22,7 @@ describe('stores/[id] data/client 结构固证', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"));
     assert.ok(CLIENT_SRC.includes('validateForm'));
     assert.ok(CLIENT_SRC.includes('submitStoreEdit'));
-    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()");
     assert.ok(CLIENT_SRC.includes('buildCapabilityEntrypoints'));
   });
 

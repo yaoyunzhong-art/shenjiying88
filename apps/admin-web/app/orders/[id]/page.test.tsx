@@ -24,7 +24,7 @@ describe('orders/[id] 结构固证', () => {
 
   it('client 应保留 router.refresh 与详情交互', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('DetailActionBar'))
     assert.ok(CLIENT_SRC.includes("message.warning('状态流转 API 尚未接入，暂无法操作')"))
     assert.ok(CLIENT_SRC.includes('刷新快照'))

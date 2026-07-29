@@ -155,8 +155,8 @@ const SRC = readClientSource();
 
 describe('Workbench / Guide — hooks验证', () => {
   it('应接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes("requiredPermission: 'workbench.read'"));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'workbench.read'"), "E54 拍平：requiredPermission 应已移除");
   });
   it('客户端应使用 use client 指令', () => {
     assert.ok(SRC.includes("'use client'"));

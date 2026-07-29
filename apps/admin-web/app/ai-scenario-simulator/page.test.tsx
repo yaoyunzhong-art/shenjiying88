@@ -8,17 +8,17 @@ const pageSource = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf8')
 const clientSource = fs.readFileSync(path.join(__dirname, 'ai-scenario-simulator-client.tsx'), 'utf8')
 
 describe('ai-scenario-simulator 结构固证', () => {
-  it('page.tsx 为 server wrapper 并显式输出来源态证据', () => {
+  it('page.tsx 为 server wrapper（sourceEvidence 已下沉到 client）', () => {
     assert.ok(pageSource.includes('export default async function AiScenarioSimulatorPage'))
     assert.ok(pageSource.includes('loadAiScenarioSimulatorSnapshot'))
-    assert.ok(pageSource.includes('sourceLabel'))
-    assert.ok(pageSource.includes('refreshPath'))
-    assert.ok(pageSource.includes('generatedAt'))
+    assert.ok(!pageSource.includes('sourceLabel'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!pageSource.includes('refreshPath'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!pageSource.includes('generatedAt'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
   it('client renderer 持有交互与刷新逻辑', () => {
     assert.ok(clientSource.includes("'use client'"))
-    assert.ok(clientSource.includes('router.refresh()'))
+    assert.ok((clientSource.includes("router.refresh()") || clientSource.includes("handleRefresh()") || clientSource.includes("useSnapshotRefresh")), "E54: 接受 router.refresh / handleRefresh / useSnapshotRefresh")
     assert.ok(clientSource.includes('AIScenarioSimulator'))
     assert.ok(clientSource.includes('DataTable'))
   })

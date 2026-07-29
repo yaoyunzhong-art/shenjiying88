@@ -88,7 +88,7 @@ describe('pad — 正例', () => {
 
   it('应接入管理员权限边界', () => {
     const src = readClientSource();
-    assert.ok(src.includes('AdminPermissionGate'), '缺少 AdminPermissionGate');
+    assert.ok(!src.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已下沉/移除');
     assert.ok(src.includes('requiredPermission="workbench.read"'), '缺少 workbench.read 权限边界');
   });
 

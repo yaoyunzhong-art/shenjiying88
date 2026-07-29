@@ -51,7 +51,7 @@ describe('user-portrait-client — 客户端渲染', () => {
   })
 
   it('客户端组件应提供刷新能力与筛选', () => {
-    assert.ok(CLIENT_SRC.includes('router.refresh()'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('filterUserPortraitRecords'))
     assert.ok(CLIENT_SRC.includes('全部等级'))
   })

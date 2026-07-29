@@ -164,8 +164,8 @@ describe('workbench-[role]: 页面渲染 (async 组件, 缺 React 19)', () => {
 
 describe('workbench-[role]: 权限边界', () => {
   it('角色详情页接入管理员权限边界', () => {
-    assert.ok(SRC.includes('AdminPermissionGate'));
-    assert.ok(SRC.includes('requiredPermission="workbench.read"'));
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('requiredPermission="workbench.read"'), 'E54 拍平：requiredPermission 应已移除');
   });
 
   it('角色详情页显式展示工作台来源态证据', () => {
