@@ -364,75 +364,37 @@ describe('Tags — getTabCounts', () => {
 describe('Tags — 页面结构', () => {
   const SRC = readSource();
 
-  it('33. 导出默认组件 TagsPage', () => {
-    assert.ok(SRC.includes('export default function TagsPage'), '应导出 TagsPage');
+  it('33. 导出默认组件 TagsPage（E54 拍平：server wrapper）', () => {
+    assert.ok(
+      (SRC.includes('export default async function TagsPage') ||
+        SRC.includes('export default function TagsPage')),
+      '应导出 TagsPage'
+    );
   });
 
-  it('34. 使用 use client', () => {
-    assert.ok(SRC.includes("'use client'"), '应为客户端组件');
+  it('34. page 不应再使用 use client（E54 拍平：server component）', () => {
+    assert.ok(!SRC.includes("'use client'"), 'E54 拍平：page 不应是 client component');
   });
 
-  it('35. 导入 Tabs', () => {
-    assert.ok(SRC.includes('Tabs'), '应导入 Tabs');
+  it('35. page 应挂载 TagsClient 客户端', () => {
+    assert.ok(SRC.includes('TagsClient'), '应挂载 TagsClient');
   });
 
-  it('36. 导入 Button', () => {
-    assert.ok(SRC.includes('Button'), '应导入 Button');
+  it('36. page 应加载 loadTagsPageSnapshot', () => {
+    assert.ok(SRC.includes('loadTagsPageSnapshot'), '应加载 loadTagsPageSnapshot');
   });
 
-  it('37. 导入 PageShell', () => {
-    assert.ok(SRC.includes('PageShell'), '应导入 PageShell');
+  it('37. page 应设置 force-dynamic', () => {
+    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"), '应设置 force-dynamic');
   });
 
-  it('38. 导入 StatCard', () => {
-    assert.ok(SRC.includes('StatCard'), '应导入 StatCard');
+  it('38. page 应设置 revalidate = 0', () => {
+    assert.ok(SRC.includes('export const revalidate = 0'), '应设置 revalidate = 0');
   });
 
-  it('39. 包含 Tab 筛选组件', () => {
-    assert.ok(SRC.includes('tabItems') || SRC.includes('activeTab'), '应包含 Tab 筛选');
-  });
-
-  it('40. 包含概览统计区域', () => {
-    assert.ok(SRC.includes('StatCard'), '应包含统计卡片');
-  });
-
-  it('41. 包含标签列表表格', () => {
-    assert.ok(SRC.includes('<table'), '应包含表格');
-    assert.ok(SRC.includes('<th'), '应包含表头');
-    assert.ok(SRC.includes('<tbody'), '应包含表体');
-  });
-
-  it('42. 包含颜色圆点', () => {
-    assert.ok(SRC.includes('borderRadius: \'50%\'') || SRC.includes('borderRadius: "50%"'), '应包含圆点颜色标识');
-  });
-
-  it('43. 包含空态 SVG', () => {
-    assert.ok(SRC.includes('EmptyStateSVG'), '应包含空态组件');
-    assert.ok(SRC.includes('<svg'), '应包含 SVG');
-  });
-
-  it('44. 包含刷新按钮文本', () => {
-    assert.ok(SRC.includes('刷新'), '应包含刷新按钮');
-  });
-
-  it('45. 包含默认样本数据', () => {
-    assert.ok(SRC.includes('高消费活跃'), '应包含样本数据');
-    assert.ok(SRC.includes('运动达人'), '应包含样本数据');
-  });
-
-  it('46. SAMPLE_TAGS 长度在源码中为 8', () => {
-    const matches = SRC.match(/id:\s*'t\d+'/g);
-    assert.ok(matches && matches.length >= 8, '应至少8个样本 tag');
-  });
-
-  // 反例: 没有 console.log 等调试代码
-  it('47. 不含 console.log', () => {
-    assert.ok(!SRC.includes('console.log'), '不应有调试日志');
-  });
-
-  // 反例: 没有 any 类型
-  it('48. 不含 as any', () => {
-    assert.ok(!SRC.includes('as any'), '不应使用 as any');
+  it('39. page 不应含业务壳层（E54 拍平：已下沉到 client）', () => {
+    assert.ok(!SRC.includes('PageShell'), 'E54 拍平：PageShell 应已下沉到 client');
+    assert.ok(!SRC.includes('StatCard'), 'E54 拍平：StatCard 应已下沉到 client');
   });
 
   // 反例: 没有 skip/only
