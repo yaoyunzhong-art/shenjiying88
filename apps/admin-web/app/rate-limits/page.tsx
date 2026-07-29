@@ -12,15 +12,14 @@
  *  - force-dynamic 动态渲染 + no-store 缓存策略
  */
 
-import { Suspense } from 'react';
-import { PageShell, ErrorBoundary } from '@m5/ui';
-import type { QuotaLedgerStatus } from '@m5/types';
-import { loadRateLimitWorkspace } from '../rate-limits-view-model';
-import { AdminPermissionGate } from '../components/admin-permission-gate';
-import RateLimitsWorkspaceClient from './rate-limits-workspace-client';
+import { Suspense } from 'react'
+import { PageShell, ErrorBoundary } from '@m5/ui'
+import type { QuotaLedgerStatus } from '@m5/types'
+import { loadRateLimitWorkspace } from '../rate-limits-view-model'
+import RateLimitsWorkspaceClient from './rate-limits-workspace-client'
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 function LoadingSkeleton() {
   return (
@@ -87,7 +86,7 @@ function LoadingSkeleton() {
         }}
       />
     </div>
-  );
+  )
 }
 
 /**
@@ -98,32 +97,32 @@ function readQueryParam(
   value: string | string[] | undefined,
 ): string | undefined {
   if (value === undefined) {
-    return undefined;
+    return undefined
   }
   if (Array.isArray(value)) {
-    return value[0] ?? undefined;
+    return value[0] ?? undefined
   }
-  return value;
+  return value
 }
 
 interface RateLimitsPageProps {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 async function RateLimitsContent({
   searchParams,
 }: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  let params: Record<string, string | string[] | undefined> = {};
+  let params: Record<string, string | string[] | undefined> = {}
   if (searchParams) {
-    params = await searchParams;
+    params = await searchParams
   }
 
-  const tenantId = readQueryParam(params.tenantId);
-  const policyCode = readQueryParam(params.policyCode);
-  const subjectKey = readQueryParam(params.subjectKey);
-  const status = readQueryParam(params.status) as QuotaLedgerStatus | 'ALL' | undefined;
+  const tenantId = readQueryParam(params.tenantId)
+  const policyCode = readQueryParam(params.policyCode)
+  const subjectKey = readQueryParam(params.subjectKey)
+  const status = readQueryParam(params.status) as QuotaLedgerStatus | 'ALL' | undefined
 
   const { workspace, deliveryMode, generatedAt, query } = await loadRateLimitWorkspace(
     {
@@ -133,7 +132,7 @@ async function RateLimitsContent({
       status,
     },
     { cache: 'no-store' },
-  );
+  )
 
   return (
     <RateLimitsWorkspaceClient
@@ -142,33 +141,27 @@ async function RateLimitsContent({
       generatedAt={generatedAt}
       query={query}
     />
-  );
+  )
 }
 
 export default async function RateLimitsPage({
   searchParams,
 }: RateLimitsPageProps) {
   return (
-    <AdminPermissionGate
-      requiredPermission="foundation.governance.read"
-      title="限流与配额管理访问受限"
-      description="限流与配额管理页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看策略、配额账本与健康分桶。"
+    <PageShell
+      title="⏱️ 限流与配额管理"
+      subtitle="限流策略与配额账本 — healthy/warning/blocked 三态分桶 · 支持 ALL 通配查询"
     >
-      <PageShell
-        title="⏱️ 限流与配额管理"
-        subtitle="限流策略与配额账本 — healthy/warning/blocked 三态分桶 · 支持 ALL 通配查询"
+      <ErrorBoundary
+        name="RateLimitsErrorBoundary"
+        severity="block"
+        description="限流工作台加载异常，请刷新重试"
+        retryLabel="重试加载"
       >
-        <ErrorBoundary
-          name="RateLimitsErrorBoundary"
-          severity="block"
-          description="限流工作台加载异常，请刷新重试"
-          retryLabel="重试加载"
-        >
-          <Suspense fallback={<LoadingSkeleton />}>
-            <RateLimitsContent searchParams={searchParams} />
-          </Suspense>
-        </ErrorBoundary>
-      </PageShell>
-    </AdminPermissionGate>
-  );
+        <Suspense fallback={<LoadingSkeleton />}>
+          <RateLimitsContent searchParams={searchParams} />
+        </Suspense>
+      </ErrorBoundary>
+    </PageShell>
+  )
 }

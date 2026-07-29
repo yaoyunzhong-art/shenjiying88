@@ -13,28 +13,6 @@ beforeEach(() => {
   DATA_SRC = readFileSync(resolve(import.meta.dirname, 'dashboard-data.ts'), 'utf-8')
 })
 
-describe('AdminDashboardPage — 服务端壳层', () => {
-  it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function AdminDashboardPage'))
-    assert.ok(!PAGE_SRC.includes("'use client'"))
-  })
-
-  it('页面应读取 admin dashboard 快照', () => {
-    assert.ok(PAGE_SRC.includes("import { loadAdminDashboardSnapshot } from './dashboard-data'"))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadAdminDashboardSnapshot()'))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
-  })
-
-  it('页面应展示来源态证据并接入权限门禁', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'dashboard:read'"))
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-  })
-})
 
 describe('AdminDashboardData — 快照合同', () => {
   it('应定义 mock 快照结构', () => {

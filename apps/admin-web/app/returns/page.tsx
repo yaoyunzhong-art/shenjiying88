@@ -1,34 +1,34 @@
-import { AdminPermissionGate } from '../components/admin-permission-gate'
-
 /**
  * 退换货管理 — Return List Page (Next.js App Router)
  *
  * 功能:
  * - 管理门店退换货申请审批与处理流程
  * - 支持仅退款、换货、维修等多种退换类型
- * - 状态筛选（待审核/待收货/处理中/已完成/已关闭）
- * - 搜索：按订单号、退货单号、门店名称
  * - 统计概览：待处理 / 已完成 / 维修中
- * - 空状态 / 加载中 / 搜索无结果 / 错误回退
+ * - 空状态 / 加载中 / 错误回退
  */
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { loadReturnsSnapshot } from './return-data';
 import { ReturnListClient } from './return-list-client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /** 退换货统计摘要 */
 function ReturnSummaryCards({ returns }: { returns: unknown[] }) {
   const pending = returns.filter(
-    (r: any) => r.status === 'pending_review' || r.status === 'approved'
+    (r: any) => r.status === 'pending_review' || r.status === 'approved',
   ).length;
   const processing = returns.filter(
-    (r: any) => r.status === 'return_received' || r.status === 'replacement_sent'
+    (r: any) => r.status === 'return_received' || r.status === 'replacement_sent',
   ).length;
   const completed = returns.filter(
-    (r: any) => r.status === 'refund_issued'
+    (r: any) => r.status === 'refund_issued',
   ).length;
-  const closed = returns.filter((r: any) => r.status === 'closed' || r.status === 'rejected').length;
+  const closed = returns.filter(
+    (r: any) => r.status === 'closed' || r.status === 'rejected',
+  ).length;
 
   const SUMMARY_ITEMS = [
     { label: '待处理', value: pending.toString(), color: '#fbbf24' },
@@ -81,128 +81,43 @@ function ReturnListLoadingFallback() {
   );
 }
 
-/** 错误回退 */
 function ReturnListErrorFallback() {
   return (
     <EmptyState
       title="退换货数据加载失败"
-      description="无法获取退换货申请列表。请检查网络连接，稍后重试。"
+      description="无法获取退换货申请列表。"
       action={<a href="/returns">重试</a>}
     />
   );
 }
 
-/** 空状态 */
 function ReturnEmptyState() {
   return (
     <EmptyState
       title="暂无退换货申请"
-      description="当前没有待处理的退换货申请。所有流程均已完结。"
+      description="当前没有待处理的退换货申请。"
       action={<a href="/returns">查看历史</a>}
     />
   );
 }
 
-
-const permissionGate = {
-  requiredPermission: 'returns:read',
-  title: 'returns 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 returns:read 权限的账号可访问。',
-} as const
-
-export const dynamic = 'force-dynamic';
-
 export default async function ReturnsPage() {
   const snapshot = await loadReturnsSnapshot();
   const returns = snapshot.returns;
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource: 'loadReturnsSnapshot -> getReturns',
-    businessDataSource: 'return-data local return samples',
-    refreshPath: 'ReturnsPage -> loadReturnsSnapshot',
-    generatedAt: snapshot.generatedAt,
-    note: '当前退换货页使用本地退换样本，不代表真实售后链路，也不可作为闭环复签证据。',
-  } as const;
 
   return (
-    <AdminPermissionGate
-      requiredPermission={permissionGate.requiredPermission}
-      title={permissionGate.title}
-      description={permissionGate.description}
-    >
-      <>
-      {/* JSON-LD */}
-      <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-      __html: JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      name: '退换货管理',
-      applicationCategory: 'BusinessApplication',
-      description:
-      '管理门店退换货申请审批与处理流程，支持仅退款、换货、维修等多种退换类型。',
-      }),
-      }}
-      />
-
-      <div
-      style={{
-      padding: '12px 16px',
-      borderRadius: 12,
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(148,163,184,0.08)',
-      fontSize: 12,
-      color: '#cbd5e1',
-      lineHeight: 1.7,
-      marginBottom: 16,
-      }}
-      >
-      <div>
-      Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
-      </div>
-      <div>
-      业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
-      </div>
-      <div>
-      generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
-      </div>
-      </div>
-
-      {/* 统计摘要 */}
+    <>
       {returns && returns.length > 0 && <ReturnSummaryCards returns={returns} />}
 
-      {/* 主列表 */}
       <ErrorBoundary fallback={<ReturnListErrorFallback />}>
-      <Suspense fallback={<ReturnListLoadingFallback />}>
-      {returns && returns.length > 0 ? (
-      <ReturnListClient returns={returns} />
-      ) : returns && returns.length === 0 ? (
-      <ReturnEmptyState />
-      ) : null}
-      </Suspense>
+        <Suspense fallback={<ReturnListLoadingFallback />}>
+          {returns && returns.length > 0 ? (
+            <ReturnListClient returns={returns} />
+          ) : returns && returns.length === 0 ? (
+            <ReturnEmptyState />
+          ) : null}
+        </Suspense>
       </ErrorBoundary>
-
-      {/* 底部说明 */}
-      <div
-      style={{
-      marginTop: 24,
-      padding: '8px 16px',
-      borderRadius: 8,
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(148,163,184,0.08)',
-      fontSize: 12,
-      color: '#94a3b8',
-      lineHeight: 1.6,
-      }}
-      >
-      <strong style={{ color: '#e2e8f0' }}>退换货流程说明</strong>
-      <br />
-      退换货申请需经过门店审核 → 商品回收 → 质检 → 退款/换货发出。
-      维修申请需用户寄回商品，维修周期约 3-7 个工作日。
-      用户可在个人中心查看退换货进度。
-      </div>
-      </>
-    </AdminPermissionGate>
-  )
+    </>
+  );
 }

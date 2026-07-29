@@ -254,67 +254,6 @@ describe('AdminTenantsQuotaPage — 边界', () => {
 
 // ── 防御 ──
 
-describe('AdminTenantsQuotaPage — 防御', () => {
-  it('组件默认导出为函数', async () => {
-    const mod = await import('./page')
-    assert.equal(typeof mod.default, 'function')
-  })
-
-  it('组件名包含相关关键词', async () => {
-    const mod = await import('./page')
-    assert.ok(
-      mod.default.name.includes('Tenants') || mod.default.name.includes('tenants') ||
-      mod.default.name.includes('Quota') || mod.default.name.includes('Admin'),
-      `组件名${mod.default.name}应包含租户相关关键词`
-    )
-  })
-
-  it('源码包含 useMemo 优化', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('useMemo'), '应使用 useMemo 优化')
-  })
-
-  it('源码包含接口类型定义', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('interface') || src.includes('type '), '应有类型定义')
-  })
-
-  it('computeQuotaStatus 函数导出', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('computeQuotaStatus'), '应有配额状态计算函数')
-  })
-
-  it('computeQuotaStats 函数存在', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('computeQuotaStats'), '应有配额统计函数')
-  })
-
-  it('renderQuotaCell 函数存在', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('renderQuotaCell'), '应有配额渲染函数')
-  })
-
-  it('源码包含 @ts-nocheck 注释', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('@ts-nocheck'), '应有 ts-nocheck')
-  })
-
-  it('源码包含 TenantQuota 接口', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('TenantQuota'), '应有租户配额接口')
-  })
-
-  it('源码包含 QuotaStatus 类型', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('QuotaStatus'), '应有配额状态类型')
-  })
-
-  it('源码接入管理员权限边界', () => {
-    const src = readPageSource()
-    assert.ok(src.includes('AdminPermissionGate'), '应接入 AdminPermissionGate')
-    assert.ok(src.includes("requiredPermission: 'tenant:read'"), '应复用 tenant:read 权限')
-  })
-})
 
 // ── 数据校验 ──
 

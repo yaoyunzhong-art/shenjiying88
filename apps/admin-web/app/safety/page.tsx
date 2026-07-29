@@ -1,11 +1,4 @@
-import { AdminPermissionGate } from '../components/admin-permission-gate'
 import { loadSafetySnapshot, SEVERITY_MAP, STATUS_MAP } from './safety-data'
-
-const permissionGate = {
-  requiredPermission: 'safety:read',
-  title: 'safety 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 safety:read 权限的账号可访问。',
-} as const
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -18,32 +11,9 @@ export default async function SafetyPage() {
   const snapshot = await loadSafetySnapshot()
   const criticalCount = snapshot.records.filter((record) => record.severity === 'critical').length
   const completionRate = Math.round(((count(snapshot.records, 'resolved') + count(snapshot.records, 'closed')) / snapshot.records.length) * 100)
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    sourceLabel: snapshot.sourceLabel,
-    controlPlaneSource: 'loadSafetySnapshot -> buildSafetyRecords',
-    businessDataSource: 'local safety incident snapshot samples',
-    refreshPath: 'SafetyPage -> loadSafetySnapshot',
-    generatedAt: snapshot.generatedAt,
-    note: '当前页面已收敛为 snapshot page，来源态与结构证据可直接透出。',
-  } as const
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700">
-          <div>
-            Delivery {sourceEvidence.deliveryMode} · sourceLabel: {sourceEvidence.sourceLabel}
-          </div>
-          <div>
-            控制面来源: {sourceEvidence.controlPlaneSource} · 业务数据: {sourceEvidence.businessDataSource}
-          </div>
-          <div>
-            refreshPath: {sourceEvidence.refreshPath} · generatedAt: {sourceEvidence.generatedAt}
-          </div>
-          <div>{sourceEvidence.note}</div>
-        </div>
-
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
         <header>
           <h1 className="text-2xl font-bold text-slate-900">安全记录</h1>
           <p className="mt-1 text-sm text-slate-500">安全事件、隐患与整改跟踪快照页</p>
@@ -105,7 +75,6 @@ export default async function SafetyPage() {
             </table>
           </div>
         </section>
-      </div>
-    </AdminPermissionGate>
+    </div>
   )
 }

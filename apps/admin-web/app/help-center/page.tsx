@@ -1,5 +1,3 @@
-import { AdminPermissionGate } from '../components/admin-permission-gate'
-
 /**
  * 帮助中心 — Help Center Page (Next.js App Router)
  *
@@ -7,34 +5,22 @@ import { AdminPermissionGate } from '../components/admin-permission-gate'
  * - 展示平台操作指南、常见问题和技术文档
  * - 按分类（入门指南 / 门店运营 / 设备维护 / 财务管理 / AI 功能）浏览
  * - 支持关键词搜索过滤
- * - 热门文章置顶 + 最新更新提示
- * - 空状态 / 加载中 / 搜索无结果
+ * - 空状态 / 加载中 / 错误回退
  */
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { loadHelpCenterSnapshot } from './help-center-data';
 import { HelpCenterClient } from './help-center-client';
 
-
-/** 帮助文档分类配置 */
-const HELP_CATEGORIES = [
-  { key: 'getting-started', label: '入门指南', icon: '🚀', count: 5 },
-  { key: 'store-operations', label: '门店运营', icon: '🏪', count: 8 },
-  { key: 'device-maintenance', label: '设备维护', icon: '🔧', count: 6 },
-  { key: 'financial-management', label: '财务管理', icon: '💰', count: 4 },
-  { key: 'ai-features', label: 'AI 功能', icon: '🤖', count: 7 },
-  { key: 'troubleshooting', label: '故障排查', icon: '⚠️', count: 3 },
-];
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /** 加载占位 */
 function HelpCenterLoadingFallback() {
   return (
     <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      {/* 搜索栏骨架 */}
       <LoadingSkeleton variant="card" rows={1} label="加载搜索栏..." />
       <div style={{ height: 24 }} />
-
-      {/* 分类标签骨架 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
@@ -44,19 +30,15 @@ function HelpCenterLoadingFallback() {
               height: 32,
               borderRadius: 8,
               background: 'rgba(148,163,184,0.08)',
-              animation: 'pulse 1.5s ease-in-out infinite',
             }}
           />
         ))}
       </div>
-
-      {/* 文章列表骨架 */}
       <LoadingSkeleton variant="card" rows={5} label="加载文章列表..." />
     </div>
   );
 }
 
-/** 错误回退 */
 function HelpCenterErrorFallback() {
   return (
     <EmptyState
@@ -67,176 +49,53 @@ function HelpCenterErrorFallback() {
   );
 }
 
-/** 搜索无结果 */
 function SearchNoResultsState() {
   return (
     <EmptyState
       title="未找到相关文档"
-      description="尝试更换关键词，或浏览分类目录查找。如果您的问题仍未解决，可以联系在线客服。"
+      description="尝试更换关键词，或浏览分类目录查找。"
       action={<a href="/help-center">浏览全部文档</a>}
     />
   );
 }
 
-
-const permissionGate = {
-  requiredPermission: 'help-center:read',
-  title: 'help-center 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 help-center:read 权限的账号可访问。',
-} as const
-
-export const dynamic = 'force-dynamic';
-
 export default async function HelpCenterPage() {
   const snapshot = await loadHelpCenterSnapshot();
   const articles = snapshot.articles;
   const articleCount = articles.length;
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    controlPlaneSource: 'loadHelpCenterSnapshot -> getHelpArticles',
-    businessDataSource: 'help-center-data local articles',
-    refreshPath: 'HelpCenterPage -> loadHelpCenterSnapshot',
-    generatedAt: snapshot.generatedAt,
-    note: '当前帮助中心使用本地知识库样本，不代表真实知识中心主数据，也不可作为闭环复签证据。',
-  } as const;
 
   return (
-    <AdminPermissionGate
-      requiredPermission={permissionGate.requiredPermission}
-      title={permissionGate.title}
-      description={permissionGate.description}
-    >
-      <>
-      {/* JSON-LD */}
-      <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-      __html: JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      name: '帮助中心',
-      applicationCategory: 'BusinessApplication',
-      description:
-      '平台操作指南、常见问题和技术文档。按分类浏览或搜索关键词快速定位帮助文档。',
-      offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'CNY',
-      },
-      }),
-      }}
-      />
-
-      {/* 页面顶部 — 分类导航 + 统计概览 */}
+    <>
+      {/* 页面顶部 */}
       <div
-      style={{
-      maxWidth: 1000,
-      margin: '0 auto',
-      padding: '24px 32px 0',
-      }}
+        style={{
+          maxWidth: 1000,
+          margin: '0 auto',
+          padding: '24px 32px 0',
+        }}
       >
-      <div
-      style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 16,
-      }}
-      >
-      <div>
-      <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 4 }}>
-      总计 <strong style={{ color: '#f8fafc' }}>{articleCount}</strong> 篇文档
-      · 最后更新: {sourceEvidence.generatedAt}
-      </div>
-      </div>
-      <div
-      style={{
-      display: 'flex',
-      gap: 6,
-      flexWrap: 'wrap',
-      }}
-      >
-      {HELP_CATEGORIES.map((cat) => (
-      <div
-      key={cat.key}
-      style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 4,
-      padding: '4px 10px',
-      borderRadius: 6,
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(148,163,184,0.1)',
-      fontSize: 12,
-      color: '#cbd5e1',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      }}
-      >
-      <span>{cat.icon}</span>
-      <span>{cat.label}</span>
-      <span style={{ color: '#64748b', fontSize: 11 }}>({cat.count})</span>
-      </div>
-      ))}
-      </div>
-      <div
-      style={{
-      padding: '12px 16px',
-      borderRadius: 12,
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(148,163,184,0.08)',
-      fontSize: 12,
-      color: '#cbd5e1',
-      lineHeight: 1.7,
-      marginBottom: 16,
-      }}
-      >
-      <div>
-      Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
-      </div>
-      <div>
-      业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
-      </div>
-      <div>
-      generatedAt: {sourceEvidence.generatedAt} · {sourceEvidence.note}
-      </div>
-      </div>
-      </div>
+        <div
+          style={{
+            color: '#94a3b8',
+            fontSize: 13,
+            marginBottom: 16,
+          }}
+        >
+          总计 <strong style={{ color: '#f8fafc' }}>{articleCount}</strong> 篇文档
+          · 最后更新: {snapshot.generatedAt}
+        </div>
       </div>
 
       {/* 主内容 */}
       <ErrorBoundary fallback={<HelpCenterErrorFallback />}>
-      <Suspense fallback={<HelpCenterLoadingFallback />}>
-      {articleCount > 0 ? (
-      <HelpCenterClient articles={articles} />
-      ) : (
-      <SearchNoResultsState />
-      )}
-      </Suspense>
+        <Suspense fallback={<HelpCenterLoadingFallback />}>
+          {articleCount > 0 ? (
+            <HelpCenterClient articles={articles} />
+          ) : (
+            <SearchNoResultsState />
+          )}
+        </Suspense>
       </ErrorBoundary>
-
-      {/* 底部 — 联系支持 */}
-      <div
-      style={{
-      marginTop: 32,
-      padding: '16px 24px',
-      borderRadius: 8,
-      background: 'rgba(59,130,246,0.04)',
-      border: '1px solid rgba(59,130,246,0.12)',
-      fontSize: 13,
-      color: '#94a3b8',
-      lineHeight: 1.6,
-      maxWidth: 1000,
-      marginLeft: 'auto',
-      marginRight: 'auto',
-      textAlign: 'center',
-      }}
-      >
-      <strong style={{ color: '#60a5fa' }}>没有找到答案？</strong>
-      <br />
-      您可以联系在线客服 (工作日 9:00-22:00) 或提交工单，技术团队将在 2 小时内响应。
-      </div>
-      </>
-    </AdminPermissionGate>
-  )
+    </>
+  );
 }

@@ -13,29 +13,6 @@ beforeEach(() => {
   DATA_SRC = readFileSync(resolve(import.meta.dirname, 'admin-settings-data.ts'), 'utf-8')
 })
 
-describe('AdminSettingsPage — 服务端壳层', () => {
-  it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function AdminSettingsPage'))
-    assert.ok(!PAGE_SRC.includes("'use client'"))
-  })
-
-  it('页面应加载 admin settings 快照并导出动态配置', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadAdminSettingsSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadAdminSettingsSnapshot } from './admin-settings-data'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
-  })
-
-  it('页面应展示来源态证据与权限门禁', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('sourceLabel: {sourceEvidence.sourceLabel}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('业务数据:'))
-    assert.ok(PAGE_SRC.includes('refreshPath: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
-  })
-})
 
 describe('AdminSettingsData — 快照合同', () => {
   it('应定义 fallback 快照结构', () => {

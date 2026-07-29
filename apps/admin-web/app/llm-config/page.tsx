@@ -7,11 +7,10 @@
  * - 支持搜索、新建、编辑、启用/禁用
  * - 空状态 / 加载中 / 错误回退
  */
-import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { AdminPermissionGate } from '../components/admin-permission-gate';
-import LLMConfigClient from './llm-config-client';
+import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui'
+import LLMConfigClient from './llm-config-client'
 
 export const metadata: Metadata = {
   title: 'LLM 接入配置 - M5 指挥台',
@@ -22,7 +21,7 @@ export const metadata: Metadata = {
     description: '管理多 LLM 提供商接入配置，支持 OpenAI、通义千问、Claude 等模型',
     type: 'website',
   },
-};
+}
 
 /** 预置的 LLM 提供商配置项 — 用于空状态提示和快速引导 */
 const PRESET_PROVIDERS = [
@@ -30,7 +29,7 @@ const PRESET_PROVIDERS = [
   { key: 'qwen', label: '通义千问', models: 'Qwen-Max / Qwen-Plus', icon: '🌐' },
   { key: 'claude', label: 'Anthropic Claude', models: 'Claude 3.5 Sonnet / Haiku', icon: '🧠' },
   { key: 'local', label: '本地模型 (Ollama)', models: 'Llama 3 / Mistral', icon: '💻' },
-];
+]
 
 /** 加载占位 */
 function LLMConfigLoadingFallback() {
@@ -42,7 +41,7 @@ function LLMConfigLoadingFallback() {
       <div style={{ height: 16 }} />
       <LoadingSkeleton variant="card" rows={3} label="加载配置表单..." />
     </div>
-  );
+  )
 }
 
 /** 错误回退 */
@@ -53,7 +52,7 @@ function LLMConfigErrorFallback() {
       description="无法加载 LLM 提供商配置列表。请检查网络连接及后端配置服务是否正常。"
       action={<a href="/llm-config">重试</a>}
     />
-  );
+  )
 }
 
 /**
@@ -107,60 +106,15 @@ function LLMConfigEmptyState() {
         ))}
       </div>
     </div>
-  );
+  )
 }
 
 export default function LLMConfigPage() {
   return (
-    <AdminPermissionGate
-      requiredPermission="foundation.governance.read"
-      title="LLM 接入配置访问受限"
-      description="LLM 接入配置页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模型提供商、API Key、配额限流与健康检查配置。"
-    >
-      <>
-        {/* JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'WebApplication',
-              name: 'LLM 接入配置',
-              applicationCategory: 'BusinessApplication',
-              description:
-                '管理多 LLM 提供商接入配置，支持 OpenAI、通义千问、Claude、本地模型。',
-            }),
-          }}
-        />
-
-        <ErrorBoundary fallback={<LLMConfigErrorFallback />}>
-          <Suspense fallback={<LLMConfigLoadingFallback />}>
-            <LLMConfigClient />
-          </Suspense>
-        </ErrorBoundary>
-
-        {/* 底部提示 — 安全说明 */}
-        <div
-          style={{
-            marginTop: 24,
-            padding: '12px 16px',
-            borderRadius: 8,
-            background: 'rgba(251,191,36,0.05)',
-            border: '1px solid rgba(251,191,36,0.15)',
-            fontSize: 12,
-            color: '#94a3b8',
-            lineHeight: 1.6,
-            maxWidth: 900,
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}
-        >
-          <strong style={{ color: '#fbbf24' }}>🔒 安全提示</strong>
-          <br />
-          API Key 存储采用 AES-256 加密。建议定期轮换密钥（推荐每 90 天）。
-          生产环境请勿使用测试 / 弱密钥。密钥修改后原有 API 调用将在 5 分钟内生效。
-        </div>
-      </>
-    </AdminPermissionGate>
-  );
+    <ErrorBoundary fallback={<LLMConfigErrorFallback />}>
+      <Suspense fallback={<LLMConfigLoadingFallback />}>
+        <LLMConfigClient />
+      </Suspense>
+    </ErrorBoundary>
+  )
 }

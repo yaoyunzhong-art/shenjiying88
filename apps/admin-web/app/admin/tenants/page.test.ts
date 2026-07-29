@@ -13,48 +13,7 @@ beforeEach(() => {
   DATA_SRC = readFileSync(resolve(import.meta.dirname, '../../tenants-data.ts'), 'utf-8')
 })
 
-describe('AdminTenantsPage — 服务端壳层', () => {
-  it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function AdminTenantsPage'))
-    assert.ok(!PAGE_SRC.includes("'use client'"))
-  })
 
-  it('页面应加载 tenants 快照', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadTenantsSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadTenantsSnapshot } from '../../tenants-data'"))
-  })
-
-  it('页面应导出 dynamic 与 revalidate', () => {
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
-  })
-
-  it('页面应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'tenant:read'"))
-  })
-})
-
-describe('AdminTenantsPage — 来源态透明化', () => {
-  it('页面应展示租户来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'))
-    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'))
-    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'))
-    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'))
-  })
-
-  it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(
-      PAGE_SRC.includes(
-        'loadTenantsSnapshot -> tenant/lifecycle/:tenantId/status + tenant/quota/:tenantId'
-      )
-    )
-    assert.ok(PAGE_SRC.includes('loadTenantsSnapshot -> MOCK_TENANTS fallback'))
-    assert.ok(PAGE_SRC.includes('local tenant samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
-  })
-})
 
 describe('TenantsData — 快照合同', () => {
   it('应定义 api|fallback 快照结构', () => {

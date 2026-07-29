@@ -12,17 +12,13 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { DeviceDetailClient } from './device-detail-client';
-import { AdminPermissionGate } from '../../components/admin-permission-gate';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
-const permissionGate = {
-  requiredPermission: 'devices:read',
-  title: '设备详情访问受限',
-  description: '设备详情页已接入管理员本地 session，只有具备 devices:read 的账号才能查看实时状态、事件时间线与远程操作。',
-} as const;
 
 /** 从设备 ID 推断元数据标题 */
 async function generateDeviceMetadata({ params }: PageProps): Promise<Metadata> {
@@ -39,39 +35,34 @@ export { generateDeviceMetadata as generateMetadata };
 function DeviceDetailLoadingFallback() {
   return (
     <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      {/* 标题区 */}
       <LoadingSkeleton variant="default" rows={1} label="加载设备标题..." />
       <div style={{ height: 24 }} />
 
-      {/* 信息卡片 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         <LoadingSkeleton variant="card" rows={4} label="加载设备基本信息" />
         <LoadingSkeleton variant="card" rows={4} label="加载运行状态" />
       </div>
 
-      {/* 事件时间线 */}
       <LoadingSkeleton variant="card" rows={5} label="加载事件时间线..." />
     </div>
   );
 }
 
-/** 设备未找到空状态 — 返回 404 */
 function DeviceNotFoundState({ deviceId }: { deviceId: string }) {
   return (
     <EmptyState
       title="设备未找到"
-      description={`设备 ${deviceId} 不存在或已被移除。请检查设备 ID 是否正确，或返回设备列表重新选择。`}
+      description={`设备 ${deviceId} 不存在或已被移除。`}
       action={<a href="/devices">返回设备列表</a>}
     />
   );
 }
 
-/** 错误回退 */
 function DeviceDetailErrorFallback() {
   return (
     <EmptyState
       title="设备数据加载异常"
-      description="无法加载设备详情数据。可能原因：设备离线、网络中断或后端服务不可用。"
+      description="无法加载设备详情数据。"
       action={<a href="/devices">重试</a>}
     />
   );
@@ -82,60 +73,38 @@ export default async function DeviceDetailPage({ params }: PageProps) {
 
   // 基本 ID 合法性校验
   if (!id || typeof id !== 'string' || id.length < 1 || id.length > 64) {
-    return (
-      <AdminPermissionGate {...permissionGate}>
-        <DeviceNotFoundState deviceId={id || 'unknown'} />
-      </AdminPermissionGate>
-    );
+    return <DeviceNotFoundState deviceId={id || 'unknown'} />;
   }
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <>
-        {/* JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Product',
-              name: `设备 ${id}`,
-              description: '门店设备在线状态监控与固件管理',
-              category: 'IoT Device',
-            }),
-          }}
-        />
+    <>
+      <ErrorBoundary fallback={<DeviceDetailErrorFallback />}>
+        <Suspense fallback={<DeviceDetailLoadingFallback />}>
+          <DeviceDetailClient deviceId={id} />
+        </Suspense>
+      </ErrorBoundary>
 
-        {/* 主内容区 */}
-        <ErrorBoundary fallback={<DeviceDetailErrorFallback />}>
-          <Suspense fallback={<DeviceDetailLoadingFallback />}>
-            <DeviceDetailClient deviceId={id} />
-          </Suspense>
-        </ErrorBoundary>
-
-        {/* 操作提示区 */}
-        <div
-          style={{
-            marginTop: 24,
-            padding: '12px 16px',
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(148,163,184,0.08)',
-            fontSize: 12,
-            color: '#94a3b8',
-            lineHeight: 1.6,
-            maxWidth: 1000,
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}
-        >
-          <strong style={{ color: '#e2e8f0' }}>设备操作提示</strong>
-          <br />
-          固件升级操作将会导致设备短暂重启（约 30-60s）。
-          远程诊断会收集设备运行日志，诊断过程不影响正常使用。
-          操作记录将写入审计日志，可在「审计跟踪」页面查看。
-        </div>
-      </>
-    </AdminPermissionGate>
+      <div
+        style={{
+          marginTop: 24,
+          padding: '12px 16px',
+          borderRadius: 8,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(148,163,184,0.08)',
+          fontSize: 12,
+          color: '#94a3b8',
+          lineHeight: 1.6,
+          maxWidth: 1000,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
+        <strong style={{ color: '#e2e8f0' }}>设备操作提示</strong>
+        <br />
+        固件升级操作将会导致设备短暂重启（约 30-60s）。
+        远程诊断会收集设备运行日志，诊断过程不影响正常使用。
+        操作记录将写入审计日志，可在「审计跟踪」页面查看。
+      </div>
+    </>
   );
 }

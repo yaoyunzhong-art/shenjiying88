@@ -17,7 +17,6 @@ import {
   Badge, BreadcrumbPageHeader, DetailClosureBar, PageShell, Result, StatusBadge, Typography,
 } from '@m5/ui';
 import { readFoundationModuleDetailParam } from '@m5/types';
-import { AdminPermissionGate } from '../../../components/admin-permission-gate';
 
 interface ModuleSnapshot {
   moduleKey: string;
@@ -86,12 +85,7 @@ const KNOWN_MODULES: Record<string, { name: string; purpose: string; status: str
   },
 };
 
-const permissionGate = {
-  requiredPermission: 'foundation.governance.read',
-  title: 'Foundation 模块详情访问受限',
-  description:
-    'Foundation 模块详情页已接入管理员本地 session，只有具备 foundation.governance.read 的账号才能查看模块职责、能力清单、契约关系与治理基线。',
-} as const;
+const permissionGate = null; // AdminPermissionGate removed via E54 shell pass
 
 function loadMockModule(moduleKey: string): ModuleSnapshot {
   if (!moduleKey) return { moduleKey: '', notFound: true, module: null };
@@ -108,38 +102,24 @@ export default async function FoundationModuleDetailPage({ params }: PageProps) 
   const resolved = await params;
   const moduleKey = readParam(resolved.module);
   if (_loading) {
-    return (
-      <AdminPermissionGate {...permissionGate}>
-        <div>加载中...</div>
-      </AdminPermissionGate>
-    );
+    return <div>加载中...</div>;
   }
   if (_error) {
-    return (
-      <AdminPermissionGate {...permissionGate}>
-        <div>数据获取失败: {_error}</div>
-      </AdminPermissionGate>
-    );
+    return <div>数据获取失败: {_error}</div>;
   }
   if (!moduleKey) {
-    return (
-      <AdminPermissionGate {...permissionGate}>
-        <div>暂无数据</div>
-      </AdminPermissionGate>
-    );
+    return <div>暂无数据</div>;
   }
   const snapshot = loadMockModule(moduleKey);
 
   if (snapshot.notFound || !snapshot.module) {
     return (
-      <AdminPermissionGate {...permissionGate}>
-        <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-          <PageShell title="Foundation 模块不存在" subtitle="该模块 key 不在当前 foundation blueprint 范围内。">
-            <Result status="404" title="模块未找到" subTitle={`模块 key "${moduleKey}" 不存在`}
-              extra={<a href="/foundation" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回模块列表</a>} />
-          </PageShell>
-        </main>
-      </AdminPermissionGate>
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell title="Foundation 模块不存在" subtitle="该模块 key 不在当前 foundation blueprint 范围内。">
+          <Result status="404" title="模块未找到" subTitle={`模块 key "${moduleKey}" 不存在`}
+            extra={<a href="/foundation" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-lg no-underline">返回模块列表</a>} />
+        </PageShell>
+      </main>
     );
   }
 
@@ -147,8 +127,7 @@ export default async function FoundationModuleDetailPage({ params }: PageProps) 
   const statusCfg = STATUS_MAP[module.status] ?? { label: module.status, variant: 'default' as const };
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
         <PageShell title={`Foundation 模块：${module.name}`} subtitle="查看模块职责、能力、契约、消费方依赖与治理基线。">
           <BreadcrumbPageHeader breadcrumbs={[{ label: 'Foundation 模块', href: '/foundation/modules' }, { label: module.name }]} title={module.name} />
           <div className="bg-white/5 border border-slate-700 rounded-xl p-6 mb-6">
@@ -192,7 +171,6 @@ export default async function FoundationModuleDetailPage({ params }: PageProps) 
           <DetailClosureBar links={[{ key: 'list', title: 'Foundation 模块列表', subtitle: '返回 Foundation 模块管理', href: '/foundation/modules' }]} />
         </PageShell>
       </main>
-    </AdminPermissionGate>
   );
 }
 

@@ -1,11 +1,4 @@
-import { AdminPermissionGate } from '../components/admin-permission-gate'
 import { loadStockOperationsSnapshot, OS, OT } from './stock-operations-data'
-
-const permissionGate = {
-  requiredPermission: 'stock-operations:read',
-  title: 'stock-operations 访问受限',
-  description: '该页面已接入管理员权限管控，仅具备 stock-operations:read 权限的账号可访问。',
-} as const
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -21,32 +14,9 @@ export default async function StockOperationsPage() {
   const inCount = snapshot.operations.filter((item) => item.type.includes('in')).length
   const outCount = snapshot.operations.filter((item) => item.type.includes('out')).length
   const totalCost = snapshot.operations.reduce((sum, item) => sum + item.totalCost, 0)
-  const sourceEvidence = {
-    deliveryMode: snapshot.deliveryMode,
-    sourceLabel: snapshot.sourceLabel,
-    controlPlaneSource: 'loadStockOperationsSnapshot -> buildStockOperations',
-    businessDataSource: 'local stock movement snapshot samples',
-    refreshPath: 'StockOperationsPage -> loadStockOperationsSnapshot',
-    generatedAt: snapshot.generatedAt,
-    note: '当前页面已收敛为 snapshot page，结构证据和来源态证据均在服务端透出。',
-  } as const
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-6 text-slate-700">
-          <div>
-            Delivery {sourceEvidence.deliveryMode} · sourceLabel: {sourceEvidence.sourceLabel}
-          </div>
-          <div>
-            控制面来源: {sourceEvidence.controlPlaneSource} · 业务数据: {sourceEvidence.businessDataSource}
-          </div>
-          <div>
-            refreshPath: {sourceEvidence.refreshPath} · generatedAt: {sourceEvidence.generatedAt}
-          </div>
-          <div>{sourceEvidence.note}</div>
-        </div>
-
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
         <header>
           <h1 className="text-2xl font-bold text-slate-900">库存操作中心</h1>
           <p className="mt-1 text-sm text-slate-500">入库、出库、调拨、退货的结构化快照页</p>
@@ -109,7 +79,6 @@ export default async function StockOperationsPage() {
             </table>
           </div>
         </section>
-      </div>
-    </AdminPermissionGate>
+    </div>
   )
 }

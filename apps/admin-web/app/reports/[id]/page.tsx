@@ -19,7 +19,6 @@ import {
 } from '@m5/ui'
 import type { DetailInfoRow, DetailTab } from '@m5/ui'
 import type { ReportResult, ReportTab } from '../reports-utils'
-import { AdminPermissionGate } from '../../components/admin-permission-gate'
 
 // ─── Mock Data ───────────────────────────────────────────
 
@@ -72,13 +71,6 @@ interface ReportPageState {
   loading: boolean
   error: string | null
 }
-
-const permissionGate = {
-  requiredPermission: 'dashboard:read',
-  title: '报表详情访问受限',
-  description:
-    '报表详情页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看指标概览、图表预览与导出数据表。',
-} as const
 
 // ─── Data Loader ─────────────────────────────────────────
 
@@ -156,28 +148,24 @@ export default function ReportDetailPage() {
 
   if (state.loading) {
     return (
-      <AdminPermissionGate {...permissionGate}>
-        <DetailShell title="报表详情" loading>
-        </DetailShell>
-      </AdminPermissionGate>
+      <DetailShell title="报表详情" loading>
+      </DetailShell>
     )
   }
 
   if (state.error || !state.report) {
     return (
-      <AdminPermissionGate {...permissionGate}>
-        <DetailShell title="报表详情">
-          <WorkspaceBreadcrumb
-            workspaceLabel="报表中心"
-            workspaceHref="/reports"
-            detailLabel="报表详情"
-          />
-          <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 text-gray-500">
-            <span className="text-5xl">📊</span>
-            <p className="text-lg">{state.error ?? '报表不存在'}</p>
-          </div>
-        </DetailShell>
-      </AdminPermissionGate>
+      <DetailShell title="报表详情">
+        <WorkspaceBreadcrumb
+          workspaceLabel="报表中心"
+          workspaceHref="/reports"
+          detailLabel="报表详情"
+        />
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 text-gray-500">
+          <span className="text-5xl">📊</span>
+          <p className="text-lg">{state.error ?? '报表不存在'}</p>
+        </div>
+      </DetailShell>
     )
   }
 
@@ -278,28 +266,26 @@ export default function ReportDetailPage() {
   ]
 
   return (
-    <AdminPermissionGate {...permissionGate}>
-      <DetailShell title={title} subtitle={`ID: ${id} · ${report.period.from} ~ ${report.period.to}`}>
-        <WorkspaceBreadcrumb
-          workspaceLabel="报表中心"
-          workspaceHref="/reports"
-          detailLabel={title}
-        />
+    <DetailShell title={title} subtitle={`ID: ${id} · ${report.period.from} ~ ${report.period.to}`}>
+      <WorkspaceBreadcrumb
+        workspaceLabel="报表中心"
+        workspaceHref="/reports"
+        detailLabel={title}
+      />
 
-        <DetailActionBar
-          actions={[
-            { key: 'back', label: '返回列表', onClick: () => router.push('/reports'), variant: 'default' as const },
-          ]}
-        />
+      <DetailActionBar
+        actions={[
+          { key: 'back', label: '返回列表', onClick: () => router.push('/reports'), variant: 'default' as const },
+        ]}
+      />
 
-        <CombinedDetailPage
-          title={title}
-          subtitle={`ID: ${id} · ${report.period.from} ~ ${report.period.to}`}
-          infoRows={infoRows}
-          tabs={tabs}
-          backHref="/reports"
-        />
-      </DetailShell>
-    </AdminPermissionGate>
+      <CombinedDetailPage
+        title={title}
+        subtitle={`ID: ${id} · ${report.period.from} ~ ${report.period.to}`}
+        infoRows={infoRows}
+        tabs={tabs}
+        backHref="/reports"
+      />
+    </DetailShell>
   )
 }

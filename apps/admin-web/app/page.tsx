@@ -4,7 +4,6 @@ import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
 import { buildFoundationWorkspaceHref } from '@m5/types';
 import { getAdminWorkbenchConsumerSnapshot } from './bootstrap';
 import { adminGovernanceApprovalsRoute } from './approvals-data';
-import { AdminPermissionGate } from './components/admin-permission-gate';
 import { GovernanceLinkedOverview } from './components/governance-linked-overview';
 import { WorkbenchList } from './components/workbench-list';
 import { buildConfigurationHref } from './configuration-view-model';
@@ -27,15 +26,10 @@ export default async function HomePage() {
 
   return (
     <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
-      <AdminPermissionGate
-        requiredPermission="dashboard:read"
-        title="指挥台访问受限"
-        description="M5 指挥台首页已接入管理员本地 session，只有具备 dashboard:read 的账号才能查看总览卡片、治理快照与工作台目录。"
+      <PageShell
+        title="M5 指挥台"
+        subtitle="每个门店支持 ToC 官网 / H5 / 小程序 / App / PC 后台，每个工作角色拥有独立工作台。"
       >
-        <PageShell
-          title="M5 指挥台"
-          subtitle="每个门店支持 ToC 官网 / H5 / 小程序 / App / PC 后台，每个工作角色拥有独立工作台。"
-        >
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
             <StatCard label="Bootstrap" value={snapshot.deliveryMode.toUpperCase()} helper={snapshot.wiring.bootstrapEndpoint} />
             <StatCard
@@ -220,7 +214,6 @@ export default async function HomePage() {
             />
           </div>
         </PageShell>
-      </AdminPermissionGate>
     </main>
   );
 }
