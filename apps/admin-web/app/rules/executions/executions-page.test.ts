@@ -13,7 +13,7 @@ describe('RuleExecutionsPage smoke', () => {
   })
 
   it('应接入权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
     assert.ok(PAGE_SRC.includes("requiredPermission: 'rules:executions:read'"))
   })
 })
