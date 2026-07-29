@@ -57,13 +57,14 @@ logistics-supplement/
 ├── ACCEPTANCE.md                         # 本文件
 ├── README.md                             # 模块文档
 └── __tests__/
-    ├── logistics-supplement.service.spec.ts    # 增强 Service 测试 (29 tests)
-    └── logistics-supplement.controller.spec.ts # Controller 测试 (37 tests)
+    ├── logistics-supplement.service.spec.ts        # 增强 Service 测试 (29 tests)
+    ├── logistics-supplement.service.edge.spec.ts   # 边界/异常深度覆盖 (20 tests)
+    └── logistics-supplement.controller.spec.ts     # Controller 测试 (37 tests)
 ```
 
 ## 测试通过率
 
 ```
-✓ 4 test files passed
-✓ 114 tests passed
+✓ 5 test files passed
+✓ 134 tests passed
 ```
