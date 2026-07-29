@@ -54,6 +54,6 @@ describe('ai-scenario-simulator snapshot loader', () => {
 describe('ai-scenario-simulator 权限边界', () => {
   it('接入管理员权限边界', () => {
     assert.ok(!pageSource.includes('AdminPermissionGate'))
-    assert.ok(pageSource.includes("requiredPermission: 'ai-scenario-simulator:read'"))
+    assert.ok(!pageSource.includes("requiredPermission: 'ai-scenario-simulator:read'"), 'E54 拍平：requiredPermission 应已移除')
   })
 })

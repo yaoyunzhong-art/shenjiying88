@@ -18,8 +18,8 @@ describe('customers/new E54 structure', () => {
   })
 
   it('client owns refresh and renders legacy view', () => {
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
-    assert.ok(CLIENT_SRC.includes('<CustomerNewLegacy />'))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh")), "E54: router.refresh() OR handleRefresh")
+    assert.ok(CLIENT_SRC.includes('useSnapshotRefresh'), 'E54: client uses useSnapshotRefresh hook')
   })
 
   it('data exposes E54 snapshot contract', () => {

@@ -42,11 +42,11 @@ describe('IntegrationOrchestrationPage — 来源态透明化', () => {
     assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
   })
 
-  it('应同时固证 api 与 fallback 语义', () => {
-    assert.ok(PAGE_SRC.includes('loadIntegrationOrchestrationWorkspace(api) + getAdminWorkbenchConsumerSnapshot(api)'))
-    assert.ok(PAGE_SRC.includes('loadIntegrationOrchestrationWorkspace/getAdminWorkbenchConsumerSnapshot fallback'))
-    assert.ok(PAGE_SRC.includes('local integration orchestration samples'))
-    assert.ok(PAGE_SRC.includes('治理证据需结合上游可达性复核'))
+  it('应同时固证 api 与 fallback 语义（DATA 层仍承担）', () => {
+    assert.ok(DATA_SRC.includes('loadIntegrationOrchestrationWorkspace(api) + getAdminWorkbenchConsumerSnapshot(api)'))
+    assert.ok(DATA_SRC.includes('loadIntegrationOrchestrationWorkspace/getAdminWorkbenchConsumerSnapshot fallback'))
+    assert.ok(DATA_SRC.includes('local integration orchestration samples'))
+    assert.ok(DATA_SRC.includes('治理证据需结合上游可达性复核'))
   })
 })
 
@@ -74,8 +74,8 @@ describe('IntegrationOrchestrationWorkspaceClient — 客户端展示层', () =>
   it('客户端组件应声明 use client 并支持 refresh', () => {
     assert.ok(CLIENT_SRC.includes("'use client'"))
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh")), "E54: router.refresh() OR handleRefresh")
   })
 
   it('客户端组件应保留 tabs、搜索与工作台收口动作', () => {

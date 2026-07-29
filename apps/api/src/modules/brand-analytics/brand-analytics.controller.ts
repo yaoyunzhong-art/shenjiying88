@@ -37,7 +37,6 @@ import type {
   ROICalculation,
   AttributionModelComparison,
   MarketShareData,
-  CompetitorComparison,
 } from './brand-analytics.entity'
 
 @Controller('brand-analytics')

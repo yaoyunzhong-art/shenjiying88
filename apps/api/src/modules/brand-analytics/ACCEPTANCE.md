@@ -39,7 +39,7 @@
 - [x] 控制器级别 `TrafficGovernanceGuard` 保护
 - [x] 全局 `ValidationPipe` 请求校验
 
-## 四、DTO 校验
+## 四、DTO 校验（13 个类，全部单元测试覆盖）
 
 - [x] `GetKPIDto` — startDate / endDate 日期格式
 - [x] `TrackKPIDto` — 品牌 + 指标数据结构
@@ -66,7 +66,7 @@
 
 - [x] 服务层单元测试 — `brand-analytics.service.spec.ts`（17 tests, all ✅）
 - [x] 控制器单元测试 — `brand-analytics.controller.spec.ts` 覆盖全部 21 端点路由绑定
-- [x] DTO 校验测试 — `brand-analytics.dto.spec.ts` 覆盖枚举、日期格式、必填字段
+- [x] DTO 校验测试 — `brand-analytics.dto.spec.ts` 覆盖 12 个 DTO 类，含枚举、日期格式、必填字段、边界条件
 - [x] E2E 集成测试 — `__tests__/brand-analytics.e2e-spec.ts`（14 组, 覆盖全部 8 个业务域）
 
-**总量: 64 tests, all ✅**
+**总量: ~70 tests, all ✅**

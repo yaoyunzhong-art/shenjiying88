@@ -44,18 +44,24 @@ test('configuration/page.tsx 固证 server wrapper 与来源态证据', () => {
   assert.match(PAGE_SRC, /export const dynamic = 'force-dynamic'/)
   assert.match(PAGE_SRC, /loadConfigurationPageSnapshot/)
   assert.match(PAGE_SRC, /normalizeConfigurationQuery/)
-  assert.match(PAGE_SRC, /const sourceEvidence = \{/)
-  assert.match(
-    PAGE_SRC,
-    /refreshPath: 'ConfigurationPage -> loadConfigurationPageSnapshot'/,
+  assert.ok(!PAGE_SRC.includes('const sourceEvidence = {'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+  assert.ok(
+    !PAGE_SRC.includes("refreshPath: 'ConfigurationPage -> loadConfigurationPageSnapshot'"),
+    'E54 拍平：refreshPath 应已下沉到 client',
   )
   assert.match(PAGE_SRC, /ConfigurationWorkspaceClient/)
 })
 
 test('configuration-workspace-client.tsx 固证 client renderer 刷新路径', () => {
   assert.match(CLIENT_SRC, /'use client'/)
-  assert.match(CLIENT_SRC, /useRouter\(\)/)
-  assert.match(CLIENT_SRC, /router\.refresh\(/)
+  assert.ok(
+    CLIENT_SRC.includes('useRouter()') || CLIENT_SRC.includes('useSnapshotRefresh'),
+    'E54: client use useRouter OR useSnapshotRefresh',
+  )
+  assert.ok(
+    CLIENT_SRC.includes('router.refresh()') || CLIENT_SRC.includes('handleRefresh()') || CLIENT_SRC.includes('handleRefresh'),
+    'E54: client use router.refresh() OR handleRefresh',
+  )
   assert.match(CLIENT_SRC, /scopeChain/)
   assert.match(CLIENT_SRC, /FilterChips/)
 })

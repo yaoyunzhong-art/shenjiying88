@@ -48,7 +48,7 @@ describe('settings client 固证', () => {
 
   it('client 文件保留 Tabs、权限提示和模块卡片渲染', () => {
     assert.ok(CLIENT_SRC.includes('Tabs'))
-    assert.ok(!CLIENT_SRC.includes('缺少 ${module.requiredPermission}'))
+    assert.ok(CLIENT_SRC.includes('缺少 ${module.requiredPermission}'), 'E54: client 保留权限提示文案')
     assert.ok(CLIENT_SRC.includes('snapshot.modules.filter'))
     assert.ok(CLIENT_SRC.includes('设置中心'))
   })

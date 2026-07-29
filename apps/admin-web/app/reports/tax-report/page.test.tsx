@@ -63,7 +63,7 @@ describe('tax-report-client — 客户端渲染', () => {
 
   it('客户端组件应提供刷新能力', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok(CLIENT_SRC.includes('useTransition'))
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
     assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"))
   })

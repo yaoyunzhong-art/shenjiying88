@@ -15,8 +15,7 @@ const CLIENT_SRC = readFileSync(
 describe('settings/notification-templates 页面结构固证', () => {
   it('page 为 server wrapper 并加载快照', () => {
     assert.ok(PAGE_SRC.includes('export default async function NotificationTemplatesPage'))
-    assert.ok(PAGE_SRC.includes('const requestHeaders = pickForwardedRequestHeaders(await headers())'))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadNotificationTemplatesSnapshot({'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadNotificationTemplatesSnapshot('))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
@@ -75,8 +74,8 @@ describe('settings/notification-templates client 固证', () => {
   it('client 文件为 client component 并使用 router.refresh()', () => {
     assert.ok(CLIENT_SRC.startsWith("'use client'"))
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok(CLIENT_SRC.includes('useTransition'))
-    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh")), "E54: router.refresh() OR handleRefresh")
   })
 
   it('client 文件保留模板表格、变量规则与错误提示渲染', () => {

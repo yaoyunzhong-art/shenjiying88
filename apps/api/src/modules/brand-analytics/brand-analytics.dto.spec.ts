@@ -4,7 +4,8 @@ import { validate } from 'class-validator'
 import {
   GetKPIDto, TrackKPIDto, TrackMentionDto, UpdateHealthDto,
   TrackContentDto, GenerateReportDto, ROIDto,
-  AnalyticsQueryDto, CompareBrandsDto,
+  AnalyticsQueryDto, CompareBrandsDto, CompetitorQueryDto,
+  TopContentQueryDto, HealthTrendQueryDto, ContentSuggestionsDto,
 } from './brand-analytics.dto'
 
 describe('GetKPIDto', () => {
@@ -120,6 +121,93 @@ describe('CompareBrandsDto', () => {
     dto.brandIds = ['b1', 'b2']
     dto.startDate = '2026-01-01'
     dto.endDate = '2026-06-30'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})
+
+describe('CompetitorQueryDto', () => {
+  it('passes with valid fields', async () => {
+    const dto = new CompetitorQueryDto()
+    dto.brandId = 'brand-1'
+    dto.competitorIds = ['comp-1', 'comp-2']
+    dto.startDate = '2026-01-01'
+    dto.endDate = '2026-06-30'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('fails with empty competitorIds', async () => {
+    const dto = new CompetitorQueryDto()
+    dto.brandId = 'brand-1'
+    dto.competitorIds = []
+    dto.startDate = '2026-01-01'
+    dto.endDate = '2026-06-30'
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+
+  it('fails without brandId', async () => {
+    const dto = new CompetitorQueryDto()
+    dto.competitorIds = ['comp-1']
+    dto.startDate = '2026-01-01'
+    dto.endDate = '2026-06-30'
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('TopContentQueryDto', () => {
+  it('passes with only required date fields', async () => {
+    const dto = new TopContentQueryDto()
+    dto.startDate = '2026-01-01'
+    dto.endDate = '2026-06-30'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('passes with optional contentType', async () => {
+    const dto = new TopContentQueryDto()
+    dto.startDate = '2026-01-01'
+    dto.endDate = '2026-06-30'
+    dto.contentType = 'video' as any
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+})
+
+describe('HealthTrendQueryDto', () => {
+  it('passes when empty', async () => {
+    const dto = new HealthTrendQueryDto()
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('passes with digits-only months', async () => {
+    const dto = new HealthTrendQueryDto()
+    dto.months = '6'
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('fails with non-numeric months', async () => {
+    const dto = new HealthTrendQueryDto()
+    dto.months = 'abc'
+    const errors = await validate(dto)
+    expect(errors.length).toBeGreaterThan(0)
+  })
+})
+
+describe('ContentSuggestionsDto', () => {
+  it('passes when empty', async () => {
+    const dto = new ContentSuggestionsDto()
+    const errors = await validate(dto)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('passes with contentType', async () => {
+    const dto = new ContentSuggestionsDto()
+    dto.contentType = 'video'
     const errors = await validate(dto)
     expect(errors).toHaveLength(0)
   })
