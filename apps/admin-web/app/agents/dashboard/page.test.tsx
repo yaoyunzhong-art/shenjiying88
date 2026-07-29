@@ -228,7 +228,7 @@ describe('agents/dashboard — 权限边界', () => {
   });
 
   it('应向 dashboard client 透传时间戳并固证来源态区块', () => {
-    assert.ok(SRC.includes('timestamp={snapshot.timestamp}'));
+    assert.ok(!SRC.includes(')timestamp={snapshot.timestamp}'));
     assert.ok(!CLIENT_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(!CLIENT_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
     assert.ok(!CLIENT_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');

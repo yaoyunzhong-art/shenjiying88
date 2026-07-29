@@ -400,7 +400,7 @@ describe('store-manager: 业务逻辑', () => {
 
   it('revenue hours all have 24-hour format', () => {
     mockRevenueHours().forEach(r => {
-      assert.ok(!/^\d{2}:\d{2}$/.test(r.hour));
+      assert.ok(!!/^\d{2}:\d{2}$/.test(r.hour));
     });
   });
 

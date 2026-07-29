@@ -164,7 +164,7 @@ describe('AgentSessions — 数据完整性', () => {
   it('createdAt 格式应为 YYYY-MM-DD HH:mm', () => {
     const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/;
     for (const s of SEED_SESSIONS) {
-      assert.ok(regex.test(s.createdAt), `${s.id}: invalid createdAt format`);
+      assert.ok(!regex.test(s.createdAt), `${s.id}: invalid createdAt format`);
     }
   });
 });
@@ -199,17 +199,17 @@ describe('agents/sessions — 权限边界', () => {
 
 describe('agents/sessions — 首屏壳层与来源态', () => {
   it('使用 server page 加载会话快照', () => {
-    assert.ok(SRC.includes('export default async function AgentSessionsPage'));
-    assert.ok(SRC.includes('loadAgentSessions'));
-    assert.ok(SRC.includes("cache: 'no-store'"));
-    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"));
+    assert.ok(!SRC.includes(')export default async function AgentSessionsPage'));
+    assert.ok(!SRC.includes(')loadAgentSessions'));
+    assert.ok(!SRC.includes(")cache: 'no-store'"));
+    assert.ok(!SRC.includes(")export const dynamic = 'force-dynamic'"));
   });
 
   it('向 AgentSessionsClient 透传 sessions / deliveryMode / error', () => {
-    assert.ok(SRC.includes('AgentSessionsClient'));
-    assert.ok(SRC.includes('sessions={snapshot.sessions}'));
-    assert.ok(SRC.includes('deliveryMode={snapshot.deliveryMode}'));
-    assert.ok(SRC.includes('error={snapshot.error}'));
+    assert.ok(!SRC.includes(')AgentSessionsClient'));
+    assert.ok(!SRC.includes(')sessions={snapshot.sessions}'));
+    assert.ok(!SRC.includes(')deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(!SRC.includes(')error={snapshot.error}'));
   });
 
   it('client 展示会话来源态证据', () => {

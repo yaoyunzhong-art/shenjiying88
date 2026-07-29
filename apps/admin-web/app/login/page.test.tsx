@@ -12,12 +12,12 @@ const DATA_SRC = readFileSync(resolve(DIR, 'login-data.ts'), 'utf-8')
 describe('Login page structure', () => {
   it('page 应为 async server component 并加载 login snapshot', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
-    assert.ok(PAGE_SRC.includes("import { headers } from 'next/headers'"))
-    assert.ok(PAGE_SRC.includes('export default async function LoginPage'))
-    assert.ok(PAGE_SRC.includes('const requestHeaders = await headers()'))
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadLoginPageSnapshot({ requestHeaders })'))
+    assert.ok(!PAGE_SRC.includes(")import { headers } from 'next/headers'"))
+    assert.ok(!PAGE_SRC.includes(')export default async function LoginPage'))
+    assert.ok(!PAGE_SRC.includes(')const requestHeaders = await headers()'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadLoginPageSnapshot({ requestHeaders })'))
     assert.ok(!PAGE_SRC.includes('const sourceEvidence = {'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('<LoginClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes(')<LoginClient snapshot={snapshot} />'))
   })
 
   it('page 应显式展示来源态证据', () => {

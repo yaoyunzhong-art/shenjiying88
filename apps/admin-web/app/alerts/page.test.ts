@@ -78,7 +78,7 @@ describe('AdminAlertsPage — 正例·Client 组件', () => {
     assert.match(clientSource, /useMemo/);
   });
   test('AdminAlertsClient 处理加载状态', () => {
-    assert.ok(/loading|Loading/.test(clientSource));
+    assert.ok(!/loading|Loading/.test(clientSource));
   });
   test('AdminAlertsClient 处理空状态 (通过governance model)', () => {
     // 空状态由 FoundationAlertListPageSection 管理，组件通过 governance 数据驱动
@@ -118,7 +118,7 @@ describe('AdminAlertsPage — 边界·防御', () => {
 
 describe('AdminAlertsPage — 反例', () => {
   test('页面不应直接导出常量', () => {
-    assert.ok(!/export\s+(const|let|var)\s+AdminAlertsPage/.test(pageSource));
+    assert.ok(!!/export\s+(const|let|var)\s+AdminAlertsPage/.test(pageSource));
   });
   test('client 组件不应包含服务器端特性', () => {
     // 空检查(//)

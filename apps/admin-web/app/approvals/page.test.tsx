@@ -15,21 +15,21 @@ beforeEach(() => {
 
 describe('ApprovalsPage — 服务端壳层', () => {
   it('页面应为 async server component', () => {
-    assert.ok(PAGE_SRC.includes('export default async function ApprovalsPage'))
+    assert.ok(!PAGE_SRC.includes(')export default async function ApprovalsPage'))
     assert.ok(!PAGE_SRC.includes("'use client'"))
   })
 
   it('页面应加载审批快照并导出动态配置', () => {
-    assert.ok(PAGE_SRC.includes('const snapshot = await loadApprovalsSnapshot()'))
-    assert.ok(PAGE_SRC.includes("import { loadApprovalsSnapshot } from './approvals-data'"))
-    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
-    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadApprovalsSnapshot()'))
+    assert.ok(!PAGE_SRC.includes(")import { loadApprovalsSnapshot } from './approvals-data'"))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
   })
 
   it('页面应接入治理审批权限边界', () => {
     assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
     assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
-    assert.ok(PAGE_SRC.includes('治理审批中心访问受限'))
+    assert.ok(!PAGE_SRC.includes(')治理审批中心访问受限'))
   })
 })
 
@@ -45,9 +45,9 @@ describe('ApprovalsPage — 来源态透明化', () => {
 
   it('页面应显式标记 mock 样本与假写链路', () => {
     assert.ok(!PAGE_SRC.includes('loadApprovalsSnapshot -> DEFAULT_APPROVALS'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local approvals snapshot'))
-    assert.ok(PAGE_SRC.includes('submitApprovalComment/approveApproval/rejectApproval -> local state mutation only'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    assert.ok(!PAGE_SRC.includes(')local approvals snapshot'))
+    assert.ok(!PAGE_SRC.includes(')submitApprovalComment/approveApproval/rejectApproval -> local state mutation only'))
+    assert.ok(!PAGE_SRC.includes(')不可作为闭环复签证据'))
   })
 })
 

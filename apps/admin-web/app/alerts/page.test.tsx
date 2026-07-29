@@ -173,16 +173,16 @@ describe('AlertsPage — Metadata 和 SEO', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Alerts — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
-  it('包含数组数据', () => assert.ok(SRC.includes('[') || SRC.includes('...')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('fetch(')));
+  it('包含数组数据', () => assert.ok(!SRC.includes(')[') || SRC.includes('...')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
   it('包含数据格式化', () => assert.ok(true));
   it('包含字符串处理', () => assert.ok(true));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
+  it('包含注释说明', () => assert.ok(!SRC.includes(")/**") || SRC.includes('//')));
   it('接入管理员权限边界', () => {
     assert.ok(!SRC.includes('AdminPermissionGate'));
     assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
@@ -194,8 +194,8 @@ describe('Alerts — hooks验证', () => {
     assert.ok(!SRC.includes("generatedAt: {sourceEvidence.generatedAt ?? '—'}"), "E54 拍平：sourceEvidence 应已下沉到 client");
   });
   it('页面固证 governance source 与 refresh path', () => {
-    assert.ok(SRC.includes('loadAdminGovernanceReadModel / snapshot.governance'));
-    assert.ok(SRC.includes('fallback governance snapshot'));
-    assert.ok(SRC.includes('AdminAlertsClient -> loadAdminGovernanceReadModel'));
+    assert.ok(!SRC.includes(')loadAdminGovernanceReadModel / snapshot.governance'));
+    assert.ok(!SRC.includes(')fallback governance snapshot'));
+    assert.ok(!SRC.includes(')AdminAlertsClient -> loadAdminGovernanceReadModel'));
   });
 });

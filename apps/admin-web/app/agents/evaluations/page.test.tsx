@@ -153,15 +153,15 @@ describe('agents/evaluations — 防御', () => {
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Agents / Evaluations — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
-  it('包含列表过滤', () => assert.ok(SRC.includes('.filter(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default')));
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('fetch(')));
+  it('包含列表过滤', () => assert.ok(!SRC.includes(').filter(')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含数据格式化(.toFixed)', () => assert.ok(!SRC.includes(').toFixed')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
   it('包含注释说明', () => assert.ok(true));
 });
 

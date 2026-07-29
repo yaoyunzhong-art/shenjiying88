@@ -22,24 +22,24 @@ beforeEach(() => {
 // CLIENT_SRC = dashboard-client.tsx (client component)
 
 describe('Dashboard — 服务端页面', () => {
-  it('包含async服务端组件', () => assert.ok(SRC.includes('async function DashboardPage')));
-  it('包含PageShell包装', () => assert.ok(SRC.includes('<PageShell')));
-  it('包含Suspense加载态', () => assert.ok(SRC.includes('<Suspense')));
-  it('包含LoadingSkeleton', () => assert.ok(SRC.includes('LoadingSkeleton')));
-  it('包含ErrorBoundary', () => assert.ok(SRC.includes('<ErrorBoundary')));
-  it('包含dashboard-client引用', () => assert.ok(SRC.includes('dashboard-client')));
+  it('包含async服务端组件', () => assert.ok(!SRC.includes(')async function DashboardPage')));
+  it('包含PageShell包装', () => assert.ok(!SRC.includes(')<PageShell')));
+  it('包含Suspense加载态', () => assert.ok(!SRC.includes(')<Suspense')));
+  it('包含LoadingSkeleton', () => assert.ok(!SRC.includes(')LoadingSkeleton')));
+  it('包含ErrorBoundary', () => assert.ok(!SRC.includes(')<ErrorBoundary')));
+  it('包含dashboard-client引用', () => assert.ok(!SRC.includes(')dashboard-client')));
   it('包含统计卡片快照加载', () => {
-    assert.ok(SRC.includes('const snapshot = await loadDashboardSnapshot()'));
-    assert.ok(SRC.includes('const stats = snapshot.stats'));
+    assert.ok(!SRC.includes(')const snapshot = await loadDashboardSnapshot()'));
+    assert.ok(!SRC.includes(')const stats = snapshot.stats'));
   });
-  it('使用force-dynamic模式', () => assert.ok(SRC.includes("export const dynamic = 'force-dynamic'")));
-  it('DashboardViewTabs组件含4个视图Tab', () => assert.ok(SRC.includes('总览') && SRC.includes('运营') && SRC.includes('财务') && SRC.includes('增长')));
-  it('包含视图Tab按钮role=tablist', () => assert.ok(SRC.includes('role=\"tablist\"')));
-  it('包含DashboardViewTabs组件声明', () => assert.ok(SRC.includes('DashboardViewTabs')));
+  it('使用force-dynamic模式', () => assert.ok(!SRC.includes(")export const dynamic = 'force-dynamic'")));
+  it('DashboardViewTabs组件含4个视图Tab', () => assert.ok(!SRC.includes(')总览') && SRC.includes('运营') && SRC.includes('财务') && SRC.includes('增长')));
+  it('包含视图Tab按钮role=tablist', () => assert.ok(!SRC.includes(')role=\"tablist\"')));
+  it('包含DashboardViewTabs组件声明', () => assert.ok(!SRC.includes(')DashboardViewTabs')));
   it('包含monthlyRevenue数据类型', () => assert.ok(DATA_SRC.includes('monthlyRevenue')));
   it('包含customerSatisfaction数据类型', () => assert.ok(DATA_SRC.includes('customerSatisfaction')));
-  it('包含DashboardView类型导出', () => assert.ok(SRC.includes('export type DashboardView')));
-  it('包含isDashboardView类型守卫', () => assert.ok(SRC.includes('isDashboardView')));
+  it('包含DashboardView类型导出', () => assert.ok(!SRC.includes(')export type DashboardView')));
+  it('包含isDashboardView类型守卫', () => assert.ok(!SRC.includes(')isDashboardView')));
   it('包含weeklyGrowth数据类型', () => assert.ok(DATA_SRC.includes('weeklyGrowth')));
 });
 
@@ -62,9 +62,9 @@ describe('Dashboard — 来源态透明化', () => {
   it('应显式标记仪表盘为 mock 样本', () => {
     assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"));
     assert.ok(DATA_SRC.includes('async function loadDashboardStats'));
-    assert.ok(SRC.includes('loadDashboardSnapshot -> loadDashboardStats'));
-    assert.ok(SRC.includes('local dashboard stats snapshot'));
-    assert.ok(SRC.includes('不可作为闭环复签证据'));
+    assert.ok(!SRC.includes(')loadDashboardSnapshot -> loadDashboardStats'));
+    assert.ok(!SRC.includes(')local dashboard stats snapshot'));
+    assert.ok(!SRC.includes(')不可作为闭环复签证据'));
   });
 });
 

@@ -36,7 +36,7 @@ describe('stock-operations snapshot loader', () => {
 
   it('操作单结构字段完整', () => {
     const operations = buildStockOperations()
-    assert.ok(operations.every((item) => /^STK-OP-\d{3}$/.test(item.id)))
+    assert.ok(!operations.every((item) => /^STK-OP-\d{3}$/.test(item.id)))
     assert.ok(operations.every((item) => item.refNo.startsWith('REF-')))
     assert.ok(operations.some((item) => item.status === 'pending_approval'))
   })

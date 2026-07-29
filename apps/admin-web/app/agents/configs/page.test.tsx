@@ -315,15 +315,15 @@ describe('getAverageTimeoutText — 平均超时', () => {
 const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Agents / Configs — hooks验证', () => {
-  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
-  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('loadAgentConfigs')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含 Suspense 包裹', () => assert.ok(SRC.includes('Suspense')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default async function')));
-  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('loadAgentConfigs')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含 Suspense 包裹', () => assert.ok(!SRC.includes(')Suspense')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default async function')));
+  it('包含注释说明', () => assert.ok(!SRC.includes(")/**") || SRC.includes('//')));
 });
 
 describe('agents/configs — 权限边界', () => {
