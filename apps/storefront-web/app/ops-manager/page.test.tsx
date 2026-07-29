@@ -1,146 +1,218 @@
 /**
- * ops-manager/page.test.tsx — 运营经理工作台 L1 冒烟测试 (storefront-web)
- * 适配实际页面 OpsManagerPage
+ * ops-manager/page.vitest.tsx — 运营管理 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 加载状态 · 渲染 · 统计卡片 · 进度条 · 分类筛选 · 日期分组 · 空状态 · 边界
+ * 注意: 多个文本重复出现，使用 getAllByText / body text
  */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+import OpsManagerPage from './page';
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
+function allText(): string {
+  return document.body.textContent ?? '';
 }
 
-describe('ops-manager/page — 正例', () => {
-  it('应导出一个默认组件 OpsManagerPage', () => {
-    const src = readSource();
-    assert.match(src, /export default function OpsManagerPage/);
+async function waitForData() {
+  await screen.findByText('📋 运营任务', {}, { timeout: 5000 });
+}
+
+describe('OpsManagerPage — 运营任务', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应包含运营任务标题', () => {
-    const src = readSource();
-    assert.match(src, /运营任务/);
+  // ====== 加载状态 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<OpsManagerPage />)).not.toThrow();
   });
 
-  it('应包含至少 4 个任务', () => {
-    const src = readSource();
-    const matches = src.match(/title: '/g);
-    assert.ok(matches && matches.length >= 4, `期望 ≥4 个任务, 实际 ${matches?.length ?? 0}`);
+  test('shows skeleton during loading phase', () => {
+    render(<OpsManagerPage />);
+    expect(screen.queryByText('📋 运营任务')).not.toBeInTheDocument();
   });
 
-  it('应包含早间巡检任务', () => {
-    const src = readSource();
-    assert.ok(src.includes('早间巡检'));
+  // ====== 渲染 ======
+
+  test('renders page title after load', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getByText('📋 运营任务')).toBeInTheDocument();
   });
 
-  it('应包含设备检查任务', () => {
-    const src = readSource();
-    assert.ok(src.includes('设备检查'));
+  test('renders summary with correct counts', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('今日共计 8 项任务');
   });
 
-  it('应包含库存确认任务', () => {
-    const src = readSource();
-    assert.ok(src.includes('库存确认'));
+  test('renders stat card labels', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getByText('总任务')).toBeInTheDocument();
+    expect(screen.getByText('已完成')).toBeInTheDocument();
   });
 
-  it('应包含日终结算任务', () => {
-    const src = readSource();
-    assert.ok(src.includes('日终结算'));
+  test('renders progress bar label', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getByText('完成进度')).toBeInTheDocument();
   });
 
-  it('应包含已完成和未完成任务 done 标识', () => {
-    const src = readSource();
-    assert.ok(src.includes('done: true') && src.includes('done: false'));
+  test('renders category distribution section', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getByText('类别分布')).toBeInTheDocument();
+    const body = allText();
+    expect(body).toContain('巡检');
+    expect(body).toContain('财务');
+    expect(body).toContain('安全');
+    expect(body).toContain('人事');
   });
 
-  it('应包含深色主题背景', () => {
-    const src = readSource();
-    assert.ok(src.includes('#0f172a'), '缺少深色背景');
+  test('renders filter buttons', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('全部');
+    expect(body).toContain('待完成');
+    expect(body).toContain('已完成');
   });
 
-  it('每个任务应有 title 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('title'), '缺少 title');
+  // ====== 筛选交互 ======
+
+  test('clicking 待完成 filter shows pending tasks', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    // Use the full button text with count to get the exact button
+    const pendingBtn = screen.getByText('待完成 (4)');
+    fireEvent.click(pendingBtn);
+    await waitFor(() => {
+      expect(screen.queryByText('早间巡检')).not.toBeInTheDocument();
+      expect(screen.getByText('库存确认')).toBeInTheDocument();
+    });
   });
 
-  it('每个任务应有 time 时间字段', () => {
-    const src = readSource();
-    assert.ok(src.includes("time: '"), '缺少 time');
+  test('clicking 已完成 filter shows done tasks', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const doneBtn = screen.getByText('已完成 (4)');
+    fireEvent.click(doneBtn);
+    await waitFor(() => {
+      expect(screen.getByText('早间巡检')).toBeInTheDocument();
+      expect(screen.queryByText('库存确认')).not.toBeInTheDocument();
+    });
   });
 
-  it('每个任务应有 category 分类字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('category'), '缺少 category');
+  test('resetting filter shows all tasks', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const pendingBtn = screen.getByText('待完成 (4)');
+    fireEvent.click(pendingBtn);
+    await waitFor(() => {
+      expect(screen.queryByText('早间巡检')).not.toBeInTheDocument();
+    });
+    const allBtn = screen.getByText('全部 (8)');
+    fireEvent.click(allBtn);
+    await waitFor(() => {
+      expect(screen.getByText('早间巡检')).toBeInTheDocument();
+    });
   });
 
-  it('每个任务应有 date 日期字段', () => {
-    const src = readSource();
-    assert.ok(src.includes("date: '"), '缺少 date');
+  test('empty filter removes date section', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const doneBtn = screen.getByText('已完成 (4)');
+    fireEvent.click(doneBtn);
+    await waitFor(() => {
+      expect(screen.queryByText('📅 前天')).not.toBeInTheDocument();
+    });
   });
 
-  it('应包含统计卡片（完成率/总任务/待完成）', () => {
-    const src = readSource();
-    assert.ok(src.includes('completionRate') || src.includes('doneCount') || src.includes('pendingCount'), '缺少统计');
-  });
-});
-
-describe('ops-manager/page — 防御性编程', () => {
-  it('不应包含硬编码的 token/密钥', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /(?:secret|password|token|api[_-]?key|authorization)/i);
-  });
-
-  it('不应包含危险的 innerHTML', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  test('maintains filter state on re-render', async () => {
+    const { rerender } = render(<OpsManagerPage />);
+    await waitForData();
+    const doneBtn = screen.getByText('已完成 (4)');
+    fireEvent.click(doneBtn);
+    await waitFor(() => {
+      expect(screen.queryByText('库存确认')).not.toBeInTheDocument();
+    });
+    rerender(<OpsManagerPage />);
+    await waitFor(() => {
+      expect(screen.queryByText('库存确认')).not.toBeInTheDocument();
+    });
   });
 
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+  // ====== 任务列表 ======
+
+  test('renders all task titles', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('早间巡检');
+    expect(body).toContain('设备检查');
+    expect(body).toContain('库存确认');
+    expect(body).toContain('日终结算');
+    expect(body).toContain('消防安全检查');
+    expect(body).toContain('员工排班确认');
+    expect(body).toContain('设备清洁保养');
+    expect(body).toContain('促销物料更新');
   });
 
-  it('不应使用 any 类型', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /:\s*any\b/);
-  });
-});
-
-describe('ops-manager/page — 反例', () => {
-  it('不应包含 console.log', () => {
-    const src = readSource();
-    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
+  test('shows task times', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getByText('10:00')).toBeInTheDocument();
+    expect(screen.getByText('12:00')).toBeInTheDocument();
+    expect(screen.getByText('21:00')).toBeInTheDocument();
   });
 
-  it('任务应有 done 布尔值', () => {
-    const src = readSource();
-    assert.ok(src.includes('done: true'), '有已完成任务');
-    assert.ok(src.includes('done: false'), '有未完成任务');
-  });
-});
-
-describe('ops-manager/page — 边界', () => {
-  it('应有筛选过滤功能（全部/待完成/已完成）', () => {
-    const src = readSource();
-    assert.ok(src.includes('filter') || src.includes('Filter'), '筛选功能');
+  test('done tasks show checkmark', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getAllByText('✅').length).toBeGreaterThanOrEqual(4);
   });
 
-  it('应有 useMemo 优化过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo'), '缺少 useMemo');
+  test('pending tasks show pending icon', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getAllByText('⬜').length).toBeGreaterThanOrEqual(4);
   });
 
-  it('应有进度条或完成率显示', () => {
-    const src = readSource();
-    assert.ok(src.includes('completionRate') || src.includes('rate') || src.includes('进度'), '完成率');
+  // ====== 日期分组 ======
+
+  test('groups tasks by date', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    expect(screen.getByText('📅 今天')).toBeInTheDocument();
+    expect(screen.getByText('📅 昨天')).toBeInTheDocument();
+    expect(screen.getByText('📅 前天')).toBeInTheDocument();
   });
 
-  it('应有模拟加载效果', () => {
-    const src = readSource();
-    assert.ok(src.includes('loading') || src.includes('Loading'), '加载状态');
+  // ====== 边界 ======
+
+  test('dark theme background', async () => {
+    const { container } = render(<OpsManagerPage />);
+    await waitForData();
+    const main = container.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
+  });
+
+  test('renders progress percentage in text', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('50%');
+  });
+
+  test('renders category done/total counts', async () => {
+    render(<OpsManagerPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('1/1');
+    expect(body).toContain('2/2');
+    expect(body).toContain('0/1');
   });
 });

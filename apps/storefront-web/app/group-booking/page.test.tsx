@@ -1,126 +1,327 @@
 /**
- * group-booking/page.test.tsx — P-38 团队预约 L1 冒烟测试
+ * group-booking/page.vitest.tsx — 团队预约 GroupBookingPage L2 组件测试
+ * 覆盖: 步骤渲染 · 活动选择 · 日期时段 · 人数调整 · 联系信息 · 提交预约 · 成功页面
+ * 角色: 🤝 团建顾客
  */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
-const SRC = readFileSync(SOURCE, 'utf-8');
+// ── Mocks ──
 
-describe('group-booking — 正例', () => {
-  it('应导出一个默认组件 GroupBookingPage', () => {
-    assert.ok(SRC.includes('export default function GroupBookingPage'));
+vi.mock('@m5/ui', () => ({
+  PageShell: vi.fn(({ children, title }: any) => (
+    <div data-testid="page-shell" data-title={title}>{children}</div>
+  )),
+  Button: vi.fn(({ children, onClick, disabled, variant, ...rest }: any) => (
+    <button data-testid={`btn-${variant || 'default'}`} onClick={onClick} disabled={disabled} {...rest}>
+      {children}
+    </button>
+  )),
+  Card: vi.fn(({ children, ...rest }: any) => (
+    <div data-testid="card" {...rest}>{children}</div>
+  )),
+  Tag: vi.fn(({ children, ...rest }: any) => (
+    <span data-testid="tag" {...rest}>{children}</span>
+  )),
+  Input: vi.fn(({ placeholder, value, onChange, ...rest }: any) => (
+    <input data-testid="input" placeholder={placeholder} value={value} onChange={onChange} {...rest} />
+  )),
+  Select: vi.fn(({ options, value, onChange, ...rest }: any) => (
+    <select data-testid="select" value={value} onChange={onChange} {...rest}>
+      {(options || []).map((opt: any) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  )),
+}));
+
+// ── Test Subject ──
+
+import GroupBookingPage from './page';
+
+describe('GroupBookingPage — 团队预约', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应包含 use client 指令', () => {
-    assert.ok(SRC.includes("'use client'"));
+  // ====== 1. 正例: Step 1 — 活动类型选择渲染 ======
+
+  test('renders step 1 — activity selection screen', () => {
+    render(<GroupBookingPage />);
+    expect(screen.getByText('团队预约 — P-38')).toBeInTheDocument();
+    expect(screen.getByText('选择活动类型开始预约')).toBeInTheDocument();
   });
 
-  it('应包含 P-38 标题', () => {
-    assert.ok(SRC.includes('团队预约'));
-    assert.ok(SRC.includes('P-38'));
+  test('renders all 6 activity types', () => {
+    render(<GroupBookingPage />);
+    expect(screen.getByText('游戏机畅玩')).toBeInTheDocument();
+    expect(screen.getByText('生日派对')).toBeInTheDocument();
+    expect(screen.getByText('团建活动')).toBeInTheDocument();
+    expect(screen.getByText('VR体验')).toBeInTheDocument();
+    expect(screen.getByText('赛事组织')).toBeInTheDocument();
+    expect(screen.getByText('包场聚会')).toBeInTheDocument();
   });
 
-  it('应包含6种活动类型', () => {
-    ['游戏机畅玩', '生日派对', '团建活动', 'VR体验', '赛事组织', '包场聚会'].forEach(a =>
-      assert.ok(SRC.includes(a), `缺少活动: ${a}`)
-    );
+  test('shows price per person for activities', () => {
+    render(<GroupBookingPage />);
+    const priceElements = screen.getAllByText(/¥\d+\/人/);
+    expect(priceElements.length).toBe(6);
   });
 
-  it('应包含所有活动图标', () => {
-    ['🎮', '🎂', '🤝', '🥽', '🏆', '🎉'].forEach(icon =>
-      assert.ok(SRC.includes(icon), `缺少图标: ${icon}`)
-    );
+  // ====== 2. 交互: Step 1 → Step 2 活动选择 ======
+
+  test('clicking activity advances to date-time step', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    expect(screen.getByText('✅ 已选活动')).toBeInTheDocument();
+    expect(screen.getByText('📅 选择时间')).toBeInTheDocument();
   });
 
-  it('应包含时间选择', () => {
-    assert.ok(SRC.includes('选择日期'));
-    assert.ok(SRC.includes('选择时段'));
+  test('after selecting activity, Card shows selected activity info', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('VR体验'));
+    // Card with the selected activity details renders
+    expect(screen.getByText('VR体验')).toBeInTheDocument();
   });
 
-  it('应包含6个时段', () => {
-    ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00'].forEach(t =>
-      assert.ok(SRC.includes(t), `缺少时段: ${t}`)
-    );
+  // ====== 3. 正例: Step 2 — 日期时段 ======
+
+  test('date-time step shows date input', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = screen.getByDisplayValue('');
+    expect(dateInput).toBeInTheDocument();
   });
 
-  it('应包含人数选择器', () => {
-    assert.ok(SRC.includes('peopleCount'));
-    assert.ok(SRC.includes('参与人数'));
+  test('date-time step shows time slot grid', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    expect(screen.getByText('10:00-12:00')).toBeInTheDocument();
+    expect(screen.getByText('12:00-14:00')).toBeInTheDocument();
   });
 
-  it('应包含联系表单', () => {
-    assert.ok(SRC.includes('联系人姓名'));
-    assert.ok(SRC.includes('联系电话'));
-    assert.ok(SRC.includes('备注'));
+  test('unavailable time slots show "已满" label', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const unavailableBtns = screen.getAllByText('已满');
+    expect(unavailableBtns.length).toBeGreaterThan(0);
   });
 
-  it('应包含预约成功页', () => {
-    assert.ok(SRC.includes('预约成功'));
-    assert.ok(SRC.includes('继续预约'));
+  test('date-time step shows people count control', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    expect(screen.getByText('参与人数')).toBeInTheDocument();
+    expect(screen.getByText('−')).toBeInTheDocument();
+    expect(screen.getByText('+')).toBeInTheDocument();
   });
 
-  it('应使用 @m5/ui 组件', () => {
-    assert.ok(SRC.includes("@m5/ui"));
+  test('date-time step shows next step button', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const nextBtn = screen.getByText('下一步 · 填写联系信息');
+    expect(nextBtn).toBeInTheDocument();
   });
 
-  it('应使用深色主题', () => {
-    assert.ok(SRC.includes('#0f172a'));
-    assert.ok(SRC.includes('#f8fafc'));
+  // ====== 4. 交互: 人数调整 ======
+
+  test('clicking + increases people count', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    // Default minPeople for 游戏机畅玩 is 1, initial is 1
+    fireEvent.click(screen.getByText('+'));
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('应包含响应式布局 maxWidth', () => {
-    assert.ok(SRC.includes('maxWidth: 560') || SRC.includes('maxWidth: 480'));
+  test('clicking - decreases people count', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    // Increase first then decrease
+    fireEvent.click(screen.getByText('+'));
+    fireEvent.click(screen.getByText('+'));
+    expect(screen.getByText('3')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('−'));
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('应包含手机号验证', () => {
-    assert.ok(SRC.includes('/^1\\d{10}$/') || SRC.includes('手机号'));
-  });
-});
-
-describe('group-booking — 边界', () => {
-  it('人数下限为活动最小值', () => {
-    assert.ok(SRC.includes('Math.max'));
-    assert.ok(SRC.includes('minPeople'));
+  test('cannot go below minPeople', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    // minPeople = 1, initial = 1, clicking - should keep at 1
+    fireEvent.click(screen.getByText('−'));
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 
-  it('人数上限为活动最大值', () => {
-    assert.ok(SRC.includes('Math.min'));
-    assert.ok(SRC.includes('maxPeople'));
+  // ====== 5. 交互: Step 2 → Step 3 日期选择验证 ======
+
+  test('shows error when next clicked without date', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const nextBtn = screen.getByText('下一步 · 填写联系信息');
+    fireEvent.click(nextBtn);
+    expect(screen.getByText('请选择日期')).toBeInTheDocument();
   });
 
-  it('未选日期/时段时禁用下一步', () => {
-    assert.ok(SRC.includes('disabled={!selectedDate || !selectedTime}'));
+  // ====== 6. 正例: Step 3 — Contact info ======
+
+  test('info step renders contact name input', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    // Set date and time first so next button works
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    // Click the next button
+    const nextBtn = screen.getByText('下一步 · 填写联系信息');
+    // Need to select a time slot first
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(nextBtn);
+    expect(screen.getByPlaceholderText('请输入姓名')).toBeInTheDocument();
   });
 
-  it('已满时段不可选', () => {
-    assert.ok(SRC.includes('available'));
-    assert.ok(SRC.includes('已满'));
+  // ====== 7. 正例: Step 3 — Summary card ======
+
+  test('info step shows booking summary card', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    expect(screen.getByText(/活动/)).toBeInTheDocument();
   });
 
-  it('应计算总价', () => {
-    assert.ok(SRC.includes('totalPrice'));
-  });
-});
-
-describe('group-booking — 防御', () => {
-  it('空联系人应报错', () => {
-    assert.ok(SRC.includes('请输入联系人姓名'));
-  });
-
-  it('手机号格式不正确应报错', () => {
-    assert.ok(SRC.includes('请输入正确的手机号'));
-  });
-
-  it('提交中应禁用按钮', () => {
-    assert.ok(SRC.includes('submitting'));
+  test('info step shows price calculation', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('VR体验'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    // VR体验 ¥98/人 × 1人 = ¥98
+    expect(screen.getByText('¥98')).toBeInTheDocument();
   });
 
-  it('应支持返回修改', () => {
-    assert.ok(SRC.includes('返回修改'));
+  test('info step has 返回修改 button', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    expect(screen.getByText('← 返回修改')).toBeInTheDocument();
   });
+
+  // ====== 8. 边界: 表单验证 ======
+
+  test('submit without name shows error', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    // Click confirm without filling in name
+    fireEvent.click(screen.getByText('确认预约'));
+    expect(screen.getByText('请输入联系人姓名')).toBeInTheDocument();
+  });
+
+  test('submit with invalid phone shows error', () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    // Fill name but invalid phone
+    fireEvent.change(screen.getByPlaceholderText('请输入姓名'), { target: { value: '张三' } });
+    fireEvent.click(screen.getByText('确认预约'));
+    expect(screen.getByText('请输入正确的手机号')).toBeInTheDocument();
+  });
+
+  // ====== 9. 正向: 成功提交 ======
+
+  test('success page shows after valid submission', async () => {
+    render(<GroupBookingPage />);
+    // Navigate to info step
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    // Fill form
+    fireEvent.change(screen.getByPlaceholderText('请输入姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    // Submit
+    fireEvent.click(screen.getByText('确认预约'));
+    // Wait for 2s timeout to complete
+    await waitFor(() => {
+      expect(screen.getByText('预约成功！')).toBeInTheDocument();
+    }, { timeout: 3000 });
+  }, 10000);
+
+  test('success page shows "继续预约" button', async () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    fireEvent.change(screen.getByPlaceholderText('请输入姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('确认预约'));
+    await waitFor(() => {
+      expect(screen.getByText('继续预约')).toBeInTheDocument();
+    }, { timeout: 3000 });
+  }, 10000);
+
+  test('success page shows 返回首页 button', async () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    fireEvent.change(screen.getByPlaceholderText('请输入姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('确认预约'));
+    await waitFor(() => {
+      expect(screen.getByText('返回首页')).toBeInTheDocument();
+    }, { timeout: 3000 });
+  }, 10000);
+
+  test('success page shows booking details summary', async () => {
+    render(<GroupBookingPage />);
+    fireEvent.click(screen.getByText('游戏机畅玩'));
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput) {
+      fireEvent.change(dateInput, { target: { value: '2026-08-15' } });
+    }
+    fireEvent.click(screen.getByText('10:00-12:00'));
+    fireEvent.click(screen.getByText('下一步 · 填写联系信息'));
+    fireEvent.change(screen.getByPlaceholderText('请输入姓名'), { target: { value: '张三' } });
+    fireEvent.change(screen.getByPlaceholderText('请输入手机号'), { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('确认预约'));
+    await waitFor(() => {
+      const priceElement = screen.getByText(/¥\d+/);
+      expect(priceElement).toBeInTheDocument();
+    }, { timeout: 3000 });
+  }, 10000);
 });

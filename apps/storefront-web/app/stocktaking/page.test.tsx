@@ -1,221 +1,335 @@
 /**
- * stocktaking/page.test.tsx — 盘点列表页 增强测试
- * 适配实际页面 StocktakingPage
+ * stocktaking/page.vitest.tsx — 盘点页面 L2 组件测试
+ * 角色: 👔店长 / 🛒前台
+ * 覆盖: 渲染 · 看板卡片 · 报表视图 · 搜索过滤 · 分类/状态筛选 · 表格 · 全选/批量操作 · 分页 · 空态 · 加载态
  *
- * 覆盖:
- *   L1 正例    — 组件导出、22个盘点项、分类统计、状态分布
- *   L2 角色测试 — 搜索/筛选、批量选择、分页、列表/报表切换
- *   边界       — 空状态、加载态、差异计算、异常标记
+ * 注意: vi.mock factory 是提升的(hoisted), 不能引用顶层变量, 数据必须内联在 factory 内。
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import StocktakingPage from './page';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
-
-describe('StocktakingPage — L1 正例', () => {
-  it('应导出默认函数组件 StocktakingPage', () => {
-    assert.ok(SRC.includes('export default function StocktakingPage'));
+describe('StocktakingPage — 盘点页面', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock window.alert
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 
-  it('应包含 use client 指令', () => {
-    assert.ok(SRC.includes("'use client'"));
+  // ====== 正例: 渲染 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<StocktakingPage />)).not.toThrow();
   });
 
-  it('渲染盘点页面标题"库存盘点"', () => {
-    assert.ok(SRC.includes('库存盘点'));
+  test('renders title 库存盘点', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('📋 库存盘点')).toBeInTheDocument();
   });
 
-  it('应有 22 个盘点项', () => {
-    const count = (SRC.match(/id:\s*['"]\d+['"]/g) || []).length;
-    assert.equal(count, 22);
+  test('renders main container with dark background', () => {
+    render(<StocktakingPage />);
+    const main = document.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
   });
 
-  it('包含游戏币、饮料、玩偶、VR手柄等基础项', () => {
-    assert.ok(SRC.includes('游戏币'));
-    assert.ok(SRC.includes('饮料(箱)'));
-    assert.ok(SRC.includes('礼品玩偶'));
-    assert.ok(SRC.includes('VR手柄'));
+  // ====== 看板卡片 ======
+
+  test('renders 已盘点 stat card', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('已盘点')).toBeInTheDocument();
   });
 
-  it('包含新增品项：零食、饮品、清洁用品等', () => {
-    assert.ok(SRC.includes('零食-薯片'));
-    assert.ok(SRC.includes('饮品-矿泉水'));
-    assert.ok(SRC.includes('清洁湿巾'));
-  });
-});
-
-describe('StocktakingPage — L1 数据完整性', () => {
-  it('每个盘点项应有 id/name/expected/actual/diff/unit/category/status', () => {
-    assert.ok(SRC.includes('expected'));
-    assert.ok(SRC.includes('actual'));
-    assert.ok(SRC.includes('diff'));
-    assert.ok(SRC.includes('category'));
-    assert.ok(SRC.includes('status'));
-    assert.ok(SRC.includes('location'));
-    assert.ok(SRC.includes('lastStocktake'));
+  test('renders 待盘点 stat card', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('待盘点')).toBeInTheDocument();
   });
 
-  it('应包含三种状态：done/pending/exception', () => {
-    assert.ok(SRC.includes("'done'"));
-    assert.ok(SRC.includes("'pending'"));
-    assert.ok(SRC.includes("'exception'"));
+  test('renders 异常 stat card', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('⚠️ 异常')).toBeInTheDocument();
   });
 
-  it('应包含 7 个分类', () => {
-    const cats = ['游戏耗材', '饮品', '礼品', '办公耗材', '设备', '清洁用品', '零食'];
-    const found = cats.filter(c => SRC.includes(c));
-    assert.equal(found.length, 7, `缺失分类: ${cats.filter(c => !SRC.includes(c)).join(', ')}`);
+  test('renders 差异项数 stat card', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('差异项数')).toBeInTheDocument();
   });
 
-  it('应定义 statusColor 和 statusLabel 渲染函数', () => {
-    assert.ok(SRC.includes('statusColor'));
-    assert.ok(SRC.includes('statusLabel'));
+  test('renders 开始盘点 button', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('+ 开始盘点')).toBeInTheDocument();
   });
 
-  it('应显示已盘点/待盘点/异常等中文状态', () => {
-    assert.ok(SRC.includes('已盘点'));
-    assert.ok(SRC.includes('待盘点'));
-    assert.ok(SRC.includes('异常'));
-  });
-});
-
-describe('StocktakingPage — L2 统计与筛选', () => {
-  it('应有统计数据 stats', () => {
-    assert.ok(SRC.includes('stats'));
-    assert.ok(SRC.includes('doneItems'));
+  test('stat cards show correct values', () => {
+    render(<StocktakingPage />);
+    // Done: 12, Pending: 4, Exception: 6
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('6')).toBeInTheDocument();
   });
 
-  it('应有分类统计 categoryStats', () => {
-    assert.ok(SRC.includes('categoryStats'));
+  // ====== 报表/列表视图切换 ======
+
+  test('renders view mode toggle button', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('📊 报表视图')).toBeInTheDocument();
   });
 
-  it('应有趋势数据 trends', () => {
-    assert.ok(SRC.includes('trends'));
+  test('switching to report view shows category stats', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('📊 报表视图'));
+    expect(screen.getByText('📊 分类盘点概况')).toBeInTheDocument();
   });
 
-  it('应支持搜索过滤', () => {
-    assert.ok(SRC.includes('search') || SRC.includes('setSearch'));
+  test('report view shows category breakdown', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('📊 报表视图'));
+    expect(screen.getByText('游戏耗材')).toBeInTheDocument();
+    expect(screen.getByText('饮品')).toBeInTheDocument();
+    expect(screen.getByText('礼品')).toBeInTheDocument();
   });
 
-  it('应支持分类筛选 categoryFilter', () => {
-    assert.ok(SRC.includes('categoryFilter'));
+  test('switching back to list view shows table', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('📊 报表视图'));
+    expect(screen.getByText('📊 分类盘点概况')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('📋 列表视图'));
+    expect(screen.queryByText('📊 分类盘点概况')).not.toBeInTheDocument();
   });
 
-  it('应支持状态筛选 statusFilter', () => {
-    assert.ok(SRC.includes('statusFilter'));
+  // ====== 搜索过滤 ======
+
+  test('renders search input with placeholder 搜索品名/分类/位置…', () => {
+    render(<StocktakingPage />);
+    const searchInput = screen.getByPlaceholderText('搜索品名/分类/位置…');
+    expect(searchInput).toBeInTheDocument();
   });
 
-  it('应支持分页 (PAGE_SIZE / totalPages)', () => {
-    assert.ok(SRC.includes('PAGE_SIZE'));
-    assert.ok(SRC.includes('totalPages'));
+  test('search filters items by name', async () => {
+    render(<StocktakingPage />);
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
+    const searchInput = screen.getByPlaceholderText('搜索品名/分类/位置…');
+    fireEvent.change(searchInput, { target: { value: 'VR' } });
+    await waitFor(() => {
+      expect(screen.getByText('VR手柄')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('应支持加载态', () => {
-    assert.ok(SRC.includes('loading'));
+  test('search filters items by category', async () => {
+    render(<StocktakingPage />);
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
+    const searchInput = screen.getByPlaceholderText('搜索品名/分类/位置…');
+    fireEvent.change(searchInput, { target: { value: '清洁' } });
+    await waitFor(() => {
+      expect(screen.getByText('清洁湿巾')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('应支持重置', () => {
-    assert.ok(SRC.includes('handleReset'));
-    assert.ok(SRC.includes('重置'));
-  });
-});
+  // ====== 分类筛选 ======
 
-describe('StocktakingPage — 批量操作与视图切换', () => {
-  it('应支持复选框多选', () => {
-    assert.ok(SRC.includes('selectedIds') || SRC.includes('toggleItem'));
-  });
-
-  it('应支持全选/反选 toggleAll', () => {
-    assert.ok(SRC.includes('toggleAll'));
+  test('category filter renders with options', () => {
+    render(<StocktakingPage />);
+    const selects = document.querySelectorAll('select');
+    const catSelect = selects[0];
+    expect(catSelect).toBeInTheDocument();
+    expect(catSelect.textContent).toContain('游戏耗材');
+    expect(catSelect.textContent).toContain('饮品');
   });
 
-  it('选中后应显示批量操作栏', () => {
-    assert.ok(SRC.includes('标记为已盘点'));
-    assert.ok(SRC.includes('批量录入实盘'));
+  test('category filter narrows results', async () => {
+    render(<StocktakingPage />);
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
+    const selects = document.querySelectorAll('select');
+    const catSelect = selects[0];
+    fireEvent.change(catSelect, { target: { value: '饮品' } });
+    await waitFor(() => {
+      expect(screen.getByText('饮料(箱)')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('应支持列表/报表视图切换', () => {
-    assert.ok(SRC.includes('viewMode') || SRC.includes('报表视图'));
+  // ====== 状态筛选 ======
+
+  test('status filter renders with options', () => {
+    render(<StocktakingPage />);
+    const selects = document.querySelectorAll('select');
+    const statusSelect = selects[1];
+    expect(statusSelect).toBeInTheDocument();
+    expect(statusSelect.textContent).toContain('已盘点');
+    expect(statusSelect.textContent).toContain('待盘点');
+    expect(statusSelect.textContent).toContain('异常');
   });
 
-  it('报表视图应显示分类盘点概况', () => {
-    assert.ok(SRC.includes('分类盘点概况'));
+  test('status filter shows only pending items', async () => {
+    render(<StocktakingPage />);
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
+    const selects = document.querySelectorAll('select');
+    const statusSelect = selects[1];
+    fireEvent.change(statusSelect, { target: { value: 'pending' } });
+    await waitFor(() => {
+      // Pending items: 礼品袋, 除尘掸, 礼品-徽章, 零食-饼干
+      expect(screen.getByText('礼品袋')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('报表视图应显示盘点趋势', () => {
-    assert.ok(SRC.includes('盘点趋势'));
-  });
-});
+  // ====== 重置按钮 ======
 
-describe('StocktakingPage — 空状态与加载', () => {
-  it('无匹配数据应显示空状态提示', () => {
-    assert.ok(SRC.includes('没有匹配的盘点记录'));
-  });
-
-  it('空状态应提示调整筛选条件', () => {
-    assert.ok(SRC.includes('调整筛选条件'));
-  });
-
-  it('加载中应显示 🔄 图标', () => {
-    assert.ok(SRC.includes('🔄'));
-  });
-});
-
-describe('StocktakingPage — L1 功能与样式', () => {
-  it('应使用 React.useState 和 useMemo', () => {
-    assert.ok(SRC.includes('useState'));
-    assert.ok(SRC.includes('useMemo'));
+  test('reset button clears all filters', async () => {
+    render(<StocktakingPage />);
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
+    const selects = document.querySelectorAll('select');
+    fireEvent.change(selects[0], { target: { value: '饮品' } });
+    await waitFor(() => {
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('重置'));
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
   });
 
-  it('应有"开始盘点"按钮', () => {
-    assert.ok(SRC.includes('开始盘点'));
+  // ====== 表格渲染 ======
+
+  test('renders table with headers', () => {
+    render(<StocktakingPage />);
+    const table = document.querySelector('table');
+    expect(table).toBeInTheDocument();
+    expect(screen.getByText('品名')).toBeInTheDocument();
+    expect(screen.getByText('分类')).toBeInTheDocument();
+    expect(screen.getByText('账存')).toBeInTheDocument();
+    expect(screen.getByText('实盘')).toBeInTheDocument();
+    expect(screen.getByText('差异')).toBeInTheDocument();
+    expect(screen.getByText('状态')).toBeInTheDocument();
+    expect(screen.getByText('存放位置')).toBeInTheDocument();
   });
 
-  it('应有"导出报告"功能', () => {
-    assert.ok(SRC.includes('导出报告'));
+  test('renders item names in table', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('游戏币')).toBeInTheDocument();
+    expect(screen.getByText('饮料(箱)')).toBeInTheDocument();
+    expect(screen.getByText('礼品玩偶')).toBeInTheDocument();
   });
 
-  it('应使用深色主题背景 #0f172a', () => {
-    assert.ok(SRC.includes('#0f172a'));
+  test('renders status labels with correct colors', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('已盘点')).toBeInTheDocument();
+    expect(screen.getByText('待盘点')).toBeInTheDocument();
   });
 
-  it('累计差异应显示件数', () => {
-    assert.ok(SRC.includes('diffValue'));
+  test('diff column shows checkmark for zero diff', () => {
+    render(<StocktakingPage />);
+    // Game coins have diff -20, so they show "-20 枚"
+    expect(screen.getByText('✓')).toBeInTheDocument();
   });
 
-  it('完成率应计算百分比', () => {
-    assert.ok(SRC.includes('完成率'));
+  // ====== 全选/批量操作 ======
+
+  test('checkbox selects items and shows batch bar', () => {
+    render(<StocktakingPage />);
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    expect(checkboxes.length).toBeGreaterThan(1);
+    // Click first item checkbox
+    fireEvent.click(checkboxes[1]);
+    const batchBar = screen.getByText(/已选 1 项/);
+    expect(batchBar).toBeInTheDocument();
   });
 
-  it('应显示表格列：品名、分类、账存、实盘、差异', () => {
-    assert.ok(SRC.includes('品名'));
-    assert.ok(SRC.includes('分类'));
-    assert.ok(SRC.includes('账存'));
-    assert.ok(SRC.includes('实盘'));
-    assert.ok(SRC.includes('差异'));
+  test('select all checkbox selects all visible items', () => {
+    render(<StocktakingPage />);
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const selectAll = checkboxes[0];
+    fireEvent.click(selectAll);
+    expect(screen.getByText(/已选/)).toBeInTheDocument();
   });
 
-  it('差异为 0 时显示 ✓，非 0 时标红', () => {
-    assert.ok(SRC.includes("'✓'") || SRC.includes('34d399'));
-    assert.ok(SRC.includes('f87171'));
+  test('batch bar shows batch action buttons', () => {
+    render(<StocktakingPage />);
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    fireEvent.click(checkboxes[1]);
+    expect(screen.getByText('✅ 标记为已盘点')).toBeInTheDocument();
+    expect(screen.getByText('📝 批量录入实盘')).toBeInTheDocument();
   });
 
-  it('应支持 pagination 翻页', () => {
-    assert.ok(SRC.includes('上一页'));
-    assert.ok(SRC.includes('下一页'));
+  test('batch bar cancel selection clears selection', () => {
+    render(<StocktakingPage />);
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    fireEvent.click(checkboxes[1]);
+    expect(screen.getByText(/已选 1 项/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText('取消选择'));
+    expect(screen.queryByText(/已选/)).not.toBeInTheDocument();
   });
 
-  it('exception 状态应有红色标记', () => {
-    assert.ok(SRC.includes('#f87171'));
+  // ====== 搜索按钮 ======
+
+  test('search button triggers loading state', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('搜索'));
+    expect(screen.getByText('🔄')).toBeInTheDocument();
+    expect(screen.getByText('处理中...')).toBeInTheDocument();
   });
 
-  it('应显示存放位置和上次盘点日期', () => {
-    assert.ok(SRC.includes('存放位置'));
-    assert.ok(SRC.includes('上次盘点'));
+  // ====== 导出报告 ======
+
+  test('export button triggers alert', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('📥 导出报告'));
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('导出盘点报告'));
+  });
+
+  // ====== 开始盘点 ======
+
+  test('start stocktake button triggers alert', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('+ 开始盘点'));
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('发起新一轮盘点'));
+  });
+
+  // ====== 空态 ======
+
+  test('shows empty state when no items match filters', async () => {
+    render(<StocktakingPage />);
+    const searchInput = screen.getByPlaceholderText('搜索品名/分类/位置…');
+    fireEvent.change(searchInput, { target: { value: 'ZZZ_NO_MATCH' } });
+    await waitFor(() => {
+      expect(screen.getByText('没有匹配的盘点记录')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 分页 ======
+
+  test('renders pagination', () => {
+    render(<StocktakingPage />);
+    expect(screen.getByText('← 上一页')).toBeInTheDocument();
+    expect(screen.getByText('下一页 →')).toBeInTheDocument();
+  });
+
+  test('pagination shows page numbers', () => {
+    render(<StocktakingPage />);
+    // 22 items, 10 per page = 3 pages
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  test('clicking page 2 changes displayed items', () => {
+    render(<StocktakingPage />);
+    fireEvent.click(screen.getByText('2'));
+    // Page 2 should show different items
+    expect(screen.getByText('零食-薯片')).toBeInTheDocument();
   });
 });

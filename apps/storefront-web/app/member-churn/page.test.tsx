@@ -1,285 +1,371 @@
 /**
- * member-churn/page.test.tsx — 会员流失预测工作台 L1+L2+L3综合测试
- * 角色视角: 🕵️ 会员运营 / AI决策引擎 / 👔店长
- * 覆盖: 模块导入 + 数据结构类型检查 + 统计计算逻辑 + 异常诊断状态 + 角色场景 + 错误边界
+ * member-churn/page.vitest.tsx — 会员流失预测页面 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 渲染 · Tab切换 · 概览表格 · 风险筛选 · 诊断 · 趋势 · 加载态 · 空状态 · 边界
+ * 角色: 🏪 店长 / 运营
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+// ====== Mock @m5/ui ======
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle: string }) => (
+    <div data-testid="page-shell">
+      <h2>{title}</h2>
+      <p>{subtitle}</p>
+      {children}
+    </div>
+  ),
+  StatusBadge: ({ label, variant }: { label: string; variant: string }) => (
+    <span data-testid={`status-badge-${label}`} data-variant={variant}>{label}</span>
+  ),
+  QuickStats: ({ items }: { items: { label: string; value: string }[] }) => (
+    <div data-testid="quick-stats">
+      {items.map((item) => (
+        <div key={item.label} data-testid="quick-stat-item">
+          <span>{item.value}</span>
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  ),
+  AIMemberChurnPredictionPanel: ({ prediction }: { prediction: Record<string, unknown> }) => (
+    <div data-testid="ai-prediction-panel" data-member-id={prediction.memberId as string}>
+      {prediction.memberName as string} - {(prediction.churnProbability as number)}%
+    </div>
+  ),
+  AnomalyDiagnosisReport: ({ title, findings, onHandleFinding, onDismissFinding }: {
+    title: string; findings: Record<string, unknown>[]; loading: boolean;
+    onHandleFinding: (id: string) => void; onDismissFinding: (id: string) => void;
+  }) => (
+    <div data-testid="diagnosis-report">
+      <h3>{title}</h3>
+      {findings.map((f: Record<string, unknown>) => (
+        <div key={f.id as string} data-testid="finding-item">
+          <span>{f.title as string}</span>
+          <button data-testid={`handle-finding-${f.id}`} onClick={() => onHandleFinding(f.id as string)}>处理</button>
+          <button data-testid={`dismiss-finding-${f.id}`} onClick={() => onDismissFinding(f.id as string)}>忽略</button>
+        </div>
+      ))}
+    </div>
+  ),
+  PredictionAnalysisPanel: ({ title, predictions, summary }: {
+    title: string; predictions: unknown[]; summary: Record<string, unknown>;
+  }) => (
+    <div data-testid="prediction-analysis-panel">
+      <h3>{title}</h3>
+      <span>{summary.bestPrediction as string}</span>
+    </div>
+  ),
+}));
 
-// ---- 与组件保持一致的数据结构 ----
+vi.mock('@m5/sdk', () => ({
+  getDefaultApiBaseUrl: () => 'https://api.example.com',
+}));
 
-type ChurnRiskLevel = 'low' | 'medium' | 'high' | 'critical';
-
-interface SignalFactor {
-  code: string;
-  label: string;
-  weight: number;
-  description: string;
-  direction: 'negative' | 'positive';
-}
-
-interface RecommendedAction {
-  code: string;
-  label: string;
-  channel: string;
-  priority: string;
-  expectedRecoveryRate: number;
-  description: string;
-}
-
-interface ChurnPrediction {
-  memberId: string;
-  memberName: string;
-  memberTier: string;
-  riskLevel: ChurnRiskLevel;
-  churnProbability: number;
-  predictedWindowDays: number;
-  signalFactors: SignalFactor[];
-  recommendedActions: RecommendedAction[];
-  activityTrend: string;
-  daysSinceLastActivity: number;
-  predictedAt: string;
-}
-
-interface DiagnosisFinding {
-  id: string;
-  title: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  category: string;
-  description: string;
-  rootCause: string;
-  impact: string;
-  recommendation: string;
-  timestamp: string;
-  owner: string;
-  resolved: boolean;
-}
-
-// ---- 类型检查 ----
-
-const RISK_LEVELS: ChurnRiskLevel[] = ['low', 'medium', 'high', 'critical'];
-
-describe('member-churn — 数据类型', () => {
-  it('应有足够的流失风险等级 (>=4)', () => {
-    assert.ok(RISK_LEVELS.length >= 4, `风险等级: ${RISK_LEVELS.length}`);
-  });
-
-  it('ChurnPrediction 应包含成员ID', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('memberId'), '缺少 memberId');
-  });
-
-  it('ChurnPrediction 应包含流失概率 (0~100)', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('churnProbability'), '缺少 churnProbability');
-  });
-
-  it('应包含 signalFactors 信号因素', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('signalFactors'), '缺少 signalFactors');
-  });
-
-  it('应包含 recommendedActions', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('recommendedActions'), '缺少 recommendedActions');
-  });
-
-  it('DiagnosisFinding 应包含 resolved 布尔值', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('resolved'), '缺少 resolved');
-  });
-
-  it('应包含 activityTrend 字段', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('activityTrend'), '缺少 activityTrend');
-  });
+// ====== Mock localStorage ======
+const localStorageStore: Record<string, string | null> = {};
+vi.stubGlobal('localStorage', {
+  getItem: vi.fn((key: string) => localStorageStore[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => { localStorageStore[key] = value; }),
+  removeItem: vi.fn((key: string) => { delete localStorageStore[key]; }),
+  clear: vi.fn(() => { Object.keys(localStorageStore).forEach(k => { delete localStorageStore[k]; }); }),
 });
 
-describe('member-churn — 正例', () => {
-  it('页面应导出 MemberChurnPage', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('export default function MemberChurnPage'), '缺少导出');
-  });
+// ====== Mock fetch ======
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
-  it('应包含 use client 指令', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes("'use client'"), '缺少 use client');
-  });
+// ====== Test Subject ======
+import MemberChurnPage from './page';
 
-  it('应包含 AI 预测面板组件', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('AIMemberChurnPredictionPanel'), '缺少 AI 面板');
-  });
+const MOCK_PREDICTIONS = [
+  { memberId: 'm1', memberName: '张三', memberTier: 'gold', riskLevel: 'high', churnProbability: 85, predictedWindowDays: 14, activityTrend: 'declining', recommendedActions: [{ code: 'coupon_20', label: '发放满减券', channel: 'coupon', expectedRecoveryRate: 35 }] },
+  { memberId: 'm2', memberName: '李四', memberTier: 'silver', riskLevel: 'medium', churnProbability: 55, predictedWindowDays: 30, activityTrend: 'declining', recommendedActions: [{ code: 'wechat_msg', label: '微信关怀消息', channel: 'wechat', expectedRecoveryRate: 25 }] },
+  { memberId: 'm3', memberName: '王五', memberTier: 'diamond', riskLevel: 'low', churnProbability: 20, predictedWindowDays: 60, activityTrend: 'stable', recommendedActions: [] },
+  { memberId: 'm4', memberName: '赵六', memberTier: 'bronze', riskLevel: 'critical', churnProbability: 95, predictedWindowDays: 7, activityTrend: 'declining', recommendedActions: [{ code: 'phone_call', label: '电话回访', channel: 'phone', expectedRecoveryRate: 15 }] },
+];
 
-  it('应包含异常诊断报告组件', () => {
-    assert.ok(true, 'AnomalyDiagnosisReport 组件');
-  });
+const MOCK_FINDINGS = [
+  { id: 'f1', title: '30天未到店消费', detail: '张三连续30天无到店记录', severity: 'high', type: 'inactive', time: '2026-07-27', resolved: false },
+  { id: 'f2', title: '消费频次下降50%', detail: '王五本周消费频次较上月下降50%', severity: 'medium', type: 'frequency', time: '2026-07-26', resolved: false },
+];
 
-  it('应包含趋势分析面板', () => {
-    assert.ok(true, 'PredictionAnalysisPanel 组件');
-  });
-
-  it('应包含概览仪表盘 Tab', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('overview'), '缺少 overview tab');
-  });
-
-  it('应包含流失率趋势预测', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('predictedValue') || src.includes('actualValue'), '缺少预测/实际值');
-  });
-
-  it('应包含 QuickStats 概览指标', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('QuickStats'), '缺少 QuickStats');
-  });
-
-  it('应包含多个 Tab 切换', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.split('setActiveTab').length >= 2, 'Tab 切换');
-  });
-
-  it('应有 mock 数据的多个流失预测成员', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('MOCK_CHURN_PREDICTIONS'), 'mock 数据');
-  });
-
-  it('应有异常诊断发现', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('MOCK_FINDINGS'), 'mock finding');
-  });
-
-  it('应有风险等级筛选', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('riskFilter'), '风险筛选');
-  });
-
-  it('应计算风险等级分布', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('riskDistribution'), '风险分布');
-  });
-
-  it('应有风险等级徽章映射', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('RISK_LABEL'), '风险等级标签');
-  });
-
-  it('应有趋势迷你进度条', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('TrendMiniBar'), '趋势条');
-  });
-});
-
-describe('member-churn — 统计逻辑', () => {
-  it('应计算高风险数量', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('highRisk') || src.includes('stats.highRisk'), '高风险统计');
-  });
-
-  it('应计算平均流失概率', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('avgProbability'), '平均概率统计');
-  });
-
-  it('应计算需紧急挽回数量', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('urgent'), '紧急挽回统计');
-  });
-
-  it('应统计待处理诊断数', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('pendingFindings'), '诊断统计');
-  });
-
-  it('应计算挽回率', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('recovery') || src.includes('expectedRecoveryRate'), '挽回率');
-  });
-});
-
-describe('member-churn — 边界', () => {
-  it('空推荐行动处理', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('.length > 0') || src.includes('.filter('), '空推荐处理');
-  });
-
-  it('高风险等级对应徽章颜色', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('#ef4444') || src.includes('#f59e0b'), '风险颜色');
-  });
-
-  it('0流失概率处理', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('churnProbability'), '流失概率字段');
-  });
-
-  it('处理 resolved 状态切换', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('resolved'), 'resolved 状态');
-  });
-
-  it('处理 dismiss 诊断', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('handleDismissFinding') || src.includes('filter'), 'dismiss');
-  });
-
-  it('所有风险等级应有对应徽章', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    RISK_LEVELS.forEach(level => {
-      assert.ok(src.includes(level), `缺少 ${level}`);
+describe('MemberChurnPage — 会员流失预测', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.keys(localStorageStore).forEach(k => { delete localStorageStore[k]; });
+    localStorageStore['member_info'] = JSON.stringify({ memberId: 'mem-001', memberName: '测试会员', mobile: '13800138000' });
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/churn/predictions')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(MOCK_PREDICTIONS) });
+      }
+      if (url.includes('/churn/diagnosis')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(MOCK_FINDINGS) });
+      }
+      return Promise.resolve({ ok: false });
     });
   });
-});
 
-describe('member-churn — 角色视角', () => {
-  it('会员运营可查看流失预测列表', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('流失预测'), '流失预测视角');
+  // ====== 正例: 渲染 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<MemberChurnPage />)).not.toThrow();
   });
 
-  it('店长可查看概览仪表盘', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('概览仪表盘') || src.includes('overview'), '店长概览');
+  test('renders PageShell title', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('会员流失预测')).toBeInTheDocument();
+    });
   });
 
-  it('AI 引擎提供挽回建议', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('recommendedActions'), '挽回建议');
+  test('renders PageShell subtitle', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/AI 驱动的会员流失分析与挽回决策/)).toBeInTheDocument();
+    });
   });
 
-  it('运营可查看诊断根因', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('rootCause') || src.includes('根因'), '根因分析');
+  test('renders summary text with prediction stats', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/共 4 位会员进行分析/)).toBeInTheDocument();
+    });
   });
 
-  it('运营可标记诊断已处理', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('handleHandleFinding'), '标记处理');
+  test('renders QuickStats component after loading', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('quick-stats')).toBeInTheDocument();
+    });
   });
 
-  it('店长可查看趋势分析', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(src.includes('trend') || src.includes('趋势'), '趋势分析');
-  });
-});
-
-describe('member-churn — 防御', () => {
-  it('不应使用 any', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(!/:\s*any\b/.test(src), '禁止 any');
+  test('renders risk distribution badges', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('status-badge-低风险')).toBeInTheDocument();
+      expect(screen.getByTestId('status-badge-中风险')).toBeInTheDocument();
+      expect(screen.getByTestId('status-badge-高风险')).toBeInTheDocument();
+      expect(screen.getByTestId('status-badge-极高风险')).toBeInTheDocument();
+    });
   });
 
-  it('不应包含 dangerous innerHTML', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(!src.includes('dangerouslySetInnerHTML'), '禁止 dangerous HTML');
+  // ====== Tab 切换 ======
+
+  test('renders all tab buttons', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('AI 流失预测')).toBeInTheDocument();
+      expect(screen.getByText('异常诊断报告')).toBeInTheDocument();
+      expect(screen.getByText('趋势分析')).toBeInTheDocument();
+      expect(screen.getByText('概览仪表盘')).toBeInTheDocument();
+    });
   });
 
-  it('不应包含密钥或敏感信息', () => {
-    const src = readFileSync(resolve(fileURLToPath(import.meta.url), '../page.tsx'), 'utf-8');
-    assert.ok(!/(?:secret|password|api[_-]?key|authorization)/i.test(src), '禁止密钥泄露');
+  test('概览仪表盘 tab is active by default', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      // Overview should show member names in the table
+      expect(screen.getByText('张三')).toBeInTheDocument();
+      expect(screen.getByText('李四')).toBeInTheDocument();
+    });
+  });
+
+  test('switching to AI流失预测 tab shows panels', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('AI 流失预测'));
+    await waitFor(() => {
+      expect(screen.getAllByTestId('ai-prediction-panel').length).toBeGreaterThan(0);
+    });
+  });
+
+  test('switching to 异常诊断报告 tab shows findings', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('异常诊断报告'));
+    await waitFor(() => {
+      expect(screen.getByTestId('diagnosis-report')).toBeInTheDocument();
+    });
+  });
+
+  test('switching to 趋势分析 tab shows analysis panel', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('趋势分析'));
+    await waitFor(() => {
+      expect(screen.getByTestId('prediction-analysis-panel')).toBeInTheDocument();
+    });
+  });
+
+  test('tab switch highlights active tab', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('AI 流失预测'));
+    await waitFor(() => {
+      const activeTab = screen.getByText('AI 流失预测');
+      expect(activeTab).toHaveStyle({ fontWeight: '700' });
+    });
+  });
+
+  // ====== 概览表格 ======
+
+  test('renders overview table with member names', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+      expect(screen.getByText('王五')).toBeInTheDocument();
+    });
+  });
+
+  test('renders churn probability in overview', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('85%')).toBeInTheDocument();
+      expect(screen.getByText('95%')).toBeInTheDocument();
+    });
+  });
+
+  test('renders predicted window in days', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      const daysElements = screen.getAllByText(/天/);
+      expect(daysElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('renders activity trend indicators', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/↓ 下降/)).toBeInTheDocument();
+      expect(screen.getByText(/→ 稳定/)).toBeInTheDocument();
+    });
+  });
+
+  // ====== 风险筛选 ======
+
+  test('renders risk level filter in AI预测 tab', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('AI 流失预测'));
+    await waitFor(() => {
+      const select = document.querySelector('select');
+      expect(select).toBeInTheDocument();
+      expect(screen.getByText('全部风险等级')).toBeInTheDocument();
+    });
+  });
+
+  test('risk filter shows prediction count', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('AI 流失预测'));
+    await waitFor(() => {
+      expect(screen.getByText(/共 4 条预测/)).toBeInTheDocument();
+    });
+  });
+
+  // ====== 诊断交互 ======
+
+  test('handle finding button works', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('异常诊断报告'));
+    await waitFor(() => {
+      expect(screen.getByTestId('handle-finding-f1')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('handle-finding-f1'));
+  });
+
+  test('dismiss finding button works', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张三')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('异常诊断报告'));
+    await waitFor(() => {
+      expect(screen.getByTestId('dismiss-finding-f2')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('dismiss-finding-f2'));
+  });
+
+  // ====== 加载态 ======
+
+  test('shows loading indicator initially', () => {
+    mockFetch.mockReturnValue(new Promise(() => {}));
+    render(<MemberChurnPage />);
+    expect(screen.getByText('加载中...')).toBeInTheDocument();
+  });
+
+  // ====== 空状态 & 边界 ======
+
+  test('shows empty state when no predictions nor findings', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/当前暂无流失预测数据/)).toBeInTheDocument();
+    });
+  });
+
+  test('shows empty state when no member_info in localStorage', async () => {
+    delete localStorageStore['member_info'];
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/当前暂无流失预测数据/)).toBeInTheDocument();
+    });
+  });
+
+  test('handles fetch error gracefully', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'));
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/共 0 条预测/)).toBeInTheDocument();
+    });
+  });
+
+  test('handles malformed member_info JSON gracefully', async () => {
+    localStorageStore['member_info'] = 'not-valid-json';
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/当前暂无流失预测数据/)).toBeInTheDocument();
+    });
+  });
+
+  test('shows recommended actions in overview', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/发放满减券/)).toBeInTheDocument();
+      expect(screen.getByText(/电话回访/)).toBeInTheDocument();
+    });
+  });
+
+  test('renders footer analysis info', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/AI 预测基于历史数据模型/)).toBeInTheDocument();
+      expect(screen.getByText(/诊断报告每 24 小时自动更新/)).toBeInTheDocument();
+    });
+  });
+
+  test('renders 挽回率 percentage in actions', async () => {
+    render(<MemberChurnPage />);
+    await waitFor(() => {
+      const recoveryTexts = screen.getAllByText(/%/);
+      expect(recoveryTexts.length).toBeGreaterThan(0);
+    });
   });
 });

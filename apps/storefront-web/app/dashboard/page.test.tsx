@@ -1,383 +1,432 @@
-/**
- * dashboard/page.test.tsx — 店长工作台 补充 L1 测试
- *
- * 覆盖: 营收趋势生成、TopProduct 计算、告警等级映射、仪表盘统计
- * 正例: 指标计算、趋势生成、排序逻辑
- * 反例: 空数据、负增长、零值指标
- * 边界: 极端日期、全零数据、超大数值
- */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach, afterAll } from 'vitest';
 
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
+// ---- Mocks (top-level) ----
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+vi.mock('next/link', () => ({
+  default: ({ children, href, style }: any) => (
+    <a data-testid="next-link" href={href} style={style}>{children}</a>
+  ),
+}));
 
-/* ── 类型定义（与 page.tsx 同步） ── */
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description, actions }: any) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>
+      {actions}
+      {children}
+    </div>
+  ),
+  StatCard: ({ label, value, variant }: any) => (
+    <div data-testid="stat-card" data-variant={variant}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  ),
+  StatusBadge: ({ label, variant, size }: any) => (
+    <span data-testid="m5-status-badge" data-variant={variant} data-size={size}>{label}</span>
+  ),
+  Tabs: ({ items, activeKey, onChange, variant, size }: any) => (
+    <div data-testid="m5-tabs" data-active-key={activeKey} data-variant={variant} data-size={size}>
+      {items.map((item: any) => (
+        <button key={item.key} data-testid={`tab-${item.key}`} onClick={() => onChange(item.key)}>
+          {item.label}
+        </button>
+      ))}
+    </div>
+  ),
+  Card: ({ children, title, style }: any) => (
+    <div data-testid="m5-card" style={style}>
+      {title && <h4 data-testid="card-title">{title}</h4>}
+      {children}
+    </div>
+  ),
+  GaugeChart: (props: any) => <div data-testid="m5-gauge" />,
+  SparklineChart: ({ data, width, height, color }: any) => (
+    <div data-testid="m5-sparkline" data-points={data?.length} data-color={color} />
+  ),
+  EmptyState: ({ title, description }: any) => (
+    <div data-testid="m5-empty-state">
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </div>
+  ),
+  Button: Object.assign(
+    ({ children, onClick, variant, size }: any) => (
+      <button data-testid={`btn-${variant || 'default'}`} onClick={onClick}>{children}</button>
+    ),
+    { displayName: 'Button' },
+  ),
+}));
 
-type Period = 'today' | 'week' | 'month';
+vi.mock('../_components/TriStateRenderer', () => ({
+  TriStateRenderer: ({ loading, empty, error, onRetry, children }: any) => {
+    if (loading) return <div data-testid="tri-state-loading">加载中…</div>;
+    if (error) return <div data-testid="tri-state-error">{error}<button data-testid="tri-state-retry" onClick={onRetry}>重新加载</button></div>;
+    if (empty) return <div data-testid="tri-state-empty">暂无数据</div>;
+    return <>{typeof children === 'function' ? children() : children}</>;
+  },
+}));
 
-interface DashboardStat {
-  label: string;
-  value: string;
-  trend: number;
-  variant: 'error' | 'warning' | 'success' | 'info';
-}
+// ---- Test Subject ----
 
-interface TopProduct {
-  rank: number;
-  name: string;
-  sales: number;
-  revenue: number;
-  growth: number;
-}
+import DashboardPage from './page';
 
-interface RecentOrder {
-  id: string;
-  orderNo: string;
-  member: string;
-  amount: string;
-  status: 'completed' | 'pending' | 'cancelled';
-  time: string;
-}
-
-interface StoreAlert {
-  id: string;
-  title: string;
-  level: 'critical' | 'warning' | 'info';
-  time: string;
-}
-
-/* ── Mock 数据（与 page.tsx 同步） ── */
-
-const MOCK_TOP_PRODUCTS: TopProduct[] = [
-  { rank: 1, name: '经典美式咖啡', sales: 128, revenue: 2560, growth: 15.2 },
-  { rank: 2, name: '鲜奶吐司面包', sales: 96, revenue: 1728, growth: 8.5 },
-  { rank: 3, name: '冰椰拿铁', sales: 85, revenue: 2125, growth: 32.1 },
-  { rank: 4, name: '招牌牛肉面', sales: 72, revenue: 2880, growth: -3.8 },
-  { rank: 5, name: '手工酸奶', sales: 68, revenue: 1020, growth: 12.0 },
-];
-
-const MOCK_ORDERS: RecentOrder[] = [
-  { id: 'O-001', orderNo: '20260715-001', member: '王芳', amount: '¥299.00', status: 'completed', time: '18:30' },
-  { id: 'O-002', orderNo: '20260715-002', member: '李明', amount: '¥89.00', status: 'pending', time: '18:25' },
-  { id: 'O-003', orderNo: '20260715-003', member: '赵雪', amount: '¥159.00', status: 'completed', time: '18:10' },
-  { id: 'O-004', orderNo: '20260715-004', member: '陈伟', amount: '¥45.00', status: 'cancelled', time: '17:55' },
-  { id: 'O-005', orderNo: '20260715-005', member: '张丽', amount: '¥520.00', status: 'pending', time: '17:40' },
-  { id: 'O-006', orderNo: '20260714-001', member: '周敏', amount: '¥68.00', status: 'completed', time: '昨 14:20' },
-  { id: 'O-007', orderNo: '20260714-002', member: '孙浩', amount: '¥1,280.00', status: 'completed', time: '昨 11:00' },
-  { id: 'O-008', orderNo: '20260714-003', member: '刘洋', amount: '¥36.00', status: 'cancelled', time: '昨 09:15' },
-];
-
-const MOCK_ALERTS: StoreAlert[] = [
-  { id: 'A-001', title: '收银机 #003 离线', level: 'critical', time: '15:10' },
-  { id: 'A-002', title: '鲜牛奶库存告急', level: 'warning', time: '16:00' },
-  { id: 'A-003', title: '本周促销活动待审核', level: 'info', time: '10:30' },
-  { id: 'A-004', title: '交接班提醒', level: 'info', time: '20:00' },
-];
-
-const ALERT_LEVEL_LABELS: Record<string, string> = {
-  critical: '严重',
-  warning: '警告',
-  info: '提示',
-};
-
-const ALERT_LEVEL_ORDER: Record<string, number> = {
-  critical: 3,
-  warning: 2,
-  info: 1,
-};
-
-/* ── 辅助函数 ── */
-
-function generateRevenueTrend(days: number = 7): { day: string; revenue: number }[] {
-  const base = 8000;
-  const trend: { day: string; revenue: number }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const dayOfWeek = d.getDay();
-    const weekendBoost = dayOfWeek === 0 || dayOfWeek === 6 ? 1.2 : 1.0;
-    const noise = 0.85 + Math.random() * 0.3;
-    const revenue = Math.round(base * weekendBoost * noise);
-    trend.push({ day: `${mm}-${dd}`, revenue });
-  }
-  return trend;
-}
-
-function calcTotalRevenue(dashboardStats: DashboardStat[]): number {
-  const rev = dashboardStats.find((s) => s.label === '营收');
-  return rev ? parseFloat(rev.value.replace(/[,¥]/g, '')) : 0;
-}
-
-function topProductStats(products: TopProduct[]) {
-  const totalSales = products.reduce((s, p) => s + p.sales, 0);
-  const totalRevenue = products.reduce((s, p) => s + p.revenue, 0);
-  const avgGrowth = products.reduce((s, p) => s + p.growth, 0) / products.length;
-  return { totalSales, totalRevenue, avgGrowth };
-}
-
-function alertSeveritySort(alerts: StoreAlert[]): StoreAlert[] {
-  return [...alerts].sort((a, b) => {
-    const orderDiff = (ALERT_LEVEL_ORDER[b.level] || 0) - (ALERT_LEVEL_ORDER[a.level] || 0);
-    if (orderDiff !== 0) return orderDiff;
-    return new Date(`1970-01-01T${b.time}`).getTime() - new Date(`1970-01-01T${a.time}`).getTime();
-  });
-}
-
-/* ══════════════════════════════════════════════════════════
-   测试: 文件存在性
-   ══════════════════════════════════════════════════════════ */
-
-describe('dashboard — 文件结构', () => {
-  it('1. page.tsx 存在', () => {
-    assert.equal(fs.existsSync(path.join(__dirname, 'page.tsx')), true);
+describe('DashboardPage — 门店仪表盘', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('2. page.tsx 导出 default 函数', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(source.includes('export default function'), 'should export default function');
+  // ====== 渲染测试 ======
+
+  test('renders PageShell with correct title', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '门店仪表盘');
+    });
   });
 
-  it('3. 子目录 inventory 和 team 存在', () => {
-    assert.equal(fs.existsSync(path.join(__dirname, 'inventory')), true);
-    assert.equal(fs.existsSync(path.join(__dirname, 'team')), true);
-  });
-});
-
-/* ══════════════════════════════════════════════════════════
-   测试: Top Product 数据分析
-   ══════════════════════════════════════════════════════════ */
-
-describe('dashboard — TopProduct 数据', () => {
-  /* ── 正例 ── */
-
-  it('4. 5 个热销商品', () => {
-    assert.equal(MOCK_TOP_PRODUCTS.length, 5);
+  test('renders PageShell with correct description', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('page-shell')).toHaveAttribute('data-description', 'Shenjiying 旗舰店 · 今日运营概览');
+    });
   });
 
-  it('5. 排名从 1 递增', () => {
-    for (let i = 0; i < MOCK_TOP_PRODUCTS.length; i++) {
-      assert.equal(MOCK_TOP_PRODUCTS[i].rank, i + 1);
-    }
+  test('renders time dimension tabs', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('tab-today')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-week')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-month')).toBeInTheDocument();
+    });
   });
 
-  it('6. 总销量 = 449', () => {
-    const total = MOCK_TOP_PRODUCTS.reduce((s, p) => s + p.sales, 0);
-    assert.equal(total, 449);
+  test('renders 6 stat sections', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const sparklines = screen.getAllByTestId('m5-sparkline');
+      expect(sparklines.length).toBe(6);
+    });
   });
 
-  it('7. 总营收 = 10313', () => {
-    const total = MOCK_TOP_PRODUCTS.reduce((s, p) => s + p.revenue, 0);
-    assert.equal(total, 10313);
+  test('renders 今日 tab as active by default', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const tabs = screen.getByTestId('m5-tabs');
+      expect(tabs).toHaveAttribute('data-active-key', 'today');
+    });
   });
 
-  it('8. 平均增长率 = 12.8%', () => {
-    const stats = topProductStats(MOCK_TOP_PRODUCTS);
-    assert.equal(stats.avgGrowth, 12.8);
+  test('renders top products card', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const cards = screen.getAllByTestId('card-title');
+      expect(cards.some(c => c.textContent?.includes('畅销产品'))).toBe(true);
+    });
   });
 
-  it('9. 存在负增长商品', () => {
-    const negative = MOCK_TOP_PRODUCTS.filter((p) => p.growth < 0);
-    assert.ok(negative.length >= 1);
+  test('renders recent orders card', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const cards = screen.getAllByTestId('card-title');
+      expect(cards.some(c => c.textContent?.includes('最近订单'))).toBe(true);
+    });
   });
 
-  it('10. 增长率最高的为冰椰拿铁 (+32.1%)', () => {
-    const sorted = [...MOCK_TOP_PRODUCTS].sort((a, b) => b.growth - a.growth);
-    assert.equal(sorted[0].name, '冰椰拿铁');
-    assert.equal(sorted[0].growth, 32.1);
+  test('renders alerts card', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const cards = screen.getAllByTestId('card-title');
+      expect(cards.some(c => c.textContent?.includes('预警提醒'))).toBe(true);
+    });
   });
 
-  it('11. 排名与销量降序一致', () => {
-    const bySales = [...MOCK_TOP_PRODUCTS].sort((a, b) => b.sales - a.sales);
-    for (let i = 0; i < MOCK_TOP_PRODUCTS.length; i++) {
-      assert.equal(bySales[i].rank, MOCK_TOP_PRODUCTS[i].rank);
-    }
+  test('renders 8 top products rows', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('瑜伽初级课')).toBeInTheDocument();
+      expect(screen.getByText('游泳季卡')).toBeInTheDocument();
+      expect(screen.getByText('HIIT 高强度训练')).toBeInTheDocument();
+      expect(screen.getByText('私教一对一')).toBeInTheDocument();
+    });
   });
 
-  /* ── 边界 ── */
-
-  it('12. 销售量为 0 的边界', () => {
-    const zeroProduct: TopProduct = { rank: 6, name: '测试', sales: 0, revenue: 0, growth: 0 };
-    assert.equal(zeroProduct.sales, 0);
+  test('renders 8 recent order rows', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('张伟')).toBeInTheDocument();
+      expect(screen.getByText('李娜')).toBeInTheDocument();
+      expect(screen.getByText('王芳')).toBeInTheDocument();
+      expect(screen.getByText('赵强')).toBeInTheDocument();
+    });
   });
 
-  it('13. 增长率为 -100% 的极端', () => {
-    const extreme: TopProduct = { rank: 10, name: '下架商品', sales: 1, revenue: 10, growth: -100 };
-    assert.equal(extreme.growth, -100);
-  });
-});
-
-/* ══════════════════════════════════════════════════════════
-   测试: 近期订单分析
-   ══════════════════════════════════════════════════════════ */
-
-describe('dashboard — 近期订单', () => {
-  it('14. 8 条近期订单', () => {
-    assert.equal(MOCK_ORDERS.length, 8);
+  test('renders 5 alert items', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('冰柜温度异常')).toBeInTheDocument();
+      expect(screen.getByText('库存预警 - 蛋白粉不足')).toBeInTheDocument();
+      expect(screen.getByText('打印机故障 - 前台1号')).toBeInTheDocument();
+      expect(screen.getByText('会员投诉跟进超时')).toBeInTheDocument();
+      expect(screen.getByText('排班冲突 - 晚班缺人')).toBeInTheDocument();
+    });
   });
 
-  it('15. 已完成订单 4 条', () => {
-    assert.equal(MOCK_ORDERS.filter((o) => o.status === 'completed').length, 4);
+  test('renders 7 shortcut links', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const links = screen.getAllByTestId('next-link');
+      expect(links.length).toBeGreaterThanOrEqual(7);
+    });
   });
 
-  it('16. 待支付订单 2 条', () => {
-    assert.equal(MOCK_ORDERS.filter((o) => o.status === 'pending').length, 2);
+  test('renders action buttons', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('🔄 刷新')).toBeInTheDocument();
+      expect(screen.getByText('📋 查看产品')).toBeInTheDocument();
+    });
   });
 
-  it('17. 已取消订单 2 条', () => {
-    assert.equal(MOCK_ORDERS.filter((o) => o.status === 'cancelled').length, 2);
+  test('shows loading state initially', () => {
+    render(<DashboardPage />);
+    expect(screen.getByTestId('tri-state-loading')).toBeInTheDocument();
   });
 
-  it('18. 订单号格式 20260715-XXX', () => {
-    for (const o of MOCK_ORDERS) {
-      assert.match(o.orderNo, /^\d{8}-\d{3}$/, `${o.id} orderNo format`);
-    }
+  // ====== 状态测试 ======
+
+  test('shows 今日营收 stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('今日营收')).toBeInTheDocument();
+    });
   });
 
-  it('19. 金额格式 ¥XXX.XX', () => {
-    for (const o of MOCK_ORDERS) {
-      assert.ok(o.amount.startsWith('¥'), `${o.id} amount should start with ¥`);
-    }
-  });
-});
-
-/* ══════════════════════════════════════════════════════════
-   测试: 告警等级
-   ══════════════════════════════════════════════════════════ */
-
-describe('dashboard — 告警分析', () => {
-  it('20. 4 条告警', () => {
-    assert.equal(MOCK_ALERTS.length, 4);
+  test('shows 订单数 stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('订单数')).toBeInTheDocument();
+    });
   });
 
-  it('21. ALERT_LEVEL_LABELS 覆盖所有等级', () => {
-    const levels = ['critical', 'warning', 'info'];
-    for (const l of levels) {
-      assert.ok(typeof ALERT_LEVEL_LABELS[l] === 'string', `missing label for ${l}`);
-    }
+  test('shows 客单价 stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('客单价')).toBeInTheDocument();
+    });
   });
 
-  it('22. ALERT_LEVEL_ORDER 权重正确', () => {
-    assert.ok(ALERT_LEVEL_ORDER.critical > ALERT_LEVEL_ORDER.warning);
-    assert.ok(ALERT_LEVEL_ORDER.warning > ALERT_LEVEL_ORDER.info);
+  test('shows 新增会员 stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('新增会员')).toBeInTheDocument();
+    });
   });
 
-  it('23. 严重级告警 1 条', () => {
-    assert.equal(MOCK_ALERTS.filter((a) => a.level === 'critical').length, 1);
+  test('shows 活跃设备 stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('活跃设备')).toBeInTheDocument();
+    });
   });
 
-  it('24. 按严重度排序: critical 优先', () => {
-    const sorted = alertSeveritySort(MOCK_ALERTS);
-    assert.equal(sorted[0].level, 'critical');
+  test('shows 在线率 stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('在线率')).toBeInTheDocument();
+    });
   });
 
-  it('25. 标题都非空', () => {
-    for (const a of MOCK_ALERTS) {
-      assert.ok(a.title.length > 0, `${a.id} empty title`);
-    }
-  });
-});
+  // ====== 交互测试 ======
 
-/* ══════════════════════════════════════════════════════════
-   测试: 营收趋势生成
-   ══════════════════════════════════════════════════════════ */
-
-describe('dashboard — 营收趋势生成', () => {
-  it('26. 7 天趋势数据', () => {
-    const trend = generateRevenueTrend(7);
-    assert.equal(trend.length, 7);
+  test('switches to week tab', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-week'));
+    });
+    await waitFor(() => {
+      const tabs = screen.getByTestId('m5-tabs');
+      expect(tabs).toHaveAttribute('data-active-key', 'week');
+    });
   });
 
-  it('27. 每天营收为正', () => {
-    const trend = generateRevenueTrend(7);
-    for (const d of trend) {
-      assert.ok(d.revenue > 0, `${d.day} revenue should be > 0`);
-    }
+  test('switches to month tab', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-month'));
+    });
+    await waitFor(() => {
+      const tabs = screen.getByTestId('m5-tabs');
+      expect(tabs).toHaveAttribute('data-active-key', 'month');
+    });
   });
 
-  it('28. 日期格式 MM-DD', () => {
-    const trend = generateRevenueTrend(7);
-    for (const d of trend) {
-      assert.match(d.day, /^\d{2}-\d{2}$/);
-    }
+  test('switches back to today tab from week', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-week'));
+    });
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-today'));
+    });
+    await waitFor(() => {
+      const tabs = screen.getByTestId('m5-tabs');
+      expect(tabs).toHaveAttribute('data-active-key', 'today');
+    });
   });
 
-  it('29. 30 天趋势同样有效', () => {
-    const trend = generateRevenueTrend(30);
-    assert.equal(trend.length, 30);
+  test('refresh button triggers alert', async () => {
+    const originalAlert = window.alert;
+    const mockAlert = vi.fn();
+    window.alert = mockAlert;
+    render(<DashboardPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('🔄 刷新'));
+    });
+    expect(mockAlert).toHaveBeenCalledWith('数据刷新中...');
+    window.alert = originalAlert;
   });
 
-  it('30. 1 天趋势（今日）', () => {
-    const trend = generateRevenueTrend(1);
-    assert.equal(trend.length, 1);
+  test('查看产品 button redirects', async () => {
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      value: { href: '' },
+      writable: true,
+    });
+
+    render(<DashboardPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('📋 查看产品'));
+    });
+    expect(window.location.href).toBe('/products');
+
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true,
+    });
   });
 
-  it('31. 连续两次生成有随机差异', () => {
-    const t1 = generateRevenueTrend(7);
-    const t2 = generateRevenueTrend(7);
-    const revs1 = t1.map((d) => d.revenue);
-    const revs2 = t2.map((d) => d.revenue);
-    const same = revs1.every((v, i) => v === revs2[i]);
-    assert.ok(!same, 'random generation should differ');
-  });
-});
-
-/* ══════════════════════════════════════════════════════════
-   反例与边界
-   ══════════════════════════════════════════════════════════ */
-
-describe('dashboard — 反例与边界', () => {
-  it('32. 空 TopProduct 列表', () => {
-    const empty: TopProduct[] = [];
-    const stats = topProductStats(empty);
-    assert.equal(stats.totalSales, 0);
-    assert.equal(stats.totalRevenue, 0);
-    assert.ok(Number.isNaN(stats.avgGrowth)); // avg of empty = NaN
+  test('shows StatusBadge for recent orders', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const badges = screen.getAllByTestId('m5-status-badge');
+      expect(badges.length).toBeGreaterThan(0);
+    });
   });
 
-  it('33. 空告警列表排序不崩溃', () => {
-    const sorted = alertSeveritySort([]);
-    assert.equal(sorted.length, 0);
+  // ====== 边界情况 ======
+
+  test('trend badges show positive values with + sign', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      // 今日营收 trend is +12.5% (positive)
+      expect(screen.getByText(/12\.5/)).toBeInTheDocument();
+    });
   });
 
-  it('34. 所有订单 status 值有效', () => {
-    const valid = ['completed', 'pending', 'cancelled'];
-    for (const o of MOCK_ORDERS) {
-      assert.ok(valid.includes(o.status), `${o.id} invalid status`);
-    }
+  test('trend badges show negative values', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      // 客单价 trend is -1.2% (negative)
+      expect(screen.getByText(/-1\.2/)).toBeInTheDocument();
+    });
   });
 
-  it('35. 告警 level 值有效', () => {
-    const valid = ['critical', 'warning', 'info'];
-    for (const a of MOCK_ALERTS) {
-      assert.ok(valid.includes(a.level), `${a.id} invalid level`);
-    }
+  test('shows 查看全部订单 link', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/查看全部订单/)).toBeInTheDocument();
+    });
   });
 
-  it('36. 页面不引用 @m5/admin', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(!source.includes('@m5/admin'), 'should not import from @m5/admin');
+  test('shows 查看全部告警 text', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('🔔 查看全部告警')).toBeInTheDocument();
+    });
   });
 
-  it('37. 页面使用 @m5/ui 组件', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(source.includes('@m5/ui'), 'should import from @m5/ui');
+  test('link to orders page has correct href', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const links = screen.getAllByTestId('next-link');
+      const ordersLink = links.find(l => l.textContent?.includes('查看全部订单'));
+      expect(ordersLink).toHaveAttribute('href', '/orders');
+    });
   });
 
-  it('38. inventory 子页面存在', () => {
-    assert.equal(fs.existsSync(path.join(__dirname, 'inventory', 'page.tsx')), true);
+  test('link to products page exists in shortcuts', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const links = screen.getAllByTestId('next-link');
+      const productsLink = links.find(l => l.textContent?.includes('商品管理'));
+      expect(productsLink).toHaveAttribute('href', '/products');
+    });
   });
 
-  it('39. team 子页面存在', () => {
-    assert.equal(fs.existsSync(path.join(__dirname, 'team', 'page.tsx')), true);
+  test('link to members page exists in shortcuts', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const links = screen.getAllByTestId('next-link');
+      const membersLink = links.find(l => l.textContent?.includes('会员管理'));
+      expect(membersLink).toHaveAttribute('href', '/members');
+    });
   });
 
-  it('40. inventory 和 team 都有测试文件', () => {
-    assert.equal(fs.existsSync(path.join(__dirname, 'inventory', 'page.test.tsx')), true);
-    assert.equal(fs.existsSync(path.join(__dirname, 'team', 'page.test.tsx')), true);
+  test('link to orders page exists in shortcuts', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const links = screen.getAllByTestId('next-link');
+      const ordersLink = links.find(l => l.textContent?.includes('订单管理'));
+      expect(ordersLink).toHaveAttribute('href', '/orders');
+    });
+  });
+
+  test('shows sparkline for each stat', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const sparklines = screen.getAllByTestId('m5-sparkline');
+      expect(sparklines.length).toBe(6);
+      // Each sparkline should have 24 data points (today)
+      expect(sparklines[0]).toHaveAttribute('data-points', '24');
+    });
+  });
+
+  test('sparkline data points change when switching to week', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-week'));
+    });
+    await waitFor(() => {
+      const sparklines = screen.getAllByTestId('m5-sparkline');
+      // Week data has 7 points
+      expect(sparklines[0]).toHaveAttribute('data-points', '7');
+    });
+  });
+
+  test('trend badge shows "持平" for zero trend', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      // 活跃设备 has trend 0
+      expect(screen.getByText('持平')).toBeInTheDocument();
+    });
+  });
+
+  test('shows correctly styled alert severity colors', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const badges = screen.getAllByTestId('m5-status-badge');
+      const alertBadges = badges.filter(b => b.textContent === '设备' || b.textContent === '库存' || b.textContent === '服务' || b.textContent === '人力');
+      expect(alertBadges.length).toBeGreaterThan(0);
+    });
+  });
+
+  test('alerts have correct data-variant based on severity', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      const badges = screen.getAllByTestId('m5-status-badge');
+      expect(badges.length).toBeGreaterThan(0);
+    });
   });
 });

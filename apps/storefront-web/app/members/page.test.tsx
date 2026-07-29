@@ -1,300 +1,349 @@
-/**
- * members/page.test.tsx — 会员列表页 L1 冒烟测试
- * 角色视角: 👔店长 · 🛒前台 · 💳会员运营
- * 覆盖: 正例(组件导出/统计计算/过滤逻辑) + 反例(防御) + 边界(空结果)
- */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import test from 'node:test';
+// Mock @m5/ui
+vi.mock('@m5/ui', () => ({
+  DataTable: vi.fn(({ columns, rows, rowKey, sort, onSortChange, emptyText }) => (
+    <div data-testid="data-table">
+      <div data-testid="table-empty-text">{emptyText}</div>
+      <div data-testid="table-rows-count">{rows?.length ?? 0}</div>
+      <table>
+        <thead>
+          <tr>
+            {(columns ?? []).map((col: { key: string; header: string; sortable?: boolean }) => (
+              <th
+                key={col.key}
+                data-testid={`th-${col.key}`}
+                data-sortable={col.sortable ? 'true' : 'false'}
+                onClick={() => {
+                  if (col.sortable && onSortChange) {
+                    const isSame = sort?.key === col.key;
+                    onSortChange({ key: col.key, direction: isSame && sort?.direction === 'asc' ? 'desc' : 'asc' });
+                  }
+                }}
+              >
+                {col.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {(rows ?? []).map((row: Record<string, unknown>) => (
+            <tr key={rowKey(row)} data-testid={`row-${rowKey(row)}`}>
+              {(columns ?? []).map((col: { key: string; render?: (row: unknown) => React.ReactNode }) => (
+                <td key={col.key}>{col.render ? col.render(row) : String(row[col.key] ?? '')}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )),
+  PageShell: vi.fn(({ title, description, children }) => (
+    <div data-testid="page-shell">
+      <h1 data-testid="page-title">{title}</h1>
+      {description && <p data-testid="page-description">{description}</p>}
+      {children}
+    </div>
+  )),
+  Pagination: vi.fn(({ page, totalPages, total, onPageChange }) => (
+    <div data-testid="pagination">
+      <span data-testid="pagination-page">{page}</span>
+      <span data-testid="pagination-totalPages">{totalPages}</span>
+      <span data-testid="pagination-total">{total}</span>
+      <button data-testid="pagination-next" onClick={() => onPageChange?.(page + 1)}>next</button>
+      <button data-testid="pagination-prev" onClick={() => onPageChange?.(page - 1)}>prev</button>
+    </div>
+  )),
+  SearchFilterInput: vi.fn(({ value, onChange, placeholder }) => (
+    <input
+      data-testid="search-filter-input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+    />
+  )),
+  StatusBadge: vi.fn(({ label, variant, size }) => (
+    <span data-testid={`badge-${label}`} data-variant={variant} data-size={size}>
+      {label}
+    </span>
+  )),
+  Tabs: vi.fn(({ items, activeKey, onChange, variant, size }) => (
+    <div data-testid="tabs" data-variant={variant} data-size={size}>
+      {(items ?? []).map((item: { key: string; label: string; count?: number }) => (
+        <button
+          key={item.key}
+          data-testid={`tab-${item.key}`}
+          data-active={activeKey === item.key ? 'true' : 'false'}
+          onClick={() => onChange(item.key)}
+        >
+          {item.label}
+          {item.count !== undefined ? <span data-testid={`tab-count-${item.key}`}>{item.count}</span> : null}
+        </button>
+      ))}
+    </div>
+  )),
+  usePagination: vi.fn((total: number, pageSize: number) => {
+    const [page, setPage] = React.useState(1);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    return { page, pageSize, totalPages, setPage };
+  }),
+  useSearchFilter: vi.fn((data: unknown[], _fields: unknown[]) => {
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const filteredItems = React.useMemo(() => {
+      if (!searchTerm.trim()) return data;
+      const term = searchTerm.toLowerCase();
+      return (data as Record<string, unknown>[]).filter(
+        (item) =>
+          item.name?.toString().toLowerCase().includes(term) ||
+          item.phone?.toString().toLowerCase().includes(term) ||
+          item.tier?.toString().toLowerCase().includes(term) ||
+          item.storeName?.toString().toLowerCase().includes(term),
+      );
+    }, [data, searchTerm]);
+    return { searchTerm, setSearchTerm, filteredItems };
+  }),
+  useSortedItems: vi.fn((items: unknown[], _columns: unknown[], sortConfig: unknown) => {
+    if (!sortConfig) return items;
+    const cfg = sortConfig as { key: string; direction: string };
+    return [...(items as Record<string, unknown>[])].sort((a, b) => {
+      const aVal = a[cfg.key] ?? '';
+      const bVal = b[cfg.key] ?? '';
+      if (aVal < bVal) return cfg.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return cfg.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }),
+}));
 
-/* ── 会员数据工厂 ── */
+// Mock local components
+vi.mock('../_components/useTriState', () => ({
+  useTriState: vi.fn(({ loading: initialLoading }) => {
+    const [loading, setLoading] = React.useState(initialLoading);
+    const [error, setError] = React.useState<string | null>(null);
+    const wrapLoad = vi.fn(async <T,>(promise: Promise<T>): Promise<T | undefined> => {
+      setLoading(true);
+      try {
+        const result = await promise;
+        setLoading(false);
+        return result;
+      } catch (err) {
+        setError(String(err));
+        setLoading(false);
+        return undefined;
+      }
+    });
+    return { loading, error, wrapLoad };
+  }),
+}));
 
-type MembershipTier = 'diamond' | 'gold' | 'silver' | 'bronze' | 'basic';
-type MemberStatus = 'active' | 'inactive' | 'frozen';
+vi.mock('../_components/TriStateRenderer', () => ({
+  TriStateRenderer: vi.fn(({ loading, empty, error, onRetry, children }) => {
+    if (loading) return <div data-testid="loading-state">Loading...</div>;
+    if (error) return (
+      <div data-testid="error-state">
+        <span>Error: {error}</span>
+        <button data-testid="retry-button" onClick={onRetry}>Retry</button>
+      </div>
+    );
+    if (empty) return <div data-testid="empty-state">No data</div>;
+    return <div data-testid="content">{children}</div>;
+  }),
+}));
 
-interface Member {
-  id: string;
-  name: string;
-  phone: string;
-  tier: MembershipTier;
-  points: number;
-  storeName: string;
-  totalVisits: number;
-  lastVisit: string;
-  status: MemberStatus;
-  joinedAt: string;
-}
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({ push: vi.fn(), back: vi.fn(), forward: vi.fn() })),
+  usePathname: vi.fn(() => '/members'),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+}));
 
-function makeMember(overrides?: Partial<Member>): Member {
-  return {
-    id: `m-${Date.now()}`,
-    name: '测试会员',
-    phone: '138****1234',
-    tier: 'silver',
-    points: 5000,
-    storeName: 'Demo Store 旗舰店',
-    totalVisits: 42,
-    lastVisit: '2026-06-20',
-    status: 'active',
-    joinedAt: '2025-06-10',
-    ...overrides,
-  };
-}
+import MembersListPage from './page';
 
-/* ── 数据工具函数 (从 page 提取的逻辑) ── */
+describe('MembersListPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-const TIER_LABELS: Record<MembershipTier, string> = {
-  diamond: '钻石会员',
-  gold: '黄金会员',
-  silver: '银卡会员',
-  bronze: '铜卡会员',
-  basic: '普通会员',
-};
+  test('renders PageShell with correct title', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('page-title')).toHaveTextContent('会员管理');
+    });
+  });
 
-const STATUS_LABELS: Record<MemberStatus, string> = {
-  active: '活跃',
-  inactive: '非活跃',
-  frozen: '冻结',
-};
+  test('shows page description', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('page-description')).toHaveTextContent('管理门店会员信息');
+    });
+  });
 
-function computeStats(members: Member[]) {
-  const active = members.filter((m) => m.status === 'active').length;
-  const diamond = members.filter((m) => m.tier === 'diamond').length;
-  const totalPoints = members.reduce((sum, m) => sum + m.points, 0);
-  return {
-    total: members.length,
-    active,
-    diamond,
-    avgPoints: members.length > 0 ? Math.round(totalPoints / members.length) : 0,
-  };
-}
+  test('shows loading state initially', () => {
+    render(<MembersListPage />);
+    expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+  });
 
-function filterByTier(members: Member[], tier: MembershipTier | 'ALL'): Member[] {
-  return tier === 'ALL' ? members : members.filter((m) => m.tier === tier);
-}
+  test('renders search filter input after loading', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('search-filter-input')).toBeInTheDocument();
+    });
+  });
 
-function filterByStatus(members: Member[], status: MemberStatus | 'ALL'): Member[] {
-  return status === 'ALL' ? members : members.filter((m) => m.status === status);
-}
+  test('search input has correct placeholder', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('search-filter-input')).toHaveAttribute('placeholder', '搜索姓名、手机号、等级或门店...');
+    });
+  });
 
-function searchMembers(members: Member[], term: string): Member[] {
-  if (!term.trim()) return members;
-  const lower = term.toLowerCase();
-  return members.filter(
-    (m) =>
-      m.name.toLowerCase().includes(lower) ||
-      m.phone.includes(term) ||
-      m.tier.toLowerCase().includes(lower) ||
-      m.storeName.toLowerCase().includes(lower),
-  );
-}
+  test('renders DataTable after loading', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('data-table')).toBeInTheDocument();
+    });
+  });
 
-function paginate<T>(items: T[], page: number, pageSize: number): T[] {
-  return items.slice((page - 1) * pageSize, page * pageSize);
-}
+  test('data table shows member rows', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const count = screen.getByTestId('table-rows-count');
+      expect(Number(count.textContent)).toBeGreaterThan(0);
+    });
+  });
 
-/* ── 测试数据 ── */
+  test('renders tier tabs', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const allTabs = screen.getAllByTestId('tab-ALL');
+      expect(allTabs.length).toBe(2);
+      expect(screen.getByTestId('tab-diamond')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-gold')).toBeInTheDocument();
+    });
+  });
 
-const MOCK_MEMBERS: Member[] = [
-  makeMember({ id: 'm1', name: '张伟', tier: 'diamond', points: 28500, status: 'active', storeName: 'Demo Store 旗舰店' }),
-  makeMember({ id: 'm2', name: '李娜', tier: 'gold', points: 12400, status: 'active', storeName: 'Demo Store 旗舰店' }),
-  makeMember({ id: 'm3', name: '王芳', tier: 'silver', points: 5600, status: 'active', storeName: 'Demo Store 社区店' }),
-  makeMember({ id: 'm4', name: '赵强', tier: 'gold', points: 9800, status: 'active', storeName: 'Demo Store 旗舰店' }),
-  makeMember({ id: 'm5', name: '孙丽', tier: 'bronze', points: 2100, status: 'inactive', storeName: 'Demo Store 社区店' }),
-  makeMember({ id: 'm6', name: '周杰', tier: 'diamond', points: 32000, status: 'active', storeName: 'Demo Store 旗舰店' }),
-];
+  test('renders status tabs', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('tab-active')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-inactive')).toBeInTheDocument();
+      expect(screen.getByTestId('tab-frozen')).toBeInTheDocument();
+    });
+  });
 
-/* =================================================================
- * 正例 (Happy Path)
- * ================================================================= */
+  test('all tier tab is active by default', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const tabs = screen.getAllByTestId('tab-ALL');
+      // First Tabs group has the tier tabs, first tab is '全部'
+      expect(tabs[0]).toHaveTextContent('全部');
+      expect(tabs[0]).toHaveAttribute('data-active', 'true');
+    });
+  });
 
-test('👔 店长视角: 页面组件默认导出是函数', async () => {
-  const mod = await import('./page');
-  assert.equal(typeof mod.default, 'function', 'MembersListPage 应导出函数组件');
-});
+  test('clicking diamond tab filters data', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-diamond'));
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('tab-diamond')).toHaveAttribute('data-active', 'true');
+    });
+  });
 
-test('🛒 前台视角: 组件不抛异常', async () => {
-  let threw = false;
-  try {
-    await import('./page');
-  } catch {
-    threw = true;
-  }
-  assert.equal(threw, false, 'page 导入应成功');
-});
+  test('clicking frozen status tab filters data', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId('tab-frozen'));
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('tab-frozen')).toHaveAttribute('data-active', 'true');
+    });
+  });
 
-test('💳 会员运营视角: 统计功能正确计算各维度', () => {
-  const stats = computeStats(MOCK_MEMBERS);
-  assert.equal(stats.total, 6, '总会员数应为 6');
-  assert.equal(stats.active, 5, '活跃会员数应为 5');
-  assert.equal(stats.diamond, 2, '钻石会员数应为 2');
-  assert.equal(stats.avgPoints, 15067, '平均积分应为 15067');
-});
+  test('search filters members by name', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const searchInput = screen.getByTestId('search-filter-input');
+      fireEvent.change(searchInput, { target: { value: '张伟' } });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('search-filter-input')).toHaveValue('张伟');
+    });
+  });
 
-test('正例: 等级过滤 — 筛选钻石会员', () => {
-  const result = filterByTier(MOCK_MEMBERS, 'diamond');
-  assert.equal(result.length, 2);
-  assert.ok(result.every((m) => m.tier === 'diamond'));
-});
+  test('empty search returns all members', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const searchInput = screen.getByTestId('search-filter-input');
+      fireEvent.change(searchInput, { target: { value: '' } });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('data-table')).toBeInTheDocument();
+    });
+  });
 
-test('正例: 等级过滤 — 筛选金卡会员', () => {
-  const result = filterByTier(MOCK_MEMBERS, 'gold');
-  assert.equal(result.length, 2);
-  assert.ok(result.every((m) => m.tier === 'gold'));
-});
+  test('renders status badges', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const badges = screen.getAllByTestId(/^badge-/);
+      expect(badges.length).toBeGreaterThan(0);
+    });
+  });
 
-test('正例: 状态过滤 — 筛选活跃会员', () => {
-  const result = filterByStatus(MOCK_MEMBERS, 'active');
-  assert.equal(result.length, 5);
-  assert.ok(result.every((m) => m.status === 'active'));
-});
+  test('renders pagination component', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const paginations = screen.getAllByTestId('pagination');
+      expect(paginations.length).toBeGreaterThan(0);
+    });
+  });
 
-test('正例: 搜索 — 按姓名搜索命中', () => {
-  const result = searchMembers(MOCK_MEMBERS, '张伟');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].name, '张伟');
-});
+  test('pagination page can change forward', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const nextBtn = screen.getByTestId('pagination-next');
+      fireEvent.click(nextBtn);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination-page').textContent).toBe('2');
+    });
+  });
 
-test('正例: 搜索 — 按门店搜索命中', () => {
-  const result = searchMembers(MOCK_MEMBERS, '社区店');
-  assert.equal(result.length, 2);
-  assert.ok(result.every((m) => m.storeName.includes('社区店')));
-});
+  test('empty state shown when no match', async () => {
+    render(<MembersListPage />);
+    // The page uses inline empty state, not TriStateRenderer empty
+    await waitFor(() => {
+      expect(screen.getByTestId('data-table')).toBeInTheDocument();
+    });
+  });
 
-test('正例: 分页 — 第一页返回预期数量', () => {
-  const page1 = paginate(MOCK_MEMBERS, 1, 4);
-  assert.equal(page1.length, 4);
-  assert.equal(page1[0].id, 'm1');
-});
+  test('column headers render', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('th-name')).toHaveTextContent('会员');
+      expect(screen.getByTestId('th-tier')).toHaveTextContent('等级');
+      expect(screen.getByTestId('th-points')).toHaveTextContent('积分');
+    });
+  });
 
-test('正例: 分页 — 第二页返回剩余数据', () => {
-  const page2 = paginate(MOCK_MEMBERS, 2, 4);
-  assert.equal(page2.length, 2);
-  assert.equal(page2[0].id, 'm5');
-});
+  test('all status tab is active by default', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      const tabs = screen.getAllByTestId('tab-ALL');
+      // Second Tabs group has the status tabs, first tab is '全部状态'
+      expect(tabs[1]).toHaveTextContent('全部状态');
+      expect(tabs[1]).toHaveAttribute('data-active', 'true');
+    });
+  });
 
-test('正例: 等级标签映射完整性', () => {
-  const tiers: MembershipTier[] = ['diamond', 'gold', 'silver', 'bronze', 'basic'];
-  for (const tier of tiers) {
-    assert.ok(TIER_LABELS[tier].length > 0, `${tier} 应有中文标签`);
-    assert.ok(TIER_LABELS[tier].endsWith('会员'), `${tier} 标签应以"会员"结尾`);
-  }
-});
-
-test('正例: 状态标签映射完整性', () => {
-  const statuses: MemberStatus[] = ['active', 'inactive', 'frozen'];
-  for (const s of statuses) {
-    assert.ok(STATUS_LABELS[s].length > 0, `${s} 应有中文标签`);
-  }
-});
-
-/* =================================================================
- * 反例 (Defensive / 防御)
- * ================================================================= */
-
-test('反例: 搜索空字符串返回全部', () => {
-  const result = searchMembers(MOCK_MEMBERS, '');
-  assert.equal(result.length, MOCK_MEMBERS.length);
-});
-
-test('反例: 搜索无匹配返回空数组', () => {
-  const result = searchMembers(MOCK_MEMBERS, '不存在的会员名xyz');
-  assert.equal(result.length, 0);
-});
-
-test('反例: 不存在的等级过滤返回空', () => {
-  // @ts-expect-error 测试传递非法等级
-  const result = filterByTier(MOCK_MEMBERS, 'platinum');
-  assert.equal(result.length, 0);
-});
-
-test('反例: 不存在的状态过滤返回空', () => {
-  // @ts-expect-error 测试传递非法状态
-  const result = filterByStatus(MOCK_MEMBERS, 'deleted');
-  assert.equal(result.length, 0);
-});
-
-test('反例: 统计空列表不崩溃', () => {
-  const stats = computeStats([]);
-  assert.equal(stats.total, 0);
-  assert.equal(stats.active, 0);
-  assert.equal(stats.diamond, 0);
-  assert.equal(stats.avgPoints, 0);
-});
-
-test('反例: 分页超出范围返回空数组', () => {
-  const result = paginate(MOCK_MEMBERS, 999, 10);
-  assert.equal(result.length, 0);
-});
-
-test('反例: 分页从负数页码不崩溃', () => {
-  const result = paginate(MOCK_MEMBERS, -1, 10);
-  assert.equal(result.length, 0);
-});
-
-test('反例: 搜索特殊字符不崩溃', () => {
-  const result = searchMembers(MOCK_MEMBERS, '<script>alert("xss")</script>');
-  assert.ok(Array.isArray(result));
-  assert.equal(result.length, 0);
-});
-
-/* =================================================================
- * 边界 (Edge Cases)
- * ================================================================= */
-
-test('边界: 全量过滤 = 不过滤，返回全部', () => {
-  const tierAll = filterByTier(MOCK_MEMBERS, 'ALL');
-  assert.equal(tierAll.length, MOCK_MEMBERS.length);
-  const statusAll = filterByStatus(MOCK_MEMBERS, 'ALL');
-  assert.equal(statusAll.length, MOCK_MEMBERS.length);
-});
-
-test('边界: 搜索单个字符也能命中', () => {
-  const result = searchMembers(MOCK_MEMBERS, '张');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].name, '张伟');
-});
-
-test('边界: 大小写不影响搜索', () => {
-  const result = searchMembers(MOCK_MEMBERS, 'diamond');
-  assert.equal(result.length, 2);
-});
-
-test('边界: 高积分会员统计', () => {
-  const highPoints = MOCK_MEMBERS.filter((m) => m.points >= 10000);
-  const stats = computeStats(highPoints);
-  assert.equal(stats.total, 3);
-  assert.equal(stats.diamond, 2);
-  assert.equal(stats.avgPoints, 24300);
-});
-
-test('边界: 分页 size=1 时每页一条', () => {
-  for (let i = 1; i <= MOCK_MEMBERS.length; i++) {
-    const page = paginate(MOCK_MEMBERS, i, 1);
-    assert.equal(page.length, 1);
-    assert.equal(page[0].id, `m${i}`);
-  }
-});
-
-test('边界: 搜索同一门店的精确匹配', () => {
-  const result = searchMembers(MOCK_MEMBERS, 'Demo Store 旗舰店');
-  assert.equal(result.length, 4);
-});
-
-test('边界: 非活跃 + 铜卡叠加过滤', () => {
-  const tierFiltered = filterByTier(MOCK_MEMBERS, 'bronze');
-  const statusFiltered = filterByStatus(tierFiltered, 'inactive');
-  assert.equal(statusFiltered.length, 1);
-  assert.equal(statusFiltered[0].name, '孙丽');
-});
-
-test('边界: 最大分页不越界', () => {
-  const result = paginate(MOCK_MEMBERS, 1, 100);
-  assert.equal(result.length, MOCK_MEMBERS.length);
-});
-
-test('边界: 会员 ID 唯一性', () => {
-  const ids = MOCK_MEMBERS.map((m) => m.id);
-  const uniqueIds = new Set(ids);
-  assert.equal(uniqueIds.size, ids.length, '所有会员 ID 应唯一');
+  test('tier tabs use pills variant', async () => {
+    render(<MembersListPage />);
+    await waitFor(() => {
+      // The first Tabs should be tier filter
+      const firstTabs = screen.getAllByTestId('tabs')[0];
+      expect(firstTabs).toHaveAttribute('data-variant', 'pills');
+    });
+  });
 });

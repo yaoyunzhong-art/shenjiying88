@@ -1,438 +1,389 @@
 /**
- * member-card/page.test.tsx — 会员卡页面 L1 测试 (storefront-web)
- * 角色视角: 👤 会员
- * 覆盖: 正例 · 反例(防御) · 边界(极端数据/空数据)
- *
- * Phase-FP T-FP-029 · 2026-07-05
+ * member-card/page.vitest.tsx — 会员卡页面 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 渲染 · 会员卡展示 · 等级权益 · 优惠券列表 · 筛选 · 操作交互 · 加载态 · 空状态 · 边界
+ * 角色: 👤 会员
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+// ====== Mock next/navigation ======
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
-const SERVICE_SOURCE = resolve(__dirname, '../../lib/member-card-service.ts');
+// ====== Mock localStorage ======
+const localStorageStore: Record<string, string | null> = {};
+vi.stubGlobal('localStorage', {
+  getItem: vi.fn((key: string) => localStorageStore[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => { localStorageStore[key] = value; }),
+  removeItem: vi.fn((key: string) => { delete localStorageStore[key]; }),
+  clear: vi.fn(() => { Object.keys(localStorageStore).forEach(k => { delete localStorageStore[k]; }); }),
+});
 
-const pageSource = readFileSync(SOURCE, 'utf-8');
-const serviceSource = readFileSync(SERVICE_SOURCE, 'utf-8');
+// ====== Mock member-card-service ======
+const mockGetMemberCard = vi.fn();
+const mockGetMemberCoupons = vi.fn();
 
-/* ── 类型/常量工厂 ── */
+vi.mock('../../lib/member-card-service', () => ({
+  memberCardService: {
+    getMemberCard: (...args: unknown[]) => mockGetMemberCard(...args),
+    getMemberCoupons: (...args: unknown[]) => mockGetMemberCoupons(...args),
+  },
+  TIER_CONFIG: {
+    diamond: { name: '钻石会员', color: '#a78bfa', minPoints: 50000 },
+    gold: { name: '黄金会员', color: '#fbbf24', minPoints: 20000 },
+    silver: { name: '银卡会员', color: '#94a3b8', minPoints: 5000 },
+    bronze: { name: '铜卡会员', color: '#d97706', minPoints: 1000 },
+    basic: { name: '普通会员', color: '#64748b', minPoints: 0 },
+  },
+}));
 
-type MemberTier = 'diamond' | 'gold' | 'silver' | 'bronze' | 'basic';
-type CouponType = 'discount' | 'cash' | 'free_shipping' | 'voucher';
-type CouponStatus = 'unused' | 'used' | 'expired';
+// ====== Test Subject ======
+import MemberCardPage from './page';
 
-const ALL_TIERS: MemberTier[] = ['basic', 'bronze', 'silver', 'gold', 'diamond'];
-const ALL_COUPON_TYPES: CouponType[] = ['discount', 'cash', 'free_shipping', 'voucher'];
-const ALL_COUPON_STATUSES: CouponStatus[] = ['unused', 'used', 'expired'];
-
-const TIER_NAMES: Record<MemberTier, string> = {
-  basic: '普通会员',
-  bronze: '铜卡会员',
-  silver: '银卡会员',
-  gold: '黄金会员',
-  diamond: '钻石会员',
+const MOCK_CARD = {
+  id: 'card-001',
+  memberId: 'mem-001',
+  cardNumber: '8888 8888 8888 0001',
+  tier: 'gold' as const,
+  tierName: '黄金会员',
+  tierColor: '#fbbf24',
+  points: 15000,
+  pointsToNextTier: 5000,
+  nextTierName: '钻石会员',
+  issuedAt: '2026-01-01',
+  expiresAt: '2027-12-31',
+  status: 'active' as const,
+  benefits: ['折扣升级 8.5折', '每月2张满减券', '专属客服', '免运费'],
 };
 
-function makeMockCard(overrides?: Record<string, unknown>) {
-  return {
-    id: 'card_001',
-    memberId: 'member_001',
-    cardNumber: 'SJYTEST001',
-    tier: 'silver' as MemberTier,
-    tierName: '银卡会员',
-    tierColor: '#94a3b8',
-    points: 12800,
-    pointsToNextTier: 7200,
-    nextTierName: '黄金会员',
-    issuedAt: '2024-01-15',
-    expiresAt: '2029-01-15',
-    status: 'active' as const,
-    benefits: ['生日双倍积分', '每月专属优惠券', '优先预约'],
-    ...overrides,
-  };
-}
+const MOCK_COUPONS = [
+  { id: 'c1', couponId: 'cp1', name: '满100减20', type: 'cash' as const, typeName: '代金券', value: '¥20', minAmount: '满100可用', validFrom: '2026-07-01', validTo: '2026-07-31', status: 'unused' as const, storeName: 'Demo Store' },
+  { id: 'c2', couponId: 'cp2', name: '8折优惠券', type: 'discount' as const, typeName: '打折券', value: '8折', minAmount: '满50可用', validFrom: '2026-07-01', validTo: '2026-08-31', status: 'unused' as const, storeName: 'Demo Store' },
+  { id: 'c3', couponId: 'cp3', name: '免运费券', type: 'free_shipping' as const, typeName: '免运费券', value: '免运费', minAmount: '全场通用', validFrom: '2026-06-01', validTo: '2026-07-15', status: 'used' as const, storeName: 'Demo Store' },
+  { id: 'c4', couponId: 'cp4', name: '礼品券', type: 'voucher' as const, typeName: '礼品券', value: '¥50', minAmount: '满200可用', validFrom: '2026-05-01', validTo: '2026-06-30', status: 'expired' as const, storeName: 'Demo Store' },
+];
 
-function makeMockCoupon(overrides?: Record<string, unknown>) {
-  return {
-    id: 'mc1',
-    couponId: 'cp1',
-    name: '新客首单8折',
-    type: 'discount' as CouponType,
-    typeName: '打折券',
-    value: '8折',
-    minAmount: '满0元可用',
-    validFrom: '2026-06-01',
-    validTo: '2026-07-31',
-    status: 'unused' as CouponStatus,
-    storeName: '测试门店',
-    ...overrides,
-  };
-}
-
-function makeMockStats(counts?: Partial<{ total: number; unusedCount: number; usedCount: number; expiredCount: number }>) {
-  return {
-    total: 5,
-    unusedCount: 3,
+const MOCK_COUPON_RESPONSE = {
+  success: true,
+  data: {
+    coupons: MOCK_COUPONS,
+    total: 4,
+    unusedCount: 2,
     usedCount: 1,
     expiredCount: 1,
-    ...counts,
-  };
-}
+  },
+};
 
-function getTypeColor(type: CouponType): string {
-  switch (type) {
-    case 'discount': return '#3b82f6';
-    case 'cash': return '#f59e0b';
-    case 'free_shipping': return '#10b981';
-    case 'voucher': return '#8b5cf6';
-    default: return '#64748b';
-  }
-}
+const MOCK_CARD_RESPONSE = { success: true, data: MOCK_CARD };
 
-/* ── 正例 ── */
-
-test('页面文件存在', () => {
-  assert.ok(readFileSync(SOURCE, 'utf-8').length > 0);
-});
-
-test('服务文件存在', () => {
-  assert.ok(readFileSync(SERVICE_SOURCE, 'utf-8').length > 0);
-});
-
-test('默认导出 MemberCardPage', () => {
-  assert.ok(pageSource.includes('export default function MemberCardPage'));
-});
-
-test('use client 指令存在', () => {
-  assert.ok(pageSource.includes("'use client'"));
-});
-
-test('导入 memberCardService', () => {
-  assert.ok(pageSource.includes('memberCardService'));
-});
-
-test('导入 TIER_CONFIG', () => {
-  assert.ok(pageSource.includes('TIER_CONFIG'));
-});
-
-test('导入 useRouter', () => {
-  assert.ok(pageSource.includes('useRouter'));
-});
-
-test('主页面使用 useState/useEffect/useCallback', () => {
-  assert.ok(pageSource.includes('useState'));
-  assert.ok(pageSource.includes('useEffect'));
-  assert.ok(pageSource.includes('useCallback'));
-});
-
-test('MemberCardDisplay 子组件存在', () => {
-  assert.ok(pageSource.includes('function MemberCardDisplay'));
-});
-
-test('BenefitsCard 子组件存在', () => {
-  assert.ok(pageSource.includes('function BenefitsCard'));
-});
-
-test('CouponCard 子组件存在', () => {
-  assert.ok(pageSource.includes('function CouponCard'));
-});
-
-test('MemberCardDisplay 渲染卡号, 等级, 积分, 进度条, 有效期', () => {
-  assert.ok(pageSource.includes('cardNumber'));
-  assert.ok(pageSource.includes('points'));
-  assert.ok(pageSource.includes('pointsToNextTier'));
-  assert.ok(pageSource.includes('expiresAt'));
-  assert.ok(pageSource.includes('TIER_CONFIG[card.tier]'));
-});
-
-test('BenefitsCard 渲染权益列表', () => {
-  assert.ok(pageSource.includes('专\n属权益') || pageSource.includes('专属权益'));
-  assert.ok(pageSource.includes('benefits.map'));
-});
-
-test('CouponCard 渲染券类型, 名称, 面值, 有效期, 立即使用按钮', () => {
-  assert.ok(pageSource.includes('coupon.type'));
-  assert.ok(pageSource.includes('coupon.name'));
-  assert.ok(pageSource.includes('coupon.value'));
-  assert.ok(pageSource.includes('coupon.validTo'));
-  assert.ok(pageSource.includes('立即使用'));
-  assert.ok(pageSource.includes('onUse'));
-});
-
-test('CouponCard 显示已使用/已过期标签', () => {
-  assert.ok(pageSource.includes('已使用'));
-  assert.ok(pageSource.includes('已过期'));
-});
-
-test('筛选标签包含 全部/可用/已用/过期', () => {
-  assert.ok(pageSource.includes("key: 'ALL'"));
-  assert.ok(pageSource.includes("key: 'unused'"));
-  assert.ok(pageSource.includes("key: 'used'"));
-  assert.ok(pageSource.includes("key: 'expired'"));
-});
-
-test('CouponFilter 类型定义', () => {
-  assert.ok(pageSource.includes("CouponFilter = 'ALL'"));
-  assert.ok(pageSource.includes("'unused'"));
-  assert.ok(pageSource.includes("'used'"));
-  assert.ok(pageSource.includes("'expired'"));
-});
-
-test('底部导航含 4 个入口: 首页/门店/会员卡/我的', () => {
-  const navItems = pageSource.match(/label: '[^']+'/g) ?? [];
-  const labels = navItems.map(m => m.match(/'([^']+)'/)?.[1] ?? '');
-  assert.ok(labels.includes('首页'));
-  assert.ok(labels.includes('门店'));
-  assert.ok(labels.includes('会员卡'));
-  assert.ok(labels.includes('我的'));
-});
-
-test('服务文件导出 TIER_CONFIG', () => {
-  assert.ok(serviceSource.includes('export { TIER_CONFIG'));
-});
-
-test('服务文件导出 COUPON_TYPE_CONFIG', () => {
-  assert.ok(serviceSource.includes('export { TIER_CONFIG, COUPON_TYPE_CONFIG'));
-});
-
-test('TIER_CONFIG 覆盖所有 5 个等级', () => {
-  for (const tier of ALL_TIERS) {
-    assert.ok(serviceSource.includes(`${tier}: {`), `TIER_CONFIG missing tier: ${tier}`);
-  }
-});
-
-test('MemberCardService 类包含 getMemberCard / getMemberCoupons', () => {
-  assert.ok(serviceSource.includes('getMemberCard'));
-  assert.ok(serviceSource.includes('getMemberCoupons'));
-  assert.ok(serviceSource.includes('claimCoupon'));
-  assert.ok(serviceSource.includes('useCoupon'));
-});
-
-test('mock 卡数据生成路径无异常', () => {
-  const card = makeMockCard();
-  assert.equal(card.tier, 'silver');
-  assert.equal(card.points, 12800);
-  assert.equal(card.status, 'active');
-  assert.ok(card.benefits.length >= 2);
-});
-
-test('mock 优惠券字段完整', () => {
-  const c = makeMockCoupon();
-  ['id', 'couponId', 'name', 'type', 'typeName', 'value', 'minAmount', 'validFrom', 'validTo', 'status', 'storeName'].forEach(k => {
-    assert.ok(k in c, `coupon missing field: ${k}`);
+describe('MemberCardPage — 会员卡页面', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.keys(localStorageStore).forEach(k => { delete localStorageStore[k]; });
+    localStorageStore['member_access_token'] = 'test-token';
+    localStorageStore['member_info'] = JSON.stringify({ memberId: 'mem-001', nickname: '测试用户', mobile: '13800138000' });
+    mockPush.mockReset();
+    mockGetMemberCard.mockResolvedValue(MOCK_CARD_RESPONSE);
+    mockGetMemberCoupons.mockResolvedValue(MOCK_COUPON_RESPONSE);
   });
-});
 
-test('mock 统计数据字段完整', () => {
-  const s = makeMockStats();
-  assert.equal(typeof s.total, 'number');
-  assert.equal(typeof s.unusedCount, 'number');
-  assert.equal(typeof s.usedCount, 'number');
-  assert.equal(typeof s.expiredCount, 'number');
-});
+  // ====== 正例: 渲染 ======
 
-test('Color 映射覆盖所有券类型', () => {
-  for (const t of ALL_COUPON_TYPES) {
-    const color = getTypeColor(t);
-    assert.ok(color.startsWith('#'), `${t} color should be hex: ${color}`);
-  }
-});
+  test('renders without crashing', async () => {
+    const { container } = render(<MemberCardPage />);
+    await waitFor(() => { expect(container).toBeTruthy(); });
+  });
 
-test('所有 5 个等级的名称包含 "会员"', () => {
-  for (const tier of ALL_TIERS) {
-    assert.ok(TIER_NAMES[tier].includes('会员'), `${tier} name should include 会员`);
-  }
-});
+  test('redirects to login when no token present', async () => {
+    delete localStorageStore['member_access_token'];
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/member-login');
+    });
+  });
 
-test('filteredCoupons 根据 filter 过滤逻辑存在', () => {
-  assert.ok(pageSource.includes('filteredCoupons'));
-  assert.ok(pageSource.includes('c.status === filter'));
-});
+  test('renders page title after loading', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('我的会员卡')).toBeInTheDocument();
+    });
+  });
 
-test('页眉含 "我的会员卡" 和 "查看会员权益和优惠券"', () => {
-  assert.ok(pageSource.includes('我的会员卡'));
-  assert.ok(pageSource.includes('查看会员权益和优惠券'));
-});
+  test('renders page subtitle', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('查看会员权益和优惠券')).toBeInTheDocument();
+    });
+  });
 
-test('优惠券区域含 "我的优惠券" 标题', () => {
-  assert.ok(pageSource.includes('我的优惠券'));
-});
+  test('renders card number', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('8888 8888 8888 0001')).toBeInTheDocument();
+    });
+  });
 
-test('loading 状态显示 "加载中..."', () => {
-  assert.ok(pageSource.includes('加载中...'));
-});
+  test('renders tier name', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('黄金会员')).toBeInTheDocument();
+    });
+  });
 
-test('无卡片数据时显示 "无法获取会员信息"', () => {
-  assert.ok(pageSource.includes('无法获取会员信息'));
-});
+  test('renders member points', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('15,000 积分')).toBeInTheDocument();
+    });
+  });
 
-test('no coupons 时显示 "暂无优惠券"', () => {
-  assert.ok(pageSource.includes('暂无优惠券'));
-});
+  test('renders expiry date', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('有效期至 2027-12-31')).toBeInTheDocument();
+    });
+  });
 
-test('handleUseCoupon 跳转门店页', () => {
-  assert.ok(pageSource.includes("router.push('/stores')"));
-});
+  test('renders benefits section', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/黄金会员专属权益/)).toBeInTheDocument();
+    });
+  });
 
-test('登录检查逻辑: member_access_token', () => {
-  assert.ok(pageSource.includes('member_access_token'));
-  assert.ok(pageSource.includes("router.push('/member-login')"));
-});
+  // ====== 优惠券区域 ======
 
-test('以 Promise.all 加载卡片+优惠券', () => {
-  assert.ok(pageSource.includes('Promise.all'));
-});
+  test('renders coupon section title', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('我的优惠券')).toBeInTheDocument();
+    });
+  });
 
-/* ── 反例 / 防御 ── */
+  test('renders total coupon count', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/共 4 张/)).toBeInTheDocument();
+    });
+  });
 
-test('防御: 空优惠券列表统计为 0', () => {
-  const stats = makeMockStats({ total: 0, unusedCount: 0, usedCount: 0, expiredCount: 0 });
-  assert.equal(stats.total, 0);
-  assert.equal(stats.unusedCount + stats.usedCount + stats.expiredCount, 0);
-});
+  test('renders unused coupon count', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('2')).toBeInTheDocument(); // unusedCount
+      expect(screen.getByText('可用')).toBeInTheDocument();
+    });
+  });
 
-test('防御: null 卡片不抛异常 (显示 "无法获取会员信息")', () => {
-  // 模拟 null card 时的 fallback 逻辑
-  assert.ok(pageSource.includes('!card'));
-  assert.ok(pageSource.includes('无法获取会员信息'));
-});
+  test('renders used coupon count', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('已用')).toBeInTheDocument();
+    });
+  });
 
-test('防御: mock 卡缺少字段时仍可构造', () => {
-  const card = makeMockCard();
-  // 删除一个非必需字段 — 不会使构造失败
-  const { tier, ...partial } = card;
-  assert.equal('id' in partial, true);
-  assert.equal('tier' in partial, false);
-});
+  test('renders expired coupon count', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('过期')).toBeInTheDocument();
+    });
+  });
 
-test('防御: 过期券不显示 "立即使用" 按钮', () => {
-  assert.ok(pageSource.includes('!isDisabled'));
-  assert.ok(pageSource.includes('!isDisabled && onUse'));
-});
+  test('renders coupon names', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+      expect(screen.getByText('8折优惠券')).toBeInTheDocument();
+    });
+  });
 
-test('防御: CouponCard 的 getTypeColor 对未知类型有默认值', () => {
-  const color = getTypeColor('unknown' as CouponType);
-  assert.equal(color, '#64748b');
-});
+  // ====== 筛选测试 ======
 
-test('防御: 服务组件 catch 降级返回 mock 数据', () => {
-  assert.ok(serviceSource.includes('generateMockCard()'));
-  assert.ok(serviceSource.includes('generateMockCoupons()'));
-});
+  test('renders filter tabs', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('全部')).toBeInTheDocument();
+      expect(screen.getByText('可用')).toBeInTheDocument();
+      expect(screen.getByText('已用')).toBeInTheDocument();
+      expect(screen.getByText('过期')).toBeInTheDocument();
+    });
+  });
 
-test('防御: fetch 失败时降级', () => {
-  assert.ok(serviceSource.includes("catch (error)"));
-  assert.ok(serviceSource.includes('console.error'));
-});
+  test('clicking "已用" filter shows used coupons only', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('8折优惠券')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('已用'));
+    await waitFor(() => {
+      expect(screen.queryByText('满100减20')).not.toBeInTheDocument();
+      expect(screen.getByText('免运费券')).toBeInTheDocument();
+    });
+  });
 
-/* ── 边界 ── */
+  test('clicking "过期" filter shows expired coupons', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('过期'));
+    await waitFor(() => {
+      expect(screen.getByText('礼品券')).toBeInTheDocument();
+      expect(screen.queryByText('满100减20')).not.toBeInTheDocument();
+    });
+  });
 
-test('边界: 最大等级 diamond 权益最多', () => {
-  const diamond = makeMockCard({ tier: 'diamond', benefits: ['专属客服优先接待', '生日双倍积分', '全场9折优惠', '免费停车', '新品优先体验'] });
-  assert.equal(diamond.tier, 'diamond');
-  assert.ok(diamond.benefits.length >= 5);
-});
+  test('clicking "全部" shows all coupons after filtering', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('已用'));
+    await waitFor(() => {
+      expect(screen.queryByText('满100减20')).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('全部'));
+    await waitFor(() => {
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+    });
+  });
 
-test('边界: 最小等级 basic 权益最少', () => {
-  const basic = makeMockCard({ tier: 'basic', benefits: ['积分抵现'] });
-  assert.equal(basic.tier, 'basic');
-  assert.equal(basic.benefits.length, 1);
-});
+  // ====== 交互测试 ======
 
-test('边界: 0 积分卡', () => {
-  const card = makeMockCard({ points: 0, tier: 'basic', pointsToNextTier: 0 });
-  assert.equal(card.points, 0);
-  assert.equal(card.pointsToNextTier, 0);
-});
+  test('renders "立即使用" button for unused coupons', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      const useButtons = screen.getAllByText('立即使用');
+      expect(useButtons.length).toBeGreaterThan(0);
+    });
+  });
 
-test('边界: 高积分 (10 万+)', () => {
-  const card = makeMockCard({ points: 100000, tier: 'diamond', pointsToNextTier: 0 });
-  assert.equal(card.points, 100000);
-});
+  test('clicking "立即使用" redirects to stores', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      const useBtn = screen.getAllByText('立即使用')[0];
+      fireEvent.click(useBtn);
+      expect(mockPush).toHaveBeenCalledWith('/stores');
+    });
+  });
 
-test('边界: 任意优惠券类型颜色值正确', () => {
-  const colorMap: Record<CouponType, string> = { discount: '#3b82f6', cash: '#f59e0b', free_shipping: '#10b981', voucher: '#8b5cf6' };
-  for (const [type, expected] of Object.entries(colorMap)) {
-    assert.equal(getTypeColor(type as CouponType), expected);
-  }
-});
+  test('used coupons do not show "立即使用" button', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('已使用')).toBeInTheDocument();
+    });
+    const usedCouponSection = screen.getByText('已使用').closest('[style*="padding"]');
+    expect(usedCouponSection?.querySelector('button')).toBeFalsy();
+  });
 
-test('边界: 4 种优惠券状态全覆盖', () => {
-  for (const s of ALL_COUPON_STATUSES) {
-    const c = makeMockCoupon({ status: s });
-    assert.equal(c.status, s);
-  }
-});
+  test('expired coupons show expiry badge', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      const expiredBadges = screen.getAllByText('已过期');
+      expect(expiredBadges.length).toBeGreaterThan(0);
+    });
+  });
 
-test('边界: 5 种会员等级全覆盖', () => {
-  for (const t of ALL_TIERS) {
-    const card = makeMockCard({ tier: t });
-    assert.equal(card.tier, t);
-  }
-});
+  test('used coupons show used badge', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('已使用')).toBeInTheDocument();
+    });
+  });
 
-test('边界: 全量 5 条 mock 优惠券状态分布', () => {
-  const coupons = [
-    makeMockCoupon({ id: 'mc1', status: 'unused' }),
-    makeMockCoupon({ id: 'mc2', status: 'unused' }),
-    makeMockCoupon({ id: 'mc3', status: 'unused' }),
-    makeMockCoupon({ id: 'mc4', status: 'used' }),
-    makeMockCoupon({ id: 'mc5', status: 'expired' }),
-  ];
-  assert.equal(coupons.length, 5);
-  assert.equal(coupons.filter(c => c.status === 'unused').length, 3);
-  assert.equal(coupons.filter(c => c.status === 'used').length, 1);
-  assert.equal(coupons.filter(c => c.status === 'expired').length, 1);
-});
+  // ====== 底部导航 ======
 
-test('边界: 导航栏 4 个图标含正确的 emoji', () => {
-  assert.ok(pageSource.includes("'🏠'"));
-  assert.ok(pageSource.includes("'🏬'"));
-  assert.ok(pageSource.includes("'🎫'"));
-  assert.ok(pageSource.includes("'👤'"));
-});
+  test('renders bottom navigation bar', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('首页')).toBeInTheDocument();
+      expect(screen.getByText('会员卡')).toBeInTheDocument();
+    });
+  });
 
-test('边界: 超大优惠券列表性能 (1000 条不阻塞)', () => {
-  const coupons = Array.from({ length: 1000 }, (_, i) =>
-    makeMockCoupon({ id: `mc${i}` }));
-  assert.equal(coupons.length, 1000);
+  test('bottom nav "会员卡" is highlighted as active', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      const cardNav = screen.getByText('会员卡').closest('a');
+      expect(cardNav).toHaveStyle({ color: '#f59e0b' });
+    });
+  });
 
-  const start = performance.now();
-  const filtered = coupons.filter(c => c.status === 'unused');
-  const elapsed = performance.now() - start;
-  assert.ok(elapsed < 10, `1000 coupons filter in ${elapsed.toFixed(2)}ms`);
-  assert.ok(filtered.length > 0);
-});
+  // ====== 加载态 ======
 
-test('边界: 已满级钻石会员 pointsToNextTier = 0', () => {
-  const card = makeMockCard({ tier: 'diamond', pointsToNextTier: 0, nextTierName: '已满级' });
-  assert.equal(card.pointsToNextTier, 0);
-  assert.equal(card.nextTierName, '已满级');
-});
+  test('shows loading indicator initially', () => {
+    // Keep promises pending so loading stays true
+    mockGetMemberCard.mockReturnValue(new Promise(() => {}));
+    mockGetMemberCoupons.mockReturnValue(new Promise(() => {}));
+    render(<MemberCardPage />);
+    expect(screen.getByText('加载中...')).toBeInTheDocument();
+  });
 
-/* ── SSR 渲染验证 (单元级) ── */
+  // ====== 错误态/边界 ======
 
-test('SSR: renderToStaticMarkup 输出关键文本', () => {
-  const React = require('react');
-  const reactDomPath = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js';
-  const { renderToStaticMarkup } = require(reactDomPath);
-  // 仅测试无 router 环境下的子组件
-  const CardDisplay = function () {
-    const card = makeMockCard();
-    return React.createElement(
-      'div',
-      { 'data-testid': 'card-display' },
-      React.createElement('div', null, card.cardNumber),
-      React.createElement('div', null, TIER_NAMES[card.tier as MemberTier]),
-      React.createElement('div', null, `${card.points} 积分`),
-    );
-  };
-  const html = renderToStaticMarkup(React.createElement(CardDisplay));
-  assert.ok(html.includes('SJYTEST001'));
-  assert.ok(html.includes('银卡会员'));
-  assert.ok(html.includes('12800'));
+  test('shows error message when card fetch fails', async () => {
+    mockGetMemberCard.mockResolvedValue({ success: false, error: { code: 'ERROR', message: 'Failed' } });
+    mockGetMemberCoupons.mockResolvedValue(MOCK_COUPON_RESPONSE);
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('无法获取会员信息')).toBeInTheDocument();
+    });
+  });
+
+  test('shows error message when both fetches fail', async () => {
+    mockGetMemberCard.mockResolvedValue({ success: false, error: { code: 'ERROR', message: 'Failed' } });
+    mockGetMemberCoupons.mockResolvedValue({ success: false, error: { code: 'ERROR', message: 'Failed' } });
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('无法获取会员信息')).toBeInTheDocument();
+    });
+  });
+
+  test('shows empty coupon message when no coupons match filter', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('已用'));
+    await waitFor(() => {
+      expect(screen.getByText('免运费券')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('可用'));
+    await waitFor(() => {
+      expect(screen.queryByText('免运费券')).not.toBeInTheDocument();
+    });
+  });
+
+  test('handles service exception gracefully', async () => {
+    mockGetMemberCard.mockRejectedValue(new Error('Network error'));
+    mockGetMemberCoupons.mockRejectedValue(new Error('Network error'));
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      // Should eventually stop loading, card will be null so "无法获取会员信息" shows
+      expect(screen.getByText('无法获取会员信息')).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test('shows upgrade progress when pointsToNextTier > 0', async () => {
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/还需/)).toBeInTheDocument();
+      expect(screen.getByText(/5,000 积分/)).toBeInTheDocument();
+    });
+  });
+
+  test('does not show upgrade progress when pointsToNextTier is 0', async () => {
+    const cardNoUpgrade = { ...MOCK_CARD, pointsToNextTier: 0, nextTierName: '' };
+    mockGetMemberCard.mockResolvedValue({ success: true, data: cardNoUpgrade });
+    render(<MemberCardPage />);
+    await waitFor(() => {
+      expect(screen.queryByText(/距离/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/还需/)).not.toBeInTheDocument();
+    });
+  });
 });

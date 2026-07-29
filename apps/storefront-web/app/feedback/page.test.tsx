@@ -1,157 +1,260 @@
 /**
- * feedback/page.test.tsx — 意见反馈页面 L1+L2 综合测试
- * 角色视角: 👤会员 / 👔店长
- * 覆盖: 正例(组件/渲染/交互) 反例(空/错) 边界(全状态/评分/分类) 角色(提交/查看/管理)
+ * feedback/page.vitest.tsx — 意见反馈 FeedbackPage L2 组件测试
+ * 覆盖: 页面渲染 · 分类筛选 · 状态筛选 · 搜索 · 分页 · 新建反馈 · 统计面板 · 错误态
+ * 角色: 👤会员 / 👔店长
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const PAGE_SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+// ── Mocks ──
 
-describe('FeedbackPage — 正例', () => {
-  test('page exports default function FeedbackPage', () => {
-    assert.ok(PAGE_SRC.includes('export default function FeedbackPage'), '缺少默认导出');
+vi.mock('@m5/ui', () => ({
+  PageShell: vi.fn(({ children, title, description }: any) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>
+      {children}
+    </div>
+  )),
+  StatusBadge: vi.fn(({ status, label }: any) => (
+    <span data-testid="status-badge" data-status={status}>{label}</span>
+  )),
+}));
+
+// ── Test Subject ──
+
+import FeedbackPage from './page';
+
+describe('FeedbackPage — 意见反馈', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  test('page contains use client directive', () => {
-    assert.ok(PAGE_SRC.includes("'use client'"), '缺少 use client');
+  // ====== 1. 正例: 页面渲染 ======
+
+  test('renders page shell with correct title', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '意见反馈');
   });
 
-  test('page title contains 意见反馈', () => {
-    assert.ok(PAGE_SRC.includes('意见反馈'), 'should render page title');
+  test('renders page heading', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByText('💬 意见反馈')).toBeInTheDocument();
   });
 
-  test('renders feedback stats calculation', () => {
-    assert.ok(PAGE_SRC.includes('avgRating') || PAGE_SRC.includes('byCategory'), 'should have stats calculation');
+  test('renders feedback count info text', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByText(/共.*条反馈/)).toBeInTheDocument();
   });
 
-  test('contains feedback record data with multiple categories', () => {
-    const categoryCount = (PAGE_SRC.match(/category:/g) || []).length;
-    assert.ok(categoryCount >= 6, `should have multiple categories, got ${categoryCount}`);
+  test('renders search input', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByPlaceholderText(/搜索反馈内容/)).toBeInTheDocument();
   });
 
-  test('records have 5 status types coverage', () => {
-    const statuses = ['pending', 'processing', 'resolved', 'closed'];
-    const found = statuses.filter(s => PAGE_SRC.includes(s));
-    assert.ok(found.length >= 3, `should have at least 3 status types, found: ${found.join(',')}`);
+  test('renders category filter dropdown', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByDisplayValue('全部分类')).toBeInTheDocument();
   });
 
-  test('has green reply background for resolved feedback', () => {
-    assert.ok(PAGE_SRC.includes('#f0fdf4'), 'should have reply section background');
+  test('renders status filter dropdown', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByDisplayValue('全部状态')).toBeInTheDocument();
   });
 
-  test('includes useMemo for computed data', () => {
-    assert.ok(PAGE_SRC.includes('useMemo'), '缺少 useMemo');
+  test('renders feedback cards by default', () => {
+    render(<FeedbackPage />);
+    // At least the first page of 10 records rendered via category labels
+    expect(screen.getByText('建议增加更多种类的游戏币套餐，比如月卡季卡年卡')).toBeInTheDocument();
   });
 
-  test('includes useState for state management', () => {
-    assert.ok(PAGE_SRC.includes('useState'), '缺少 useState');
+  test('renders pagination when more than PAGE_SIZE records exist', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByText('← 上一页')).toBeInTheDocument();
+    expect(screen.getByText('下一页 →')).toBeInTheDocument();
   });
 
-  test('includes search or filter functionality', () => {
-    assert.ok(PAGE_SRC.includes('.trim()') || PAGE_SRC.includes('filter'), 'should have search/filter');
+  test('renders "新反馈" and "统计" toggle buttons', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByText('✏️ 新反馈')).toBeInTheDocument();
+    expect(screen.getByText('📊 统计')).toBeInTheDocument();
   });
 
-  test('renders category filter with all options', () => {
-    const expected = ['suggestion', 'complaint', 'question', 'praise', 'bug', 'other'];
-    const found = expected.filter(e => PAGE_SRC.includes(e));
-    assert.ok(found.length >= 4, `should render most filter options, found: ${found.length}/6`);
+  // ====== 2. 正例: 分类筛选 ======
+
+  test('filters by category — shows only complaints', async () => {
+    render(<FeedbackPage />);
+    const categorySelect = screen.getByDisplayValue('全部分类');
+    fireEvent.change(categorySelect, { target: { value: 'complaint' } });
+    await waitFor(() => {
+      expect(screen.getByText(/抓娃娃机有故障/)).toBeInTheDocument();
+    });
   });
 
-  test('has pagination controls', () => {
-    assert.ok(PAGE_SRC.includes('上一页') && PAGE_SRC.includes('下一页'), 'should have pagination');
+  test('filters by category — praise shows praise records', async () => {
+    render(<FeedbackPage />);
+    const categorySelect = screen.getByDisplayValue('全部分类');
+    fireEvent.change(categorySelect, { target: { value: 'praise' } });
+    await waitFor(() => {
+      expect(screen.getByText(/工作人员态度很好/)).toBeInTheDocument();
+    });
   });
 
-  test('should have empty state for no matching feedback', () => {
-    assert.ok(PAGE_SRC.includes('暂无反馈记录') || PAGE_SRC.includes('暂无'), 'should have empty state');
+  test('filters by status — pending shows only pending', async () => {
+    render(<FeedbackPage />);
+    const statusSelect = screen.getByDisplayValue('全部状态');
+    fireEvent.change(statusSelect, { target: { value: 'pending' } });
+    await waitFor(() => {
+      const labels = screen.getAllByText('待处理');
+      expect(labels.length).toBeGreaterThan(0);
+    });
   });
 
-  test('should have error state simulation', () => {
-    assert.ok(PAGE_SRC.includes('模拟错误') || PAGE_SRC.includes('加载失败'), 'should have error simulation');
+  test('filters by status — resolved shows resolved items', async () => {
+    render(<FeedbackPage />);
+    const statusSelect = screen.getByDisplayValue('全部状态');
+    fireEvent.change(statusSelect, { target: { value: 'resolved' } });
+    await waitFor(() => {
+      expect(screen.getByText('已回复')).toBeInTheDocument();
+    });
   });
 
-  test('has star rating interaction', () => {
-    assert.ok(PAGE_SRC.includes('★'), 'should have star rating');
+  // ====== 3. 正例: 搜索 ======
+
+  test('search filters feedback by content', async () => {
+    render(<FeedbackPage />);
+    const searchInput = screen.getByPlaceholderText(/搜索反馈内容/);
+    fireEvent.change(searchInput, { target: { value: '游戏币' } });
+    await waitFor(() => {
+      expect(screen.getByText(/建议增加更多种类的游戏币套餐/)).toBeInTheDocument();
+    });
   });
 
-  test('has new feedback form', () => {
-    assert.ok(PAGE_SRC.includes('NewFeedbackForm') || PAGE_SRC.includes('提交反馈'), 'should have new feedback form');
-  });
-});
-
-describe('FeedbackPage — 反例', () => {
-  test('should handle empty filtered results', () => {
-    assert.ok(PAGE_SRC.includes('.length === 0') || PAGE_SRC.includes('暂无'), 'should handle empty results');
-  });
-
-  test('should handle error state rendering', () => {
-    assert.ok(PAGE_SRC.includes('showError'), 'should handle error state toggle');
+  test('search with non-matching keyword shows empty state', async () => {
+    render(<FeedbackPage />);
+    const searchInput = screen.getByPlaceholderText(/搜索反馈内容/);
+    fireEvent.change(searchInput, { target: { value: 'ZZZ_NONEXISTENT_2026' } });
+    await waitFor(() => {
+      expect(screen.getByText('暂无反馈记录')).toBeInTheDocument();
+    });
   });
 
-  test('should handle missing reply gracefully', () => {
-    assert.ok(PAGE_SRC.includes('reply'), 'should handle optional reply field');
+  // ====== 4. 正例: 分页 ======
+
+  test('clicking next page changes page number', async () => {
+    render(<FeedbackPage />);
+    const nextBtn = screen.getByText('下一页 →');
+    fireEvent.click(nextBtn);
+    await waitFor(() => {
+      expect(screen.getByText(/2\/4/)).toBeInTheDocument();
+    });
   });
 
-  test('no eval or dangerous patterns', () => {
-    assert.ok(!PAGE_SRC.includes('eval('), 'no eval usage');
-    assert.ok(!PAGE_SRC.includes('dangerouslySetInnerHTML'), 'no dangerous HTML');
+  test('clicking prev page goes back', async () => {
+    render(<FeedbackPage />);
+    // Go to page 2 first
+    fireEvent.click(screen.getByText('下一页 →'));
+    await waitFor(() => {
+      expect(screen.getByText(/2\/4/)).toBeInTheDocument();
+    });
+    // Go back
+    fireEvent.click(screen.getByText('← 上一页'));
+    await waitFor(() => {
+      expect(screen.getByText(/1\/4/)).toBeInTheDocument();
+    });
   });
 
-  test('no hardcoded personal info', () => {
-    assert.ok(!PAGE_SRC.includes('13800138000'), 'no fake phone numbers');
-  });
-});
-
-describe('FeedbackPage — 边界', () => {
-  test('feedback types should be properly defined', () => {
-    const types = ['FeedbackStatus', 'FeedbackCategory', 'FeedbackRecord'];
-    const found = types.filter(t => PAGE_SRC.includes(t));
-    assert.ok(found.length >= 2, `should define most types, found: ${found.length}/3`);
+  test('prev button disabled on first page', () => {
+    render(<FeedbackPage />);
+    const prevBtn = screen.getByText('← 上一页');
+    expect(prevBtn).toBeDisabled();
   });
 
-  test('status badges have appropriate colors', () => {
-    const statusColors = ['#f59e0b', '#3b82f6', '#22c55e', '#6b7280'];
-    const found = statusColors.filter(c => PAGE_SRC.includes(c));
-    assert.ok(found.length >= 3, `should define colors for most statuses, found: ${found.length}/4`);
+  // ====== 5. 边界: 错误态 ======
+
+  test('shows error state when simulate error button clicked', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('模拟错误'));
+    expect(screen.getByText('⚠️ 加载失败')).toBeInTheDocument();
   });
 
-  test('category filter should have "全部" option', () => {
-    assert.ok(PAGE_SRC.includes("'全部'"), 'should have 全部 option');
+  test('error state has retry button', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('模拟错误'));
+    expect(screen.getByText('重试')).toBeInTheDocument();
   });
 
-  test('expand/collapse reply section', () => {
-    assert.ok(PAGE_SRC.includes('expanded'), 'should have expand/collapse for replies');
+  test('error state clears when retry clicked', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('模拟错误'));
+    expect(screen.getByText('⚠️ 加载失败')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('重试'));
+    expect(screen.queryByText('⚠️ 加载失败')).not.toBeInTheDocument();
   });
 
-  test('should handle new feedback submission callback', () => {
-    assert.ok(PAGE_SRC.includes('handleNewFeedback'), 'should pass submit handler');
+  // ====== 6. 交互: 统计面板 ======
+
+  test('clicking 统计 toggles stats panel', () => {
+    render(<FeedbackPage />);
+    const statsBtn = screen.getByText('📊 统计');
+    fireEvent.click(statsBtn);
+    expect(screen.getByText('总反馈')).toBeInTheDocument();
+    expect(screen.getByText('已处理')).toBeInTheDocument();
+    expect(screen.getByText('待处理')).toBeInTheDocument();
+    expect(screen.getByText('平均评分')).toBeInTheDocument();
   });
 
-  test('simulated error state has retry button', () => {
-    assert.ok(PAGE_SRC.includes('重试'), 'should have retry button in error state');
-  });
-});
-
-describe('FeedbackPage — 角色视角', () => {
-  test('member can submit feedback', () => {
-    assert.ok(PAGE_SRC.includes('提交反馈'), 'member can submit');
-  });
-
-  test('member can check history', () => {
-    assert.ok(PAGE_SRC.includes('反馈记录') || PAGE_SRC.includes('共') || PAGE_SRC.includes('条反馈'), 'member can view history');
+  test('clicking stats again hides panel', () => {
+    render(<FeedbackPage />);
+    const statsBtn = screen.getByText('📊 统计');
+    fireEvent.click(statsBtn);
+    expect(screen.getByText('总反馈')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('隐藏统计'));
+    expect(screen.queryByText('总反馈')).not.toBeInTheDocument();
   });
 
-  test('manager can see processing stats', () => {
-    assert.ok(PAGE_SRC.includes('已处理') || PAGE_SRC.includes('待处理'), 'manager can see stats');
+  // ====== 7. 交互: 新建反馈 ======
+
+  test('clicking 新反馈 toggles new feedback form', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('✏️ 新反馈'));
+    expect(screen.getByText('📝 提交反馈')).toBeInTheDocument();
   });
 
-  test('manager can filter by status', () => {
-    assert.ok(PAGE_SRC.includes('statusFilter'), 'manager can filter by status');
+  test('new feedback form has category select', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('✏️ 新反馈'));
+    expect(screen.getByDisplayValue('suggestion')).toBeInTheDocument();
   });
 
-  test('member can filter by category', () => {
-    assert.ok(PAGE_SRC.includes('categoryFilter'), 'member can filter by category');
+  test('new feedback form has textarea', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('✏️ 新反馈'));
+    expect(screen.getByPlaceholderText('请描述您的意见或建议...')).toBeInTheDocument();
+  });
+
+  test('new feedback form has submit button', () => {
+    render(<FeedbackPage />);
+    fireEvent.click(screen.getByText('✏️ 新反馈'));
+    expect(screen.getByText('提交反馈')).toBeInTheDocument();
+  });
+
+  // ====== 8. 正例: 底部统计 ======
+
+  test('renders bottom stats bar', () => {
+    render(<FeedbackPage />);
+    expect(screen.getByText(/共.*条反馈/)).toBeInTheDocument();
+  });
+
+  test('renders 已处理 count in bottom stats', () => {
+    render(<FeedbackPage />);
+    // Multiple texts match this; just verify the text appears
+    const elements = screen.getAllByText(/已处理/);
+    expect(elements.length).toBeGreaterThan(0);
+  });
+
+  test('renders 待处理 count in bottom stats', () => {
+    render(<FeedbackPage />);
+    const elements = screen.getAllByText(/待处理/);
+    expect(elements.length).toBeGreaterThan(0);
   });
 });

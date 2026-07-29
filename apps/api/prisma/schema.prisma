@@ -2739,3 +2739,179 @@ model StorefrontReferralRelation {
   @@index([customerPhone])
   @@map("storefront_referral_relations")
 }
+
+// ── RLS 补全: brand_custom_font ───────────────────────────────
+
+model BrandCustomFont {
+  id         String   @id @default(cuid())
+  tenantId   String
+  brandId    String
+  fontName   String
+  fontUrl    String
+  format     String   @default("woff2")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId, brandId])
+  @@map("brand_custom_fonts")
+}
+
+// ── RLS 补全: brand_custom_script ─────────────────────────────
+
+model BrandCustomScript {
+  id         String   @id @default(cuid())
+  tenantId   String
+  brandId    String
+  scriptName String
+  scriptUrl  String
+  placement  String   @default("head")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId, brandId])
+  @@map("brand_custom_scripts")
+}
+
+// ── RLS 补全: logistics_fuel_record ───────────────────────────
+
+model LogisticsFuelRecord {
+  id              String   @id @default(cuid())
+  tenantId        String
+  vehicleId       String
+  driverId        String
+  fuelType        String
+  liters          Decimal  @db.Decimal(10,2)
+  costAmount      Decimal  @db.Decimal(12,2)
+  odometerBefore  Int?
+  odometerAfter   Int?
+  stationName     String?
+  recordedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@map("logistics_fuel_records")
+}
+
+// ── RLS 补全: logistics_cost_record ───────────────────────────
+
+model LogisticsCostRecord {
+  id          String   @id @default(cuid())
+  tenantId    String
+  category    String
+  amount      Decimal  @db.Decimal(12,2)
+  description String?
+  referenceId String?
+  recordedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@map("logistics_cost_records")
+}
+
+// ── RLS 补全: stock_transfer_item ─────────────────────────────
+
+model StockTransferItem {
+  id              String   @id @default(cuid())
+  tenantId        String
+  transferId      String
+  productId       String
+  productName     String
+  quantity        Int
+  unit            String   @default("pc")
+  unitPrice       Decimal? @db.Decimal(10,2)
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([transferId])
+  @@map("stock_transfer_items")
+}
+
+// ── RLS 补全: logistics_supplement_cargo ──────────────────────
+
+model LogisticsSupplementCargo {
+  id            String   @id @default(cuid())
+  tenantId      String
+  orderId       String
+  cargoType     String
+  description   String
+  weight        Decimal? @db.Decimal(8,2)
+  volume        Decimal? @db.Decimal(8,2)
+  packageCount  Int      @default(1)
+  isHazardous   Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@map("logistics_supplement_cargos")
+}
+
+// ── RLS 补全: logistics_driver_schedule ───────────────────────
+
+model LogisticsDriverSchedule {
+  id          String   @id @default(cuid())
+  tenantId    String
+  driverId    String
+  driverName  String
+  vehicleId   String?
+  status      String   @default("scheduled")
+  startAt     DateTime
+  endAt       DateTime
+  routeId     String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([driverId])
+  @@map("logistics_driver_schedules")
+}
+
+// ── RLS 补全: minor_protection_profile ────────────────────────
+
+model MinorProtectionProfile {
+  userId              String   @id
+  tenantId            String
+  birthDate           DateTime
+  age                 Int
+  ageGroup            String
+  ageVerified         Boolean  @default(false)
+  verificationMethod  String?
+  verifiedAt          DateTime?
+  parentalConsentId   String?
+  dailyTimeLimitMin   Int      @default(0)
+  dailySpendLimit     Decimal  @default(0) @db.Decimal(10,2)
+  monthlySpendLimit   Decimal  @default(0) @db.Decimal(10,2)
+  restrictions        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([parentalConsentId])
+  @@map("minor_protection_profiles")
+}
+
+// ── RLS 补全: minor_parental_consent ──────────────────────────
+
+model MinorParentalConsent {
+  id              String   @id @default(cuid())
+  minorUserId     String
+  parentUserId    String
+  parentName      String
+  parentIdCard    String
+  relationship    String
+  consentType     String
+  status          String   @default("pending")
+  effectiveFrom   DateTime @default(now())
+  effectiveTo     DateTime?
+  tenantId        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([minorUserId])
+  @@map("minor_parental_consents")
+}

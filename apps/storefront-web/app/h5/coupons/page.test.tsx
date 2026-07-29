@@ -1,325 +1,366 @@
 /**
- * H5优惠券页面 - page.test.tsx — L1 冒烟测试
- * Phase-FP · T-FP-029 · 2026-07-03
- * 角色视角: 👤 会员
- * 覆盖: 正例 + 反例(防御) + 边界(极端数据/空数据)
+ * h5/coupons/page.vitest.tsx — H5优惠券页 组件测试
+ * 覆盖: 加载态 · 优惠券列表 · 筛选 · 空态 · 状态渲染 · 交互
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import test from 'node:test';
+// ---- Mocks ----
 
-// ── 数据工厂 ──
+const mockPush = vi.fn();
 
-function makeCoupon(overrides?: Record<string, unknown>) {
-  return {
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+  usePathname: () => '/h5/coupons',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+const mockGetCoupons = vi.fn();
+
+vi.mock('../../../lib/coupon-service', () => ({
+  couponService: {
+    getCoupons: (...args: any[]) => mockGetCoupons(...args),
+  },
+  TYPE_CONFIG: {
+    discount: { name: '打折券', color: '#f97316' },
+    cash: { name: '代金券', color: '#10b981' },
+    free_shipping: { name: '免运费券', color: '#3b82f6' },
+    voucher: { name: '礼品券', color: '#ec4899' },
+  },
+}));
+
+vi.mock('../h5-style', () => ({
+  getMainContainerStyle: () => ({ minHeight: '100vh', background: '#0f172a' }),
+  getToggleChipStyle: (isActive: boolean, opts?: any) => ({
+    padding: '6px 16px',
+    borderRadius: 16,
+    border: 'none',
+    fontSize: 13,
+    cursor: 'pointer',
+    background: isActive ? 'rgba(99,102,241,0.2)' : 'rgba(148,163,184,0.1)',
+    color: isActive ? '#a5b4fc' : '#94a3b8',
+  }),
+  getCardStyle: (opts?: any) => ({
+    borderRadius: 12,
+    background: opts?.disabled ? 'rgba(15,23,42,0.4)' : 'rgba(15,23,42,0.8)',
+    border: opts?.disabled ? '1px solid rgba(148,163,184,0.08)' : '1px solid rgba(148,163,184,0.1)',
+    padding: 16,
+    marginBottom: 12,
+    opacity: opts?.disabled ? 0.6 : 1,
+  }),
+  getEmptyStateStyle: () => ({ textAlign: 'center', padding: 48, color: '#64748b' }),
+  getEmptyStateEmojiStyle: () => ({ fontSize: 48, marginBottom: 12 }),
+  H5Header: ({ title, children }: any) => (
+    <div data-testid="h5-header" data-title={title}>
+      <h1>{title}</h1>
+      {children}
+    </div>
+  ),
+  H5NavBar: ({ activeKey }: any) => <div data-testid="h5-navbar" data-active-key={activeKey} />,
+  COLOR_TEXT_PRIMARY: '#f8fafc',
+  COLOR_TEXT_MUTED: '#64748b',
+  COLOR_BORDER: '1px solid rgba(148,163,184,0.1)',
+}));
+
+import H5CouponsPage from './page';
+
+const MOCK_COUPONS = [
+  {
     id: 'c1',
     couponId: 'cp1',
     name: '新客首单8折',
-    type: 'discount' as const,
+    type: 'discount',
     typeName: '打折券',
     value: '8折',
     minAmount: '满0元可用',
     validFrom: '2026-06-01',
     validTo: '2026-07-31',
-    status: 'unused' as const,
+    status: 'unused',
     storeName: '神机营旗舰店',
-    ...overrides,
-  };
+  },
+  {
+    id: 'c2',
+    couponId: 'cp2',
+    name: '满100减20',
+    type: 'cash',
+    typeName: '代金券',
+    value: '¥20',
+    minAmount: '满100元可用',
+    validFrom: '2026-06-01',
+    validTo: '2026-08-31',
+    status: 'used',
+    storeName: '全部门店',
+  },
+  {
+    id: 'c3',
+    couponId: 'cp3',
+    name: '夏日饮品券',
+    type: 'voucher',
+    typeName: '礼品券',
+    value: '¥10',
+    minAmount: '满0元可用',
+    validFrom: '2026-05-01',
+    validTo: '2026-06-30',
+    status: 'expired',
+    storeName: '深圳南山店',
+  },
+];
+
+function renderPage() {
+  return render(<H5CouponsPage />);
 }
 
-function makeCouponListResponse(overrides?: Record<string, unknown>) {
-  return {
-    success: true,
-    data: {
-      coupons: [
-        makeCoupon(),
-        makeCoupon({ id: 'c2', type: 'cash' as const, value: '¥50', status: 'unused' as const }),
-        makeCoupon({ id: 'c4', type: 'discount' as const, status: 'used' as const }),
-        makeCoupon({ id: 'c5', type: 'voucher' as const, status: 'expired' as const }),
-      ],
-      total: 4,
-      unusedCount: 2,
-      usedCount: 1,
-      expiredCount: 1,
-    },
-    ...overrides,
-  };
-}
+describe('H5CouponsPage — H5优惠券', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetCoupons.mockResolvedValue({
+      success: true,
+      data: { coupons: MOCK_COUPONS, total: 3, unusedCount: 1, usedCount: 1, expiredCount: 1 },
+    });
+  });
 
-const COUPON_TYPES = ['discount', 'cash', 'free_shipping', 'voucher'] as const;
-const COUPON_STATUSES = ['unused', 'used', 'expired'] as const;
+  // ====== 渲染测试 ======
 
-const TYPE_CONFIG = {
-  discount: { name: '打折券', color: '#f97316' },
-  cash: { name: '代金券', color: '#10b981' },
-  free_shipping: { name: '免运费券', color: '#3b82f6' },
-  voucher: { name: '礼品券', color: '#ec4899' },
-};
+  test('renders without crashing', () => {
+    expect(() => renderPage()).not.toThrow();
+  });
 
-/* ── 正例 ── */
+  test('renders page title 我的优惠券', async () => {
+    renderPage();
+    expect(await screen.findByText('我的优惠券')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should accept a valid Coupon with all fields', () => {
-  const coupon = makeCoupon();
-  assert.equal(typeof coupon.id, 'string');
-  assert.equal(typeof coupon.name, 'string');
-  assert.equal(typeof coupon.value, 'string');
-  assert.equal(typeof coupon.status, 'string');
-  assert.equal(typeof coupon.type, 'string');
-  assert.ok(COUPON_TYPES.includes(coupon.type));
-  assert.ok(COUPON_STATUSES.includes(coupon.status));
-});
+  test('renders stats section with counts', async () => {
+    renderPage();
+    expect(await screen.findByText('1')).toBeInTheDocument(); // unused count
+    expect(screen.getByText('可用')).toBeInTheDocument();
+    expect(screen.getByText('已用')).toBeInTheDocument();
+    expect(screen.getByText('过期')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should accept a valid CouponListResponse', () => {
-  const resp = makeCouponListResponse();
-  assert.equal(resp.success, true);
-  assert.ok(resp.data !== undefined);
-  assert.equal(resp.data!.coupons.length, 4);
-  assert.equal(resp.data!.unusedCount, 2);
-  assert.equal(resp.data!.usedCount, 1);
-  assert.equal(resp.data!.expiredCount, 1);
-});
+  test('renders filter tabs: 可用/已用/过期', async () => {
+    renderPage();
+    expect(await screen.findByText('可用')).toBeInTheDocument();
+    expect(screen.getByText('已用')).toBeInTheDocument();
+    expect(screen.getByText('过期')).toBeInTheDocument();
+  });
 
-test('CouponsPage: each coupon should have a valid type', () => {
-  for (const type of COUPON_TYPES) {
-    const coupon = makeCoupon({ type, typeName: TYPE_CONFIG[type].name });
-    assert.equal(coupon.type, type);
-    assert.equal(coupon.typeName, TYPE_CONFIG[type].name);
-  }
-});
+  test('renders coupon names', async () => {
+    renderPage();
+    expect(await screen.findByText('新客首单8折')).toBeInTheDocument();
+    expect(screen.getByText('满100减20')).toBeInTheDocument();
+    expect(screen.getByText('夏日饮品券')).toBeInTheDocument();
+  });
 
-test('CouponsPage: each coupon should have a valid status', () => {
-  for (const status of COUPON_STATUSES) {
-    const coupon = makeCoupon({ status });
-    assert.equal(coupon.status, status);
-  }
-});
+  test('renders coupon values', async () => {
+    renderPage();
+    expect(await screen.findByText('8折')).toBeInTheDocument();
+    expect(screen.getByText('¥20')).toBeInTheDocument();
+    expect(screen.getByText('¥10')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should filter coupons by status', () => {
-  const coupons = [
-    makeCoupon({ id: 'c1', status: 'unused' as const }),
-    makeCoupon({ id: 'c2', status: 'used' as const }),
-    makeCoupon({ id: 'c3', status: 'unused' as const }),
-    makeCoupon({ id: 'c4', status: 'expired' as const }),
-  ];
-  const unused = coupons.filter(c => c.status === 'unused');
-  const used = coupons.filter(c => c.status === 'used');
-  const expired = coupons.filter(c => c.status === 'expired');
-  assert.equal(unused.length, 2);
-  assert.equal(used.length, 1);
-  assert.equal(expired.length, 1);
-});
+  test('renders coupon type names', async () => {
+    renderPage();
+    expect(await screen.findByText('打折券')).toBeInTheDocument();
+    expect(screen.getByText('代金券')).toBeInTheDocument();
+    expect(screen.getByText('礼品券')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should compute stats correctly', () => {
-  const coupons = [
-    makeCoupon({ status: 'unused' as const }),
-    makeCoupon({ status: 'unused' as const }),
-    makeCoupon({ status: 'used' as const }),
-    makeCoupon({ status: 'expired' as const }),
-    makeCoupon({ status: 'expired' as const }),
-  ];
-  const stats = {
-    total: coupons.length,
-    unused: coupons.filter(c => c.status === 'unused').length,
-    used: coupons.filter(c => c.status === 'used').length,
-    expired: coupons.filter(c => c.status === 'expired').length,
-  };
-  assert.equal(stats.total, 5);
-  assert.equal(stats.unused, 2);
-  assert.equal(stats.used, 1);
-  assert.equal(stats.expired, 2);
-  assert.equal(stats.unused + stats.used + stats.expired, stats.total);
-});
+  test('renders coupon min amount conditions', async () => {
+    renderPage();
+    expect(await screen.findByText('满0元可用')).toBeInTheDocument();
+    expect(screen.getByText('满100元可用')).toBeInTheDocument();
+  });
 
-test('CouponsPage: unused coupon should show "立即使用" button', () => {
-  const coupon = makeCoupon({ status: 'unused' as const });
-  const showUseButton = coupon.status === 'unused';
-  assert.equal(showUseButton, true);
-});
+  test('renders coupon store names', async () => {
+    renderPage();
+    expect(await screen.findByText('神机营旗舰店')).toBeInTheDocument();
+    expect(screen.getByText('全部门店')).toBeInTheDocument();
+    expect(screen.getByText('深圳南山店')).toBeInTheDocument();
+  });
 
-test('CouponsPage: used coupon should not show use button', () => {
-  const coupon = makeCoupon({ status: 'used' as const });
-  const showUseButton = coupon.status === 'unused';
-  assert.equal(showUseButton, false);
-});
+  test('renders coupon valid-to dates', async () => {
+    renderPage();
+    expect(await screen.findByText(/有效期至 2026-07-31/)).toBeInTheDocument();
+    expect(screen.getByText(/有效期至 2026-08-31/)).toBeInTheDocument();
+    expect(screen.getByText(/有效期至 2026-06-30/)).toBeInTheDocument();
+  });
 
-test('CouponsPage: expired coupon should not show use button', () => {
-  const coupon = makeCoupon({ status: 'expired' as const });
-  const showUseButton = coupon.status === 'unused';
-  assert.equal(showUseButton, false);
-});
+  // ====== 筛选测试 ======
 
-test('CouponsPage: TYPE_CONFIG should have correct configs for all types', () => {
-  assert.equal(TYPE_CONFIG.discount.name, '打折券');
-  assert.equal(TYPE_CONFIG.cash.name, '代金券');
-  assert.equal(TYPE_CONFIG.free_shipping.name, '免运费券');
-  assert.equal(TYPE_CONFIG.voucher.name, '礼品券');
-  assert.ok(TYPE_CONFIG.discount.color.length > 0);
-  assert.ok(TYPE_CONFIG.cash.color.length > 0);
-});
+  test('filter by 可用 shows only unused coupons', async () => {
+    renderPage();
+    await screen.findByText('新客首单8折');
+    fireEvent.click(screen.getByText('可用'));
+    await waitFor(() => {
+      expect(screen.getByText('新客首单8折')).toBeInTheDocument();
+      expect(screen.queryByText('满100减20')).not.toBeInTheDocument();
+      expect(screen.queryByText('夏日饮品券')).not.toBeInTheDocument();
+    });
+  });
 
-test('CouponsPage: coupon with description optional field', () => {
-  const withDesc = makeCoupon({ description: '限首次消费使用' });
-  const withoutDesc = makeCoupon({ description: undefined });
-  assert.equal(withDesc.description, '限首次消费使用');
-  assert.equal(withoutDesc.description, undefined);
-});
+  test('filter by 已用 shows only used coupons', async () => {
+    renderPage();
+    await screen.findByText('新客首单8折');
+    fireEvent.click(screen.getByText('已用'));
+    await waitFor(() => {
+      expect(screen.queryByText('新客首单8折')).not.toBeInTheDocument();
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+      expect(screen.queryByText('夏日饮品券')).not.toBeInTheDocument();
+    });
+  });
 
-test('CouponsPage: filter toggle should switch between statuses', () => {
-  let filter: string = 'ALL';
-  assert.equal(filter, 'ALL');
-  filter = 'unused';
-  assert.equal(filter, 'unused');
-  filter = 'used';
-  assert.equal(filter, 'used');
-  filter = 'expired';
-  assert.equal(filter, 'expired');
-});
+  test('filter by 过期 shows only expired coupons', async () => {
+    renderPage();
+    await screen.findByText('新客首单8折');
+    fireEvent.click(screen.getByText('过期'));
+    await waitFor(() => {
+      expect(screen.queryByText('新客首单8折')).not.toBeInTheDocument();
+      expect(screen.queryByText('满100减20')).not.toBeInTheDocument();
+      expect(screen.getByText('夏日饮品券')).toBeInTheDocument();
+    });
+  });
 
-/* ── 反例 / 防御 ── */
+  // ====== 状态渲染 ======
 
-test('CouponsPage: should handle empty coupon list', () => {
-  const resp = { success: true, data: { coupons: [] as unknown[], total: 0, unusedCount: 0, usedCount: 0, expiredCount: 0 } };
-  assert.equal(resp.data.coupons.length, 0);
-  assert.equal(resp.data.total, 0);
-});
+  test('unused coupons show 立即使用 button', async () => {
+    renderPage();
+    const useBtn = await screen.findByText('立即使用');
+    expect(useBtn).toBeInTheDocument();
+    fireEvent.click(useBtn);
+    expect(mockPush).toHaveBeenCalledWith('/stores');
+  });
 
-test('CouponsPage: should handle failed response', () => {
-  const resp = { success: false, error: { code: 'FETCH_ERROR', message: '获取优惠券列表失败' } };
-  assert.equal(resp.success, false);
-  assert.ok(resp.error !== undefined);
-  assert.equal(resp.error!.code, 'FETCH_ERROR');
-});
+  test('used coupons show 已使用 label', async () => {
+    renderPage();
+    expect(await screen.findByText('已使用')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should handle missing data in response', () => {
-  const resp = { success: false, data: undefined };
-  assert.equal(resp.data, undefined);
-});
+  test('expired coupons show 已过期 label', async () => {
+    renderPage();
+    expect(await screen.findByText('已过期')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should handle unknown status values', () => {
-  const unknownStatuses = [undefined, null, 'unknown', 'redeemed', ''];
-  for (const s of unknownStatuses) {
-    const coupon = makeCoupon({ status: s });
-    assert.equal(coupon.status, s);
-  }
-});
+  // ====== 空态 ======
 
-test('CouponsPage: should handle unknown type values', () => {
-  const unknownTypes = [undefined, null, 'unknown', ''];
-  for (const t of unknownTypes) {
-    const coupon = makeCoupon({ type: t });
-    assert.equal(coupon.type, t);
-  }
-});
+  test('shows 暂无优惠券 when list is empty', async () => {
+    mockGetCoupons.mockResolvedValue({
+      success: true,
+      data: { coupons: [], total: 0, unusedCount: 0, usedCount: 0, expiredCount: 0 },
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('暂无优惠券')).toBeInTheDocument();
+    });
+  });
 
-test('CouponsPage: should handle empty value string', () => {
-  const coupon = makeCoupon({ value: '', minAmount: '' });
-  assert.equal(coupon.value, '');
-  assert.equal(coupon.minAmount, '');
-});
+  test('shows emoji in empty state', async () => {
+    mockGetCoupons.mockResolvedValue({
+      success: true,
+      data: { coupons: [], total: 0, unusedCount: 0, usedCount: 0, expiredCount: 0 },
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('🎫')).toBeInTheDocument();
+    });
+  });
 
-test('CouponsPage: should handle missing validTo date', () => {
-  const coupon = makeCoupon({ validTo: undefined, validFrom: undefined });
-  assert.equal(coupon.validTo, undefined);
-  assert.equal(coupon.validFrom, undefined);
-});
+  // ====== 导航 ======
 
-test('CouponsPage: should handle missing id field', () => {
-  const coupon = makeCoupon({ id: undefined });
-  assert.equal(coupon.id, undefined);
-});
+  test('renders H5NavBar with activeKey coupons', async () => {
+    renderPage();
+    const nav = await screen.findByTestId('h5-navbar');
+    expect(nav).toHaveAttribute('data-active-key', 'coupons');
+  });
 
-test('CouponsPage: should handle claim coupon failure', () => {
-  const claimResult = { success: false, error: { code: 'CLAIM_ERROR', message: '该优惠券已领完' } };
-  assert.equal(claimResult.success, false);
-  assert.equal(claimResult.error!.code, 'CLAIM_ERROR');
-});
+  // ====== 统计 ======
 
-test('CouponsPage: should handle claim coupon network error', () => {
-  const claimResult = { success: false, error: { code: 'NETWORK_ERROR', message: '网络错误' } };
-  assert.equal(claimResult.success, false);
-  assert.equal(claimResult.error!.code, 'NETWORK_ERROR');
-});
+  test('stats show correct counts: 1 available, 1 used, 1 expired', async () => {
+    renderPage();
+    // Each stat value is shown in a div
+    const statValues = await screen.findAllByText('1');
+    expect(statValues.length).toBeGreaterThanOrEqual(3);
+  });
 
-/* ── 边界 ── */
+  // ====== 加载态 ======
 
-test('CouponsPage: should handle many coupons', () => {
-  const coupons = Array.from({ length: 200 }, (_, i) => makeCoupon({
-    id: `c${i}`,
-    status: i % 3 === 0 ? 'unused' as const : i % 3 === 1 ? 'used' as const : 'expired' as const,
-  }));
-  assert.equal(coupons.length, 200);
-  const unusedCount = coupons.filter(c => c.status === 'unused').length;
-  const usedCount = coupons.filter(c => c.status === 'used').length;
-  const expiredCount = coupons.filter(c => c.status === 'expired').length;
-  assert.equal(unusedCount + usedCount + expiredCount, 200);
-});
+  test('renders header title even before data loads', () => {
+    mockGetCoupons.mockImplementation(() => new Promise(() => {}));
+    renderPage();
+    expect(screen.getByText('我的优惠券')).toBeInTheDocument();
+  });
 
-test('CouponsPage: should sort coupons by value type', () => {
-  const coupons = [
-    makeCoupon({ id: 'c1', type: 'cash' as const, value: '¥80' }),
-    makeCoupon({ id: 'c2', type: 'discount' as const, value: '8折' }),
-    makeCoupon({ id: 'c3', type: 'voucher' as const, value: '¥50' }),
-  ];
-  // grouping by type
-  const cash = coupons.filter(c => c.type === 'cash');
-  assert.equal(cash.length, 1);
-  assert.equal(cash[0].value, '¥80');
-});
+  // ====== 圈梁五道箍 — 增强测试 ======
 
-test('CouponsPage: should handle all coupons being unused', () => {
-  const coupons = Array.from({ length: 3 }, (_, i) => makeCoupon({ id: `c${i}`, status: 'unused' as const }));
-  assert.equal(coupons.filter(c => c.status === 'unused').length, 3);
-  assert.equal(coupons.filter(c => c.status === 'used').length, 0);
-  assert.equal(coupons.filter(c => c.status === 'expired').length, 0);
-});
+  describe('圈梁五道箍 — 优惠券筛选与状态', () => {
+    test('[圈梁五道箍] 默认显示所有优惠券', async () => {
+      renderPage();
+      await screen.findByText('新客首单8折');
+      expect(screen.getByText('满100减20')).toBeInTheDocument();
+      expect(screen.getByText('夏日饮品券')).toBeInTheDocument();
+    });
 
-test('CouponsPage: should handle all coupons being expired', () => {
-  const coupons = Array.from({ length: 5 }, (_, i) => makeCoupon({ id: `c${i}`, status: 'expired' as const }));
-  assert.equal(coupons.every(c => c.status === 'expired'), true);
-});
+    test('[圈梁五道箍] 未使用优惠券显示立即使用按钮', async () => {
+      renderPage();
+      await screen.findByText('立即使用');
+      expect(screen.getByText('立即使用')).toBeInTheDocument();
+    });
 
-test('CouponsPage: should handle coupon with very long name', () => {
-  const longName = '超级优惠'.repeat(30);
-  const coupon = makeCoupon({ name: longName });
-  assert.equal(coupon.name.length, longName.length);
-  assert.ok(coupon.name.length > 60);
-});
+    test('[圈梁五道箍] 已使用优惠券不显示立即使用按钮', async () => {
+      renderPage();
+      await screen.findByText('新客首单8折');
+      // There should be exactly one "立即使用" button
+      const useBtns = screen.getAllByText('立即使用');
+      expect(useBtns.length).toBe(1);
+    });
 
-test('CouponsPage: coupon service fallback mock data valid check', () => {
-  const mockCoupons = [
-    { id: 'c1', name: '新客首单8折', type: 'discount' as const, value: '8折', status: 'unused' as const, validTo: '2026-07-31' },
-    { id: 'c2', name: '满300减50', type: 'cash' as const, value: '¥50', status: 'unused' as const, validTo: '2026-06-30' },
-    { id: 'c5', name: '端午节礼券', type: 'voucher' as const, value: '¥100', status: 'expired' as const, validTo: '2026-06-15' },
-  ];
-  assert.equal(mockCoupons.length, 3);
-  assert.ok(mockCoupons.every(c => typeof c.id === 'string'));
-  assert.ok(mockCoupons.every(c => COUPON_STATUSES.includes(c.status)));
-  assert.ok(mockCoupons.every(c => COUPON_TYPES.includes(c.type)));
-});
+    test('[圈梁五道箍] 过期优惠券标记为已过期', async () => {
+      renderPage();
+      await screen.findByText('已过期');
+      expect(screen.getByText('已过期')).toBeInTheDocument();
+    });
+  });
 
-test('CouponsPage: claim coupon should return couponId on success', () => {
-  const claimResult = { success: true, data: { couponId: 'coupon_001' } };
-  assert.equal(claimResult.success, true);
-  assert.equal(claimResult.data!.couponId, 'coupon_001');
-});
+  describe('圈梁五道箍 — 优惠券数据展示', () => {
+    test('[圈梁五道箍] 打折券面值为8折', async () => {
+      renderPage();
+      expect(await screen.findByText('8折')).toBeInTheDocument();
+    });
 
-test('CouponsPage: coupon disabled state check for used and expired', () => {
-  const unused = makeCoupon({ status: 'unused' as const });
-  const used = makeCoupon({ status: 'used' as const });
-  const expired = makeCoupon({ status: 'expired' as const });
-  assert.equal(unused.status === 'unused' ? true : false, true);
-  assert.equal(used.status !== 'unused' ? true : false, true);
-  assert.equal(expired.status !== 'unused' ? true : false, true);
-});
+    test('[圈梁五道箍] 代金券面值为¥20', async () => {
+      renderPage();
+      expect(await screen.findByText('¥20')).toBeInTheDocument();
+    });
 
-test('CouponsPage: URL construction with status filter', () => {
-  const baseUrl = '/member-coupons';
-  const params = new URLSearchParams();
-  params.set('status', 'unused');
-  params.set('page', '1');
-  params.set('pageSize', '20');
-  const url = `${baseUrl}?${params}`;
-  assert.ok(url.includes('status=unused'));
-  assert.ok(url.includes('page=1'));
-  assert.ok(url.includes('pageSize=20'));
+    test('[圈梁五道箍] 礼品券面值为¥10', async () => {
+      renderPage();
+      expect(await screen.findByText('¥10')).toBeInTheDocument();
+    });
+
+    test('[圈梁五道箍] 优惠券最短有效期渲染正确', async () => {
+      renderPage();
+      await screen.findByText(/有效期至 2026-06-30/);
+      expect(screen.getByText(/有效期至 2026-06-30/)).toBeInTheDocument();
+    });
+
+    test('[圈梁五道箍] 优惠券最长有效期渲染正确', async () => {
+      renderPage();
+      expect(await screen.findByText(/有效期至 2026-08-31/)).toBeInTheDocument();
+    });
+  });
+
+  describe('圈梁五道箍 — 导航与布局', () => {
+    test('[圈梁五道箍] 页面包含H5Header', async () => {
+      renderPage();
+      const header = await screen.findByTestId('h5-header');
+      expect(header).toHaveAttribute('data-title', '我的优惠券');
+    });
+
+    test('[圈梁五道箍] H5NavBar activeKey为coupons', async () => {
+      renderPage();
+      const nav = await screen.findByTestId('h5-navbar');
+      expect(nav).toHaveAttribute('data-active-key', 'coupons');
+    });
+  });
 });

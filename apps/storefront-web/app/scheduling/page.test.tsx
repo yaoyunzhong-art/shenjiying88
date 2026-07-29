@@ -1,132 +1,278 @@
 /**
- * scheduling/page.test.tsx — 排班管理页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·反例·边界·防御
+ * scheduling/page.vitest.tsx — 排班管理页 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 渲染 · 统计卡片 · 人员统计 · 周摘要 · 排班表 · 概览 · 交互 · 边界
+ * 角色: 👔店长 · 🛒前台主管
  */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>{children}</div>
+  ),
+  StaffShiftSchedulePanel: ({ shifts, availableStaff, onAddShift, onRemoveShift, loading }: {
+    shifts: unknown[]; availableStaff: unknown[]; loading: boolean;
+    onAddShift: (date: string, staffId: string, shiftLabel: string) => Promise<void>;
+    onRemoveShift: (date: string, staffId: string) => Promise<void>;
+  }) => (
+    <div data-testid="staff-shift-panel" data-loading={loading}>
+      <div data-testid="panel-shifts-count">{shifts.length} 天排班</div>
+      <div data-testid="panel-staff-count">{availableStaff.length} 名员工</div>
+      {shifts.map((s: { date: string; dayLabel: string; assignments: unknown[] }) => (
+        <div key={s.date} data-testid={`shift-day-${s.date}`}>
+          <span>{s.date}</span>
+          <span>{s.dayLabel}</span>
+          <button data-testid={`add-shift-${s.date}`} onClick={() => onAddShift(s.date, 's1', '早班 08:00-16:00')}>添加</button>
+        </div>
+      ))}
+      <button data-testid="panel-remove-shift" onClick={() => onRemoveShift('2026-06-29', 's1')}>移除</button>
+    </div>
+  ),
+  StatusBadge: ({ label, variant }: { label: string; variant?: string }) => (
+    <span data-testid="m5-status-badge" data-variant={variant}>{label}</span>
+  ),
+}));
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
+import SchedulingPage from './page';
 
-describe('scheduling — 正例', () => {
-  it('应导出一个默认组件 SchedulingPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function SchedulingPage'), '缺少默认导出');
+describe('SchedulingPage — 排班管理', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应包含 MOCK_SHIFTS 和 MOCK_AVAILABLE_STAFF', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_SHIFTS'), '缺少班次数据');
-    assert.ok(src.includes('MOCK_AVAILABLE_STAFF'), '缺少员工数据');
+  // ====== 渲染测试 ======
+
+  test('render without crashing', () => {
+    expect(() => render(<SchedulingPage />)).not.toThrow();
   });
 
-  it('应包含 ShiftSlot 接口或类型', () => {
-    const src = readSource();
-    assert.ok(src.includes('ShiftSlot') || src.includes('interface'), '缺少类型定义');
+  test('renders PageShell with correct title', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '排班管理');
   });
 
-  it('应包含 availableStaff 数据传递', () => {
-    const src = readSource();
-    assert.ok(src.includes('availableStaff'), '缺少员工传递');
+  test('renders page shell description', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-description', '门店员工排班查看与编辑，支持早中晚班配置');
   });
 
-  it('应包含 staff 名称字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('name'), '缺少 name');
+  test('renders page title 排班管理', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText('📅 排班管理')).toBeInTheDocument();
   });
 
-  it('应包含 shift 时间字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('start') || src.includes('startTime'), '缺少开始时间');
-    assert.ok(src.includes('end') || src.includes('endTime'), '缺少结束时间');
+  test('renders page description with staff count', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/管理门店 6 名员工的排班/)).toBeInTheDocument();
+    expect(screen.getByText(/共 7 天排班计划/)).toBeInTheDocument();
   });
 
-  it('应包含日期 date 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('date'), '缺少 date');
+  // ====== 统计卡片测试 ======
+
+  test('renders all 5 stat cards', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText('总员工')).toBeInTheDocument();
+    expect(screen.getByText('排班天数')).toBeInTheDocument();
+    expect(screen.getByText('本周排班人次')).toBeInTheDocument();
+    const cashierEls = screen.getAllByText('收银员');
+    expect(cashierEls.length).toBeGreaterThanOrEqual(1);
+    const shopperEls = screen.getAllByText('导购员');
+    expect(shopperEls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('Mock 数据中应至少包含 5 个班次', () => {
-    const src = readSource();
-    const matches = src.match(/id:\s*['"]/g);
-    assert.ok(matches && matches.length >= 5, `期望 ≥5, 实际 ${matches?.length ?? 0}`);
-  });
-});
-
-describe('scheduling — 边界', () => {
-  it('班次冲突检测', () => {
-    const src = readSource();
-    assert.ok(src.includes('conflict') || src.includes('Conflict'), '冲突检测');
+  test('total staff count is 6', () => {
+    render(<SchedulingPage />);
+    // The first "6" in the page - total employees
+    expect(screen.getByText('6')).toBeInTheDocument();
   });
 
-  it('staff 为空时不应崩溃', () => {
-    const src = readSource();
-    assert.ok(src.includes('.find(') || src.includes('staffId'), '员工查找');
+  test('scheduling days count is 7', () => {
+    render(<SchedulingPage />);
+    expect(screen.getAllByText('7').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('空排班表应正确处理', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_SHIFTS'), '排班数据');
+  test('cashier count is displayed', () => {
+    render(<SchedulingPage />);
+    const cashierEls = screen.getAllByText('收银员');
+    expect(cashierEls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('应使用 assignments 字段存储分配信息', () => {
-    const src = readSource();
-    assert.ok(src.includes('assignments'), '缺少 assignments 字段');
+  test('shopper count is displayed', () => {
+    render(<SchedulingPage />);
+    const shopperEls = screen.getAllByText('导购员');
+    expect(shopperEls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('应包含日期标签 dayLabel', () => {
-    const src = readSource();
-    assert.ok(src.includes('dayLabel'), '缺少 dayLabel');
-  });
-});
+  // ====== 人员统计测试 ======
 
-describe('scheduling — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+  test('renders staff stats panel', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/人员统计:/)).toBeInTheDocument();
   });
 
-  it('应包含 useState 状态管理', () => {
-    const src = readSource();
-    assert.ok(src.includes('useState'), '缺少 useState');
+  test('staff stats panel shows role breakdown', () => {
+    render(<SchedulingPage />);
+    const cashierEls = screen.getAllByText(/收银员/);
+    expect(cashierEls.length).toBeGreaterThanOrEqual(1);
+    const shopperEls = screen.getAllByText(/导购员/);
+    expect(shopperEls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('排班渲染应有 generateMockShifts 数据生成', () => {
-    const src = readSource();
-    assert.ok(src.includes('generateMockShifts'), '缺少数据生成函数');
+  test('staff stats panel shows total count', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/共 6 人/)).toBeInTheDocument();
   });
 
-  it('不应包含危险的 innerHTML', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
+  // ====== 周排班摘要测试 ======
+
+  test('renders weekly summary section', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/排班周期:/)).toBeInTheDocument();
+    expect(screen.getByText(/总排班人次:/)).toBeInTheDocument();
+    expect(screen.getByText(/日均排班:/)).toBeInTheDocument();
+    expect(screen.getByText(/最忙:/)).toBeInTheDocument();
   });
 
-  it('不应包含硬编码 token/密钥', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key|token|authorization)/i);
-  });
-});
-
-describe('scheduling — 反例', () => {
-  it('不应使用 any 类型', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /:\s*any\b/);
+  test('weekly summary shows scheduling period', () => {
+    render(<SchedulingPage />);
+    const dateEls = screen.getAllByText(/2026-0[6-7]-/);
+    expect(dateEls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('不应包含 console.log', () => {
-    const src = readSource();
-    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), '裸 console.log');
+  test('weekly summary shows avg per day', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/人\/天/)).toBeInTheDocument();
   });
 
-  it('Mock 数据中每个班次应有 startTime 和 endTime', () => {
-    const src = readSource();
-    assert.ok(src.includes('startTime') && src.includes('endTime'), '缺少时间字段');
+  // ====== Tab 切换测试 ======
+
+  test('default tab is schedule', () => {
+    render(<SchedulingPage />);
+    const scheduleTab = screen.getByText('📋 排班表');
+    expect(scheduleTab).toBeInTheDocument();
+    expect(scheduleTab.closest('button')).toHaveStyle('fontWeight: 700');
+  });
+
+  test('renders overview tab button', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText('📊 概览')).toBeInTheDocument();
+  });
+
+  test('clicking overview tab switches view', () => {
+    render(<SchedulingPage />);
+    fireEvent.click(screen.getByText('📊 概览'));
+    expect(screen.getByText('📊 概览').closest('button')).toHaveStyle('fontWeight: 700');
+  });
+
+  // ====== 排班面板测试 ======
+
+  test('renders StaffShiftSchedulePanel when schedule tab active', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByTestId('staff-shift-panel')).toBeInTheDocument();
+  });
+
+  test('shift panel shows 7 days', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText('7 天排班')).toBeInTheDocument();
+  });
+
+  test('shift panel shows 6 staff members', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText('6 名员工')).toBeInTheDocument();
+  });
+
+  test('each day has an add shift button', () => {
+    render(<SchedulingPage />);
+    const addBtns = screen.getAllByText('添加');
+    expect(addBtns.length).toBe(7);
+  });
+
+  test('has remove shift button', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByTestId('panel-remove-shift')).toBeInTheDocument();
+  });
+
+  // ====== 概览视图测试 ======
+
+  test('overview tab shows table headers', () => {
+    render(<SchedulingPage />);
+    fireEvent.click(screen.getByText('📊 概览'));
+    expect(screen.getByText('日期')).toBeInTheDocument();
+    expect(screen.getByText('星期')).toBeInTheDocument();
+    expect(screen.getByText('排班人数')).toBeInTheDocument();
+    expect(screen.getByText('值班人员')).toBeInTheDocument();
+  });
+
+  test('overview tab shows all 7 days', () => {
+    render(<SchedulingPage />);
+    fireEvent.click(screen.getByText('📊 概览'));
+    // Days should be visible with date strings
+    const dayElements = screen.getAllByText(/2026-0[6-7]-/);
+    expect(dayElements.length).toBeGreaterThanOrEqual(7);
+  });
+
+  test('overview tab shows table content', () => {
+    render(<SchedulingPage />);
+    fireEvent.click(screen.getByText('📊 概览'));
+    expect(screen.getByText('日期')).toBeInTheDocument();
+    expect(screen.getByText('星期')).toBeInTheDocument();
+    expect(screen.getByText('排班人数')).toBeInTheDocument();
+    expect(screen.getByText('值班人员')).toBeInTheDocument();
+  });
+
+  test('overview tab shows weekday labels', () => {
+    render(<SchedulingPage />);
+    fireEvent.click(screen.getByText('📊 概览'));
+    expect(screen.getByText('周一')).toBeInTheDocument();
+    expect(screen.getByText('周日')).toBeInTheDocument();
+  });
+
+  // ====== 操作说明测试 ======
+
+  test('renders operation instructions', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/操作说明:/)).toBeInTheDocument();
+  });
+
+  test('instructions mention shift conflict detection', () => {
+    render(<SchedulingPage />);
+    expect(screen.getByText(/排班冲突/)).toBeInTheDocument();
+  });
+
+  // ====== 边界测试 ======
+
+  test('export default is a function', () => {
+    expect(typeof SchedulingPage).toBe('function');
+  });
+
+  test('page does not show error initially', () => {
+    render(<SchedulingPage />);
+    expect(screen.queryByText(/⚠️/)).not.toBeInTheDocument();
+  });
+
+  test('panel not in loading state after render', () => {
+    render(<SchedulingPage />);
+    const panel = screen.getByTestId('staff-shift-panel');
+    expect(panel).toHaveAttribute('data-loading', 'false');
+  });
+
+  test('add shift triggers callback', async () => {
+    render(<SchedulingPage />);
+    const addBtn = screen.getAllByText('添加')[0];
+    fireEvent.click(addBtn);
+    // Panel should handle it without error
+    await waitFor(() => {
+      // No crash means success
+      expect(screen.getByTestId('staff-shift-panel')).toBeInTheDocument();
+    });
+  });
+
+  test('remove shift triggers callback', async () => {
+    render(<SchedulingPage />);
+    fireEvent.click(screen.getByTestId('panel-remove-shift'));
+    await waitFor(() => {
+      expect(screen.getByTestId('staff-shift-panel')).toBeInTheDocument();
+    });
   });
 });

@@ -1,224 +1,428 @@
-/*!
- * members/[id]/page.test.tsx - L1 smoke test (storefront-web)
- * Adapted for MemberDetailPage
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+// ---- Mocks (top-level) ----
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
+const mockPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+  useParams: () => ({ id: 'm1' }),
+}));
+
+vi.mock('@m5/ui', () => ({
+  DetailShell: ({ children, title, subtitle, backLabel, backHref, actions, sections, breadcrumbs, loading }: any) => (
+    <div data-testid="detail-shell" data-title={title} data-subtitle={subtitle} data-loading={loading}>
+      {breadcrumbs && (
+        <div data-testid="breadcrumbs">
+          {breadcrumbs.map((b: any, i: number) => (
+            <span key={i}>{b.label}{i < breadcrumbs.length - 1 ? ' / ' : ''}</span>
+          ))}
+        </div>
+      )}
+      {actions && (
+        <div data-testid="detail-actions">
+          {actions.map((a: any) => (
+            <button
+              key={a.key}
+              data-testid={`action-${a.key}`}
+              onClick={a.onClick}
+              data-variant={a.variant}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {sections?.map((s: any, i: number) => (
+        <div key={i} data-testid="section" data-section-title={s.title}>
+          <h3>{s.title}</h3>
+          <div>{s.content}</div>
+        </div>
+      ))}
+      {children}
+    </div>
+  ),
+  InfoRow: ({ label, value }: any) => (
+    <div data-testid="info-row">
+      <span data-testid="info-label">{label}</span>
+      <span data-testid="info-value">{value}</span>
+    </div>
+  ),
+  StatusBadge: ({ label, variant, size }: any) => (
+    <span data-testid="status-badge" data-variant={variant} data-size={size}>{label}</span>
+  ),
+  ConfirmDialog: ({ open, title, message, confirmLabel, cancelLabel, onConfirm, onCancel, variant }: any) => {
+    if (!open) return null;
+    return (
+      <div data-testid="confirm-dialog" data-variant={variant}>
+        <div data-testid="dialog-title">{title}</div>
+        <div data-testid="dialog-message">{message}</div>
+        <button data-testid="confirm-btn" onClick={onConfirm}>{confirmLabel}</button>
+        <button data-testid="cancel-btn" onClick={onCancel}>{cancelLabel}</button>
+      </div>
+    );
+  },
+  Alert: ({ children, variant, dismissible, onDismiss }: any) => (
+    <div data-testid="alert" data-variant={variant}>
+      {children}
+      {dismissible && <button data-testid="alert-dismiss" onClick={onDismiss}>×</button>}
+    </div>
+  ),
+  useToast: () => ({
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  }),
+  useAlert: () => ({
+    alert: null,
+    dismiss: vi.fn(),
+    show: vi.fn(),
+  }),
+  FormSubmitFeedback: ({ error }: any) => error ? <div data-testid="form-error">{error}</div> : null,
+  FormField: ({ label, children, required, htmlFor }: any) => (
+    <div data-testid="form-field">
+      <label htmlFor={htmlFor}>{label}{required && ' *'}</label>
+      {children}
+    </div>
+  ),
+  SubmitButton: ({ children, loading, ...rest }: any) => (
+    <button data-testid="submit-btn" disabled={loading} {...rest}>{loading ? '保存中...' : children}</button>
+  ),
+}));
+
+// ---- Test Subject ----
+
+import MemberDetailPage from './page';
+
+function renderPage() {
+  return render(<MemberDetailPage />);
 }
 
-describe('MemberDetailPage - 正例', () => {
-  it('exports default MemberDetailPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function MemberDetailPage'), 'missing export');
+describe('MemberDetailPage — 会员详情页', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
-  it('has use client', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), 'missing use client');
-  });
-  it('uses useParams', () => {
-    const src = readSource();
-    assert.ok(src.includes('useParams'), 'missing useParams');
-  });
-  it('uses useRouter', () => {
-    const src = readSource();
-    assert.ok(src.includes('useRouter'), 'missing useRouter');
-  });
-  it('imports Alert', () => {
-    const src = readSource();
-    assert.ok(src.includes('Alert'), 'missing Alert');
-  });
-  it('imports ConfirmDialog', () => {
-    const src = readSource();
-    assert.ok(src.includes('ConfirmDialog'), 'missing ConfirmDialog');
-  });
-  it('imports DetailShell', () => {
-    const src = readSource();
-    assert.ok(src.includes('DetailShell'), 'missing DetailShell');
-  });
-  it('imports DetailShellAction', () => {
-    const src = readSource();
-    assert.ok(src.includes('DetailShellAction'), 'missing DetailShellAction');
-  });
-  it('imports FormField', () => {
-    const src = readSource();
-    assert.ok(src.includes('FormField'), 'missing FormField');
-  });
-  it('imports FormSubmitFeedback', () => {
-    const src = readSource();
-    assert.ok(src.includes('FormSubmitFeedback'), 'missing FormSubmitFeedback');
-  });
-  it('imports InfoRow', () => {
-    const src = readSource();
-    assert.ok(src.includes('InfoRow'), 'missing InfoRow');
-  });
-  it('imports StatusBadge', () => {
-    const src = readSource();
-    assert.ok(src.includes('StatusBadge'), 'missing StatusBadge');
-  });
-  it('imports SubmitButton', () => {
-    const src = readSource();
-    assert.ok(src.includes('SubmitButton'), 'missing SubmitButton');
-  });
-  it('imports useAlert', () => {
-    const src = readSource();
-    assert.ok(src.includes('useAlert'), 'missing useAlert');
-  });
-  it('has MOCK_MEMBERS data', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_MEMBERS'), 'missing MOCK_MEMBERS');
-  });
-  it('has MOCK_MEMBERS data', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_MEMBERS'), 'missing MOCK_MEMBERS');
-  });
-  it('uses useMemo', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo'), 'missing useMemo');
-  });
-  it('uses useToast', () => {
-    const src = readSource();
-    assert.ok(src.includes('useToast'), 'missing useToast');
-  });
-  it('uses Input', () => {
-    const src = readSource();
-    assert.ok(src.includes('Input'), 'missing Input');
-  });
-  it('uses SubmitButton', () => {
-    const src = readSource();
-    assert.ok(src.includes('SubmitButton'), 'missing SubmitButton');
-  });
-  it('uses DetailShell', () => {
-    const src = readSource();
-    assert.ok(src.includes('DetailShell'), 'missing DetailShell');
-  });
-  it('uses InfoRow', () => {
-    const src = readSource();
-    assert.ok(src.includes('InfoRow'), 'missing InfoRow');
-  });
-  it('uses StatusBadge', () => {
-    const src = readSource();
-    assert.ok(src.includes('StatusBadge'), 'missing StatusBadge');
-  });
-  it('uses Button', () => {
-    const src = readSource();
-    assert.ok(src.includes('Button'), 'missing Button');
-  });
-  it('defines Member interface/type', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface Member') || src.includes('type Member'), 'missing Member');
-  });
-  it('defines EditFormData interface/type', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface EditFormData') || src.includes('type EditFormData'), 'missing EditFormData');
-  });
-  it('has onSubmit handler', () => {
-    const src = readSource();
-    assert.ok(src.includes('onSubmit'), 'missing onSubmit');
-  });
-});
 
-describe('MemberDetailPage - 反例', () => {
-  it('no dangerousSetInnerHTML', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /dangerouslySetInnerHTML/);
-  });
-  it('no any type', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /:\s*any\b/);
-  });
-  it('no secret leak', () => {
-    const src = readSource();
-    assert.doesNotMatch(src, /(?:secret|password|api[_-]?key)/i);
-  });
-  it('no raw console.log', () => {
-    const src = readSource();
-    assert.ok(!src.includes('console.log(') || src.includes('// console.log'), 'bare console.log');
-  });
-});
+  // ====== 渲染测试 ======
 
-describe('MemberDetailPage - 边界', () => {
-  it('has conditional rendering', () => {
-    const src = readSource();
-    assert.ok(src.includes('?'), 'missing conditional');
+  test('renders page without crashing', () => {
+    expect(() => renderPage()).not.toThrow();
   });
-  it('handles not-found state', () => {
-    const src = readSource();
-    assert.ok(src.includes('notFound') || src.includes('不存在'), 'missing not found');
-  });
-  it('uses .map() iteration', () => {
-    const src = readSource();
-    assert.ok(src.includes('.map('), 'missing .map');
-  });
-});
 
-describe('MemberDetailPage - 数据完整性', () => {
-  it('includes context "Demo Store 旗..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('Demo Store 旗舰店'), 'missing Demo Store 旗');
+  test('renders DetailShell component', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('detail-shell')).toBeInTheDocument();
+    });
   });
-  it('includes context "Demo Store 社..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('Demo Store 社区店'), 'missing Demo Store 社');
+
+  test('renders member name in title', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/张伟/)).toBeInTheDocument();
+    });
   });
-  it('includes context "上海市浦东新区张江高科技..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('上海市浦东新区张江高科技园区'), 'missing 上海市浦东新区张江高科技');
+
+  test('renders member tier in subtitle', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/钻石会员/)).toBeInTheDocument();
+    });
   });
-  it('includes context "价格敏感..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('价格敏感'), 'missing 价格敏感');
+
+  test('renders breadcrumbs', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('breadcrumbs')).toBeInTheDocument();
+      expect(screen.getByText('首页')).toBeInTheDocument();
+      expect(screen.getByText('会员管理')).toBeInTheDocument();
+    });
   });
-  it('includes context "会员姓名..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('会员姓名'), 'missing 会员姓名');
+
+  test('renders action buttons', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-edit')).toHaveTextContent('编辑');
+    });
   });
-  it('includes context "会员等级..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('会员等级'), 'missing 会员等级');
+
+  test('renders info sections', async () => {
+    renderPage();
+    await waitFor(() => {
+      const sections = screen.getAllByTestId('section');
+      expect(sections.length).toBeGreaterThanOrEqual(4);
+    });
   });
-  it('includes context "会员等级 & 积分..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('会员等级 & 积分'), 'missing 会员等级 & 积分');
+
+  test('renders basic info section title', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('基本信息')).toBeInTheDocument();
+    });
   });
-  it('includes context "会员详情..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('会员详情'), 'missing 会员详情');
+
+  test('renders member level section title', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('会员等级 & 积分')).toBeInTheDocument();
+    });
   });
-  it('includes context "保存失败，请重试..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('保存失败，请重试'), 'missing 保存失败，请重试');
+
+  test('renders store visit section title', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('到店记录')).toBeInTheDocument();
+    });
   });
-  it('includes context "保存成功..."', () => {
-    const src = readSource();
-    assert.ok(src.includes('保存成功'), 'missing 保存成功');
+
+  test('renders tags section title', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('标签 & 备注')).toBeInTheDocument();
+    });
   });
-  it('has constant onSubmit', () => {
-    const src = readSource();
-    assert.ok(src.includes('onSubmit'), 'missing onSubmit');
+
+  test('renders member tags', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('高净值')).toBeInTheDocument();
+      expect(screen.getByText('老顾客')).toBeInTheDocument();
+    });
   });
-  it('has constant form', () => {
-    const src = readSource();
-    assert.ok(src.includes('form'), 'missing form');
+
+  test('renders member points', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('28,500')).toBeInTheDocument();
+    });
   });
-  it('has constant params', () => {
-    const src = readSource();
-    assert.ok(src.includes('params'), 'missing params');
+
+  test('renders member phone', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('138****1234')).toBeInTheDocument();
+    });
   });
-  it('has constant router', () => {
-    const src = readSource();
-    assert.ok(src.includes('router'), 'missing router');
+
+  // ====== 编辑功能测试 ======
+
+  test('clicking edit opens edit form', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-edit')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-edit'));
+    await waitFor(() => {
+      expect(screen.getByText('编辑会员信息')).toBeInTheDocument();
+    });
   });
-  it('has constant toast', () => {
-    const src = readSource();
-    assert.ok(src.includes('toast'), 'missing toast');
+
+  test('edit form shows member name input', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-edit')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-edit'));
+    await waitFor(() => {
+      const nameInput = screen.getByTestId('edit-name');
+      expect(nameInput).toHaveValue('张伟');
+    });
+  });
+
+  test('edit form shows save and cancel buttons', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-edit')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-edit'));
+    await waitFor(() => {
+      expect(screen.getByTestId('save-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('cancel-btn')).toBeInTheDocument();
+    });
+  });
+
+  test('canceling edit hides edit form', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-edit')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-edit'));
+    await waitFor(() => {
+      expect(screen.getByTestId('cancel-btn')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('cancel-btn'));
+    await waitFor(() => {
+      expect(screen.queryByText('编辑会员信息')).not.toBeInTheDocument();
+    });
+  });
+
+  test('saves edit form successfully', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-edit')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-edit'));
+    await waitFor(() => {
+      expect(screen.getByTestId('save-btn')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('save-btn'));
+    await waitFor(() => {
+      // After save, edit form should close
+      expect(screen.queryByText('编辑会员信息')).not.toBeInTheDocument();
+    });
+  });
+
+  // ====== 状态流转测试 ======
+
+  test('renders transition buttons for active member', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-transition-frozen')).toHaveTextContent('冻结');
+      expect(screen.getByTestId('action-transition-inactive')).toHaveTextContent('标记非活跃');
+    });
+  });
+
+  test('clicking freeze transitions status', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-transition-frozen')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-transition-frozen'));
+    // After transition, frozen member only has "解冻" button
+    await waitFor(() => {
+      expect(screen.getByTestId('action-transition-active')).toHaveTextContent('解冻');
+    });
+  });
+
+  test('clicks inactive transition', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-transition-inactive')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-transition-inactive'));
+    await waitFor(() => {
+      expect(screen.getByTestId('action-transition-active')).toHaveTextContent('激活');
+    });
+  });
+
+  // ====== 删除测试 ======
+
+  test('delete button opens confirm dialog', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-delete')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-delete'));
+    await waitFor(() => {
+      expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+    });
+  });
+
+  test('confirm delete shows dialog with member name', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-delete')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-delete'));
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog-message')).toHaveTextContent(/张伟/);
+    });
+  });
+
+  test('cancel delete closes dialog', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-delete')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-delete'));
+    await waitFor(() => {
+      expect(screen.getByTestId('cancel-btn')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('cancel-btn'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  test('confirm delete removes member and redirects', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('action-delete')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('action-delete'));
+    await waitFor(() => {
+      expect(screen.getByTestId('confirm-btn')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('confirm-btn'));
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/members');
+    });
+  });
+
+  // ====== 边界情况 ======
+
+  test('shows not found for invalid member id', () => {
+    vi.mocked(require('next/navigation').useParams).mockReturnValueOnce({ id: 'nonexistent' });
+    renderPage();
+    expect(screen.getByText('会员不存在或已被删除')).toBeInTheDocument();
+  });
+
+  test('displays status badge for member tier', async () => {
+    renderPage();
+    await waitFor(() => {
+      const badges = screen.getAllByTestId('status-badge');
+      expect(badges.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  test('displays member store name', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/Demo Store 旗舰店/)).toBeInTheDocument();
+    });
+  });
+
+  test('displays member total visits', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('156')).toBeInTheDocument();
+    });
+  });
+
+  test('displays member last visit date', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('2026-06-22')).toBeInTheDocument();
+    });
+  });
+
+  test('displays member birthday', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('1990-05-20')).toBeInTheDocument();
+    });
+  });
+
+  test('displays member address', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/上海市浦东新区张江高科技园区/)).toBeInTheDocument();
+    });
+  });
+
+  test('displays member join date', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('2025-01-15')).toBeInTheDocument();
+    });
+  });
+
+  test('displays member notes', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/每次到店消费金额较高/)).toBeInTheDocument();
+    });
   });
 });

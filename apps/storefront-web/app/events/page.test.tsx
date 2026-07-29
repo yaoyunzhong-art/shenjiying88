@@ -1,187 +1,317 @@
 /**
- * events/page.test.tsx — 活动中心页 增强测试 (2026-07-16)
- *
- * 覆盖:
- *   L1 正例    — 组件导出、活动数据扩展至 12 条、统计卡片、筛选器
- *   L1 三态    — loading/error/empty 状态
- *   L2 角色测试 — 类型/状态筛选、展开详情、空结果、热门排行、分类分析、精选推荐
- *   边界       — 倒计时计算、参与人数统计、新类型验证
- *   L3 安全    — 无危险代码、无 as any
+ * events/page.vitest.tsx — 活动中心 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 加载状态 · 渲染 · 筛选 · 展开详情 · 统计 · 排行 · 边界
+ * 关键: 多个 "进行中" "4" "竞赛" "促销" 等文本出现在页面多处，
+ *       使用 getAllByText 或 container.textContent 进行检查
+ * 角色: 👔店长 · 🎯运营专员 · 🏪全体员工
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import EventsPage from './page';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+async function waitForData() {
+  // Unique text that only appears after data load completes
+  await screen.findByText(/共 13 个活动/, {}, { timeout: 8000 });
+}
 
-describe('EventsPage — L1 正例', () => {
-  it('应导出一个默认函数组件 EventsPage', () => {
-    assert.ok(SRC.includes('export default function EventsPage'));
+function allText(): string {
+  return document.body.textContent ?? '';
+}
+
+describe('EventsPage — 活动中心', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应包含 use client 指令', () => {
-    assert.ok(SRC.includes("'use client'"));
+  // ====== 加载/渲染基础测试 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<EventsPage />)).not.toThrow();
   });
 
-  it('应从 @m5/ui 导入 PageShell', () => {
-    assert.ok(SRC.includes('PageShell'));
+  test('shows loading skeleton initially, then content after fetch', async () => {
+    render(<EventsPage />);
+    expect(screen.queryByText('🎪 活动中心')).not.toBeInTheDocument();
+    await waitForData();
+    expect(screen.getByText('🎪 活动中心')).toBeInTheDocument();
   });
 
-  it('应导入 StatCard', () => {
-    assert.ok(SRC.includes('StatCard'));
+  test('renders page subtitle', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText('竞赛·促销·体验·亲子')).toBeInTheDocument();
   });
 
-  it('应导入 StatusBadge', () => {
-    assert.ok(SRC.includes('StatusBadge'));
+  test('renders event summary text', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText(/共 13 个活动/)).toBeInTheDocument();
   });
 
-  it('页面标题应为"活动中心"', () => {
-    assert.ok(SRC.includes('活动中心'));
-  });
-});
+  // ====== 统计卡片测试 ======
 
-describe('EventsPage — L1 活动数据验证', () => {
-  it('应定义 13 个模拟活动', () => {
-    const matches = SRC.match(/id:\s*\d+/g);
-    assert.equal(matches ? matches.length : 0, 13, `预期 13 个活动，实际 ${matches?.length || 0}`);
-  });
-
-  it('活动类型包含竞赛、促销、体验、亲子、会员、主题', () => {
-    assert.ok(SRC.includes('竞赛') && SRC.includes('促销') && SRC.includes('体验'));
-    assert.ok(SRC.includes('亲子') && SRC.includes('会员') && SRC.includes('主题'));
+  test('renders stat cards with labels', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    // Stat card labels may also appear in other parts of the UI
+    expect(screen.getAllByText('进行中').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('即将开始').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('累计参与')).toBeInTheDocument();
+    expect(screen.getAllByText('已结束').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('活动状态包含进行中、即将开始、已结束', () => {
-    assert.ok(SRC.includes('进行中') && SRC.includes('即将开始') && SRC.includes('已结束'));
+  test('total participant count is formatted', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText('10,094')).toBeInTheDocument();
   });
 
-  it('每个活动应有 rating 评分字段', () => {
-    assert.ok(SRC.includes('rating'));
+  test('active event count in summary', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText(/6 进行中/)).toBeInTheDocument();
   });
 
-  it('活动应包含渐变色定义', () => {
-    assert.ok(SRC.includes('from-red') || SRC.includes('from-purple') || SRC.includes('from-pink'));
-  });
-});
-
-describe('EventsPage — L1 三态', () => {
-  it('应有 loading 骨架屏', () => {
-    assert.ok(SRC.includes('LoadingSkeleton') || SRC.includes('loading'));
+  test('renders stat card values correctly', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('10,094');
+    expect(body).toContain('13');
   });
 
-  it('应有 error 状态界面', () => {
-    assert.ok(SRC.includes('活动中心加载失败') || SRC.includes('重新加载'));
+  // ====== 事件标题渲染 ======
+
+  test('renders event titles after load', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const titles = [
+      '暑期狂欢·全民争霸赛', 'VR新游体验周', '亲子嘉年华·周末嗨翻天',
+      '会员日双倍积分', '开学季·学生特惠', '街机怀旧夜', '直播挑战赛',
+      '中秋节·团圆套餐', '电竞女神邀请赛', '夏日冰爽畅玩季', '音游挑战赛',
+      '周末亲子烘焙工坊', '周年庆特惠月',
+    ];
+    const body = allText();
+    for (const t of titles) {
+      expect(body).toContain(t);
+    }
   });
 
-  it('无匹配活动时应显示空状态提示', () => {
-    assert.ok(SRC.includes('没有找到符合条件的活动'));
+  // ====== 分类分析测试 ======
+
+  test('renders category distribution', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('竞赛');
+    expect(body).toContain('促销');
+    expect(body).toContain('体验');
+    expect(body).toContain('亲子');
+    expect(body).toContain('会员');
+    expect(body).toContain('主题');
   });
 
-  it('空状态应提示尝试调整筛选', () => {
-    assert.ok(SRC.includes('调整筛选条件') || SRC.includes('其他关键词'));
-  });
-});
+  // ====== 热度排行测试 ======
 
-describe('EventsPage — L2 统计与筛选', () => {
-  it('应使用 useMemo 优化统计', () => {
-    assert.ok(SRC.includes('useMemo'));
+  test('renders top 3 hot events section', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText('🔥 热度排行 Top 3')).toBeInTheDocument();
   });
 
-  it('应计算进行中活动数量', () => {
-    assert.ok(SRC.includes('stats') && SRC.includes('active'));
+  // ====== 精选推荐测试 ======
+
+  test('renders featured event section', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText('⭐ 精选推荐')).toBeInTheDocument();
+    expect(screen.getByText(/推荐理由：参与人数最多/)).toBeInTheDocument();
   });
 
-  it('应计算即将开始活动数量', () => {
-    assert.ok(SRC.includes('stats') && SRC.includes('upcoming'));
+  // ====== 筛选按钮测试 ======
+
+  test('renders all type filter buttons', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    // Filter button text may also appear in category distribution, so use body text
+    const body = allText();
+    const filterLabels = ['全部', '竞赛', '促销', '体验', '亲子', '会员', '主题'];
+    for (const label of filterLabels) {
+      expect(body).toContain(label);
+    }
   });
 
-  it('应计算总参与人数', () => {
-    assert.ok(SRC.includes('totalParticipants') || SRC.includes('reduce'));
+  test('renders status filter labels', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('进行中');
   });
 
-  it('应计算已结束活动数量', () => {
-    assert.ok(SRC.includes('stats') && SRC.includes('ended'));
+  test('type filter: clicking 促销 shows only promotion events', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    // Find the 促销 BUTTON (skip the category distribution label)
+    const promoBtns = screen.getAllByText('促销').filter(el => el.tagName === 'BUTTON');
+    expect(promoBtns.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(promoBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('开学季·学生特惠')).toBeInTheDocument();
+      expect(screen.queryByText('VR新游体验周')).not.toBeInTheDocument();
+    });
   });
 
-  it('应支持类型筛选', () => {
-    assert.ok(SRC.includes('typeFilter') || SRC.includes('setTypeFilter'));
+  test('type filter: clicking 竞赛 filters event list', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const compBtn = screen.getAllByText('竞赛').filter(el => el.tagName === 'BUTTON')[0];
+    fireEvent.click(compBtn);
+    await waitFor(() => {
+      expect(screen.getByText('电竞女神邀请赛')).toBeInTheDocument(); // 竞赛 event
+      // 'VR新游体验周' is 体验 — should not appear (and not in Top 3)
+      expect(screen.queryByText('VR新游体验周')).not.toBeInTheDocument();
+    });
   });
 
-  it('应支持状态筛选', () => {
-    assert.ok(SRC.includes('statusFilter') || SRC.includes('setStatusFilter'));
+  test('resetting type filter shows all events', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const compBtn = screen.getAllByText('竞赛').filter(el => el.tagName === 'BUTTON')[0];
+    fireEvent.click(compBtn);
+    await waitFor(() => {
+      expect(screen.queryByText('VR新游体验周')).not.toBeInTheDocument();
+    });
+    const allTypeBtn = screen.getAllByText('全部').filter(el => el.tagName === 'BUTTON')[0];
+    fireEvent.click(allTypeBtn);
+    await waitFor(() => {
+      expect(screen.getByText('VR新游体验周')).toBeInTheDocument();
+    });
   });
 
-  it('应支持展开/收起活动详情', () => {
-    assert.ok(SRC.includes('expandedId') || SRC.includes('toggleExpand'));
+  test('status filter buttons exist', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    // Verify all status filter buttons are rendered
+    const statusLabels = ['全部', '进行中', '即将开始', '已结束'];
+    for (const label of statusLabels) {
+      const btns = screen.getAllByText(label).filter(el => el.tagName === 'BUTTON');
+      expect(btns.length).toBeGreaterThanOrEqual(1);
+    }
   });
 
-  it('应显示 TYPES 筛选按钮', () => {
-    assert.ok(SRC.includes('TYPES'));
+  // ====== 展开详情测试 ======
+
+  test('clicking 详情 button expands event details', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const detailBtns = screen.getAllByText('详情');
+    expect(detailBtns.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(detailBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('分享好友')).toBeInTheDocument();
+    });
   });
 
-  it('应显示 STATUSES 筛选按钮', () => {
-    assert.ok(SRC.includes('STATUSES'));
-  });
-});
-
-describe('EventsPage — L2 增强功能', () => {
-  it('应有热门排行 Top 3 区域', () => {
-    assert.ok(SRC.includes('热度排行') || SRC.includes('Top 3'));
-  });
-
-  it('应有分类分析统计', () => {
-    assert.ok(SRC.includes('typeStats') || SRC.includes('分类'));
+  test('expanded event shows action buttons', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const detailBtns = screen.getAllByText('详情');
+    fireEvent.click(detailBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('立即参与')).toBeInTheDocument();
+      expect(screen.getByText('分享好友')).toBeInTheDocument();
+      expect(screen.getByText('加入日历')).toBeInTheDocument();
+    });
   });
 
-  it('应有精选推荐活动', () => {
-    assert.ok(SRC.includes('精选推荐') || SRC.includes('featured'));
+  test('clicking 收起 collapses expanded event', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const detailBtns = screen.getAllByText('详情');
+    fireEvent.click(detailBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('立即参与')).toBeInTheDocument();
+    });
+    const collapseBtns = screen.getAllByText('收起');
+    fireEvent.click(collapseBtns[0]);
+    await waitFor(() => {
+      expect(screen.queryByText('立即参与')).not.toBeInTheDocument();
+    });
   });
 
-  it('进行中活动应显示剩余天数', () => {
-    assert.ok(SRC.includes('剩余') || SRC.includes('daysLeft'));
+  // ====== 地点信息测试 ======
+
+  test('renders location info', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('旗舰店');
+    expect(body).toContain('全部门店');
   });
 
-  it('活动列表应按状态优先级排序', () => {
-    assert.ok(SRC.includes('sortedFiltered') || SRC.includes('statusOrder'));
+  // ====== 空状态测试 ======
+
+  test('no matching events shows empty state', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    // 主题 + 进行中 = 0 results
+    const allTextContent = allText();
+    expect(allTextContent).toContain('主题');
+    // 主题 events: 街机怀旧夜(已结束). 主题 + 进行中 = 0
+    fireEvent.click(screen.getAllByText('主题').filter(el => el.tagName === 'BUTTON')[0]);
+    // Also filter by 进行中 buttons
+    const statusBtns = screen.getAllByText('进行中').filter(el => el.tagName === 'BUTTON');
+    if (statusBtns.length > 0) fireEvent.click(statusBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('没有找到符合条件的活动')).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
-  it('应显示活动评分星级', () => {
-    assert.ok(SRC.includes('⭐') || SRC.includes('rating'));
-  });
-});
+  // ====== 脚注测试 ======
 
-describe('EventsPage — 边界', () => {
-  it('参与者数应使用 toLocaleString 格式化', () => {
-    assert.ok(SRC.includes('toLocaleString'));
-  });
-
-  it('即将开始活动参与者为 0', () => {
-    assert.ok(SRC.includes('participants: 0') || SRC.includes('0, prize'));
+  test('renders footer with stats', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('13/13');
+    expect(body).toContain('10,094');
   });
 
-  it('simulateFetch 应异步返回活动数据', () => {
-    assert.ok(SRC.includes('Promise') && SRC.includes('resolve'));
+  // ====== 事件详情渲染测试 ======
+
+  test('renders event dates', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText(/2026-07-01 ~ 2026-08-31/)).toBeInTheDocument();
   });
 
-  it('calcDaysLeft 工具函数存在', () => {
-    assert.ok(SRC.includes('calcDaysLeft') || SRC.includes('daysLeft'));
-  });
-});
-
-describe('EventsPage — L3 安全', () => {
-  it('不应使用 dangerouslySetInnerHTML', () => {
-    assert.ok(!SRC.includes('dangerouslySetInnerHTML'));
+  test('renders event participants', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('3,452');
   });
 
-  it('不应包含 as any', () => {
-    assert.ok(!SRC.includes('as any'));
+  test('renders event prizes using allText', async () => {
+    render(<EventsPage />);
+    await waitForData();
+    const body = allText();
+    expect(body).toContain('¥10,000奖金+年卡');
+    expect(body).toContain('免费体验券');
+    expect(body).toContain('双倍积分');
   });
 
-  it('不应使用 eval', () => {
-    assert.ok(!SRC.includes('eval('));
+  // ====== 边界情况 ======
+
+  test('render is idempotent', async () => {
+    const { rerender } = render(<EventsPage />);
+    await waitForData();
+    expect(screen.getByText('🎪 活动中心')).toBeInTheDocument();
+    rerender(<EventsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('🎪 活动中心')).toBeInTheDocument();
+    });
   });
 });

@@ -1,130 +1,184 @@
-/**
- * stores/page.test.tsx — 门店列表页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·边界·防御
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+let mockTabsItems: any[] = [];
+let mockDTCalls: any[] = [];
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => '/stores',
+  useSearchParams: () => new URLSearchParams(),
+}));
 
-describe('stores — 正例', () => {
-  it('应导出一个默认组件 StoresListPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function StoresListPage'), '缺少默认导出');
+vi.mock('next/link', () => ({
+  default: ({ children, href }: any) => <a href={href} data-testid="nl">{children}</a>,
+}));
+
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title }: any) => <div data-testid="ps" data-t={title}>{children}</div>,
+  DataTable: (props: any) => {
+    mockDTCalls.push(props);
+    const { columns, rows, rowKey } = props;
+    return <div data-testid="dt" data-r={rows.length}>{rows.map((r: any) => <div key={rowKey(r)}>{columns.map((c: any) => <span key={c.key}>{c.render ? c.render(r) : String(r[c.key])}</span>)}</div>)}</div>;
+  },
+  Pagination: () => <div data-testid="pg">pg</div>,
+  SearchFilterInput: ({ value, onChange, placeholder }: any) => (
+    <input data-testid="si" placeholder={placeholder} value={value} onChange={(e: any) => onChange(e.target.value)} />
+  ),
+  StatusBadge: ({ label, variant }: any) => <span data-testid="sb" data-v={variant}>{label}</span>,
+  Tabs: ({ items, activeKey, onChange }: any) => {
+    mockTabsItems = items || [];
+    return <div data-testid="tabs" data-key={activeKey}>{items.map((i: any) => <button key={i.key} onClick={() => onChange(i.key)}>{i.label}</button>)}</div>;
+  },
+  usePagination: () => ({ page: 1, totalPages: 2, setPage: vi.fn() }),
+  useSearchFilter: () => ({ searchTerm: '', setSearchTerm: vi.fn(), filteredItems: [
+    { id: 's01', name: 'Demo Store 旗舰店', code: 'DS-FLAG-001', type: 'flagship' as const, address: '上海浦东', city: '上海', district: '浦东', phone: '021-68', managerName: '张明', status: 'active' as const, staffCount: 28, areaSqm: 580, monthlyRevenue: 358000, createdAt: '2024-01-15' },
+    { id: 's02', name: 'Demo Store 社区店', code: 'DS-COMM-002', type: 'community' as const, address: '上海静安', city: '上海', district: '静安', phone: '021-62', managerName: '李芳', status: 'active' as const, staffCount: 12, areaSqm: 220, monthlyRevenue: 128000, createdAt: '2024-03-01' },
+    { id: 's03', name: 'Demo Store 标准店', code: 'DS-STD-003', type: 'standard' as const, address: '北京朝阳', city: '北京', district: '朝阳', phone: '010-85', managerName: '王强', status: 'active' as const, staffCount: 18, areaSqm: 350, monthlyRevenue: 215000, createdAt: '2024-02-20' },
+  ]}),
+}));
+
+vi.mock('../_components/useTriState', () => ({
+  useTriState: () => ({ loading: false, error: null, wrapLoad: vi.fn((p: Promise<any>) => p.then((d: any) => d)) }),
+}));
+
+vi.mock('../_components/TriStateRenderer', () => ({
+  TriStateRenderer: ({ children }: any) => <div data-testid="tric">{typeof children === 'function' ? children() : children}</div>,
+}));
+
+import StoresListPage from './page';
+beforeEach(() => { vi.clearAllMocks(); mockTabsItems = []; mockDTCalls = []; });
+
+describe('StoresListPage', () => {
+  test('renders PageShell with stores title', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(screen.getByTestId('ps').dataset.t).toBe('门店列表');
   });
 
-  it('应包含 Store 接口定义', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface Store'), '缺少接口');
+  test('renders stat badge labels', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(screen.getAllByText('总门店').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('营业中').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('员工总数').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('月总营收').length).toBeGreaterThan(0);
   });
 
-  it('应包含 MOCK_STORES 数据集', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_STORES'), '缺少数据源');
+  test('renders search input', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(screen.getByTestId('si')).toBeInTheDocument();
   });
 
-  it('应计算 active / totalRevenue / totalStaff 统计', () => {
-    const src = readSource();
-    assert.ok(src.includes('active:'), '缺少 active');
-    assert.ok(src.includes('monthlyRevenue'), '缺少营收');
-    assert.ok(src.includes('staffCount'), '缺少员工数');
+  test('renders status filter tabs with correct keys', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const keys = mockTabsItems.map((i: any) => i.key);
+    expect(keys).toContain('ALL');
+    expect(keys).toContain('active');
+    expect(keys).toContain('maintenance');
+    expect(keys).toContain('inactive');
   });
 
-  it('应包含 useSearchFilter', () => {
-    const src = readSource();
-    assert.ok(src.includes('useSearchFilter'), '缺少搜索过滤');
+  test('renders DataTable with store rows', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls.length).toBeGreaterThan(0);
+    expect(mockDTCalls[mockDTCalls.length - 1].rows.length).toBeGreaterThan(0);
   });
 
-  it('应包含门店卡片视图', () => {
-    const src = readSource();
-    assert.ok(src.includes('card') || src.includes('Card') || src.includes('div'), '缺少卡片视图');
+  test('DataTable has correct column keys', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const keys = mockDTCalls[mockDTCalls.length - 1].columns.map((c: any) => c.key);
+    expect(keys).toContain('name');
+    expect(keys).toContain('type');
+    expect(keys).toContain('city');
+    expect(keys).toContain('managerName');
+    expect(keys).toContain('staffCount');
+    expect(keys).toContain('areaSqm');
+    expect(keys).toContain('monthlyRevenue');
+    expect(keys).toContain('status');
   });
 
-  it('应包含 status 字段用于筛选', () => {
-    const src = readSource();
-    assert.ok(src.includes('status'), '缺少 status 字段');
+  test('renders pagination component', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(screen.getByTestId('pg')).toBeInTheDocument();
   });
 
-  it('应包含 address 字段用于地图显示', () => {
-    const src = readSource();
-    assert.ok(src.includes('address'), '缺少 address');
+  test('name column renders Link', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const col = mockDTCalls[mockDTCalls.length - 1].columns[0];
+    const sample = { id: 's-t', name: '测试店', code: 'TS-001', type: 'flagship' as const, address: 'a', city: '北京', district: '朝阳', phone: '010', managerName: '张', status: 'active' as const, staffCount: 10, areaSqm: 200, monthlyRevenue: 100000, createdAt: '2024-01-01' };
+    expect(col.render(sample)).toBeTruthy();
   });
 
-  it('应包含 managerName 用于门店经理', () => {
-    const src = readSource();
-    assert.ok(src.includes('managerName'), '缺少managerName');
-  });
-});
-
-describe('stores — 边界', () => {
-  it('active 状态过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes(".status === 'active'"), 'active 过滤');
+  test('type column at index 1', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[1].key).toBe('type');
   });
 
-  it('营收统计使用 reduce', () => {
-    const src = readSource();
-    assert.ok(src.includes('.reduce('), 'reduce 求和');
+  test('city column at index 2', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[2].key).toBe('city');
   });
 
-  it('MOCK_STORES 长度统计', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_STORES.length'), '长度统计');
+  test('monthlyRevenue column at index 6', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[6].key).toBe('monthlyRevenue');
   });
 
-  it('应支持按城市筛选', () => {
-    const src = readSource();
-    assert.ok(src.includes('city') || src.includes('城市'), '城市筛选');
+  test('renders via TriStateRenderer', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(screen.getByTestId('tric')).toBeInTheDocument();
   });
 
-  it('应处理全量 active 门店匹配', () => {
-    const src = readSource();
-    assert.ok(src.includes('.filter('), 'filter 过滤');
-    assert.ok(src.includes('.length'), 'length 判断');
+  test('status tabs have 4 items', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockTabsItems.length).toBe(4);
   });
 
-  it('月营收大于 0', () => {
-    const src = readSource();
-    assert.ok(src.includes('> 0') || src.includes('>=0') || src.includes('monthlyRevenue'), '月营收');
-  });
-});
-
-describe('stores — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+  test('pagination receives correct total', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const pg = screen.getByTestId('pg');
+    expect(pg).toBeInTheDocument();
   });
 
-  it('应包含 useMemo', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo'), '缺少 useMemo');
+  test('status column present in DataTable', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const keys = mockDTCalls[mockDTCalls.length - 1].columns.map((c: any) => c.key);
+    expect(keys).toContain('status');
   });
 
-  it('空门店列表应有处理', () => {
-    const src = readSource();
-    assert.ok(src.includes('.length'), '长度判断');
+  test('renders without crash', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(document.body.textContent).toContain('门店');
   });
 
-  it('应包含门店经理姓名', () => {
-    const src = readSource();
-    assert.ok(src.includes('managerName') || src.includes('manager'), '缺少门店经理');
+  test('managerName column present', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[3].key).toBe('managerName');
   });
 
-  it('应处理隐式 undefined store 数据', () => {
-    const src = readSource();
-    assert.ok(src.includes('?.') || src.includes('??') || src.includes('!!'), '可选链或空值合并');
+  test('staffCount column present', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[4].key).toBe('staffCount');
   });
 
-  it('应包含门店类型过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes(".type === '") || src.includes('.filter('), '类型过滤条件');
+  test('areaSqm column at index 5', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[5].key).toBe('areaSqm');
+  });
+
+  test('search input placeholder includes correct text', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const si = screen.getByTestId('si');
+    const placeholder = si.getAttribute('placeholder') || '';
+    expect(placeholder).toContain('搜索门店');
+  });
+
+  test('DataTable renders with store names', async () => {
+    await act(async () => { render(<StoresListPage />); });
+    const dt = mockDTCalls[mockDTCalls.length - 1];
+    const nameCol = dt.columns[0];
+    const sample = { id: 's-t', name: '测试店', code: 'TS-001', type: 'standard' as const, address: 'a', city: '北京', district: '朝阳', phone: '010', managerName: '张', status: 'active' as const, staffCount: 10, areaSqm: 200, monthlyRevenue: 100000, createdAt: '2024-01-01' };
+    const rendered = nameCol.render(sample);
+    expect(rendered).toBeTruthy();
   });
 });

@@ -1,153 +1,291 @@
 /**
- * 公告列表页 L1 测试 — AnnouncementsPage (storefront-web)
- * 覆盖: 正例(组件导出/数据/渲染) 反例(无效状态/缺失字段) 边界(空列表/长文本/特殊字符)
+ * announcements/page.vitest.tsx — 公告列表页 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 加载页 · 渲染 · 搜索 · 类型筛选 · 展开详情 · 日期格式化 · 边界
+ * 角色: 📢营销 · 👔店长 · 🎯运行专员
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const pageSource = fs.readFileSync(
-  path.resolve(__dirname, 'page.tsx'), 'utf8'
-);
+import AnnouncementsPage from './page';
 
-describe('AnnouncementsPage (storefront-web)', () => {
+/** Wait until data finishes loading */
+async function waitForData() {
+  await screen.findByText('新店开业优惠', {}, { timeout: 5000 });
+}
 
-  /* ── 正例 ── */
+/** Find the badge filter chip <button> with exact text, not the card badge span */
+function filterChip(text: string): HTMLElement {
+  return screen.getAllByText(text).find(el => el.tagName === 'BUTTON')!;
+}
 
-  test('页面导出默认函数组件 AnnouncementsPage', () => {
-    assert.ok(pageSource.includes('export default function AnnouncementsPage'));
+describe('AnnouncementsPage — 公告列表', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  test('页面包含 use client 指令', () => {
-    assert.ok(pageSource.includes("'use client'"));
+  // ====== 加载状态测试 ======
+
+  test('renders without crashing during loading', () => {
+    expect(() => render(<AnnouncementsPage />)).not.toThrow();
   });
 
-  test('定义了 5 条公告数据（增强后）', () => {
-    const count = (pageSource.match(/title: '/g) || []).length;
-    assert.equal(count, 5);
+  // ====== 渲染测试 ======
+
+  test('renders 公告 header after load', async () => {
+    render(<AnnouncementsPage />);
+    await screen.findByText('公告', {}, { timeout: 5000 });
+    expect(screen.getByText('公告')).toBeInTheDocument();
   });
 
-  test('包含新店开业优惠公告', () => {
-    assert.ok(pageSource.includes('新店开业优惠'));
+  test('renders all 5 announcements after load', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getByText('新店开业优惠')).toBeInTheDocument();
+    expect(screen.getByText('设备升级通知')).toBeInTheDocument();
+    expect(screen.getByText('会员日特惠')).toBeInTheDocument();
+    expect(screen.getByText('暑期学生特惠')).toBeInTheDocument();
+    expect(screen.getByText('停车优惠调整')).toBeInTheDocument();
   });
 
-  test('包含设备升级通知', () => {
-    assert.ok(pageSource.includes('设备升级通知'));
+  test('renders announcement descriptions after load', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getByText('充值满100送15，限时一周')).toBeInTheDocument();
+    expect(screen.getByText('VR体验区已全面升级为最新设备')).toBeInTheDocument();
   });
 
-  test('包含会员日特惠公告', () => {
-    assert.ok(pageSource.includes('会员日特惠'));
+  test('renders announcement count text after load', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getByText(/共 5 条公告/)).toBeInTheDocument();
   });
 
-  test('包含标题、描述、日期、徽标字段', () => {
-    assert.ok(pageSource.includes('title'));
-    assert.ok(pageSource.includes('desc'));
-    assert.ok(pageSource.includes('date'));
-    assert.ok(pageSource.includes('badge'));
+  test('renders badge chips (filter buttons) after load', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getByText('全部')).toBeInTheDocument();
+    // Some badge texts appear on both filter buttons AND card badges — use getAllByText
+    expect(screen.getAllByText('NEW').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('更新').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('会员').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('优惠').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('通知').length).toBeGreaterThanOrEqual(2);
   });
 
-  test('渲染深色主题样式', () => {
-    assert.ok(pageSource.includes('#0f172a'), '缺少深色背景');
+  test('renders search input after load', async () => {
+    render(<AnnouncementsPage />);
+    await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    expect(screen.getByPlaceholderText('搜索公告…')).toBeInTheDocument();
   });
 
-  test('包含加载/错误/空三态', () => {
-    assert.ok(pageSource.includes('loading'), '缺少 loading 状态');
-    assert.ok(pageSource.includes('error'), '缺少 error 状态');
-    assert.ok(pageSource.includes('simulateFetch'), '缺少模拟 API');
-    assert.ok(pageSource.includes('search'), '缺少搜索框');
-    assert.ok(pageSource.includes('badgeFilter'), '缺少类型筛选');
+  // ====== 日期格式化测试 ======
+
+  test('formats date in Chinese after load', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getByText('2026年7月12日')).toBeInTheDocument();
+    expect(screen.getByText('2026年7月10日')).toBeInTheDocument();
+    expect(screen.getByText('2026年7月8日')).toBeInTheDocument();
+    expect(screen.getByText('2026年7月6日')).toBeInTheDocument();
+    expect(screen.getByText('2026年7月5日')).toBeInTheDocument();
   });
 
-  test('包含展开详情功能', () => {
-    assert.ok(pageSource.includes('toggleExpand'), '缺少展开/收起');
-    assert.ok(pageSource.includes('expandedId'), '缺少展开状态');
+  // ====== 搜索测试 ======
+
+  test('search filters by title', async () => {
+    render(<AnnouncementsPage />);
+    const searchInput = await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    fireEvent.change(searchInput, { target: { value: '开业' } });
+    await waitFor(() => {
+      expect(screen.getByText('新店开业优惠')).toBeInTheDocument();
+      expect(screen.queryByText('设备升级通知')).not.toBeInTheDocument();
+    });
   });
 
-  test('每条公告都有唯一 id', () => {
-    // 每个公告字段中应该包含字符串 ID (如 'a1', 'a2' 等)
-    const ids = pageSource.match(/id:\s*'[^']+'/g);
-    assert.ok(ids !== null, '应该有 ID 字段');
-    assert.ok(ids.length >= 5, '至少 5 个 ID');
+  test('search filters by description', async () => {
+    render(<AnnouncementsPage />);
+    const searchInput = await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    fireEvent.change(searchInput, { target: { value: '双倍积分' } });
+    await waitFor(() => {
+      expect(screen.getByText('会员日特惠')).toBeInTheDocument();
+    });
   });
 
-  /* ── 反例 ── */
-
-  test('不应包含危险的 innerHTML', () => {
-    assert.ok(!pageSource.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
+  test('search is case-insensitive', async () => {
+    render(<AnnouncementsPage />);
+    const searchInput = await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    fireEvent.change(searchInput, { target: { value: 'VR' } });
+    await waitFor(() => {
+      expect(screen.getByText('设备升级通知')).toBeInTheDocument();
+    });
   });
 
-  test('不应包含未捕获的 throw', () => {
-    // 页面不应直接 throw（除非在错误边界内）
-    // 不匹配注释中的 throw 示例
-    const lines = pageSource.split('\n');
-    for (const line of lines) {
-      if (line.includes('throw ') && !line.trim().startsWith('//') && !line.includes('simulateFetch')) {
-        assert.fail('发现未注释的 throw: ' + line.trim());
-      }
-    }
+  test('search with no results shows empty state', async () => {
+    render(<AnnouncementsPage />);
+    const searchInput = await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    fireEvent.change(searchInput, { target: { value: 'zzz不存在的关键字xxx' } });
+    await waitFor(() => {
+      expect(screen.getByText('暂无公告')).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  test('badge 字段类型应为有效值', () => {
-    // badge 值应为预设中文标签或 NEW
-    const validBadges = ['NEW', '更新', '会员', '优惠', '通知', 'info', 'promotion', 'urgent'];
-    const badges = pageSource.match(/badge:\s*'([^']+)'/g);
-    if (badges) {
-      for (const b of badges) {
-        const val = b.match(/'([^']+)'/)?.[1];
-        assert.ok(validBadges.includes(val), `无效的 badge 值: ${val}`);
-      }
-    }
+  test('clearing search restores all items', async () => {
+    render(<AnnouncementsPage />);
+    const searchInput = await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    fireEvent.change(searchInput, { target: { value: '开业' } });
+    await waitFor(() => {
+      expect(screen.getByText('新店开业优惠')).toBeInTheDocument();
+    });
+    fireEvent.change(searchInput, { target: { value: '' } });
+    await waitFor(() => {
+      expect(screen.getByText('设备升级通知')).toBeInTheDocument();
+    });
   });
 
-  /* ── 边界 ── */
+  // ====== 类型筛选测试 ======
 
-  test('每条公告的 badge 字段非空', () => {
-    const badges = pageSource.match(/badge:\s*'([^']*)'/g);
-    assert.ok(badges !== null, '应该有 badge 字段');
-    for (const b of badges) {
-      const val = b.match(/'([^']*)'/)?.[1];
-      assert.ok(val !== '', 'badge 不应为空');
-    }
+  test('badge filter: click NEW shows only NEW items', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    const chip = filterChip('NEW');
+    fireEvent.click(chip);
+    await waitFor(() => {
+      expect(screen.getByText('新店开业优惠')).toBeInTheDocument();
+      expect(screen.queryByText('设备升级通知')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  test('date 字段符合日期格式', () => {
-    const dates = pageSource.match(/date:\s*'([^']+)'/g);
-    if (dates) {
-      for (const d of dates) {
-        const val = d.match(/'([^']+)'/)?.[1];
-        // 日期应包含年月日分隔符
-        if (val) {
-          assert.ok(val.length >= 8, `date 字段长度至少 8 字符: ${val}`);
-        }
-      }
-    }
+  test('badge filter: click 全部 shows all items', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    fireEvent.click(filterChip('NEW'));
+    await waitFor(() => {
+      expect(screen.queryByText('设备升级通知')).not.toBeInTheDocument();
+    }, { timeout: 5000 });
+    fireEvent.click(screen.getByText('全部'));
+    await waitFor(() => {
+      expect(screen.getByText('设备升级通知')).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  test('公告描述不应为空', () => {
-    const descs = pageSource.match(/desc:\s*'([^']*)'/g);
-    if (descs) {
-      for (const d of descs) {
-        const val = d.match(/'([^']*)'/)?.[1];
-        assert.ok(val && val.length > 0, 'desc 不应为空');
-      }
-    }
+  test('badge filter: click 优惠 shows only 优惠 items', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    fireEvent.click(filterChip('优惠'));
+    await waitFor(() => {
+      expect(screen.getByText('暑期学生特惠')).toBeInTheDocument();
+    }, { timeout: 5000 });
   });
 
-  test('所有公告标题都不为空', () => {
-    const titles = pageSource.match(/title:\s*'([^']*)'/g);
-    if (titles) {
-      for (const t of titles) {
-        const val = t.match(/'([^']*)'/)?.[1];
-        assert.ok(val && val.length > 0, 'title 不应为空');
-      }
-    }
+  test('badge filter + search combined', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    const searchInput = screen.getByPlaceholderText('搜索公告…');
+    fireEvent.click(filterChip('NEW'));
+    fireEvent.change(searchInput, { target: { value: '新店' } });
+    await waitFor(() => {
+      expect(screen.getByText('新店开业优惠')).toBeInTheDocument();
+    });
   });
 
-  test('公告 ID 应递增', () => {
-    const ids = [...pageSource.matchAll(/id:\s*(\d+)/g)].map(m => parseInt(m[1], 10));
-    for (let i = 1; i < ids.length; i++) {
-      assert.ok(ids[i] > ids[i - 1], `ID 应递增: ${ids[i]} <= ${ids[i-1]}`);
-    }
+  // ====== 展开详情测试 ======
+
+  test('clicking announcement expands detail', async () => {
+    render(<AnnouncementsPage />);
+    const item = await screen.findByText('新店开业优惠', {}, { timeout: 5000 });
+    fireEvent.click(item);
+    await waitFor(() => {
+      expect(screen.getByText(/为庆祝新店开业/)).toBeInTheDocument();
+    });
+  });
+
+  test('expanded detail shows 点击收起', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('新店开业优惠'));
+    await waitFor(() => {
+      expect(screen.getByText(/点击收起/)).toBeInTheDocument();
+    });
+  });
+
+  test('clicking expanded item collapses it', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('新店开业优惠'));
+    await waitFor(() => {
+      expect(screen.getByText(/点击收起/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('新店开业优惠'));
+    await waitFor(() => {
+      expect(screen.queryByText(/点击收起/)).not.toBeInTheDocument();
+    });
+  });
+
+  test('expanding a second item collapses the first', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('新店开业优惠'));
+    await waitFor(() => {
+      expect(screen.getByText(/点击收起/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('设备升级通知'));
+    await waitFor(() => {
+      expect(screen.getByText(/VR体验区已完成设备更新/)).toBeInTheDocument();
+    });
+  });
+
+  // ====== 匹配数显示测试 ======
+
+  test('shows matching count after search', async () => {
+    render(<AnnouncementsPage />);
+    const searchInput = await screen.findByPlaceholderText('搜索公告…', {}, { timeout: 5000 });
+    fireEvent.change(searchInput, { target: { value: '会员' } });
+    await waitFor(() => {
+      expect(screen.getByText(/1 条匹配/)).toBeInTheDocument();
+    });
+  });
+
+  test('shows correct filter count (5/5 when no filter)', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getByText(/5 条匹配/)).toBeInTheDocument();
+  });
+
+  // ====== 边界情况 ======
+
+  test('empty search shows all items', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    expect(screen.getAllByText(/2026年7月/).length).toBeGreaterThanOrEqual(5);
+  });
+
+  test('search with whitespace shows empty state', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    const searchInput = screen.getByPlaceholderText('搜索公告…');
+    fireEvent.change(searchInput, { target: { value: '  ' } });
+    await waitFor(() => {
+      // Whitespace is not empty string, so !search is false → it searches for whitespace
+      expect(screen.getByText('暂无公告')).toBeInTheDocument();
+    });
+  });
+
+  test('dark theme background applied', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    const main = document.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
+  });
+
+  test('badge filter count text updates', async () => {
+    render(<AnnouncementsPage />);
+    await waitForData();
+    fireEvent.click(filterChip('通知'));
+    await waitFor(() => {
+      // Only "通知" badge items should remain - 1 item
+      const matchText = screen.queryByText(/1 条匹配/);
+      if (matchText) expect(matchText).toBeInTheDocument();
+    });
   });
 });

@@ -1,197 +1,357 @@
 /**
- * maintenance/page.test.tsx — 设备保养工单页面 L1+L2+L3 综合测试
- * 角色视角: 👨‍🔧设备维护 / 🔧门店运营
- * 覆盖: 正例·反例·边界·角色场景·AI预测·统计面板·状态过滤·优先级·搜索详情弹窗
+ * maintenance/page.vitest.tsx — 设备保养工单页 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 渲染 · 统计卡片 · 数据表格 · 搜索 · 状态筛选 · 优先级筛选 · 分页 · 空状态 · 详情弹窗 · AI预测 · 成本分析 · 维护计划 · 边界
+ * 角色: 👨‍🔧设备维护 · 🔧门店运营
  */
-const assert = require('node:assert/strict');
-const { describe, test } = require('node:test');
-const fs = require('node:fs');
-const path = require('path');
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const PAGE_SRC = fs.readFileSync(path.resolve(__dirname, 'page.tsx'), 'utf8');
+// Mock @m5/ui components
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, subtitle }: any) => (
+    <div data-testid="page-shell">
+      {title && <h2>{title}</h2>}
+      {subtitle && <p>{subtitle}</p>}
+      {children}
+    </div>
+  ),
+  DataTable: ({ columns, rows, rowKey }: any) => (
+    <div data-testid="data-table">
+      <table>
+        <thead>
+          <tr>
+            {columns.map((col: any) => (
+              <th key={col.key}>{col.header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row: any) => (
+            <tr key={rowKey(row)} data-row-id={rowKey(row)}>
+              {columns.map((col: any) => (
+                <td key={col.key}>
+                  {col.render ? col.render(row) : row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ),
+  StatusBadge: ({ variant, label }: any) => (
+    <span data-testid="status-badge" data-variant={variant}>
+      {label}
+    </span>
+  ),
+  Button: ({ children, onClick, variant }: any) => (
+    <button data-testid="btn" data-variant={variant} onClick={onClick}>
+      {children}
+    </button>
+  ),
+  Pagination: ({ page, totalPages, onPageChange, pageSize, onPageSizeChange, pageSizeOptions, total }: any) => (
+    <div data-testid="pagination">
+      <span data-testid="page-info">{page}/{totalPages}</span>
+      <button data-testid="next-page" onClick={() => onPageChange(page + 1)}>下一页</button>
+      <select data-testid="page-size-select" onChange={(e: any) => onPageSizeChange(Number(e.target.value))} value={pageSize}>
+        {pageSizeOptions.map((opt: number) => <option key={opt} value={opt}>{opt}条/页</option>)}
+      </select>
+      <span data-testid="pagination-total">共{total}条</span>
+    </div>
+  ),
+  usePagination: (total: number, defaultPageSize: number) => ({
+    page: 1,
+    setPage: vi.fn(),
+    pageSize: defaultPageSize,
+    setPageSize: vi.fn(),
+    totalPages: Math.ceil(total / defaultPageSize),
+  }),
+  EmptyState: ({ title, description }: any) => (
+    <div data-testid="empty-state">
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </div>
+  ),
+  Modal: ({ open, onClose, title, children, width }: any) =>
+    open ? (
+      <div data-testid="modal" data-width={width}>
+        <h3>{title}</h3>
+        {children}
+        <button data-testid="modal-close-btn" onClick={onClose}>关闭</button>
+      </div>
+    ) : null,
+}));
 
-describe('MaintenancePage — 正例', () => {
-  test('page exports default function MaintenancePage', () => {
-    assert.ok(PAGE_SRC.includes('export default function MaintenancePage'), '缺少默认导出');
+import MaintenancePage from './page';
+
+describe('MaintenancePage — 设备保养工单', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  test('page contains use client directive', () => {
-    assert.ok(PAGE_SRC.includes("'use client'"), '缺少 use client');
+  // ====== 正例: 渲染 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<MaintenancePage />)).not.toThrow();
   });
 
-  test('title contains 设备保养工单', () => {
-    assert.ok(PAGE_SRC.includes('设备保养工单'), '页面标题缺失');
+  test('renders page title 设备保养工单', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText('🔧 设备保养工单')).toBeInTheDocument();
   });
 
-  test('page description mentions maintenance', () => {
-    assert.ok(PAGE_SRC.includes('工单') || PAGE_SRC.includes('保养'), '描述缺失');
+  test('renders PageShell title', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText('设备保养工单')).toBeInTheDocument();
   });
 
-  test('renders MaintenanceOrder interface', () => {
-    assert.ok(PAGE_SRC.includes('interface MaintenanceOrder'), '缺少接口定义');
+  test('renders summary text with total count', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText(/共 12 个工单/)).toBeInTheDocument();
   });
 
-  test('renders multiple order status types', () => {
-    assert.ok(PAGE_SRC.includes("'pending'") && PAGE_SRC.includes("'in_progress'") && PAGE_SRC.includes("'completed'") && PAGE_SRC.includes("'cancelled'"), '状态类型');
+  test('renders summary text with pending count', () => {
+    render(<MaintenancePage />);
+    const pendingElements = screen.getAllByText(/待处理/);
+    expect(pendingElements.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('renders priority levels', () => {
-    assert.ok(PAGE_SRC.includes("'low'") && PAGE_SRC.includes("'medium'") && PAGE_SRC.includes("'high'") && PAGE_SRC.includes("'urgent'"), '优先级类型');
+  // ====== 统计卡片 ======
+
+  test('renders StatCard for 总工单', () => {
+    render(<MaintenancePage />);
+    const statCards = screen.getAllByText('总工单');
+    expect(statCards.length).toBeGreaterThanOrEqual(1);
+    // The StatCard icon for 总工单
+    const totalIcon = screen.getByText('📋');
+    expect(totalIcon).toBeInTheDocument();
   });
 
-  test('has mock data with 12 orders', () => {
-    const match = PAGE_SRC.match(/MOCK_ORDERS/g);
-    assert.ok(match && match.length >= 1, 'mock 数据');
+  test('renders StatCard for 待处理', () => {
+    render(<MaintenancePage />);
+    const pendingLabels = screen.getAllByText('待处理');
+    expect(pendingLabels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('⏳')).toBeInTheDocument();
   });
 
-  test('renders search input', () => {
-    assert.ok(PAGE_SRC.includes('placeholder') && (PAGE_SRC.includes('搜索') || PAGE_SRC.includes('搜索工单')), '搜索输入');
+  test('renders StatCard for 处理中', () => {
+    render(<MaintenancePage />);
+    const inProgressLabels = screen.getAllByText('处理中');
+    expect(inProgressLabels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('🔄')).toBeInTheDocument();
   });
 
-  test('renders status filter', () => {
-    assert.ok(PAGE_SRC.includes('statusFilter'), '状态筛选');
+  test('renders StatCard for 已完成', () => {
+    render(<MaintenancePage />);
+    const completedLabels = screen.getAllByText('已完成');
+    expect(completedLabels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('✅')).toBeInTheDocument();
   });
 
-  test('renders priority filter', () => {
-    assert.ok(PAGE_SRC.includes('priorityFilter'), '优先级筛选');
+  test('renders StatCard for 紧急', () => {
+    render(<MaintenancePage />);
+    const urgentLabels = screen.getAllByText('紧急');
+    expect(urgentLabels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('🔴')).toBeInTheDocument();
   });
 
-  test('includes DataTable component', () => {
-    assert.ok(PAGE_SRC.includes('DataTable'), 'DataTable');
+  // ====== 门店分布 ======
+
+  test('renders store distribution chips', () => {
+    render(<MaintenancePage />);
+    const body = document.body.textContent || '';
+    expect(body).toMatch(/旗舰店/);
+    expect(body).toMatch(/分店-A/);
+    expect(body).toMatch(/分店-B/);
+    expect(body).toMatch(/分店-C/);
   });
 
-  test('includes Pagination', () => {
-    assert.ok(PAGE_SRC.includes('Pagination'), 'Pagination');
+  // ====== 搜索和筛选 ======
+
+  test('renders search input with placeholder', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByPlaceholderText('搜索工单/设备/门店/负责人…')).toBeInTheDocument();
   });
 
-  test('includes EmptyState for no results', () => {
-    assert.ok(PAGE_SRC.includes('EmptyState') || PAGE_SRC.includes('暂无匹配'), '空状态');
+  test('renders status filter select', () => {
+    render(<MaintenancePage />);
+    const statusSelect = screen.getByTestId('status-filter');
+    expect(statusSelect).toBeInTheDocument();
+    // Status options appear in the select AND in the status badges in the table
+    const allOptions = screen.getAllByText('全部');
+    expect(allOptions.length).toBeGreaterThanOrEqual(1);
+    const pendingOptions = screen.getAllByText('待处理');
+    expect(pendingOptions.length).toBeGreaterThanOrEqual(1);
+    const inProgressOptions = screen.getAllByText('处理中');
+    expect(inProgressOptions.length).toBeGreaterThanOrEqual(1);
+    const completedOptions = screen.getAllByText('已完成');
+    expect(completedOptions.length).toBeGreaterThanOrEqual(1);
+    const cancelledOptions = screen.getAllByText('已取消');
+    expect(cancelledOptions.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('includes Modal for detail', () => {
-    assert.ok(PAGE_SRC.includes('Modal'), '详情弹窗');
+  test('renders priority filter select', () => {
+    render(<MaintenancePage />);
+    const prioritySelect = screen.getByTestId('priority-filter');
+    expect(prioritySelect).toBeInTheDocument();
   });
 
-  test('has stat cards', () => {
-    assert.ok(PAGE_SRC.includes('StatCard'), '统计卡片');
+  test('renders 新建工单 button', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText('+ 新建工单')).toBeInTheDocument();
   });
 
-  test('has order detail function', () => {
-    assert.ok(PAGE_SRC.includes('OrderDetailModal'), '详情组件');
+  test('search input filters orders', async () => {
+    render(<MaintenancePage />);
+    const searchInput = screen.getByPlaceholderText('搜索工单/设备/门店/负责人…');
+    fireEvent.change(searchInput, { target: { value: '空调' } });
+    await waitFor(() => {
+      const filterText = screen.getByText(/筛选后/);
+      expect(filterText).toBeInTheDocument();
+    });
   });
 
-  test('has new order button linking to /maintenance/new', () => {
-    assert.ok(PAGE_SRC.includes('/maintenance/new'), '新建工单链接');
+  test('status filter changes renders', () => {
+    render(<MaintenancePage />);
+    const statusSelect = screen.getByTestId('status-filter') as HTMLSelectElement;
+    fireEvent.change(statusSelect, { target: { value: 'completed' } });
+    expect(statusSelect.value).toBe('completed');
   });
 
-  test('has AI prediction panel', () => {
-    assert.ok(PAGE_SRC.includes('AIPredictionPanel') || PAGE_SRC.includes('AI 故障预测'), 'AI预测面板');
-  });
-});
-
-describe('MaintenancePage — 统计', () => {
-  test('calculates total order count', () => {
-    assert.ok(PAGE_SRC.includes('stats.total') || PAGE_SRC.includes('total'), '总工单统计');
+  test('priority filter changes renders', () => {
+    render(<MaintenancePage />);
+    const prioritySelect = screen.getByTestId('priority-filter') as HTMLSelectElement;
+    fireEvent.change(prioritySelect, { target: { value: 'urgent' } });
+    expect(prioritySelect.value).toBe('urgent');
   });
 
-  test('calculates pending count', () => {
-    assert.ok(PAGE_SRC.includes('stats.pending') || PAGE_SRC.includes('pending'), '待处理统计');
+  // ====== 数据表格 ======
+
+  test('renders data table with columns', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText('工单编号')).toBeInTheDocument();
+    expect(screen.getByText('工单标题')).toBeInTheDocument();
+    expect(screen.getByText('设备名称')).toBeInTheDocument();
+    expect(screen.getByText('所属门店')).toBeInTheDocument();
+    expect(screen.getByText('状态')).toBeInTheDocument();
+    expect(screen.getByText('优先级')).toBeInTheDocument();
+    expect(screen.getByText('负责人')).toBeInTheDocument();
+    expect(screen.getByText('计划日期')).toBeInTheDocument();
+    expect(screen.getByText('操作')).toBeInTheDocument();
   });
 
-  test('calculates in-progress count', () => {
-    assert.ok(PAGE_SRC.includes('stats.inProgress') || PAGE_SRC.includes('inProgress'), '处理中统计');
+  test('renders order data in table', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText('MO-001')).toBeInTheDocument();
+    expect(screen.getByText('空调滤网更换')).toBeInTheDocument();
   });
 
-  test('calculates completed count', () => {
-    assert.ok(PAGE_SRC.includes('stats.completed'), '已完成统计');
+  test('renders 详情 button for each row', () => {
+    render(<MaintenancePage />);
+    const detailButtons = screen.getAllByText('详情');
+    expect(detailButtons.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('calculates urgent count', () => {
-    assert.ok(PAGE_SRC.includes('stats.urgent'), '紧急统计');
+  test('renders 查看 link for each row', () => {
+    render(<MaintenancePage />);
+    const viewLinks = screen.getAllByText('查看');
+    expect(viewLinks.length).toBeGreaterThanOrEqual(1);
+    expect(viewLinks[0].closest('a')).toHaveAttribute('href', '/maintenance/MO-001');
   });
 
-  test('has completion rate calculation', () => {
-    assert.ok(PAGE_SRC.includes('完成率') || PAGE_SRC.includes('percent') || PAGE_SRC.includes('Math.round'), '完成率');
+  // ====== 分页 ======
+
+  test('renders pagination component', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByTestId('pagination')).toBeInTheDocument();
   });
 
-  test('store distribution displayed', () => {
-    assert.ok(PAGE_SRC.includes('旗舰店') && (PAGE_SRC.includes('分店-A') || PAGE_SRC.includes('分店')), '门店分布');
-  });
-});
-
-describe('MaintenancePage — 边界', () => {
-  test('handles empty search results', () => {
-    assert.ok(PAGE_SRC.includes('.length === 0') || PAGE_SRC.includes('暂无匹配'), '空搜索结果');
+  test('pagination shows correct page info', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByTestId('page-info')).toHaveTextContent(/1\/\d+/);
+    expect(screen.getByTestId('pagination-total')).toHaveTextContent(/共/);
   });
 
-  test('uses filter function for ordering', () => {
-    assert.ok(PAGE_SRC.includes('filterOrders') || PAGE_SRC.includes('.filter('), '筛选函数');
+  // ====== 详情弹窗 ======
+
+  test('clicking 详情 opens modal', async () => {
+    render(<MaintenancePage />);
+    const detailBtn = screen.getAllByText('详情')[0];
+    fireEvent.click(detailBtn);
+    await waitFor(() => {
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+    });
   });
 
-  test('priority colors defined', () => {
-    assert.ok(PAGE_SRC.includes('#F56C6C') || PAGE_SRC.includes('#C41D7F') || PAGE_SRC.includes('#E6A23C'), '优先级颜色');
+  test('modal displays order details', () => {
+    render(<MaintenancePage />);
+    fireEvent.click(screen.getAllByText('详情')[0]);
+    expect(screen.getByTestId('modal')).toBeInTheDocument();
+    const body = document.body.textContent || '';
+    expect(body).toMatch(/工单详情/);
+    expect(body).toMatch(/MO-001/);
+    expect(body).toMatch(/空调滤网更换/);
   });
 
-  test('status badges render for each status', () => {
-    assert.ok(PAGE_SRC.includes('StatusBadge'), '状态徽章');
+  test('modal close button works', () => {
+    render(<MaintenancePage />);
+    fireEvent.click(screen.getAllByText('详情')[0]);
+    expect(screen.getByTestId('modal')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('modal-close-btn'));
+    expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
   });
 
-  test('detail modal shows full order info', () => {
-    assert.ok(PAGE_SRC.includes('工单号') || PAGE_SRC.includes('订单编号'), '详情字段');
+  // ====== AI 故障预测 ======
+
+  test('renders AI 故障预测 section', () => {
+    render(<MaintenancePage />);
+    const aiTitle = screen.getByText('🤖 AI 故障预测');
+    expect(aiTitle).toBeInTheDocument();
   });
 
-  test('AI prediction shows device risk levels', () => {
-    assert.ok(PAGE_SRC.includes('risk') || PAGE_SRC.includes('高危') || PAGE_SRC.includes('预测'), 'AI预测');
+  test('AI prediction shows device names', () => {
+    render(<MaintenancePage />);
+    const body = document.body.textContent || '';
+    expect(body).toMatch(/中央空调-3F/);
+    expect(body).toMatch(/配电柜/);
+    expect(body).toMatch(/监控系统/);
   });
 
-  test('0 orders edge case', () => {
-    assert.ok(PAGE_SRC.includes('total === 0') || PAGE_SRC.includes('total > 0'), '零订单处理');
-  });
-});
+  // ====== 完成率统计 ======
 
-describe('MaintenancePage — 角色视角', () => {
-  test('maintenance engineer can view work orders', () => {
-    assert.ok(PAGE_SRC.includes('工单'), '维护人员查看工单');
-  });
-
-  test('store ops can filter by status', () => {
-    assert.ok(PAGE_SRC.includes('statusFilter'), '运营筛选');
+  test('renders completion rate stats', () => {
+    render(<MaintenancePage />);
+    const rateElements = screen.getAllByText(/完成率/);
+    expect(rateElements.length).toBeGreaterThanOrEqual(1);
+    const processRate = screen.getAllByText(/处理率/);
+    expect(processRate.length).toBeGreaterThanOrEqual(1);
+    const urgentRate = screen.getAllByText(/紧急占比/);
+    expect(urgentRate.length).toBeGreaterThanOrEqual(1);
   });
 
-  test('manager can view stats dashboard', () => {
-    assert.ok(PAGE_SRC.includes('统计') || PAGE_SRC.includes('StatCard'), '经理统计');
+  // ====== 边界 ======
+
+  test('empty state when no orders match filter', async () => {
+    render(<MaintenancePage />);
+    const searchInput = screen.getByPlaceholderText('搜索工单/设备/门店/负责人…');
+    fireEvent.change(searchInput, { target: { value: 'xxxxxxxxxx不存在xxxx' } });
+    await waitFor(() => {
+      expect(screen.getByText('暂无匹配工单')).toBeInTheDocument();
+    });
   });
 
-  test('engineer can view AI prediction', () => {
-    assert.ok(PAGE_SRC.includes('AI') || PAGE_SRC.includes('预测'), 'AI预测');
+  test('empty state shows suggestion to adjust filters', async () => {
+    render(<MaintenancePage />);
+    const searchInput = screen.getByPlaceholderText('搜索工单/设备/门店/负责人…');
+    fireEvent.change(searchInput, { target: { value: 'xxxxxxxxxx不存在xxxx' } });
+    await waitFor(() => {
+      expect(screen.getByText('尝试调整搜索条件或筛选')).toBeInTheDocument();
+    });
   });
 
-  test('engineer can create new order', () => {
-    assert.ok(PAGE_SRC.includes('新建工单') || PAGE_SRC.includes('/maintenance/new'), '新建工单');
-  });
-
-  test('ops can see completion rate', () => {
-    assert.ok(PAGE_SRC.includes('完成率') || PAGE_SRC.includes('处理率'), '完成率');
-  });
-});
-
-describe('MaintenancePage — 防御', () => {
-  test('no dangerous HTML', () => {
-    assert.ok(!PAGE_SRC.includes('dangerouslySetInnerHTML'), '禁止 dangerous HTML');
-  });
-
-  test('no any type (exceptions for generated)', () => {
-    // known: grid comparator uses :any for dynamic type comparison
-    const anyLines = PAGE_SRC.split('\n').filter(l => /:\s*any\b/.test(l) && !l.trim().startsWith('//'));
-    assert.ok(anyLines.length <= 3, 'any type used more than expected');
-  });
-
-  test('no secret/API key', () => {
-    assert.ok(!/(?:secret|password|api[_-]?key|authorization)/i.test(PAGE_SRC), '禁止密钥');
-  });
-
-  test('no bare console.log', () => {
-    const lines = PAGE_SRC.split('\n').filter(l => l.includes('console.log(') && !l.trimStart().startsWith('//'));
-    assert.ok(lines.length === 0, '裸 console.log');
+  test('filtered count text updates', () => {
+    render(<MaintenancePage />);
+    expect(screen.getByText(/筛选后/)).toBeInTheDocument();
   });
 });

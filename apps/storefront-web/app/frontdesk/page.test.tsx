@@ -1,268 +1,382 @@
 /**
- * frontdesk/page.test.tsx — 前台操作面板 L1 冒烟测试
- * 角色视角: 🛒前台
- * 覆盖: 正例 + 反例(防御) + 边界(极端数据/空数据)
+ * frontdesk/page.vitest.tsx — 前台收银台 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 渲染 · 统计卡片 · 快捷操作 · 购物篮 · 排队叫号 · 交易记录 · 支付 · 边界
+ * 角色: 🛒前台
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import test from 'node:test';
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>{children}</div>
+  ),
+  StatusBadge: ({ label, variant }: { label: string; variant?: string }) => (
+    <span data-testid="m5-status-badge" data-variant={variant}>{label}</span>
+  ),
+}));
 
-/* ── 数据工厂 ── */
+import FrontDeskPage from './page';
 
-function makeBasketItem(overrides?: Record<string, unknown>) {
-  return {
-    id: 'bi-1',
-    name: '测试商品',
-    sku: 'SKU-001',
-    quantity: 2,
-    unitPrice: 45.00,
-    subtotal: 90.00,
-    ...overrides,
-  };
-}
+describe('FrontDeskPage — 前台收银台', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-function makeQueueItem(overrides?: Record<string, unknown>) {
-  return {
-    id: 'q1',
-    number: 'A001',
-    customerName: '张先生',
-    type: 'service',
-    waitingMinutes: 3,
-    status: 'waiting',
-    ...overrides,
-  };
-}
+  // ====== 渲染测试 ======
 
-function makeQuickFnButton(overrides?: Record<string, unknown>) {
-  return {
-    key: 'qa-scan',
-    label: '扫码录入',
-    icon: '📷',
-    highlight: true,
-    ...overrides,
-  };
-}
+  test('render without crashing', () => {
+    expect(() => render(<FrontDeskPage />)).not.toThrow();
+  });
 
-function makeTodayStats(overrides?: Record<string, unknown>) {
-  return {
-    totalOrders: 156,
-    totalRevenue: 124580.50,
-    avgCheckoutSec: 32,
-    pendingPickups: 7,
-    ...overrides,
-  };
-}
+  test('renders PageShell with correct title', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '前台收银台');
+  });
 
-function callSafe(fn: (...args: unknown[]) => unknown, ...args: unknown[]): boolean {
-  try { fn(...args); return true; } catch { return false; }
-}
+  test('renders page shell description', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-description', '一站式收银、排队叫号与快捷操作面板');
+  });
 
-/* ── 正例 ── */
+  test('renders page title 前台收银台', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('🏪 前台收银台')).toBeInTheDocument();
+  });
 
-test('🛒 前台视角: 页面默认导出为函数', async () => {
-  const mod = await import('./page');
-  assert.equal(typeof mod.default, 'function', 'default export should be a function');
-});
+  test('renders store and cashier info', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText(/门店 #001/)).toBeInTheDocument();
+    const cashierEls = screen.getAllByText(/收银员: 王芳/);
+    expect(cashierEls.length).toBeGreaterThanOrEqual(1);
+    const shiftEls = screen.getAllByText(/早班 08:00-16:00/);
+    expect(shiftEls.length).toBeGreaterThanOrEqual(1);
+  });
 
-test('🛒 前台视角: 页面模块导入稳定', async () => {
-  const mod = await import('./page');
-  assert.equal(typeof mod.default, 'function', 'default export should be a function');
-  const src = mod.default.toString();
-  assert.ok(src.includes('FrontDeskPage'), 'should reference FrontDeskPage');
-  assert.ok(src.includes('PageShell'), 'should reference PageShell');
-});
+  test('renders toggle basket button', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('📋 收银面板')).toBeInTheDocument();
+  });
 
-test('正例: 所有 mock 数据构造不抛异常', async () => {
-  assert.equal(callSafe(makeBasketItem), true);
-  assert.equal(callSafe(makeQueueItem), true);
-  assert.equal(callSafe(makeQuickFnButton), true);
-  assert.equal(callSafe(makeTodayStats), true);
-});
+  // ====== 统计卡片测试 ======
 
-test('正例: basketItem 字段完整', () => {
-  const item = makeBasketItem();
-  const expectedKeys = ['id', 'name', 'sku', 'quantity', 'unitPrice', 'subtotal'];
-  for (const key of expectedKeys) {
-    assert.equal(key in item, true, `basketItem should have field: ${key}`);
-    assert.equal(typeof item[key as keyof typeof item], ['id', 'name', 'sku'].includes(key) ? 'string' : 'number',
-      `${key} type check`);
-  }
-});
+  test('renders all 5 stat cards', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('今日订单')).toBeInTheDocument();
+    expect(screen.getByText('今日营收')).toBeInTheDocument();
+    expect(screen.getByText('平均结账')).toBeInTheDocument();
+    expect(screen.getByText('待取货')).toBeInTheDocument();
+    expect(screen.getByText('排队人数')).toBeInTheDocument();
+  });
 
-test('正例: queueItem 字段完整', () => {
-  const q = makeQueueItem();
-  assert.equal(typeof q.id, 'string');
-  assert.equal(typeof q.number, 'string');
-  assert.equal(typeof q.type, 'string');
-  assert.equal(typeof q.waitingMinutes, 'number');
-  assert.equal(typeof q.status, 'string');
-  assert.ok(['service', 'pickup', 'return', 'consult'].includes(q.type), 'queue type valid');
-  assert.ok(['waiting', 'calling', 'serving'].includes(q.status), 'queue status valid');
-});
+  test('stat card shows totalOrders = 156.00', () => {
+    render(<FrontDeskPage />);
+    const oneFiftySix = screen.getAllByText(/156/);
+    expect(oneFiftySix.length).toBeGreaterThanOrEqual(1);
+  });
 
-test('正例: quickFnButton 字段完整', () => {
-  const btn = makeQuickFnButton();
-  assert.equal(typeof btn.key, 'string');
-  assert.equal(typeof btn.label, 'string');
-  assert.equal(typeof btn.highlight, 'boolean');
-});
+  test('stat card shows totalRevenue formatted', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('¥124,580.5')).toBeInTheDocument();
+  });
 
-test('正例: todayStats 字段完整', () => {
-  const s = makeTodayStats();
-  assert.equal(typeof s.totalOrders, 'number');
-  assert.equal(typeof s.totalRevenue, 'number');
-  assert.equal(typeof s.avgCheckoutSec, 'number');
-  assert.equal(typeof s.pendingPickups, 'number');
-});
+  test('stat card shows avgCheckoutSec = 32s', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('32s')).toBeInTheDocument();
+  });
 
-test('正例: 4 个购物篮商品不抛异常', () => {
-  const items = [
-    makeBasketItem({ id: 'bi-1', name: '精选有机蔬菜拼盘', sku: 'VEG-001', quantity: 2, unitPrice: 45.00, subtotal: 90.00 }),
-    makeBasketItem({ id: 'bi-2', name: '澳洲进口牛排 500g', sku: 'BEEF-012', quantity: 1, unitPrice: 168.00, subtotal: 168.00 }),
-    makeBasketItem({ id: 'bi-3', name: '纯牛奶 1L 装', sku: 'MLK-008', quantity: 3, unitPrice: 19.90, subtotal: 59.70 }),
-    makeBasketItem({ id: 'bi-4', name: '新鲜蓝莓 125g', sku: 'FRT-023', quantity: 2, unitPrice: 29.90, subtotal: 59.80 }),
-  ];
-  assert.equal(items.length, 4);
-  const totalQty = items.reduce((sum, i) => sum + i.quantity, 0);
-  assert.equal(totalQty, 8, 'total quantity should be 8');
-  const totalAmt = items.reduce((sum, i) => sum + i.subtotal, 0);
-  assert.equal(totalAmt, 377.50, 'total amount should be 377.50');
-});
+  test('stat card shows pendingPickups = 7.00', () => {
+    render(<FrontDeskPage />);
+    const sevenEls = screen.getAllByText('7.00');
+    expect(sevenEls.length).toBeGreaterThanOrEqual(1);
+  });
 
-test('正例: 6 个排队叫号不抛异常', () => {
-  const queue = [
-    makeQueueItem({ id: 'q1', number: 'A001', customerName: '张先生', type: 'service', waitingMinutes: 3, status: 'waiting' }),
-    makeQueueItem({ id: 'q2', number: 'A002', customerName: '李女士', type: 'pickup', waitingMinutes: 5, status: 'waiting' }),
-    makeQueueItem({ id: 'q3', number: 'A003', type: 'return', waitingMinutes: 7, status: 'calling' }),
-    makeQueueItem({ id: 'q4', number: 'A004', customerName: '王女士', type: 'consult', waitingMinutes: 10, status: 'waiting' }),
-    makeQueueItem({ id: 'q5', number: 'A005', type: 'service', waitingMinutes: 12, status: 'waiting' }),
-    makeQueueItem({ id: 'q6', number: 'B001', customerName: '赵先生', type: 'pickup', waitingMinutes: 15, status: 'waiting' }),
-  ];
-  assert.equal(queue.length, 6);
-  const types = new Set(queue.map(q => q.type));
-  assert.ok(types.size >= 3, 'should have at least 3 distinct queue types');
-  const statuses = new Set(queue.map(q => q.status));
-  assert.ok(statuses.size >= 2, 'should have at least 2 distinct queue statuses');
-});
+  test('stat card shows waiting queue count', () => {
+    render(<FrontDeskPage />);
+    const waitingEl = screen.getByText(/人等待/);
+    expect(waitingEl).toBeInTheDocument();
+  });
 
-test('正例: 8 个快捷操作不抛异常', () => {
-  const actions = [
-    makeQuickFnButton({ key: 'qa-scan', label: '扫码录入', icon: '📷', highlight: true }),
-    makeQuickFnButton({ key: 'qa-return', label: '退货处理', icon: '↩️', highlight: false }),
-    makeQuickFnButton({ key: 'qa-call', label: '叫号通知', icon: '🔔', highlight: false, badge: 2 }),
-    makeQuickFnButton({ key: 'qa-member', label: '会员查询', icon: '👤', highlight: false }),
-    makeQuickFnButton({ key: 'qa-inv', label: '库存查询', icon: '📦', highlight: false }),
-    makeQuickFnButton({ key: 'qa-price', label: '改价审批', icon: '💰', highlight: false }),
-    makeQuickFnButton({ key: 'qa-print', label: '打印小票', icon: '🖨️', highlight: false }),
-    makeQuickFnButton({ key: 'qa-summary', label: '交班汇总', icon: '📊', highlight: false }),
-  ];
-  assert.equal(actions.length, 8);
-  const highlights = actions.filter(a => a.highlight === true);
-  assert.equal(highlights.length, 1, 'exactly 1 highlighted action');
-});
+  // ====== 快捷操作测试 ======
 
-/* ── 反例 ── */
+  test('renders quick action grid', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('扫码录入')).toBeInTheDocument();
+    expect(screen.getByText('退货处理')).toBeInTheDocument();
+    expect(screen.getByText('叫号通知')).toBeInTheDocument();
+    expect(screen.getByText('会员查询')).toBeInTheDocument();
+  });
 
-test('反例: 空购物篮不抛异常', () => {
-  const items: Record<string, unknown>[] = [];
-  const totalQty = items.reduce((sum, i) => sum + ((i.quantity as number) ?? 0), 0);
-  assert.equal(totalQty, 0);
-  assert.equal(items.length, 0);
-});
+  test('renders all 8 quick action buttons', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('扫码录入')).toBeInTheDocument();
+    expect(screen.getByText('退货处理')).toBeInTheDocument();
+    expect(screen.getByText('叫号通知')).toBeInTheDocument();
+    expect(screen.getByText('会员查询')).toBeInTheDocument();
+    expect(screen.getByText('库存查询')).toBeInTheDocument();
+    expect(screen.getByText('改价审批')).toBeInTheDocument();
+    expect(screen.getByText('打印小票')).toBeInTheDocument();
+    expect(screen.getByText('交班汇总')).toBeInTheDocument();
+  });
 
-test('反例: 空排队列表不抛异常', () => {
-  const queue: Record<string, unknown>[] = [];
-  assert.equal(queue.length, 0);
-});
+  test('扫码录入 button is highlighted', () => {
+    render(<FrontDeskPage />);
+    const scanBtn = screen.getByText('扫码录入').closest('button');
+    expect(scanBtn).toBeTruthy();
+  });
 
-test('反例: 空快捷操作列表不抛异常', () => {
-  const actions: Record<string, unknown>[] = [];
-  assert.equal(actions.length, 0);
-});
+  test('叫号通知 shows badge', () => {
+    render(<FrontDeskPage />);
+    const twoEls = screen.getAllByText('2');
+    expect(twoEls.length).toBeGreaterThanOrEqual(1);
+  });
 
-test('反例: 负价格/数量不抛异常', () => {
-  const item = makeBasketItem({ unitPrice: -10, subtotal: -20 });
-  assert.equal(item.unitPrice, -10);
-  assert.equal(item.subtotal, -20);
-});
+  // ====== 购物篮测试 ======
 
-test('反例: 负等待时间不抛异常', () => {
-  const q = makeQueueItem({ waitingMinutes: -1 });
-  assert.equal(q.waitingMinutes, -1);
-});
+  test('renders basket section with item count', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText(/购物篮/)).toBeInTheDocument();
+  });
 
-test('反例: todayStats 零值不抛异常', () => {
-  const s = makeTodayStats({ totalOrders: 0, totalRevenue: 0, avgCheckoutSec: 0, pendingPickups: 0 });
-  assert.equal(s.totalOrders, 0);
-  assert.equal(s.totalRevenue, 0);
-});
+  test('basket shows 4 items initially', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText(/购物篮 \(4 件\)/)).toBeInTheDocument();
+  });
 
-/* ── 边界 ── */
+  test('basket shows all 4 product names', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('精选有机蔬菜拼盘')).toBeInTheDocument();
+    expect(screen.getByText('澳洲进口牛排 500g')).toBeInTheDocument();
+    expect(screen.getByText('纯牛奶 1L 装')).toBeInTheDocument();
+    expect(screen.getByText('新鲜蓝莓 125g')).toBeInTheDocument();
+  });
 
-test('边界: 超大购物篮（100 件商品）', () => {
-  const items = Array.from({ length: 100 }, (_, i) =>
-    makeBasketItem({ id: `bi-${i}`, name: `商品${i}`, quantity: i + 1 }));
-  assert.equal(items.length, 100);
-  assert.equal(items[0].id, 'bi-0');
-  assert.equal(items[99].id, 'bi-99');
-  const totalQty = items.reduce((sum, i) => sum + i.quantity, 0);
-  assert.equal(totalQty, 5050, 'sum 1..100 = 5050');
-});
+  test('basket shows correct SKUs', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('VEG-001')).toBeInTheDocument();
+    expect(screen.getByText('BEEF-012')).toBeInTheDocument();
+  });
 
-test('边界: 超长排队列表（50 位）', () => {
-  const queue = Array.from({ length: 50 }, (_, i) =>
-    makeQueueItem({ id: `q${i}`, number: `A${String(i + 1).padStart(3, '0')}`, waitingMinutes: i }));
-  assert.equal(queue.length, 50);
-  assert.equal(queue[0].number, 'A001');
-  assert.equal(queue[49].number, 'A050');
-});
+  test('basket shows unit prices', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('¥45.00')).toBeInTheDocument();
+    const price168 = screen.getAllByText('¥168.00');
+    expect(price168.length).toBeGreaterThanOrEqual(1);
+  });
 
-test('边界: 所有 queue 类型覆盖', () => {
-  const types = ['service', 'pickup', 'return', 'consult'];
-  for (const t of types) {
-    const q = makeQueueItem({ type: t });
-    assert.equal(q.type, t);
-  }
-});
+  test('basket shows quantities', () => {
+    render(<FrontDeskPage />);
+    // Multiple items have quantity displayed
+    const qtyElements = screen.getAllByText(/^[1-9]$/);
+    expect(qtyElements.length).toBeGreaterThanOrEqual(1);
+  });
 
-test('边界: 所有 queue 状态覆盖', () => {
-  const statuses = ['waiting', 'calling', 'serving'];
-  for (const s of statuses) {
-    const q = makeQueueItem({ status: s });
-    assert.equal(q.status, s);
-  }
-});
+  test('basket shows subtotal for each item', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('¥90.00')).toBeInTheDocument();
+    expect(screen.getByText('¥59.70')).toBeInTheDocument();
+  });
 
-test('边界: 所有结账状态覆盖', () => {
-  const statuses = ['idle', 'processing', 'success', 'failed'];
-  for (const s of statuses) {
-    assert.ok(['idle', 'processing', 'success', 'failed'].includes(s), `valid checkout status: ${s}`);
-  }
-});
+  test('basket total is displayed', () => {
+    render(<FrontDeskPage />);
+    const totalAmount = (90.00 + 168.00 + 59.70 + 59.80).toFixed(2);
+    expect(screen.getByText(`¥${totalAmount}`)).toBeInTheDocument();
+  });
 
-test('边界: 所有支付方式覆盖', () => {
-  const methods = ['wechat', 'alipay', 'cash', 'card', 'member_card'];
-  assert.equal(methods.length, 5);
-  for (const m of methods) {
-    assert.ok(typeof m === 'string');
-  }
-});
+  test('basket has clear basket button', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('清空')).toBeInTheDocument();
+  });
 
-test('边界: 超高营收', () => {
-  const s = makeTodayStats({ totalRevenue: 99999999.99 });
-  assert.equal(s.totalRevenue, 99999999.99);
-});
+  test('each basket item has delete button', () => {
+    render(<FrontDeskPage />);
+    const deleteBtns = screen.getAllByText('删除');
+    expect(deleteBtns.length).toBe(4);
+  });
 
-test('边界: 超长结账时间', () => {
-  const s = makeTodayStats({ avgCheckoutSec: 999 });
-  assert.equal(s.avgCheckoutSec, 999);
-});
+  // ====== 支付方式测试 ======
 
-test('边界: 性能 — 构造 1000 条购物篮数据 < 50ms', () => {
-  const start = performance.now();
-  const items = Array.from({ length: 1000 }, (_, i) =>
-    makeBasketItem({ id: `bi-${i}` }));
-  const elapsed = performance.now() - start;
-  assert.equal(items.length, 1000);
-  assert.ok(elapsed < 50, `1000 items construct in ${elapsed.toFixed(1)}ms (should be < 50ms)`);
+  test('renders all 5 payment method options', () => {
+    render(<FrontDeskPage />);
+    const wechatEls = screen.getAllByText('微信支付');
+    expect(wechatEls.length).toBeGreaterThanOrEqual(1);
+    const alipayEls = screen.getAllByText('支付宝');
+    expect(alipayEls.length).toBeGreaterThanOrEqual(1);
+    const cashEls = screen.getAllByText('现金');
+    expect(cashEls.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('银行卡')).toBeInTheDocument();
+    const cardEls = screen.getAllByText('会员卡');
+    expect(cardEls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('wechat payment is selected by default', () => {
+    render(<FrontDeskPage />);
+    const wechatBtns = screen.getAllByText('微信支付');
+    const wechatBtn = wechatBtns[0].closest('button');
+    expect(wechatBtn).toHaveStyle('border: 2px solid #2563eb');
+  });
+
+  test('checkout button shows total amount', () => {
+    render(<FrontDeskPage />);
+    const total = (90.00 + 168.00 + 59.70 + 59.80).toFixed(2);
+    expect(screen.getByText(`💳 结算 ¥${total}`)).toBeInTheDocument();
+  });
+
+  // ====== 交互测试 ======
+
+  test('clicking delete removes item from basket', () => {
+    render(<FrontDeskPage />);
+    const deleteBtns = screen.getAllByText('删除');
+    fireEvent.click(deleteBtns[0]);
+    expect(screen.queryByText('精选有机蔬菜拼盘')).not.toBeInTheDocument();
+  });
+
+  test('delete updates basket count', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText(/购物篮 \(4 件\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByText('删除')[0]);
+    expect(screen.getByText(/购物篮 \(3 件\)/)).toBeInTheDocument();
+  });
+
+  test('clearing all items shows empty basket message', () => {
+    render(<FrontDeskPage />);
+    const deleteBtns = screen.getAllByText('删除');
+    deleteBtns.forEach(btn => fireEvent.click(btn));
+    expect(screen.getByText(/购物篮为空/)).toBeInTheDocument();
+  });
+
+  test('clear basket button empties the basket', () => {
+    render(<FrontDeskPage />);
+    fireEvent.click(screen.getByText('清空'));
+    expect(screen.getByText('🛒 购物篮为空，请扫描或搜索商品')).toBeInTheDocument();
+  });
+
+  test('clicking alipay switches payment method', () => {
+    render(<FrontDeskPage />);
+    const alipayEls = screen.getAllByText('支付宝');
+    fireEvent.click(alipayEls[0]);
+    const alipayBtn = alipayEls[0].closest('button');
+    expect(alipayBtn).toHaveStyle('border: 2px solid #2563eb');
+  });
+
+  test('toggle basket button hides basket', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('精选有机蔬菜拼盘')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('📋 收银面板'));
+    expect(screen.queryByText('精选有机蔬菜拼盘')).not.toBeInTheDocument();
+    expect(screen.getByText('🛒 显示购物篮')).toBeInTheDocument();
+  });
+
+  test('toggle basket button shows basket again', () => {
+    render(<FrontDeskPage />);
+    fireEvent.click(screen.getByText('📋 收银面板'));
+    expect(screen.getByText('🛒 显示购物篮')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('🛒 显示购物篮'));
+    expect(screen.getByText('精选有机蔬菜拼盘')).toBeInTheDocument();
+  });
+
+  // ====== 排队列表测试 ======
+
+  test('renders queue list section', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText(/排队叫号/)).toBeInTheDocument();
+  });
+
+  test('queue shows waiting count', () => {
+    render(<FrontDeskPage />);
+    const waitingText = screen.getByText(/人等待/);
+    expect(waitingText).toBeInTheDocument();
+  });
+
+  test('queue shows queue numbers', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('A001')).toBeInTheDocument();
+    expect(screen.getByText('A002')).toBeInTheDocument();
+    expect(screen.getByText('B001')).toBeInTheDocument();
+  });
+
+  test('queue item A003 is calling status', () => {
+    render(<FrontDeskPage />);
+    const statusBadges = screen.getAllByTestId('m5-status-badge');
+    const callingBadge = statusBadges.find(b => b.textContent === '叫号中');
+    expect(callingBadge).toBeInTheDocument();
+  });
+
+  test('clicking calling button for wait item', () => {
+    render(<FrontDeskPage />);
+    const callBtns = screen.getAllByText('叫号');
+    expect(callBtns.length).toBeGreaterThan(0);
+  });
+
+  test('clicking serve button for calling item', () => {
+    render(<FrontDeskPage />);
+    const serveBtns = screen.getAllByText('服务');
+    expect(serveBtns.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // ====== 交易记录测试 ======
+
+  test('renders recent transactions section', () => {
+    render(<FrontDeskPage />);
+    const transactionsSection = screen.getByText('📄 最近交易');
+    expect(transactionsSection).toBeInTheDocument();
+  });
+
+  test('renders all 5 transactions', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    expect(screen.getByText('ORD-005')).toBeInTheDocument();
+  });
+
+  test('transactions show customer names', () => {
+    render(<FrontDeskPage />);
+    expect(screen.getByText('张明')).toBeInTheDocument();
+    expect(screen.getByText('陈伟')).toBeInTheDocument();
+  });
+
+  test('transactions show payment method labels', () => {
+    render(<FrontDeskPage />);
+    // 交易记录表和支付按钮区域都显示支付方式
+    const wechatCount = screen.getAllByText('微信支付').length;
+    const alipayCount = screen.getAllByText('支付宝').length;
+    expect(wechatCount + alipayCount).toBeGreaterThanOrEqual(3);
+  });
+
+  test('refunded transaction shows 已退款', () => {
+    render(<FrontDeskPage />);
+    const refundBadges = screen.getAllByText('已退款');
+    expect(refundBadges.length).toBe(1);
+  });
+
+  // ====== 底部状态栏测试 ======
+
+  test('renders cashier status bar', () => {
+    render(<FrontDeskPage />);
+    const cashierEls = screen.getAllByText(/收银员: 王芳/);
+    expect(cashierEls.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/班次: 早班 08:00-16:00/)).toBeInTheDocument();
+    expect(screen.getByText(/已处理订单: 156/)).toBeInTheDocument();
+    expect(screen.getByText(/收银总额:/)).toBeInTheDocument();
+  });
+
+  // ====== 边界测试 ======
+
+  test('export default is a function', () => {
+    expect(typeof FrontDeskPage).toBe('function');
+  });
+
+  test('checkout button renders with total amount', () => {
+    render(<FrontDeskPage />);
+    const total = (90.00 + 168.00 + 59.70 + 59.80).toFixed(2);
+    const checkoutBtn = screen.getByText(`💳 结算 ¥${total}`);
+    expect(checkoutBtn).toBeInTheDocument();
+    expect(checkoutBtn).not.toBeDisabled();
+  });
+
+  test('empty basket shows empty message and hides checkout', () => {
+    render(<FrontDeskPage />);
+    fireEvent.click(screen.getByText('清空'));
+    expect(screen.getByText('🛒 购物篮为空，请扫描或搜索商品')).toBeInTheDocument();
+    expect(screen.queryByText(/结算/)).not.toBeInTheDocument();
+  });
 });

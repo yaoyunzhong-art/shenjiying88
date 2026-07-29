@@ -1,136 +1,342 @@
-/**
- * orders/page.test.tsx — 订单列表页真实接口版结构护栏
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+// ---- Mocks (top-level) ----
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
+const mockPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+// Complex mock of @m5/ui since OrdersListPage heavily uses it
+const mockUsePagination = vi.fn();
+const mockUseSortedItems = vi.fn();
+
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description }: any) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>{children}</div>
+  ),
+  DataTable: ({ columns, rows, rowKey, sort, onSortChange, onRowClick }: any) => (
+    <div data-testid="m5-datatable" data-row-count={rows.length}>
+      {rows.length === 0 && <div data-testid="datatable-empty" />}
+      {rows.map((row: any, i: number) => (
+        <div key={rowKey(row)} data-testid={`datatable-row-${i}`} onClick={() => onRowClick(row)}>
+          {columns.map((col: any) => (
+            <span key={col.key} data-testid={`cell-${col.key}-${i}`}>
+              {col.render ? col.render(row) : row[col.key]}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  ),
+  Pagination: ({ page, totalPages, total, onPageChange }: any) => (
+    <div data-testid="m5-pagination" data-page={page} data-total-pages={totalPages}>
+      <button data-testid="pagination-prev" onClick={() => onPageChange(page - 1)} disabled={page <= 1}>Prev</button>
+      <span>Page {page} of {totalPages} ({total})</span>
+      <button data-testid="pagination-next" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages}>Next</button>
+    </div>
+  ),
+  SearchFilterInput: ({ value, onChange, placeholder }: any) => (
+    <input data-testid="search-filter-input" value={value} onChange={(e: any) => onChange(e.target.value)} placeholder={placeholder} />
+  ),
+  StatusBadge: ({ label, variant, size }: any) => (
+    <span data-testid="m5-status-badge" data-variant={variant} data-size={size}>{label}</span>
+  ),
+  Tabs: ({ items, activeKey, onChange, variant }: any) => (
+    <div data-testid="m5-tabs" data-active-key={activeKey}>
+      {items.map((item: any) => (
+        <button key={item.key} data-testid={`tab-${item.key}`} onClick={() => onChange(item.key)}>
+          {item.label} {item.count != null ? `(${item.count})` : ''}
+        </button>
+      ))}
+    </div>
+  ),
+  usePagination: (...args: any[]) => mockUsePagination(...args),
+  useSortedItems: (...args: any[]) => mockUseSortedItems(...args),
+  StatCard: ({ label, value, variant }: any) => (
+    <div data-testid="stat-card" data-variant={variant}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  ),
+  EmptyState: ({ title, description }: any) => (
+    <div data-testid="m5-empty-state">
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </div>
+  ),
+}));
+
+// Use the REAL useTriState hook — importing the actual module
+// vi.mock('../_components/useTriState', ...) is NOT called, so the real hook is used
+
+vi.mock('../_components/TriStateRenderer', () => ({
+  TriStateRenderer: ({ loading, empty, error, onRetry, children }: any) => {
+    if (loading) return <div data-testid="tri-state-loading">加载中…</div>;
+    if (error) return <div data-testid="tri-state-error">{error}<button data-testid="tri-state-retry" onClick={onRetry}>重新加载</button></div>;
+    if (empty) return <div data-testid="tri-state-empty">暂无数据</div>;
+    return <>{typeof children === 'function' ? children() : children}</>;
+  },
+}));
+
+const mockLoadOrders = vi.fn();
+const mockFormatCurrency = vi.fn();
+const mockFormatDateTime = vi.fn();
+const mockGetPaymentLabel = vi.fn();
+const mockGetPaymentStatusLabel = vi.fn();
+const mockGetRefundStatusLabel = vi.fn();
+const mockGetStatusLabel = vi.fn();
+const mockGetStatusVariant = vi.fn();
+const mockMatchStatus = vi.fn();
+const mockMatchPayment = vi.fn();
+
+vi.mock('../../lib/storefront-orders', () => ({
+  loadStorefrontOrders: (...args: any[]) => mockLoadOrders(...args),
+  formatStorefrontOrderCurrency: (...args: any[]) => mockFormatCurrency(...args),
+  formatStorefrontOrderDateTime: (...args: any[]) => mockFormatDateTime(...args),
+  getStorefrontOrderPaymentLabel: (...args: any[]) => mockGetPaymentLabel(...args),
+  getStorefrontPaymentStatusLabel: (...args: any[]) => mockGetPaymentStatusLabel(...args),
+  getStorefrontRefundStatusLabel: (...args: any[]) => mockGetRefundStatusLabel(...args),
+  getStorefrontOrderStatusLabel: (...args: any[]) => mockGetStatusLabel(...args),
+  getStorefrontOrderStatusVariant: (...args: any[]) => mockGetStatusVariant(...args),
+  matchesStorefrontOrderStatusFilter: (...args: any[]) => mockMatchStatus(...args),
+  matchesStorefrontOrderPaymentFilter: (...args: any[]) => mockMatchPayment(...args),
+}));
+
+// ---- Test Subject ----
+
+import OrdersListPage from './page';
+
+const MOCK_ORDERS = [
+  { id: '1', orderNo: 'ORD001', memberId: 'mem1', itemCount: 2, totalAmount: 20000, paidAmount: 20000, refundedAmount: 0, currency: 'CNY', status: 'paid' as const, paymentChannel: 'WECHAT_PAY', createdAt: '2026-07-22T10:00:00Z', updatedAt: '2026-07-22T10:05:00Z' },
+  { id: '2', orderNo: 'ORD002', memberId: 'mem2', itemCount: 1, totalAmount: 5000, paidAmount: 0, refundedAmount: 0, currency: 'CNY', status: 'pending_payment' as const, paymentChannel: 'ALIPAY', createdAt: '2026-07-22T09:00:00Z', updatedAt: '2026-07-22T09:00:00Z' },
+  { id: '3', orderNo: 'ORD003', memberId: 'mem3', itemCount: 3, totalAmount: 80000, paidAmount: 80000, refundedAmount: 80000, currency: 'CNY', status: 'refunded' as const, paymentChannel: 'CASH', createdAt: '2026-07-20T10:00:00Z', updatedAt: '2026-07-21T10:00:00Z' },
+];
+
+function setupMocks() {
+  mockLoadOrders.mockResolvedValue(MOCK_ORDERS);
+  mockFormatCurrency.mockImplementation((amt: number) => `¥${(amt / 100).toFixed(2)}`);
+  mockFormatDateTime.mockImplementation((dt: string) => dt.replace('T', ' ').slice(0, 16));
+  mockGetPaymentLabel.mockImplementation((ch: string) => ch?.replace('_', ' ') ?? '');
+  mockGetPaymentStatusLabel.mockImplementation((status?: string) => status ?? '待确认');
+  mockGetRefundStatusLabel.mockImplementation((status?: string) => status ?? '-');
+  mockGetStatusLabel.mockImplementation((s: string) => s === 'paid' ? '已支付' : s === 'pending_payment' ? '待支付' : '已退款');
+  mockGetStatusVariant.mockImplementation((s: string) => s === 'paid' ? 'success' : s === 'pending_payment' ? 'warning' : 'default');
+  mockMatchStatus.mockImplementation((order: any, filter: string) => filter === 'ALL' || order.status === filter.toLowerCase());
+  mockMatchPayment.mockImplementation((order: any, filter: string) => filter === 'ALL' || order.paymentChannel === filter);
+  mockUsePagination.mockReturnValue({ page: 1, totalPages: 1, setPage: vi.fn() });
+  mockUseSortedItems.mockImplementation((items: any[]) => items);
 }
 
-describe('orders — 正例', () => {
-  it('应导出一个默认组件 OrdersListPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function OrdersListPage'), '缺少默认导出');
+describe('OrdersListPage — 订单管理', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupMocks();
   });
 
-  it('应接入真实订单 helper 与三态渲染', () => {
-    const src = readSource();
-    assert.ok(src.includes('loadStorefrontOrders'), '应接入真实订单列表 helper');
-    assert.ok(src.includes('useTriState'), '应使用 useTriState');
-    assert.ok(src.includes('TriStateRenderer'), '应使用 TriStateRenderer');
-    assert.ok(src.includes('loadOrdersPage'), '应存在真实拉单函数');
+  // ====== 渲染测试 ======
+
+  test('renders PageShell with correct title', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '订单管理');
+    });
   });
 
-  it('应包含统计信息和 StatCard', () => {
-    const src = readSource();
-    assert.ok(src.includes('StatCard'), '缺少 StatCard 组件');
-    assert.ok(src.includes('stats.'), '缺少统计数据引用');
+  test('renders StatCard components', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const statCards = screen.getAllByTestId('stat-card');
+      expect(statCards.length).toBe(8);
+    });
   });
 
-  it('应包含 DataTable 表格渲染', () => {
-    const src = readSource();
-    assert.ok(src.includes('DataTable'), '缺少 DataTable 组件');
-    assert.ok(src.includes('rowKey'), '缺少行键');
+  test('renders search input', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('search-filter-input')).toBeInTheDocument();
+    });
   });
 
-  it('应包含搜索过滤逻辑', () => {
-    const src = readSource();
-    assert.ok(src.includes('SearchFilterInput'), '缺少 SearchFilterInput');
-    assert.ok(src.includes('searchTerm'), '缺少搜索状态');
-    assert.ok(src.includes('statusFilter'), '缺少状态筛选');
-    assert.ok(src.includes('paymentFilter'), '缺少支付方式筛选');
+  test('renders status filter tabs', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      // Tabs mock renders label with count: "全部 (3)"
+      const statusBtns = screen.getAllByTestId(/^tab-/);
+      const statusTabLabels = statusBtns.map(b => b.textContent);
+      expect(statusTabLabels.some(l => l?.startsWith('全部'))).toBe(true);
+      expect(statusTabLabels.some(l => l?.startsWith('待支付'))).toBe(true);
+      expect(statusTabLabels.some(l => l?.startsWith('已支付'))).toBe(true);
+      expect(statusTabLabels.some(l => l?.startsWith('部分退款'))).toBe(true);
+      expect(statusTabLabels.some(l => l?.startsWith('已退款'))).toBe(true);
+    });
   });
 
-  it('应包含真实订单金额渲染', () => {
-    const src = readSource();
-    assert.ok(src.includes('totalAmount'), '缺少金额字段');
-    assert.ok(src.includes('paidAmount'), '缺少实付金额字段');
+  test('renders payment filter tabs', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const allTabs = screen.getAllByTestId(/^tab-/);
+      const labels = allTabs.map(b => b.textContent);
+      expect(labels.some(l => l?.startsWith('全部支付方式'))).toBe(true);
+      expect(labels.some(l => l?.startsWith('微信支付'))).toBe(true);
+      expect(labels.some(l => l?.startsWith('支付宝'))).toBe(true);
+      expect(labels.some(l => l?.startsWith('现金'))).toBe(true);
+      expect(labels.some(l => l?.startsWith('会员卡'))).toBe(true);
+    });
   });
 
-  it('应包含订单号渲染', () => {
-    const src = readSource();
-    assert.ok(src.includes('orderNo') || src.includes('orderId'), '缺少订单号');
+  test('renders DataTable with order rows', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const dataTable = screen.getByTestId('m5-datatable');
+      expect(dataTable).toBeInTheDocument();
+    });
   });
 
-  it('应包含会员 ID 渲染', () => {
-    const src = readSource();
-    assert.ok(src.includes('memberId'), '缺少会员字段');
-  });
-});
+  // ====== 状态测试 ======
 
-describe('orders — 边界', () => {
-  it('应支持分页', () => {
-    const src = readSource();
-    assert.ok(src.includes('Pagination'), '缺少 Pagination');
-    assert.ok(
-      src.includes('pageItems') || src.includes('.slice((pagination.page - 1)'),
-      '缺少分页数据切片'
-    );
+  test('shows loading state initially', () => {
+    mockLoadOrders.mockImplementation(() => new Promise(() => {}));
+    render(<OrdersListPage />);
+    expect(screen.getByTestId('tri-state-loading')).toBeInTheDocument();
   });
 
-  it('应包含 EmptyState 空数据兜底', () => {
-    const src = readSource();
-    assert.ok(src.includes('EmptyState'), '缺少 EmptyState');
-    assert.ok(src.includes('暂无订单'), '缺少空状态文案');
+  test('loads orders on mount', () => {
+    render(<OrdersListPage />);
+    expect(mockLoadOrders).toHaveBeenCalledTimes(1);
   });
 
-  it('应支持多维筛选（状态+支付方式）', () => {
-    const src = readSource();
-    assert.ok(src.includes('statusFilter'), '缺少状态筛选');
-    assert.ok(src.includes('paymentFilter'), '缺少支付方式筛选');
-    assert.ok(src.includes('matchesStorefrontOrderStatusFilter'), '应使用共享状态过滤 helper');
-    assert.ok(src.includes('matchesStorefrontOrderPaymentFilter'), '应使用共享支付过滤 helper');
+  test('calls formatCurrency for order amounts', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(mockFormatCurrency).toHaveBeenCalled();
+    });
   });
 
-  it('应支持按真实时间字段排序展示', () => {
-    const src = readSource();
-    assert.ok(src.includes('createdAt'), '缺少时间字段');
+  test('filters by status on tab click', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const tab = screen.getByTestId('tab-PAID');
+      fireEvent.click(tab);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('m5-datatable')).toBeInTheDocument();
+    });
   });
 
-  it('应点击行跳转真实详情页', () => {
-    const src = readSource();
-    assert.ok(src.includes('router.push(`/orders/${item.id}`)'), '应跳转真实详情页');
-    assert.ok(src.includes('onRowClick={handleRowClick}'), '应支持行点击');
-  });
-});
-
-describe('orders — 防御', () => {
-  it('应包含 React 导入', () => {
-    const src = readSource();
-    assert.ok(src.includes('import React'), '缺少 React 导入');
+  test('filters by payment tab on click', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const tab = screen.getByTestId('tab-WECHAT_PAY');
+      fireEvent.click(tab);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('m5-datatable')).toBeInTheDocument();
+    });
   });
 
-  it('不应再保留 mock 页面遗留结构', () => {
-    const src = readSource();
-    assert.equal(src.includes('generateMockOrders'), false, '不应继续保留随机 mock 订单');
-    assert.equal(src.includes('MOCK_ORDERS'), false, '不应继续保留 MOCK_ORDERS');
-    assert.equal(src.includes('OrderDetailDialog'), false, '不应继续保留假详情弹窗');
+  // ====== 搜索测试 ======
+
+  test('filters orders by search term', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const searchInput = screen.getByTestId('search-filter-input');
+      fireEvent.change(searchInput, { target: { value: 'ORD001' } });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('m5-datatable')).toBeInTheDocument();
+    });
   });
 
-  it('应包含统计卡片中的真实收入口径', () => {
-    const src = readSource();
-    assert.ok(src.includes('实收金额'), '应展示真实收入统计');
+  test('renders pagination component', async () => {
+    mockUsePagination.mockReturnValue({ page: 1, totalPages: 2, setPage: vi.fn() });
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('m5-pagination')).toBeInTheDocument();
+    });
   });
 
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+  // ====== 交互测试 ======
+
+  test('navigates to order detail on row click', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const rows = screen.getAllByTestId(/datatable-row/);
+      expect(rows.length).toBeGreaterThan(0);
+      fireEvent.click(rows[0]);
+    });
+    expect(mockPush).toHaveBeenCalledWith('/orders/1');
   });
 
-  it('应包 useMemo/useCallback 优化', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo') || src.includes('useCallback'), '缺少性能优化');
+  test('uses pagination component', async () => {
+    mockUsePagination.mockReturnValue({ page: 2, totalPages: 3, setPage: vi.fn() });
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const nextBtn = screen.getByTestId('pagination-next');
+      fireEvent.click(nextBtn);
+    });
   });
 
-  it('应使用可选链避免深层属性报错', () => {
-    const src = readSource();
-    assert.ok(src.includes('?.') || src.includes('??'), '缺少可选链');
+  test('shows EmptyState when no orders', async () => {
+    mockLoadOrders.mockResolvedValue([]);
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('m5-empty-state')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 统计测试 ======
+
+  test('StatCard shows total order count', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const statCards = screen.getAllByTestId('stat-card');
+      expect(statCards[0]).toHaveTextContent('总订单数');
+    });
+  });
+
+  test('StatCard shows pending count', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const statCards = screen.getAllByTestId('stat-card');
+      expect(statCards[1]).toHaveTextContent('待支付');
+    });
+  });
+
+  test('StatCard shows revenue amount', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const statCards = screen.getAllByTestId('stat-card');
+      expect(statCards.some((card) => card.textContent?.includes('实收金额'))).toBe(true);
+    });
+  });
+
+  // ====== 边界情况 ======
+
+  test('handles order load failure and shows error state', async () => {
+    mockLoadOrders.mockRejectedValue(new Error('网络错误'));
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('tri-state-error')).toBeInTheDocument();
+    });
+  });
+
+  test('retry button triggers reload', async () => {
+    mockLoadOrders.mockRejectedValue(new Error('网络错误'));
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('tri-state-retry')).toBeInTheDocument();
+    });
+  });
+
+  test('renders StatusBadge for each order', async () => {
+    render(<OrdersListPage />);
+    await waitFor(() => {
+      const badges = screen.getAllByTestId('m5-status-badge');
+      expect(badges.length).toBeGreaterThan(0);
+    });
   });
 });

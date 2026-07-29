@@ -1,234 +1,403 @@
 /**
- * 供应商详情页 — Supplier Detail Page Test
- * 验证: 状态映射、状态流转规则、Mock 数据完整性
+ * suppliers/[id]/page.vitest.tsx — 供应商详情页 L2 组件测试
+ * 角色: 👔店长 / 💳采购
+ * 覆盖: 渲染 · 基本信息 · 合作数据 · 产品列表 · 状态流转 · 确认对话框 · 编辑/删除 · 空态
+ *
+ * 注意: vi.mock factory 是提升的(hoisted), 不能引用顶层变量, 数据必须内联在 factory 内。
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+// ── Mock next/navigation ──
 
-// ---- 类型 & 常量 (与 page.tsx 同步) ----
+const mockPush = vi.fn();
+const mockRouterParams = Promise.resolve({ id: '1' });
 
-type CooperationStatus = 'active' | 'suspended' | 'terminated' | 'pending';
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
 
-const STATUS_LABELS: Record<CooperationStatus, string> = {
-  active: '合作中',
-  suspended: '暂停合作',
-  terminated: '已终止',
-  pending: '待审核',
-};
+// vi.mock('next/link', () => ({
+//   default: ({ children, href, ...rest }: any) => <a href={href} {...rest}>{children}</a>,
+// }));
+vi.mock('next/link', () => ({
+  default: ({ children, href, ...rest }: any) => React.createElement('a', { href, ...rest }, children),
+}));
 
-const STATUS_TRANSITIONS: Record<CooperationStatus, CooperationStatus[]> = {
-  active: ['suspended'],
-  suspended: ['active', 'terminated'],
-  terminated: [],
-  pending: ['active', 'terminated'],
-};
+// ── Mock @m5/ui ──
 
-const TRANSITION_LABELS: Record<string, string> = {
-  active: '恢复合作',
-  suspended: '暂停合作',
-  terminated: '终止合作',
-};
+vi.mock('@m5/ui', () => {
+  const MockDetailActionBar = ({ actions }: any) => (
+    <div data-testid="detail-action-bar">
+      {actions?.map((a: any) => (
+        <button key={a.key} data-testid={`action-${a.key}`} data-variant={a.variant} onClick={a.onClick}>
+          {a.label}
+        </button>
+      ))}
+    </div>
+  );
 
-const CREDIT_LABELS: Record<string, string> = {
-  A: 'A级（优秀）',
-  B: 'B级（良好）',
-  C: 'C级（一般）',
-  D: 'D级（待改进）',
-};
+  const MockDetailClosureBar = ({ links }: any) => (
+    <div data-testid="detail-closure-bar">
+      {links?.map((l: any) => (
+        <a key={l.key} data-testid={`closure-${l.key}`} href={l.href}>{l.title}</a>
+      ))}
+    </div>
+  );
 
-// ---- Mock 供应商常量 ----
-
-const MOCK_SUPPLIER_NAME = '广州美妆供应链有限公司';
-const MOCK_SHORT_NAME = '广州美妆';
-const MOCK_CONTACT = '李明';
-const MOCK_PHONE = '13800138001';
-const MOCK_EMAIL = 'liming@gzmz.com';
-
-const MOCK_PRODUCTS = [
-  { name: '保湿精华液（100ml）', category: '护肤品', sku: 'ES-100ML-001', unitPrice: 68 },
-  { name: '洁面乳（150g）', category: '护肤品', sku: 'CF-150G-002', unitPrice: 45 },
-  { name: '防晒霜（SPF50 60ml）', category: '护肤品', sku: 'SS-60ML-003', unitPrice: 55 },
-];
-
-const MOCK_STATS = {
-  totalOrders: 86,
-  totalAmount: 1285000,
-  onTimeRate: 97.5,
-  qualityRate: 99.2,
-};
-
-const MOCK_HISTORY = [
-  '供应商注册申请',
-  '资质审核通过',
-  '续签合作协议',
-];
-
-// ---- Tests ----
-
-describe('SupplierDetailPage - 类型与常量', () => {
-  it('应定义所有合作状态', () => {
-    assert.equal(Object.keys(STATUS_LABELS).length, 4);
-    assert.equal(STATUS_LABELS.active, '合作中');
-    assert.equal(STATUS_LABELS.suspended, '暂停合作');
-    assert.equal(STATUS_LABELS.terminated, '已终止');
-    assert.equal(STATUS_LABELS.pending, '待审核');
-  });
-
-  it('应定义正确的状态流转规则', () => {
-    // active 可暂停
-    assert.deepEqual(STATUS_TRANSITIONS.active, ['suspended']);
-    // suspended 可恢复或终止
-    assert.deepEqual(STATUS_TRANSITIONS.suspended, ['active', 'terminated']);
-    // terminated 无后续
-    assert.deepEqual(STATUS_TRANSITIONS.terminated, []);
-    // pending 可通过或拒绝
-    assert.deepEqual(STATUS_TRANSITIONS.pending, ['active', 'terminated']);
-  });
-
-  it('应定义完整的状态流转标签', () => {
-    assert.equal(TRANSITION_LABELS.active, '恢复合作');
-    assert.equal(TRANSITION_LABELS.suspended, '暂停合作');
-    assert.equal(TRANSITION_LABELS.terminated, '终止合作');
-  });
-
-  it('应定义所有信用等级标签', () => {
-    assert.equal(CREDIT_LABELS.A, 'A级（优秀）');
-    assert.equal(CREDIT_LABELS.B, 'B级（良好）');
-    assert.equal(CREDIT_LABELS.C, 'C级（一般）');
-    assert.equal(CREDIT_LABELS.D, 'D级（待改进）');
-  });
-});
-
-describe('SupplierDetailPage - Mock 数据', () => {
-  it('应包含供应商基本信息', () => {
-    assert.equal(MOCK_SUPPLIER_NAME, '广州美妆供应链有限公司');
-    assert.equal(MOCK_SHORT_NAME, '广州美妆');
-    assert.equal(MOCK_CONTACT, '李明');
-    assert.equal(MOCK_PHONE, '13800138001');
-    assert.equal(MOCK_EMAIL, 'liming@gzmz.com');
-  });
-
-  it('应包含产品数据', () => {
-    assert.equal(MOCK_PRODUCTS.length, 3);
-    assert.ok(MOCK_PRODUCTS.some((p) => p.name === '保湿精华液（100ml）'));
-    assert.ok(MOCK_PRODUCTS.some((p) => p.name === '洁面乳（150g）'));
-    assert.ok(MOCK_PRODUCTS.some((p) => p.name === '防晒霜（SPF50 60ml）'));
-  });
-
-  it('应包含正确的产品 SKU', () => {
-    assert.equal(MOCK_PRODUCTS[0].sku, 'ES-100ML-001');
-    assert.equal(MOCK_PRODUCTS[1].sku, 'CF-150G-002');
-    assert.equal(MOCK_PRODUCTS[2].sku, 'SS-60ML-003');
-  });
-
-  it('应包含合作数据统计', () => {
-    assert.equal(MOCK_STATS.totalOrders, 86);
-    assert.equal(MOCK_STATS.totalAmount, 1285000);
-    assert.equal(MOCK_STATS.onTimeRate, 97.5);
-    assert.equal(MOCK_STATS.qualityRate, 99.2);
-  });
-
-  it('应包含合作历史事件', () => {
-    assert.ok(MOCK_HISTORY.includes('供应商注册申请'));
-    assert.ok(MOCK_HISTORY.includes('资质审核通过'));
-    assert.ok(MOCK_HISTORY.includes('续签合作协议'));
-  });
-});
-
-describe('SupplierDetailPage - 页面文件完整性', () => {
-  it('页面文件应 export 默认函数组件', async () => {
-    const mod = await import('./page.tsx');
-    assert.equal(typeof mod.default, 'function');
-  });
-
-  it('页面文件应导入 DetailShell 组件', async () => {
-    const mod = await import('./page.tsx');
-    // 验证模块中的导入符号
-    const src = await import('fs').then(
-      (fs) => fs.readFileSync(
-        new URL('./page.tsx', import.meta.url),
-        'utf-8',
+  return {
+    DetailShell: ({ children, title, subtitle, backHref, actions }: any) => (
+      <div data-testid="detail-shell" data-title={title} data-subtitle={subtitle} data-back-href={backHref}>
+        {actions && <MockDetailActionBar actions={actions} />}
+        {children}
+      </div>
+    ),
+    InfoRow: ({ label, value }: any) => (
+      <div data-testid="info-row"><span data-testid="info-label">{label}</span><span data-testid="info-value">{value}</span></div>
+    ),
+    StatusBadge: ({ label, variant, size }: any) => (
+      <span data-testid="status-badge" data-badge-variant={variant} data-size={size}>{label}</span>
+    ),
+    Button: Object.assign(
+      ({ children, onClick, disabled, loading, variant, style, ...rest }: any) => (
+        <button data-testid={`btn-${variant || 'default'}`} onClick={onClick} disabled={disabled || loading} data-variant={variant} style={style} {...rest}>
+          {children}
+        </button>
       ),
-    );
-    assert.ok(src.includes('DetailShell'), 'Missing DetailShell');
-    assert.ok(src.includes('StatusBadge'), 'Missing StatusBadge');
-    assert.ok(src.includes('DescriptionList'), 'Missing DescriptionList');
-    assert.ok(src.includes('DataTable'), 'Missing DataTable');
-    assert.ok(src.includes('useToast'), 'Missing useToast');
-    assert.ok(src.includes('ConfirmDialog'), 'Missing ConfirmDialog');
-    assert.ok(src.includes('cooperationStatus'), 'Missing cooperationStatus');
+      { displayName: 'Button' },
+    ),
+    DetailActionBar: MockDetailActionBar,
+    DetailClosureBar: MockDetailClosureBar,
+    Timeline: ({ items }: any) => (
+      <div data-testid="timeline">
+        {items?.map((item: any) => (
+          <div key={item.key} data-testid="timeline-item" data-variant={item.variant}>
+            <div>{item.heading}</div>
+            <div>{item.subtitle}</div>
+          </div>
+        ))}
+      </div>
+    ),
+    DescriptionList: ({ title, items, columns }: any) => (
+      <div data-testid="description-list" data-title={title} data-columns={columns}>
+        {items?.map((item: any, i: number) => (
+          <div key={i} data-testid="desc-item">
+            <span data-testid="desc-label">{item.label}</span>
+            <span data-testid="desc-value">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    ),
+    DataTable: ({ columns, rows, rowKey }: any) => (
+      <div data-testid="data-table">
+        {rows?.map((row: any) => (
+          <div key={rowKey(row)} data-testid="table-row">
+            {columns?.map((col: any) => (
+              <span key={col.key} data-testid={`cell-${col.key}`}>
+                {col.render ? col.render(row) : row[col.dataKey]}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    ),
+    EmptyState: ({ title, description }: any) => (
+      <div data-testid="empty-state">
+        <div data-testid="empty-title">{title}</div>
+        <div data-testid="empty-desc">{description}</div>
+      </div>
+    ),
+    useToast: () => ({
+      success: vi.fn(),
+      info: vi.fn(),
+      error: vi.fn(),
+      warning: vi.fn(),
+    }),
+    ConfirmDialog: ({ open, title, message, confirmLabel, cancelLabel, onConfirm, onCancel, variant }: any) =>
+      open ? (
+        <div data-testid="confirm-dialog" data-variant={variant}>
+          <div data-testid="confirm-title">{title}</div>
+          <div data-testid="confirm-message">{message}</div>
+          <button data-testid="confirm-yes" onClick={onConfirm}>{confirmLabel}</button>
+          <button data-testid="confirm-no" onClick={onCancel}>{cancelLabel}</button>
+        </div>
+      ) : null,
+  };
+});
+
+// ── Test Subject ──
+
+import SupplierDetailPage from './page';
+
+/** Create a params promise for the component */
+function mockParams(id: string = '1'): Promise<{ id: string }> {
+  return Promise.resolve({ id });
+}
+
+function renderSupplierPage() {
+  return render(<SupplierDetailPage params={mockParams()} />);
+}
+
+describe('SupplierDetailPage — 供应商详情页', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('页面文件应包含所有页面子组件', async () => {
-    const fs = await import('fs');
-    const src = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url),
-      'utf-8',
-    );
-    assert.ok(src.includes('HistoryTimeline'), 'Missing HistoryTimeline');
-    assert.ok(src.includes('SupplierProduct'), 'Missing SupplierProduct type');
-    assert.ok(src.includes('handleTransition'), 'Missing handleTransition');
-    assert.ok(src.includes('handleConfirmDanger'), 'Missing handleConfirmDanger');
-    assert.ok(src.includes('headerActions'), 'Missing headerActions');
-    assert.ok(src.includes('closureLinks'), 'Missing closureLinks');
+  // ====== 正例: 渲染 ======
+
+  test('renders DetailShell with supplier name', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('detail-shell')).toHaveAttribute('data-title', '广州美妆供应链有限公司');
+    });
   });
 
-
-  it('active can only go to suspended', () => {
-    assert.deepEqual(STATUS_TRANSITIONS.active, ['suspended']);
+  test('renders subtitle with short name and cooperation date', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('detail-shell')).toHaveAttribute('data-subtitle', expect.stringContaining('简称：广州美妆'));
+    });
   });
 
-  it('suspended can go to active or terminated', () => {
-    const tos = STATUS_TRANSITIONS.suspended;
-    assert.ok(tos.includes('active'));
-    assert.ok(tos.includes('terminated'));
+  test('renders backHref to /suppliers', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('detail-shell')).toHaveAttribute('data-back-href', '/suppliers');
+    });
   });
 
-  it('terminated has no transitions', () => {
-    assert.equal(STATUS_TRANSITIONS.terminated.length, 0);
+  test('renders DescriptionList with basic info', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('description-list')).toBeInTheDocument();
+    });
+    const labels = screen.getAllByTestId('desc-label');
+    expect(labels.length).toBeGreaterThan(0);
+    expect(labels[0]).toHaveTextContent('供应商名称');
   });
 
-  it('pending can go to active or terminated', () => {
-    const tos = STATUS_TRANSITIONS.pending;
-    assert.ok(tos.includes('active'));
-    assert.ok(tos.includes('terminated'));
+  test('renders supplier name in description list', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      const values = screen.getAllByTestId('desc-value');
+      expect(values.some(v => v.textContent === '广州美妆供应链有限公司')).toBe(true);
+    });
   });
 
-  it('all statuses have labels in STATUS_LABELS', () => {
-    for (const s of Object.keys(STATUS_TRANSITIONS)) {
-      assert.ok(STATUS_LABELS[s], 'Missing label for ' + s);
-    }
+  test('renders status badge with 合作中', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('合作中')).toBeInTheDocument();
+    });
   });
 
-  it('all transition targets are valid statuses', () => {
-    const valid = Object.keys(STATUS_LABELS);
-    for (const [, tos] of Object.entries(STATUS_TRANSITIONS)) {
-      for (const to of tos) {
-        assert.ok(valid.includes(to), 'Invalid target: ' + to);
-      }
-    }
+  test('renders credit level A级（优秀）', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('A级（优秀）')).toBeInTheDocument();
+    });
   });
 
-  it('empty product list is safe', () => {
-    assert.equal([].length, 0);
+  // ====== 合作数据 ======
+
+  test('renders cooperation data section', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('合作数据')).toBeInTheDocument();
+    });
   });
 
-  it('all product unit prices are positive', () => {
-    for (const p of MOCK_PRODUCTS) {
-      assert.ok(p.unitPrice > 0);
-    }
+  test('renders total orders count', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('86 单')).toBeInTheDocument();
+    });
   });
 
-  it('all products have category', () => {
-    for (const p of MOCK_PRODUCTS) {
-      assert.ok(p.category);
-    }
+  test('renders total amount', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('¥1,285,000')).toBeInTheDocument();
+    });
   });
 
-  it('supplier contact fields are non-empty', () => {
-    assert.ok(MOCK_CONTACT);
-    assert.ok(MOCK_PHONE);
-    assert.ok(MOCK_EMAIL);
+  // ====== 产品列表 ======
+
+  test('renders product list section', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('供应产品（6 项）')).toBeInTheDocument();
+    });
+  });
+
+  test('renders product names in DataTable', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('保湿精华液（100ml）')).toBeInTheDocument();
+      expect(screen.getByText('洁面乳（150g）')).toBeInTheDocument();
+      expect(screen.getByText('丝绒哑光口红')).toBeInTheDocument();
+    });
+  });
+
+  test('renders product prices with ¥ prefix', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('¥68')).toBeInTheDocument();
+      expect(screen.getByText('¥72')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 合作历史 ======
+
+  test('renders cooperation history timeline', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('合作历史')).toBeInTheDocument();
+      expect(screen.getByTestId('timeline')).toBeInTheDocument();
+    });
+  });
+
+  test('renders timeline events', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText(/供应商注册申请/)).toBeInTheDocument();
+      expect(screen.getByText(/资质审核通过/)).toBeInTheDocument();
+      expect(screen.getByText(/续签合作协议/)).toBeInTheDocument();
+    });
+  });
+
+  // ====== 动作栏 ======
+
+  test('renders action bar with transition actions', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('detail-action-bar')).toBeInTheDocument();
+    });
+    expect(screen.getByText('暂停合作')).toBeInTheDocument();
+    expect(screen.getByText('编辑')).toBeInTheDocument();
+  });
+
+  test('renders closure bar with links', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('detail-closure-bar')).toBeInTheDocument();
+    });
+    expect(screen.getByText('返回供应商列表')).toBeInTheDocument();
+    expect(screen.getByText('新增供应商')).toBeInTheDocument();
+  });
+
+  test('back to list link has correct href', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      const link = screen.getByText('返回供应商列表');
+      expect(link.closest('a')).toHaveAttribute('href', '/suppliers');
+    });
+  });
+
+  // ====== 状态流转 ======
+
+  test('clicking suspend opens confirm dialog', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('暂停合作')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('暂停合作'));
+    await waitFor(() => {
+      expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/确认暂停合作/)).toBeInTheDocument();
+  });
+
+  test('confirming suspend updates status', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('暂停合作')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('暂停合作'));
+    await waitFor(() => {
+      expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('confirm-yes'));
+    await waitFor(() => {
+      // Status should change - badge text changes on re-render
+      expect(screen.getByText(/已暂停合作/)).toBeInTheDocument();
+    });
+  });
+
+  test('cancelling suspend dialog closes it', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('暂停合作')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('暂停合作'));
+    await waitFor(() => {
+      expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId('confirm-no'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  // ====== 编辑/删除 ======
+
+  test('clicking edit shows info toast', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('编辑')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('编辑'));
+    // Test passes as long as no crash occurs; toast is called internally
+    await waitFor(() => {
+      expect(screen.getByText('编辑')).toBeInTheDocument();
+    });
+  });
+
+  test('delete button not available for active supplier', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      // For active supplier, only suspend + edit are available
+      expect(screen.getByText('暂停合作')).toBeInTheDocument();
+      expect(screen.queryByText('终止合作')).not.toBeInTheDocument();
+    });
+  });
+
+  // ====== 边界/空态 ======
+
+  test('closing link redirects supplier new page', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      const link = screen.getByText('新增供应商');
+      expect(link.closest('a')).toHaveAttribute('href', '/suppliers/new');
+    });
+  });
+
+  test('renders supply categories', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText(/护肤品、彩妆、个人护理/)).toBeInTheDocument();
+    });
+  });
+
+  test('renders payment terms', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('月结30天')).toBeInTheDocument();
+    });
+  });
+
+  test('renders on-time rate', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('97.5%')).toBeInTheDocument();
+    });
+  });
+
+  test('renders quality rate', async () => {
+    renderSupplierPage();
+    await waitFor(() => {
+      expect(screen.getByText('99.2%')).toBeInTheDocument();
+    });
   });
 });

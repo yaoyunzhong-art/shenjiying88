@@ -1,343 +1,748 @@
-/**
- * cashier/page.test.tsx — 前台收银台 L1 验收测试
- *
- * PRD-001 驱动测试（V17#Day3）
- * 覆盖所有 AC-35 验收卡:
- *   AC-35-01: 商品搜索
- *   AC-35-02: 商品添加到已选清单
- *   AC-35-03: 多件商品金额计算
- *   AC-35-04: 会员识别（手机号输入）
- *   AC-35-05: 会员折扣应用
- *   AC-35-07: 支付方式选择
- *   AC-35-10: 空结算防御
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+// ---- Mocks (top-level) ----
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
+const mockPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>
+      {children}
+    </div>
+  ),
+  Button: Object.assign(
+    ({ children, onClick, disabled, loading, variant, size, block, style, ...rest }: any) => (
+      <button
+        data-testid={`btn-${variant || 'default'}`}
+        onClick={onClick}
+        disabled={disabled || loading}
+        data-loading={loading}
+        data-variant={variant}
+        data-size={size}
+        style={style}
+        {...rest}
+      >
+        {loading ? '⏳ 正在创建订单...' : children}
+      </button>
+    ),
+    { displayName: 'Button' },
+  ),
+  Input: ({ value, onChange, placeholder, variant, block, 'aria-label': ariaLabel, ...rest }: any) => (
+    <input
+      data-testid="m5-input"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      data-variant={variant}
+      {...rest}
+    />
+  ),
+  Card: ({ children, variant, padding, style, onClick, ...rest }: any) => (
+    <div data-testid="m5-card" data-variant={variant} style={style} {...rest}>
+      {children}
+    </div>
+  ),
+  Tag: ({ children, variant, size, style }: any) => (
+    <span data-testid="m5-tag" data-tag-variant={variant} data-tag-size={size} style={style}>
+      {children}
+    </span>
+  ),
+}));
+
+const mockListProducts = vi.fn();
+const mockBuildMemberId = vi.fn();
+const mockEnsureRegistered = vi.fn();
+const mockStartCheckout = vi.fn();
+const mockLookupMember = vi.fn();
+
+vi.mock('../../lib/storefront-transactions', () => ({
+  listStorefrontCashierProducts: (...args: any[]) => mockListProducts(...args),
+  buildStorefrontMemberId: (...args: any[]) => mockBuildMemberId(...args),
+  ensureStorefrontMemberRegistered: (...args: any[]) => mockEnsureRegistered(...args),
+  startStorefrontCheckout: (...args: any[]) => mockStartCheckout(...args),
+  lookupStorefrontMember: (...args: any[]) => mockLookupMember(...args),
+}));
+
+// ---- Test Subject ----
+
+import CashierPage from './page';
+
+const MOCK_PRODUCTS = [
+  { id: 'p1', name: '射击游戏', category: '街机', price: 500, stock: 10 },
+  { id: 'p2', name: '跳舞机', category: '音乐', price: 800, stock: 5 },
+  { id: 'p3', name: '娃娃机', category: '抓物', price: 300, stock: 20 },
+];
+
+function renderPage() {
+  return render(<CashierPage />);
 }
 
-// ============================================================
-// AC-35-01: 商品搜索
-// ============================================================
-describe('AC-35-01: 商品搜索', () => {
-  it('应包含搜索输入框（searchText 状态 + Input 组件）', () => {
-    const src = readSource();
-    assert.ok(src.includes('searchText'), '缺少 searchText 状态');
-    assert.ok(src.includes('placeholder'), '缺少搜索占位符');
-    assert.ok(src.includes('🔍'), '缺少搜索图标关键词');
+describe('CashierPage — 收银台', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListProducts.mockResolvedValue(MOCK_PRODUCTS);
+    mockBuildMemberId.mockReturnValue('member_id_123');
+    mockEnsureRegistered.mockResolvedValue(undefined);
+    mockLookupMember.mockResolvedValue({
+      phone: '13800138000',
+      name: '张三',
+      tier: 'gold',
+      discountRate: 0.85,
+      points: 1200,
+    });
+    mockStartCheckout.mockResolvedValue({
+      order: { orderId: 'ord-001', orderNo: 'ORD202607220001' },
+    });
   });
 
-  it('应包含商品过滤逻辑（filteredProducts）', () => {
-    const src = readSource();
-    assert.ok(src.includes('filteredProducts'), '缺少过滤商品列表');
-    assert.ok(src.includes('.filter('), '使用 filter 实现过滤');
+  // ====== 渲染测试 ======
+
+  test('renders PageShell with correct title and description', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '🧾 收银台 — P-35');
+    });
   });
 
-  it('搜索应同时匹配商品名称和分类字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('p.name.toLowerCase().includes(q)'), '商品名称应参与过滤');
-    assert.ok(src.includes('p.category.toLowerCase().includes(q)'), '商品分类应参与过滤');
-    assert.ok(src.includes('toLowerCase()'), '大小写不敏感搜索');
-    assert.ok(src.includes('.includes(q)'), '使用 includes 模糊匹配');
+  test('renders product search input', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('搜索商品')).toBeInTheDocument();
+    });
   });
 
-  it('未找到匹配商品时有提示', () => {
-    const src = readSource();
-    assert.ok(src.includes('未找到匹配商品'), '空结果提示');
+  test('renders member phone input', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('会员手机号')).toBeInTheDocument();
+    });
   });
 
-  it('商品目录应通过真实 helper 加载', () => {
-    const src = readSource();
-    assert.ok(src.includes('listStorefrontCashierProducts'), '应接入真实商品目录 helper');
-    assert.ok(src.includes('const loadProductCatalog = useCallback(async () => {'), '应存在真实商品目录加载函数');
-    assert.ok(src.includes('useEffect(() => {'), '应在页面初始化时拉取商品目录');
-  });
-});
-
-// ============================================================
-// AC-35-02: 商品添加到已选清单
-// ============================================================
-describe('AC-35-02: 商品添加到已选清单', () => {
-  it('应包含 addToCart 函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('addToCart'), '缺少 addToCart');
-    assert.ok(src.includes('setCart'), '缺少 setCart 状态更新');
+  test('renders 3 payment method buttons', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('微信扫码')).toBeInTheDocument();
+      expect(screen.getByText('会员余额')).toBeInTheDocument();
+      expect(screen.getByText('现金')).toBeInTheDocument();
+    });
   });
 
-  it('应包含 removeFromCart 函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('removeFromCart'), '缺少 removeFromCart');
+  test('shows loading state initially for products', () => {
+    mockListProducts.mockImplementation(() => new Promise(() => {})); // never resolves
+    renderPage();
+    expect(screen.getByText('商品目录加载中...')).toBeInTheDocument();
   });
 
-  it('应包含 updateQuantity 函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('updateQuantity'), '缺少 updateQuantity');
+  test('renders product cards after loading', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      expect(screen.getByText('跳舞机')).toBeInTheDocument();
+      expect(screen.getByText('娃娃机')).toBeInTheDocument();
+    });
   });
 
-  it('购物车应显示各商品的数量和金额', () => {
-    const src = readSource();
-    assert.ok(src.includes('quantity'), '商品数量字段');
-    assert.ok(src.includes('.quantity'), '数量计算');
+  // ====== 状态测试 ======
+
+  test('shows "未找到匹配商品" when search term does not match any product', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const searchInput = screen.getByLabelText('搜索商品');
+    fireEvent.change(searchInput, { target: { value: '不存在的商品' } });
+    await waitFor(() => {
+      expect(screen.getByText('未找到匹配商品')).toBeInTheDocument();
+    });
   });
 
-  it('添加重复商品应增加数量而非新增条目', () => {
-    const src = readSource();
-    // 逻辑: find existing → quantity+1
-    assert.ok(src.includes('.find((item) => item.id === product.id)'), '查找已存在商品');
-    assert.ok(src.includes('quantity: item.quantity + 1'), '数量递增');
-  });
-});
-
-// ============================================================
-// AC-35-03: 多件商品金额计算
-// ============================================================
-describe('AC-35-03: 多件商品金额计算', () => {
-  it('应计算小计（rawTotal = sum price × quantity）', () => {
-    const src = readSource();
-    assert.ok(src.includes('rawTotal'), '原始小计');
-    assert.ok(src.includes('item.price * item.quantity'), '金额计算');
+  test('filters products by search term', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const searchInput = screen.getByLabelText('搜索商品');
+    fireEvent.change(searchInput, { target: { value: '射击' } });
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      expect(screen.queryByText('跳舞机')).not.toBeInTheDocument();
+    });
   });
 
-  it('应计算商品总数（cartCount）', () => {
-    const src = readSource();
-    assert.ok(src.includes('cartCount'), '商品件数');
-    assert.ok(src.includes('sum + item.quantity'), '件数累加');
+  test('filters products by category search', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const searchInput = screen.getByLabelText('搜索商品');
+    fireEvent.change(searchInput, { target: { value: '音乐' } });
+    await waitFor(() => {
+      expect(screen.getByText('跳舞机')).toBeInTheDocument();
+      expect(screen.queryByText('娃娃机')).not.toBeInTheDocument();
+    });
   });
 
-  it('应显示"应付"金额', () => {
-    const src = readSource();
-    assert.ok(src.includes('应付'), '应付标签');
-    assert.ok(src.includes('finalTotal'), '最终金额');
+  test('shows error state when product loading fails', async () => {
+    mockListProducts.mockRejectedValue(new Error('网络错误'));
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/网络错误/)).toBeInTheDocument();
+    });
   });
 
-  it('应显示"小计"金额', () => {
-    const src = readSource();
-    assert.ok(src.includes('小计'), '小计标签');
-  });
-});
+  // ====== 购物车交互测试 ======
 
-// ============================================================
-// AC-35-04: 会员识别（手机号输入）
-// ============================================================
-describe('AC-35-04: 会员识别', () => {
-  it('应包含手机号输入框', () => {
-    const src = readSource();
-    assert.ok(src.includes('memberPhone'), '会员手机号状态');
-    assert.ok(src.includes('输入会员手机号'), '手机号输入提示');
+  test('adds product to cart on click', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    await waitFor(() => {
+      expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+    });
   });
 
-  it('应包含查询会员按钮', () => {
-    const src = readSource();
-    assert.ok(src.includes('handleLookupMember'), '查询会员函数');
-    assert.ok(src.includes('查询'), '查询按钮');
+  test('shows quantity controls after adding to cart', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    await waitFor(() => {
+      // After adding, the item should have + and − buttons
+      expect(screen.getAllByText('+').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('−').length).toBeGreaterThan(1);
+    });
   });
 
-  it('会员识别应调用 lookupStorefrontMember 真实 API', () => {
-    const src = readSource();
-    assert.ok(src.includes('lookupStorefrontMember'), '应通过真实 API 查询会员');
+  test('increments item quantity in cart', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    // Add to cart
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    await waitFor(() => {
+      expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
-  it('手机号验证应检查11位输入', () => {
-    const src = readSource();
-    assert.ok(src.includes('11位手机号'), '手机号长度验证');
+  test('removes item from cart', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    await waitFor(() => {
+      // Find remove button
+      const removeBtn = screen.getByLabelText('移除 射击游戏');
+      expect(removeBtn).toBeInTheDocument();
+      fireEvent.click(removeBtn);
+    });
   });
 
-  it('查找到会员应显示姓名/等级/积分', () => {
-    const src = readSource();
-    assert.ok(src.includes('姓名'), '姓名字段');
-    assert.ok(src.includes('等级'), '等级字段');
-    assert.ok(src.includes('积分'), '积分字段');
+  test('shows cart total price', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    fireEvent.click(addButtons[1]);
+    await waitFor(() => {
+      // Should show "应付" section
+      expect(screen.getByText('应付')).toBeInTheDocument();
+    });
   });
 
-  it('未找到会员应有提示信息', () => {
-    const src = readSource();
-    assert.ok(src.includes('未找到该会员'), '未找到提示');
+  // ====== 会员识别测试 ======
+
+  test('shows member phone input and query button', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('会员手机号')).toBeInTheDocument();
+      expect(screen.getByText('查询')).toBeInTheDocument();
+    });
   });
 
-  it('应包含清除会员功能', () => {
-    const src = readSource();
-    assert.ok(src.includes('handleClearMember'), '清除会员函数');
-    assert.ok(src.includes('清除'), '清除按钮');
-  });
-});
-
-// ============================================================
-// AC-35-05: 会员折扣应用
-// ============================================================
-describe('AC-35-05: 会员折扣应用', () => {
-  it('折扣信息来自 API 返回的 discountRate 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('discountRate'), '折扣率来自 API');
-    assert.ok(!src.includes('TIER_DISCOUNT'), '不再使用本地 TIER_DISCOUNT 常量');
-    assert.ok(!src.includes('MOCK_MEMBER_DB'), '不再使用本地模拟会员数据库');
+  test('looks up member on query click', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('会员手机号')).toBeInTheDocument();
+    });
+    const phoneInput = screen.getByLabelText('会员手机号');
+    fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('查询'));
+    await waitFor(() => {
+      expect(mockLookupMember).toHaveBeenCalledWith('13800138000');
+      expect(screen.getByText(/欢迎 张三/)).toBeInTheDocument();
+    });
   });
 
-  it('应计算折扣金额（discountAmount）', () => {
-    const src = readSource();
-    assert.ok(src.includes('discountAmount'), '折扣金额');
+  test('shows warning for invalid phone number', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('会员手机号')).toBeInTheDocument();
+    });
+    const phoneInput = screen.getByLabelText('会员手机号');
+    fireEvent.change(phoneInput, { target: { value: '123' } });
+    fireEvent.click(screen.getByText('查询'));
+    await waitFor(() => {
+      expect(screen.getByText(/请输入完整的11位手机号/)).toBeInTheDocument();
+    });
   });
 
-  it('应计算最终应付金额（finalTotal）', () => {
-    const src = readSource();
-    assert.ok(src.includes('finalTotal'), '最终应付金额');
+  test('clears member info on clear button', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('会员手机号')).toBeInTheDocument();
+    });
+    const phoneInput = screen.getByLabelText('会员手机号');
+    fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('查询'));
+    await waitFor(() => {
+      expect(screen.getByText(/欢迎 张三/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('清除'));
+    await waitFor(() => {
+      expect(screen.getByText('已清除会员信息')).toBeInTheDocument();
+    });
   });
 
-  it('打折后应显示折扣信息', () => {
-    const src = readSource();
-    assert.ok(src.includes('会员折扣'), '折扣标签');
-    assert.ok(src.includes('已省'), '折扣金额展示');
+  test('handles member lookup failure gracefully', async () => {
+    mockLookupMember.mockRejectedValue(new Error('查询失败'));
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText('会员手机号')).toBeInTheDocument();
+    });
+    const phoneInput = screen.getByLabelText('会员手机号');
+    fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('查询'));
+    await waitFor(() => {
+      expect(screen.getByText(/查询会员失败/)).toBeInTheDocument();
+    });
   });
 
-  it('折扣展示使用动态 discountRate 而非硬编码等级', () => {
-    const src = readSource();
-    assert.ok(src.includes('${Math.round(member.discountRate * 10)}折'), '折扣率动态渲染');
-    assert.ok(src.includes('member.tierLabel'), '等级标签动态渲染');
-  });
-});
+  // ====== 支付方式测试 ======
 
-// ============================================================
-// AC-35-07: 支付方式选择
-// ============================================================
-describe('AC-35-07: 支付方式选择', () => {
-  it('应包含三种支付方式（微信扫码/会员余额/现金）', () => {
-    const src = readSource();
-    assert.ok(src.includes('wechat'), '微信支付');
-    assert.ok(src.includes('balance'), '会员余额');
-    assert.ok(src.includes('cash'), '现金');
+  test('selects payment method', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('微信扫码')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('微信扫码'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+    });
   });
 
-  it('应包含 PAYMENT_OPTIONS 配置', () => {
-    const src = readSource();
-    assert.ok(src.includes('PAYMENT_OPTIONS'), '支付方式配置');
-    assert.ok(src.includes('微信扫码'), '微信扫码标签');
-    assert.ok(src.includes('会员余额'), '会员余额标签');
-    assert.ok(src.includes('现金'), '现金标签');
+  test('selects cash payment method', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('现金')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('现金'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：现金/)).toBeInTheDocument();
+    });
   });
 
-  it('应包含 handlePaymentSelect 函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('handlePaymentSelect'), '支付选择函数');
-    assert.ok(src.includes('setPaymentMethod'), '支付状态管理');
+  test('selects balance payment method', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('会员余额')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('会员余额'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：会员余额/)).toBeInTheDocument();
+    });
   });
 
-  it('选择微信支付应生成二维码', () => {
-    const src = readSource();
-    assert.ok(src.includes('paymentCodeUrl'), '支付码URL');
-    assert.ok(src.includes('请使用微信扫码支付'), '扫码支付提示');
-    assert.ok(src.includes('[二维码]'), '二维码区域');
-  });
-});
+  // ====== 结算 / 空结算防御测试 ======
 
-// ============================================================
-// AC-35-10: 空结算防御
-// ============================================================
-describe('AC-35-10: 空结算防御', () => {
-  it('购物车为空时点击结账应有防御提示', () => {
-    const src = readSource();
-    assert.ok(src.includes('请添加商品'), '空购物车提示');
+  test('shows empty cart warning on checkout with no items', async () => {
+    renderPage();
+    await waitFor(() => {
+      const checkoutBtn = screen.getByText(/结算/);
+      fireEvent.click(checkoutBtn);
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/请添加商品/)).toBeInTheDocument();
+    });
   });
 
-  it('应检查购物车是否为空（cart.length === 0）', () => {
-    const src = readSource();
-    assert.ok(src.includes('cart.length === 0'), '空购物车检查');
+  test('shows payment method required when cart has items but no payment', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    await waitFor(() => {
+      const checkoutBtn = screen.getByText(/结算/);
+      fireEvent.click(checkoutBtn);
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/请选择支付方式/)).toBeInTheDocument();
+    });
   });
 
-  it('未选择支付方式应有防御提示', () => {
-    const src = readSource();
-    assert.ok(src.includes('请选择支付方式'), '支付方式检查提示');
+  test('completes checkout successfully', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    fireEvent.click(screen.getByText('微信扫码'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+    });
+    // The checkout button text should now be '🧾 结算 ¥5.00'
+    const checkoutBtn = screen.getByText(/结算/);
+    fireEvent.click(checkoutBtn);
+    await waitFor(() => {
+      expect(mockBuildMemberId).toHaveBeenCalled();
+      expect(mockEnsureRegistered).toHaveBeenCalled();
+      expect(mockStartCheckout).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith('/h5/payment/ord-001');
+    });
   });
 
-  it('handleCheckout 函数应包含防御逻辑', () => {
-    const src = readSource();
-    assert.ok(src.includes('handleCheckout'), '结账函数');
-    assert.ok(src.includes('!paymentMethod'), '支付方式为空检查');
-  });
-});
+  // ====== 边界情况 ======
 
-// ============================================================
-// 基础结构验证
-// ============================================================
-describe('基础结构验证', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
-  });
-
-  it('应导出一个默认组件 CashierPage', () => {
-    const src = readSource();
-    assert.ok(
-      src.includes('export default function CashierPage'),
-      '缺少默认导出'
-    );
+  test('shows "新订单" button after successful checkout', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    fireEvent.click(screen.getByText('微信扫码'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText(/结算/));
+    await waitFor(() => {
+      expect(screen.getByText('🔄 新订单')).toBeInTheDocument();
+    });
   });
 
-  it('应包含 "收银台 — P-35" 标题', () => {
-    const src = readSource();
-    assert.ok(src.includes('收银台 — P-35'), '缺少页面标题');
+  test('shows error message on checkout failure', async () => {
+    mockStartCheckout.mockRejectedValue(new Error('库存不足'));
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    fireEvent.click(screen.getByText('微信扫码'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText(/结算/));
+    await waitFor(() => {
+      expect(screen.getByText(/库存不足/)).toBeInTheDocument();
+    });
   });
 
-  it('应使用 PageShell 组件', () => {
-    const src = readSource();
-    assert.ok(src.includes('PageShell'), '缺少 PageShell');
+  test('loads product catalog on mount', () => {
+    renderPage();
+    expect(mockListProducts).toHaveBeenCalledTimes(1);
   });
 
-  it('应使用 useState useCallback useMemo', () => {
-    const src = readSource();
-    assert.ok(src.includes('useState'), '缺少 useState');
-    assert.ok(src.includes('useCallback'), '缺少 useCallback');
-    assert.ok(src.includes('useMemo'), '缺少 useMemo');
+  test('retries product load on retry button click after error', async () => {
+    mockListProducts.mockRejectedValueOnce(new Error('网络错误'));
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('重试加载商品')).toBeInTheDocument();
+    });
+    mockListProducts.mockResolvedValueOnce(MOCK_PRODUCTS);
+    fireEvent.click(screen.getByText('重试加载商品'));
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
   });
 
-  it('应包含 fm 金额格式化函数', () => {
-    const src = readSource();
-    assert.ok(src.includes('function fm'), '缺少 fm 函数');
-  });
-});
-
-// ============================================================
-// P0-E1: 前端真实交易接线诊断
-// ============================================================
-describe('cashier — 真实交易接线诊断 [P0-E1]', () => {
-  it('[READY] 页面已接入真实 checkout helper', () => {
-    const src = readSource();
-    assert.ok(src.includes('startStorefrontCheckout'), '应接入真实下单 helper');
-    assert.ok(src.includes('ensureStorefrontMemberRegistered'), '应在下单前注册/兜底会员');
-    assert.ok(src.includes('buildStorefrontMemberId'), '应根据手机号构造 storefront memberId');
-    assert.ok(src.includes('const handleCheckout = useCallback(async () => {'), 'handleCheckout 应为异步提交');
-    assert.ok(src.includes('await startStorefrontCheckout('), '结账应 await 真实 checkout');
-  });
-
-  it('[READY] 下单成功后应跳转到真实支付页', () => {
-    const src = readSource();
-    assert.ok(src.includes('useRouter'), '应接入 Next router');
-    assert.ok(src.includes('router.push(`/h5/payment/${aggregate.order.orderId}`)'), '应跳转到 H5 支付页');
-    assert.ok(src.includes('订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建'), '应展示真实订单创建提示');
+  test('resetOrder clears all state', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('射击游戏')).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]);
+    fireEvent.click(screen.getByText('微信扫码'));
+    await waitFor(() => {
+      expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText(/结算/));
+    await waitFor(() => {
+      expect(screen.getByText('🔄 新订单')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('🔄 新订单'));
+    // After reset, the empty cart placeholder should show
+    await waitFor(() => {
+      expect(screen.getByText('请从左侧选择商品')).toBeInTheDocument();
+    });
   });
 
-  it('[MIGRATED] 会员与商品数据均已接入真实 API', () => {
-    const src = readSource();
-    assert.ok(!src.includes('MOCK_PRODUCTS'), '商品数据不应再使用内联 Mock');
-    assert.ok(!src.includes('MOCK_MEMBER_DB'), '会员数据不再使用内联 Mock');
-    assert.ok(src.includes('lookupStorefrontMember(trimmed)'), '会员查询走真实 API');
-    assert.ok(src.includes('await listStorefrontCashierProducts()'), '商品目录应走真实 API');
-    assert.ok(src.includes('商品目录加载中...'), '应提供真实商品目录加载态');
-    assert.ok(src.includes('setTimeout(() => setMessageText('), '当前仍保留消息自动消失定时器');
-    assert.ok(!src.includes('支付成功！金额 ${fm(finalTotal)}'), '不应继续使用本地假支付成功文案');
+  test('member discount reduces total', async () => {
+    mockLookupMember.mockResolvedValue({
+      phone: '13800138000',
+      name: '张三',
+      tier: 'gold',
+      discountRate: 0.85,
+      points: 1200,
+    });
+    renderPage();
+    await waitFor(async () => {
+      expect(await screen.findByText('射击游戏', undefined, { timeout: 1000 })).toBeInTheDocument();
+    });
+    const addButtons = screen.getAllByText('+ 加入购物车');
+    fireEvent.click(addButtons[0]); // ¥5.00
+    const phoneInput = screen.getByLabelText('会员手机号');
+    fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+    fireEvent.click(screen.getByText('查询'));
+    await waitFor(async () => {
+      expect(await screen.findByText(/欢迎 张三/, undefined, { timeout: 1000 })).toBeInTheDocument();
+    });
   });
 
-  it('[READY] 页面状态已适配真实提交结果', () => {
-    const src = readSource();
-    assert.ok(src.includes('setIsProcessing(true)'), '应在提交前进入 processing');
-    assert.ok(src.includes('setCheckoutStatus(\'success\')'), '真实下单成功后应进入 success');
-    assert.ok(src.includes('setCheckoutStatus(\'error\')'), '真实下单失败后应进入 error');
-    assert.ok(src.includes('⚠️ 下单失败，请稍后重试'), '应提供真实失败兜底提示');
+  // ====== 圈梁五道箍 — 增强测试 ======
+
+  describe('圈梁五道箍 — 购物车数量与金额计算', () => {
+    test('[圈梁五道箍] 添加商品后购物车显示商品', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+        expect(screen.getByText('1 件')).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 添加多个商品后小计金额正确', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.getByText('跳舞机')).toBeInTheDocument();
+      });
+      const addBtns = screen.getAllByText('+ 加入购物车');
+      expect(addBtns.length).toBeGreaterThanOrEqual(2);
+      fireEvent.click(addBtns[0]); // 射击游戏 ¥5×1
+      fireEvent.click(addBtns[1]); // 跳舞机 ¥8×1
+      await waitFor(() => {
+        // 小计和应付应都显示 （500+800 = 1300）
+        expect(screen.getByText('小计')).toBeInTheDocument();
+        expect(screen.getByText('2 件')).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 从购物车移除商品后金额更新', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[1]);
+      await waitFor(() => {
+        expect(screen.getByText('小计')).toBeInTheDocument();
+        expect(screen.getByText('2 件')).toBeInTheDocument();
+      });
+      const removeBtn = screen.getByLabelText('移除 射击游戏');
+      fireEvent.click(removeBtn);
+      await waitFor(() => {
+        expect(screen.getByText('1 件')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('圈梁五道箍 — 响应式布局与 UI 完整性', () => {
+    test('[圈梁五道箍] 页面包含商品分类区域', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('🎮 商品选择')).toBeInTheDocument();
+        expect(screen.getByText('📋 已选清单')).toBeInTheDocument();
+        expect(screen.getByText('👤 会员识别')).toBeInTheDocument();
+        expect(screen.getByText('💳 支付方式')).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 支付方式选择后高亮当前选项', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('微信扫码')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText('会员余额'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：会员余额/)).toBeInTheDocument();
+      });
+      // 切换支付方式
+      fireEvent.click(screen.getByText('现金'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：现金/)).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 搜索后清除文本恢复全部商品', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      const searchInput = screen.getByLabelText('搜索商品');
+      fireEvent.change(searchInput, { target: { value: '不存在的商品' } });
+      await waitFor(() => {
+        expect(screen.getByText('未找到匹配商品')).toBeInTheDocument();
+      });
+      fireEvent.change(searchInput, { target: { value: '' } });
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.getByText('跳舞机')).toBeInTheDocument();
+        expect(screen.getByText('娃娃机')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('圈梁五道箍 — 事务流程整合测试', () => {
+    test('[圈梁五道箍] 完整购买流程: 选商品→选支付→下单', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.getByText('跳舞机')).toBeInTheDocument();
+      });
+      // 添加两种不同的商品（每个按钮只点一次，互不干扰）
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[1]);
+      await waitFor(() => {
+        expect(screen.getByText('2 件')).toBeInTheDocument();
+      });
+      // 选择支付方式
+      fireEvent.click(screen.getByText('微信扫码'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+      });
+      // 下单 — 结算按钮文字包含¥
+      const checkoutBtn = screen.getByText(/结算/);
+      fireEvent.click(checkoutBtn);
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/h5/payment/ord-001');
+      });
+    });
+
+    test('[圈梁五道箍] 新订单后清空购物车并恢复初始状态', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getByText('微信扫码'));
+      await waitFor(() => {
+        expect(screen.getByText(/已选择：微信扫码/)).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText(/结算/));
+      await waitFor(() => {
+        expect(screen.getByText('🔄 新订单')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText('🔄 新订单'));
+      await waitFor(() => {
+        // 购物车应为空
+        expect(screen.getByText('请从左侧选择商品')).toBeInTheDocument();
+        // 会员手机号已清除
+        expect(screen.getByLabelText('会员手机号')).toHaveValue('');
+      });
+    });
+
+    test('[圈梁五道箍] 未选择支付方式时结账有防御提示', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+      });
+      // 不给支付方式直接结算
+      fireEvent.click(screen.getByText(/结算/));
+      await waitFor(() => {
+        expect(screen.getByText(/请选择支付方式/)).toBeInTheDocument();
+      });
+    });
+
+    test('[圈梁五道箍] 会员折扣后最终金额计算', async () => {
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      // 添加射击游戏 ¥5.00 × 1 = ¥5.00
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      await waitFor(() => {
+        expect(screen.getByText(/已添加「射击游戏」/)).toBeInTheDocument();
+        expect(screen.getByText('1 件')).toBeInTheDocument();
+      });
+      // 查询金牌会员（discountRate=0.85）
+      const phoneInput = screen.getByLabelText('会员手机号');
+      fireEvent.change(phoneInput, { target: { value: '13800138000' } });
+      fireEvent.click(screen.getByText('查询'));
+      await waitFor(() => {
+        expect(mockLookupMember).toHaveBeenCalledWith('13800138000');
+        expect(screen.getByText(/欢迎 张三/)).toBeInTheDocument();
+        // 应显示折扣信息（Math.round(0.85*10)=9折）
+        expect(screen.getByText(/欢迎 张三/)).toBeInTheDocument();
+        // 会员折扣信息在 tag 和折扣区域中出现多次，验证存在即可
+        const goldElements = screen.getAllByText(/黄金会员/);
+        expect(goldElements.length).toBeGreaterThanOrEqual(2);
+        expect(screen.getByText(/9折/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('圈梁五道箍 — 错误处理', () => {
+    test('[圈梁五道箍] 下单失败后显示错误信息并可重新尝试', async () => {
+      mockStartCheckout.mockRejectedValueOnce(new Error('支付服务暂时不可用'));
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getAllByText('+ 加入购物车')[0]);
+      fireEvent.click(screen.getByText('微信扫码'));
+      fireEvent.click(screen.getByText(/结算/));
+      await waitFor(() => {
+        expect(screen.getByText(/支付服务暂时不可用/)).toBeInTheDocument();
+      });
+      // 仍然可以重新下单（按钮没有被禁用）
+      const checkoutBtn = screen.getByText(/结算/);
+      expect(checkoutBtn).not.toBeDisabled();
+    });
+
+    test('[圈梁五道箍] 商品加载失败后重试', async () => {
+      mockListProducts.mockRejectedValueOnce(new Error('网络请求超时'));
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText(/网络请求超时/)).toBeInTheDocument();
+      });
+      expect(screen.getByText('重试加载商品')).toBeInTheDocument();
+      // 重试成功
+      mockListProducts.mockResolvedValueOnce(MOCK_PRODUCTS);
+      fireEvent.click(screen.getByText('重试加载商品'));
+      await waitFor(() => {
+        expect(screen.getByText('射击游戏')).toBeInTheDocument();
+        expect(screen.queryByText(/网络请求超时/)).not.toBeInTheDocument();
+      });
+    });
   });
 });

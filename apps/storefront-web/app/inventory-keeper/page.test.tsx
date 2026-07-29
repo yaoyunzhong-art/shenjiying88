@@ -1,171 +1,325 @@
 /**
- * 库房管理员工作台 — 页面级测试
- * 正例: 各模块渲染正确
- * 反例: 空数据、边界值
- * 边界: Mock 数据一致性
+ * inventory-keeper/page.vitest.tsx — 库存看板 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 加载状态 · 渲染 · 统计卡片 · 搜索 · 分类筛选 · 状态筛选 · 展开详情 · 分页 · 空状态 · 边界
+ * 角色: 👔店长 · 🛒前台
  */
 import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-const assert = require('node:assert/strict');
-const { describe, it } = require('node:test');
+import InventoryKeeperPage from './page';
 
-const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
-const { renderToStaticMarkup } = require(
-  PROJECT_ROOT + '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js'
-);
+async function waitForData() {
+  await screen.findByText('库存看板', {}, { timeout: 5000 });
+}
 
-const { InventoryKeeperClient } = require('./inventory-keeper-client');
-
-describe('InventoryKeeperClient Page', () => {
-
-  /* ── 正例：核心渲染 ── */
-
-  it('renders the PageShell with title', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /库房管理工作台/);
+describe('InventoryKeeperPage — 库存看板', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('renders the subtitle with inbound/outbound counts', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /今日入库/);
-    assert.match(html, /18/);
-    assert.match(html, /出库/);
-    assert.match(html, /23/);
+  // ====== 加载状态测试 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<InventoryKeeperPage />)).not.toThrow();
   });
 
-  it('renders InventoryKeeperDashboard keeper-dashboard testid', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /keeper-dashboard/);
+  // ====== 渲染测试 ======
+
+  test('renders page title', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    expect(screen.getByText('库存看板')).toBeInTheDocument();
   });
 
-  it('renders warehouse name', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /中央配送中心/);
+  test('renders all inventory stats', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    expect(screen.getByText('品类总数')).toBeInTheDocument();
+    expect(screen.getByText('库存总额')).toBeInTheDocument();
+    expect(screen.getByText('预警商品')).toBeInTheDocument();
+    expect(screen.getByText('过剩商品')).toBeInTheDocument();
   });
 
-  it('renders stock alerts', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /单品咖啡豆/);
-    assert.match(html, /抹茶粉/);
-    assert.match(html, /奶油芝士/);
+  test('renders stat values', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // 22 items total
+    expect(screen.getByText('22')).toBeInTheDocument(); // 品类总数
   });
 
-  it('renders inbound tasks', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /PO-2024-0689/);
-    assert.match(html, /云南咖啡基地/);
+  test('renders search input', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    expect(screen.getByPlaceholderText('🔍 搜索商品/分类/库位...')).toBeInTheDocument();
   });
 
-  it('renders outbound tasks', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /REQ-2024-0321/);
-    assert.match(html, /门店A/);
+  test('renders category filter select', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // '全部' appears in multiple selects; use getAllByText
+    expect(screen.getAllByText('全部').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders quick action buttons', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /新建入库单/);
-    assert.match(html, /发起盘点/);
-    assert.match(html, /库位巡检/);
-    assert.match(html, /调拨申请/);
+  test('renders status filter select', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // '正常' appears in both select option and status badge on items
+    expect(screen.getAllByText('正常').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('偏少').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('严重不足').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('偏多')).toBeInTheDocument();
   });
 
-  it('renders metrics section with formatted values', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /1,256/);
-    assert.match(html, /28,430/);
+  // ====== 库存项目渲染测试 ======
+
+  test('renders first page inventory items', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // PAGE_SIZE = 8, first page shows first 8 items
+    expect(screen.getByText('游戏币')).toBeInTheDocument();
+    expect(screen.getByText('可口可乐(箱)')).toBeInTheDocument();
+    expect(screen.getByText('毛绒公仔-中号')).toBeInTheDocument();
+    expect(screen.getByText('彩票打印纸')).toBeInTheDocument();
+    expect(screen.getByText('VR手柄')).toBeInTheDocument();
+    expect(screen.getByText('一次性杯盖')).toBeInTheDocument();
+    expect(screen.getByText('冰激凌机原料')).toBeInTheDocument();
+    expect(screen.getByText('奶茶珍珠')).toBeInTheDocument();
   });
 
-  it('renders alert summary badges', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /低库存 7/);
-    assert.match(html, /临期 3/);
+  test('shows stock counts and units', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    expect(screen.getByText('4980 枚')).toBeInTheDocument();
+    expect(screen.getByText('56 箱')).toBeInTheDocument();
   });
 
-  /* ── 增强测试：数据丰富度验证 ── */
-
-  it('renders all five stock alerts with sku and location', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /SKU-089/);
-    assert.match(html, /SKU-312/);
-    assert.match(html, /A-01-03/);
-    assert.match(html, /B-01-08/);
+  test('shows item category and location', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    expect(screen.getByText(/游戏消耗 · 主库-A01/)).toBeInTheDocument();
+    expect(screen.getByText(/饮品 · 冷库-B02/)).toBeInTheDocument();
   });
 
-  it('renders supplier and sku count for each inbound order', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /本地鲜奶厂/);
-    assert.match(html, /食品包装供应商/);
-    // skuCount values
-    assert.match(html, /5/);
-    assert.match(html, /2/);
-    assert.match(html, /8/);
+  test('shows status badges with colors', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // These labels appear both on status badges and in select options
+    expect(screen.getAllByText('正常').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('偏少').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('严重不足').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('偏多').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders destination and priority for outbound tasks', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /门店B/);
-    // 优先级可能以图标+标签形式渲染
-    assert.ok(html.includes('门店B'), 'Should render destination');
-    assert.ok(html.length > 500, 'Should render substantial HTML with all tasks');
+  // ====== 搜索测试 ======
+
+  test('search by product name works', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const searchInput = screen.getByPlaceholderText('🔍 搜索商品/分类/库位...');
+    fireEvent.change(searchInput, { target: { value: '游戏' } });
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+      expect(screen.queryByText('可口可乐(箱)')).not.toBeInTheDocument();
+    });
   });
 
-  it('renders stock value and location utilization in metrics', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    // 库存金额以人可读格式显示
-    assert.ok(html.includes('186.4万') || html.includes('¥186.4'), 'Should show formatted stock value');
-    assert.match(html, /82%/);
+  test('search by category works', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const searchInput = screen.getByPlaceholderText('🔍 搜索商品/分类/库位...');
+    fireEvent.change(searchInput, { target: { value: '饮品' } });
+    await waitFor(() => {
+      expect(screen.getByText('可口可乐(箱)')).toBeInTheDocument();
+      expect(screen.getByText('橙汁(箱)')).toBeInTheDocument();
+      expect(screen.getByText('碳酸饮料(箱)')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('renders all 4 quick actions consistently', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.match(html, /新建入库单/);
-    assert.match(html, /发起盘点/);
-    assert.match(html, /库位巡检/);
-    assert.match(html, /调拨申请/);
+  test('search by location works', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const searchInput = screen.getByPlaceholderText('🔍 搜索商品/分类/库位...');
+    fireEvent.change(searchInput, { target: { value: 'D01' } });
+    await waitFor(() => {
+      expect(screen.getByText('彩票打印纸')).toBeInTheDocument();
+    });
   });
 
-  /* ── 反例：格式验证 ── */
-
-  it('does not show raw decimal for location utilization', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    // Should NOT show the raw decimal 0.82
-    const rawDecimal = html.match(/0\.82/);
-    // 82% is correct
-    assert.ok(html.includes('82%') || html.includes('82%'));
-    // If raw 0.82 appears, it means formatting is missing
-    if (html.includes('0.82')) {
-      // Check if it's inside a number like 1,864,200
-      assert.ok(true, '0.82 may appear inside stock value');
-    }
+  test('search with no results shows empty state', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const searchInput = screen.getByPlaceholderText('🔍 搜索商品/分类/库位...');
+    fireEvent.change(searchInput, { target: { value: 'zzz不存在的商品' } });
+    await waitFor(() => {
+      expect(screen.getByText('暂无匹配的库存商品')).toBeInTheDocument();
+    });
   });
 
-  it('does not render undefined or NaN text', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    assert.ok(!html.includes('undefined'), 'Should not contain undefined text');
-    assert.ok(!html.includes('NaN'), 'Should not contain NaN text');
+  // ====== 分类筛选测试 ======
+
+  test('category filter: 礼品 shows only gift items', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const categorySelect = screen.getAllByRole('combobox')[0];
+    fireEvent.change(categorySelect, { target: { value: '礼品' } });
+    await waitFor(() => {
+      expect(screen.getByText('毛绒公仔-中号')).toBeInTheDocument();
+      expect(screen.getByText('桌游卡牌')).toBeInTheDocument();
+      expect(screen.getByText('抓娃娃机礼品-小号')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('does not crash when key mock data strings are present', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    // 验证Mock数据中的特定字符串正常渲染（overstock不直接显示，但不崩溃）
-    assert.ok(html.includes('A-02-05') || html.includes('A-01-03'), 'Should contain location data');
-    assert.match(html, /张三/);
+  // ====== 状态筛选测试 ======
+
+  test('status filter: 严重不足 shows only critical items', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const statusSelect = screen.getAllByRole('combobox')[1];
+    fireEvent.change(statusSelect, { target: { value: 'critical' } });
+    await waitFor(() => {
+      expect(screen.getByText('奶茶珍珠')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('page shell wrapping contains dashboard content correctly nested', () => {
-    // The page should have proper element nesting
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    // PageShell and dashboard should both be present
-    assert.ok(html.length > 500, 'Rendered HTML should be substantial');
+  test('status filter: 偏多 shows overstock items', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const statusSelect = screen.getAllByRole('combobox')[1];
+    fireEvent.change(statusSelect, { target: { value: 'overstock' } });
+    await waitFor(() => {
+      expect(screen.getByText('桌游卡牌')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
   });
 
-  it('renders expiry warning count separately from low stock', () => {
-    const html = renderToStaticMarkup(React.createElement(InventoryKeeperClient));
-    // Both numbers appear
-    const lowStockMatch = html.match(/低库存 7/);
-    const expiryMatch = html.match(/临期 3/);
-    assert.ok(lowStockMatch, 'Low stock count should render');
-    assert.ok(expiryMatch, 'Expiry count should render');
+  // ====== 展开详情测试 ======
+
+  test('clicking item expands detail', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('奶茶珍珠'));
+    await waitFor(() => {
+      expect(screen.getByText('库存范围:')).toBeInTheDocument();
+      expect(screen.getByText(/3 ~ 12/)).toBeInTheDocument();
+      expect(screen.getByText(/进货单价/)).toBeInTheDocument();
+    });
+  });
+
+  test('expanded detail shows action buttons', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('奶茶珍珠'));
+    await waitFor(() => {
+      expect(screen.getByText('出入库记录')).toBeInTheDocument();
+      expect(screen.getByText('调整库存')).toBeInTheDocument();
+    });
+  });
+
+  test('clicking expanded item collapses it', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('奶茶珍珠'));
+    await waitFor(() => {
+      expect(screen.getByText(/进货单价/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('奶茶珍珠'));
+    await waitFor(() => {
+      expect(screen.queryByText(/进货单价/)).not.toBeInTheDocument();
+    });
+  });
+
+  // ====== 补货建议测试 ======
+
+  test('low stock items show restock suggestion', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // These may appear multiple times across different items
+    expect(screen.getAllByText('🟡 库存偏低').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('🔴 严重短缺').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('restock bar shows suggested quantity', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // 奶茶珍珠: min=3, max=12, stock=1, suggested = min(12, 3*3-1) = min(12, 8) = 8
+    expect(screen.getByText(/建议补货: 8 袋/)).toBeInTheDocument();
+  });
+
+  test('restock button exists on low stock items', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const restockButtons = screen.getAllByText('补货');
+    expect(restockButtons.length).toBeGreaterThanOrEqual(3);
+  });
+
+  // ====== 分页测试 ======
+
+  test('renders pagination when items > PAGE_SIZE', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // 22 items, PAGE_SIZE=8, totalPages=3
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+  });
+
+  test('clicking next page shows page 2 items', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('下一页'));
+    await waitFor(() => {
+      expect(screen.getByText('橙汁(箱)')).toBeInTheDocument();
+      expect(screen.queryByText('游戏币')).not.toBeInTheDocument();
+    });
+  });
+
+  test('clicking prev page goes back', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    fireEvent.click(screen.getByText('下一页'));
+    await waitFor(() => {
+      expect(screen.getByText('橙汁(箱)')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('上一页'));
+    await waitFor(() => {
+      expect(screen.getByText('游戏币')).toBeInTheDocument();
+    });
+  });
+
+  test('prev button is disabled on first page', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    const prevButton = screen.getByText('上一页');
+    expect(prevButton).toBeDisabled();
+  });
+
+  test('next button is disabled on last page', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    // Go to last page (page 3)
+    fireEvent.click(screen.getByText('下一页'));
+    await waitFor(() => { expect(screen.getByText('2 / 3')).toBeInTheDocument(); });
+    fireEvent.click(screen.getByText('下一页'));
+    await waitFor(() => { expect(screen.getByText('3 / 3')).toBeInTheDocument(); });
+    const nextButton = screen.getByText('下一页');
+    expect(nextButton).toBeDisabled();
+  });
+
+  // ====== 边界情况 ======
+
+  test('dark theme background applied', async () => {
+    const { container } = render(<InventoryKeeperPage />);
+    await waitForData();
+    const main = container.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
+  });
+
+  test('bottom stats show item count', async () => {
+    render(<InventoryKeeperPage />);
+    await waitForData();
+    expect(screen.getByText(/共 22 种商品/)).toBeInTheDocument();
+    expect(screen.getByText(/本页 8 种/)).toBeInTheDocument();
   });
 });

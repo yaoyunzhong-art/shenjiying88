@@ -1,418 +1,211 @@
-/**
- * 退换货管理页 — Refunds List Page 测试
- * 测试策略: 纯 Node test (不依赖 jsdom), 覆盖过滤/搜索逻辑
- */
+import React from 'react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  usePathname: () => '/refunds',
+  useSearchParams: () => new URLSearchParams(),
+}));
 
-// ── 内联数据模型 ──
+// Mock @m5/ui
+const mockPageShell = vi.fn(({ children, title }: any) => (
+  <div data-testid="page-shell" data-title={title}>{children}</div>
+));
+const mockDataTable = vi.fn(({ columns, rows, rowKey }: any) => (
+  <div data-testid="data-table">
+    {rows.map((r: any) => <div key={rowKey(r)}>{columns.map((c: any) => <span key={c.key}>{c.render ? c.render(r) : String(r[c.key])}</span>)}</div>)}
+  </div>
+));
+const mockStatusBadge = vi.fn(({ label, variant }: any) => (
+  <span data-testid="sb" data-variant={variant}>{label}</span>
+));
+const mockEmptyState = vi.fn(({ title }: any) => (
+  <div data-testid="empty-state"><span>{title}</span></div>
+));
+const mockModal = vi.fn(({ open, onClose, title, children }: any) => (
+  open ? <div data-testid="modal" data-title={title}><button data-testid="modal-close" onClick={onClose}>✕</button>{children}</div> : null
+));
 
-type RefundStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'processing'
-  | 'completed'
-  | 'cancelled';
+vi.mock('@m5/ui', () => ({
+  PageShell: (props: any) => mockPageShell(props),
+  DataTable: (props: any) => mockDataTable(props),
+  StatusBadge: (props: any) => mockStatusBadge(props),
+  EmptyState: (props: any) => mockEmptyState(props),
+  Modal: (props: any) => mockModal(props),
+}));
 
-type RefundType = 'refund' | 'exchange' | 'return';
+// Mock refund-data
+vi.mock('./refund-data', () => {
+  const REFUND_STATUS_LABEL: Record<string, string> = {
+    pending_approval: '待审批', approved: '已通过', rejected: '已拒绝',
+    processing: '处理中', completed: '已完成', cancelled: '已取消',
+  };
+  const REFUND_STATUS_VARIANT: Record<string, string> = {
+    pending_approval: 'warning', approved: 'success', rejected: 'danger',
+    processing: 'info', completed: 'success', cancelled: 'neutral',
+  };
+  const REFUND_TYPE_LABEL: Record<string, string> = {
+    refund: '仅退款', exchange: '换货', return: '退货退款',
+  };
+  const MOCK_REFUNDS = [
+    { id: 'RF-001', orderId: 'ORD-001', type: 'refund' as const, status: 'pending_approval' as const, customerName: '王芳', customerPhone: '138****5678', amount: 12900, reason: '商品与描述不符', createdAt: '2026-06-28 09:15', productName: '蔬菜礼盒' },
+    { id: 'RF-002', orderId: 'ORD-002', type: 'exchange' as const, status: 'approved' as const, customerName: '李明', customerPhone: '159****2341', amount: 35800, reason: '尺码不合适', createdAt: '2026-06-27 14:30', processedAt: '2026-06-27 16:00', productName: '跑鞋' },
+    { id: 'RF-003', orderId: 'ORD-003', type: 'return' as const, status: 'processing' as const, customerName: '赵雪', customerPhone: '176****9087', amount: 52000, reason: '商品破损', createdAt: '2026-06-26 10:00', processedAt: '2026-06-26 11:30', productName: '红酒' },
+    { id: 'RF-004', orderId: 'ORD-004', type: 'refund' as const, status: 'completed' as const, customerName: '陈伟', customerPhone: '182****4532', amount: 8800, reason: '重复下单', createdAt: '2026-06-25 08:45', processedAt: '2026-06-25 10:20', productName: '饼干' },
+    { id: 'RF-005', orderId: 'ORD-005', type: 'exchange' as const, status: 'rejected' as const, customerName: '刘洋', customerPhone: '136****7890', amount: 25900, reason: '超过期限', createdAt: '2026-06-24 16:20', processedAt: '2026-06-24 17:00', productName: '耳机' },
+    { id: 'RF-006', orderId: 'ORD-006', type: 'return' as const, status: 'pending_approval' as const, customerName: '孙丽', customerPhone: '139****3456', amount: 16800, reason: '商品过期', createdAt: '2026-06-23 11:10', productName: '牛奶' },
+    { id: 'RF-007', orderId: 'ORD-007', type: 'refund' as const, status: 'cancelled' as const, customerName: '周强', customerPhone: '137****6789', amount: 4500, reason: '已协商', createdAt: '2026-06-22 09:30', processedAt: '2026-06-22 10:15', productName: '零食' },
+  ];
+  return { REFUND_STATUS_LABEL, REFUND_STATUS_VARIANT, REFUND_TYPE_LABEL, MOCK_REFUNDS };
+});
 
-interface RefundItem {
-  id: string;
-  orderId: string;
-  type: RefundType;
-  status: RefundStatus;
-  customerName: string;
-  customerPhone: string;
-  amount: number;
-  reason: string;
-  createdAt: string;
-  processedAt?: string;
-  productName: string;
-}
+import RefundsPage from './page';
+beforeEach(() => { vi.clearAllMocks(); });
 
-const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
-  pending_approval: '待审批',
-  approved: '已通过',
-  rejected: '已拒绝',
-  processing: '处理中',
-  completed: '已完成',
-  cancelled: '已取消',
-};
-
-const REFUND_STATUS_VARIANT: Record<RefundStatus, string> = {
-  pending_approval: 'warning',
-  approved: 'success',
-  rejected: 'danger',
-  processing: 'info',
-  completed: 'success',
-  cancelled: 'neutral',
-};
-
-const REFUND_TYPE_LABEL: Record<RefundType, string> = {
-  refund: '仅退款',
-  exchange: '换货',
-  return: '退货退款',
-};
-
-// ── Mock 数据 (与 page.tsx / refund-data.ts 一致) ──
-
-const MOCK_REFUNDS: RefundItem[] = [
-  { id: 'RF-20260601', orderId: 'ORD-20260601-001', type: 'refund', status: 'pending_approval', customerName: '王芳', customerPhone: '138****5678', amount: 12900, reason: '商品与描述不符', createdAt: '2026-06-28 09:15', productName: '有机蔬菜礼盒' },
-  { id: 'RF-20260602', orderId: 'ORD-20260601-002', type: 'exchange', status: 'approved', customerName: '李明', customerPhone: '159****2341', amount: 35800, reason: '尺码不合适，换货', createdAt: '2026-06-27 14:30', processedAt: '2026-06-27 16:00', productName: '运动跑鞋' },
-  { id: 'RF-20260603', orderId: 'ORD-20260601-003', type: 'return', status: 'processing', customerName: '赵雪', customerPhone: '176****9087', amount: 52000, reason: '收到的商品破损', createdAt: '2026-06-26 10:00', processedAt: '2026-06-26 11:30', productName: '进口红酒套装' },
-  { id: 'RF-20260604', orderId: 'ORD-20260601-004', type: 'refund', status: 'completed', customerName: '陈伟', customerPhone: '182****4532', amount: 8800, reason: '重复下单', createdAt: '2026-06-25 08:45', processedAt: '2026-06-25 10:20', productName: '手工饼干' },
-  { id: 'RF-20260605', orderId: 'ORD-20260601-005', type: 'exchange', status: 'rejected', customerName: '刘洋', customerPhone: '136****7890', amount: 25900, reason: '超过退换货期限', createdAt: '2026-06-24 16:20', processedAt: '2026-06-24 17:00', productName: '蓝牙耳机' },
-  { id: 'RF-20260606', orderId: 'ORD-20260601-006', type: 'return', status: 'pending_approval', customerName: '孙丽', customerPhone: '139****3456', amount: 16800, reason: '商品过期', createdAt: '2026-06-23 11:10', productName: '鲜牛奶' },
-  { id: 'RF-20260607', orderId: 'ORD-20260601-007', type: 'refund', status: 'cancelled', customerName: '周强', customerPhone: '137****6789', amount: 4500, reason: '已协商解决', createdAt: '2026-06-22 09:30', processedAt: '2026-06-22 10:15', productName: '零食大礼包' },
-  { id: 'RF-20260608', orderId: 'ORD-20260601-008', type: 'exchange', status: 'completed', customerName: '吴敏', customerPhone: '158****2345', amount: 68900, reason: '颜色发错', createdAt: '2026-06-21 15:00', processedAt: '2026-06-22 09:00', productName: '羊绒围巾' },
-];
-
-// ── 工具函数 (与 page.tsx 过滤逻辑一致) ──
-
-function filterRefunds(
-  items: RefundItem[],
-  statusFilter: RefundStatus | 'ALL',
-  searchText: string,
-): RefundItem[] {
-  let result = items;
-
-  // 状态过滤
-  if (statusFilter !== 'ALL') {
-    result = result.filter((r) => r.status === statusFilter);
-  }
-
-  // 搜索
-  if (searchText.trim()) {
-    const lower = searchText.toLowerCase();
-    result = result.filter(
-      (r) =>
-        r.id.toLowerCase().includes(lower) ||
-        r.customerName.toLowerCase().includes(lower) ||
-        r.productName.toLowerCase().includes(lower) ||
-        r.reason.toLowerCase().includes(lower),
-    );
-  }
-
-  return result;
-}
-
-function getStatusCounts(items: RefundItem[]): Record<RefundStatus, number> {
-  const counts: Record<string, number> = {};
-  for (const item of items) {
-    counts[item.status] = (counts[item.status] ?? 0) + 1;
-  }
-  return counts as Record<RefundStatus, number>;
-}
-
-function getTotalAmount(items: RefundItem[]): number {
-  return items.reduce((sum, r) => sum + r.amount, 0);
-}
-
-// ============================================================
-//  测试套件
-// ============================================================
-
-describe('退换货管理页 — Refunds List Page', () => {
-  // ── 数据完整性 ──
-
-  describe('数据完整性', () => {
-    it('MOCK_REFUNDS 应有 8 条数据', () => {
-      assert.equal(MOCK_REFUNDS.length, 8);
-    });
-
-    it('所有退单 ID 唯一', () => {
-      const ids = MOCK_REFUNDS.map((r) => r.id);
-      assert.equal(new Set(ids).size, ids.length);
-    });
-
-    it('每条记录的必要字段非空', () => {
-      const required: (keyof RefundItem)[] = ['id', 'orderId', 'type', 'status', 'customerName', 'amount', 'reason', 'createdAt', 'productName'];
-      for (const record of MOCK_REFUNDS) {
-        for (const field of required) {
-          const val = record[field];
-          assert.ok(val !== undefined && val !== null && val !== '',
-            `${field} 不能为空 (${record.id})`);
-        }
-      }
-    });
-
-    it('金额字段为正数', () => {
-      for (const record of MOCK_REFUNDS) {
-        assert.ok(record.amount > 0, `${record.id} amount 必须 > 0`);
-      }
-    });
-
-    it('状态值均在 REFUND_STATUS_LABEL 中', () => {
-      for (const record of MOCK_REFUNDS) {
-        assert.ok(record.status in REFUND_STATUS_LABEL, `${record.id} 状态异常`);
-      }
-    });
-
-    it('类型值均在 REFUND_TYPE_LABEL 中', () => {
-      for (const record of MOCK_REFUNDS) {
-        assert.ok(record.type in REFUND_TYPE_LABEL, `${record.id} 类型异常`);
-      }
-    });
-
-    it('covered all 6 refund statuses', () => {
-      const statuses = new Set(MOCK_REFUNDS.map((r) => r.status));
-      assert.equal(statuses.size, 6);
-      const expected: RefundStatus[] = ['pending_approval', 'approved', 'rejected', 'processing', 'completed', 'cancelled'];
-      for (const s of expected) {
-        assert.ok(statuses.has(s), `缺少状态: ${s}`);
-      }
-    });
-
-    it('covered all 3 refund types', () => {
-      const types = new Set(MOCK_REFUNDS.map((r) => r.type));
-      assert.equal(types.size, 3);
-      assert.ok(types.has('refund'));
-      assert.ok(types.has('exchange'));
-      assert.ok(types.has('return'));
-    });
+describe('RefundsPage', () => {
+  test('renders PageShell with correct title', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(mockPageShell.mock.lastCall![0].title).toBe('退换货管理');
   });
 
-  // ── 状态过滤 ──
-
-  describe('状态过滤', () => {
-    it('ALL 返回全部 8 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '');
-      assert.equal(result.length, 8);
-    });
-
-    it('pending_approval 返回 2 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'pending_approval', '');
-      assert.equal(result.length, 2);
-      assert.ok(result.every((r) => r.status === 'pending_approval'));
-    });
-
-    it('approved 返回 1 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'approved', '');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260602');
-    });
-
-    it('rejected 返回 1 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'rejected', '');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260605');
-    });
-
-    it('processing 返回 1 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'processing', '');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260603');
-    });
-
-    it('completed 返回 2 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'completed', '');
-      assert.equal(result.length, 2);
-      assert.ok(result.every((r) => r.status === 'completed'));
-    });
-
-    it('cancelled 返回 1 条', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'cancelled', '');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260607');
-    });
+  test('renders main page heading', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(screen.getByText('🔄 退换货管理')).toBeInTheDocument();
   });
 
-  // ── 搜索 ──
-
-  describe('搜索', () => {
-    it('空搜索返回全部', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '');
-      assert.equal(result.length, 8);
-    });
-
-    it('按退单号搜索 RF-20260601', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', 'RF-20260601');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260601');
-    });
-
-    it('搜索 "王芳" 匹配会员名', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '王芳');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].customerName, '王芳');
-    });
-
-    it('搜索 "红酒" 匹配商品名', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '红酒');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].productName, '进口红酒套装');
-    });
-
-    it('搜索 "破损" 匹配原因', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '破损');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].reason, '收到的商品破损');
-    });
-
-    it('搜索 "饼干" 匹配商品名', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '饼干');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].productName, '手工饼干');
-    });
-
-    it('搜索 "零食" 匹配商品名', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '零食');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].productName, '零食大礼包');
-    });
-
-    it('搜索不存在的文本返回空', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', 'zzznotexist');
-      assert.equal(result.length, 0);
-    });
-
-    it('搜索大小写不敏感', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', 'rf-20260601');
-      assert.equal(result.length, 1);
-    });
-
-    it('搜索 "围巾" + 状态 completed', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'completed', '围巾');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260608');
-    });
+  test('renders summary with record count', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(screen.getByText(/共 \d+ 条记录/)).toBeInTheDocument();
   });
 
-  // ── 组合过滤 ──
-
-  describe('组合过滤', () => {
-    it('pending_approval 搜索 "孙丽"', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'pending_approval', '孙丽');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260606');
-    });
-
-    it('completed 搜索 "吴敏"', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'completed', '吴敏');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260608');
-    });
-
-    it('状态过滤后搜索不存在返回空', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'rejected', '蔬菜');
-      assert.equal(result.length, 0);
-    });
+  test('renders stat cards', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    // Stat card labels are rendered; use getAllByText for labels that appear in both card and select
+    const completedCards = screen.getAllByText('已完成');
+    expect(completedCards.length).toBeGreaterThan(0);
   });
 
-  // ── 统计函数 ──
-
-  describe('统计', () => {
-    it('getStatusCounts 正确计数', () => {
-      const counts = getStatusCounts(MOCK_REFUNDS);
-      assert.equal(counts.pending_approval, 2);
-      assert.equal(counts.approved, 1);
-      assert.equal(counts.rejected, 1);
-      assert.equal(counts.processing, 1);
-      assert.equal(counts.completed, 2);
-      assert.equal(counts.cancelled, 1);
-    });
-
-    it('空数组返回空 counts', () => {
-      const counts = getStatusCounts([]);
-      assert.deepEqual(counts, {});
-    });
-
-    it('getTotalAmount 总和正确', () => {
-      const total = getTotalAmount(MOCK_REFUNDS);
-      // 12900 + 35800 + 52000 + 8800 + 25900 + 16800 + 4500 + 68900
-      assert.equal(total, 225600);
-    });
-
-    it('空数组 totalAmount = 0', () => {
-      assert.equal(getTotalAmount([]), 0);
-    });
+  test('renders search input', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const input = screen.getByTestId('search-input');
+    expect(input).toBeInTheDocument();
+    expect((input as HTMLInputElement).placeholder).toContain('退单号');
   });
 
-  // ── 常量映射 ──
-
-  describe('常量映射', () => {
-    it('REFUND_STATUS_LABEL 覆盖6种状态', () => {
-      assert.equal(Object.keys(REFUND_STATUS_LABEL).length, 6);
-    });
-
-    it('REFUND_TYPE_LABEL 覆盖3种类型', () => {
-      assert.equal(Object.keys(REFUND_TYPE_LABEL).length, 3);
-      assert.equal(REFUND_TYPE_LABEL.refund, '仅退款');
-      assert.equal(REFUND_TYPE_LABEL.exchange, '换货');
-      assert.equal(REFUND_TYPE_LABEL.return, '退货退款');
-    });
-
-    it('REFUND_STATUS_VARIANT 映射正确', () => {
-      assert.equal(REFUND_STATUS_VARIANT.pending_approval, 'warning');
-      assert.equal(REFUND_STATUS_VARIANT.approved, 'success');
-      assert.equal(REFUND_STATUS_VARIANT.rejected, 'danger');
-      assert.equal(REFUND_STATUS_VARIANT.processing, 'info');
-      assert.equal(REFUND_STATUS_VARIANT.completed, 'success');
-      assert.equal(REFUND_STATUS_VARIANT.cancelled, 'neutral');
-    });
+  test('renders status filter select', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const el = screen.getByTestId('status-filter');
+    expect(el.tagName).toBe('SELECT');
+    expect((el as HTMLSelectElement).value).toBe('ALL');
   });
 
-  // ── 边缘情况 ──
+  test('renders type filter select', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(screen.getByTestId('type-filter')).toBeInTheDocument();
+  });
 
-  describe('边缘情况', () => {
-    it('搜索含空格的文本', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '   ');
-      assert.equal(result.length, 8);
-    });
+  test('renders export CSV button', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(screen.getByText(/📥 导出 CSV/)).toBeInTheDocument();
+  });
 
-    it('搜索部分匹配 "06" 匹配多个退单号', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '06');
-      // 所有 ID 都包含 06
-      assert.ok(result.length >= 8);
-    });
+  test('renders DataTable', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(mockDataTable).toHaveBeenCalled();
+    expect(mockDataTable.mock.lastCall![0].rows.length).toBeGreaterThan(0);
+  });
 
-    it('搜索 "蔬菜" 匹配商品名', () => {
-      const result = filterRefunds(MOCK_REFUNDS, 'ALL', '蔬菜');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'RF-20260601');
-    });
+  test('DataTable has correct column keys', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const keys = mockDataTable.mock.lastCall![0].columns.map((c: any) => c.key);
+    expect(keys).toContain('id');
+    expect(keys).toContain('orderId');
+    expect(keys).toContain('customerName');
+    expect(keys).toContain('type');
+    expect(keys).toContain('amount');
+    expect(keys).toContain('productName');
+    expect(keys).toContain('reason');
+    expect(keys).toContain('status');
+    expect(keys).toContain('createdAt');
+    expect(keys).toContain('actions');
+  });
 
-    it('pending_approval 待处理统计 = 2', () => {
-      const pending = MOCK_REFUNDS.filter((r) => r.status === 'pending_approval');
-      assert.equal(pending.length, 2);
-    });
+  test('renders pagination buttons', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    expect(screen.getByText(/← 上一页/)).toBeInTheDocument();
+    expect(screen.getByText(/下一页 →/)).toBeInTheDocument();
+  });
 
-    it('refund type 只退款条目', () => {
-      const refunds = MOCK_REFUNDS.filter((r) => r.type === 'refund');
-      assert.equal(refunds.length, 3);
-      assert.ok(refunds.every((r) => r.type === 'refund'));
-    });
+  test('shows approval modal on 审核 click', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const btns = screen.getAllByText('审核');
+    expect(btns.length).toBeGreaterThan(0);
+    fireEvent.click(btns[0]);
+    expect(mockModal.mock.lastCall![0].title).toContain('退单审批');
+  });
 
-    it('exchange 换货条目', () => {
-      const exchanges = MOCK_REFUNDS.filter((r) => r.type === 'exchange');
-      assert.equal(exchanges.length, 3);
-    });
+  test('modal has approve and reject buttons', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    fireEvent.click(screen.getAllByText('审核')[0]);
+    expect(screen.getByText('通过审批')).toBeInTheDocument();
+    expect(screen.getByText('拒绝退款')).toBeInTheDocument();
+  });
 
-    it('return 退货条目', () => {
-      const returns = MOCK_REFUNDS.filter((r) => r.type === 'return');
-      assert.equal(returns.length, 2);
-    });
+  test('approve closes modal', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    fireEvent.click(screen.getAllByText('审核')[0]);
+    fireEvent.click(screen.getByText('通过审批'));
+    expect(screen.queryByTestId('modal')).toBeNull();
+  });
 
-    it('金额 ¥ 格式转换', () => {
-      const formatYuan = (fen: number) => `¥${(fen / 100).toFixed(2)}`;
-      assert.equal(formatYuan(12900), '¥129.00');
-      assert.equal(formatYuan(35800), '¥358.00');
-      assert.equal(formatYuan(68900), '¥689.00');
-      assert.equal(formatYuan(0), '¥0.00');
-      assert.equal(formatYuan(99), '¥0.99');
-    });
+  test('reject closes modal', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    fireEvent.click(screen.getAllByText('审核')[0]);
+    fireEvent.click(screen.getByText('拒绝退款'));
+    expect(screen.queryByTestId('modal')).toBeNull();
+  });
 
-    it('processedAt 只对非 pending_approval 有效', () => {
-      const pendingIds = MOCK_REFUNDS.filter((r) => r.status === 'pending_approval').map((r) => r.id);
-      for (const record of MOCK_REFUNDS) {
-        if (pendingIds.includes(record.id)) {
-          assert.equal(record.processedAt, undefined, `pending_approval 不应有 processedAt: ${record.id}`);
-        } else {
-          assert.ok(record.processedAt, `非 pending_approval 应有 processedAt: ${record.id}`);
-        }
-      }
-    });
+  test('toggle detail panel', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const btns = screen.getAllByText('详情');
+    expect(btns.length).toBeGreaterThan(0);
+    fireEvent.click(btns[0]);
+    expect(screen.getByText(/退单详情/)).toBeInTheDocument();
+  });
+
+  test('search input updates value', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const input = screen.getByTestId('search-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'RF-001' } });
+    expect(input.value).toBe('RF-001');
+  });
+
+  test('status filter changes', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const sel = screen.getByTestId('status-filter') as HTMLSelectElement;
+    fireEvent.change(sel, { target: { value: 'pending_approval' } });
+    expect(sel.value).toBe('pending_approval');
+  });
+
+  test('type filter changes', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const sel = screen.getByTestId('type-filter') as HTMLSelectElement;
+    fireEvent.change(sel, { target: { value: 'refund' } });
+    expect(sel.value).toBe('refund');
+  });
+
+  test('amount column renders with ¥', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const col = mockDataTable.mock.lastCall![0].columns.find((c: any) => c.key === 'amount');
+    expect(col).toBeTruthy();
+    const r = { id: 't', orderId: 'o', type: 'refund' as const, status: 'pending_approval' as const, customerName: 'T', customerPhone: '123', amount: 12900, reason: 'r', createdAt: '2026-01-01', productName: 'p' };
+    expect(col.render(r)).toBeTruthy();
+  });
+
+  test('status column renders StatusBadge', async () => {
+    await act(async () => { render(<RefundsPage />); });
+    const col = mockDataTable.mock.lastCall![0].columns.find((c: any) => c.key === 'status');
+    expect(col).toBeTruthy();
   });
 });

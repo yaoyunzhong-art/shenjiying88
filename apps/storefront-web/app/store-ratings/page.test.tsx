@@ -1,166 +1,319 @@
 /**
- * store-ratings/page.test.tsx — 门店评分页 增强测试
+ * store-ratings/page.vitest.tsx — 门店评分页面 L2 组件测试
+ * 角色: 顾客 / 👔店长
+ * 覆盖: 渲染 · 综合评分 · 维度评分 · 评分分布 · 标签云 · 星级/排序筛选 · 评价列表 · 回复 · 分页 · 空态
  *
- * 覆盖:
- *   L1 正例    — 组件导出、5个维度评分、12条评价数据、分布统计
- *   L2 角色测试 — 星级筛选、排序、标签筛选、分页、加载态
- *   边界       — 回复评价、点赞数、评分分布渲染
+ * 注意: vi.mock factory 是提升的(hoisted), 不能引用顶层变量, 数据必须内联在 factory 内。
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import StoreRatingsPage from './page';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
-
-describe('StoreRatingsPage — L1 正例', () => {
-  it('应导出一个默认函数组件 StoreRatingsPage', () => {
-    assert.ok(SRC.includes('export default function StoreRatingsPage'));
+describe('StoreRatingsPage — 门店评分页面', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应包含 use client 指令', () => {
-    assert.ok(SRC.includes("'use client'"));
+  // ====== 正例: 渲染 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<StoreRatingsPage />)).not.toThrow();
   });
 
-  it('应包含 5 个评分维度（环境、服务、设备、性价比、卫生）', () => {
-    const dims = ['环境', '服务', '设备', '性价比', '卫生'];
-    const found = dims.filter(d => SRC.includes(d));
-    assert.equal(found.length, 5, `缺失维度: ${dims.filter(d => !SRC.includes(d)).join(', ')}`);
+  test('renders title 门店评价', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('⭐ 门店评价')).toBeInTheDocument();
   });
 
-  it('每个维度应有 icon、score、description', () => {
-    assert.ok(SRC.includes('icon'));
-    assert.ok(SRC.includes('score'));
-    assert.ok(SRC.includes('description'));
+  test('renders main container with dark background', () => {
+    render(<StoreRatingsPage />);
+    const main = document.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
   });
 
-  it('环境评分应为 4.8', () => {
-    assert.ok(SRC.includes('4.8'));
+  // ====== 综合评分卡片 ======
+
+  test('renders 综合评分 card', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('综合评分')).toBeInTheDocument();
   });
 
-  it('卫生评分应为 4.9（最高）', () => {
-    assert.ok(SRC.includes('4.9'));
-  });
-});
-
-describe('StoreRatingsPage — L1 评价数据验证', () => {
-  it('应包含 12 条评价数据', () => {
-    const matches = SRC.match(/id:\s*['"]\d+['"]/g);
-    assert.equal(matches ? matches.length : 0, 12, `预期 12 条评价，实际 ${matches?.length || 0}`);
+  test('renders 好评率 card', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('好评率')).toBeInTheDocument();
   });
 
-  it('评价应有 author、avatar、rating、date、content、tags 字段', () => {
-    assert.ok(SRC.includes('author'));
-    assert.ok(SRC.includes('avatar'));
-    assert.ok(SRC.includes('rating'));
-    assert.ok(SRC.includes('date'));
-    assert.ok(SRC.includes('content'));
-    assert.ok(SRC.includes('tags'));
-    assert.ok(SRC.includes('likes'));
+  test('renders 已回复 card', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('已回复')).toBeInTheDocument();
   });
 
-  it('应包含评分 5、4、3 各等级评价', () => {
-    assert.ok(SRC.includes("rating: 5"));
-    assert.ok(SRC.includes("rating: 4"));
-    assert.ok(SRC.includes("rating: 3"));
-  });
-});
-
-describe('StoreRatingsPage — L2 筛选与排序', () => {
-  it('应支持星级筛选 filterStars', () => {
-    assert.ok(SRC.includes('filterStars') || SRC.includes('setFilterStars'));
+  test('renders 互动热度 card', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('互动热度')).toBeInTheDocument();
   });
 
-  it('应支持排序 sortOrder（recent/rating_high/rating_low/likes）', () => {
-    assert.ok(SRC.includes("sortOrder") || SRC.includes("'recent'"));
+  test('average rating is displayed', () => {
+    render(<StoreRatingsPage />);
+    // Average of all REVIEWS: about 4.1
+    const avgText = screen.getByText(/4\.\d/);
+    expect(avgText).toBeInTheDocument();
   });
 
-  it('应支持标签筛选 tagFilter', () => {
-    assert.ok(SRC.includes('tagFilter') || SRC.includes('setTagFilter'));
+  test('review count is displayed', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText(/12 条评价/)).toBeInTheDocument();
   });
 
-  it('应支持分页 page / PAGE_SIZE', () => {
-    assert.ok(SRC.includes('PAGE_SIZE') || SRC.includes('page'));
+  // ====== 维度评分 ======
+
+  test('renders dimension ratings section', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('📊 评分维度')).toBeInTheDocument();
   });
 
-  it('应支持加载态 loading', () => {
-    assert.ok(SRC.includes('loading') || SRC.includes('setLoading'));
+  test('renders all 5 dimensions', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('环境')).toBeInTheDocument();
+    expect(screen.getByText('服务')).toBeInTheDocument();
+    expect(screen.getByText('设备')).toBeInTheDocument();
+    expect(screen.getByText('性价比')).toBeInTheDocument();
+    expect(screen.getByText('卫生')).toBeInTheDocument();
   });
 
-  it('应定义 ALL_TAGS 标签云', () => {
-    assert.ok(SRC.includes('ALL_TAGS') || SRC.includes('flatMap'));
+  test('dimension scores are displayed', () => {
+    render(<StoreRatingsPage />);
+    const dimScores = screen.getAllByText(/4\.\d/);
+    expect(dimScores.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('应计算评分分布分布', () => {
-    assert.ok(SRC.includes('distribution'));
-  });
-});
+  // ====== 评分分布 ======
 
-describe('StoreRatingsPage — 回复与交互', () => {
-  it('部分评价应包含回复 (reply)', () => {
-    // Betty(r=4)、Diana(r=3)、Hannah(r=3)、Linda(r=3) 有回复
-    assert.ok(SRC.includes('reply'));
-    assert.ok(SRC.includes('感谢您的反馈'));
+  test('renders rating distribution section', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('📈 评分分布')).toBeInTheDocument();
   });
 
-  it('评价应有点赞数 likes', () => {
-    assert.ok(SRC.includes('likes'));
+  test('renders all 5 star levels', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('5星')).toBeInTheDocument();
+    expect(screen.getByText('4星')).toBeInTheDocument();
+    expect(screen.getByText('3星')).toBeInTheDocument();
+    expect(screen.getByText('2星')).toBeInTheDocument();
+    expect(screen.getByText('1星')).toBeInTheDocument();
   });
 
-  it('评价点赞数各异（3~15）', () => {
-    assert.ok(SRC.includes('likes: 12'));
-    assert.ok(SRC.includes('likes: 4'));
+  // ====== 标签云 ======
+
+  test('renders tag cloud', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('🏷️ 环境好')).toBeInTheDocument();
+    expect(screen.getByText('🏷️ 设备新')).toBeInTheDocument();
+    expect(screen.getByText('🏷️ 干净卫生')).toBeInTheDocument();
   });
 
-  it('应渲染星级显示组件 Stars', () => {
-    assert.ok(SRC.includes('function Stars'));
+  test('clicking a tag filters reviews', async () => {
+    render(<StoreRatingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('🏷️ VR体验'));
+    await waitFor(() => {
+      expect(screen.getByText('Evan')).toBeInTheDocument();
+      expect(screen.queryByText('Alex')).not.toBeInTheDocument();
+    });
   });
 
-  it('Stars 组件使用 ★ 和 ☆', () => {
-    assert.ok(SRC.includes('★') && SRC.includes('☆'));
-  });
-});
-
-describe('StoreRatingsPage — 维度与标签', () => {
-  it('性价比评分应为 4.5', () => {
-    assert.ok(SRC.includes('4.5'));
+  test('active tag shows clear button', async () => {
+    render(<StoreRatingsPage />);
+    fireEvent.click(screen.getByText('🏷️ VR体验'));
+    await waitFor(() => {
+      expect(screen.getByText('✕ 清除')).toBeInTheDocument();
+    });
   });
 
-  it('服务评分应为 4.6', () => {
-    assert.ok(SRC.includes('4.6'));
+  test('clear tag button resets filter', async () => {
+    render(<StoreRatingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('🏷️ VR体验'));
+    await waitFor(() => {
+      expect(screen.queryByText('Alex')).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('✕ 清除'));
+    await waitFor(() => {
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+    });
   });
 
-  it('设备评分应为 4.7', () => {
-    assert.ok(SRC.includes('4.7'));
+  // ====== 星级筛选 ======
+
+  test('renders star filter buttons', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('全部')).toBeInTheDocument();
+    expect(screen.getByText('5★')).toBeInTheDocument();
+    expect(screen.getByText('4★')).toBeInTheDocument();
+    expect(screen.getByText('3★')).toBeInTheDocument();
+    expect(screen.getByText('2★')).toBeInTheDocument();
+    expect(screen.getByText('1★')).toBeInTheDocument();
   });
 
-  it('标签云应包含"环境好"、"设备新"、"干净卫生"等', () => {
-    const tags = ['环境好', '设备新', '干净卫生', '亲子友好'];
-    assert.ok(tags.some(t => SRC.includes(t)));
+  test('clicking star filter narrows reviews', async () => {
+    render(<StoreRatingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('5★'));
+    await waitFor(() => {
+      // Only 5-star reviews: Alex (5), Charlie (5), Evan (5), Fiona (5), Ivan (5), Kevin (5)
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+      expect(screen.getByText('Charlie')).toBeInTheDocument();
+      // 4-star reviews should be hidden
+      expect(screen.queryByText('Betty')).not.toBeInTheDocument();
+    });
   });
 
-  it('应使用 useMemo 优化分布计算', () => {
-    assert.ok(SRC.includes('useMemo'));
-  });
-});
+  // ====== 排序 ======
 
-describe('StoreRatingsPage — L1 导出完整性', () => {
-  it('应从 React 导入 useState', () => {
-    assert.ok(SRC.includes("useState"));
-  });
-
-  it('应导入 useMemo', () => {
-    assert.ok(SRC.includes('useMemo'));
+  test('renders sort order dropdown', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('最新')).toBeInTheDocument();
+    expect(screen.getByText('评分最高')).toBeInTheDocument();
+    expect(screen.getByText('评分最低')).toBeInTheDocument();
+    expect(screen.getByText('最多赞')).toBeInTheDocument();
   });
 
-  it('应使用 React 的内联样式 (style 对象)', () => {
-    assert.ok(SRC.includes('style={{'), '页面应使用 React 内联 style 对象');
+  test('sort by rating_low shows lowest-rated first', async () => {
+    render(<StoreRatingsPage />);
+    const sortSelect = screen.getByDisplayValue('最新');
+    fireEvent.change(sortSelect, { target: { value: 'rating_low' } });
+    await waitFor(() => {
+      // The first visible card should be a 3-star review
+      const reviews = screen.getAllByText(/3|4|5/).filter(el => {
+        const stars = el.textContent?.match(/★/g);
+        return stars && stars.length >= 3;
+      });
+      expect(reviews.length).toBeGreaterThan(0);
+    });
   });
 
-  it('评分分布 5 星应有计数', () => {
-    assert.ok(SRC.includes('5: 0') || SRC.includes('counts[5]'));
+  test('sort by likes shows most-liked first', async () => {
+    render(<StoreRatingsPage />);
+    const sortSelect = screen.getByDisplayValue('最新');
+    fireEvent.change(sortSelect, { target: { value: 'likes' } });
+    await waitFor(() => {
+      expect(screen.getByText('👍 15')).toBeInTheDocument(); // Charlie has 15 likes (highest)
+    });
+  });
+
+  // ====== 评价列表 ======
+
+  test('renders review author avatars', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('🎮')).toBeInTheDocument(); // Alex avatar
+    expect(screen.getByText('🎀')).toBeInTheDocument(); // Betty avatar
+  });
+
+  test('renders review author names', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('Alex')).toBeInTheDocument();
+    expect(screen.getByText('Betty')).toBeInTheDocument();
+    expect(screen.getByText('Charlie')).toBeInTheDocument();
+  });
+
+  test('renders review content', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText(/环境特别好，设备也很新/)).toBeInTheDocument();
+    expect(screen.getByText(/和朋友一起来的/)).toBeInTheDocument();
+  });
+
+  test('renders review dates', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('2026-07-12')).toBeInTheDocument();
+    expect(screen.getByText('2026-07-11')).toBeInTheDocument();
+  });
+
+  test('reviews with replies show store response', () => {
+    render(<StoreRatingsPage />);
+    const replies = screen.getAllByText(/门店回复/);
+    expect(replies.length).toBeGreaterThan(0);
+    expect(screen.getByText(/感谢反馈/)).toBeInTheDocument();
+  });
+
+  // ====== 互动 ======
+
+  test('renders like counts', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('👍 12')).toBeInTheDocument();
+    expect(screen.getByText('👍 8')).toBeInTheDocument();
+  });
+
+  test('renders reply button for each review', () => {
+    render(<StoreRatingsPage />);
+    const replyBtns = screen.getAllByText('💬 回复');
+    expect(replyBtns.length).toBeGreaterThan(0);
+  });
+
+  // ====== 分页 ======
+
+  test('renders pagination controls', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText('← 上一页')).toBeInTheDocument();
+    expect(screen.getByText('下一页 →')).toBeInTheDocument();
+  });
+
+  test('pagination shows page 1 of 2', () => {
+    render(<StoreRatingsPage />);
+    // 12 items, 6 per page = 2 pages
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  test('pagination advances to next page', () => {
+    render(<StoreRatingsPage />);
+    fireEvent.click(screen.getByText('下一页 →'));
+    // Page 2 should show Kevin, Linda etc.
+    expect(screen.getByText('Kevin')).toBeInTheDocument();
+    expect(screen.getByText('Linda')).toBeInTheDocument();
+  });
+
+  test('previous page is disabled on first page', () => {
+    render(<StoreRatingsPage />);
+    const prevBtn = screen.getByText('← 上一页').closest('button');
+    expect(prevBtn).toBeDisabled();
+  });
+
+  // ====== 空态 ======
+
+  test('shows empty state when no reviews match filter', async () => {
+    render(<StoreRatingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('2★'));
+    await waitFor(() => {
+      expect(screen.getByText('没有匹配的评价')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 边界 ======
+
+  test('total review count shown in stats', () => {
+    render(<StoreRatingsPage />);
+    expect(screen.getByText(/共 12 条评价/)).toBeInTheDocument();
+  });
+
+  test('filtered count updates correctly', async () => {
+    render(<StoreRatingsPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/显示 6 条/)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('5★'));
+    await waitFor(() => {
+      expect(screen.getByText(/显示 6 条/)).toBeInTheDocument();
+    });
   });
 });

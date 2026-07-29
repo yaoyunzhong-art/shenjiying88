@@ -1,253 +1,307 @@
 /**
- * member-upgrade-path/page.test.tsx — 会员升级路径页 增强测试
- *
- * 覆盖:
- *   L1 正例    — 组件导出、元数据、级别数据验证、JSON-LD
- *   L2 角色测试 — 当前等级高亮、晋升差距计算、空状态、错误回退
- *   边界       — Suspense/ErrorBoundary 包裹、metadata 完整性
- *   子组件     — 分布面板、权益对比、升级记录、FAQ
+ * member-upgrade-path/page.vitest.tsx — 会员升级路径页面 L2 组件测试 (vitest + @testing-library/react)
+ * 覆盖: 渲染 · 升级摘要 · 升级阶梯 · 等级分布 · 权益对比 · 升级记录 · 常见问题 · 加载态 · 错误态 · 空状态 · 边界
+ * 角色: 👤 会员
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+// ====== Mock @m5/ui ======
+vi.mock('@m5/ui', () => ({
+  LoadingSkeleton: ({ variant, rows, label }: { variant?: string; rows?: number; label?: string }) => (
+    <div data-testid="loading-skeleton" data-variant={variant} data-rows={rows}>{label}</div>
+  ),
+  EmptyState: ({ title, description, actionLabel, actionHref }: {
+    title: string; description: string; actionLabel?: string; actionHref?: string;
+  }) => (
+    <div data-testid="empty-state">
+      <h3>{title}</h3>
+      <p>{description}</p>
+      {actionLabel && <a href={actionHref}>{actionLabel}</a>}
+    </div>
+  ),
+  ErrorBoundary: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => (
+    <div data-testid="error-boundary">{children}</div>
+  ),
+  MemberUpgradePath: ({ tiers, currentTierKey, subtitle }: {
+    tiers: unknown[]; currentTierKey: string; subtitle?: string;
+  }) => (
+    <div data-testid="member-upgrade-path" data-current-tier={currentTierKey}>
+      <p>{subtitle}</p>
+      {tiers.map((tier: Record<string, unknown>) => (
+        <div key={tier.key as string} data-testid={`tier-${tier.key as string}`} data-tiert-name={tier.name as string}>
+          <span>{tier.name as string}</span>
+          <span>{tier.requiredValue as string}</span>
+        </div>
+      ))}
+    </div>
+  ),
+}));
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC = readFileSync(resolve(__dirname, 'page.tsx'), 'utf-8');
+// ====== Test Subject ======
+import MemberUpgradePathPage from './page';
 
-describe('MemberUpgradePathPage — L1 正例', () => {
-  it('应导出一个默认函数组件', () => {
-    assert.ok(SRC.includes('export default function MemberUpgradePath'));
+describe('MemberUpgradePathPage — 会员升级路径', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应导出元数据 metadata', () => {
-    assert.ok(SRC.includes('export const metadata'));
+  // ====== 正例: 渲染 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<MemberUpgradePathPage />)).not.toThrow();
   });
 
-  it('metadata 标题应包含"会员升级路径"', () => {
-    assert.ok(SRC.includes('会员升级路径'));
+  test('renders MemberUpgradePath component', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('member-upgrade-path')).toBeInTheDocument();
+    });
   });
 
-  it('应导入 LoadingSkeleton 以支持加载态', () => {
-    assert.ok(SRC.includes('LoadingSkeleton'));
+  test('renders subtitle on MemberUpgradePath', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('当前门店 · 标准 VIP 等级体系')).toBeInTheDocument();
+    });
   });
 
-  it('应导入 EmptyState 以支持空状态', () => {
-    assert.ok(SRC.includes('EmptyState'));
+  test('renders all four tier nodes', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('tier-bronze')).toBeInTheDocument();
+      expect(screen.getByTestId('tier-silver')).toBeInTheDocument();
+      expect(screen.getByTestId('tier-gold')).toBeInTheDocument();
+      expect(screen.getByTestId('tier-diamond')).toBeInTheDocument();
+    });
   });
 
-  it('应导入 ErrorBoundary 以支持错误回退', () => {
-    assert.ok(SRC.includes('ErrorBoundary'));
+  test('renders tier names', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('青铜会员')).toBeInTheDocument();
+      expect(screen.getByText('白银会员')).toBeInTheDocument();
+      expect(screen.getByText('黄金会员')).toBeInTheDocument();
+      expect(screen.getByText('钻石会员')).toBeInTheDocument();
+    });
   });
 
-  it('应使用 Suspense 包裹', () => {
-    assert.ok(SRC.includes('<Suspense') || SRC.includes('Suspense'));
-  });
-});
+  // ====== 升级摘要 ======
 
-describe('MemberUpgradePathPage — L2 等级数据验证', () => {
-  it('应定义青铜—白银—黄金—钻石四个等级', () => {
-    assert.ok(SRC.includes('青铜') && SRC.includes('白银') && SRC.includes('黄金') && SRC.includes('钻石'));
-  });
-
-  it('每个等级应有 distinct color', () => {
-    const colors = ['#cd7f32', '#9ca3af', '#f59e0b', '#06b6d4'];
-    assert.equal(colors.filter(c => SRC.includes(c)).length, 4);
+  test('renders current tier in summary', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('白银会员')).toBeInTheDocument();
+    });
   });
 
-  it('应包含"累计消费"升级条件', () => {
-    assert.ok(SRC.includes('累计消费'));
+  test('renders upgrade progress (current/total)', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('2/4')).toBeInTheDocument();
+    });
   });
 
-  it('应包含会员权益列表 (benefits)', () => {
-    assert.ok(SRC.includes('benefits'));
+  test('renders next tier info', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('黄金会员')).toBeInTheDocument();
+      expect(screen.getByText(/累计消费/)).toBeInTheDocument();
+    });
   });
 
-  it('应包含条件完成状态 met 字段', () => {
-    assert.ok(SRC.includes('met:'));
+  test('renders current benefits count', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('3 项')).toBeInTheDocument(); // silver has 3 benefits
+    });
   });
 
-  it('应包含升级进度百分比计算', () => {
-    assert.ok(SRC.includes('progress') || SRC.includes('%'));
-  });
-});
+  // ====== 等级分布面板 ======
 
-describe('MemberUpgradePathPage — L2 元数据与结构化', () => {
-  it('应设置 OG title 和 description', () => {
-    assert.ok(SRC.includes('openGraph'));
-  });
-
-  it('应包含 JSON-LD 或结构化数据', () => {
-    assert.ok(SRC.includes('application/ld+json') || SRC.includes('structured'));
+  test('renders tier distribution panel', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('会员等级分布')).toBeInTheDocument();
+    });
   });
 
-  it('metadata type 应为 website', () => {
-    assert.ok(SRC.includes("'website'"));
+  test('renders tier count numbers', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/2840人/)).toBeInTheDocument(); // bronze
+      expect(screen.getByText(/1680人/)).toBeInTheDocument(); // silver
+      expect(screen.getByText(/928人/)).toBeInTheDocument(); // gold
+      expect(screen.getByText(/376人/)).toBeInTheDocument(); // diamond
+    });
   });
 
-  it('应使用 UpgradeTierNode 类型', () => {
-    assert.ok(SRC.includes('UpgradeTierNode'));
+  test('renders monthly upgrades info', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/本月升级 142 人/)).toBeInTheDocument();
+    });
   });
 
-  it('应定义 DEFAULT_TIERS 数组', () => {
-    assert.ok(SRC.includes('DEFAULT_TIERS'));
+  // ====== 权益对比表格 ======
+
+  test('renders benefit comparison section', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('等级权益对比')).toBeInTheDocument();
+    });
   });
 
-  it('应定义 MemberUpgradeSummary 子组件', () => {
-    assert.ok(SRC.includes('MemberUpgradeSummary'));
+  test('renders benefit items', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('基础折扣')).toBeInTheDocument();
+      expect(screen.getByText('满减券/月')).toBeInTheDocument();
+      expect(screen.getByText('生日福利')).toBeInTheDocument();
+      expect(screen.getByText('运费优惠')).toBeInTheDocument();
+      expect(screen.getByText('专属客服')).toBeInTheDocument();
+      expect(screen.getByText('新品体验')).toBeInTheDocument();
+    });
   });
 
-  it('应包含 currentIndex 计算当前等级位置', () => {
-    assert.ok(SRC.includes('currentIndex') || SRC.includes('findIndex'));
-  });
-});
-
-describe('MemberUpgradePathPage — L1 导出完整性', () => {
-  it('应使用 TypeScript Metadata 类型', () => {
-    assert.ok(SRC.includes('type Metadata') || SRC.includes('Metadata'));
-  });
-
-  it('应从 @m5/ui 导入组件', () => {
-    assert.ok(SRC.includes('@m5/ui'));
+  test('renders tier column headers', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('青铜会员')).toBeInTheDocument();
+      expect(screen.getByText('白银会员')).toBeInTheDocument();
+      expect(screen.getByText('黄金会员')).toBeInTheDocument();
+      expect(screen.getByText('钻石会员')).toBeInTheDocument();
+    });
   });
 
-  it('应导出 metadata 常量', () => {
-    assert.ok(SRC.includes('export const metadata: Metadata'));
+  test('renders benefit values', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('9.5折')).toBeInTheDocument();
+      expect(screen.getByText('9折')).toBeInTheDocument();
+      expect(screen.getByText('8.5折')).toBeInTheDocument();
+      expect(screen.getByText('8折')).toBeInTheDocument();
+    });
   });
 
-  it('DEFAULT_TIERS 应有升级条件数组', () => {
-    const match = SRC.match(/DEFAULT_TIERS\s*[=:]/);
-    assert.ok(match);
+  // ====== 升级记录 ======
+
+  test('renders upgrade history section', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('升级记录')).toBeInTheDocument();
+    });
   });
 
-  it('应包含进阶提示（下一级差距）', () => {
-    assert.ok(SRC.includes('requiredValue') || SRC.includes('¥'));
-  });
-});
-
-// ============================================================
-// 子组件测试
-// ============================================================
-
-describe('MemberUpgradePathPage — 等级分布面板', () => {
-  it('应包含 TierDistributionPanel 子组件', () => {
-    assert.ok(SRC.includes('TierDistributionPanel'), '缺少等级分布面板');
+  test('renders upgrade history entries', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('青铜会员')).toBeInTheDocument();
+      expect(screen.getByText('白银会员')).toBeInTheDocument();
+      expect(screen.getByText('钻石会员')).toBeInTheDocument();
+    });
   });
 
-  it('等级分布包含等级统计标题', () => {
-    assert.ok(SRC.includes('会员等级分布'), '缺少等级分布标题');
+  test('renders upgrade dates', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('2026-03-15')).toBeInTheDocument();
+      expect(screen.getByText('2026-01-10')).toBeInTheDocument();
+    });
   });
 
-  it('等级分布包含四项指标（钻石/黄金/白银/青铜）', () => {
-    assert.ok(SRC.includes('钻石会员'));
-    assert.ok(SRC.includes('黄金会员'));
-    assert.ok(SRC.includes('白银会员'));
-    assert.ok(SRC.includes('青铜会员'));
+  test('renders upgrade reasons', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('累计消费达标自动升级')).toBeInTheDocument();
+      expect(screen.getByText('历史累计消费达标')).toBeInTheDocument();
+      expect(screen.getByText('年度消费达标自动升级')).toBeInTheDocument();
+    });
   });
 
-  it('等级分布展示累计会员总数', () => {
-    assert.ok(SRC.includes('totalMembers') || SRC.includes('累计会员'));
+  // ====== 常见问题 ======
+
+  test('renders FAQ section', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('常见问题')).toBeInTheDocument();
+    });
   });
 
-  it('等级分布展示本月升级人数', () => {
-    assert.ok(SRC.includes('monthlyUpgrades') || SRC.includes('本月升级'));
-  });
-});
-
-describe('MemberUpgradePathPage — 权益对比表格', () => {
-  it('应包含 BenefitComparisonTable 子组件', () => {
-    assert.ok(SRC.includes('BenefitComparisonTable'), '缺少权益对比表格');
-  });
-
-  it('权益对比表格包含标题', () => {
-    assert.ok(SRC.includes('等级权益对比'), '缺少对比标题');
+  test('renders all FAQ questions', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('升级后多长时间生效？')).toBeInTheDocument();
+      expect(screen.getByText('升级后原有积分会清零吗？')).toBeInTheDocument();
+      expect(screen.getByText('消费金额如何计算？')).toBeInTheDocument();
+      expect(screen.getByText('等级会降级吗？')).toBeInTheDocument();
+      expect(screen.getByText('跨店消费是否累计？')).toBeInTheDocument();
+    });
   });
 
-  it('权益对比表格包含6项权益对比', () => {
-    assert.ok(SRC.includes('基础折扣'), '缺少基础折扣对比');
-    assert.ok(SRC.includes('满减券'), '缺少满减券对比');
-    assert.ok(SRC.includes('生日福利'), '缺少生日福利对比');
-    assert.ok(SRC.includes('运费优惠'), '缺少运费对比');
-    assert.ok(SRC.includes('专属客服'), '缺少客服对比');
-    assert.ok(SRC.includes('新品体验'), '缺少新品体验对比');
+  test('renders FAQ answers', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/达到升级条件后，系统将在 24 小时内自动升级等级/)).toBeInTheDocument();
+      expect(screen.getByText(/升级不会影响您的积分余额/)).toBeInTheDocument();
+    });
   });
 
-  it('权益对比使用 BENEFIT_COMPARISONS 数据', () => {
-    assert.ok(SRC.includes('BENEFIT_COMPARISONS'), '缺少 BENEFIT_COMPARISONS');
+  // ====== 加载态 ======
+
+  test('renders Loadings in Suspense fallback', async () => {
+    render(<MemberUpgradePathPage />);
+    // LoadingSkeletons should render as part of the Suspense fallback
+    await waitFor(() => {
+      const skeletons = screen.getAllByTestId('loading-skeleton');
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
   });
 
-  it('权益对比表包含4个等级的列', () => {
-    assert.ok(SRC.includes('青铜会员') && SRC.includes('白银会员') && SRC.includes('黄金会员') && SRC.includes('钻石会员'));
-  });
-});
+  // ====== 底部提示 ======
 
-describe('MemberUpgradePathPage — 升级记录', () => {
-  it('应包含 UpgradeHistoryTable 子组件', () => {
-    assert.ok(SRC.includes('UpgradeHistoryTable'), '缺少升级记录表格');
-  });
-
-  it('升级记录包含标题', () => {
-    assert.ok(SRC.includes('升级记录'), '缺少升级记录标题');
+  test('renders upgrade tips footer', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/升级小贴士/)).toBeInTheDocument();
+    });
   });
 
-  it('升级记录包含表头: 从/到/日期/原因', () => {
-    assert.ok(SRC.includes('从') && SRC.includes('到') && SRC.includes('日期') && SRC.includes('原因'));
+  test('renders upgrade tip content', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/积分每月 1 日结算/)).toBeInTheDocument();
+      expect(screen.getByText(/达到升级条件后系统将在 24 小时内自动升级等级/)).toBeInTheDocument();
+    });
   });
 
-  it('升级记录使用 UPGRADE_HISTORIES 数据', () => {
-    assert.ok(SRC.includes('UPGRADE_HISTORIES'), '缺少 UPGRADE_HISTORIES');
+  // ====== JSON-LD ======
+
+  test('renders JSON-LD structured data', () => {
+    const { container } = render(<MemberUpgradePathPage />);
+    const script = container.querySelector('script[type="application/ld+json"]');
+    expect(script).toBeInTheDocument();
+    expect(script?.innerHTML).toContain('WebApplication');
+    expect(script?.innerHTML).toContain('会员升级路径');
   });
 
-  it('升级记录包含至少3条历史', () => {
-    const matches = SRC.match(/id: '/g);
-    const uhMatches = SRC.match(/UH-/g);
-    assert.ok(uhMatches && uhMatches.length >= 3, '应至少3条升级记录');
-  });
-});
+  // ====== 边界 ======
 
-describe('MemberUpgradePathPage — FAQ 面板', () => {
-  it('应包含 FAQSection 子组件', () => {
-    assert.ok(SRC.includes('FAQSection'), '缺少 FAQ 面板');
-  });
-
-  it('FAQ 面板包含标题', () => {
-    assert.ok(SRC.includes('常见问题'), '缺少 FAQ 标题');
+  test('renders tier required values', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText('注册即享')).toBeInTheDocument();
+      expect(screen.getByText('累计消费 ≥ ¥500')).toBeInTheDocument();
+      expect(screen.getByText('累计消费 ≥ ¥2,000')).toBeInTheDocument();
+      expect(screen.getByText('累计消费 ≥ ¥10,000')).toBeInTheDocument();
+    });
   });
 
-  it('FAQ 面板包含至少3个问题', () => {
-    assert.ok(SRC.includes('多长时间生效'), '缺少问题1');
-    assert.ok(SRC.includes('积分会清零'), '缺少问题2');
-    assert.ok(SRC.includes('消费金额如何计算'), '缺少问题3');
-  });
-
-  it('FAQ 使用 FAQS 数据', () => {
-    assert.ok(SRC.includes('FAQS'), '缺少 FAQS');
-  });
-
-  it('FAQ 包含升级不降级说明', () => {
-    assert.ok(SRC.includes('不会降级'), '应包含不降级说明');
-  });
-
-  it('FAQ 包含跨店消费说明', () => {
-    assert.ok(SRC.includes('跨店'), '应包含跨店消费说明');
-  });
-});
-
-describe('MemberUpgradePathPage — 状态元数据', () => {
-  it('应包含 TIER_STATS 统计数据对象', () => {
-    assert.ok(SRC.includes('TIER_STATS'), '缺少统计对象');
-  });
-
-  it('TIER_STATS 包含 4 个等级会员数', () => {
-    assert.ok(SRC.includes('bronzeCount'), '缺少青铜统计');
-    assert.ok(SRC.includes('silverCount'), '缺少白银统计');
-    assert.ok(SRC.includes('goldCount'), '缺少黄金统计');
-    assert.ok(SRC.includes('diamondCount'), '缺少钻石统计');
-  });
-
-  it('升级小贴士提示底部', () => {
-    assert.ok(SRC.includes('升级小贴士'), '应包含升级贴士');
+  test('renders total member count in distribution', async () => {
+    render(<MemberUpgradePathPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/5,824/)).toBeInTheDocument(); // totalMembers
+    });
   });
 });

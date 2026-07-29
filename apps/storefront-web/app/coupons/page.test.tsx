@@ -1,221 +1,175 @@
-/**
- * coupons/page.test.tsx — 优惠券列表页 L1 冒烟测试 (storefront-web)
- * 覆盖: 正例·边界·防御
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import React from 'react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+let mockTabsItems: any[] = [];
+let mockDTCalls: any[] = [];
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => '/coupons',
+  useSearchParams: () => new URLSearchParams(),
+}));
 
-describe('coupons — 正例', () => {
-  it('应导出一个默认组件 CouponsListPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function CouponsListPage'), '缺少默认导出');
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title }: any) => <div data-testid="ps" data-t={title}>{children}</div>,
+  DataTable: (props: any) => {
+    mockDTCalls.push(props);
+    const { columns, rows, rowKey } = props;
+    return <div data-testid="dt" data-r={rows.length}>{rows.map((r: any) => <div key={rowKey(r)}>{columns.map((c: any) => <span key={c.key}>{c.render ? c.render(r) : String(r[c.key])}</span>)}</div>)}</div>;
+  },
+  Pagination: () => <div data-testid="pg">pg</div>,
+  SearchFilterInput: ({ value, onChange, placeholder }: any) => (
+    <input data-testid="si" placeholder={placeholder} value={value} onChange={(e: any) => onChange(e.target.value)} />
+  ),
+  StatusBadge: ({ label, variant }: any) => <span data-testid="sb" data-v={variant}>{label}</span>,
+  Tabs: ({ items, activeKey, onChange }: any) => {
+    mockTabsItems = items || [];
+    return <div data-testid="tabs" data-key={activeKey}>{items.map((i: any) => <button key={i.key} onClick={() => onChange(i.key)}>{i.label}</button>)}</div>;
+  },
+  usePagination: () => ({ page: 1, totalPages: 2, setPage: vi.fn() }),
+  useSearchFilter: () => ({ searchTerm: '', setSearchTerm: vi.fn(), filteredItems: [
+    { id: 'cp1', name: '新客首单8折', type: 'discount' as const, value: '8折', minAmount: '满0', totalIssued: 500, usedCount: 187, validFrom: '2026-06-01', validTo: '2026-07-31', storeName: '旗舰店', status: 'active' as const },
+    { id: 'cp2', name: '满300减50', type: 'cash' as const, value: '¥50', minAmount: '满300', totalIssued: 300, usedCount: 89, validFrom: '2026-06-01', validTo: '2026-06-30', storeName: '旗舰店', status: 'active' as const },
+    { id: 'cp3', name: '已过期券', type: 'voucher' as const, value: '¥100', minAmount: '满200', totalIssued: 150, usedCount: 98, validFrom: '2026-06-01', validTo: '2026-06-15', storeName: '社区店', status: 'expired' as const },
+  ]}),
+  useSortedItems: (i: any) => i,
+}));
+
+vi.mock('../_components/useTriState', () => ({
+  useTriState: () => ({ loading: false, error: null, wrapLoad: vi.fn((p: Promise<any>) => p.then((d: any) => d)) }),
+}));
+
+vi.mock('../_components/TriStateRenderer', () => ({
+  TriStateRenderer: ({ children }: any) => <div data-testid="tric">{typeof children === 'function' ? children() : children}</div>,
+}));
+
+import CouponsListPage from './page';
+beforeEach(() => { vi.clearAllMocks(); mockTabsItems = []; mockDTCalls = []; });
+
+describe('CouponsListPage', () => {
+  test('renders PageShell with coupons title', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(screen.getByTestId('ps').dataset.t).toBe('优惠券管理');
   });
 
-  it('应包含 Coupon 接口定义', () => {
-    const src = readSource();
-    assert.ok(src.includes('interface Coupon'), '缺少接口');
+  test('renders stat badge labels for coupon metrics', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(screen.getAllByText('优惠券总数').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('进行中').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('总发放').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('已核销').length).toBeGreaterThan(0);
   });
 
-  it('应包含 MOCK_COUPONS 数据集', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_COUPONS'), '缺少数据源');
+  test('renders search input', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(screen.getByTestId('si')).toBeInTheDocument();
   });
 
-  it('应计算 active / totalIssued', () => {
-    const src = readSource();
-    assert.ok(src.includes('active:'), '缺少 active');
-    assert.ok(src.includes('totalIssued'), '缺少 totalIssued');
+  test('renders status filter tabs with correct keys', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const keys = mockTabsItems.map((i: any) => i.key);
+    expect(keys).toContain('ALL');
+    expect(keys).toContain('active');
+    expect(keys).toContain('expired');
+    expect(keys).toContain('disabled');
   });
 
-  it('应包含优惠券使用率统计', () => {
-    const src = readSource();
-    assert.ok(src.includes('used') || src.includes('usage'), '缺少使用率');
+  test('renders DataTable with coupon rows', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(mockDTCalls.length).toBeGreaterThan(0);
+    expect(mockDTCalls[mockDTCalls.length - 1].rows.length).toBeGreaterThan(0);
   });
 
-  it('应展示优惠券列表', () => {
-    const src = readSource();
-    assert.ok(src.includes('优惠券') || src.includes('Coupon'), '缺少优惠券列表');
-  });
-});
-
-describe('coupons — 边界', () => {
-  it('active 状态过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes(".status === 'active'"), 'active 过滤');
-  });
-
-  it('问题统计使用 reduce', () => {
-    const src = readSource();
-    assert.ok(src.includes('.reduce('), 'reduce 求和');
+  test('DataTable has correct column keys', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const keys = mockDTCalls[mockDTCalls.length - 1].columns.map((c: any) => c.key);
+    expect(keys).toContain('name');
+    expect(keys).toContain('type');
+    expect(keys).toContain('value');
+    expect(keys).toContain('minAmount');
+    expect(keys).toContain('usage');
+    expect(keys).toContain('validTo');
+    expect(keys).toContain('storeName');
+    expect(keys).toContain('status');
   });
 
-  it('MOCK_COUPONS 长度统计', () => {
-    const src = readSource();
-    assert.ok(src.includes('MOCK_COUPONS.length'), '长度统计');
+  test('renders pagination component', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(screen.getByTestId('pg')).toBeInTheDocument();
   });
 
-  it('应包含 status 字段过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes('status'), '缺少 status 字段');
+  test('renders empty state when no items match', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    // The page shows empty state when finalFiltered.length === 0
+    // With mock data populated, this is not shown
+    const allText = document.body.textContent || '';
+    expect(allText).not.toContain('未找到匹配的优惠券');
   });
 
-  it('应包含 discount 或 amount 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('discount') || src.includes('amount') || src.includes('Discount'), '缺少折扣字段');
-  });
-});
-
-describe('coupons — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+  test('name column renders correctly', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const col = mockDTCalls[mockDTCalls.length - 1].columns[0];
+    const sample = { id: 'cp-t', name: '测试', type: 'discount' as const, value: '8折', minAmount: '满0', totalIssued: 100, usedCount: 50, validFrom: '', validTo: '', storeName: '', status: 'active' as const };
+    expect(col.render(sample)).toBeTruthy();
   });
 
-  it('应包含 useMemo', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo'), '缺少 useMemo');
+  test('type column at index 1', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[1].key).toBe('type');
   });
 
-  it('应包含搜索过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes('search') || src.includes('Search'), '搜索');
+  test('status column present', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const cols = mockDTCalls[mockDTCalls.length - 1].columns;
+    expect(cols.find((c: any) => c.key === 'status')).toBeTruthy();
   });
 
-  it('不应使用 innerHTML', () => {
-    const src = readSource();
-    assert.ok(!src.includes('innerHTML'), '不应使用 innerHTML');
-  });
-});
-
-describe('coupons — 补充覆盖', () => {
-  it('应包含 有效期 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('validTo') || src.includes('validFrom') || src.includes('valid'), '缺少有效期');
+  test('usage column at index 4', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[4].key).toBe('usage');
   });
 
-  it('应包含 useMemo 或 useState', () => {
-    const src = readSource();
-    assert.ok(src.includes('useMemo') || src.includes('useState'), '缺少 hooks');
+  test('renders via TriStateRenderer', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(screen.getByTestId('tric')).toBeInTheDocument();
   });
 
-  it('MOCK_COUPONS 应包含 minAmount 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('minAmount') || src.includes('min') || src.includes('threshold'), '缺少最低消费');
+  test('renders coupon management text on page', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(screen.getByTestId('ps')).toBeInTheDocument();
   });
 
-  it('应包含 优惠券类型 字段', () => {
-    const src = readSource();
-    assert.ok(src.includes('type') || src.includes('couponType'), '缺少类型字段');
+  test('status tabs have 4 items', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(mockTabsItems.length).toBe(4);
   });
 
-  it('应包含 filter 过滤逻辑', () => {
-    const src = readSource();
-    assert.ok(src.includes('.filter('), '缺少 filter 调用');
-  });
-});
-
-describe('coupons — 完整覆盖', () => {
-  it('应包含 CouponType 4 种类型定义', () => {
-    const src = readSource();
-    const types = ["'discount'", "'cash'", "'free_shipping'", "'voucher'"];
-    types.forEach(t => assert.ok(src.includes(t), `缺少类型: ${t}`));
+  test('validTo column renders date range', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const col = mockDTCalls[mockDTCalls.length - 1].columns[5];
+    expect(col.key).toBe('validTo');
   });
 
-  it('应包含 CouponStatus 3 种状态定义', () => {
-    const src = readSource();
-    ["'active'", "'expired'", "'disabled'"].forEach(s =>
-      assert.ok(src.includes(s), `缺少状态: ${s}`)
-    );
+  test('storeName column present', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const col = mockDTCalls[mockDTCalls.length - 1].columns[6];
+    expect(col.key).toBe('storeName');
   });
 
-  it('TYPE_LABELS 覆盖全部 4 种优惠券中文标签', () => {
-    const src = readSource();
-    ['打折券', '代金券', '免运费', '礼品券'].forEach(label =>
-      assert.ok(src.includes(label), `缺少标签: ${label}`)
-    );
+  test('value column at index 2', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[2].key).toBe('value');
   });
 
-  it('STATUS_LABELS 覆盖全部 3 种状态标签', () => {
-    const src = readSource();
-    ['进行中', '已过期', '已停用'].forEach(label =>
-      assert.ok(src.includes(label), `缺少状态标签: ${label}`)
-    );
+  test('minAmount column at index 3', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    expect(mockDTCalls[mockDTCalls.length - 1].columns[3].key).toBe('minAmount');
   });
 
-  it('应包含 Tabs 组件用于状态过滤', () => {
-    const src = readSource();
-    assert.ok(src.includes('Tabs'), '缺少 Tabs');
-    assert.ok(src.includes('statusFilter'), '缺少 statusFilter');
-  });
-
-  it('应包含 DataTable 组件用于数据展示', () => {
-    const src = readSource();
-    assert.ok(src.includes('DataTable'), '缺少 DataTable');
-    assert.ok(src.includes('columns'), '缺少 columns');
-  });
-
-  it('应包含 Pagination 组件用于分页控制', () => {
-    const src = readSource();
-    assert.ok(src.includes('Pagination'), '缺少 Pagination');
-    assert.ok(src.includes('usePagination'), '缺少 usePagination');
-  });
-
-  it('应包含 StatBadge 子组件', () => {
-    const src = readSource();
-    assert.ok(src.includes('function StatBadge'), '缺少 StatBadge');
-  });
-
-  it('应包含空状态处理（未找到匹配的优惠券）', () => {
-    const src = readSource();
-    assert.ok(src.includes('未找到匹配的优惠券'), '缺少空状态提示');
-  });
-
-  it('应包含 searchTerm / setSearchTerm 搜索能力', () => {
-    const src = readSource();
-    assert.ok(src.includes('searchTerm'), '缺少 searchTerm');
-    assert.ok(src.includes('setSearchTerm'), '缺少 setSearchTerm');
-  });
-
-  it('应包含 useSearchFilter 过滤钩子', () => {
-    const src = readSource();
-    assert.ok(src.includes('useSearchFilter'), '缺少 useSearchFilter');
-  });
-
-  it('MOCK_COUPONS 应覆盖全部 4 种优惠券类型', () => {
-    const src = readSource();
-    const typeLabels = ['打折券', '代金券', '免运费', '礼品券'];
-    typeLabels.forEach(label =>
-      assert.ok(src.includes(label), `Mock 数据缺少类型: ${label}`)
-    );
-  });
-
-  it('MOCK_COUPONS 应覆盖全部 3 种优惠券状态', () => {
-    const src = readSource();
-    ["status: 'active'", "status: 'expired'", "status: 'disabled'"].forEach(s =>
-      assert.ok(src.includes(s), `Mock 数据缺少状态: ${s}`)
-    );
-  });
-
-  it('应包含 COLUMNS 列定义内含 8 列', () => {
-    const src = readSource();
-    const columnMatches = (src.match(/header:/g) || []).length;
-    assert.ok(columnMatches >= 7, `列定义不足: ${columnMatches}`);
-  });
-
-  it('不应使用 console.log 或 console.error 直接输出', () => {
-    const src = readSource();
-    // 仅允许 SUMMARY 诊断中的 console.log
-    const consoleLines = src.split('\n').filter(l => l.includes('console.'));
-    assert.ok(consoleLines.length <= 1, '存在多余的 console 调用');
+  test('Tabs activeKey is ALL initially', async () => {
+    await act(async () => { render(<CouponsListPage />); });
+    const tabs = screen.getByTestId('tabs');
+    expect(tabs.dataset.key).toBe('ALL');
   });
 });

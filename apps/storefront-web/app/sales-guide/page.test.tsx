@@ -1,230 +1,216 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+/**
+ * sales-guide/page.vitest.tsx — 导购员工作台页 测试增强
+ *
+ * 覆盖：渲染、用户交互、加载态/错误态、边界场景
+ * 使用 vitest + @testing-library/react
+ */
+import React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
-describe('SalesGuidePage structure', () => {
-  // Page file exists
-  it('should have the page file', async () => {
-    const fs = await import('fs');
-    const exists = fs.existsSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-    );
-    assert.equal(exists, true);
+// ── Mocks ──
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock('@m5/ui', () => ({
+  PageShell: ({ children, title, description }: any) => (
+    <div data-testid="page-shell" data-title={title} data-description={description}>
+      {children}
+    </div>
+  ),
+  StatusBadge: ({ label, variant }: any) => (
+    <span data-testid="status-badge" data-variant={variant}>
+      {label}
+    </span>
+  ),
+  SalesClerkTool: ({ stats, followUpClients, scripts, clerkName, storeName, onMemberSearch, onFollowUp, onScriptCopy }: any) => (
+    <div data-testid="sales-clerk-tool">
+      <span data-testid="clerk-name">{clerkName}</span>
+      <span data-testid="store-name">{storeName}</span>
+      <span data-testid="stats-total">{stats?.totalReceptions}</span>
+      <span data-testid="followup-count">{followUpClients?.length}</span>
+      <span data-testid="scripts-count">{scripts?.length}</span>
+      <button data-testid="btn-member-search" onClick={() => onMemberSearch?.('王芳')}>
+        会员搜索
+      </button>
+      <button data-testid="btn-followup" onClick={() => onFollowUp?.('fu-1')}>
+        跟进fu-1
+      </button>
+      <button data-testid="btn-copy" onClick={() => onScriptCopy?.('sc-1')}>
+        复制话术
+      </button>
+    </div>
+  ),
+}));
+
+import SalesGuidePage from './page';
+
+const renderPage = () => render(<SalesGuidePage />);
+
+// ── 测试套件 ──
+
+describe('SalesGuidePage — 渲染', () => {
+  test('应正确渲染 PageShell 组件', () => {
+    renderPage();
+    expect(screen.getByTestId('page-shell')).toHaveAttribute('data-title', '导购员工具');
   });
 
-  // Page exports a default function
-  it('should export default function component', async () => {
-    const mod = await import('./page.tsx');
-    assert.equal(typeof mod.default, 'function');
+  test('应渲染导购员工作台标题', () => {
+    renderPage();
+    expect(screen.getByText(/导购员工作台/)).toBeTruthy();
   });
 
-  // Verify imports from @m5/ui
-  it('should import from @m5/ui', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('@m5/ui'), 'Missing @m5/ui import');
-    assert.ok(source.includes('SalesClerkTool'), 'Missing SalesClerkTool import');
-    assert.ok(source.includes('PageShell'), 'Missing PageShell import');
+  test('应渲染统计指标卡片', () => {
+    renderPage();
+    expect(screen.getByText(/今日接待/)).toBeTruthy();
+    expect(screen.getByText(/新线索/)).toBeTruthy();
+    expect(screen.getByText(/转化数/)).toBeTruthy();
+    expect(screen.getByText(/平均响应/)).toBeTruthy();
+    expect(screen.getAllByText(/待跟进/).length).toBeGreaterThanOrEqual(1);
   });
 
-  // Verify mock stats data
-  it('should have complete DailyReceptionStats mock', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('totalReceptions'), 'Missing totalReceptions');
-    assert.ok(source.includes('newLeads'), 'Missing newLeads');
-    assert.ok(source.includes('conversions'), 'Missing conversions');
-    assert.ok(source.includes('conversionRate'), 'Missing conversionRate');
-    assert.ok(source.includes('avgResponseMin'), 'Missing avgResponseMin');
+  test('应渲染 SalesClerkTool 组件', () => {
+    renderPage();
+    expect(screen.getByTestId('clerk-name')).toHaveTextContent('张明');
+    expect(screen.getByTestId('store-name')).toHaveTextContent('朝阳旗舰店');
   });
 
-  // Verify all stats values
-  it('should have correct stats values', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('totalReceptions: 28'), 'Expected 28 receptions');
-    assert.ok(source.includes('newLeads: 12'), 'Expected 12 leads');
-    assert.ok(source.includes('conversions: 8'), 'Expected 8 conversions');
-    assert.ok(source.includes('conversionRate: 66.7'), 'Expected 66.7% rate');
-    assert.ok(source.includes('avgResponseMin: 2.3'), 'Expected 2.3 min response');
+  test('应渲染待跟进客户表格', () => {
+    renderPage();
+    expect(screen.getByText(/待跟进客户列表/)).toBeTruthy();
+    expect(screen.getByText('王芳')).toBeTruthy();
+    expect(screen.getByText('李明')).toBeTruthy();
   });
 
-  // Verify follow-up client mock data
-  it('should have 5 follow-up clients', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    const clientNames = ['王芳', '李明', '赵雪', '陈伟', '刘洋'];
-    for (const name of clientNames) {
-      assert.ok(source.includes(name), `Missing client: ${name}`);
-    }
+  test('应渲染推荐话术区域', () => {
+    renderPage();
+    expect(screen.getByText(/推荐话术/)).toBeTruthy();
+    expect(screen.getByText('新客欢迎')).toBeTruthy();
+    expect(screen.getByText('会员推荐')).toBeTruthy();
+    expect(screen.getByText('客诉安抚')).toBeTruthy();
   });
 
-  // Verify all clients have complete fields
-  it('should have complete FollowUpClient fields', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('tier'), 'Missing tier field');
-    assert.ok(source.includes('lastVisit'), 'Missing lastVisit field');
-    assert.ok(source.includes('reason'), 'Missing reason field');
-    assert.ok(source.includes('priority'), 'Missing priority field');
+  test('应渲染今日工作摘要', () => {
+    renderPage();
+    expect(screen.getByText(/今日排名/)).toBeTruthy();
+    expect(screen.getByText(/在岗时长/)).toBeTruthy();
   });
 
-  // Verify all priority levels covered
-  it('should include all priority levels', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes("priority: 'high'"), 'Missing high');
-    assert.ok(source.includes("priority: 'medium'"), 'Missing medium');
-    assert.ok(source.includes("priority: 'low'"), 'Missing low');
-  });
-
-  // Verify all membership tiers covered
-  it('should include all membership tiers', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes("tier: 'VIP'"), 'Missing VIP');
-    assert.ok(source.includes("tier: 'GOLD'"), 'Missing GOLD');
-    assert.ok(source.includes("tier: 'SILVER'"), 'Missing SILVER');
-    assert.ok(source.includes("tier: 'REGULAR'"), 'Missing REGULAR');
-  });
-
-  // Verify sales scripts
-  it('should have 5 sales scripts', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    const scenarios = ['新客欢迎', '会员推荐', '客诉安抚', '离店回访', '活动邀约'];
-    for (const s of scenarios) {
-      assert.ok(source.includes(s), `Missing scenario: ${s}`);
-    }
-  });
-
-  // Verify callback handlers
-  it('should implement all callback handlers', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('handleMemberSearch'), 'Missing handleMemberSearch');
-    assert.ok(source.includes('handleFollowUp'), 'Missing handleFollowUp');
-    assert.ok(source.includes('handleScriptCopy'), 'Missing handleScriptCopy');
-  });
-
-  // Verify page metadata
-  it('should include PageShell with title and description', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('导购员工具'), 'Missing title');
-    assert.ok(source.includes('导购员专属工作台'), 'Missing description');
-  });
-
-  // Verify member mock database
-  it('should have mock member data for lookup', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('MOCK_MEMBERS'), 'Missing MOCK_MEMBERS');
-    assert.ok(source.includes('高消费'), 'Missing member tag');
-    assert.ok(source.includes('红酒爱好者'), 'Missing member interest tag');
-  });
-
-  // Verify toast notification logic
-  it('should include toast notification state', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync(
-      new URL('./page.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    assert.ok(source.includes('toastMessage'), 'Missing toastMessage state');
-    assert.ok(source.includes('setToastMessage'), 'Missing setToastMessage');
+  test('应渲染快速入口按钮组', () => {
+    renderPage();
+    expect(screen.getByText(/新建客户/)).toBeTruthy();
+    expect(screen.getByText(/今日回访计划/)).toBeTruthy();
+    expect(screen.getByText(/业绩排行榜/)).toBeTruthy();
   });
 });
 
-describe('SalesGuidePage - Edge Cases & Data Integrity', () => {
-  it('conversion rate calculation should be correct: 8/12*100 = 66.7', () => {
-    const conversions = 8;
-    const leads = 12;
-    const rate = Math.round((conversions / leads) * 1000) / 10;
-    assert.equal(rate, 66.7);
+describe('SalesGuidePage — 用户交互', () => {
+  test('点击跟进按钮应触发跟进回调', async () => {
+    renderPage();
+    fireEvent.click(screen.getAllByText('跟进')[0]);
+    await waitFor(() => expect(screen.getByText(/已标记跟进/)).toBeTruthy());
   });
 
-  it('avg response time calculation: 2.3 min = (1.5 + 3.0 + 2.0 + 2.5 + 2.5) / 5', () => {
-    const times = [1.5, 3.0, 2.0, 2.5, 2.5];
-    const avg = times.reduce((a, b) => a + b, 0) / times.length;
-    assert.equal(avg, 2.3);
+  test('点击复制话术按钮应触发复制回调', async () => {
+    renderPage();
+    fireEvent.click(screen.getAllByText(/📋 复制/)[0]);
+    await waitFor(() => expect(screen.getByText(/话术已复制/)).toBeTruthy());
   });
 
-  it('should handle empty follow-up client list', () => {
-    const emptyClients: any[] = [];
-    assert.equal(emptyClients.length, 0);
-    assert.equal(emptyClients.filter(c => c.priority === 'high').length, 0);
+  test('优先级筛选下拉框可切换', () => {
+    renderPage();
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'high' } });
+    expect(select).toHaveValue('high');
+    fireEvent.change(select, { target: { value: 'medium' } });
+    expect(select).toHaveValue('medium');
   });
 
-  it('should handle all clients high priority', () => {
-    const clients = [
-      { name: 'A', priority: 'high' },
-      { name: 'B', priority: 'high' },
-      { name: 'C', priority: 'high' },
-    ];
-    assert.equal(clients.filter(c => c.priority === 'high').length, 3);
-    assert.equal(clients.filter(c => c.priority === 'low').length, 0);
+  test('吐司通知3秒后自动消失', async () => {
+    vi.useFakeTimers();
+    renderPage();
+    fireEvent.click(screen.getAllByText('跟进')[0]);
+    expect(screen.getByText(/已标记跟进/)).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(screen.queryByText(/已标记跟进/)).toBeNull();
+    vi.useRealTimers();
   });
 
-  it('script copy handler should generate correct message', () => {
-    const message = '已复制导购话术: 新客欢迎';
-    assert.ok(message.includes('已复制'));
-    assert.ok(message.includes('新客欢迎'));
+  test('切换到低优先级筛选', () => {
+    renderPage();
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'low' } });
+    expect(screen.getByRole('combobox')).toHaveValue('low');
   });
 
-  it('member search should handle no results', () => {
-    const empty = { found: false, member: null };
-    assert.equal(empty.found, false);
-    assert.equal(empty.member, null);
+  test('会员搜索按钮可点击', () => {
+    renderPage();
+    fireEvent.click(screen.getByTestId('btn-member-search'));
+  });
+});
+
+describe('SalesGuidePage — 加载态与错误态', () => {
+  test('页面初始不应显示加载态', () => {
+    renderPage();
+    expect(screen.queryByText('加载中...')).toBeNull();
   });
 
-  it('member search should return matching results', () => {
-    const members = [
-      { name: '张三', phone: '13800138001' },
-      { name: '李四', phone: '13800138002' },
-    ];
-    const result = members.find(m => m.phone === '13800138001');
-    assert.ok(result !== undefined);
-    assert.equal(result!.name, '张三');
+  test('页面初始不应显示错误态', () => {
+    renderPage();
+    expect(screen.queryByText(/数据获取失败/)).toBeNull();
+  });
+});
+
+describe('SalesGuidePage — 边界场景', () => {
+  test('高优先级客户应有"高"标签', () => {
+    renderPage();
+    expect(screen.getAllByText('高').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('client priority distribution should be valid', () => {
-    const priorities = ['high', 'medium', 'low'];
-    assert.equal(priorities.length, 3);
-    for (const p of priorities) {
-      assert.ok(['high', 'medium', 'low'].includes(p));
-    }
+  test('应显示不同等级会员徽章', () => {
+    renderPage();
+    expect(screen.getAllByText('VIP').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('GOLD')).toBeTruthy();
+  });
+
+  test('优先级筛选"全部"显示所有客户', () => {
+    renderPage();
+    expect(screen.getByRole('combobox')).toHaveValue('ALL');
+    expect(screen.getByText('王芳')).toBeTruthy();
+    expect(screen.getByText('刘洋')).toBeTruthy();
+  });
+
+  test('电话脱敏显示', () => {
+    renderPage();
+    expect(screen.getByText('138****5678')).toBeTruthy();
+  });
+
+  test('话术卡片标签', () => {
+    renderPage();
+    expect(screen.getByText('新客')).toBeTruthy();
+    expect(screen.getByText('欢迎')).toBeTruthy();
+    expect(screen.getByText('推荐')).toBeTruthy();
+  });
+
+  test('在线状态徽章', () => {
+    renderPage();
+    expect(screen.getByText('在线')).toBeTruthy();
+  });
+
+  test('转化率 66.7%', () => {
+    renderPage();
+    expect(screen.getAllByText(/转化率 66.7%/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('话术数量统计 5 条', () => {
+    renderPage();
+    expect(screen.getByText(/5 条话术/)).toBeTruthy();
+  });
+
+  test('营收数据正确', () => {
+    renderPage();
+    expect(screen.getByText('累计接待')).toBeTruthy();
+    expect(screen.getByText('今日新增')).toBeTruthy();
   });
 });

@@ -1,376 +1,397 @@
 /**
- * h5/page.test.tsx — H5移动端首页 L1 冒烟测试
- * Phase-FP T-FP-026 · 2026-07-07
- * 覆盖: Banner / 快捷入口 / 热门活动 / 推荐门店 / 会员卡片
+ * h5/page.vitest.tsx — H5移动端首页 组件测试
+ * 覆盖: 默认渲染 · 搜索 · 快捷入口 · 热门活动 · 推荐门店 · 会员卡片 · 交互
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import { describe, it, mock } from 'node:test';
+// ---- Mocks ----
 
-// ── 数据工厂 ──
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => '/h5',
+  useSearchParams: () => new URLSearchParams(),
+}));
 
-function makeBannerItem(overrides?: Record<string, unknown>) {
-  return {
-    id: 'b1',
-    title: '新用户专享福利',
-    image: 'https://picsum.photos/seed/banner1/750/300',
-    link: undefined,
-    ...overrides,
-  };
+vi.mock('next/image', () => ({
+  default: (props: any) => {
+    const imgProps: any = { alt: props.alt || '' };
+    if (props.src) imgProps.src = props.src;
+    if (props.fill !== undefined) imgProps['data-fill'] = String(props.fill);
+    return React.createElement('img', imgProps);
+  },
+}));
+
+vi.mock('../../components/h5-components', () => ({
+  MobileLayout: ({ children, title, subtitle, showBack, showNav }: any) => (
+    <div data-testid="mobile-layout" data-title={title} data-subtitle={subtitle} data-showback={showBack} data-shownav={showNav}>
+      {children}
+    </div>
+  ),
+  H5Card: ({ children, style, onClick }: any) => (
+    <div data-testid="h5-card" style={style} onClick={onClick}>{children}</div>
+  ),
+  H5Badge: ({ children, variant, size }: any) => (
+    <span data-testid="h5-badge" data-variant={variant} data-size={size}>{children}</span>
+  ),
+  H5SearchBar: ({ value, onChange, placeholder }: any) => (
+    <input
+      data-testid="h5-searchbar"
+      value={value}
+      onChange={(e: any) => onChange(e.target.value)}
+      placeholder={placeholder}
+      aria-label="搜索门店、商品..."
+    />
+  ),
+  H5Button: ({ children, variant, size, disabled, onClick, loading }: any) => (
+    <button
+      data-testid="h5-button"
+      data-variant={variant}
+      data-size={size}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {loading ? '加载中...' : children}
+    </button>
+  ),
+  BottomTabBar: ({ tabs, currentPath }: any) => (
+    <div data-testid="bottom-tab-bar" data-current-path={currentPath}>
+      {tabs.map((tab: any) => (
+        <a key={tab.href} href={tab.href} data-testid={`tab-${tab.label}`}>{tab.label}</a>
+      ))}
+    </div>
+  ),
+  useH5Back: () => vi.fn(),
+}));
+
+import H5HomePage from './page';
+
+function renderPage() {
+  return render(<H5HomePage />);
 }
 
-function makeQuickAction(overrides?: Record<string, unknown>) {
-  return {
-    icon: '🏪',
-    label: '门店查询',
-    href: '/store-locator',
-    color: '#667eea',
-    ...overrides,
-  };
-}
-
-function makeStore(overrides?: Record<string, unknown>) {
-  return {
-    id: 's01',
-    name: '深圳南山旗舰店',
-    city: '深圳',
-    rating: 4.8,
-    distance: '1.2km',
-    image: 'https://picsum.photos/seed/store1/200/150',
-    ...overrides,
-  };
-}
-
-function makeCampaign(overrides?: Record<string, unknown>) {
-  return {
-    id: 'c1',
-    title: '夏日清凉季',
-    subtitle: '全场8折起',
-    badge: '热卖',
-    color: '#ef4444',
-    ...overrides,
-  };
-}
-
-// ── 常量验证: Banner ──
-
-const BANNERS: ReturnType<typeof makeBannerItem>[] = [
-  { id: 'b1', title: '新用户专享福利', image: 'https://picsum.photos/seed/banner1/750/300' },
-  { id: 'b2', title: '限时折扣来袭', image: 'https://picsum.photos/seed/banner2/750/300' },
-];
-
-// ── 常量验证: QuickActions ──
-
-const QUICK_ACTIONS: ReturnType<typeof makeQuickAction>[] = [
-  { icon: '🏪', label: '门店查询', href: '/store-locator', color: '#667eea' },
-  { icon: '🎫', label: '优惠券', href: '/h5/coupons', color: '#f59e0b' },
-  { icon: '📋', label: '我的订单', href: '/h5/orders', color: '#10b981' },
-  { icon: '💰', label: '积分兑换', href: '/h5/points', color: '#ef4444' },
-  { icon: '⭐', label: '我的收藏', href: '/h5/favorites', color: '#8b5cf6' },
-  { icon: '📞', label: '联系客服', href: '/h5/contact', color: '#06b6d4' },
-];
-
-// ── 常量验证: RecommendedStores ──
-
-const RECOMMENDED_STORES: ReturnType<typeof makeStore>[] = [
-  { id: 's01', name: '深圳南山旗舰店', city: '深圳', rating: 4.8, distance: '1.2km', image: 'https://picsum.photos/seed/store1/200/150' },
-  { id: 's02', name: '广州天河城店', city: '广州', rating: 4.6, distance: '3.5km', image: 'https://picsum.photos/seed/store2/200/150' },
-  { id: 's03', name: '上海浦东店', city: '上海', rating: 4.7, distance: '5.8km', image: 'https://picsum.photos/seed/store3/200/150' },
-];
-
-// ── 常量验证: HotCampaigns ──
-
-const HOT_CAMPAIGNS: ReturnType<typeof makeCampaign>[] = [
-  { id: 'c1', title: '夏日清凉季', subtitle: '全场8折起', badge: '热卖', color: '#ef4444' },
-  { id: 'c2', title: '新人专属礼包', subtitle: '注册即送100元券', badge: '新人', color: '#10b981' },
-  { id: 'c3', title: '会员日特惠', subtitle: '每月15日双倍积分', badge: '会员', color: '#f59e0b' },
-];
-
-/* ════════════════════════════════════════
-   正例 — H5首页数据与UI特征
-   ════════════════════════════════════════ */
-
-describe('H5HomePage — data contracts', () => {
-  /* ── Banner ── */
-  it('should have exactly 2 banner items', () => {
-    assert.equal(BANNERS.length, 2);
+describe('H5HomePage — H5移动端首页', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('each banner should have required fields', () => {
-    for (const b of BANNERS) {
-      assert.equal(typeof b.id, 'string');
-      assert.ok(b.id.length > 0);
-      assert.equal(typeof b.title, 'string');
-      assert.ok(b.title.length > 0);
-      assert.equal(typeof b.image, 'string');
-      assert.ok(b.image.startsWith('https://'));
-    }
+  // ====== 渲染测试 ======
+
+  test('renders MobileLayout with correct title', () => {
+    renderPage();
+    const layout = screen.getByTestId('mobile-layout');
+    expect(layout).toHaveAttribute('data-title', '神机营 SaaS');
+    expect(layout).toHaveAttribute('data-subtitle', '让商业更智能');
+    expect(layout).toHaveAttribute('data-showback', 'false');
+    expect(layout).toHaveAttribute('data-shownav', 'true');
   });
 
-  it('banner images should start with picsum domain', () => {
-    for (const b of BANNERS) {
-      assert.ok(b.image.startsWith('https://picsum.photos/'), `banner ${b.id} has invalid image URL`);
-    }
+  test('renders search bar with correct placeholder', () => {
+    renderPage();
+    const searchBar = screen.getByTestId('h5-searchbar');
+    expect(searchBar).toBeInTheDocument();
+    expect(searchBar).toHaveAttribute('placeholder', '搜索门店、商品...');
   });
 
-  /* ── QuickActions ── */
-  it('should have exactly 6 quick action items (3x2 grid)', () => {
-    assert.equal(QUICK_ACTIONS.length, 6);
+  test('renders banner image', () => {
+    renderPage();
+    const bannerImg = screen.getByAltText('新用户专享福利');
+    expect(bannerImg).toBeInTheDocument();
+    expect(bannerImg).toHaveAttribute('src', 'https://picsum.photos/seed/banner1/750/300');
   });
 
-  it('each quick action should have icon, label, href, and color', () => {
-    for (const qa of QUICK_ACTIONS) {
-      assert.equal(typeof qa.icon, 'string');
-      assert.equal(typeof qa.label, 'string');
-      assert.ok(qa.label.length > 0);
-      assert.equal(typeof qa.href, 'string');
-      assert.ok(qa.href.startsWith('/'));
-      assert.equal(typeof qa.color, 'string');
-      assert.ok(qa.color.startsWith('#'));
-    }
+  test('renders banner title text', () => {
+    renderPage();
+    expect(screen.getByText('新用户专享福利')).toBeInTheDocument();
   });
 
-  it('all quick action hrefs should be valid internal routes', () => {
-    const validPrefixes = ['/store-locator', '/h5/'];
-    for (const qa of QUICK_ACTIONS) {
-      const valid = validPrefixes.some((p) => qa.href.startsWith(p));
-      assert.ok(valid, `href=${qa.href} is not a valid internal route`);
-    }
+  test('renders banner indicator dots', () => {
+    renderPage();
+    // Two dots for two banners
+    const dots = document.querySelectorAll('[style*="border-radius: 50%"]');
+    expect(dots.length).toBeGreaterThanOrEqual(2);
   });
 
-  /* ── RecommendedStores ── */
-  it('should have exactly 3 recommended stores', () => {
-    assert.equal(RECOMMENDED_STORES.length, 3);
+  // ====== 快捷入口 ======
+
+  test('renders 6 quick action items', () => {
+    renderPage();
+    expect(screen.getByText('门店查询')).toBeInTheDocument();
+    expect(screen.getByText('优惠券')).toBeInTheDocument();
+    expect(screen.getByText('我的订单')).toBeInTheDocument();
+    expect(screen.getByText('积分兑换')).toBeInTheDocument();
+    expect(screen.getByText('我的收藏')).toBeInTheDocument();
+    expect(screen.getByText('联系客服')).toBeInTheDocument();
   });
 
-  it('each store should have required fields', () => {
-    for (const s of RECOMMENDED_STORES) {
-      assert.equal(typeof s.id, 'string');
-      assert.ok(s.id.length > 0);
-      assert.equal(typeof s.name, 'string');
-      assert.ok(s.name.length > 0);
-      assert.equal(typeof s.city, 'string');
-      assert.ok(s.city.length > 0);
-      assert.equal(typeof s.rating, 'number');
-      assert.ok(s.rating >= 0 && s.rating <= 5);
-      assert.equal(typeof s.distance, 'string');
-      assert.ok(s.distance.match(/^[\d.]+km$/));
-      assert.equal(typeof s.image, 'string');
-      assert.ok(s.image.startsWith('https://'));
-    }
+  test('quick action links have correct hrefs', () => {
+    renderPage();
+    const storeLink = screen.getByText('门店查询').closest('a');
+    expect(storeLink).toHaveAttribute('href', '/store-locator');
+    const couponsLink = screen.getByText('优惠券').closest('a');
+    expect(couponsLink).toHaveAttribute('href', '/h5/coupons');
+    const ordersLink = screen.getByText('我的订单').closest('a');
+    expect(ordersLink).toHaveAttribute('href', '/h5/orders');
+    const favoritesLink = screen.getByText('我的收藏').closest('a');
+    expect(favoritesLink).toHaveAttribute('href', '/h5/favorites');
   });
 
-  it('store ratings should be in valid range [0, 5]', () => {
-    const ratings = RECOMMENDED_STORES.map((s) => s.rating);
-    const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-    assert.ok(avg >= 0 && avg <= 5);
-    assert.ok(avg > 4, `average rating ${avg} should be > 4 for recommended stores`);
+  test('quick action icons render', () => {
+    renderPage();
+    expect(screen.getByText('🏪')).toBeInTheDocument();
+    expect(screen.getByText('🎫')).toBeInTheDocument();
+    expect(screen.getByText('📋')).toBeInTheDocument();
+    expect(screen.getByText('💰')).toBeInTheDocument();
+    expect(screen.getByText('⭐')).toBeInTheDocument();
+    expect(screen.getByText('📞')).toBeInTheDocument();
   });
 
-  /* ── HotCampaigns ── */
-  it('should have exactly 3 hot campaigns', () => {
-    assert.equal(HOT_CAMPAIGNS.length, 3);
+  // ====== 热门活动 ======
+
+  test('renders 热门活动 section heading', () => {
+    renderPage();
+    expect(screen.getByText('热门活动')).toBeInTheDocument();
   });
 
-  it('each campaign should have required fields and distinct badges', () => {
-    const badges = new Set<string>();
-    for (const c of HOT_CAMPAIGNS) {
-      assert.equal(typeof c.id, 'string');
-      assert.ok(c.id.length > 0);
-      assert.equal(typeof c.title, 'string');
-      assert.ok(c.title.length > 0);
-      assert.equal(typeof c.subtitle, 'string');
-      assert.ok(c.subtitle.length > 0);
-      assert.equal(typeof c.badge, 'string');
-      assert.ok(c.badge.length > 0);
-      assert.equal(typeof c.color, 'string');
-      assert.ok(c.color.startsWith('#'));
-      badges.add(c.badge);
-    }
-    assert.equal(badges.size, HOT_CAMPAIGNS.length, 'each campaign should have a unique badge label');
+  test('renders "查看全部 →" link to campaigns page', () => {
+    renderPage();
+    const viewAllLink = screen.getByText('查看全部 →');
+    expect(viewAllLink).toBeInTheDocument();
+    expect(viewAllLink.closest('a')).toHaveAttribute('href', '/h5/campaigns');
   });
 
-  /* ── Data integration: store <-> city mappings ── */
-  it('should cover at least 2 cities among recommended stores', () => {
-    const cities = new Set(RECOMMENDED_STORES.map((s) => s.city));
-    assert.ok(cities.size >= 2, `only ${cities.size} cities covered`);
-  });
-});
-
-/* ════════════════════════════════════════
-   反例 — 防御性校验
-   ════════════════════════════════════════ */
-
-describe('H5HomePage — defensive checks', () => {
-  it('should reject banner with missing title', () => {
-    const bad = makeBannerItem({ title: '' });
-    assert.equal(bad.title, '');
-    assert.ok(!bad.title, 'banner with empty title should be caught');
+  test('renders 3 hot campaign cards', () => {
+    renderPage();
+    expect(screen.getByText('夏日清凉季')).toBeInTheDocument();
+    expect(screen.getByText('新人专属礼包')).toBeInTheDocument();
+    expect(screen.getByText('会员日特惠')).toBeInTheDocument();
   });
 
-  it('should reject quick action with missing href', () => {
-    const bad = makeQuickAction({ href: '' });
-    assert.equal(bad.href, '');
-    assert.ok(!bad.href.startsWith('/'), 'action with empty href should not pass route validation');
+  test('campaign badges render correctly', () => {
+    renderPage();
+    const badges = screen.getAllByTestId('h5-badge');
+    expect(badges.length).toBe(3);
+    const badgeTexts = badges.map(b => b.textContent);
+    expect(badgeTexts).toContain('热卖');
+    expect(badgeTexts).toContain('新人');
+    expect(badgeTexts).toContain('会员');
   });
 
-  it('should reject store with negative rating', () => {
-    const bad = makeStore({ rating: -1 });
-    assert.equal(bad.rating, -1);
-    assert.ok(bad.rating < 0, 'store with negative rating should be caught');
+  test('campaign subtitle text renders', () => {
+    renderPage();
+    expect(screen.getByText('全场8折起')).toBeInTheDocument();
+    expect(screen.getByText('注册即送100元券')).toBeInTheDocument();
+    expect(screen.getByText('每月15日双倍积分')).toBeInTheDocument();
   });
 
-  it('should reject store with rating > 5', () => {
-    const bad = makeStore({ rating: 5.5 });
-    assert.ok(bad.rating > 5, 'store with over-max rating should be caught');
+  test('campaign links go to correct detail pages', () => {
+    renderPage();
+    const summerLink = screen.getByText('夏日清凉季').closest('a');
+    expect(summerLink).toHaveAttribute('href', '/h5/campaigns/c1');
+    const newcomerLink = screen.getByText('新人专属礼包').closest('a');
+    expect(newcomerLink).toHaveAttribute('href', '/h5/campaigns/c2');
   });
 
-  it('should reject store without trailing km in distance', () => {
-    const bad = makeStore({ distance: '100m' });
-    assert.ok(!bad.distance.endsWith('km'), 'distance without km suffix should be rejected');
+  // ====== 附近门店 ======
+
+  test('renders 附近门店 section heading', () => {
+    renderPage();
+    expect(screen.getByText('附近门店')).toBeInTheDocument();
   });
 
-  it('should reject campaign with missing subtitle', () => {
-    const bad = makeCampaign({ subtitle: '' });
-    assert.equal(bad.subtitle, '');
-    assert.ok(!bad.subtitle, 'campaign with empty subtitle should be caught');
+  test('renders store "查看全部 →" link to store-locator', () => {
+    renderPage();
+    const viewAllLinks = screen.getAllByText('查看全部 →');
+    expect(viewAllLinks.length).toBe(2);
+    expect(viewAllLinks[1].closest('a')).toHaveAttribute('href', '/store-locator');
   });
 
-  it('should reject campaign hex color without hash prefix', () => {
-    const bad = makeCampaign({ color: 'ef4444' });
-    assert.ok(!bad.color.startsWith('#'), 'color without # prefix should be rejected');
+  test('renders 3 recommended stores', () => {
+    renderPage();
+    expect(screen.getByText('深圳南山旗舰店')).toBeInTheDocument();
+    expect(screen.getByText('广州天河城店')).toBeInTheDocument();
+    expect(screen.getByText('上海浦东店')).toBeInTheDocument();
   });
 
-  it('should reject banner image with non-https protocol', () => {
-    const bad = makeBannerItem({ image: 'http://picsum.photos/test.jpg' });
-    assert.ok(!bad.image.startsWith('https://'), 'non-https banner image should be rejected');
-  });
-});
-
-/* ════════════════════════════════════════
-   边界 — 极限数据 / 空数据
-   ════════════════════════════════════════ */
-
-describe('H5HomePage — edge cases', () => {
-  it('should handle empty banner list gracefully', () => {
-    const empty: typeof BANNERS = [];
-    assert.equal(empty.length, 0);
+  test('store ratings render', () => {
+    renderPage();
+    expect(screen.getByText('⭐ 4.8')).toBeInTheDocument();
+    expect(screen.getByText('⭐ 4.6')).toBeInTheDocument();
+    expect(screen.getByText('⭐ 4.7')).toBeInTheDocument();
   });
 
-  it('should be resilient if BANNERS[0] is nullish', () => {
-    // 模拟 banner 为空的情况下的 fallback 显示
-    const fallbackTitle = BANNERS[0]?.title ?? '';
-    assert.equal(fallbackTitle, '新用户专享福利');
-
-    const noBanner = null as unknown as (typeof BANNERS)[0];
-    const noBannerTitle = noBanner?.title ?? '';
-    assert.equal(noBannerTitle, '', 'null banner should fallback to empty string');
+  test('store distances render', () => {
+    renderPage();
+    expect(screen.getByText('1.2km')).toBeInTheDocument();
+    expect(screen.getByText('3.5km')).toBeInTheDocument();
+    expect(screen.getByText('5.8km')).toBeInTheDocument();
   });
 
-  it('should handle very long store names (truncation scenario)', () => {
-    const longName = '深圳南山区科技园万象天地旗舰体验中心店';
-    const store = makeStore({ name: longName });
-    assert.ok(store.name.length > 10);
-    assert.equal(store.name, longName);
+  test('store links go to store-locator detail', () => {
+    renderPage();
+    const storeLink = screen.getByText('深圳南山旗舰店').closest('a');
+    expect(storeLink).toHaveAttribute('href', '/store-locator/s01');
+    const storeLink3 = screen.getByText('上海浦东店').closest('a');
+    expect(storeLink3).toHaveAttribute('href', '/store-locator/s03');
   });
 
-  it('should handle maximum rating edge case (5.0)', () => {
-    const max = makeStore({ rating: 5.0 });
-    assert.equal(max.rating, 5.0);
-    assert.ok(max.rating <= 5);
+  test('store card images render', () => {
+    renderPage();
+    const storeImg = screen.getByAltText('深圳南山旗舰店');
+    expect(storeImg).toBeInTheDocument();
+    expect(storeImg).toHaveAttribute('src', 'https://picsum.photos/seed/store1/200/150');
   });
 
-  it('should handle minimum rating edge case (0)', () => {
-    const min = makeStore({ rating: 0 });
-    assert.equal(min.rating, 0);
+  // ====== 会员卡片 ======
+
+  test('renders member card section', () => {
+    renderPage();
+    expect(screen.getByText('黄金会员')).toBeInTheDocument();
   });
 
-  it('should handle empty quick actions (unlikely, but defensive)', () => {
-    const emptyQA: typeof QUICK_ACTIONS = [];
-    assert.equal(emptyQA.length, 0);
-    // 3x2 grid would show nothing
-    const gridCols = emptyQA.length > 0 ? 'repeat(3, 1fr)' : 'none';
-    assert.equal(gridCols, 'none', 'empty quick actions should render no grid');
+  test('renders member points', () => {
+    renderPage();
+    expect(screen.getByText('当前积分: 1,280')).toBeInTheDocument();
   });
 
-  it('should handle single hot campaign', () => {
-    const single = [HOT_CAMPAIGNS[0]];
-    assert.equal(single.length, 1);
+  test('renders 续费 button', () => {
+    renderPage();
+    const renewBtn = screen.getByText('立即续费');
+    expect(renewBtn).toBeInTheDocument();
+    expect(renewBtn).toHaveAttribute('data-variant', 'outline');
+    expect(renewBtn).toHaveAttribute('data-size', 'sm');
   });
 
-  it('should handle very long distance strings', () => {
-    const far = makeStore({ distance: '999.9km' });
-    assert.ok(far.distance.match(/^[\d.]+km$/));
-    const parsedDist = parseFloat(far.distance);
-    assert.ok(parsedDist > 900);
+  // ====== 交互测试 ======
+
+  test('search bar accepts input', () => {
+    renderPage();
+    const searchBar = screen.getByTestId('h5-searchbar');
+    fireEvent.change(searchBar, { target: { value: '测试搜索' } });
+    expect(searchBar).toHaveValue('测试搜索');
   });
 
-  it('should handle city name with special characters', () => {
-    const store = makeStore({ city: '香港·九龙' });
-    assert.equal(typeof store.city, 'string');
-    assert.ok(store.city.length > 0);
-  });
-});
-
-/* ════════════════════════════════════════
-   UI 组件行为 — 模拟调用验证
-   ════════════════════════════════════════ */
-
-describe('H5HomePage — component behavior', () => {
-  it('should link to correct H5 sub-pages from quick actions', () => {
-    const expectedLinks = ['/store-locator', '/h5/coupons', '/h5/orders', '/h5/points', '/h5/favorites', '/h5/contact'];
-    const actualLinks = QUICK_ACTIONS.map((qa) => qa.href);
-    assert.deepEqual(actualLinks.sort(), expectedLinks.sort());
+  test('search bar clears on empty input', () => {
+    renderPage();
+    const searchBar = screen.getByTestId('h5-searchbar');
+    fireEvent.change(searchBar, { target: { value: '某门店' } });
+    expect(searchBar).toHaveValue('某门店');
+    fireEvent.change(searchBar, { target: { value: '' } });
+    expect(searchBar).toHaveValue('');
   });
 
-  it('should have at least one highlighted quick action emoji', () => {
-    const storeEmojis = QUICK_ACTIONS.filter((qa) => qa.icon === '🏪');
-    assert.ok(storeEmojis.length >= 1);
+  // ====== 边界情况 ======
+
+  test('renders without crashing — no props', () => {
+    expect(() => renderPage()).not.toThrow();
   });
 
-  it('banner indicator count should match banner item count', () => {
-    const indicatorCount = BANNERS.length; // one dot per banner
-    assert.equal(indicatorCount, 2);
+  test('banner displays first banner title', () => {
+    renderPage();
+    expect(screen.getByText('新用户专享福利')).toBeInTheDocument();
+    // Second banner title should NOT be visible as we only show the first
+    expect(screen.queryByText('限时折扣来袭')).not.toBeInTheDocument();
   });
 
-  it('hot campaigns horizontal scroll should have correct card width', () => {
-    const CARD_WIDTH = 160;
-    assert.equal(CARD_WIDTH, 160, 'each campaign card should be 160px wide');
+  test('renders 会 avatar in member card', () => {
+    renderPage();
+    expect(screen.getByText('会')).toBeInTheDocument();
   });
 
-  it('member card should have reasonable mock data scenario', () => {
-    const mockMember = {
-      level: '黄金会员',
-      points: 1280,
-    };
-    assert.ok(mockMember.points > 0);
-    assert.ok(mockMember.level.length > 0);
-    assert.ok(/会员$/.test(mockMember.level), 'member level should end with 会员');
+  test('has correct dark background theme', () => {
+    renderPage();
+    const layout = screen.getByTestId('mobile-layout');
+    expect(layout).toBeInTheDocument();
   });
 
-  it('should navigate to campaign detail page with correct path', () => {
-    for (const c of HOT_CAMPAIGNS) {
-      const detailHref = `/h5/campaigns/${c.id}`;
-      assert.ok(detailHref.startsWith('/h5/campaigns/'));
-      assert.ok(detailHref.endsWith(c.id));
-    }
+  test('renders member card in an H5Card container', () => {
+    renderPage();
+    const cards = screen.getAllByTestId('h5-card');
+    expect(cards.length).toBeGreaterThanOrEqual(3); // quick actions, member card, store cards
   });
 
-  it('should navigate to store detail page', () => {
-    for (const s of RECOMMENDED_STORES) {
-      const detailHref = `/store-locator/${s.id}`;
-      assert.ok(detailHref.startsWith('/store-locator/'));
-    }
+  // ====== 圈梁五道箍 — 增强测试 ======
+
+  describe('圈梁五道箍 — 页面完整性与导航', () => {
+    test('[圈梁五道箍] 页面包含搜索栏且可交互', () => {
+      renderPage();
+      const searchBar = screen.getByTestId('h5-searchbar');
+      expect(searchBar).toBeInTheDocument();
+      fireEvent.change(searchBar, { target: { value: '深圳' } });
+      expect(searchBar).toHaveValue('深圳');
+    });
+
+    test('[圈梁五道箍] 所有快捷入口都有正确链接', () => {
+      renderPage();
+      const quickLinks = [
+        { label: '门店查询', href: '/store-locator' },
+        { label: '优惠券', href: '/h5/coupons' },
+        { label: '我的订单', href: '/h5/orders' },
+        { label: '积分兑换', href: '/h5/points' },
+        { label: '我的收藏', href: '/h5/favorites' },
+        { label: '联系客服', href: '/h5/contact' },
+      ];
+      quickLinks.forEach(({ label, href }) => {
+        const link = screen.getByText(label).closest('a');
+        expect(link).toHaveAttribute('href', href);
+      });
+    });
+
+    test('[圈梁五道箍] 底部导航栏正确渲染', () => {
+      renderPage();
+      const tabBar = screen.getByTestId('bottom-tab-bar');
+      expect(tabBar).toHaveAttribute('data-current-path', '/h5');
+      expect(screen.getByText('首页')).toBeInTheDocument();
+      expect(screen.getByText('门店')).toBeInTheDocument();
+      expect(screen.getByText('卡券')).toBeInTheDocument();
+      expect(screen.getByText('我的')).toBeInTheDocument();
+    });
+
+    test('[圈梁五道箍] 活动卡片可点击跳转', () => {
+      renderPage();
+      // Each campaign card is wrapped in a Link
+      const campaignLink = screen.getByText('夏日清凉季').closest('a');
+      expect(campaignLink).toHaveAttribute('href', '/h5/campaigns/c1');
+      expect(campaignLink).toHaveStyle('text-decoration: none');
+    });
+
+    test('[圈梁五道箍] 门店卡片显示评分与距离', () => {
+      renderPage();
+      expect(screen.getByText('⭐ 4.8')).toBeInTheDocument();
+      expect(screen.getByText('1.2km')).toBeInTheDocument();
+      expect(screen.getByText('⭐ 4.7')).toBeInTheDocument();
+      expect(screen.getByText('5.8km')).toBeInTheDocument();
+    });
+
+    test('[圈梁五道箍] 会员卡片包含黄金会员标识与积分', () => {
+      renderPage();
+      expect(screen.getByText('黄金会员')).toBeInTheDocument();
+      expect(screen.getByText('当前积分: 1,280')).toBeInTheDocument();
+      const renewBtn = screen.getByText('立即续费');
+      expect(renewBtn).toBeInTheDocument();
+    });
   });
 
-  it('hot campaign colors should be valid 6-char hex', () => {
-    for (const c of HOT_CAMPAIGNS) {
-      assert.ok(/^#[0-9a-f]{6}$/i.test(c.color), `campaign ${c.id} has invalid hex color ${c.color}`);
-    }
-  });
+  describe('圈梁五道箍 — 搜索栏边界', () => {
+    test('[圈梁五道箍] 搜索栏初始值为空', () => {
+      renderPage();
+      const searchBar = screen.getByTestId('h5-searchbar');
+      expect(searchBar).toHaveValue('');
+    });
 
-  it('search placeholder text should be correct', () => {
-    const PLACEHOLDER = '搜索门店、商品...';
-    assert.equal(PLACEHOLDER, '搜索门店、商品...');
+    test('[圈梁五道箍] 搜索栏支持中文输入', () => {
+      renderPage();
+      const searchBar = screen.getByTestId('h5-searchbar');
+      fireEvent.change(searchBar, { target: { value: '神机营门店' } });
+      expect(searchBar).toHaveValue('神机营门店');
+    });
+
+    test('[圈梁五道箍] 搜索栏支持特殊字符', () => {
+      renderPage();
+      const searchBar = screen.getByTestId('h5-searchbar');
+      fireEvent.change(searchBar, { target: { value: '!@#$%^&*()' } });
+      expect(searchBar).toHaveValue('!@#$%^&*()');
+    });
   });
 });

@@ -1,312 +1,247 @@
 /**
- * anomaly-frequency/page.test.tsx — 门店异常时序频率页面 L1 冒烟测试
- * 角色视角: 👔店长 / 🛒前台 / 🎮导玩员
- * 覆盖: 正例 + 反例(防御) + 边界(极端数据/空数据)
+ * anomaly-frequency/page.vitest.tsx — 异常时序频率 AnomalyFrequencyPage L2 组件测试
+ * 覆盖: 页面渲染 · 时间范围切换 · 严重程度过滤 · 统计卡片 · 异常分布 · 操作记录 · 详情表格 · 展开收起
+ * 角色: 👤会员 / 👔店长
  */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-import assert from 'node:assert/strict';
-import test from 'node:test';
+// ── Mocks ──
 
-/* ── 手动测试辅助 ── */
+vi.mock('@m5/ui', () => ({
+  PageShell: vi.fn(({ children, title }: any) => (
+    <div data-testid="page-shell" data-title={title}>{children}</div>
+  )),
+  AnomalyFrequencyTimeline: vi.fn(({ buckets, title, height, emptyText }: any) => (
+    <div data-testid="anomaly-freq-timeline" data-buckets={buckets?.length || 0} data-title={title}>
+      {buckets && buckets.length > 0 ? `Timeline: ${buckets.length} buckets` : emptyText}
+    </div>
+  )),
+  StatusBadge: vi.fn(({ status, label }: any) => (
+    <span data-testid="status-badge" data-status={status}>{label}</span>
+  )),
+  Modal: vi.fn(({ children, open, onClose }: any) => (
+    open ? <div data-testid="modal">{children}</div> : null
+  )),
+}));
 
-const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
-const reactPath = `${PROJECT_ROOT}/node_modules/.pnpm/react@18.3.1/node_modules/react/index.js`;
-const serverPath = `${PROJECT_ROOT}/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js`;
+// ── Test Subject ──
 
-const React = require(reactPath);
-const { renderToStaticMarkup } = require(serverPath);
-const AnomalyFrequencyPage = require('./page').default;
+import AnomalyFrequencyPage from './page';
 
-function render(el: React.ReactElement): string {
-  return renderToStaticMarkup(el);
-}
+describe('AnomalyFrequencyPage — 异常时序频率', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-function contains(haystack: string, needle: string): boolean {
-  return haystack.includes(needle);
-}
+  // ====== 1. 正例: 页面渲染 ======
 
-function notContains(haystack: string, needle: string): boolean {
-  return !haystack.includes(needle);
-}
+  test('renders page title', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('门店异常时序频率')).toBeInTheDocument();
+  });
 
-/* ════════════════════════════════════════════════════════
-   正例
-   ════════════════════════════════════════════════════════ */
+  test('renders page subtitle', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText(/监控各时段门店异常分布趋势/)).toBeInTheDocument();
+  });
 
-test('导出 AnomalyFrequencyPage 为函数', () => {
-  assert.equal(typeof AnomalyFrequencyPage, 'function');
-});
+  test('renders all 4 time range buttons', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('近6小时')).toBeInTheDocument();
+    expect(screen.getByText('近24小时')).toBeInTheDocument();
+    expect(screen.getByText('近7天')).toBeInTheDocument();
+    expect(screen.getByText('近30天')).toBeInTheDocument();
+  });
 
-test('渲染页面标题 "门店异常时序频率"', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '门店异常时序频率'), '应展示页面标题');
-});
+  test('default time range is 近24小时', () => {
+    render(<AnomalyFrequencyPage />);
+    const btns = screen.getAllByText('近24小时');
+    expect(btns.length).toBeGreaterThan(0);
+  });
 
-test('渲染统计卡片——总异常数', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '总异常数'), '应展示总异常数');
-});
+  test('renders refresh button', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('刷新')).toBeInTheDocument();
+  });
 
-test('渲染统计卡片——严重异常', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '严重异常'), '应展示严重异常统计');
-});
+  // ====== 2. 正例: 时间范围切换 ======
 
-test('渲染统计卡片——高优先级', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '高优先级'), '应展示高优先级统计');
-});
+  test('clicking 近7天 changes time range', () => {
+    render(<AnomalyFrequencyPage />);
+    fireEvent.click(screen.getByText('近7天'));
+    // Timeline re-renders with new buckets
+    const timeline = screen.getByTestId('anomaly-freq-timeline');
+    expect(timeline).toBeInTheDocument();
+  });
 
-test('渲染统计卡片——时段均值', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '时段均值'), '应展示时段均值统计');
-});
+  test('clicking 近30天 changes time range', () => {
+    render(<AnomalyFrequencyPage />);
+    fireEvent.click(screen.getByText('近30天'));
+    expect(screen.getByText('近30天')).toBeInTheDocument();
+  });
 
-test('渲染时间范围按钮——近6小时', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '近6小时'), '应展示近6小时');
-});
+  // ====== 3. 正例: 严重程度过滤 ======
 
-test('渲染时间范围按钮——近24小时', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '近24小时'), '应展示近24小时');
-});
+  test('renders all severity filter buttons', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('全部')).toBeInTheDocument();
+    expect(screen.getByText('🔴 严重')).toBeInTheDocument();
+    expect(screen.getByText('🟠 高')).toBeInTheDocument();
+    expect(screen.getByText('🟡 中')).toBeInTheDocument();
+    expect(screen.getByText('🟢 低')).toBeInTheDocument();
+  });
 
-test('渲染时间范围按钮——近7天', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '近7天'), '应展示近7天');
-});
+  test('clicking severity filter updates timeline', () => {
+    render(<AnomalyFrequencyPage />);
+    fireEvent.click(screen.getByText('🔴 严重'));
+    const timeline = screen.getByTestId('anomaly-freq-timeline');
+    expect(timeline).toBeInTheDocument();
+  });
 
-test('渲染时间范围按钮——近30天', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '近30天'), '应展示近30天');
-});
+  // ====== 4. 正例: 统计卡片 ======
 
-test('渲染严重程度过滤按钮——全部', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '🔴 严重'), '应展示严重按钮');
-});
+  test('renders 4 stat cards', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('总异常数')).toBeInTheDocument();
+    expect(screen.getByText('严重异常')).toBeInTheDocument();
+    expect(screen.getByText('高优先级')).toBeInTheDocument();
+    expect(screen.getByText('时段均值')).toBeInTheDocument();
+  });
 
-test('渲染严重程度过滤按钮——高', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '🟠 高'), '应展示高按钮');
-});
+  test('stat cards show numeric values', () => {
+    render(<AnomalyFrequencyPage />);
+    // The stat values are rendered as numeric strings
+    const statValueElements = document.querySelectorAll('[style*="font-size: 24px; font-weight: 700"]');
+    expect(statValueElements.length).toBe(4);
+  });
 
-test('渲染严重程度过滤按钮——中', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '🟡 中'), '应展示中按钮');
-});
+  // ====== 5. 正例: AnomalyFrequencyTimeline ======
 
-test('渲染严重程度过滤按钮——低', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '🟢 低'), '应展示低按钮');
-});
+  test('renders AnomalyFrequencyTimeline component', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByTestId('anomaly-freq-timeline')).toBeInTheDocument();
+  });
 
-test('渲染异常时序分布图容器', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, 'data-testid="anomaly-frequency-timeline-page"'), '应渲染时序图');
-});
+  test('timeline shows bucket count info', () => {
+    render(<AnomalyFrequencyPage />);
+    const timeline = screen.getByTestId('anomaly-freq-timeline');
+    const bucketCount = parseInt(timeline.getAttribute('data-buckets') || '0');
+    expect(bucketCount).toBeGreaterThan(0);
+  });
 
-test('渲染刷新按钮', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '刷新'), '应有刷新按钮');
-});
+  // ====== 6. 正例: 异常类型分布 ======
 
-test('渲染底部说明区域', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '时序频率图展示各时段内不同严重级别异常的分布'), '应有说明文字');
-});
+  test('renders anomaly distribution panel', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('📊 异常类型分布')).toBeInTheDocument();
+  });
 
-test('统计数值为非负数', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  const match = html.match(/>\d+</);
-  assert.ok(match, '应有统计数值');
-});
+  test('shows anomaly types', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('网络异常')).toBeInTheDocument();
+    expect(screen.getByText('设备故障')).toBeInTheDocument();
+    expect(screen.getByText('传感器告警')).toBeInTheDocument();
+  });
 
-test('默认选中 timeRange=24h 的近24小时按钮样式为激活态', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  const activeMatch = html.match(/近24小时/);
-  assert.ok(activeMatch, '默认应展示近24小时标签');
-});
+  test('shows anomaly counts', () => {
+    render(<AnomalyFrequencyPage />);
+    // Each type has a "(N) (X%)" text
+    expect(screen.getByText(/3 \(/)).toBeInTheDocument();
+  });
 
-test('默认选中 severity=all', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '全部'), '应展示全部按钮');
-});
+  // ====== 7. 正例: 操作记录面板 ======
 
-/* ════════════════════════════════════════════════════════
-   子组件: 异常详情表格
-   ════════════════════════════════════════════════════════ */
+  test('renders operation log panel', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('📝 处理操作记录')).toBeInTheDocument();
+  });
 
-test('渲染异常事件详情表格', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '🚨'), '应渲染异常事件图标');
-  assert.ok(contains(html, '异常事件详情'), '应渲染事件标题');
-});
+  test('shows operation records', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('重启打印服务')).toBeInTheDocument();
+    expect(screen.getByText('检查网络线路')).toBeInTheDocument();
+  });
 
-test('异常事件表格包含表头——事件、级别、来源、时间、持续、状态', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '级别'), '应展示级别列');
-  assert.ok(contains(html, '来源'), '应展示来源列');
-  assert.ok(contains(html, '持续'), '应展示持续列');
-  assert.ok(contains(html, '状态'), '应展示状态列');
-});
+  // ====== 8. 正例: 异常事件表格 ======
 
-test('异常事件表格至少包含4行默认数据', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  const handledMatches = html.match(/已处理/g);
-  const pendingMatches = html.match(/待处理/g);
-  assert.ok((handledMatches?.length ?? 0) + (pendingMatches?.length ?? 0) >= 4, '应至少渲染4条事件');
-});
+  test('renders incident table', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('🚨 异常事件详情')).toBeInTheDocument();
+  });
 
-test('异常事件支持展开详情（含事件标题展示）', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '收银台'), '应包含事件名称');
-  assert.ok(contains(html, '网络闪断'), '应包含事件描述词');
-});
+  test('renders table headers', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('事件')).toBeInTheDocument();
+    expect(screen.getByText('级别')).toBeInTheDocument();
+    expect(screen.getByText('来源')).toBeInTheDocument();
+    expect(screen.getByText('时间')).toBeInTheDocument();
+    expect(screen.getByText('持续')).toBeInTheDocument();
+    expect(screen.getByText('状态')).toBeInTheDocument();
+  });
 
-/* ════════════════════════════════════════════════════════
-   子组件: 异常类型分布面板
-   ════════════════════════════════════════════════════════ */
+  test('shows incident records by default (first 4)', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('收银台 POS-01 网络闪断')).toBeInTheDocument();
+    expect(screen.getByText('厨房打印机打印头温度异常')).toBeInTheDocument();
+  });
 
-test('渲染异常类型分布面板', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '📊'), '应渲染图表图标');
-  assert.ok(contains(html, '异常类型分布'), '应渲染分布标题');
-});
+  test('shows 已处理 and 待处理 status badges', () => {
+    render(<AnomalyFrequencyPage />);
+    const handledElements = screen.getAllByText('已处理');
+    expect(handledElements.length).toBeGreaterThan(0);
+    const pendingElements = screen.getAllByText('待处理');
+    expect(pendingElements.length).toBeGreaterThan(0);
+  });
 
-test('异常类型分布包含多种类型', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '网络异常'), '应包含网络异常类型');
-  assert.ok(contains(html, '设备故障'), '应包含设备故障类型');
-  assert.ok(contains(html, '传感器告警'), '应包含传感器类型');
-  assert.ok(contains(html, '电力问题'), '应包含电力问题类型');
-});
+  // ====== 9. 交互: 展开收起 ======
 
-test('异常类型分布包含百分比值', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(/\d+%/.test(html), '应包含百分比');
-});
+  test('clicking 查看全部 shows all incidents', () => {
+    render(<AnomalyFrequencyPage />);
+    fireEvent.click(screen.getByText(/查看全部.*条事件/));
+    expect(screen.getByText('收银台通讯超时')).toBeInTheDocument();
+    expect(screen.getByText('UPS 电池电压偏低')).toBeInTheDocument();
+  });
 
-/* ════════════════════════════════════════════════════════
-   子组件: 处理操作记录
-   ════════════════════════════════════════════════════════ */
+  test('clicking 收起 collapses incidents', () => {
+    render(<AnomalyFrequencyPage />);
+    fireEvent.click(screen.getByText(/查看全部.*条事件/));
+    fireEvent.click(screen.getByText('收起'));
+    // Should only show first 4 again
+    expect(screen.queryByText('UPS 电池电压偏低')).not.toBeInTheDocument();
+  });
 
-test('渲染操作记录面板', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '📝'), '应渲染操作记录图标');
-  assert.ok(contains(html, '处理操作记录'), '应渲染操作记录标题');
-});
+  // ====== 10. 交互: 展开行详情 ======
 
-test('操作记录包含操作人信息', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  // 操作人姓名首字母应渲染
-  assert.ok(contains(html, '张'), '应包含操作人张');
-  assert.ok(contains(html, '李'), '应包含操作人李');
-});
+  test('clicking incident row expands detail', () => {
+    render(<AnomalyFrequencyPage />);
+    // Click first incident row
+    fireEvent.click(screen.getByText('收银台 POS-01 网络闪断'));
+    expect(screen.getByText(/POS-01 收银台网络连接中断 3 秒/)).toBeInTheDocument();
+  });
 
-test('操作记录包含操作行为描述', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '重启'), '应包含重启操作');
-  assert.ok(contains(html, '检查'), '应包含检查操作');
-});
+  // ====== 11. 正例: 操作栏 ======
 
-/* ════════════════════════════════════════════════════════
-   子组件: 操作栏
-   ════════════════════════════════════════════════════════ */
+  test('renders action bar buttons', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText('📥 导出报告')).toBeInTheDocument();
+    expect(screen.getByText('🔔 设置告警')).toBeInTheDocument();
+    expect(screen.getByText('🔄 刷新数据')).toBeInTheDocument();
+  });
 
-test('渲染操作栏按钮——导出报告', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '📥'), '应渲染导出图标');
-  assert.ok(contains(html, '导出报告'), '应渲染导出按钮');
-});
+  test('clicking refresh updates data', () => {
+    render(<AnomalyFrequencyPage />);
+    const refreshBtn = screen.getByText('🔄 刷新数据');
+    fireEvent.click(refreshBtn);
+    // Timeline should still render
+    expect(screen.getByTestId('anomaly-freq-timeline')).toBeInTheDocument();
+  });
 
-test('渲染操作栏按钮——设置告警', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '🔔'), '应渲染告警图标');
-  assert.ok(contains(html, '设置告警'), '应渲染告警按钮');
-});
+  // ====== 12. 正例: 底部说明 ======
 
-test('渲染刷新数据按钮在主操作栏', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, '刷新数据'), '应渲染刷新数据按钮');
-});
-
-/* ════════════════════════════════════════════════════════
-   子组件: SeverityBadge
-   ════════════════════════════════════════════════════════ */
-
-test('严重级别标签颜色映射——critical 为红色背景', () => {
-  const bg = severityBadgeBg('critical');
-  assert.equal(bg, '#fef2f2', '严重级别背景应为浅红');
-});
-
-test('严重级别标签颜色映射——high 为橙色背景', () => {
-  const bg = severityBadgeBg('high');
-  assert.equal(bg, '#fff7ed', '高级别背景应为浅橙');
-});
-
-test('严重级别标签颜色映射——medium 为黄色背景', () => {
-  const bg = severityBadgeBg('medium');
-  assert.equal(bg, '#fefce8', '中级别背景应为浅黄');
-});
-
-test('严重级别标签颜色映射——low 为绿色背景', () => {
-  const bg = severityBadgeBg('low');
-  assert.equal(bg, '#f0fdf4', '低级别背景应为浅绿');
-});
-
-function severityBadgeBg(severity: string): string {
-  const map: Record<string, string> = {
-    critical: '#fef2f2',
-    high: '#fff7ed',
-    medium: '#fefce8',
-    low: '#f0fdf4',
-  };
-  return map[severity] ?? '#f8fafc';
-}
-
-/* ════════════════════════════════════════════════════════
-   边界: 极端/空数据
-   ════════════════════════════════════════════════════════ */
-
-test('边界: 组件不依赖外部 props，不会因缺失参数崩溃', () => {
-  assert.doesNotThrow(() => render(React.createElement(AnomalyFrequencyPage)));
-});
-
-test('边界: 实例化两次无副作用', () => {
-  const html1 = render(React.createElement(AnomalyFrequencyPage));
-  const html2 = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(html1.length > 100);
-  assert.ok(html2.length > 100);
-  assert.equal(contains(html1, '总异常数'), true);
-  assert.equal(contains(html2, '总异常数'), true);
-});
-
-test('边界: 异常时序图组件 data-testid 属性透传', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(contains(html, 'data-testid'), '应有 data-testid');
-});
-
-/* ════════════════════════════════════════════════════════
-   防御
-   ════════════════════════════════════════════════════════ */
-
-test('防御: 不意外渲染无关文本', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  assert.ok(notContains(html, 'undefined'), '不应包含 undefined');
-  assert.ok(notContains(html, 'NaN'), '不应包含 NaN');
-  assert.ok(notContains(html, '[object Object]'), '不应包含 [object Object]');
-});
-
-test('防御: 统计卡片数值为数字（非空）', () => {
-  const html = render(React.createElement(AnomalyFrequencyPage));
-  const digitPattern = />\d+</;
-  assert.ok(digitPattern.test(html), '统计值应为数字');
-});
-
-test('防御: 渲染不抛出异常', () => {
-  assert.doesNotThrow(() => {
-    React.createElement(AnomalyFrequencyPage);
+  test('renders footer note', () => {
+    render(<AnomalyFrequencyPage />);
+    expect(screen.getByText(/时序频率图展示各时段内不同严重级别异常的分布/)).toBeInTheDocument();
   });
 });

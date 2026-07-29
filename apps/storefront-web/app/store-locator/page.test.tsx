@@ -1,231 +1,614 @@
-import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
+/**
+ * store-locator/page.vitest.tsx — 门店搜索页 L2 组件测试 (vitest + @testing-library/react)
+ * 圈梁五道箍 🌲 树哥C
+ * 覆盖: 加载态 · 门店列表渲染 · 搜索过滤 · 城市筛选 · 空状态 · 底部导航 · 交互
+ * 角色: 🎯运行专员 · 👔店长 · 📢营销
+ *
+ * 注意: vi.mock factory 是提升的(hoisted), 不能引用顶层变量, 数据必须内联在 factory 内。
+ */
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-describe('StoreLocatorPage', () => {
-  it('renders without crashing', () => {
-    const html = renderPage();
-    assert.ok(html.includes('门店搜索'), 'Should render page title');
-  });
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
-  it('shows loading state initially', () => {
-    const html = renderPage();
-    assert.ok(html.includes('加载中...'), 'Should show loading state');
-  });
+// Mock next/image - use a function component that passes through
+vi.mock('next/image', () => ({
+  default: (props: any) => {
+    const imgProps: any = {};
+    if (props.src) imgProps.src = props.src;
+    if (props.alt) imgProps.alt = props.alt;
+    if (props.fill !== undefined) imgProps['data-fill'] = String(props.fill);
+    return React.createElement('img', imgProps);
+  },
+}));
 
-  it('renders search input', () => {
-    const html = renderPage();
-    assert.ok(html.includes('搜索门店名称或地址...'), 'Should show search placeholder');
-  });
-
-  it('renders city filter button "全部城市"', () => {
-    const html = renderPage();
-    assert.ok(html.includes('全部城市'), 'Should show 全部城市 filter');
-  });
-
-  it('renders store list section', () => {
-    const html = renderPage();
-    assert.ok(html.includes('section'), 'Should render store list section');
-  });
-
-  // ── 分类测试：搜索组件 ──────────────────────────────────────
-
-  describe('search components', () => {
-    it('renders search form with input and button', () => {
-      const html = renderPage();
-      assert.ok(html.includes('form'), 'Search form should exist');
-      assert.ok(html.includes('input'), 'Search input should exist');
-      assert.ok(html.includes('button'), 'Search button should exist');
-    });
-
-    it('renders search placeholder text', () => {
-      const html = renderPage();
-      assert.ok(html.includes('搜索门店名称或地址'), 'Search placeholder should render');
-    });
-
-    it('renders submit button with emoji', () => {
-      const html = renderPage();
-      assert.ok(html.includes('🔍'), 'Submit button should have search emoji');
-    });
-  });
-
-  // ── 分类测试：门店卡片 ──────────────────────────────────────
-
-  describe('store cards', () => {
-    it('renders store names from mock data', () => {
-      const html = renderPage();
-      assert.ok(html.includes('旗舰店'), 'Store name should include 旗舰店');
-      assert.ok(html.includes('社区店'), 'Store name should include 社区店');
-    });
-
-    it('renders store addresses', () => {
-      const html = renderPage();
-      assert.ok(html.includes('路'), 'Address should contain road indicator');
-    });
-
-    it('renders status badge text', () => {
-      const html = renderPage();
-      assert.ok(html.includes('营业中'), 'Status badge should show 营业中');
-    });
-  });
-
-  // ── 分类测试：底部导航 ──────────────────────────────────────
-
-  describe('bottom navigation', () => {
-    it('renders nav bar', () => {
-      const html = renderPage();
-      assert.ok(html.includes('nav'), 'Bottom nav should exist');
-    });
-
-    it('renders 4 nav items', () => {
-      const html = renderPage();
-      assert.ok(html.includes('首页'), 'Home nav should exist');
-      assert.ok(html.includes('门店'), 'Store nav should exist');
-      assert.ok(html.includes('卡券'), 'Coupon nav should exist');
-      assert.ok(html.includes('我的'), 'Profile nav should exist');
-    });
-
-    it('renders nav with emoji icons', () => {
-      const html = renderPage();
-      assert.ok(html.includes('🏠'), 'Home icon should render');
-      assert.ok(html.includes('🎫'), 'Coupon icon should render');
-      assert.ok(html.includes('👤'), 'Profile icon should render');
-    });
-  });
-
-  // ── 分类测试：页面结构 ──────────────────────────────────────
-
-  describe('page structure', () => {
-    it('renders main container', () => {
-      const html = renderPage();
-      assert.ok(html.includes('main'), 'Main container should exist');
-    });
-
-    it('renders page title h1', () => {
-      const html = renderPage();
-      assert.ok(html.includes('h1'), 'Page title should be h1');
-    });
-
-    it('renders subtitle text', () => {
-      const html = renderPage();
-      assert.ok(html.includes('查找离您最近的门店'), 'Subtitle should render');
-    });
-  });
-
-  it('renders bottom navigation with 4 items', () => {
-    const html = renderPage();
-    assert.ok(html.includes('首页'), 'Should show 首页 nav');
-    assert.ok(html.includes('门店'), 'Should show 门店 nav');
-    assert.ok(html.includes('卡券'), 'Should show 卡券 nav');
-    assert.ok(html.includes('我的'), 'Should show 我的 nav');
-  });
-
-  it('renders header description text', () => {
-    const html = renderPage();
-    assert.ok(html.includes('查找离您最近的门店'), 'Should show description');
-  });
-});
-
-describe('StoreLocatorPage - Search & Filter', () => {
-  it('allows typing in search input', () => {
-    // Test search input handler: filtering stores by keyword
-    const filtered = filterStoreByKeyword('旗舰店');
-    assert.equal(filtered.length, 2, 'Should find 2 stores matching 旗舰店');
-  });
-
-  it('renders form for search submission', () => {
-    const html = renderPage();
-    assert.ok(html.includes('🔍'), 'Should show search icon');
-  });
-
-  it('shows empty state text in page', () => {
-    const html = renderPage();
-    assert.ok(html.includes('门店搜索'), 'Title should appear');
-  });
-
-  it('renders main container with correct background', () => {
-    const html = renderPage();
-    assert.ok(html.includes('#0f172a'), 'Background color should be #0f172a');
-  });
-
-  it('renders logo heading with h1 tag', () => {
-    const html = renderPage();
-    assert.ok(html.includes('<h1'), 'Should have h1 tag');
-    assert.ok(html.includes('门店搜索'), 'h1 should contain title');
-  });
-});
-
-describe('StoreLocatorPage - Navigation', () => {
-  it('renders bottom nav with fixed position', () => {
-    const html = renderPage();
-    assert.ok(html.includes('position: fixed'), 'Nav should be fixed');
-    assert.ok(html.includes('bottom: 0'), 'Nav should be at bottom');
-  });
-
-  it('renders nav with 4 link items', () => {
-    const html = renderPage();
-    assert.ok(html.includes('🏠'), 'Should show home icon');
-    assert.ok(html.includes('🔍'), 'Should show search icon');
-    assert.ok(html.includes('🎫'), 'Should show ticket icon');
-    assert.ok(html.includes('👤'), 'Should show profile icon');
-  });
-
-  it('renders store section container', () => {
-    const html = renderPage();
-    assert.ok(html.includes('<section'), 'Should have section element');
-  });
-});
-
-// Helper: filter stores by keyword
-function filterStoreByKeyword(keyword: string): { storeName: string; address: string }[] {
-  const stores = [
-    { storeName: '旗舰店（国贸）', address: '北京市朝阳区国贸大厦A座' },
-    { storeName: '旗舰店（三里屯）', address: '北京市朝阳区三里屯路' },
-    { storeName: '社区店（望京）', address: '北京市朝阳区望京SOHO' },
-    { storeName: '社区店（五道口）', address: '北京市海淀区五道口' },
-    { storeName: '社区店（中关村）', address: '北京市海淀区中关村大街' },
+/** Inline mock data (NOT a top-level variable — factory return value is ok) */
+vi.mock('../../lib/store-locator-service', () => {
+  const mockStores = [
+    { id: '1', storeName: '旗舰店（国贸）', storeCode: 'BJ-CBD-001', city: '北京', district: '朝阳区', address: '国贸大厦A座', phone: '010-88886666', status: 'open', businessHours: '10:00 - 22:00', features: ['电竞赛区', 'VR体验', '水吧'], imageUrl: '/images/store1.jpg' },
+    { id: '2', storeName: '旗舰店（三里屯）', storeCode: 'BJ-SLT-002', city: '北京', district: '朝阳区', address: '三里屯路19号', phone: '010-88886667', status: 'open', businessHours: '10:00 - 22:00', features: ['VR体验', '桌游区'], imageUrl: '/images/store2.jpg' },
+    { id: '3', storeName: '社区店（望京）', storeCode: 'BJ-WJ-003', city: '北京', district: '朝阳区', address: '望京SOHO T1', phone: '010-88886668', status: 'maintenance', businessHours: '10:00 - 22:00', features: ['水吧', '休息区'] },
+    { id: '4', storeName: '社区店（深圳）', storeCode: 'SZ-NH-001', city: '深圳', district: '南山区', address: '科技园南区', phone: '0755-88886669', status: 'open', businessHours: '11:00 - 23:00', features: ['电竞赛区', '直播区'] },
+    { id: '5', storeName: '社区店（上海）', storeCode: 'SH-PD-001', city: '上海', district: '浦东新区', address: '张江高科园区', phone: '021-88886670', status: 'closed', businessHours: '10:00 - 22:00', features: ['桌游区'] },
   ];
-  if (!keyword) return stores;
-  return stores.filter(
-    (s) => s.storeName.includes(keyword) || s.address.includes(keyword)
-  );
-}
+  return {
+    storeLocatorService: {
+      searchStores: vi.fn().mockResolvedValue({
+        success: true,
+        data: { stores: mockStores, total: 5, cities: ['北京', '上海', '深圳'] },
+      }),
+    },
+  };
+});
 
-function renderPage(): string {
-  // Simulate the static HTML output of StoreLocatorPage
-  const stores = filterStoreByKeyword('');
-  const statusInfo: Record<string, { text: string; color: string }> = {
+vi.mock('../../lib/store-locator-style', () => ({
+  STATUS_INFO: {
     open: { text: '营业中', color: '#22c55e' },
     closed: { text: '已休息', color: '#6b7280' },
     maintenance: { text: '维护中', color: '#f59e0b' },
-  };
+    busy: { text: '繁忙', color: '#ef4444' },
+  },
+  getCityButtonStyle: (active: boolean) => ({
+    padding: '6px 14px',
+    borderRadius: 20,
+    border: `1px solid ${active ? 'rgba(245,158,11,0.5)' : 'rgba(148,163,184,0.15)'}`,
+    background: active ? 'rgba(245,158,11,0.1)' : 'transparent',
+    color: active ? '#f59e0b' : '#94a3b8',
+    fontSize: 13,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
+  }),
+  getStoreCardStyle: () => ({
+    borderRadius: 12,
+    overflow: 'hidden' as const,
+    background: '#1e293b',
+    border: '1px solid rgba(148,163,184,0.08)',
+  }),
+  getStatusBadgeStyle: (_status: string, _size: string) => ({
+    position: 'absolute' as const,
+    top: 8,
+    right: 8,
+    padding: '2px 8px',
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 600,
+  }),
+  getFeatureChipStyle: (_variant: string) => ({
+    padding: '2px 8px',
+    borderRadius: 4,
+    background: 'rgba(99,102,241,0.1)',
+    color: '#818cf8',
+    fontSize: 11,
+  }),
+  getContactActionButtonStyle: (_type: string, _size: string) => ({
+    padding: '6px 14px',
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 600,
+    textDecoration: 'none',
+  }),
+  getActionButtonRowStyle: () => ({
+    display: 'flex',
+    gap: 8,
+    marginTop: 12,
+  }),
+  getBottomNavItemStyle: (active: boolean) => ({
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: 2,
+    textDecoration: 'none',
+    color: active ? '#f59e0b' : '#64748b',
+  }),
+  filterStoreByKeyword: (stores: any[], keyword: string) => {
+    if (!keyword) return stores;
+    const q = keyword.toLowerCase();
+    return stores.filter(
+      (s: any) =>
+        s.storeName.toLowerCase().includes(q) ||
+        s.address.toLowerCase().includes(q)
+    );
+  },
+}));
 
-  return `
-    <main style="background: #0f172a;">
-      <h1>门店搜索</h1>
-      <div>查找离您最近的门店</div>
-      <div>加载中...</div>
-      <form>
-        <input placeholder="搜索门店名称或地址..." />
-        <button type="submit">🔍</button>
-      </form>
-      <div>
-        <button style="padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(148,163,184,0.15); background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer; white-space: nowrap;">全部城市</button>
-      </div>
-      <section>
-        ${stores.map((s, i) => `
-          <div style="border-radius: 12px; overflow: hidden; background: #1e293b; border: 1px solid rgba(148,163,184,0.08);">
-            <div style="position: absolute; top: 8; right: 8; padding: 2px 8px; border-radius: 6; background: rgba(34,197,94,0.15); color: ${statusInfo.open.color}; font-size: 11px; font-weight: 600;">${statusInfo.open.text}</div>
-            <div>${s.storeName}</div>
-            <div>${s.address}</div>
-          </div>
-        `).join('')}
-      </section>
-      <nav style="position: fixed; bottom: 0;">
-        <a style="color: #f59e0b;"><span>🏠</span><span>首页</span></a>
-        <a style="color: #64748b;"><span>🔍</span><span>门店</span></a>
-        <a style="color: #64748b;"><span>🎫</span><span>卡券</span></a>
-        <a style="color: #64748b;"><span>👤</span><span>我的</span></a>
-      </nav>
-    </main>
-  `;
-}
+import StoreLocatorPage from './page';
+
+describe('StoreLocatorPage — 门店搜索页', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** Helper: wait until stores are loaded */
+  async function waitForStores() {
+    await screen.findByText('旗舰店（国贸）', {}, { timeout: 5000 });
+  }
+
+  // ====== 正例: 渲染 ======
+
+  test('renders without crashing', () => {
+    expect(() => render(<StoreLocatorPage />)).not.toThrow();
+  });
+
+  test('renders page title 门店搜索', async () => {
+    render(<StoreLocatorPage />);
+    await screen.findByText('门店搜索', {}, { timeout: 5000 });
+    expect(screen.getByText('门店搜索')).toBeInTheDocument();
+  });
+
+  test('renders subtitle 查找离您最近的门店', async () => {
+    render(<StoreLocatorPage />);
+    expect(await screen.findByText('查找离您最近的门店', {}, { timeout: 5000 })).toBeInTheDocument();
+  });
+
+  test('renders search input with placeholder', async () => {
+    render(<StoreLocatorPage />);
+    await screen.findByPlaceholderText('搜索门店名称或地址...', {}, { timeout: 5000 });
+    expect(screen.getByPlaceholderText('搜索门店名称或地址...')).toBeInTheDocument();
+  });
+
+  test('renders 全部城市 filter button', async () => {
+    render(<StoreLocatorPage />);
+    await screen.findByText('全部城市', {}, { timeout: 5000 });
+    expect(screen.getByText('全部城市')).toBeInTheDocument();
+  });
+
+  test('renders store names after load', async () => {
+    render(<StoreLocatorPage />);
+    await screen.findByText('旗舰店（国贸）', {}, { timeout: 5000 });
+    expect(screen.getByText('旗舰店（国贸）')).toBeInTheDocument();
+    expect(screen.getByText('旗舰店（三里屯）')).toBeInTheDocument();
+    expect(screen.getByText('社区店（望京）')).toBeInTheDocument();
+    expect(screen.getByText('社区店（深圳）')).toBeInTheDocument();
+    expect(screen.getByText('社区店（上海）')).toBeInTheDocument();
+  });
+
+  test('renders store addresses', async () => {
+    render(<StoreLocatorPage />);
+    await screen.findByText(/国贸大厦A座/, {}, { timeout: 5000 });
+    expect(screen.getByText(/国贸大厦A座/)).toBeInTheDocument();
+    const threeLiElements = screen.getAllByText(/三里屯/);
+    expect(threeLiElements.length).toBe(2);
+  });
+
+  test('renders business hours', async () => {
+    render(<StoreLocatorPage />);
+    const hoursElements = await screen.findAllByText(/10:00 - 22:00/, {}, { timeout: 5000 });
+    expect(hoursElements.length).toBeGreaterThanOrEqual(4);
+  });
+
+  test('renders feature chips on store cards', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const eccChips = screen.getAllByText('电竞赛区');
+    expect(eccChips.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('VR体验').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('renders city filter buttons for each city', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByText('北京')).toBeInTheDocument();
+    expect(screen.getByText('上海')).toBeInTheDocument();
+    expect(screen.getByText('深圳')).toBeInTheDocument();
+  });
+
+  // ====== 正例: 底部导航 ======
+
+  test('renders bottom navigation with 4 items', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByText('首页')).toBeInTheDocument();
+    expect(screen.getByText('门店')).toBeInTheDocument();
+    expect(screen.getByText('卡券')).toBeInTheDocument();
+    expect(screen.getByText('我的')).toBeInTheDocument();
+  });
+
+  test('bottom nav has active state on 门店', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const storeLink = screen.getByText('门店').closest('a');
+    expect(storeLink).toHaveAttribute('href', '/store-locator');
+  });
+
+  // ====== 搜索过滤 ======
+
+  test('search filters stores by name', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '国贸' } });
+    await waitFor(() => {
+      expect(screen.getByText('旗舰店（国贸）')).toBeInTheDocument();
+      expect(screen.queryByText('社区店（望京）')).not.toBeInTheDocument();
+    });
+  });
+
+  test('search filters stores by address', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '望京' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（望京）')).toBeInTheDocument();
+      expect(screen.queryByText('旗舰店（国贸）')).not.toBeInTheDocument();
+    });
+  });
+
+  test('clearing search restores all stores', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '国贸' } });
+    await waitFor(() => {
+      expect(screen.queryByText('社区店（望京）')).not.toBeInTheDocument();
+    });
+    fireEvent.change(searchInput, { target: { value: '' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（望京）')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 城市筛选 ======
+
+  test('clicking a city filter button selects it', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    fireEvent.click(screen.getByText('北京'));
+    expect(screen.getByText('北京')).toBeInTheDocument();
+  });
+
+  test('clicking 全部城市 resets city filter', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    fireEvent.click(screen.getByText('北京'));
+    fireEvent.click(screen.getByText('全部城市'));
+    expect(screen.getByText('全部城市')).toBeInTheDocument();
+  });
+
+  // ====== 空状态 ======
+
+  test('search with no results shows 暂无门店数据', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: 'zzz根本不存在的门店xxx' } });
+    await waitFor(() => {
+      expect(screen.getByText('暂无门店数据')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 加载态 ======
+
+  test('shows loading state before data arrives', async () => {
+    render(<StoreLocatorPage />);
+    // The component shows loading initially before data resolves
+    expect(await screen.findByText('加载中...', {}, { timeout: 3000 })).toBeInTheDocument();
+  });
+
+  // ====== 门店卡片操作 ======
+
+  test('store cards have phone call links', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const callBtns = screen.getAllByText('📞 电话');
+    expect(callBtns.length).toBe(5);
+    expect(callBtns[0].closest('a')).toHaveAttribute('href', 'tel:010-88886666');
+  });
+
+  test('store cards have navigation links', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const navBtns = screen.getAllByText('🗺️ 导航');
+    expect(navBtns.length).toBe(5);
+    expect(navBtns[0].closest('a')).toHaveAttribute('href', expect.stringContaining('maps.apple.com'));
+    expect(navBtns[0].closest('a')).toHaveAttribute('target', '_blank');
+  });
+
+  test('store cards are wrapped in Link to detail page', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const link = screen.getByText('旗舰店（国贸）').closest('a');
+    expect(link).toHaveAttribute('href', '/store-locator/1');
+  });
+
+  test('status badge text renders correctly', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const statusBadges = screen.getAllByText('营业中');
+    expect(statusBadges.length).toBeGreaterThanOrEqual(3);
+  });
+
+  // ====== 边界 ======
+
+  test('dark background applied', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const main = document.querySelector('main');
+    expect(main).toHaveStyle('background: #0f172a');
+  });
+
+  test('empty search input shows all stores', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    expect(searchInput).toHaveValue('');
+    expect(screen.getByText('旗舰店（三里屯）')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 空态展示 ======
+
+  test('shows 暂无门店数据 when search yields no results', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '南极洲不存在的门店' } });
+    await waitFor(() => {
+      const emptyIcon = screen.getByText('🏪');
+      expect(emptyIcon).toBeInTheDocument();
+      expect(screen.getByText('暂无门店数据')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 增强: 门店详情页链接 ======
+
+  test('all store cards have correct detail page links', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const store1Link = screen.getByText('旗舰店（国贸）').closest('a');
+    expect(store1Link).toHaveAttribute('href', '/store-locator/1');
+    const store3Link = screen.getByText('社区店（望京）').closest('a');
+    expect(store3Link).toHaveAttribute('href', '/store-locator/3');
+    const store5Link = screen.getByText('社区店（上海）').closest('a');
+    expect(store5Link).toHaveAttribute('href', '/store-locator/5');
+  });
+
+  // ====== 增强: 电话格式校验 ======
+
+  test('phone links have correct tel: href for each store', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const callBtn = screen.getAllByText('📞 电话')[4]; // 上海店
+    expect(callBtn.closest('a')).toHaveAttribute('href', 'tel:021-88886670');
+  });
+
+  // ====== 增强: 地图导航链接完整性 ======
+
+  test('nav links point to apple maps with encoded address', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const navBtn = screen.getAllByText('🗺️ 导航')[0];
+    const href = navBtn.closest('a')?.getAttribute('href') ?? '';
+    expect(href).toContain('maps.apple.com');
+    expect(href).toContain(encodeURIComponent('国贸大厦A座'));
+  });
+
+  // ====== 增强: 状态标签渲染 ======
+
+  test('status badge shows correct text per store status', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    // 营业中 stores: 国贸, 三里屯, 深圳
+    const openBadges = screen.getAllByText('营业中');
+    expect(openBadges.length).toBeGreaterThanOrEqual(3);
+    // 维护中: 望京
+    expect(screen.getByText('维护中')).toBeInTheDocument();
+    // 已休息: 上海
+    expect(screen.getByText('已休息')).toBeInTheDocument();
+  });
+
+  // ====== 增强: 搜索不区分大小写 ======
+
+  test('search works with partial name match', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '旗舰' } });
+    await waitFor(() => {
+      expect(screen.getByText('旗舰店（国贸）')).toBeInTheDocument();
+      expect(screen.getByText('旗舰店（三里屯）')).toBeInTheDocument();
+    });
+  });
+
+  // ====== 增强: 搜索店名末段匹配 ======
+
+  test('search matches end of store name', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '深圳' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（深圳）')).toBeInTheDocument();
+      expect(screen.queryByText('旗舰店（国贸）')).not.toBeInTheDocument();
+    });
+  });
+
+  // ====== 增强测试 ======
+
+  // Search edge cases
+  test('search filters with partial name', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '国贸' } });
+    await waitFor(() => {
+      expect(screen.getByText('旗舰店（国贸）')).toBeInTheDocument();
+      expect(screen.queryByText('社区店（望京）')).not.toBeInTheDocument();
+    });
+  });
+
+  test('search by store name fragment', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '深圳' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（深圳）')).toBeInTheDocument();
+    });
+  });
+
+  test('search single character key 上 finds 上海', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '上' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（上海）')).toBeInTheDocument();
+    });
+  });
+
+  // City filter visual tests (city buttons render correctly; actual filter is server-side)
+  test('city filter button 全部城市 renders', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByText('全部城市')).toBeInTheDocument();
+  });
+
+  test('clicking city button selects the city visually', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    fireEvent.click(screen.getByText('上海'));
+    // The button should still show 上海 text
+    expect(screen.getByText('上海')).toBeInTheDocument();
+  });
+
+  test('clicking 全部城市 after selecting a city', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    fireEvent.click(screen.getByText('深圳'));
+    fireEvent.click(screen.getByText('全部城市'));
+    expect(screen.getByText('全部城市')).toBeInTheDocument();
+  });
+
+  // Store card action links
+  test('every store has call and nav buttons', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const callBtns = screen.getAllByText('📞 电话');
+    const navBtns = screen.getAllByText('🗺️ 导航');
+    expect(callBtns.length).toBe(5);
+    expect(navBtns.length).toBe(5);
+  });
+
+  test('closed status store shows 已休息', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByText('已休息')).toBeInTheDocument();
+  });
+
+  test('maintenance status store shows 维护中', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByText('维护中')).toBeInTheDocument();
+  });
+
+  test('phone link format correct for all stores', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const callBtns = screen.getAllByText('📞 电话');
+    const telHrefs = callBtns.map(btn => btn.closest('a')!.getAttribute('href'));
+    telHrefs.forEach(href => {
+      expect(href).toMatch(/^tel:/);
+    });
+  });
+
+  test('map nav links all point to maps.apple.com', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const navBtns = screen.getAllByText('🗺️ 导航');
+    const navHrefs = navBtns.map(btn => btn.closest('a')!.getAttribute('href'));
+    navHrefs.forEach(href => {
+      expect(href).toMatch(/maps\.apple\.com/);
+    });
+  });
+
+  test('每个门店卡片都是可点击的详情链接', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const storeLinks = screen.getAllByRole('link').filter(l => l.getAttribute('href')?.startsWith('/store-locator/'));
+    expect(storeLinks.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test('empty state shows store emoji', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '不存在的门店名' } });
+    await waitFor(() => {
+      expect(screen.getByText('🏪')).toBeInTheDocument();
+    });
+  });
+
+  test('bottom nav has store-locator active highlight', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const storeNav = screen.getByText('门店').closest('a');
+    expect(storeNav).toHaveAttribute('href', '/store-locator');
+  });
+
+  test('bottom nav has correct hrefs', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const homeLink = screen.getByText('首页').closest('a');
+    expect(homeLink).toHaveAttribute('href', '/');
+    const couponLink = screen.getByText('卡券').closest('a');
+    expect(couponLink).toHaveAttribute('href', '/coupons');
+    const profileLink = screen.getByText('我的').closest('a');
+    expect(profileLink).toHaveAttribute('href', '/member-center');
+  });
+
+  test('搜索/城市栏保留在页面', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByPlaceholderText('搜索门店名称或地址...')).toBeInTheDocument();
+    expect(screen.getByText('全部城市')).toBeInTheDocument();
+  });
+
+  test('city filters show for all mock cities', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    expect(screen.getByText('北京')).toBeInTheDocument();
+    expect(screen.getByText('上海')).toBeInTheDocument();
+    expect(screen.getByText('深圳')).toBeInTheDocument();
+  });
+
+  test('business hours display for all stores', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const hoursElements = screen.getAllByText(/\d{2}:00 - \d{2}:00/);
+    expect(hoursElements.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test('feature chips show on store cards', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const featureElements = screen.getAllByText(/电竞赛区|VR体验|水吧|桌游区|直播区|休息区/);
+    expect(featureElements.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test('每张卡片包含选择门店按钮 (电话/导航)', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const actionButtons = screen.getAllByText(/📞 电话|🗺️ 导航/);
+    expect(actionButtons.length).toBe(10); // 5 stores × 2 actions each
+  });
+
+  test('search then clear restores all stores', async () => {
+    render(<StoreLocatorPage />);
+    await waitForStores();
+    const searchInput = screen.getByPlaceholderText('搜索门店名称或地址...');
+    fireEvent.change(searchInput, { target: { value: '三里屯' } });
+    await waitFor(() => {
+      expect(screen.getByText('旗舰店（三里屯）')).toBeInTheDocument();
+      expect(screen.queryByText('社区店（望京）')).not.toBeInTheDocument();
+    });
+    // Clear search
+    fireEvent.change(searchInput, { target: { value: '' } });
+    await waitFor(() => {
+      expect(screen.getByText('社区店（上海）')).toBeInTheDocument();
+    });
+  });
+});
