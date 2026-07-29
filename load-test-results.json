@@ -1,28 +1,31 @@
 {
-  "timestamp": "2026-07-29T15:03:10.529Z",
+  "timestamp": "2026-07-29T16:24:18.126Z",
   "config": {
-    "baseUrl": "https://api.sportsant.net",
+    "baseUrl": "http://localhost:3145",
     "vus": 50,
-    "duration": "20s"
+    "duration": "30s"
   },
   "metrics": {
     "health": {
-      "avg_ms": 5108.467153284671,
-      "p95_ms": 5323.35,
-      "p99_ms": 5895.38
+      "avg_ms": 4.379856115107914,
+      "p95_ms": 11.299999999999969,
+      "p99_ms": 45.059999999999995
     },
     "order": {
-      "avg_ms": 0,
-      "p95_ms": 0,
-      "p99_ms": 0
+      "avg_ms": 3.8633093525179856,
+      "p95_ms": 10,
+      "p99_ms": 44.11999999999999
     },
-    "verify": {},
+    "verify": {
+      "avg_ms": 4.6719424460431656,
+      "p95_ms": 10
+    },
     "http": {
-        "total_requests": 274,
-        "failed_rate": 1,
-        "avg_duration_ms": 0,
-        "p95_duration_ms": 0
-      }
+      "total_requests": 2085,
+      "failed_rate": 0.6666666666666666,
+      "avg_duration_ms": 4.172967386091128,
+      "p95_duration_ms": 10.127399999999987
+    }
   },
   "verdict": "FAIL"
 }
