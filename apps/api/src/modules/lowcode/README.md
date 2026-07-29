@@ -1,14 +1,39 @@
 # Lowcode 低代码
 
-> 低代码页面管理服务，支持页面的创建、发布与管理
+> 低代码页面管理服务，支持页面的创建、发布与管理。通过可视化配置与模板化渲染，平台运营人员与租户管理员无需编写前端代码即可快速搭建营销落地页、公告页、活动页面等。此模块同时提供页面版本控制与发布审批流程。
 
 ## 功能
-- 低代码页面 CRUD
-- 页面发布管理
+
+- **低代码页面 CRUD** — 完整的页面生命周期管理，支持创建、查看、编辑、删除低代码页面；页面内容以 JSON Schema 结构存储，前端渲染器解析 Schema 动态渲染组件
+- **页面发布管理** — 支持页面草稿与发布版本分离，发布操作触发版本快照与生产环境更新；发布历史可追溯，支持回滚到任意已发布版本
+- **页面模板系统** — 预置多种页面模板（营销模板、公告模板、表单模板），租户可基于模板快速生成页面并二次编辑
+- **组件库管理** — 管理低代码平台支持的组件列表，包括组件属性 Schema、默认样式、事件绑定配置，支持自定义组件注册
 
 ## API
-- POST /lowcode/pages — 创建页面
-- GET /lowcode/pages/:id — 页面详情
-- PUT /lowcode/pages/:id — 更新页面
-- DELETE /lowcode/pages/:id — 删除页面
-- POST /lowcode/pages/:id/publish — 发布页面
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | /lowcode/pages | 创建页面 |
+| GET | /lowcode/pages | 页面列表（支持分页、筛选、搜索） |
+| GET | /lowcode/pages/:id | 页面详情 |
+| PUT | /lowcode/pages/:id | 更新页面 |
+| DELETE | /lowcode/pages/:id | 删除页面 |
+| POST | /lowcode/pages/:id/publish | 发布页面（创建新版本快照） |
+| POST | /lowcode/pages/:id/draft | 保存草稿（不触发发布） |
+| GET | /lowcode/pages/:id/versions | 页面版本历史 |
+
+## 技术栈
+
+- **NestJS** — 模块化服务端架构
+- **TypeORM** — 页面数据、版本快照、模板配置的持久化存储
+- **JSON Schema** — 页面内容和组件配置的描述与校验标准
+- **RESTful API** — 标准化的页面与模板管理端点
+
+## 核心依赖
+
+| 模块 | 用途 |
+|------|------|
+| FoundationModule | 基础服务依赖 |
+| TenantModule | 租户隔离上下文，确保页面数据按租户隔离 |
+| StorageModule | 页面静态资源（图片、CSS 文件）管理与 CDN 上传 |
+| AuditModule | 页面发布与版本变更的审计日志 |
