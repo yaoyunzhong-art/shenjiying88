@@ -29,9 +29,8 @@ describe('SystemMonitorPage — 服务端壳层', () => {
     assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
   })
 
-  it('页面应接入管理员权限边界', () => {
-    assert.ok(PAGE_SRC.includes('AdminPermissionGate'))
-    assert.ok(PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+  it('页面应通过 E54 拍平移除 AdminPermissionGate', () => {
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'AdminPermissionGate 已通过 E54 拍平移除')
   })
 })
 

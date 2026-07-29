@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { WorkspaceBreadcrumb, DetailClosureBar, LoadingSkeleton, StatCard, Badge, type BadgeVariant } from '@m5/ui';
 import { getAdminWorkbenchConsumerSnapshot } from '../bootstrap';
-import { AdminPermissionGate } from '../components/admin-permission-gate';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../components/detail-workspace-registry';
 
 /**
@@ -38,12 +37,7 @@ export default async function WorkbenchListPage() {
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'workbench', detailLabel: '工作台目录' })}
       />
-      <AdminPermissionGate
-        requiredPermission="workbench.read"
-        title="工作台目录访问受限"
-        description="工作台目录已接入管理员本地 session，只有具备 workbench.read 的账号才能查看角色工作台清单。"
-      >
-        <section
+      <section
           style={{
             borderRadius: 24,
             padding: 28,
@@ -232,7 +226,6 @@ export default async function WorkbenchListPage() {
             ],
           })}
         />
-      </AdminPermissionGate>
     </main>
   );
 }
