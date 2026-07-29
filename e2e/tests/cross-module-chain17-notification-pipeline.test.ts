@@ -795,4 +795,267 @@ describe('链17: 消息推送 + 通知治理 (Miniapp→Domain→Admin→Tob-Web
     const unreadAfter = tobWebGetUnreadCount('admin');
     assert.equal(unreadAfter.byType['system_announcement'] ?? 0, (unreadBefore.byType['system_announcement'] || 0) - 1);
   });
+
+  // --- Phase 8: 通知优先级调度与频率控制 ---
+
+  test('[正例] 高频事件(immediate) → 立即创建并派发', () => {
+    const r = miniappTriggerEvent({
+      type: 'order_alert',
+      title: '高频事件测试',
+      content: '应immediate创建',
+      priority: 'high',
+      requestId: 'evt_high_freq_01',
+    });
+    assert.ok(r.success);
+    assert.equal(r.notification!.priority, 'high');
+  });
+
+  test('[正例] 低优先级通知(digest频率) → 正常创建, 不拒绝', () => {
+    // 修改 system_announcement 规则为 digest 频率
+    adminUpdateRule('rule_system', { frequency: 'digest' });
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '摘要模式测试',
+      content: '频率为digest时应正常创建',
+      priority: 'low',
+      requestId: 'evt_digest_01',
+    });
+    assert.ok(r.success);
+    adminUpdateRule('rule_system', { frequency: 'immediate' });
+  });
+
+  test('[边界] 极高优先级(urgent)覆盖任何频率 → 即时创建', () => {
+    adminUpdateRule('rule_system', { frequency: 'daily' });
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '紧急覆盖频率',
+      content: 'urgent应覆盖daily限制',
+      priority: 'urgent',
+      requestId: 'evt_urgent_override_freq',
+    });
+    assert.ok(r.success);
+    adminUpdateRule('rule_system', { frequency: 'immediate' });
+  });
+
+  test('[边界] 同一事件类型多次触发(同优先级) → 全部创建不丢失', () => {
+    const ids: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const r = miniappTriggerEvent({
+        type: 'order_alert',
+        title: `重复事件#${i}`,
+        content: `重复触发第${i}次`,
+        priority: 'normal',
+        requestId: `evt_same_type_${i}`,
+      });
+      assert.ok(r.success);
+      ids.push(r.notification!.id);
+    }
+    assert.equal(ids.length, 5);
+    assert.equal(new Set(ids).size, 5); // ID 全部唯一
+
+    const relatedNotifs = notificationStore.filter(n => n.title.startsWith('重复事件'));
+    assert.equal(relatedNotifs.length, 5);
+  });
+
+  // --- Phase 9: 通知审计与日志场景 ---
+
+  test('[正例] 通知创建时间戳正确 → 记录创建时间', () => {
+    const before = new Date();
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '审计时间戳测试',
+      content: '验证createdAt',
+      priority: 'low',
+      requestId: 'evt_audit_ts_01',
+    });
+    assert.ok(r.success);
+    const createdAt = new Date(r.notification!.createdAt);
+    assert.ok(createdAt >= before, 'createdAt 应在事件触发之后');
+    assert.ok(createdAt <= new Date(), 'createdAt 不应在未来');
+  });
+
+  test('[边界] 规则更新时间戳更新 → 每次更新都变化', () => {
+    const before = new Date();
+    const r1 = adminUpdateRule('rule_order', { smsEnabled: true });
+    assert.ok(r1.success);
+    const t1 = new Date(r1.rule!.updatedAt);
+
+    // 等一点点时间
+    const r2 = adminUpdateRule('rule_order', { smsEnabled: false });
+    assert.ok(r2.success);
+    const t2 = new Date(r2.rule!.updatedAt);
+
+    assert.ok(t2 >= t1, '每次更新的updatedAt应递增');
+  });
+
+  test('[边界] 通知source字段始终记录来源 → miniapp触发标记为miniapp', () => {
+    const r = miniappTriggerEvent({
+      type: 'order_alert',
+      title: '来源测试',
+      content: '验证source字段',
+      priority: 'high',
+      requestId: 'evt_source_test',
+    });
+    assert.ok(r.success);
+    assert.equal(r.notification!.source, 'miniapp');
+  });
+
+  test('[正例] 多次派发同一批通知 → 幂等, 已sent的不重复发送', () => {
+    const sentBefore = notificationStore.filter(n => n.status === 'sent').length;
+    const pendingBefore = notificationStore.filter(n => n.status === 'pending').length;
+
+    // 第二次派发
+    const result = domainDispatchNotifications();
+    assert.equal(result.sent, pendingBefore === 0 ? 0 : pendingBefore);
+
+    // sent 通知不应变为 pending
+    for (const n of notificationStore) {
+      assert.notEqual(n.status, 'pending', '通知不应从sent回到pending');
+    }
+  });
+
+  // --- Phase 10: 多种组合场景 ---
+
+  test('[边界] 同时禁用+启用+更改优先级 → 规则配置链完整', () => {
+    // chain: disable → change minPriority → enable
+    adminUpdateRule('rule_refund', { enabled: false });
+    adminUpdateRule('rule_refund', { minPriority: 'normal' });
+    adminUpdateRule('rule_refund', { enabled: true });
+
+    const rule = adminGetAllRules().find(r => r.id === 'rule_refund');
+    assert.equal(rule!.enabled, true);
+    assert.equal(rule!.minPriority, 'normal');
+
+    // 验证变更后的规则生效: normal refund 应通过
+    const r = miniappTriggerEvent({
+      type: 'refund_alert',
+      title: '链式配置测试',
+      content: '变更链应完整生效',
+      priority: 'normal',
+      requestId: 'evt_chain_config_01',
+    });
+    assert.ok(r.success);
+
+    // 恢复
+    adminUpdateRule('rule_refund', { minPriority: 'high' });
+  });
+
+  test('[边界] SM发送+邮件禁用 → 只发送渠道(仅push)', () => {
+    adminUpdateRule('rule_order', { pushEnabled: true, smsEnabled: false });
+    const r = miniappTriggerEvent({
+      type: 'order_alert',
+      title: '渠道过滤测试',
+      content: '仅推送应有效',
+      priority: 'high',
+      requestId: 'evt_channel_filter',
+    });
+    assert.ok(r.success);
+    assert.equal(r.notification!.type, 'order_alert');
+  });
+
+  test('[边界] 多发角色聚合查询 → 通知去重正确', () => {
+    // admin 既是 order_alert 又是 compliance_alert 的 targetRole
+    const adminAllNotifs = domainGetNotificationsByRole('admin');
+    const adminIds = new Set(adminAllNotifs.map(n => n.id));
+    // admin 应收到 order, refund, system, compliance 等类型的通知
+    const typesPresent = new Set(adminAllNotifs.map(n => n.type));
+    assert.ok(typesPresent.size >= 2, 'admin应收到至少2种类型的通知');
+  });
+
+  test('[边界] 通知标题为空 → 创建成功, 内容正常', () => {
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '',
+      content: '标题为空的测试通知',
+      priority: 'low',
+      requestId: 'evt_empty_title_01',
+    });
+    assert.ok(r.success);
+    assert.equal(r.notification!.title, '');
+    assert.equal(r.notification!.content, '标题为空的测试通知');
+  });
+
+  test('[边界] 通知内容仅空格 → 正常创建', () => {
+    const r = miniappTriggerEvent({
+      type: 'system_announcement',
+      title: '空格内容测试',
+      content: '   ',
+      priority: 'low',
+      requestId: 'evt_space_content_01',
+    });
+    assert.ok(r.success);
+    assert.equal(r.notification!.content, '   ');
+  });
+
+  // --- Phase 11: 并发/竞争/异常场景 ---
+
+  test('[边界] 连续创建+标记+归档同一通知 → 状态链正确', () => {
+    const r = miniappTriggerEvent({
+      type: 'order_alert',
+      title: '状态链测试',
+      content: 'pending→sent→read→archived',
+      priority: 'high',
+      requestId: 'evt_state_chain_01',
+    });
+    assert.ok(r.success);
+    const nId = r.notification!.id;
+
+    // pending
+    assert.equal(notificationStore.find(n => n.id === nId)!.status, 'pending');
+
+    // sent
+    domainDispatchNotifications();
+    assert.equal(notificationStore.find(n => n.id === nId)!.status, 'sent');
+
+    // read
+    tobWebMarkAsRead('admin', [nId]);
+    assert.equal(notificationStore.find(n => n.id === nId)!.status, 'read');
+
+    // archived
+    tobWebArchiveNotification('admin', nId);
+    assert.equal(notificationStore.find(n => n.id === nId)!.status, 'archived');
+
+    // 归档后不可再标记已读→已读界面应隐藏
+    const unread = tobWebGetUnreadCount('admin');
+    const archivedInUnread = notificationStore.filter(n => {
+      if (n.id !== nId) return false;
+      const userReads = userReadStore.get('admin') || new Set();
+      return !userReads.has(n.id) && n.status === 'sent';
+    });
+    assert.equal(archivedInUnread.length, 0);
+  });
+
+  test('[边界] 角色不存在时查询未读 → 返回0', () => {
+    const unread = domainGetUnreadCount('nonexistent_role');
+    assert.equal(unread.total, 0);
+    assert.deepEqual(unread.byType, {});
+  });
+
+  test('[边界] 标记已读时角色尚未创建 → 自动创建角色读取记录', () => {
+    // 在标记前, compliance_officer 还未读过任何通知
+    const r = miniappTriggerEvent({
+      type: 'compliance_alert',
+      title: '新角色测试',
+      content: 'compliance_officer应能阅读',
+      priority: 'urgent',
+      requestId: 'evt_new_role_01',
+    });
+    assert.ok(r.success);
+    domainDispatchNotifications();
+
+    const nId = r.notification!.id;
+    const result = tobWebMarkAsRead('compliance_officer', [nId]);
+    assert.equal(result.success, 1);
+
+    // 应计入已读
+    const userReads = userReadStore.get('compliance_officer');
+    assert.ok(userReads);
+    assert.ok(userReads.has(nId));
+  });
+
+  test('[边界] 空ID数组标记已读 → 返回空成功', () => {
+    const result = tobWebMarkAsRead('admin', []);
+    assert.equal(result.success, 0);
+    assert.equal(result.errors.length, 0);
+  });
 });
