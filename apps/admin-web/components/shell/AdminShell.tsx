@@ -6,7 +6,6 @@
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import {
   SideNavigation,
   Breadcrumb,
@@ -88,6 +87,8 @@ export default function AdminShell({ children }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [activeKey, setActiveKey] = useState('dashboard');
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // 同步 activeKey
   React.useEffect(() => {
@@ -116,6 +117,18 @@ export default function AdminShell({ children }: AdminShellProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setCmdOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // ⌘/ 快捷键帮助面板
+  React.useEffect(() => {
+    const handler = (e: globalThis.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handler);
@@ -178,47 +191,57 @@ export default function AdminShell({ children }: AdminShellProps) {
               }))}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Link
-                href="/audit-logs"
-                title="操作日志"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: 'rgba(148,163,184,0.08)',
-                  color: '#94a3b8',
-                  fontSize: 16,
-                  textDecoration: 'none',
-                  transition: 'all 0.15s',
-                  position: 'relative' as const,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(96,165,250,0.15)';
-                  e.currentTarget.style.color = '#93c5fd';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(148,163,184,0.08)';
-                  e.currentTarget.style.color = '#94a3b8';
-                }}
-              >
-                🔔
-                {/* 未读小红点 */}
-                <span
+              {/* 铃铛通知下拉面板 */}
+              <div style={{ position: 'relative' as const }}>
+                <button
+                  onClick={() => setNotifOpen((p) => !p)}
+                  title="操作日志"
                   style={{
-                    position: 'absolute' as const,
-                    top: 4,
-                    right: 6,
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: '#ef4444',
-                    border: '1px solid rgba(15,23,42,0.8)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 32, height: 32, borderRadius: 8,
+                    background: notifOpen ? 'rgba(96,165,250,0.15)' : 'rgba(148,163,184,0.08)',
+                    color: notifOpen ? '#93c5fd' : '#94a3b8',
+                    fontSize: 16, border: 'none', cursor: 'pointer',
+                    position: 'relative' as const, transition: 'all 0.15s',
                   }}
-                />
-              </Link>
+                >
+                  🔔
+                  <span style={{ position: 'absolute' as const, top: 4, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#ef4444', border: '1px solid rgba(15,23,42,0.8)' }} />
+                </button>
+                {notifOpen && (
+                  <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setNotifOpen(false)} />
+                    <div style={{
+                      position: 'absolute', top: 40, right: 0, width: 320, maxHeight: 360, overflowY: 'auto',
+                      background: 'rgba(15,23,42,0.98)', border: '1px solid rgba(148,163,184,0.2)',
+                      borderRadius: 12, boxShadow: '0 16px 48px rgba(0,0,0,0.5)', zIndex: 50, padding: 8,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px 12px', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>最近操作</span>
+                        <a href="/audit-logs" style={{ fontSize: 11, color: '#60a5fa', textDecoration: 'none' }}>查看全部 →</a>
+                      </div>
+                      {/* 模拟最近操作条目 */}
+                      {[
+                        { time: '10分钟前', action: '更新商品SKU-001', operator: '管理员', result: 'success' },
+                        { time: '25分钟前', action: '创建优惠券CP001', operator: '运营经理', result: 'success' },
+                        { time: '1小时前', action: '删除用户U-003', operator: '系统管理员', result: 'success' },
+                        { time: '2小时前', action: '批量导入会员', operator: '运营专员', result: 'warning' },
+                        { time: '3小时前', action: '修改门店配置', operator: '系统管理员', result: 'success' },
+                      ].map((item, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 8, cursor: 'pointer' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(148,163,184,0.06)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                          <span style={{ fontSize: 14, marginTop: 1 }}>{item.result === 'success' ? '✅' : '⚠️'}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.action}</div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{item.operator} · {item.time}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
               <span
                 onClick={() => setCmdOpen(true)}
                 style={{
@@ -258,6 +281,31 @@ export default function AdminShell({ children }: AdminShellProps) {
 
       {/* 快捷悬浮球 */}
       <SpeedDial actions={SPEED_DIAL_ACTIONS} />
+
+      {/* 快捷键帮助面板 */}
+      {shortcutsOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, backdropFilter: 'blur(4px)' }} onClick={() => setShortcutsOpen(false)} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 101, background: 'rgba(15,23,42,0.98)', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 16, padding: 24, minWidth: 420, boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>⌨️ 快捷键</span>
+              <button onClick={() => setShortcutsOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 18, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {[
+                { keys: '⌘K', desc: '全局命令面板' },
+                { keys: '⌘/', desc: '快捷键帮助' },
+                { keys: 'Esc', desc: '关闭弹窗/面板' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, background: 'rgba(148,163,184,0.04)' }}>
+                  <span style={{ fontSize: 13, color: '#cbd5e1' }}>{item.desc}</span>
+                  <kbd style={{ padding: '3px 8px', borderRadius: 4, background: 'rgba(148,163,184,0.15)', color: '#94a3b8', fontSize: 12, fontFamily: 'monospace', border: '1px solid rgba(148,163,184,0.2)' }}>{item.keys}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
       </FeedbackProvider>
     </ErrorBoundary>
   );
