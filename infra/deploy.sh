@@ -4,7 +4,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 K8S_DIR="$SCRIPT_DIR/k8s/rendered-release-preflight"
 ACR="shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com/shenjiying88"
 VERSION="${VERSION:-v1.0.0}"
-NAMESPACE="m5-platform"
+NAMESPACE="m5"
 DRY=false; SKIP=false
 for a in "$@"; do case "$a" in --dry-run) DRY=true ;; --skip-build) SKIP=true ;; esac; done
 
@@ -44,5 +44,5 @@ $CMD -k "$K8S_DIR"
 if [ "$DRY" = false ]; then
   kubectl -n "$NAMESPACE" wait --for=condition=Ready pod -l 'app.kubernetes.io/part-of=shenjiying' --timeout=300s || true
   kubectl -n "$NAMESPACE" get pods -o wide
-  echo "✅ Done! https://admin.m5-platform.com"
+  echo "✅ Done! https://admin.m5.com"
 fi

@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: kaniko-build-admin-web
-  namespace: m5-platform
+  namespace: m5
 spec:
   backoffLimit: 0
   template:
@@ -71,7 +71,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: kaniko-build-storefront-web
-  namespace: m5-platform
+  namespace: m5
 spec:
   backoffLimit: 0
   template:
@@ -140,7 +140,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: kaniko-build-tob-web
-  namespace: m5-platform
+  namespace: m5
 spec:
   backoffLimit: 0
   template:

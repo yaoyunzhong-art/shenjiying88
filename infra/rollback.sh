@@ -4,7 +4,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 K8S_DIR="$SCRIPT_DIR/k8s/rendered-release-preflight"
-NAMESPACE="m5-platform"
+NAMESPACE="m5"
 
 echo "🆘 M5 紧急回滚"
 

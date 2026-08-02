@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: m5-storefront-web
-  namespace: m5-platform
+  namespace: m5
   labels:
     app: m5-storefront-web
     app.kubernetes.io/part-of: shenjiying
@@ -24,7 +24,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: m5-storefront-web
-  namespace: m5-platform
+  namespace: m5
   labels:
     app: m5-storefront-web
     app.kubernetes.io/part-of: shenjiying
@@ -134,7 +134,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: m5-storefront-web
-  namespace: m5-platform
+  namespace: m5
   labels:
     app: m5-storefront-web
 spec:

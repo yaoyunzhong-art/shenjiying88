@@ -5,7 +5,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: m5-api-pdb
-  namespace: m5-platform
+  namespace: m5
   labels:
     app.kubernetes.io/part-of: shenjiying
     app.kubernetes.io/component: backend
@@ -19,7 +19,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: m5-admin-web-pdb
-  namespace: m5-platform
+  namespace: m5
   labels:
     app.kubernetes.io/part-of: shenjiying
     app.kubernetes.io/component: frontend
@@ -33,7 +33,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: m5-storefront-web-pdb
-  namespace: m5-platform
+  namespace: m5
   labels:
     app.kubernetes.io/part-of: shenjiying
     app.kubernetes.io/component: frontend
