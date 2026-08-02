@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: m5
+  name: m5-platform
   labels:
     name: m5
     environment: production

@@ -2,16 +2,16 @@
 # M5 — Ingress (NGINX Ingress Controller)
 #
 # 路由映射:
-#   api.m5.local       → m5-api:3001
-#   admin.m5.local     → m5-admin-web:3002
-#   store.m5.local     → m5-storefront-web:3003
-#   tob.m5.local       → m5-tob-web:3011
+#   api.m5-platform.com       → m5-api:3001
+#   admin.m5-platform.com     → m5-admin-web:3002
+#   store.m5-platform.com     → m5-storefront-web:3003
+#   tob.m5-platform.com       → m5-tob-web:3011
 # ═══════════════════════════════════════════════════════════════
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: m5-ingress
-  namespace: m5
+  namespace: m5-platform
   labels:
     app.kubernetes.io/part-of: shenjiying
     app.kubernetes.io/component: ingress
@@ -31,7 +31,7 @@ metadata:
 
     # ─── CORS ────────────────────────────────────────
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://admin.m5.local,https://store.m5.local,https://tob.m5.local"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://admin.m5-platform.com,https://store.m5-platform.com,https://tob.m5-platform.com"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Request-Id,Traceparent"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
@@ -50,13 +50,13 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.m5.local
-        - admin.m5.local
-        - store.m5.local
-        - tob.m5.local
+        - api.m5-platform.com
+        - admin.m5-platform.com
+        - store.m5-platform.com
+        - tob.m5-platform.com
       secretName: m5-tls
   rules:
-    - host: api.m5.local
+    - host: api.m5-platform.com
       http:
         paths:
           - path: /api/v1/
@@ -88,7 +88,7 @@ spec:
                 port:
                   number: 3001
 
-    - host: admin.m5.local
+    - host: admin.m5-platform.com
       http:
         paths:
           - path: /
@@ -99,7 +99,7 @@ spec:
                 port:
                   number: 3002
 
-    - host: store.m5.local
+    - host: store.m5-platform.com
       http:
         paths:
           - path: /
@@ -110,7 +110,7 @@ spec:
                 port:
                   number: 3003
 
-    - host: tob.m5.local
+    - host: tob.m5-platform.com
       http:
         paths:
           - path: /

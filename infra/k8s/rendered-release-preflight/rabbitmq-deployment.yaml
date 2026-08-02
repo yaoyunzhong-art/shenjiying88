@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: m5-rabbitmq
-  namespace: m5
+  namespace: m5-platform
   labels:
     app: m5-rabbitmq
     app.kubernetes.io/part-of: shenjiying
@@ -28,7 +28,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: m5-rabbitmq
-  namespace: m5
+  namespace: m5-platform
   labels:
     app: m5-rabbitmq
     app.kubernetes.io/part-of: shenjiying

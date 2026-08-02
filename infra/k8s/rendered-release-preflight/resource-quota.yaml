@@ -5,7 +5,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: m5-quota
-  namespace: m5
+  namespace: m5-platform
   labels:
     app.kubernetes.io/part-of: shenjiying
 spec:
@@ -26,7 +26,7 @@ apiVersion: v1
 kind: LimitRange
 metadata:
   name: m5-limits
-  namespace: m5
+  namespace: m5-platform
   labels:
     app.kubernetes.io/part-of: shenjiying
 spec:
