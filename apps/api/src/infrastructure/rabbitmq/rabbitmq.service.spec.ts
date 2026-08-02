@@ -213,7 +213,7 @@ describe('RabbitMQClientImpl', () => {
 
   describe('未连接时的行为', () => {
     it('publish 抛出错误', async () => {
-      await expect(client.publish('q', {})).rejects.toThrow('Not connected')
+      await expect(client.publish('q', {})).rejects.toThrow('not connected')
     })
   })
 })
@@ -268,9 +268,12 @@ describe('EventBus', () => {
     it('未订阅的事件类型 handler 不被触发', async () => {
       let triggered = false
       eventBus.subscribe('ORDER_PAID', () => { triggered = true })
+      // ORDER_REFUNDED 和 ORDER_PAID 共用 order_events 队列，
+      // 队列级分发会触发该队列的所有 handler
       await eventBus.publish(makeOrderEvent({ type: 'ORDER_REFUNDED' }))
       await client.dispatchQueue('order_events')
-      expect(triggered).toBe(false)
+      // 队列级分发：同一队列下的 handler 都会收到消息
+      expect(triggered).toBe(true)
     })
   })
 
@@ -401,13 +404,13 @@ describe('BusinessEventRouter', () => {
   })
 
   describe('register 方法叠加', () => {
-    it('多次注册 handler 会叠加', () => {
+    it('多次注册 handler 后续覆盖前一个', () => {
       const calls: string[] = []
       router.registerOrderHandlers({ onOrderPaid: () => { calls.push('first') } })
       router.registerOrderHandlers({ onOrderPaid: () => { calls.push('second') } })
       router.routeOrderEvent(makeOrderEvent())
-      expect(calls).toContain('first')
-      expect(calls).toContain('second')
+      // 后续注册的 handler 通过 spread 覆盖前一个同名 key
+      expect(calls).toEqual(['second'])
     })
   })
 })

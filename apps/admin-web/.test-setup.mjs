@@ -210,9 +210,14 @@ function stubGetRuntimePanelTenantId(scope) {
   if (!scope || typeof scope !== 'object') return 'global';
   return String(scope.tenantId || scope.tenant_id || 'global');
 }
+function stubSummarizeRuntimePanelReceipt(receipt) {
+  if (!receipt || typeof receipt !== 'object') return 'unknown -> unknown';
+  return `${receipt.action ?? 'unknown'} -> ${receipt.state ?? 'unknown'} / ticket ${receipt.ticket?.status ?? 'unknown'} / callback ${receipt.callback?.callbackStatus ?? 'unknown'} / replay ${receipt.ledger?.replayable ? 'ready' : 'not-ready'}`;
+}
 const runtimeGovernanceKeys = [
   ['canReplayRuntimePanelReceipt', stubCanReplayRuntimePanelReceipt],
   ['getRuntimePanelTenantId', stubGetRuntimePanelTenantId],
+  ['summarizeRuntimePanelReceipt', stubSummarizeRuntimePanelReceipt],
 ];
 const runtimeGovernanceMocks = {};
 for (const [k, fallback] of runtimeGovernanceKeys) {

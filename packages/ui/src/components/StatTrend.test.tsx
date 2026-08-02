@@ -2,11 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import React from 'react';
 
-const PROJECT_ROOT = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88';
-const { renderToStaticMarkup } = require(
-  PROJECT_ROOT +
-    '/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/server.node.js',
-);
+const { renderToStaticMarkup } = require('react-dom/server');
 const { StatTrend } = require('./StatTrend');
 
 describe('StatTrend', () => {
@@ -161,7 +157,9 @@ describe('StatTrend', () => {
     const html = renderToStaticMarkup(
       React.createElement(StatTrend, { direction: 'up', value: '> +100%' }),
     );
-    assert.ok(html.includes('> +100%'));
+    // React escapes HTML entities in text content: '>' becomes '&gt;'
+    assert.ok(html.includes('&gt; +100%'));
+    assert.ok(html.includes('↑'));
   });
 
   test('renders sm size with direction stable invert has no effect since stable uses gray', () => {
