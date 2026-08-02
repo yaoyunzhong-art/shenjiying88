@@ -120,12 +120,12 @@ describe('🌐 [L3-E2E-03] C端优惠券 → 管理端审批 → Domain状态 �
 
   test('[正例] 多张优惠券叠加: 最优折扣选择', () => {
     const coupons = [
-      { code: '8折', type: 'percentage' as const, discount: 0.8 },
+      { code: '8折', type: 'percentage' as const, discount: 0.2 },
       { code: '满200减50', type: 'fixed' as const, discount: 50, minOrder: 200 },
     ];
     const orderTotal = 300;
     const discounts = coupons.map(c =>
-      c.type === 'percentage' ? orderTotal * (1 - c.discount) : c.discount
+      c.type === 'percentage' ? Math.round(orderTotal * c.discount) : c.discount
     );
     const bestDiscount = Math.max(...discounts);
     assert.ok(bestDiscount > 0, '应选出最优折扣');
@@ -174,7 +174,7 @@ describe('🌐 [L3-E2E-03] C端优惠券 → 管理端审批 → Domain状态 �
   test('[边界] 优惠券码最小长度验证', () => {
     const codes = ['AB', 'ABCD1234', 'TOOLONGCODE2026FORVALIDATION'];
     const validCodes = codes.filter(c => c.length >= 4 && c.length <= 20);
-    assert.equal(validCodes.length, 2, '仅中间长度合法');
+    assert.equal(validCodes.length, 1, '仅中间长度合法 (ABCD1234)');
   });
 
   test('[边界] 优惠券过期时间在过去自动失效', () => {

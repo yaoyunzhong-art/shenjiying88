@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,12 +8,14 @@ const DIR = dirname(fileURLToPath(import.meta.url))
 const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 const CLIENT_SRC = readFileSync(resolve(DIR, 'notification-form-client.tsx'), 'utf-8')
 const DATA_SRC = readFileSync(resolve(DIR, 'notification-form-data.ts'), 'utf-8')
-const LEGACY_SRC = readFileSync(resolve(DIR, 'notification-form-legacy.tsx'), 'utf-8')
+// E54 拍平后 legacy 已合入 client.tsx，legacy 文件可能不存在
+const LEGACY_PATH = resolve(DIR, 'notification-form-legacy.tsx')
+const LEGACY_SRC = existsSync(LEGACY_PATH) ? readFileSync(LEGACY_PATH, 'utf-8') : CLIENT_SRC
 
 describe('notifications/new 结构固证', () => {
   it('page 应切为 server wrapper 并加载快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"))
-    assert.ok(PAGE_SRC.includes('export default async function NewNotificationPage'))
+    assert.ok(PAGE_SRC.includes('export default async function NotificationFormPage'))
     assert.ok(PAGE_SRC.includes('const snapshot = await loadNotificationFormSnapshot()'))
     assert.ok(PAGE_SRC.includes('<NotificationFormClient snapshot={snapshot} />'))
   })
@@ -39,10 +41,11 @@ describe('notifications/new 结构固证', () => {
     assert.ok(DATA_SRC.includes('loadNotificationFormSnapshot'))
   })
 
-  it('legacy 应保留创建通知表单与校验逻辑', () => {
-    assert.ok(LEGACY_SRC.includes('function validateForm'))
-    assert.ok(LEGACY_SRC.includes('通知标题不能为空'))
-    assert.ok(LEGACY_SRC.includes('创建通知'))
-    assert.ok(LEGACY_SRC.includes("router.push('/notifications')"))
+  it('legacy 关键词应在 E54 拍平后保留到 client.tsx', () => {
+    const target = existsSync(LEGACY_PATH) ? LEGACY_SRC : CLIENT_SRC
+    assert.ok(target.includes('function validateForm'))
+    assert.ok(target.includes('通知标题不能为空'))
+    assert.ok(target.includes('创建通知'))
+    assert.ok(target.includes("router.push('/notifications')"))
   })
 })

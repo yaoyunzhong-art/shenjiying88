@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,7 +8,9 @@ const DIR = dirname(fileURLToPath(import.meta.url))
 const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 const CLIENT_SRC = readFileSync(resolve(DIR, 'cashier-workbench-client.tsx'), 'utf-8')
 const DATA_SRC = readFileSync(resolve(DIR, 'cashier-workbench-data.ts'), 'utf-8')
-const LEGACY_SRC = readFileSync(resolve(DIR, 'cashier-workbench-legacy.tsx'), 'utf-8')
+// E54 拍平后 legacy 内容已合入 client.tsx，legacy 文件可能已删除
+const LEGACY_PATH = resolve(DIR, 'cashier-workbench-legacy.tsx')
+const LEGACY_SRC = existsSync(LEGACY_PATH) ? readFileSync(LEGACY_PATH, 'utf-8') : CLIENT_SRC
 
 describe('workbench/cashier 结构固证', () => {
   it('page 应切为 server wrapper 并加载快照', () => {
@@ -30,7 +32,6 @@ describe('workbench/cashier 结构固证', () => {
     assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
     assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(CLIENT_SRC.includes('刷新快照'))
-    assert.ok(CLIENT_SRC.includes('<LegacyView snapshot={snapshot} />'))
   })
 
   it('data 应定义 API/fallback 快照合同与角色桥接证据', () => {
@@ -41,11 +42,13 @@ describe('workbench/cashier 结构固证', () => {
     assert.ok(DATA_SRC.includes('FALLBACK_SESSION + generateFallbackTxns'))
   })
 
-  it('legacy 应保留收银工作台主交互与来源态展示', () => {
-    assert.ok(LEGACY_SRC.includes('快速收银'))
-    assert.ok(LEGACY_SRC.includes('最近交易'))
-    assert.ok(LEGACY_SRC.includes('会员查询'))
-    assert.ok(LEGACY_SRC.includes('交接班'))
-    assert.ok(LEGACY_SRC.includes('tenant-config 角色映射'))
+  it('legacy 关键词应在 E54 拍平后保留到 client.tsx', () => {
+    // E54 拍平后 legacy 已合入 client.tsx，因此关键词断言对 client 检查
+    const target = existsSync(LEGACY_PATH) ? LEGACY_SRC : CLIENT_SRC
+    assert.ok(target.includes('快速收银'))
+    assert.ok(target.includes('最近交易'))
+    assert.ok(target.includes('会员查询'))
+    assert.ok(target.includes('交接班'))
+    assert.ok(target.includes('tenant-config 角色映射'))
   })
 })

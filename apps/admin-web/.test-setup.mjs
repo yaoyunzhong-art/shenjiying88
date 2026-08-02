@@ -119,6 +119,47 @@ const uiPath = Module._resolveFilename('@m5/ui', {
   paths: Module._nodeModulePaths(process.cwd()),
 });
 
+// Pull *DemoPresets/*ListPreset objects from the real @m5/ui so view-model
+// tests (operations-data, foundation alerts, runtime panels) can rely on them
+// without forcing the heavy React component tree.
+const realUiExports = require('@m5/ui');
+const dataPresetKeys = [
+  'foundationAdminGovernanceListPreset',
+  'foundationAlertDetailDemoPresets',
+  'foundationAlertListDemoPresets',
+  'foundationAlertPanelThemePresets',
+  'runtimeOperationDetailDemoPresets',
+  'runtimeOperationListDemoPresets',
+];
+const dataPresets = {};
+for (const k of dataPresetKeys) {
+  if (realUiExports && realUiExports[k] !== undefined) {
+    dataPresets[k] = realUiExports[k];
+  }
+}
+
+// Pull runtime governance helpers (used by app/runtime-governance.ts).
+// Provide fallbacks if the real export is missing.
+function stubCanReplayRuntimePanelReceipt(receipt) {
+  if (!receipt || typeof receipt !== 'object') return false;
+  const status = String(receipt.status || '').toLowerCase();
+  return status === 'completed' || status === 'success' || status === 'failed';
+}
+function stubGetRuntimePanelTenantId(scope) {
+  if (!scope || typeof scope !== 'object') return 'global';
+  return String(scope.tenantId || scope.tenant_id || 'global');
+}
+const runtimeGovernanceKeys = [
+  ['canReplayRuntimePanelReceipt', stubCanReplayRuntimePanelReceipt],
+  ['getRuntimePanelTenantId', stubGetRuntimePanelTenantId],
+];
+const runtimeGovernanceMocks = {};
+for (const [k, fallback] of runtimeGovernanceKeys) {
+  runtimeGovernanceMocks[k] = realUiExports && typeof realUiExports[k] === 'function'
+    ? realUiExports[k]
+    : fallback;
+}
+
 function makeMockComponent(displayName) {
   const C = (props) => {
     const { children, ...rest } = props;
@@ -614,6 +655,9 @@ const mockUiModule = {
   },
   // DataTableSortConfig type export not needed at runtime
 };
+
+// Inject real-data presets (used by view-model modules like operations-data)
+Object.assign(mockUiModule, dataPresets, runtimeGovernanceMocks);
 
 require.cache[uiPath] = {
   id: uiPath,
