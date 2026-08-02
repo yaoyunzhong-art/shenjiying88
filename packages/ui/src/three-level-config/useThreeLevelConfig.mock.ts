@@ -5,7 +5,7 @@
  * 用于 ThreeLevelConfigPanel.test.tsx
  */
 
-import type { EffectiveConfig, WorkbenchCode, ConfigCategory } from './types'
+import type { EffectiveConfig, WorkbenchCode, ConfigCategory, ConfigResponse } from './types'
 
 const MOCK_DATA: Record<WorkbenchCode, EffectiveConfig[]> = {
   'W-S': [
@@ -42,7 +42,7 @@ export function useWorkbenchConfigs(workbench: WorkbenchCode, _category?: Config
 export function useSetConfig() {
   return {
     mutate: () => undefined,
-    mutateAsync: () => Promise.resolve({} as any),
+    mutateAsync: () => Promise.resolve({} as unknown as ConfigResponse),
     isPending: false,
   }
 }
