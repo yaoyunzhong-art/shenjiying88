@@ -109,6 +109,12 @@ function adminCreateOrder(order: Order): { success: boolean; error?: string } {
   if (order.items.length === 0) {
     return { success: false, error: 'Order must have at least one item' };
   }
+  // 🆕 数量校验: 每个商品 quantity 必须 > 0
+  for (const item of order.items) {
+    if (item.quantity <= 0) {
+      return { success: false, error: `Item ${item.productId} quantity must be > 0` };
+    }
+  }
   ORDER_STORE.set(order.orderId, order);
   return { success: true };
 }

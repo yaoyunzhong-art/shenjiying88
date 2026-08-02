@@ -186,6 +186,12 @@ function doPay(orderId: string, body: CreatePaymentRequest): PaymentResponse {
   const stored = orderStore.get(orderId);
   if (!stored) throw new Error(`Order ${orderId} not found`);
 
+  // 验证支付方式必须是已知 PaymentMethod 枚举
+  const VALID_METHODS = new Set<PaymentMethod>(['WECHAT', 'ALIPAY', 'CARD', 'CASH', 'BALANCE']);
+  if (!body.method || !VALID_METHODS.has(body.method)) {
+    throw new Error('method is required or invalid');
+  }
+
   // 防重: 已支付成功过不允许再支付
   const hasSuccessPayment = stored.payments.some(p => p.status === 'success');
   if (hasSuccessPayment) {

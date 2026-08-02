@@ -12,7 +12,12 @@ const CLIENT_SRC = readFileSync(resolve(DIR, 'seo-client.tsx'), 'utf-8');
 describe('seo 结构固证', () => {
   it('page 应为 server wrapper 并加载 SEO 快照', () => {
     assert.ok(!PAGE_SRC.includes("'use client'"));
-    assert.ok(PAGE_SRC.includes('searchParams: Promise<Record<string, string | string[] | undefined>>'));
+    // E54: page 已拍平为纯 server wrapper, searchParams 在 client 层处理
+    assert.ok(
+      PAGE_SRC.includes('searchParams: Promise<Record<string, string | string[] | undefined>>') ||
+        PAGE_SRC.includes('loadSeoSnapshot'),
+      'page 应加载 SEO 快照或保留 searchParams 入口',
+    );
     assert.ok(PAGE_SRC.includes('loadSeoSnapshot'));
     assert.ok(PAGE_SRC.includes('<SeoClient snapshot={snapshot} />'));
   });

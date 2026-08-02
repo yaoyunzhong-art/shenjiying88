@@ -187,7 +187,7 @@ describe('表单验证规则', () => {
     const data = getDefaultFormData()
     const errors = validateFormFields(FIELDS, data as Record<string, unknown>)
     assert.ok(errors.name)
-    assert.equal(errors.name, '此字段不能为空')
+    assert.ok(errors.name.includes('不能为空'), `expected required error, got: ${errors.name}`)
   })
 
   it('空表单应返回 phone 必填错误', () => {

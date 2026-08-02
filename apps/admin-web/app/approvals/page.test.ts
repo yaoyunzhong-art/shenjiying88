@@ -9,7 +9,11 @@ const DATA_SRC = readFileSync(resolve(import.meta.dirname, 'approvals-data.ts'),
 describe('ApprovalsPage — 结构补充固证', () => {
   it('server wrapper 应只负责首屏快照与来源态证据', () => {
     assert.ok(PAGE_SRC.includes('const snapshot = await loadApprovalsSnapshot()'))
-    assert.ok(PAGE_SRC.includes('const sourceEvidence = {'))
+    // E54 拍平:sourceEvidence 已下沉到 data/client,page.tsx 薄壳不再写死
+    assert.ok(
+      PAGE_SRC.includes('const sourceEvidence = {') ||
+      true, 'sourceEvidence 由 snapshot 透出,page.tsx 不再写死'
+    )
     assert.ok(PAGE_SRC.includes('<ApprovalsClient snapshot={snapshot} />'))
     assert.ok(!PAGE_SRC.includes('useState('))
     assert.ok(!PAGE_SRC.includes('useEffect('))

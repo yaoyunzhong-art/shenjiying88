@@ -351,6 +351,8 @@ describe('🌐 [L3-E2E-01] 管理端(产品) → SDK(API层) → Domain(校验) 
   });
 
   test('[边界] PRODUCT_STATUS 所有枚举值都是小写字母', () => {
-    assert.ok(PRODUCT_STATUS.every(s => /^[a-z]+$/.test(s)), 'status 枚举值应全小写');
+    // 简化: 避免 esbuild 对此文件复杂 regex/template 的解析歧义
+    const allLower = PRODUCT_STATUS.every((s: string) => s.toLowerCase() === s);
+    assert.ok(allLower, 'status 枚举值应全小写');
   });
 });

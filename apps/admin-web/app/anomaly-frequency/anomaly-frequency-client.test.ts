@@ -4,9 +4,19 @@ const { readFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 
 const SOURCE = resolve(__dirname, './anomaly-frequency-client.tsx');
+const REFRESH_CARD_SOURCE = resolve(__dirname, '../components/snapshot-refresh-card.tsx');
+const REFRESH_HOOK_SOURCE = resolve(__dirname, '../components/use-snapshot-refresh.ts');
 
 function readSource() {
   return readFileSync(SOURCE, 'utf-8');
+}
+
+function readRefreshCardSource() {
+  return readFileSync(REFRESH_CARD_SOURCE, 'utf-8');
+}
+
+function readRefreshHookSource() {
+  return readFileSync(REFRESH_HOOK_SOURCE, 'utf-8');
 }
 
 // ---- 正例 ----
@@ -50,9 +60,11 @@ describe('AnomalyFrequencyClient — 正例', () => {
   });
 
   test('渲染刷新按钮', () => {
-    const src = readSource();
-    assert.ok(src.includes('刷新快照'), '应展示刷新按钮');
-    assert.ok(src.includes('router.refresh()'), '刷新按钮应走 router.refresh');
+    // 刷新按钮文案已下沉到 snapshot-refresh-card, hook 走 use-snapshot-refresh
+    const cardSrc = readRefreshCardSource();
+    const hookSrc = readRefreshHookSource();
+    assert.ok(cardSrc.includes('刷新快照'), 'snapshot-refresh-card 应展示刷新按钮');
+    assert.ok(hookSrc.includes('router.refresh()'), 'use-snapshot-refresh hook 应调用 router.refresh');
   });
 
   test('渲染异常时序图组件', () => {
@@ -71,16 +83,20 @@ describe('AnomalyFrequencyClient — 正例', () => {
   test('离线模式标识与来源态文案共存', () => {
     const src = readSource();
     assert.ok(src.includes('离线模式'), 'fallback 模式应展示离线标识');
-    assert.ok(src.includes('客户端快照上下文: {snapshot.sourceLabel}'), '应展示 sourceLabel');
     assert.ok(src.includes('Delivery {snapshot.deliveryMode}'), '应展示 deliveryMode');
     assert.ok(src.includes('业务数据: {snapshot.businessDataSource}'), '应展示业务数据来源');
+    // sourceLabel 已下沉到 snapshot-refresh-card
+    const cardSrc = readRefreshCardSource();
+    assert.ok(cardSrc.includes('sourceLabel'), 'snapshot-refresh-card 应展示 sourceLabel');
   });
 
   test('显式展示快照说明与时间证据', () => {
     const src = readSource();
     assert.ok(src.includes('generatedAt: {snapshot.generatedAt}'));
     assert.ok(src.includes('{snapshot.note}'));
-    assert.ok(src.includes('{snapshot.refreshPath}'));
+    // refreshPath 已下沉到 snapshot-refresh-card
+    const cardSrc = readRefreshCardSource();
+    assert.ok(cardSrc.includes('refreshPath'), 'snapshot-refresh-card 应展示 refreshPath');
   });
 
   test('初始时间范围为近24小时（默认选中）', () => {

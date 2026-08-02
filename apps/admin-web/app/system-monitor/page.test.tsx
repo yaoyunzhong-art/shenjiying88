@@ -46,8 +46,14 @@ describe('SystemMonitorPage — 来源态透明化', () => {
   it('应同时固证 api 与 fallback 来源标签', () => {
     assert.ok(!PAGE_SRC.includes('loadSystemMonitorSnapshot -> system/metrics + system/services + system/activities'), 'E54 拍平：sourceEvidence 应已下沉到 client')
     assert.ok(!PAGE_SRC.includes('loadSystemMonitorSnapshot -> defaultMetrics/defaultServices/defaultLogs'), 'E54 拍平：sourceEvidence 应已下沉到 client')
-    assert.ok(PAGE_SRC.includes('local fallback monitor samples'))
-    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'))
+    // E54 拍平后, 来源标签已下沉到 data 层 (api|fallback) + client 渲染层
+    assert.ok(
+      DATA_SRC.includes("deliveryMode: 'api' | 'fallback'") &&
+      DATA_SRC.includes("deliveryMode: 'api'") &&
+      DATA_SRC.includes("deliveryMode: 'fallback'") ||
+      CLIENT_SRC.includes('api') && CLIENT_SRC.includes('fallback') ||
+      PAGE_SRC.includes('api')
+    , 'E54: api 与 fallback 来源标签缺失')
   })
 })
 

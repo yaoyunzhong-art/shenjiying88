@@ -8,7 +8,10 @@ const CLIENT_SRC = readFileSync(new URL('./repairs-client.tsx', import.meta.url)
 
 describe('logistics/repairs 页面结构固证', () => {
   it('page 为 server wrapper 并加载快照', () => {
-    assert.ok(PAGE_SRC.includes('export default async function RepairsPage'))
+    assert.ok(
+      PAGE_SRC.includes('export default async function RepairsPage') ||
+      PAGE_SRC.includes('export default async function LogisticsRepairsPage')
+    )
     assert.ok(PAGE_SRC.includes('const snapshot = await loadRepairsSnapshot()'))
     assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
     assert.ok(!PAGE_SRC.includes("'use client'"))

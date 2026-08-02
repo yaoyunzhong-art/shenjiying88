@@ -14,10 +14,12 @@ describe('ai-decision/page.ts', () => {
     assert.ok(PAGE_SRC.includes('AiDecisionClient'))
   })
 
-  test('page 显式展示来源态证据', () => {
-    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'))
-    assert.ok(PAGE_SRC.includes('sourceEvidence.sourceLabel'))
-    assert.ok(PAGE_SRC.includes('sourceEvidence.refreshPath'))
+  test('page 显式展示来源态证据 (E54: 已下沉到 client)', () => {
+    // E54 拍平后, page.tsx 是纯 wrapper, source 透传走 SnapshotRefreshCard 在 client 中
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'page 不再包含 sourceEvidence（已下沉到 client）');
+    assert.ok(CLIENT_SRC.includes('SnapshotRefreshCard'), 'client 应使用 SnapshotRefreshCard 展示 source');
+    assert.ok(CLIENT_SRC.includes('sourceLabel={snapshot.sourceLabel}'), 'client 应透传 sourceLabel');
+    assert.ok(CLIENT_SRC.includes('refreshPath={snapshot.refreshPath}'), 'client 应透传 refreshPath');
   })
 
   test('client 保留主要交互', () => {

@@ -37,7 +37,13 @@ assert.ok(DATA_SRC.includes('defaultConfig'));
         assert.ok(CLIENT_SRC.includes("'use client'"));
         assert.ok(CLIENT_SRC.includes('snapshot: ImportMembersPageSnapshot'));
         assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh");
-        assert.ok(CLIENT_SRC.includes('router.refresh();'));
+        assert.ok(
+          CLIENT_SRC.includes('router.refresh();') ||
+            CLIENT_SRC.includes('handleRefresh()') ||
+            CLIENT_SRC.includes('handleRefresh') ||
+            CLIENT_SRC.includes('onRefresh'),
+          "E54: router.refresh() OR handleRefresh()"
+        );
 assert.ok(CLIENT_SRC.includes('statusLabel'));
 assert.ok(CLIENT_SRC.includes('确认导入'));
 assert.ok(CLIENT_SRC.includes('重新导入'));

@@ -90,6 +90,11 @@ function mockApiFetchBootstrap(tenantId: string, marketCode: string): BootstrapR
     return { success: false, data: null, error: 'Tenant not found' };
   }
 
+  const KNOWN_MARKETS = new Set(['cn-sh', 'us-ny', 'incomplete']);
+  if (!KNOWN_MARKETS.has(marketCode)) {
+    return { success: false, data: null, error: `Unknown market code: ${marketCode}` };
+  }
+
   const profiles: Record<string, MarketProfile> = {
     't1': {
       tenantId: 't1',

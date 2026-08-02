@@ -36,7 +36,7 @@ describe('safety snapshot loader', () => {
 
   it('mock 记录满足结构化字段要求', () => {
     const records = buildSafetyRecords()
-    assert.ok(!records.every((record) => /^SAF-\d{3}$/.test(record.id)))
+    assert.ok(records.every((record) => /^SAF-\d{3}$/.test(record.id)))
     assert.ok(records.every((record) => record.reportedDate.length === 10))
     assert.ok(records.some((record) => record.status === 'critical' || record.severity === 'critical'))
   })

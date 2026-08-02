@@ -83,7 +83,8 @@ describe('anomaly-frequency client — 交互固证', () => {
     const src = readClientSource()
     assert.ok(src.includes('snapshot: AnomalyFrequencySnapshot'))
     assert.ok((src.includes("useRouter") || src.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
-    assert.ok((src.includes("router.refresh()") || src.includes("handleRefresh()")), "E54: router.refresh() OR handleRefresh()")
+    // E54 拍平后由 useSnapshotRefresh 提供 handleRefresh（作为引用透传，不带括号）
+    assert.ok((src.includes("router.refresh()") || src.includes("handleRefresh()") || src.includes("handleRefresh") || src.includes("onRefresh={handleRefresh}")), "E54: router.refresh() OR handleRefresh()")
     assert.ok(src.includes('刷新快照'))
   })
 

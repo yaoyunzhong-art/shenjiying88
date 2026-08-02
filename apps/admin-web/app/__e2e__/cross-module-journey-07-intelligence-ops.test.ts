@@ -87,6 +87,7 @@ const MOCK_COMPETITOR_DB: CompetitorVenue[] = [
   { name: '电玩先锋', city: '上海', district: '徐汇', priceLevel: 2, equipmentCount: 30, rating: 3.8, monthlyRevenue: 220000 },
   { name: '极速电玩', city: '北京', district: '朝阳', priceLevel: 4, equipmentCount: 55, rating: 4.3, monthlyRevenue: 480000 },
   { name: '欢乐时光', city: '上海', district: '黄浦', priceLevel: 3, equipmentCount: 35, rating: 4.0, monthlyRevenue: 280000 },
+  { name: '动感电玩', city: '上海', district: '长宁', priceLevel: 4, equipmentCount: 50, rating: 4.4, monthlyRevenue: 420000 },
   { name: '未来玩家', city: '深圳', district: '南山', priceLevel: 5, equipmentCount: 90, rating: 4.9, monthlyRevenue: 920000 },
   { name: '游戏基地', city: '广州', district: '天河', priceLevel: 3, equipmentCount: 40, rating: 4.1, monthlyRevenue: 310000 },
 ]
@@ -537,15 +538,12 @@ describe('P-50 V2 运营参谋跨模块E2E', { concurrency: 1 }, () => {
   test('B2-2: 上海竞品设备总数计算', () => {
     const shCompetitors = getCompetitorsByCity('上海')
     const totalEq = shCompetitors.reduce((s, c) => s + c.equipmentCount, 0)
-    assert.equal(totalEq, 340) // 45+60+80+30+35+90 = 340
+    assert.equal(totalEq, 300) // 45+60+80+30+35+50 = 300 (6 家上海)
   })
 
   test('B2-3: 月营收大于30万的竞品占比', () => {
-    const highRevenue = MOCK_COMPETITOR_DB.filter(c => (c.monthlyRevenue ?? 0) > 300000)
-    assert.equal(highRevenue.length, 6) // 350k+520k+780k+480k+280k(=280k no)+920k = 6
-    // Actually 220k < 300k, 280k < 300k too. Let's recalc
     const over300k = MOCK_COMPETITOR_DB.filter(c => (c.monthlyRevenue ?? 0) > 300000)
-    assert.equal(over300k.length, 6) // 350+520+780+480+920 = 5... wait let's compute
-    // 350000 ✓, 520000 ✓, 780000 ✓, 220000 ✗, 480000 ✓, 280000 ✗, 920000 ✓, 310000 ✓ = 6
+    // 350000 ✓, 520000 ✓, 780000 ✓, 220000 ✗, 480000 ✓, 280000 ✗, 420000 ✓, 920000 ✓, 310000 ✓ = 7
+    assert.equal(over300k.length, 7)
   })
 })

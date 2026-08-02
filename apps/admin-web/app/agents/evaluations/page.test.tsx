@@ -159,7 +159,7 @@ describe('Agents / Evaluations — hooks验证', () => {
   it('包含列表过滤', () => assert.ok(!SRC.includes(').filter(')));
   it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
-  it('包含数据格式化(.toFixed)', () => assert.ok(!SRC.includes(').toFixed')));
+  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
   it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
   it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
   it('包含注释说明', () => assert.ok(true));
@@ -173,10 +173,11 @@ describe('agents/evaluations — 权限边界', () => {
 
   it('client 应展示评估来源态证据', () => {
     const src = readClientSource();
-    assert.ok(!src.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('latestEvaluatedAt: {sourceEvidence.latestEvaluatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    // E54: 来源态证据 (控制面来源 / 业务数据 / 刷新路径 / latestEvaluatedAt) 均在 client 渲染
+    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'client 应展示控制面来源');
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'), 'client 应展示 deliveryMode');
+    assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'), 'client 应展示刷新路径');
+    assert.ok(src.includes('latestEvaluatedAt: {sourceEvidence.latestEvaluatedAt}'), 'client 应展示 latestEvaluatedAt');
   });
 
   it('client 应固证实时与 fallback 评估来源', () => {

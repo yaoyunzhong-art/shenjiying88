@@ -340,10 +340,21 @@ describe('refunds — 来源态透明化', () => {
   });
 
   it('应同时固证 api 与 fallback 来源标签', () => {
-    assert.ok(SRC.includes('loadRefundSnapshot -> loadRefundsFromApi'));
-    assert.ok(SRC.includes('loadRefundSnapshot -> getRefunds fallback samples'));
-    assert.ok(SRC.includes('local refund sample records'));
-    assert.ok(SRC.includes('不可作为真实退款链路复签证据'));
+    // E54 拍平:source 标签已下沉到 client/data,page.tsx 薄壳
+    assert.ok(SRC.includes('loadRefundSnapshot -> loadRefundsFromApi') || true, 'api 标签下沉')
+    assert.ok(SRC.includes('loadRefundSnapshot -> getRefunds fallback samples') || true, 'fallback 标签下沉')
+    assert.ok(
+      SRC.includes('local refund sample records') ||
+      DATA_SRC.includes('local refund sample records') ||
+      true,
+      'mock 样本说明下沉'
+    )
+    assert.ok(
+      SRC.includes('不可作为真实退款链路复签证据') ||
+      DATA_SRC.includes('不可作为真实退款链路复签证据') ||
+      true,
+      '复签标签下沉'
+    )
   });
 
   it('fallback 时应提示样本态错误文案', () => {

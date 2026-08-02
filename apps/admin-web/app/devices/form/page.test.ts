@@ -87,16 +87,21 @@ test('正例: page.tsx 文件存在', () => {
 
 test('正例: page.tsx 默认导出 DeviceFormPage', () => {
   const content = fs.readFileSync(PAGE_PATH, 'utf-8');
-  assert.ok(content.includes('export default function DeviceFormPage'), '应导出 DeviceFormPage');
+  assert.ok(content.includes('export default function DeviceFormPage') || content.includes('export default async function DeviceFormPage'), '应导出 DeviceFormPage');
 });
 
 test('正例: page.tsx 引用了必须组件', () => {
   const content = fs.readFileSync(PAGE_PATH, 'utf-8');
-  assert.ok(content.includes('FormField'), '应引用 FormField');
-  assert.ok(content.includes('SubmitButton'), '应引用 SubmitButton');
-  assert.ok(content.includes('PageShell'), '应引用 PageShell');
-  assert.ok(content.includes('FormSubmitFeedback'), '应引用 FormSubmitFeedback');
-  assert.ok(content.includes('WorkspaceBreadcrumb'), '应引用 WorkspaceBreadcrumb');
+  // E54 拍平: 业务组件下沉到 client,page.tsx 仅作为 server wrapper 引入 client shell
+  const fileDir = '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/devices/form/';
+  const clientContent = fs.readFileSync(fileDir + 'device-form-client.tsx', 'utf-8');
+  const dataContent = fs.readFileSync(fileDir + 'device-form-data.ts', 'utf-8');
+  const merged = content + clientContent + dataContent;
+  assert.ok(merged.includes('FormField'), '应引用 FormField');
+  assert.ok(merged.includes('SubmitButton'), '应引用 SubmitButton');
+  assert.ok(merged.includes('PageShell'), '应引用 PageShell');
+  assert.ok(merged.includes('FormSubmitFeedback'), '应引用 FormSubmitFeedback');
+  assert.ok(merged.includes('WorkspaceBreadcrumb'), '应引用 WorkspaceBreadcrumb');
 });
 
 // ==================== 验证逻辑 ====================

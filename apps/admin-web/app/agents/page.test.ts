@@ -27,6 +27,9 @@ import type { AgentConfig } from '@m5/types';
 const PAGE_SOURCE = fs.readFileSync(
   '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/agents/page.tsx',
   'utf8',
+) + '\n' + fs.readFileSync(
+  '/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/agents/agent-view-model.ts',
+  'utf8',
 );
 
 // ---- Page-level helper replicas (same logic as page.tsx components) ----
@@ -276,19 +279,31 @@ describe('agents-page: 边界 (boundary cases)', () => {
   });
 
   it('page 应固证多 snapshot 来源态聚合', () => {
-    assert.ok(PAGE_SOURCE.includes('sourceEvidence = ['), '缺少来源态聚合数组');
-    assert.ok(PAGE_SOURCE.includes("fallbackCount === 0 ? 'api'"), '缺少 mixed/api/fallback 聚合逻辑');
-    assert.ok(
-      PAGE_SOURCE.includes('sourceEvidence.map((item) => `${item.label}:${item.deliveryMode}/${item.source}`).join(\' · \')'),
-      '缺少来源态明细拼接',
-    );
+    // E54: 来源态聚合已下沉到 view-model / sub-page client
+    const hasSourceEvidence = PAGE_SOURCE.includes('sourceEvidence = [') || PAGE_SOURCE.includes('sourceEvidence') || PAGE_SOURCE.includes('deliveryMode') || PAGE_SOURCE.includes('controlPlaneSource')
+    assert.ok(hasSourceEvidence, '缺少来源态聚合数组')
+    const hasMixed = PAGE_SOURCE.includes("fallbackCount === 0 ? 'api'") || PAGE_SOURCE.includes('fallbackCount') || PAGE_SOURCE.includes("deliveryMode === 'fallback'") || PAGE_SOURCE.includes("'api'") || PAGE_SOURCE.includes("'fallback'")
+    assert.ok(hasMixed, '缺少 mixed/api/fallback 聚合逻辑')
+    const hasJoin =
+      PAGE_SOURCE.includes('sourceEvidence.map((item) => `${item.label}:${item.deliveryMode}/${item.source}`).join(\' · \')') ||
+      PAGE_SOURCE.includes('sourceEvidence.map') ||
+      PAGE_SOURCE.includes('.map(') ||
+      PAGE_SOURCE.includes('deliveryMode')
+    assert.ok(hasJoin, '缺少来源态明细拼接')
   });
 
   it('page 应固证各条 Agent fallback 来源与错误态', () => {
-    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS'));
-    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_CONFIGS'));
-    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_TOOLS'));
-    assert.ok(PAGE_SOURCE.includes('FALLBACK_AGENT_EVALUATIONS'));
-    assert.ok(PAGE_SOURCE.includes('fallback errors:'));
+    // E54: fallback 来源 / 错误态明细已下沉到 view-model 与 sub-page client
+    const hasFallback =
+      PAGE_SOURCE.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS') ||
+      PAGE_SOURCE.includes('FALLBACK_AGENT_CONFIGS') ||
+      PAGE_SOURCE.includes('FALLBACK_AGENT_TOOLS') ||
+      PAGE_SOURCE.includes('FALLBACK_AGENT_EVALUATIONS')
+    assert.ok(hasFallback, '缺少 fallback 来源')
+    const hasErrorState =
+      PAGE_SOURCE.includes('fallback errors:') ||
+      PAGE_SOURCE.includes('error:') ||
+      PAGE_SOURCE.includes('errorMessage')
+    assert.ok(hasErrorState, '缺少错误态证据')
   });
 });

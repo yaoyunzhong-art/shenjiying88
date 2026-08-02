@@ -90,12 +90,25 @@ function validateTokenAndDecode(token: string): { valid: boolean; decoded?: Deco
 
   const userId = parts[1]!;
   const tenantId = parts[parts.length - 1]!;
-  const roleStr = parts.slice(2, -1).join('-');
-  const roles = roleStr.split(',').filter(Boolean) as UserRole[];
+  // 🆕 角色解析: 优先按 '-' 分隔 (支持 'valid-u-unknown-superuser-t1' → ['unknown','superuser'])
+  // 然后按 ',' 二次切分, 合并所有 roles
+  const segRoles = parts.slice(2, -1) as UserRole[];
+  const commaRoles = parts.slice(2, -1).join('-').split(',').filter(Boolean) as UserRole[];
+  // 去重: 包含两种解析方式的所有 unique role
+  const roles = Array.from(new Set([...segRoles, ...commaRoles]));
+
+  // 🆕 模拟"无角色 token": 含 'no-role' 字面时视为空
+  if (token.includes('no-role')) {
+    return { valid: false, error: 'Token missing roles' };
+  }
 
   if (roles.length === 0) {
     return { valid: false, error: 'Token missing roles' };
   }
+
+  // 🆕 模拟"过期 token": token 含 'expired' 字面时,exp 设为已过期
+  const isExpiredToken = token.includes('expired');
+  const now = Date.now();
 
   return {
     valid: true,
@@ -104,8 +117,8 @@ function validateTokenAndDecode(token: string): { valid: boolean; decoded?: Deco
       email: `${userId}@example.com`,
       roles,
       tenantId,
-      iat: Date.now() - 3600000,
-      exp: Date.now() + 3600000,
+      iat: now - 3600000,
+      exp: isExpiredToken ? now - 1000 : now + 3600000,
     },
   };
 }
@@ -338,12 +351,10 @@ describe('链06: App登录 → SDK调用 → API认证 → Domain权限 → Stor
   describe('🆕 [新增] Token验证边界场景', () => {
 
     test('[边界] Token 已过期 → Domain 校验 expire → API 401', () => {
-      // 构造一个过期 token: iat=远早, exp=远早
+      // 构造一个过期 token: userId 含 'expired' 字面触发 mock exp
       const expiredToken = 'valid-u-expired-consumer-t1';
       const decoded = validateTokenAndDecode(expiredToken);
       assert.ok(decoded.valid, '格式仍有效');
-      // 手动修改过期时间
-      decoded.decoded!.exp = Date.now() - 1000;
       assert.ok(isTokenExpired(decoded.decoded!), '应标记为过期');
 
       const resp = sdkApiCall(expiredToken, '/api/consumer/profile');

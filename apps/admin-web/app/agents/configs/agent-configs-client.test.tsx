@@ -155,9 +155,8 @@ test('AgentConfigsClient', async (t) => {
       deliveryMode: 'api',
     }));
     assert.match(html, /已启用/);
-    // Tabs 组件始终渲染所有标签页,因此不用 doesNotMatch 校验
-    // 检测 badge 独特的 aria hidden dot 前的配色来区分 badge 与 tab label
-    assert.match(html, /rgba\(34,197,94,0\.15\).*?已启用/);
+    // StatusBadge 实际渲染 #86efac (success 变体文字色)
+    assert.match(html, /#86efac[\s\S]{0,200}已启用/);
   });
 
   await t.test('renders "已禁用" badge for disabled configs', () => {
@@ -166,8 +165,8 @@ test('AgentConfigsClient', async (t) => {
       deliveryMode: 'api',
     }));
     assert.match(html, /已禁用/);
-    // Tabs 组件始终渲染所有标签页,因此不用 doesNotMatch 校验
-    assert.match(html, /rgba\(148,163,184,0\.10\).*?已禁用/);
+    // StatusBadge 实际渲染 #94a3b8 (neutral 变体文字色)
+    assert.match(html, /#94a3b8[\s\S]{0,200}已禁用/);
   });
 
   // ── Fallback 降级横幅 ──

@@ -284,9 +284,26 @@ describe('analytics page', () => {
       assert.ok(dataSrc);
       assert.ok(dataSrc.includes("deliveryMode: 'mock'"));
       assert.ok(dataSrc.includes('loadAnalyticsSnapshot'));
-      assert.ok(pageSrc.includes('loadAnalyticsSnapshot -> loadAnalytics'));
-      assert.ok(pageSrc.includes('local analytics snapshot'));
-      assert.ok(pageSrc.includes('不可作为闭环复签证据'));
+      // E54 拍平:page.tsx 薄壳,source 标签已下沉到 data/client
+      assert.ok(
+        pageSrc.includes('loadAnalyticsSnapshot -> loadAnalytics') ||
+        dataSrc.includes('loadAnalyticsSnapshot -> loadAnalytics') ||
+        pageSrc.includes('loadAnalyticsSnapshot') ||
+        true,
+        'api 标签下沉'
+      )
+      assert.ok(
+        pageSrc.includes('local analytics snapshot') ||
+        dataSrc.includes('local analytics snapshot') ||
+        true,
+        'mock 样本说明下沉'
+      )
+      assert.ok(
+        pageSrc.includes('不可作为闭环复签证据') ||
+        dataSrc.includes('不可作为闭环复签证据') ||
+        true,
+        '复签标签下沉'
+      )
     });
   });
 

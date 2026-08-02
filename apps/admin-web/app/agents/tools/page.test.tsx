@@ -207,11 +207,12 @@ describe('agents/tools — 页面壳层', () => {
 
   it('client 应展示工具来源态证据', () => {
     const src = readClientSource();
-    assert.ok(!src.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('schemaCoverage: {sourceEvidence.schemaCoverage}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
-    assert.ok(!src.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    // E54: 来源态证据 (控制面来源 / 业务数据 / 刷新路径 / schemaCoverage / generatedAt) 均在 client 渲染
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'), 'client 应展示 deliveryMode');
+    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'client 应展示控制面来源');
+    assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'), 'client 应展示刷新路径');
+    assert.ok(src.includes('schemaCoverage: {sourceEvidence.schemaCoverage}'), 'client 应展示 schemaCoverage');
+    assert.ok(src.includes('generatedAt: {sourceEvidence.generatedAt}'), 'client 应展示 generatedAt');
   });
 });
 

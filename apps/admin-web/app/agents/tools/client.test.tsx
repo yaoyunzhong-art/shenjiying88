@@ -234,7 +234,9 @@ test('AgentToolsClient', async (t) => {
       tools: MOCK_TOOLS,
       deliveryMode: 'api',
     }));
-    assert.match(html, />5</);      // 5 tools total (count = all)
+    // Tabs 组件将 label 与 count 分开渲染，故分别断言
+    assert.match(html, /全部/);
+    assert.match(html, />5</);      // 5 tools total
   });
 
   // ── 搜索框 ──

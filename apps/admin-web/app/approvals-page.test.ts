@@ -32,7 +32,7 @@ import {
 } from './approvals-view-model';
 
 const APPROVAL_DETAIL_PAGE_SOURCE = fs.readFileSync(
-  new URL('./approvals/[ticket]/page.tsx', import.meta.url),
+  new URL('./approvals/[ticket]/approval-detail-client.tsx', import.meta.url),
   'utf-8'
 );
 
