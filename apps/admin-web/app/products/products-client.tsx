@@ -40,6 +40,9 @@ import {
 import { StoreCapabilityActionStrip } from '../components/store-capability-action-strip';
 import { StoreCapabilityGatingBanner } from '../components/store-capability-gating-banner';
 import { useStoreCapabilityGating } from '../components/use-store-capability-gating';
+import BatchOperationsBar, { type BatchAction } from '../../components/shell/BatchOperationsBar';
+import { useRowSelection } from '../../components/shell/useRowSelection';
+import { useCrudFeedback } from '../../components/shell/FeedbackProvider';
 
 
 // ---- 毛利率配色 ----
@@ -319,6 +322,53 @@ function ProductsPageContent() {
   const columns = useMemo(() => buildColumns(handleRowClick, canOpenProductDetail), [canOpenProductDetail, handleRowClick]);
   const sortedItems = useSortedItems(marginFiltered, columns, sortConfig);
 
+  // 行选择 + 反馈通知（必须在 columnsWithCheckbox 之前）
+  const selection = useRowSelection(sortedItems, (item) => item.id);
+  const feedback = useCrudFeedback();
+
+  // 🆕 添加复选框列（批量选择）
+  const columnsWithCheckbox = useMemo<DataTableColumn<ProductItem>[]>(() => [
+    {
+      key: '_select',
+      title: '✅',
+      width: '40px',
+      render: (item: ProductItem) => (
+        <input
+          type="checkbox"
+          checked={selection.selectedIds.has(item.id)}
+          onChange={() => selection.toggle(item.id)}
+          style={{ cursor: 'pointer', width: 16, height: 16 }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
+    ...columns,
+  ], [columns, selection.selectedIds, selection.toggle]);
+
+  const batchActions: BatchAction[] = useMemo(() => [
+    {
+      key: 'batch-online',
+      label: '批量上架',
+      icon: '📤',
+      variant: 'primary',
+      onClick: () => { feedback.success(`已上架 ${selection.selectedCount} 件商品`); selection.clear(); },
+    },
+    {
+      key: 'batch-offline',
+      label: '批量下架',
+      icon: '📥',
+      variant: 'danger',
+      onClick: () => { feedback.success(`已下架 ${selection.selectedCount} 件商品`); selection.clear(); },
+    },
+    {
+      key: 'batch-export',
+      label: '导出选中',
+      icon: '📥',
+      variant: 'default',
+      onClick: () => { feedback.info(`正在导出 ${selection.selectedCount} 件商品...`); selection.clear(); },
+    },
+  ], [selection, feedback]);
+
   // 分页
   const pagination = usePagination({
     initialPageSize: 10,
@@ -327,6 +377,7 @@ function ProductsPageContent() {
   useEffect(() => {
     pagination.resetPage();
   }, [searchTerm, statusFilter, categoryFilter, marketFilter, marginFilter, pagination]);
+
   const pageItems = pagination.paginate(sortedItems);
 
   // 统计
@@ -686,10 +737,19 @@ function ProductsPageContent() {
           style={{ marginBottom: 8 }}
         />
 
+        {/* 批量操作栏 */}
+        <BatchOperationsBar
+          selectedCount={selection.selectedCount}
+          totalCount={sortedItems.length}
+          actions={batchActions}
+          onClearSelection={selection.clear}
+          itemLabel="件商品"
+        />
+
         {/* 数据表格 */}
         <DataTable
           title={`商品列表（匹配 ${sortedItems.length} 条）`}
-          columns={columns}
+          columns={columnsWithCheckbox}
           items={pageItems}
           rowKey={(item) => item.id}
           sort={sortConfig}
