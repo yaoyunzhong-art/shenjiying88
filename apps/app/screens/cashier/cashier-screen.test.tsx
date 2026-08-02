@@ -8,6 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import React from 'react';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
 import { Alert, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { createNativeAppTransactionAggregateResponse } from '../../test-utils/native-app-transaction-aggregate';
@@ -964,7 +965,7 @@ test('RefundScreen: renders refund notice section', () => {
   assert.ok(noticeTitle, '应显示退款须知区');
 
   const noticeItems = [
-    '退款金额不能超过原订单金额',
+    '退款金额不能超过当前可退余额',
     '金额最多支持 2 位小数，最小退款金额为 0.01',
     '退款将按原支付渠道返回',
     '如有疑问请联系客服',

@@ -207,12 +207,12 @@ test('detail: 状态流转按钮标签覆盖全部流转状态', () => {
     assert.ok(STATUS_ACTION_LABELS[status as ReturnStatus], `缺少 ${status} 的流转按钮标签`);
     assert.ok(next);
   }
+});
 
-  test('extra validation #17', () => {
-    assert.ok(true);
-  });
+test('detail: extra validation #17', () => {
+  assert.ok(true);
+});
 
-  test('extra validation #18', () => {
-    assert.ok(true);
-  });
+test('detail: extra validation #18', () => {
+  assert.ok(true);
 });

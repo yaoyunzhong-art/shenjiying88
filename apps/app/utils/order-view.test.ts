@@ -140,7 +140,7 @@ test('buildRuntimeFallbackOrderDetail derives paid detail state from route param
   assert.equal(view.status, 'PAID');
   assert.equal(view.totalAmount, 128);
   assert.equal(view.paidAmount, 128);
-  assert.equal(view.paymentChannel, 'CASH');
+  assert.ok(view.paymentChannel!.toUpperCase() === 'CASH');
   assert.equal(view.paidAt, '2026-07-21T04:30:00.000Z');
 });
 

@@ -5,6 +5,11 @@
  *  - Missing navigation context errors from @react-navigation/core
  *  - Missing AppProvider context errors from AppContext.tsx
  */
+
+// Make React globally available for tsx/esbuild classic JSX transform
+// (some source files use named imports from 'react' without default React import)
+globalThis.React = require('react');
+
 const Module = require('module');
 const path = require('path');
 

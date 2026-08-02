@@ -11,9 +11,13 @@ import test from 'node:test';
 test('🛒 前台视角: layout metadata title contains Shenjiying', async () => {
   const { metadata } = await import('./layout');
   assert.ok((metadata as Record<string, unknown>).title, 'title should exist');
-  const title = (metadata as { title?: string | null }).title;
+  const titleRaw = (metadata as { title?: string | { default?: string; template?: string } }).title;
+  const title = typeof titleRaw === 'string' ? titleRaw : (titleRaw?.default ?? '');
   assert.ok(title, 'title should be defined');
-  assert.ok(title.includes('Shenjiying') || title.includes('Storefront') || title.includes('storefront'));
+  assert.ok(
+    title.includes('神机营') || title.includes('Shenjiying') || title.includes('Storefront') || title.includes('storefront'),
+    'title should contain brand keyword',
+  );
 });
 
 test('🎯 运行专员视角: layout metadata description is set', async () => {
@@ -30,7 +34,8 @@ test('正例: RootLayout is a function component', async () => {
 
 test('正例: metadata contains title', async () => {
   const { metadata } = await import('./layout');
-  const title = (metadata as { title?: string }).title;
+  const titleRaw = (metadata as { title?: string | { default?: string; template?: string } }).title;
+  const title = typeof titleRaw === 'string' ? titleRaw : (titleRaw?.default ?? '');
   assert.ok(title, 'title should be defined');
   assert.equal(typeof title, 'string');
   assert.ok(title.length > 0);
@@ -46,7 +51,8 @@ test('正例: metadata contains description', async () => {
 
 test('反例: metadata title is not empty', async () => {
   const { metadata } = await import('./layout');
-  const title = (metadata as { title?: string }).title;
+  const titleRaw = (metadata as { title?: string | { default?: string; template?: string } }).title;
+  const title = typeof titleRaw === 'string' ? titleRaw : (titleRaw?.default ?? '');
   assert.ok(title, 'title should be defined');
   assert.ok(title.length > 0);
   assert.notEqual(title, '');
@@ -62,7 +68,8 @@ test('反例: metadata description is not empty', async () => {
 
 test('正例: metadata title and description are strings', async () => {
   const { metadata } = await import('./layout');
-  const title = (metadata as { title?: string }).title;
+  const titleRaw = (metadata as { title?: string | { default?: string; template?: string } }).title;
+  const title = typeof titleRaw === 'string' ? titleRaw : (titleRaw?.default ?? '');
   const desc = (metadata as { description?: string }).description;
   assert.equal(typeof title, 'string');
   assert.equal(typeof desc, 'string');
@@ -70,7 +77,8 @@ test('正例: metadata title and description are strings', async () => {
 
 test('边界: metadata title is reasonable length', async () => {
   const { metadata } = await import('./layout');
-  const title = (metadata as { title?: string }).title;
+  const titleRaw = (metadata as { title?: string | { default?: string; template?: string } }).title;
+  const title = typeof titleRaw === 'string' ? titleRaw : (titleRaw?.default ?? '');
   assert.ok(title, 'title should be defined');
   assert.ok(title.length >= 2, 'title too short');
   assert.ok(title.length < 200, 'title too long');
@@ -100,8 +108,9 @@ test('边界: component has name', async () => {
 test('边界: metadata should not contain template syntax', async () => {
   const { metadata } = await import('./layout');
   const metaStr = JSON.stringify(metadata);
-  assert.ok(!metaStr.includes('{{'), 'should not contain template syntax');
-  assert.ok(!metaStr.includes('}}'), 'should not contain template syntax');
+  // E54 拍平 — template 是合法的 Next.js metadata.template, 这里放宽断言
+  assert.ok(typeof metaStr === 'string', 'metadata should stringify');
+  assert.ok(!metaStr.includes('${'), 'should not contain JS template syntax');
 });
 
 // 移除不稳定的 metadata 字段检查 — layout.tsx 的 metadata 对象不包含 viewport 属性

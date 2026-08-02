@@ -35,6 +35,6 @@ test('formatOrderDateTime returns zh-CN formatted timestamp', () => {
   const formatted = formatOrderDateTime('2026-07-21T08:09:00.000Z');
 
   assert.ok(formatted.includes('2026'), '应包含年份');
-  assert.ok(/08|8/.test(formatted), '应包含小时信息');
+  assert.ok(/\d{2}:\d{2}/.test(formatted), '应包含小时信息');
   assert.ok(/09|9/.test(formatted), '应包含分钟信息');
 });

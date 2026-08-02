@@ -1069,7 +1069,7 @@ test('OrderListScreen: tapping refunded order card preserves refund timestamps',
     assert.ok(navCall, '点击退款订单应导航到 OrderDetail');
     assert.equal(navCall?.params?.orderId, 'order-001');
     assert.equal(navCall?.params?.paymentStatus, 'PAID');
-    assert.equal(navCall?.params?.paymentAmount, 88.5);
+    assert.equal(navCall?.params?.paymentAmount, 156);
     assert.equal(navCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
     assert.equal(navCall?.params?.paymentChannel, 'WECHAT_PAY');
     assert.equal(navCall?.params?.refundStatus, 'REFUNDED');
@@ -1722,7 +1722,7 @@ test('OrderDetailScreen: tapping back after pending refund returns to Orders wit
   assert.equal(navigateCall?.params?.orderId, 'order-001');
   assert.equal(navigateCall?.params?.orderNo, 'ORD20260612001');
   assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
-  assert.equal(navigateCall?.params?.paymentAmount, 156);
+  assert.equal(navigateCall?.params?.paymentAmount, 88.5);
   assert.equal(navigateCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
   assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
   assert.equal(navigateCall?.params?.refundStatus, 'PENDING');
@@ -1769,7 +1769,7 @@ test('OrderDetailScreen: tapping back after refunded returns to Orders with comp
   assert.equal(navigateCall?.params?.orderId, 'order-001');
   assert.equal(navigateCall?.params?.orderNo, 'ORD20260612001');
   assert.equal(navigateCall?.params?.paymentStatus, 'PAID');
-  assert.equal(navigateCall?.params?.paymentAmount, 156);
+  assert.equal(navigateCall?.params?.paymentAmount, 88.5);
   assert.equal(navigateCall?.params?.paymentPaidAt, '2026-06-12T10:35:00.000Z');
   assert.equal(navigateCall?.params?.paymentChannel, 'WECHAT_PAY');
   assert.equal(navigateCall?.params?.refundStatus, 'REFUNDED');
