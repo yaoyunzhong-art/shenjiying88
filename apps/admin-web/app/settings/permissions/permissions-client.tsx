@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { PermissionRolePreview, PermissionsSnapshotDelivery } from './permissions-data'
 import SnapshotRefreshButton from '../../components/snapshot-refresh-button'
 import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
+import RoleCapabilityMatrix from './RoleCapabilityMatrix'
 
 export default function PermissionsClient({
   snapshot,
@@ -91,6 +92,10 @@ export default function PermissionsClient({
             ))}
           </tbody>
         </table>
+      </section>
+
+      <section style={{ marginTop: 4 }}>
+        <RoleCapabilityMatrix roles={roles} />
       </section>
 
       <section style={splitLayoutStyle}>

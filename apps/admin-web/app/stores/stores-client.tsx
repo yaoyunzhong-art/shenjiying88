@@ -22,6 +22,10 @@ import {
   type DataTableSortConfig,
   type FilterChip,
 } from '@m5/ui';
+import BatchOperationsBar, { type BatchAction } from '../../components/shell/BatchOperationsBar';
+import { useRowSelection } from '../../components/shell/useRowSelection';
+import { useCrudFeedback } from '../../components/shell/FeedbackProvider';
+import ListToolbar from '../../components/shell/ListToolbar';
 
 import {
   STORE_RISK_LEVEL_MAP,
@@ -251,6 +255,26 @@ export default function StoresClient({
   );
   const sortedItems = useSortedItems(riskFiltered, columns, sortConfig);
 
+  const selection = useRowSelection(sortedItems, (item) => item.id);
+  const feedback = useCrudFeedback();
+
+  const columnsWithCheckbox = useMemo<DataTableColumn<StoreItem>[]>(() => [
+    { key: '_select', title: '✅', width: '40px', render: (item: StoreItem) => (
+      <input type="checkbox" checked={selection.selectedIds.has(item.id)} 
+        onChange={() => selection.toggle(item.id)} onClick={(e) => e.stopPropagation()}
+        style={{ cursor: 'pointer', width: 16, height: 16 }} />
+    )}, ...columns,
+  ], [columns, selection.selectedIds, selection.toggle]);
+
+  const batchActions: BatchAction[] = useMemo(() => [
+    { key: 'batch-enable', label: '批量启用', icon: '✅', variant: 'primary',
+      onClick: () => { feedback.success(`已启用 ${selection.selectedCount} 个门店`); selection.clear(); } },
+    { key: 'batch-disable', label: '批量停用', icon: '⛔', variant: 'danger',
+      onClick: () => { feedback.success(`已停用 ${selection.selectedCount} 个门店`); selection.clear(); } },
+    { key: 'batch-export', label: '导出选中', icon: '📤', variant: 'default',
+      onClick: () => { feedback.info(`正在导出 ${selection.selectedCount} 个门店...`); selection.clear(); } },
+  ], [selection, feedback]);
+
   const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [...PAGE_SIZE_OPTIONS] });
   useEffect(
     () => {
@@ -470,13 +494,11 @@ export default function StoresClient({
           </article>
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索门店编码 / 名称 / 市场..."
-          />
-        </div>
+        <ListToolbar
+          matchedCount={sortedItems.length}
+          searchInput={<SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索门店编码 / 名称 / 市场..." />}
+          batchToggle={selection.selectedCount > 0 ? { active: true, onClear: selection.clear } as any : undefined}
+        />
 
         <div style={{ marginBottom: 12 }}>
           <Tabs
@@ -592,9 +614,19 @@ export default function StoresClient({
           style={{ marginBottom: 8 }}
         />
 
+        {selection.selectedCount > 0 && (
+          <BatchOperationsBar
+            selectedCount={selection.selectedCount}
+            totalCount={sortedItems.length}
+            actions={batchActions}
+            onClearSelection={selection.clear}
+            itemLabel="门店"
+          />
+        )}
+
         <DataTable
           title={`门店列表（匹配 ${sortedItems.length} 条）`}
-          columns={columns}
+          columns={columnsWithCheckbox}
           items={pageItems}
           rowKey={(item) => item.id}
           sort={sortConfig}
