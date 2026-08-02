@@ -8,6 +8,17 @@
 import { Injectable, Logger, OnApplicationBootstrap, Optional } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 
+/**
+ * minorProtectionProfile 表尚未加入 Prisma schema。
+ * 这里用最小结构化接口替代 `as any`（仅暴露运行时可能存在的可选委托），
+ * 保持 `?.findMany()` 的可选链语义不变。
+ */
+interface MinorProtectionPrismaLike {
+  minorProtectionProfile?: {
+    findMany: () => Promise<unknown[]>
+  }
+}
+
 @Injectable()
 export class MinorProtectionPrismaStore implements OnApplicationBootstrap {
   private readonly logger = new Logger(MinorProtectionPrismaStore.name)
@@ -26,8 +37,7 @@ export class MinorProtectionPrismaStore implements OnApplicationBootstrap {
     }
     try {
       // NOTE: minorProtectionProfile table not yet in Prisma schema — load from MinorIdentityVerification
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const profiles = await (this.prisma as any).minorProtectionProfile?.findMany()
+      const profiles = await (this.prisma as unknown as MinorProtectionPrismaLike).minorProtectionProfile?.findMany()
       if (profiles) {
         this.logger.log(`Loaded ${profiles.length} minor protection profiles`)
       }

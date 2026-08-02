@@ -702,8 +702,9 @@ export function joinRuntimeScopeSummary(parts: string[], _opts?: any): string {
 export function useRuntimePresetSelection<T>(presets?: readonly T[] | T[], defaultKey?: string) {
   const [selectedAction, setSelectedAction] = React.useState<string>(defaultKey ?? '');
   const activePreset = React.useMemo(() => {
-    if (!presets || !Array.isArray(presets)) return (presets as any) ?? null;
-    return (presets as any[]).find((p: any) => p?.key === selectedAction) ?? presets?.[0] ?? null;
+    // presets 泛型可能不含 key 字段，仅在运行时窄化后比对
+    if (!presets || !Array.isArray(presets)) return null;
+    return presets.find((p) => (p as { key?: unknown }).key === selectedAction) ?? presets[0] ?? null;
   }, [presets, selectedAction]);
   return {
     selectedAction,

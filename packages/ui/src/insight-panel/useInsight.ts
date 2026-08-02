@@ -7,6 +7,7 @@ import type {
   InsightResponse,
   InsightTemplate,
   InsightTemplateType,
+  InsightSourceRef,
 } from './types'
 
 const MOCK_TEMPLATES: InsightTemplate[] = [
@@ -69,7 +70,7 @@ async function generateInsightApi(req: {
     content: `## 关键发现 (${req.templateType})\n- 数据源: ${req.sources.length} 个\n- 已分析完成\n\n## 行动建议\n- 持续监控核心指标`,
     modelId: 'preset-deepseek',
     tokenUsage: { prompt: 250, completion: 80, total: 330 },
-    sources: req.sources.map((s) => ({ type: s.type as any, refId: s.refId, period: s.period })),
+    sources: req.sources.map((s) => ({ type: s.type as InsightSourceRef['type'], refId: s.refId, period: s.period })),
     createdAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
     createdBy: 'admin',

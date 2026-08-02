@@ -64815,7 +64815,6 @@ function useAiABTestComparison() {
     return list;
   }, [raw, sortKey, showOnlySignificant]);
   const adoptVariant = useCallback89((_experimentId, _variant) => {
-    console.log(`Adopt variant ${_variant} for experiment ${_experimentId}`);
   }, []);
   const getVariantRate = useCallback89((stats) => {
     if (stats.totalExecutions === 0) return 0;

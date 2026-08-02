@@ -747,7 +747,7 @@ export class AuthService {
 
   private initMockUsers(): void {
     // 创建一些测试用户
-    // 测试密码: TestP@ss888 (使用 Node.js scrypt 哈希存储)
+    // 测试密码: password123 (使用 Node.js scrypt 哈希存储)
     // 长期应迁移至外部身份服务,不再使用内存 mock 用户
     const crypto = require('crypto') as typeof import('crypto')
     const salt = crypto.randomBytes(16).toString('hex')
@@ -756,7 +756,7 @@ export class AuthService {
       const k = crypto.scryptSync(pwd, s, 64).toString('hex')
       return `${s}:${k}`
     }
-    const testPassword = 'TestP@ss888'
+    const testPassword = 'password123'
     const testUsers: MockUser[] = [
       {
         userId: 'admin_001',
@@ -766,7 +766,7 @@ export class AuthService {
         nickname: 'Admin',
         roles: ['PLATFORM_ADMIN'],
         permissions: ['*'],
-        passwordHash: 'fb5517ad4883abb2e8a1da717b1e37b5:f34f9bdeacf6aafb5d6a47d71b0fbfd16d4e53ff1e3ad3ec64fb91d38c2796cbfe6b5b16d1038a8bc47c46a1cdb4af2ad60b1f41c46e95993f3b6c67433ac3f1',// TestP@ss888
+        passwordHash: 'dc33d7a4670f3e20794ad5c901c53268:0ee5744e19ca6e59121f2828d4fc1050181917614ddff9f2f16d59119e28c36d3e570178a8c6515b2392bb88886e0f86f20cee5d488ec17fdf44408ea59043d8',// password123
         failedAttempts: 0,
         lockedUntil: undefined,
         lastLoginAt: undefined,
@@ -780,7 +780,7 @@ export class AuthService {
         nickname: 'Tenant Admin',
         roles: ['TENANT_ADMIN'],
         permissions: ['tenant:*', 'store:*', 'member:*'],
-        passwordHash: '4483ee5b8bca4de75e9eca4df77e78e4:97f4c9bf886a4cba087379666e4ba0860abf4be55776470ff01e84ece6c4e4f86fe00f16c52b156d1c6cbe443b35196216c8e4f42524fc76b1e78f758cd7efcd',// TestP@ss888
+        passwordHash: '0509a6953e15654893024b9524848830:5f9aeec1bceec965fa0069d3b8de30d741212832b724151d15fd5b8b245a760247cdc3f0215a68193d01baae5959a941d27da7c3cd7ad2fd8c9747a138a0a33e',// password123
         failedAttempts: 0,
         lockedUntil: undefined,
         lastLoginAt: undefined,
@@ -794,7 +794,7 @@ export class AuthService {
         nickname: 'Demo Member',
         roles: ['MEMBER'],
         permissions: ['member:read', 'member:update'],
-        passwordHash: 'c00029de9aa5c4ab25c629e02bece3d0:cadfaaf2af77c8bcfda65963c12a88b1d5f16014a7f9e9c3a0f74c52d6889aeaf5e8e38ef76aa3a11bf3a903264174b2dc47cd9e8d95dcf91b6789a6e64d19e5',// TestP@ss888
+        passwordHash: '6185d5f6b899d99e1dd0732f9d8caf43:41f990d9920d61e1043adf22dc98231ab257566df6cc5c0a8524096fe771950918653cff3c976256e2f5a697fd37aaf95292a5a5857c18e001e1869caa8b02ba',// password123
         failedAttempts: 0,
         lockedUntil: undefined,
         lastLoginAt: undefined,

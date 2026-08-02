@@ -160,7 +160,8 @@ export function ReturnGoodsProcessingPanel({
     (action: string) => {
       if (readOnly) return false;
       if (!allowedActions) return true;
-      return allowedActions.includes(action as any);
+      // 将 action（string）与 allowedActions 并集做宽化比较，避免用 any 强行断言
+      return (allowedActions as readonly string[]).includes(action);
     },
     [readOnly, allowedActions],
   );
@@ -317,7 +318,7 @@ export function ReturnGoodsProcessingPanel({
                   };
                   const color = actionColor[ns] || '#3b82f6';
 
-                  if (!isActionAllowed(ns as any)) return null;
+                  if (!isActionAllowed(ns)) return null;
 
                   return (
                     <button

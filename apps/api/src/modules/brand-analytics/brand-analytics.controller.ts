@@ -57,7 +57,7 @@ export class BrandAnalyticsController {
 
   @Post('kpi')
   async trackKPI(@Body() dto: TrackKPIDto): Promise<BrandKPI> {
-    return this.service.trackKPI(dto)
+    return this.service.trackKPI(dto as unknown as Parameters<BrandAnalyticsService['trackKPI']>[0])
   }
 
   // ── 渠道归因 ─────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ export class BrandAnalyticsController {
 
   @Post('mentions')
   async trackMention(@Body() dto: TrackMentionDto): Promise<BrandMention> {
-    return this.service.trackMention(dto)
+    return this.service.trackMention({ ...dto, topKeywords: dto.topKeywords ?? [] } as Parameters<BrandAnalyticsService['trackMention']>[0])
   }
 
   // ── 健康度 ───────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ export class BrandAnalyticsController {
     @Param('brandId') brandId: string,
     @Body() dto: UpdateHealthDto,
   ): Promise<BrandHealthScore> {
-    return this.service.updateHealthScore(brandId, dto)
+    return this.service.updateHealthScore(brandId, dto as Parameters<BrandAnalyticsService['updateHealthScore']>[1])
   }
 
   // ── 内容 ─────────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ export class BrandAnalyticsController {
 
   @Post('content')
   async trackContent(@Body() dto: TrackContentDto): Promise<ContentPerformance> {
-    return this.service.trackContent(dto)
+    return this.service.trackContent(dto as Parameters<BrandAnalyticsService['trackContent']>[0])
   }
 
   // ── 报告 ─────────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ export class BrandAnalyticsController {
     @Param('brandId') brandId: string,
     @Body() dto: GenerateReportDto,
   ): Promise<BrandAnalyticsReport> {
-    return this.service.generateReport(brandId, dto.reportType)
+    return this.service.generateReport(brandId, dto.reportType as Parameters<BrandAnalyticsService['generateReport']>[1])
   }
 
   @Get('reports/:brandId')

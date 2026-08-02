@@ -65259,7 +65259,6 @@ function useAiABTestComparison() {
     return list;
   }, [raw, sortKey, showOnlySignificant]);
   const adoptVariant = (0, import_react177.useCallback)((_experimentId, _variant) => {
-    console.log(`Adopt variant ${_variant} for experiment ${_experimentId}`);
   }, []);
   const getVariantRate = (0, import_react177.useCallback)((stats) => {
     if (stats.totalExecutions === 0) return 0;

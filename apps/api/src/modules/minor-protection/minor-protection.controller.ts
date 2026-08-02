@@ -34,7 +34,13 @@ export class MinorProtectionController {
   verifyAge(@Param('userId') uid: string, @Body() dto: VerifyAgeDto): Promise<MinorProtectionProfile> { return this.service.verifyAge(uid, dto.method) }
 
   @Post('consent')
-  createConsent(@Body() dto: CreateConsentDto): Promise<ParentalConsent> { return this.service.createParentalConsent(dto) }
+  createConsent(@Body() dto: CreateConsentDto): Promise<ParentalConsent> {
+    return this.service.createParentalConsent({
+      ...dto,
+      effectiveFrom: new Date(dto.effectiveFrom),
+      effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : undefined,
+    } as Parameters<MinorProtectionService['createParentalConsent']>[0])
+  }
 
   @Post('consent/:id/approve')
   approveConsent(@Param('id') id: string): Promise<ParentalConsent> { return this.service.approveConsent(id) }

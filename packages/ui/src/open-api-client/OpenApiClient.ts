@@ -67,13 +67,22 @@ export class OpenApiClient {
   private token: AccessToken | null = null
 
   constructor(config: OpenApiClientConfig) {
+    // 确定要用的 fetch 实现（浏览器全局 / Node 环境自定义实现 / 不可用时报错）
+    let nearestFetch: typeof fetch
+    if (config.fetch) {
+      nearestFetch = config.fetch
+    } else if (typeof fetch !== 'undefined') {
+      nearestFetch = fetch.bind(globalThis)
+    } else {
+      nearestFetch = () => { throw new Error('No fetch available') }
+    }
     this.config = {
       baseUrl: config.baseUrl.replace(/\/$/, ''),
       clientId: config.clientId,
       clientSecret: config.clientSecret,
       hmacSecret: config.hmacSecret,
       scopes: config.scopes ?? ['auth:read', 'sync:write', 'command:send'],
-      fetch: config.fetch ?? (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (() => { throw new Error('No fetch available') }) as any),
+      fetch: nearestFetch,
     }
   }
 

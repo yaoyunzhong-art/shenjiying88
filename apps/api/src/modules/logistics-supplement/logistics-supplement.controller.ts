@@ -21,6 +21,9 @@ import type {
   LogisticsSupplementMetrics,
 } from './logistics-supplement.entity'
 
+/** 为内存模式下缺失的必填字段提供默认值 */
+const DEFAULT_TENANT = 'default'
+
 @Controller('logistics-supplement')
 @UseGuards(TrafficGovernanceGuard)
 @UsePipes(new ValidationPipe({ transform: true }))
@@ -31,7 +34,7 @@ export class LogisticsSupplementController {
 
   @Post('transport-orders')
   createTransportOrder(@Body() dto: CreateTransportOrderDto): Promise<TransportOrder> {
-    return this.service.createTransportOrder(dto)
+    return this.service.createTransportOrder({ ...dto, tenantId: DEFAULT_TENANT, status: 'draft' } as Parameters<LogisticsSupplementService['createTransportOrder']>[0])
   }
 
   @Get('transport-orders/:id')
@@ -69,7 +72,7 @@ export class LogisticsSupplementController {
 
   @Post('cargo-loads')
   addCargoLoad(@Body() dto: CreateCargoLoadDto): Promise<CargoLoad> {
-    return this.service.addCargoLoad(dto)
+    return this.service.addCargoLoad({ ...dto, tenantId: DEFAULT_TENANT, status: 'pending' } as Parameters<LogisticsSupplementService['addCargoLoad']>[0])
   }
 
   @Get('cargo-loads')
@@ -94,7 +97,7 @@ export class LogisticsSupplementController {
 
   @Post('route-plans')
   createRoutePlan(@Body() dto: CreateRoutePlanDto): Promise<RoutePlan> {
-    return this.service.createRoutePlan(dto)
+    return this.service.createRoutePlan({ ...dto, tenantId: DEFAULT_TENANT, status: 'active' } as Parameters<LogisticsSupplementService['createRoutePlan']>[0])
   }
 
   @Get('route-plans')
@@ -129,7 +132,7 @@ export class LogisticsSupplementController {
 
   @Post('driver-schedules')
   createSchedule(@Body() dto: CreateDriverScheduleDto): Promise<DriverSchedule> {
-    return this.service.createDriverSchedule(dto)
+    return this.service.createDriverSchedule({ ...dto, tenantId: DEFAULT_TENANT, status: 'scheduled', transportOrderIds: dto.transportOrderIds ?? [] } as Parameters<LogisticsSupplementService['createDriverSchedule']>[0])
   }
 
   @Get('driver-schedules')
@@ -162,7 +165,7 @@ export class LogisticsSupplementController {
 
   @Post('maintenance')
   createMaintenance(@Body() dto: CreateVehicleMaintenanceRecordDto): Promise<VehicleMaintenanceRecord> {
-    return this.service.createMaintenanceRecord(dto)
+    return this.service.createMaintenanceRecord({ ...dto, tenantId: DEFAULT_TENANT, status: 'pending' } as Parameters<LogisticsSupplementService['createMaintenanceRecord']>[0])
   }
 
   @Get('maintenance/:id')
@@ -192,7 +195,7 @@ export class LogisticsSupplementController {
 
   @Post('fuel-records')
   recordFuel(@Body() dto: CreateFuelRecordDto): Promise<FuelRecord> {
-    return this.service.recordFuel(dto)
+    return this.service.recordFuel({ ...dto, tenantId: DEFAULT_TENANT, unitPriceCent: 0 } as Parameters<LogisticsSupplementService['recordFuel']>[0])
   }
 
   // 静态路由优先于 :id 参数路由
@@ -224,7 +227,7 @@ export class LogisticsSupplementController {
 
   @Post('accidents')
   recordAccident(@Body() dto: CreateAccidentRecordDto): Promise<AccidentRecord> {
-    return this.service.recordAccident(dto)
+    return this.service.recordAccident({ ...dto, tenantId: DEFAULT_TENANT, resolved: false } as Parameters<LogisticsSupplementService['recordAccident']>[0])
   }
 
   @Get('accidents')
@@ -249,7 +252,7 @@ export class LogisticsSupplementController {
 
   @Post('costs')
   recordCost(@Body() dto: CreateLogisticsCostDto): Promise<LogisticsCost> {
-    return this.service.recordCost(dto)
+    return this.service.recordCost({ ...dto, tenantId: DEFAULT_TENANT, totalCent: 0 } as Parameters<LogisticsSupplementService['recordCost']>[0])
   }
 
   @Get('costs/summary')

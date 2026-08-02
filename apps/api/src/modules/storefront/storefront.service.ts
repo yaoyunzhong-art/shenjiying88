@@ -22,12 +22,27 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
+import { isRecordError } from '../../common/error-handler.utils'
 import type { CreateBookingDto } from './dto/create-booking.dto'
 import type { CancelBookingDto, RescheduleBookingDto, BookingStatus } from './dto/cancellation.dto'
 
 // ═══════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Prisma 将 rescheduledTo 存为 Json?。这里做一次带运行时校验的窄化，
+ * 避免用 `as any` 直接把 JsonValue 强行断言成结构化类型。
+ */
+function parseRescheduledTo(value: unknown): { date: string; timeSlot: string } | null {
+  if (value && typeof value === 'object') {
+    const rec = value as Record<string, unknown>
+    if (typeof rec.date === 'string' && typeof rec.timeSlot === 'string') {
+      return { date: rec.date, timeSlot: rec.timeSlot }
+    }
+  }
+  return null
+}
 
 export interface StoreFrontInfo {
   slug: string
@@ -262,7 +277,7 @@ export class StoreFrontService {
   // ── 6. 查询预约 ────────────────────────────────────────────
 
   async getBooking(bookingId: string): Promise<BookingStatus> {
-    const record = (await this.prisma.storefrontBooking.findUnique({ where: { bookingId } })) as any
+    const record = await this.prisma.storefrontBooking.findUnique({ where: { bookingId } })
     if (!record) throw new NotFoundException(`预约 ${bookingId} 不存在`)
     const store = this.getStore(record.storeSlug)
     return {
@@ -272,7 +287,7 @@ export class StoreFrontService {
       customerName: record.customerName, customerPhone: record.customerPhone,
       amount: record.amount, createdAt: record.createdAt.toISOString(),
       cancelledAt: record.cancelledAt?.toISOString(),
-      rescheduledTo: (record.rescheduledTo ?? undefined) as { date: string; timeSlot: string } | null | undefined,
+      rescheduledTo: parseRescheduledTo(record.rescheduledTo) ?? undefined,
     }
   }
 
@@ -323,14 +338,14 @@ export class StoreFrontService {
     }
 
     try {
-      const updated = (await this.prisma.storefrontBooking.update({
+      const updated = await this.prisma.storefrontBooking.update({
         where: { bookingId },
         data: {
           date: dto.newDate, timeSlot: dto.newTimeSlot,
           status: 'rescheduled',
           rescheduledTo: { date: dto.newDate, timeSlot: dto.newTimeSlot },
         },
-      })) as any
+      })
 
       const store = this.getStore(record.storeSlug)
       return {
@@ -339,10 +354,10 @@ export class StoreFrontService {
         date: updated.date, timeSlot: updated.timeSlot,
         customerName: record.customerPhone, customerPhone: record.customerPhone,
         amount: record.amount, createdAt: record.createdAt.toISOString(),
-        rescheduledTo: (updated.rescheduledTo ?? undefined) as { date: string; timeSlot: string } | null | undefined,
+        rescheduledTo: parseRescheduledTo(updated.rescheduledTo) ?? undefined,
       }
-    } catch (err: any) {
-      if (err?.code === 'P2002') {
+    } catch (err: unknown) {
+      if (isRecordError(err)?.code === 'P2002') {
         throw new ConflictException(`新时段已被占用`)
       }
       throw err

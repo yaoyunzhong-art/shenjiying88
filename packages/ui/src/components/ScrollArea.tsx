@@ -179,8 +179,7 @@ export function ScrollArea({
     overflowX: 'hidden',
     scrollbarWidth: 'none' as const, // Firefox
     msOverflowStyle: 'none', // IE/Edge
-    // Hide native scrollbar in WebKit
-    ...({} as any),
+    // 注：WebKit 隐藏原生滚动条需通过 ::-webkit-scrollbar 伪元素实现，无法在行内 style 中表达
     position: 'relative',
   };
 

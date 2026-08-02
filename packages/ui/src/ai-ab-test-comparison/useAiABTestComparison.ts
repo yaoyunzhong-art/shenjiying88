@@ -55,7 +55,7 @@ export function useAiABTestComparison(): UseAiABTestComparisonReturn {
   // 模拟「采纳」— 实际上 mock 数据不需要真正的 mutation
   const adoptVariant = useCallback((_experimentId: string, _variant: TestVariant) => {
     // In a real implementation, this would call an API
-    console.log(`Adopt variant ${_variant} for experiment ${_experimentId}`);
+    // debug: mock adoption — replace with real tracking/API call when wired up
   }, []);
 
   const getVariantRate = useCallback((stats: VariantStats): number => {

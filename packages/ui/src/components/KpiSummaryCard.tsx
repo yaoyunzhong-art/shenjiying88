@@ -12,6 +12,18 @@
 import React from 'react';
 import { StatCard } from './StatCard';
 
+/** KpiCardItem.variant → StatCard.variant 映射（'danger' → 'error'，其余同名） */
+const STATCARD_VARIANT_MAP: Record<
+  NonNullable<KpiCardItem['variant']>,
+  NonNullable<React.ComponentProps<typeof StatCard>['variant']>
+> = {
+  default: 'default',
+  success: 'success',
+  warning: 'warning',
+  danger: 'error',
+  info: 'info',
+};
+
 export interface KpiCardItem {
   /** 指标标签 */
   label: string;
@@ -98,7 +110,7 @@ export function KpiSummaryCard({
             value={item.value}
             trend={item.trend}
             helper={item.helper}
-            variant={item.variant as any}
+            variant={item.variant ? STATCARD_VARIANT_MAP[item.variant] : undefined}
           />
         ))}
       </div>
