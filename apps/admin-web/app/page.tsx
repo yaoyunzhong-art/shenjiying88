@@ -14,6 +14,12 @@ export default async function HomePage() {
   const snapshot = await getAdminWorkbenchConsumerSnapshot();
   const workbenchSource =
     snapshot.deliveryMode === 'api' ? 'snapshot.workbenches' : 'fallbackRoleWorkbenches';
+  const workbenchStats = {
+    orderCount: snapshot.workbenches.length,
+    storeCount: snapshot.governance.alerts.length,
+    roleCount: snapshot.workbenches.length,
+    deliveryMode: snapshot.deliveryMode,
+  };
   const configurationHref = buildConfigurationHref({
     tenantId: snapshot.tenantContext.tenantId,
     brandId: snapshot.tenantContext.brandId,
@@ -31,7 +37,7 @@ export default async function HomePage() {
         title="M5 指挥台"
         subtitle="每个门店支持 ToC 官网 / H5 / 小程序 / App / PC 后台，每个工作角色拥有独立工作台。"
       >
-          <QuickWorkbench />
+          <QuickWorkbench stats={workbenchStats} />
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
             <StatCard label="Bootstrap" value={snapshot.deliveryMode.toUpperCase()} helper={snapshot.wiring.bootstrapEndpoint} />
             <StatCard

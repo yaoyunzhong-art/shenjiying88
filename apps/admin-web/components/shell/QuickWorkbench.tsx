@@ -8,6 +8,13 @@ import React from 'react';
 import Link from 'next/link';
 import { useCrudFeedback } from './FeedbackProvider';
 
+interface QuickWorkbenchStats {
+  orderCount: number;
+  storeCount: number;
+  roleCount: number;
+  deliveryMode: string;
+}
+
 interface KpiData {
   label: string;
   value: string;
@@ -16,12 +23,17 @@ interface KpiData {
   icon: string;
 }
 
-const MOCK_KPIS: KpiData[] = [
-  { label: '今日订单', value: '1,247', trend: 'up', trendValue: '+12.5%', icon: '📦' },
-  { label: '今日营收', value: '¥89.4k', trend: 'up', trendValue: '+8.3%', icon: '💰' },
-  { label: '活跃门店', value: '42/48', trend: 'flat', trendValue: '87.5%', icon: '🏪' },
-  { label: '待处理任务', value: '15', trend: 'down', trendValue: '-3', icon: '📋' },
-];
+function buildKpis(stats: QuickWorkbenchStats): KpiData[] {
+  const deliveryLabel = stats.deliveryMode === 'api' ? '实时模式' : '降级模式';
+  const deliveryTrend: KpiData['trend'] = stats.deliveryMode === 'api' ? 'up' : 'down';
+  const deliveryTrendValue = stats.deliveryMode === 'api' ? 'API' : 'fallback';
+  return [
+    { label: '角色工作台', value: String(stats.roleCount), trend: 'flat', trendValue: `${stats.roleCount} 个角色`, icon: '�️' },
+    { label: '交付模式', value: deliveryLabel, trend: deliveryTrend, trendValue: deliveryTrendValue, icon: '⚡' },
+    { label: '工作台数量', value: String(stats.orderCount), trend: 'up', trendValue: `${stats.orderCount} 个`, icon: '📦' },
+    { label: '治理告警', value: String(stats.storeCount), trend: 'down', trendValue: `${stats.storeCount} 条`, icon: '📋' },
+  ];
+}
 
 const QUICK_ACTIONS = [
   { label: '新建订单', href: '/orders/new', icon: '📝', color: '#3b82f6' },
@@ -32,12 +44,14 @@ const QUICK_ACTIONS = [
   { label: '操作日志', href: '/audit-logs', icon: '📜', color: '#6366f1' },
 ];
 
-export default function QuickWorkbench() {
+export default function QuickWorkbench({ stats }: { stats: QuickWorkbenchStats }) {
   const feedback = useCrudFeedback();
 
   const handleQuickAction = (label: string) => {
     feedback.info(`正在跳转到 ${label}...`);
   };
+
+  const kpis = buildKpis(stats);
 
   return (
     <div style={{ padding: '0 0 24px 0' }}>
@@ -50,7 +64,7 @@ export default function QuickWorkbench() {
           marginBottom: 24,
         }}
       >
-        {MOCK_KPIS.map((kpi) => (
+        {kpis.map((kpi) => (
           <div
             key={kpi.label}
             style={{

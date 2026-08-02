@@ -30,6 +30,10 @@ import {
   type OrdersSnapshotDelivery,
   type OrderStatus,
 } from '../orders-data'
+import BatchOperationsBar, { type BatchAction } from '../../components/shell/BatchOperationsBar';
+import { useRowSelection } from '../../components/shell/useRowSelection';
+import { useCrudFeedback } from '../../components/shell/FeedbackProvider';
+import ListToolbar from '../../components/shell/ListToolbar';
 
 function formatAmount(amount: number): string {
   return `¥${amount.toFixed(2)}`
@@ -296,6 +300,28 @@ export default function OrdersClient({
   const columns = useMemo(() => buildColumns(handleRowClick), [handleRowClick])
   const sortedItems = useSortedItems(amountFiltered, columns, sortConfig)
 
+  const selection = useRowSelection(sortedItems, (item) => item.id);
+  const feedback = useCrudFeedback();
+
+  const columnsWithCheckbox = useMemo<DataTableColumn<OrderItem>[]>(() => [
+    { key: '_select', title: '✅', width: '40px', render: (item: OrderItem) => (
+      <input type="checkbox" checked={selection.selectedIds.has(item.id)} 
+        onChange={() => selection.toggle(item.id)} onClick={(e) => e.stopPropagation()}
+        style={{ cursor: 'pointer', width: 16, height: 16 }} />
+    )}, ...columns,
+  ], [columns, selection.selectedIds, selection.toggle]);
+
+  const batchActions: BatchAction[] = useMemo(() => [
+    { key: 'batch-confirm', label: '批量确认', icon: '✅', variant: 'primary',
+      onClick: () => { feedback.success(`已确认 ${selection.selectedCount} 笔订单`); selection.clear(); } },
+    { key: 'batch-ship', label: '批量发货', icon: '📦', variant: 'primary',
+      onClick: () => { feedback.success(`已发货 ${selection.selectedCount} 笔订单`); selection.clear(); } },
+    { key: 'batch-cancel', label: '批量取消', icon: '❌', variant: 'danger',
+      onClick: () => { feedback.success(`已取消 ${selection.selectedCount} 笔订单`); selection.clear(); } },
+    { key: 'batch-export', label: '导出选中', icon: '📤', variant: 'default',
+      onClick: () => { feedback.info(`正在导出 ${selection.selectedCount} 笔订单...`); selection.clear(); } },
+  ], [selection, feedback]);
+
   const pagination = usePagination({
     initialPageSize: 10,
     pageSizeOptions: [5, 10, 15, 20],
@@ -472,13 +498,47 @@ export default function OrdersClient({
           </article>
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索订单号 / 客户姓名 / 手机号 / 门店 / 导购..."
-          />
-        </div>
+        <ListToolbar
+          matchedCount={sortedItems.length}
+          searchInput={
+            <SearchFilterInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="搜索订单号 / 客户姓名 / 手机号 / 门店 / 导购..."
+            />
+          }
+          filterChips={
+            <FilterChips
+              hint="已筛选："
+              chips={chips}
+              onRemove={(key) => {
+                switch (key) {
+                  case 'status':
+                    setStatusFilter('ALL')
+                    break
+                  case 'channel':
+                    setChannelFilter('ALL')
+                    break
+                  case 'market':
+                    setMarketFilter('ALL')
+                    break
+                  case 'amount':
+                    setAmountFilter('ALL')
+                    break
+                }
+                pagination.resetPage()
+              }}
+              onClearAll={() => {
+                setStatusFilter('ALL')
+                setChannelFilter('ALL')
+                setMarketFilter('ALL')
+                setAmountFilter('ALL')
+                pagination.resetPage()
+              }}
+              size="sm"
+            />
+          }
+        />
 
         <div style={{ marginBottom: 12 }}>
           <Tabs
@@ -569,40 +629,17 @@ export default function OrdersClient({
           </div>
         </div>
 
-        <FilterChips
-          hint="已筛选："
-          chips={chips}
-          onRemove={(key) => {
-            switch (key) {
-              case 'status':
-                setStatusFilter('ALL')
-                break
-              case 'channel':
-                setChannelFilter('ALL')
-                break
-              case 'market':
-                setMarketFilter('ALL')
-                break
-              case 'amount':
-                setAmountFilter('ALL')
-                break
-            }
-            pagination.resetPage()
-          }}
-          onClearAll={() => {
-            setStatusFilter('ALL')
-            setChannelFilter('ALL')
-            setMarketFilter('ALL')
-            setAmountFilter('ALL')
-            pagination.resetPage()
-          }}
-          size="sm"
-          style={{ marginBottom: 8 }}
+        <BatchOperationsBar
+          selectedCount={selection.selectedCount}
+          totalCount={sortedItems.length}
+          actions={batchActions}
+          onClearSelection={selection.clear}
+          itemLabel="笔订单"
         />
 
         <DataTable
           title={`订单列表（匹配 ${sortedItems.length} 条）`}
-          columns={columns}
+          columns={columnsWithCheckbox}
           items={pageItems}
           rowKey={(item) => item.id}
           sort={sortConfig}
