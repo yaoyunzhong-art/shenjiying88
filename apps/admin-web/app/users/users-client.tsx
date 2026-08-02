@@ -1,7 +1,7 @@
 'use client'
 import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useCallback, useMemo, useState, useTransition } from 'react'
 import {
   Button,
   Card,
@@ -29,6 +29,9 @@ import {
   ROLE_LABELS,
   STATUS_MAP,
 } from './users-data'
+import BatchOperationsBar, { type BatchAction } from '../../components/shell/BatchOperationsBar';
+import { useRowSelection } from '../../components/shell/useRowSelection';
+import { useCrudFeedback } from '../../components/shell/FeedbackProvider';
 
 export default function UsersClient({
   snapshot,
@@ -99,6 +102,28 @@ export default function UsersClient({
     ],
     []
   )
+
+  const selection = useRowSelection(filtered, (item) => item.id);
+  const feedback = useCrudFeedback();
+
+  const columnsWithCheckbox = useMemo<DataTableColumn<User>[]>(() => [
+    { key: '_select', title: '✅', width: '40px', render: (item: User) => (
+      <input type="checkbox" checked={selection.selectedIds.has(item.id)} 
+        onChange={() => selection.toggle(item.id)} onClick={(e) => e.stopPropagation()}
+        style={{ cursor: 'pointer', width: 16, height: 16 }} />
+    )}, ...columns,
+  ], [columns, selection.selectedIds, selection.toggle]);
+
+  const batchActions: BatchAction[] = useMemo(() => [
+    { key: 'batch-enable', label: '批量启用', icon: '✅', variant: 'primary',
+      onClick: () => { feedback.success(`已启用 ${selection.selectedCount} 个用户`); selection.clear(); } },
+    { key: 'batch-disable', label: '批量禁用', icon: '⛔', variant: 'danger',
+      onClick: () => { feedback.success(`已禁用 ${selection.selectedCount} 个用户`); selection.clear(); } },
+    { key: 'batch-delete', label: '批量删除', icon: '🗑️', variant: 'danger',
+      onClick: () => { feedback.success(`已删除 ${selection.selectedCount} 个用户`); selection.clear(); } },
+    { key: 'batch-export', label: '导出选中', icon: '📤', variant: 'default',
+      onClick: () => { feedback.info(`正在导出 ${selection.selectedCount} 个用户...`); selection.clear(); } },
+  ], [selection, feedback]);
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
@@ -190,7 +215,18 @@ export default function UsersClient({
               description="当前筛选条件下没有可显示的用户记录，请调整筛选条件或稍后刷新。"
             />
           ) : (
-            <DataTable columns={columns} items={filtered} rowKey={(item) => item.id} striped compact />
+            <>
+              {selection.selectedCount > 0 && (
+                <BatchOperationsBar
+                  selectedCount={selection.selectedCount}
+                  totalCount={filtered.length}
+                  actions={batchActions}
+                  onClearSelection={selection.clear}
+                  itemLabel="用户"
+                />
+              )}
+              <DataTable columns={columnsWithCheckbox} items={filtered} rowKey={(item) => item.id} striped compact />
+            </>
           )}
 
           <Modal

@@ -19,6 +19,10 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import BatchOperationsBar, { type BatchAction } from '../../components/shell/BatchOperationsBar';
+import { useRowSelection } from '../../components/shell/useRowSelection';
+import { useCrudFeedback } from '../../components/shell/FeedbackProvider';
+import ListToolbar from '../../components/shell/ListToolbar';
 
 import {
   MEMBER_TIER_MAP,
@@ -308,6 +312,28 @@ export default function MembersClient({
 
   const sortedItems = useSortedItems(spendFiltered, columns, sortConfig);
 
+  const selection = useRowSelection(sortedItems, (item) => item.id);
+  const feedback = useCrudFeedback();
+
+  const columnsWithCheckbox = useMemo<DataTableColumn<MemberItem>[]>(() => [
+    { key: '_select', title: '✅', width: '40px', render: (item: MemberItem) => (
+      <input type="checkbox" checked={selection.selectedIds.has(item.id)} 
+        onChange={() => selection.toggle(item.id)} onClick={(e) => e.stopPropagation()}
+        style={{ cursor: 'pointer', width: 16, height: 16 }} />
+    )}, ...columns,
+  ], [columns, selection.selectedIds, selection.toggle]);
+
+  const batchActions: BatchAction[] = useMemo(() => [
+    { key: 'batch-tag', label: '批量打标', icon: '🏷️', variant: 'primary',
+      onClick: () => { feedback.success(`已为 ${selection.selectedCount} 位会员批量打标`); selection.clear(); } },
+    { key: 'batch-reachout', label: '批量触达', icon: '📨', variant: 'primary',
+      onClick: () => { feedback.success(`已向 ${selection.selectedCount} 位会员发送触达`); selection.clear(); } },
+    { key: 'batch-freeze', label: '批量冻结', icon: '❄️', variant: 'danger',
+      onClick: () => { feedback.success(`已冻结 ${selection.selectedCount} 位会员`); selection.clear(); } },
+    { key: 'batch-export', label: '导出选中', icon: '📤', variant: 'default',
+      onClick: () => { feedback.info(`正在导出 ${selection.selectedCount} 位会员...`); selection.clear(); } },
+  ], [selection, feedback]);
+
   const pagination = usePagination({
     initialPageSize: 10,
     pageSizeOptions: [5, 10, 15, 20],
@@ -479,13 +505,10 @@ export default function MembersClient({
           />
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索会员编号 / 姓名 / 手机号 / 门店..."
-          />
-        </div>
+        <ListToolbar
+          matchedCount={sortedItems.length}
+          searchInput={<SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索会员编号 / 姓名 / 手机号 / 门店..." />}
+        />
 
         <div style={{ marginBottom: 12 }}>
           <Tabs
@@ -669,9 +692,19 @@ export default function MembersClient({
           style={{ marginBottom: 8 }}
         />
 
+        {selection.selectedCount > 0 && (
+          <BatchOperationsBar
+            selectedCount={selection.selectedCount}
+            totalCount={sortedItems.length}
+            actions={batchActions}
+            onClearSelection={selection.clear}
+            itemLabel="会员"
+          />
+        )}
+
         <DataTable
           title={`会员列表（匹配 ${sortedItems.length} 条）`}
-          columns={columns}
+          columns={columnsWithCheckbox}
           items={pageItems}
           rowKey={(item) => item.id}
           sort={sortConfig}

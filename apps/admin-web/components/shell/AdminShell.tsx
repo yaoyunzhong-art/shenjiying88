@@ -6,6 +6,7 @@
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   SideNavigation,
   Breadcrumb,
@@ -177,6 +178,47 @@ export default function AdminShell({ children }: AdminShellProps) {
               }))}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Link
+                href="/audit-logs"
+                title="操作日志"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: 'rgba(148,163,184,0.08)',
+                  color: '#94a3b8',
+                  fontSize: 16,
+                  textDecoration: 'none',
+                  transition: 'all 0.15s',
+                  position: 'relative' as const,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(96,165,250,0.15)';
+                  e.currentTarget.style.color = '#93c5fd';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(148,163,184,0.08)';
+                  e.currentTarget.style.color = '#94a3b8';
+                }}
+              >
+                🔔
+                {/* 未读小红点 */}
+                <span
+                  style={{
+                    position: 'absolute' as const,
+                    top: 4,
+                    right: 6,
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: '#ef4444',
+                    border: '1px solid rgba(15,23,42,0.8)',
+                  }}
+                />
+              </Link>
               <span
                 onClick={() => setCmdOpen(true)}
                 style={{

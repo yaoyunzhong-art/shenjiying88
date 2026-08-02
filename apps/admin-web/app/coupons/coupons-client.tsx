@@ -22,6 +22,10 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import BatchOperationsBar, { type BatchAction } from '../../components/shell/BatchOperationsBar';
+import { useRowSelection } from '../../components/shell/useRowSelection';
+import { useCrudFeedback } from '../../components/shell/FeedbackProvider';
+import ListToolbar from '../../components/shell/ListToolbar';
 
 import {
   MOCK_COUPONS,
@@ -277,6 +281,26 @@ function CouponsPageContent() {
   const columns = useMemo(() => buildColumns(handleRowClick), [handleRowClick]);
   const sortedItems = useSortedItems(scopeFiltered, columns, sortConfig);
 
+  const selection = useRowSelection(sortedItems, (item) => item.id);
+  const feedback = useCrudFeedback();
+
+  const columnsWithCheckbox = useMemo<DataTableColumn<CouponItem>[]>(() => [
+    { key: '_select', title: '✅', width: '40px', render: (item: CouponItem) => (
+      <input type="checkbox" checked={selection.selectedIds.has(item.id)} 
+        onChange={() => selection.toggle(item.id)} onClick={(e) => e.stopPropagation()}
+        style={{ cursor: 'pointer', width: 16, height: 16 }} />
+    )}, ...columns,
+  ], [columns, selection.selectedIds, selection.toggle]);
+
+  const batchActions: BatchAction[] = useMemo(() => [
+    { key: 'batch-enable', label: '批量启用', icon: '✅', variant: 'primary',
+      onClick: () => { feedback.success(`已启用 ${selection.selectedCount} 张优惠券`); selection.clear(); } },
+    { key: 'batch-disable', label: '批量停用', icon: '⛔', variant: 'danger',
+      onClick: () => { feedback.success(`已停用 ${selection.selectedCount} 张优惠券`); selection.clear(); } },
+    { key: 'batch-export', label: '导出选中', icon: '📤', variant: 'default',
+      onClick: () => { feedback.info(`正在导出 ${selection.selectedCount} 张优惠券...`); selection.clear(); } },
+  ], [selection, feedback]);
+
   // 分页
   const pagination = usePagination({
     initialPageSize: 10,
@@ -422,14 +446,11 @@ function CouponsPageContent() {
           </div>
         </div>
 
-        {/* 搜索框 */}
-        <div style={{ marginBottom: 12 }}>
-          <SearchFilterInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="搜索券码 / 优惠券名称 / 创建人..."
-          />
-        </div>
+        <ListToolbar
+          matchedCount={sortedItems.length}
+          searchInput={<SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索券码 / 优惠券名称 / 创建人..." />}
+          batchToggle={selection.selectedCount > 0 ? { active: true, onClear: selection.clear } : undefined}
+        />
 
         {/* 状态过滤 */}
         <div style={{ marginBottom: 12 }}>
@@ -550,10 +571,20 @@ function CouponsPageContent() {
           style={{ marginBottom: 8 }}
         />
 
+        {selection.selectedCount > 0 && (
+          <BatchOperationsBar
+            selectedCount={selection.selectedCount}
+            totalCount={sortedItems.length}
+            actions={batchActions}
+            onClearSelection={selection.clear}
+            itemLabel="优惠券"
+          />
+        )}
+
         {/* 数据表格 */}
         <DataTable
           title={`优惠券列表（匹配 ${sortedItems.length} 条）`}
-          columns={columns}
+          columns={columnsWithCheckbox}
           items={pageItems}
           rowKey={(item) => item.id}
           sort={sortConfig}
