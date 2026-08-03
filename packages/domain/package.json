@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test $(find src -type f -name '*.test.ts' | sort)"
   }

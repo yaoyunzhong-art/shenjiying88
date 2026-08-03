@@ -92,7 +92,7 @@ type ApiMiddleware = {
 };
 
 function createApiClient(baseUrl: string) {
-  let middleware: ApiMiddleware = { before: [], after: [] };
+  const middleware: ApiMiddleware = { before: [], after: [] };
 
   return {
     useBefore: (fn: RequestInterceptor) => {

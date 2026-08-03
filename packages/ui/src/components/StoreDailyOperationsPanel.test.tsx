@@ -76,7 +76,7 @@ describe('StoreDailyOperationsPanel', () => {
     assert.ok(html.includes('待办事项'), '应展示待办标题');
     assert.ok(html.includes('在岗员工'), '应展示员工标题');
     assert.ok(html.includes('快捷操作'), '应展示快捷操作标题');
-    assert.ok(html.includes('role="region"') || html.includes('role=\\"region\\"'), '应设置 role=region');
+    assert.ok(html.includes('role="region"') || html.includes('role="region"'), '应设置 role=region');
   });
 
   test('指标渲染 — 值/单位/变化趋势', () => {
@@ -176,13 +176,13 @@ describe('StoreDailyOperationsPanel', () => {
   test('任务 onTaskClick 存在时渲染 role=button', () => {
     const props = makeProps({ onTaskClick: (id) => {} });
     const html = renderToStaticMarkup(React.createElement(StoreDailyOperationsPanel, props));
-    assert.ok(html.includes('role="button"') || html.includes('role=\\"button\\"'), '任务应设置 role=button');
+    assert.ok(html.includes('role="button"') || html.includes('role="button"'), '任务应设置 role=button');
   });
 
   test('员工 onStaffClick 存在时渲染 role=button', () => {
     const props = makeProps({ onStaffClick: (id) => {} });
     const html = renderToStaticMarkup(React.createElement(StoreDailyOperationsPanel, props));
     // 员工卡片也应该有 role=button
-    assert.ok(html.includes('role="button"') || html.includes('role=\\"button\\"'), '员工卡片应设置 role=button');
+    assert.ok(html.includes('role="button"') || html.includes('role="button"'), '员工卡片应设置 role=button');
   });
 });

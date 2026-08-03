@@ -26,14 +26,14 @@ describe('RichTextEditor', () => {
 
   test('renders with data-testid', () => {
     const html = renderToStaticMarkup(r({ 'data-testid': 'my-rte' }));
-    assert.ok(html.includes('data-testid="my-rte"') || html.includes('data-testid=\\"my-rte\\"') || html.includes('data-testid'));
+    assert.ok(html.includes('data-testid="my-rte"') || html.includes('data-testid="my-rte"') || html.includes('data-testid'));
   });
 
   test('renders toolbar buttons for basic preset', () => {
     const html = renderToStaticMarkup(r({ toolbar: 'basic' }));
     assert.ok(html.includes('role="toolbar"'));
     // Should contain at least Bold button
-    assert.ok(html.includes('Bold') || html.includes('title="Bold"') || html.includes('title=\\"Bold\\"'));
+    assert.ok(html.includes('Bold') || html.includes('title="Bold"') || html.includes('title="Bold"'));
   });
 
   test('renders initial value', () => {

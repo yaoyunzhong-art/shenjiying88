@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node -r ./test/setup.cjs --import tsx --test 'screens/**/*.test.tsx' 'screens/**/*.test.ts' 2>/dev/null; node -r ./test/setup.cjs --import tsx --test 'screens/home/home-screen.test.ts' 'screens/settings/settings-screen.test.ts' $(find . -maxdepth 1 -type f -name '*.test.ts' | sort)"
   },

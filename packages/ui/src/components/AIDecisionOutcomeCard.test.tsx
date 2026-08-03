@@ -42,7 +42,7 @@ describe('AIDecisionOutcomeCard', () => {
     assert.ok(html.includes('¥52,000'), '应展示指标值');
     assert.ok(html.includes('发送至店长审批'), '应展示建议操作');
     assert.ok(html.includes('Gemini-Pro'), '应展示决策者');
-    assert.ok(html.includes('role="article"') || html.includes('role=\\"article\\"'), '应设置 role=article');
+    assert.ok(html.includes('role="article"') || html.includes('role="article"'), '应设置 role=article');
   });
 
   test('rejected 状态', () => {
@@ -70,7 +70,7 @@ describe('AIDecisionOutcomeCard', () => {
     const props = makeProps({ onClick: (id: string) => { clickedId = id; } });
     const html = renderToStaticMarkup(React.createElement(AIDecisionOutcomeCard, props));
     // onClick 通过渲染 HTML 体现: card 必须拥有 role=article
-    assert.ok(html.includes('role="article"') || html.includes('role=\\"article\\"'), 'role 属性应存在');
+    assert.ok(html.includes('role="article"') || html.includes('role="article"'), 'role 属性应存在');
   });
 
   test('置信度边界值', () => {

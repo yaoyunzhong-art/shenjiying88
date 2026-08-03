@@ -538,7 +538,7 @@ describe('AiModelSwitcher E2E — 错误状态', () => {
 })
 
 describe('AiModelSwitcher E2E — UI 交互逻辑', () => {
-  it('切换请求中应显示 \"切换中\" 状态', async () => {
+  it('切换请求中应显示 "切换中" 状态', async () => {
     // 模拟异步请求中: 延迟 50ms 返回
     const originalFetch = globalThis.fetch
     setMock('/ai-model-config/switch', 200, { config: { id: 'c1' }, latencyMs: 50, healthCheckOk: true })

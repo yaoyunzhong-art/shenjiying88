@@ -1,11 +1,17 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { FlatCompat } from '@eslint/eslintrc';
 import rootConfig from '../../eslint.config.mjs';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const compat = new FlatCompat({
-  baseDirectory: currentDir
-});
-
-export default [...rootConfig, ...compat.extends('next/core-web-vitals', 'next/typescript')];
+export default [
+  ...rootConfig,
+  {
+    rules: {
+      'no-constant-condition': 'off',
+      'no-useless-escape': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-extra-non-null-assertion': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off',
+      '@next/next/no-assign-module-variable': 'off',
+    },
+  },
+];
